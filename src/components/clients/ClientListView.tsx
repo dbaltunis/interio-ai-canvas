@@ -375,11 +375,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Mail className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-xs">{communicationStats?.[client.id]?.emailCount || 0}</span>
+                            <span className="text-xs">{communicationStats?.[client.id]?.emailCount || '—'}</span>
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <MessageSquare className="h-3.5 w-3.5 text-green-500" />
-                            <span className="text-xs">{communicationStats?.[client.id]?.whatsappCount || 0}</span>
+                            <span className="text-xs">{communicationStats?.[client.id]?.whatsappCount || '—'}</span>
                           </div>
                         </div>
                       </TableCell>
@@ -387,12 +387,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        {filesCount?.[client.id] && filesCount[client.id] > 0 ? (
                           <Badge variant="muted" className="text-xs flex items-center gap-1.5">
                             <FileText className="h-3 w-3" />
-                            {filesCount?.[client.id] || 0}
+                            {filesCount[client.id]}
                           </Badge>
-                        </div>
+                        ) : (
+                          <span className="text-muted-foreground/60 text-sm">—</span>
+                        )}
                       </TableCell>
                     )}
                     

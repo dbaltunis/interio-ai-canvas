@@ -112,7 +112,7 @@ export const MobileCRMView = () => {
                         <span>{formatCurrency(client.deal_value)}</span>
                       </div>
                     )}
-                    {client.lead_score && (
+                    {client.lead_score && client.lead_score > 0 && (
                       <div className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
                         <span>{client.lead_score}%</span>
