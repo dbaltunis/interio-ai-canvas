@@ -227,7 +227,7 @@ export const InteractiveCRMTable = () => {
                         onClick={() => setEditingCell({row: client.id, col: 'conversion_probability'})}
                       >
                         <span className="text-sm font-medium">
-                          {client.conversion_probability || 0}%
+                          {client.conversion_probability ? `${client.conversion_probability}%` : '—'}
                         </span>
                       </div>
                     )}

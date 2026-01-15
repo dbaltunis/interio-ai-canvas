@@ -83,7 +83,9 @@ export const HotLeadsList = () => {
                   </div>
                 </div>
               </div>
-              <LeadScoreCard score={lead.lead_score || 0} priority={lead.priority_level} />
+              {lead.lead_score && lead.lead_score > 0 && (
+                <LeadScoreCard score={lead.lead_score} priority={lead.priority_level} />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
