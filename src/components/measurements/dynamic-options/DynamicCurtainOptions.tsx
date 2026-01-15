@@ -822,7 +822,7 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
               <Select
-                value={selectedHeading || measurements.selected_heading || ''}
+                value={selectedHeading || measurements.selected_heading || '__none__'}
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >
@@ -1259,7 +1259,7 @@ export const DynamicCurtainOptions = ({
               <span className="text-sm text-muted-foreground">Select {option.label}</span>
               <div className="w-64">
                 <Select
-                  value={selectedValueId || ''}
+                  value={selectedValueId || '__none__'}
                   onValueChange={(value) => {
                     console.log(`🔥 Treatment option change: ${option.key} = ${value}`);
                     handleTreatmentOptionChange(option.key, value);
@@ -1327,7 +1327,7 @@ export const DynamicCurtainOptions = ({
                   <span className={`text-sm ${showSubCategoryIndicator ? 'text-destructive' : 'text-muted-foreground'}`}>Select Type</span>
                   <div className="w-64">
                     <Select
-                      value={currentSubCategory || ''}
+                      value={currentSubCategory || '__none__'}
                       onValueChange={(categoryKey) => {
                         console.log(`🔥 Sub-category change: ${option.key} type = ${categoryKey}`);
                         
@@ -1421,7 +1421,7 @@ export const DynamicCurtainOptions = ({
                       <span className={`text-sm ${showItemIndicator ? 'text-destructive' : 'text-muted-foreground'}`}>{selectedSubOption.label}</span>
                       <div className="w-64">
                         <Select
-                          value={currentItemSelection || ''}
+                          value={currentItemSelection || '__none__'}
                           onValueChange={(choiceValue) => {
                             console.log(`🔥 Choice selection: ${subOptionKey} = ${choiceValue}`);
                             handleTreatmentOptionChange(subOptionKey, choiceValue);

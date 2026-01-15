@@ -15,8 +15,9 @@ This document is the single source of truth for understanding how the applicatio
 5. [Data Sources (TWC, CSV, Manual)](#5-data-sources)
 6. [Permission System](#6-permission-system)
 7. [Common Pitfalls & Solutions](#7-common-pitfalls--solutions)
-8. [Universal Testing Checklist](#8-universal-testing-checklist)
-9. [Key Files Reference](#9-key-files-reference)
+8. [UI Component Patterns](#8-ui-component-patterns)
+9. [Universal Testing Checklist](#9-universal-testing-checklist)
+10. [Key Files Reference](#10-key-files-reference)
 
 ---
 
@@ -449,10 +450,50 @@ const finalPermissions = customPermissions; // Loses all role permissions!
 | 8 | TWC badge on manual options | Using `source` column instead of metadata | Check `metadata.twc_product_id` | Option components |
 | 9 | Price inflation (50×2=150) | Fallback recalculation in display | Use `calculatedPrice` directly | `optionCostCalculator.ts` |
 | 10 | Stale data after account switch | `effectiveOwnerId` not in queryKey | Include in all queryKeys | All hooks |
+| 11 | "Something went wrong" crash | `SelectItem value=""` in dropdown | Use `value="__none__"` sentinel | All Select components |
 
 ---
 
-## 8. Universal Testing Checklist
+## 8. UI Component Patterns
+
+### Select Component (CRITICAL!)
+
+Radix UI Select does NOT allow empty string values. Use sentinel values instead.
+
+| Use Case | Sentinel Value | Display Text |
+|----------|----------------|--------------|
+| Optional selection | `__none__` | "None" / "Not selected" |
+| "All" filter | `__all__` | "All [items]" |
+| Clear selection | `__clear__` | "Clear" |
+
+**Correct Pattern:**
+```typescript
+<Select value={selectedId || "__none__"}>
+  <SelectContent>
+    <SelectItem value="__none__">None</SelectItem>
+    {items.map(item => (
+      <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+```
+
+**Handler Pattern:**
+```typescript
+onValueChange={(value) => {
+  const actualValue = value === '__none__' || value === '__all__' ? null : value;
+  handleChange(actualValue);
+}}
+```
+
+**NEVER use:**
+- `value=""`
+- `value={x || ''}`
+- Any empty string as SelectItem value
+
+---
+
+## 9. Universal Testing Checklist
 
 ### Before ANY Fix is Considered Complete
 

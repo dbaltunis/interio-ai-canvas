@@ -126,7 +126,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
                   <SelectValue placeholder="All vendors" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Vendors</SelectItem>
+                  <SelectItem value="__all__">All Vendors</SelectItem>
                   <SelectItem value="fibre-naturelle">Fibre Naturelle</SelectItem>
                   <SelectItem value="kd-design">KD Design</SelectItem>
                   <SelectItem value="hunter-douglas">Hunter Douglas</SelectItem>
@@ -142,7 +142,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="__all__">All Categories</SelectItem>
                   <SelectItem value="upholstery-fabrics">Upholstery Fabrics</SelectItem>
                   <SelectItem value="drapery-fabrics">Drapery Fabrics</SelectItem>
                   <SelectItem value="blackout-fabrics">Blackout Fabrics</SelectItem>
@@ -159,7 +159,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
                   <SelectValue placeholder="All collections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Collections</SelectItem>
+                  <SelectItem value="__all__">All Collections</SelectItem>
                   <SelectItem value="heritage-collection">Heritage Collection</SelectItem>
                   <SelectItem value="luxury-series">Luxury Series</SelectItem>
                   <SelectItem value="functional-fabrics">Functional Fabrics</SelectItem>
@@ -206,7 +206,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
                   <SelectValue placeholder="All stock levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Stock Levels</SelectItem>
+                  <SelectItem value="__all__">All Stock Levels</SelectItem>
                   <SelectItem value="in-stock">In Stock</SelectItem>
                   <SelectItem value="low-stock">Low Stock</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
@@ -222,7 +222,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
                   <SelectValue placeholder="All patterns" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Patterns</SelectItem>
+                  <SelectItem value="__all__">All Patterns</SelectItem>
                   <SelectItem value="solid">Solid</SelectItem>
                   <SelectItem value="striped">Striped</SelectItem>
                   <SelectItem value="floral">Floral</SelectItem>

@@ -63,14 +63,14 @@ export const ClientSelectionStep = ({ formData, updateFormData }: ClientSelectio
       {!showNewClientForm ? (
         <div className="space-y-4">
           <Select 
-            value={formData.client_id || ""} 
-            onValueChange={(value) => updateFormData("client_id", value || null)}
+            value={formData.client_id || "__none__"} 
+            onValueChange={(value) => updateFormData("client_id", value === "__none__" ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select an existing client or leave empty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No client assigned</SelectItem>
+              <SelectItem value="__none__">No client assigned</SelectItem>
               {clients?.map(client => (
                 <SelectItem key={client.id} value={client.id}>
                   <div className="flex items-center space-x-2">
