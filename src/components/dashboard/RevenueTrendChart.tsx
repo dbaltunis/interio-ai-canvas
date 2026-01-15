@@ -56,8 +56,19 @@ export const RevenueTrendChart = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
-          {/* Retro pixel art style icon */}
-          <div className="mb-3 text-2xl opacity-60">📈</div>
+          {/* Nokia 3310-inspired pixel art chart icon */}
+          <svg width="48" height="48" viewBox="0 0 24 24" className="mb-3 opacity-70">
+            <rect x="2" y="18" width="3" height="4" fill="currentColor" className="text-muted-foreground" />
+            <rect x="6" y="14" width="3" height="8" fill="currentColor" className="text-muted-foreground" />
+            <rect x="10" y="10" width="3" height="12" fill="currentColor" className="text-primary/60" />
+            <rect x="14" y="6" width="3" height="16" fill="currentColor" className="text-primary/70" />
+            <rect x="18" y="2" width="3" height="20" fill="currentColor" className="text-primary" />
+            {/* Pixel dots for retro feel */}
+            <rect x="4" y="16" width="1" height="1" fill="currentColor" className="text-muted-foreground/50" />
+            <rect x="8" y="12" width="1" height="1" fill="currentColor" className="text-muted-foreground/50" />
+            <rect x="12" y="8" width="1" height="1" fill="currentColor" className="text-primary/40" />
+            <rect x="16" y="4" width="1" height="1" fill="currentColor" className="text-primary/50" />
+          </svg>
           <p className="text-sm font-medium text-foreground mb-1">Your first sale awaits!</p>
           <p className="text-xs text-muted-foreground">Big deals are on the horizon</p>
         </CardContent>

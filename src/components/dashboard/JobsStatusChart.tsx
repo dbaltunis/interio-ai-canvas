@@ -143,8 +143,22 @@ export const JobsStatusChart = () => {
           <CardTitle className="text-sm font-medium text-muted-foreground">Jobs by Status</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
-          {/* Retro pixel art style icon */}
-          <div className="mb-3 text-2xl opacity-60">🎯</div>
+          {/* Nokia 3310-inspired pixel art target/clipboard icon */}
+          <svg width="48" height="48" viewBox="0 0 24 24" className="mb-3 opacity-70">
+            {/* Clipboard base */}
+            <rect x="4" y="4" width="16" height="18" rx="1" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground" />
+            <rect x="8" y="2" width="8" height="4" rx="1" fill="currentColor" className="text-muted-foreground" />
+            {/* Pixel checkmarks - retro style */}
+            <rect x="7" y="9" width="2" height="2" fill="currentColor" className="text-primary" />
+            <rect x="9" y="11" width="2" height="2" fill="currentColor" className="text-primary" />
+            <rect x="11" y="9" width="2" height="2" fill="currentColor" className="text-primary" />
+            <rect x="14" y="9" width="4" height="2" fill="currentColor" className="text-muted-foreground/60" />
+            {/* Second row */}
+            <rect x="7" y="14" width="2" height="2" fill="currentColor" className="text-primary/60" />
+            <rect x="9" y="16" width="2" height="2" fill="currentColor" className="text-primary/60" />
+            <rect x="11" y="14" width="2" height="2" fill="currentColor" className="text-primary/60" />
+            <rect x="14" y="14" width="4" height="2" fill="currentColor" className="text-muted-foreground/40" />
+          </svg>
           <p className="text-sm font-medium text-foreground mb-1">Ready for your first project!</p>
           <p className="text-xs text-muted-foreground">Great things start here</p>
         </CardContent>
