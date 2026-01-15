@@ -42,7 +42,23 @@ const JobsPage = () => {
   const [showColumnCustomization, setShowColumnCustomization] = useState(false);
   const [isAutoCreating, setIsAutoCreating] = useState(false);
   
-  const { 
+  // CRITICAL: This query MUST be at top level before any early returns (React Rules of Hooks)
+  const { data: jobExists, isLoading: validatingJob } = useQuery({
+    queryKey: ['validate-job-exists', selectedJobId],
+    queryFn: async () => {
+      if (!selectedJobId) return null;
+      const { data } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('id', selectedJobId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!selectedJobId,
+    staleTime: 30000,
+  });
+  
+  const {
     columns, 
     visibleColumns, 
     toggleColumn, 
@@ -413,22 +429,6 @@ const canViewJobsExplicit =
       </div>
     );
   }
-
-  // Validate job exists before rendering
-  const { data: jobExists, isLoading: validatingJob } = useQuery({
-    queryKey: ['validate-job-exists', selectedJobId],
-    queryFn: async () => {
-      if (!selectedJobId) return null;
-      const { data } = await supabase
-        .from('measurement_jobs')
-        .select('id')
-        .eq('id', selectedJobId)
-        .maybeSingle();
-      return !!data;
-    },
-    enabled: !!selectedJobId,
-    staleTime: 30000,
-  });
 
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
