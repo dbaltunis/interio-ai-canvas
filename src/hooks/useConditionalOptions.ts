@@ -11,38 +11,61 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
   console.log('🔧 useConditionalOptions - Rules:', rules.length);
   console.log('🔧 useConditionalOptions - Selected Options:', selectedOptions);
 
+  // ✅ CRITICAL FIX: Normalize comparison to handle UUID vs code/label mismatches
+  // Rules may store code ("motorised_track") while selections store UUIDs
+  // Also check the corresponding _code key for matching
   const evaluateCondition = (rule: OptionRule): boolean => {
     const { option_key, operator, value } = rule.condition;
     const selectedValue = selectedOptions[option_key];
+    // Also check for a code version of the selection (e.g., "hardware_type_code")
+    const selectedCode = selectedOptions[`${option_key}_code`];
+    // And label version
+    const selectedLabel = selectedOptions[`${option_key}_label`];
 
     console.log(`📊 Evaluating rule: "${option_key}" ${operator} "${value}"`, {
       selectedValue,
-      conditionMet: !!selectedValue
+      selectedCode,
+      selectedLabel,
+      conditionMet: !!(selectedValue || selectedCode)
     });
 
-    if (!selectedValue) return false;
+    if (!selectedValue && !selectedCode) return false;
+
+    // Helper to check if any selected value matches a target
+    const matchesValue = (target: string): boolean => {
+      const targetLower = target?.toString().toLowerCase();
+      return (
+        selectedValue === target ||
+        selectedCode === target ||
+        selectedLabel === target ||
+        selectedValue?.toString().toLowerCase() === targetLower ||
+        selectedCode?.toString().toLowerCase() === targetLower ||
+        selectedLabel?.toString().toLowerCase() === targetLower
+      );
+    };
 
     let result = false;
     switch (operator) {
       case 'equals':
-        result = selectedValue === value;
+        result = matchesValue(value as string);
         break;
       
       case 'not_equals':
-        result = selectedValue !== value;
+        result = !matchesValue(value as string);
         break;
       
       case 'contains':
         if (Array.isArray(selectedValue)) {
           result = selectedValue.includes(value as string);
         } else {
-          result = String(selectedValue).includes(value as string);
+          result = String(selectedValue || selectedCode || '').toLowerCase().includes((value as string).toLowerCase());
         }
         break;
       
       case 'in_list':
         if (Array.isArray(value)) {
-          result = value.includes(selectedValue as string);
+          // Check if any value in the list matches our selection (by UUID, code, or label)
+          result = value.some(v => matchesValue(v));
         }
         break;
       

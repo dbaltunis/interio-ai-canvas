@@ -125,8 +125,33 @@ export const DynamicCurtainOptions = ({
   
   // ✅ NEW: Conditional options based on option_rules (e.g., show track_selection when hardware_type = track)
   // Build selected options map for the conditional hook
+  // ✅ CRITICAL FIX: Include BOTH UUID and code/label for each selection
+  // This allows rules to match by code ("motorised_track") even when we store UUIDs
   const selectedOptionsForRules = useMemo(() => {
-    const result: Record<string, string> = { ...treatmentOptionSelections };
+    const result: Record<string, string> = {};
+    
+    // Process treatmentOptionSelections with enriched code/label data
+    Object.entries(treatmentOptionSelections).forEach(([key, selectedId]) => {
+      if (!selectedId) return;
+      
+      // Store the UUID
+      result[key] = selectedId;
+      
+      // Find the option to get its values
+      const option = treatmentOptions.find(o => o.key === key);
+      if (option?.option_values) {
+        const selectedValue = option.option_values.find((v: any) => v.id === selectedId);
+        if (selectedValue) {
+          // Also store the code and label for rule matching
+          if (selectedValue.code) {
+            result[`${key}_code`] = selectedValue.code;
+          }
+          if (selectedValue.label) {
+            result[`${key}_label`] = selectedValue.label;
+          }
+        }
+      }
+    });
     
     // ✅ CRITICAL FIX: Include selectedHeading for heading→hardware rules to evaluate
     if (selectedHeading) {
@@ -144,8 +169,10 @@ export const DynamicCurtainOptions = ({
         result[key.replace('treatment_option_', '')] = measurements[key];
       }
     });
+    
+    console.log('🎯 selectedOptionsForRules with codes:', result);
     return result;
-  }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining]);
+  }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining, treatmentOptions]);
   
   const { isOptionVisible, getDefaultValue, getAllowedValues, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
   

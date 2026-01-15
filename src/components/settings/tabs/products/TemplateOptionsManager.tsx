@@ -158,7 +158,21 @@ const SortableOptionItem = ({
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {!enabled && (
+              {!enabled && ruleInfo && ruleInfo.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="destructive" className="text-xs cursor-help">
+                        ⚠️ Rules won't work
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-xs">This option has rules but is disabled. Enable it for rules to apply.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {!enabled && (!ruleInfo || ruleInfo.length === 0) && (
                 <Badge variant="destructive" className="text-xs">
                   Disabled
                 </Badge>
