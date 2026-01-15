@@ -1,6 +1,7 @@
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Send, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { PixelMessageIcon } from "@/components/icons/PixelArtIcons";
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -76,9 +77,12 @@ export const RecentEmailsWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {recentEmails.length === 0 ? (
-        <div className="text-center py-6 text-muted-foreground">
-            <Mail className="h-8 w-8 mx-auto mb-2 opacity-20" />
-            <p className="text-xs">No emails sent yet</p>
+        <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelMessageIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Start conversations</p>
+            <p className="text-xs text-muted-foreground">No emails sent yet</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-3">

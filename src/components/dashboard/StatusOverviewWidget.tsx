@@ -2,6 +2,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Circle } from "lucide-react";
+import { PixelChartIcon } from "@/components/icons/PixelArtIcons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -69,9 +70,12 @@ export const StatusOverviewWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {displayStatuses.length === 0 && totalProjects === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <BarChart3 className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
-            <p className="text-xs">No projects yet</p>
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelChartIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Track your progress</p>
+            <p className="text-xs text-muted-foreground">No projects yet</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-3">

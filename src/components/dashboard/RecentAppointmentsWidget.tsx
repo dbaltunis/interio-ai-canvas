@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, Clock, User, MapPin } from "lucide-react";
+import { PixelBellIcon } from "@/components/icons/PixelArtIcons";
 import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -92,9 +93,12 @@ export const RecentAppointmentsWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {!bookings || bookings.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <Bell className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
-            <p className="text-xs">No appointments booked yet</p>
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelBellIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Ready for bookings</p>
+            <p className="text-xs text-muted-foreground">No appointments booked yet</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-3">
