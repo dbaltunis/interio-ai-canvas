@@ -13,7 +13,7 @@ export interface OptionRule {
   effect: {
     action: 'show_option' | 'hide_option' | 'require_option' | 'set_default' | 'filter_values';
     target_option_key: string;
-    target_value?: string | string[];
+    target_value?: string | string[]; // For set_default (single) or filter_values (array of allowed value IDs)
   };
   description?: string;
   created_at?: string;
