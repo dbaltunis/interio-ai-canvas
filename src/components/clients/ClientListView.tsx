@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -245,12 +246,12 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
     <Card variant="elevated" className="overflow-hidden">
       <CardContent className="p-0">
         {!clients || clients.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <div className="p-4 bg-muted/40 rounded-2xl w-fit mx-auto mb-4">
-              <User className="h-10 w-10 text-muted-foreground" />
+          <div className="text-center py-16">
+            <div className="flex justify-center mb-4">
+              <PixelUserIcon size={64} />
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">No clients found</h3>
-            <p className="text-sm text-muted-foreground mb-4">Try adjusting your filters or add a new client.</p>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Your future clients are waiting!</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">Start building relationships that last. Great projects begin with great connections.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

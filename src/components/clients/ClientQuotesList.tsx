@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, FileText, Calendar, DollarSign, Eye } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
 
 interface ClientQuotesListProps {
   clientId: string;
@@ -55,8 +56,9 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
       <CardContent className="p-3">
         {quotes.length === 0 ? (
           <div className="empty-state">
-            <FileText className="empty-state-icon" />
-            <p className="empty-state-text">No quotes found</p>
+            <PixelDocumentIcon size={48} className="mx-auto mb-2" />
+            <p className="empty-state-title">Ready to quote</p>
+            <p className="empty-state-text text-xs">Create your first quote for this client</p>
             <Button size="sm" variant="outline" className="h-7 text-xs mt-2">
               <Plus className="h-3 w-3 mr-1" />
               Create Quote

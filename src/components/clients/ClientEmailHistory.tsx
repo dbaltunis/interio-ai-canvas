@@ -23,6 +23,7 @@ import {
 import { Mail, Plus, Eye, MousePointer, Calendar, ArrowRight } from "lucide-react";
 import { useClientEmails } from "@/hooks/useClientEmails";
 import { EmailStatusBadge } from "../jobs/email-components/EmailStatusBadge";
+import { PixelMessageIcon } from "@/components/icons/PixelArtIcons";
 import { EmailDetailDialog } from "../jobs/email-components/EmailDetailDialog";
 import type { Email } from "@/hooks/useEmails";
 
@@ -184,8 +185,9 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
             </div>
           ) : !emails || emails.length === 0 ? (
             <div className="empty-state">
-              <Mail className="empty-state-icon" />
-              <p className="empty-state-title">No email communication yet</p>
+              <PixelMessageIcon size={48} className="mx-auto mb-2" />
+              <p className="empty-state-title">Start the conversation!</p>
+              <p className="empty-state-text text-xs">Great relationships begin with hello</p>
               {clientEmail && onComposeEmail && (
                 <Button onClick={onComposeEmail} className="mt-3" variant="outline" size="sm">
                   <Plus className="h-3.5 w-3.5 mr-1" />

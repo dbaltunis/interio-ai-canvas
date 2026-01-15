@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
   Mail, MessageSquare, Search, ChevronRight, 
-  MessageCircle, RefreshCw, Users
+  RefreshCw, Users
 } from "lucide-react";
+import { PixelMessageIcon } from "@/components/icons/PixelArtIcons";
 import { formatDistanceToNow, format } from "date-fns";
 import { useUnifiedCommunications, groupMessagesByClient, UnifiedMessage } from "@/hooks/useUnifiedCommunications";
 import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawer";
@@ -248,11 +249,13 @@ export const EmailDashboard = ({
       <Card className="rounded-xl border">
         <CardContent className="p-0">
           {groupedMessages.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <MessageCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No messages found</h3>
-              <p className="text-sm">
-                {searchTerm ? "Try a different search term" : "Start a conversation with a client"}
+            <div className="text-center py-12">
+              <div className="flex justify-center mb-4">
+                <PixelMessageIcon size={64} />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Start the conversation!</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                {searchTerm ? "Try a different search term" : "Great relationships begin with hello."}
               </p>
             </div>
           ) : (
