@@ -86,7 +86,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
               option_values (*)
             )
           `)
-          .eq('template_id', templateIdOrCategory);
+          .eq('template_id', templateIdOrCategory)
+          .eq('is_enabled', true); // ✅ CRITICAL: Only fetch ENABLED options (WHITELIST approach)
         
         if (linkedError) {
           console.error('Error fetching linked options:', linkedError);

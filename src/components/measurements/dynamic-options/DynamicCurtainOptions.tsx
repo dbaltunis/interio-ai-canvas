@@ -66,6 +66,18 @@ export const DynamicCurtainOptions = ({
       </div>
     );
   }
+  
+  // ✅ CRITICAL: Validate template has an ID (exists in database)
+  if (!template?.id) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Template configuration error: Template ID is missing. Please re-select the template or contact support.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
