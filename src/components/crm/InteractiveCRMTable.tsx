@@ -35,7 +35,11 @@ const stageColors: Record<string, string> = {
   lost: "bg-gray-100 text-gray-700 border-gray-300",
 };
 
-export const InteractiveCRMTable = () => {
+interface InteractiveCRMTableProps {
+  onClientClick?: (clientId: string) => void;
+}
+
+export const InteractiveCRMTable = ({ onClientClick }: InteractiveCRMTableProps) => {
   const { data: clients = [], isLoading } = useClients();
   const updateClient = useUpdateClient();
   const [editingCell, setEditingCell] = useState<{row: string, col: string} | null>(null);

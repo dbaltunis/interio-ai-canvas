@@ -25,6 +25,11 @@ import { HelpIcon } from "@/components/ui/help-icon";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileClientView } from "./MobileClientView";
+import { CRMViewToggle, CRMViewMode } from "../crm/CRMViewToggle";
+import { KanbanPipelineBoard } from "../crm/KanbanPipelineBoard";
+import { MyDayDashboard } from "../crm/MyDayDashboard";
+import { InteractiveCRMTable } from "../crm/InteractiveCRMTable";
+
 interface ClientManagementPageProps {
   onTabChange?: (tab: string) => void;
 }
@@ -42,6 +47,9 @@ export const ClientManagementPage = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
+
+  // CRM View Mode
+  const [viewMode, setViewMode] = useState<CRMViewMode>('my-day');
 
   // CRM Filters
   const [filters, setFilters] = useState({
@@ -369,7 +377,7 @@ export const ClientManagementPage = ({
   return <div className="bg-background min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 md:p-6 lg:p-6">
         {/* Compact Header - Analytics Style */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
               <Users className="h-5 w-5 text-primary" />
@@ -381,21 +389,28 @@ export const ClientManagementPage = ({
             </Badge>
           </div>
         
-          <div className="flex items-center gap-2">
-            {/* Always-visible Search Input */}
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search clients..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-9 h-9"
-              />
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* View Mode Toggle */}
+            <CRMViewToggle value={viewMode} onChange={setViewMode} />
+
+            {/* Search - only show for list/table views */}
+            {(viewMode === 'list' || viewMode === 'table') && (
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search clients..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+            )}
             
-            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="icon-sm" className="rounded-lg" title="Filter">
-              <Filter className="h-4 w-4" />
-            </Button>
+            {(viewMode === 'list' || viewMode === 'table') && (
+              <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="icon-sm" className="rounded-lg" title="Filter">
+                <Filter className="h-4 w-4" />
+              </Button>
+            )}
             
             <Button variant="outline" onClick={() => setShowImportExport(true)} size="icon-sm" className="rounded-lg" title="Import/Export">
               <Download className="h-4 w-4" />
@@ -408,21 +423,50 @@ export const ClientManagementPage = ({
           </div>
         </div>
 
-      {/* Filters */}
-      {showFilters && <CRMFilters filters={filters} onFilterChange={handleFilterChange} onReset={clearFilters} />}
+      {/* Filters - only for list/table views */}
+      {showFilters && (viewMode === 'list' || viewMode === 'table') && (
+        <CRMFilters filters={filters} onFilterChange={handleFilterChange} onReset={clearFilters} />
+      )}
 
-      {/* Client List */}
-      <ClientListView 
-        clients={paginatedClients} 
-        searchTerm={searchTerm} 
-        onSearchChange={handleSearchChange} 
-        onClientClick={handleClientClick} 
-        isLoading={isLoading || isLoadingStats}
-        canDeleteClients={canDeleteClients}
-      />
+      {/* View Content */}
+      {viewMode === 'my-day' && (
+        <MyDayDashboard onClientClick={(clientId) => {
+          const client = clientsWithStats.find(c => c.id === clientId);
+          if (client) handleClientClick(client);
+        }} />
+      )}
 
-      {/* Pagination */}
-      <JobsPagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} />
+      {viewMode === 'board' && (
+        <KanbanPipelineBoard onClientClick={(clientId) => {
+          const client = clientsWithStats.find(c => c.id === clientId);
+          if (client) handleClientClick(client);
+        }} />
+      )}
+
+      {viewMode === 'list' && (
+        <ClientListView 
+          clients={paginatedClients} 
+          searchTerm={searchTerm} 
+          onSearchChange={handleSearchChange} 
+          onClientClick={handleClientClick} 
+          isLoading={isLoading || isLoadingStats}
+          canDeleteClients={canDeleteClients}
+        />
+      )}
+
+      {viewMode === 'table' && (
+        <InteractiveCRMTable 
+          onClientClick={(clientId) => {
+            const client = clientsWithStats.find(c => c.id === clientId);
+            if (client) handleClientClick(client);
+          }}
+        />
+      )}
+
+      {/* Pagination - only for list view */}
+      {viewMode === 'list' && (
+        <JobsPagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} />
+      )}
 
       {/* Create Client Dialog with Lead Intelligence */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
