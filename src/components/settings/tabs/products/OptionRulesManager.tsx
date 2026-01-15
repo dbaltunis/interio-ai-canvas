@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit, Zap, Eye, EyeOff, AlertCircle, ListFilter, CheckSquare } from 'lucide-react';
+import { Plus, Trash2, Edit, Zap, Eye, EyeOff, AlertCircle, ListFilter, CheckSquare, HelpCircle, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTreatmentOptionRules, useCreateOptionRule, useUpdateOptionRule, useDeleteOptionRule, OptionRule } from '@/hooks/useOptionRules';
 import { useTreatmentOptions } from '@/hooks/useTreatmentOptions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { OptionRulesGuide } from './OptionRulesGuide';
 import { OptionRuleWizard } from './OptionRuleWizard';
 import { RuleTemplatesPanel } from './RuleTemplatesPanel';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -170,34 +171,39 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   const getOptionLabel = (key: string) => 
     options.find(opt => opt.key === key)?.label || key;
 
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
   return (
-    <div className="space-y-6">
-      <OptionRulesGuide />
-      
-      {/* Quick Templates */}
-      <RuleTemplatesPanel 
-        onSelectTemplate={(template) => {
-          // Open wizard with template pattern pre-filled hints
-          setEditingRule(null);
-          setWizardOpen(true);
-          toast({
-            title: "Template Selected",
-            description: `Use "${template.name}" pattern. Select matching options from your list.`,
-          });
-        }} 
-      />
-      
+    <div className="space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Option Rules
-              <Badge variant="secondary" className="ml-2">{rules.length}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Configure conditional visibility and behavior for options
-            </CardDescription>
+          <div className="flex items-center gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Option Rules
+                <Badge variant="secondary" className="ml-2">{rules.length}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Rules control when options appear during job creation
+              </CardDescription>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs text-sm space-y-1">
+                  <p><strong>Show:</strong> Make option visible when condition met</p>
+                  <p><strong>Hide:</strong> Hide option when condition met</p>
+                  <p><strong>Require:</strong> Force selection when condition met</p>
+                  <p><strong>Default:</strong> Pre-select a value automatically</p>
+                  <p><strong>Filter:</strong> Limit dropdown choices</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <Button onClick={handleCreateNew} size="sm">
             <Plus className="h-4 w-4 mr-2" />
@@ -285,6 +291,28 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
           ))}
         </CardContent>
       </Card>
+
+      {/* Collapsible Quick Templates */}
+      <Collapsible open={templatesOpen} onOpenChange={setTemplatesOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-between px-4 py-2 h-auto">
+            <span className="text-sm text-muted-foreground">Quick Templates</span>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${templatesOpen ? 'rotate-180' : ''}`} />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          <RuleTemplatesPanel 
+            onSelectTemplate={(template) => {
+              setEditingRule(null);
+              setWizardOpen(true);
+              toast({
+                title: "Template Selected",
+                description: `Use "${template.name}" pattern. Select matching options.`,
+              });
+            }} 
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Rule Wizard Dialog */}
       <OptionRuleWizard
