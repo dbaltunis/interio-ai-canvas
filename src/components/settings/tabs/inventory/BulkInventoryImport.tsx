@@ -346,7 +346,7 @@ export const BulkInventoryImport = () => {
                       <SelectValue placeholder="Select column" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Not mapped --</SelectItem>
+                      <SelectItem value="__none__">-- Not mapped --</SelectItem>
                       {csvHeaders.map((header) => (
                         <SelectItem key={header} value={header}>
                           {header}

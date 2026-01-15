@@ -251,7 +251,7 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
                               <SelectValue placeholder="No template (fabric only)" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No template (fabric only)</SelectItem>
+                              <SelectItem value="__none__">No template (fabric only)</SelectItem>
                               {categoryTemplates.map(template => (
                                 <SelectItem key={template.id} value={template.id}>
                                   {template.name}
