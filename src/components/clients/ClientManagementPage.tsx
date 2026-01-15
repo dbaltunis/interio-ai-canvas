@@ -48,8 +48,17 @@ export const ClientManagementPage = ({
   const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
 
-  // CRM View Mode
-  const [viewMode, setViewMode] = useState<CRMViewMode>('my-day');
+  // CRM View Mode - persist to localStorage, default to 'list'
+  const [viewMode, setViewMode] = useState<CRMViewMode>(() => {
+    const saved = localStorage.getItem('crm-view-mode');
+    return (saved as CRMViewMode) || 'list';
+  });
+
+  // Save view mode to localStorage when changed
+  const handleViewModeChange = (mode: CRMViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('crm-view-mode', mode);
+  };
 
   // CRM Filters
   const [filters, setFilters] = useState({
@@ -391,7 +400,7 @@ export const ClientManagementPage = ({
         
           <div className="flex items-center gap-2 flex-wrap">
             {/* View Mode Toggle */}
-            <CRMViewToggle value={viewMode} onChange={setViewMode} />
+            <CRMViewToggle value={viewMode} onChange={handleViewModeChange} />
 
             {/* Search - only show for list/table views */}
             {(viewMode === 'list' || viewMode === 'table') && (

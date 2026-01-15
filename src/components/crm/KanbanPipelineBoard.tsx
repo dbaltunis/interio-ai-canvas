@@ -309,7 +309,7 @@ export const KanbanPipelineBoard = ({ onClientClick }: KanbanPipelineBoardProps)
     >
       <Card className="border-0 shadow-none bg-transparent">
         <CardContent className="p-0">
-          <div className="grid grid-cols-6 gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-3 overflow-x-auto pb-4">
             {pipelineStages.map((stage) => {
               const clients = clientsByStage[stage.value];
               const stageValue = getStageValue(stage.value);
@@ -383,7 +383,7 @@ const StageColumn = ({
       </div>
 
       {/* Client cards */}
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[calc(100vh-320px)] min-h-[300px]">
         <div className="space-y-2 pr-2">
           {clients.map((client) => (
             <DraggableClientCard
