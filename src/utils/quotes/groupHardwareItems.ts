@@ -117,17 +117,68 @@ export function getItemPrice(item: BreakdownItem): number {
 }
 
 /**
- * Filters out zero-priced category selections (e.g., "Hardware Type: Rod" with ₹0)
- * These are just category choices, not actual products
+ * Filters out zero-priced parent category selections (e.g., "Hardware To Test: Tracks" with £0)
+ * These are just category choices, not actual products - only show the end result
+ * 
+ * UNIVERSAL: Works for all SaaS accounts with any hardware naming pattern
  */
 export function filterMeaningfulHardwareItems(items: BreakdownItem[]): BreakdownItem[] {
+  // First, identify items with actual prices (these are the real products)
+  const itemsWithPrice = items.filter(item => getItemPrice(item) > 0);
+  
   return items.filter(item => {
     const price = getItemPrice(item);
     const optionKey = (item.optionKey || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+    const description = (item.description || '').toLowerCase();
     
-    // If it's hardware_type with ₹0, hide it (just a category selection)
+    // RULE 1: Always remove hardware_type with £0 (exact match - legacy pattern)
     if (optionKey === 'hardware_type' && price === 0) {
+      console.log('[filterHardware] Removing hardware_type at £0:', item.name);
       return false;
+    }
+    
+    // RULE 2: Remove any £0 item that is a PARENT category selection
+    if (price === 0) {
+      // Pattern detection for parent categories:
+      // - Option keys containing "type", "selection" are category pickers
+      // - Descriptions that are generic category names like "tracks", "rods", "poles"
+      const isParentCategoryByKey = 
+        optionKey.includes('_type') ||
+        optionKey.includes('type_') ||
+        optionKey === 'type' ||
+        optionKey.includes('selection');
+      
+      const isGenericCategoryDescription = 
+        description === 'tracks' ||
+        description === 'rods' ||
+        description === 'poles' ||
+        description === 'motors' ||
+        description === 'chains';
+      
+      // If it looks like a category selector AND there are priced items, filter it out
+      if ((isParentCategoryByKey || isGenericCategoryDescription) && itemsWithPrice.length > 0) {
+        console.log('[filterHardware] Removing zero-price parent category:', item.name);
+        return false;
+      }
+      
+      // RULE 3: Check if there's a related priced item (parent-child relationship)
+      // e.g., "Hardware To Test: Tracks" (£0) should be removed if 
+      //       "Hardware To Test - Curtain Track: black" (£45) exists
+      const nameRoot = name.split(':')[0].split(' - ')[0].trim();
+      if (nameRoot && nameRoot.length > 3) {
+        const hasRelatedPricedItem = itemsWithPrice.some(priced => {
+          const pricedName = (priced.name || '').toLowerCase();
+          const pricedRoot = pricedName.split(':')[0].split(' - ')[0].trim();
+          // Check if they share the same root name (parent-child pattern)
+          return pricedRoot === nameRoot && priced !== item;
+        });
+        
+        if (hasRelatedPricedItem) {
+          console.log('[filterHardware] Removing zero-price parent with related child:', item.name);
+          return false;
+        }
+      }
     }
     
     return true;

@@ -2,7 +2,7 @@ import React from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import type { ClientBreakdownItem } from "@/utils/quotes/buildClientBreakdown";
-import { groupHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
 import { Wrench, ChevronDown } from "lucide-react";
 
 interface QuoteItemBreakdownProps {
@@ -29,26 +29,34 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
     ...item,
     calculatedPrice: item.total_cost
   })));
+  
+  // Filter out redundant parent category items (e.g., "Hardware To Test: Tracks" at £0)
+  // Only show the actual end product the client is receiving
+  const filteredHardwareItems = hardwareGroup 
+    ? filterMeaningfulHardwareItems(hardwareGroup.items)
+    : [];
 
   return (
     <div className="mt-2 space-y-1">
       {/* Hardware Section - Grouped with collapsible breakdown */}
-      {hardwareGroup && hardwareGroup.items.length > 0 && (
+      {hardwareGroup && filteredHardwareItems.length > 0 && (
         <details className="py-1 group/hw">
           <summary className="flex items-center justify-between cursor-pointer list-none text-sm">
             <div className="flex items-center gap-2">
               <Wrench className="h-3.5 w-3.5 text-primary" />
               <span className="font-medium text-foreground">Hardware</span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
+              {filteredHardwareItems.length > 1 && (
+                <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
+              )}
             </div>
             <span className="font-medium text-foreground">
               {formatCurrency(hardwareGroup.total)}
             </span>
           </summary>
           
-          {/* Hardware breakdown items */}
+          {/* Hardware breakdown items - filtered to show only meaningful products */}
           <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-muted pl-3">
-            {hardwareGroup.items.map((item, idx) => {
+            {filteredHardwareItems.map((item, idx) => {
               const isAccessory = item.category === 'hardware_accessory';
               const totalPrice = Number(item.total_cost) || 0;
               const unitPrice = Number(item.unit_price) || 0;
