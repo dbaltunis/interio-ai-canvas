@@ -1,5 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PixelZapIcon } from "@/components/icons/PixelArtIcons";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Zap, CreditCard, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe, Truck } from "lucide-react";
@@ -198,9 +198,10 @@ export const IntegrationsTab = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Zap className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">Automation integrations coming soon</p>
+              <div className="text-center py-10">
+                <PixelZapIcon className="mx-auto mb-4" size={64} />
+                <h4 className="font-medium text-foreground mb-2">Connect your tools</h4>
+                <p className="text-sm text-muted-foreground">Automation integrations coming soon</p>
               </div>
             </CardContent>
           </Card>

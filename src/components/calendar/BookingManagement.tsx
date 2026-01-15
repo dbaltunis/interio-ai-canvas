@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -325,12 +326,12 @@ export const BookingManagement = () => {
 
       {filteredBookings.length === 0 && (
         <Card>
-          <CardContent className="text-center py-8">
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No bookings found</h3>
+          <CardContent className="text-center py-10">
+            <PixelCalendarIcon className="mx-auto mb-4" size={64} />
+            <h3 className="text-lg font-semibold mb-2">Your schedule awaits!</h3>
             <p className="text-muted-foreground">
               {filterStatus === "all" 
-                ? "You don't have any bookings yet."
+                ? "No bookings yet — share your scheduler to get started"
                 : `No ${filterStatus} bookings found.`
               }
             </p>

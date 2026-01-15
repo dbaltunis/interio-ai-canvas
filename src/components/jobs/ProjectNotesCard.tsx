@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProjectNotes } from "@/hooks/useProjectNotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { StickyNote, Trash2, Save, X, AtSign, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { PixelNoteIcon } from "@/components/icons/PixelArtIcons";
 
 interface ProjectNotesCardProps {
   projectId: string;
@@ -90,9 +90,10 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
             {error && <div className="text-sm text-destructive text-center py-4">Error: {error}</div>}
             
             {!loading && notes.length === 0 && !isAddingNote && (
-              <div className="text-center py-6 bg-muted/20 rounded-lg">
-                <StickyNote className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground mb-3">No notes yet</p>
+              <div className="text-center py-8 bg-muted/20 rounded-lg">
+                <PixelNoteIcon className="mx-auto mb-3" size={48} />
+                <h4 className="font-medium text-foreground mb-1">Capture your ideas!</h4>
+                <p className="text-sm text-muted-foreground mb-4">Add notes to keep track of project details</p>
                 <Button onClick={() => setIsAddingNote(true)} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Note

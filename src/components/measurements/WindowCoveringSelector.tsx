@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PixelWindowIcon } from "@/components/icons/PixelArtIcons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,8 +135,8 @@ export const WindowCoveringSelector = ({
 
           {/* No Results */}
           {!isLoading && filteredCoverings.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <PixelWindowIcon className="mx-auto mb-4" size={64} />
               <h3 className="text-lg font-medium mb-2">No curtain templates found</h3>
               <p className="text-muted-foreground max-w-md">
                 {searchQuery 

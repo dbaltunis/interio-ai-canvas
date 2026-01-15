@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClients } from "@/hooks/useClients";
@@ -78,9 +79,10 @@ export const CRMPipelineView = ({ onClientClick }: CRMPipelineViewProps) => {
                       </div>
                     ))}
                     {clients.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        No clients
-                      </p>
+                      <div className="text-center py-6">
+                        <PixelUserIcon className="mx-auto mb-2" size={32} />
+                        <p className="text-xs text-muted-foreground">No clients in this stage</p>
+                      </div>
                     )}
                   </div>
                 </ScrollArea>

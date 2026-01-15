@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -727,7 +728,8 @@ export const QuotationTab = ({
   if (!activeTemplates || activeTemplates.length === 0) {
     return <div className="flex items-center justify-center py-12">
       <div className="text-center">
-        <div className="text-muted-foreground mb-4">No active quote templates found</div>
+        <PixelDocumentIcon className="mx-auto mb-4" size={56} />
+        <h4 className="font-medium text-foreground mb-2">No active quote templates</h4>
         <p className="text-sm text-muted-foreground">
           Please create and activate quote templates in Settings → Document Templates
         </p>

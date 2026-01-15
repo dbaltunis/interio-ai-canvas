@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PixelWindowIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -183,8 +184,8 @@ export const RoomCard = ({
               onDeleteSurface={onDeleteSurface}
             />
           ) : (
-            <div className="text-center py-6 border-2 border-dashed border-border rounded-lg mx-4 my-4">
-              <div className="text-4xl mb-2">🪟</div>
+            <div className="text-center py-8 border-2 border-dashed border-border rounded-lg mx-4 my-4">
+              <PixelWindowIcon className="mx-auto mb-3" size={48} />
               <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
               <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets or products to get started</p>
             </div>
