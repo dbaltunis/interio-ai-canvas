@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Grid, List, Package, Home, Minus, Wallpaper, Lock, QrCode, Wrench, Shield, RefreshCw } from "lucide-react";
+import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw } from "lucide-react";
+import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
@@ -321,25 +322,25 @@ export const ModernInventoryDashboard = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
               <TabsTrigger value="fabrics" className="flex items-center gap-2">
-                <Home className="h-4 w-4" />
+                <PixelFabricIcon size={18} />
                 Fabrics
               </TabsTrigger>
               <TabsTrigger value="materials" className="flex items-center gap-2">
-                <Minus className="h-4 w-4" />
+                <PixelMaterialIcon size={18} />
                 Materials
               </TabsTrigger>
               <TabsTrigger value="hardware" className="flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
+                <PixelHardwareIcon size={18} />
                 Hardware
               </TabsTrigger>
               <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
-                <Wallpaper className="h-4 w-4" />
+                <PixelWallpaperIcon size={18} />
                 Wallcoverings
               </TabsTrigger>
               {/* Hide Vendors and Admin tabs for dealers */}
               {!isDealer && (
                 <TabsTrigger value="vendors" className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
+                  <PixelBriefcaseIcon size={18} />
                   Vendors
                 </TabsTrigger>
               )}
