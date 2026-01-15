@@ -958,7 +958,7 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Lining</span>
             <div className="w-64">
               <Select
-                value={measurements.selected_lining || ''}
+                value={measurements.selected_lining || 'none'}
                 onValueChange={handleLiningChange}
               >
                 <SelectTrigger className={`bg-background border-input ${!measurements.selected_lining && template.lining_types.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
