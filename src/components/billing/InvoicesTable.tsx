@@ -38,7 +38,7 @@ const normalizeStripeInvoice = (invoice: StripeInvoice): UnifiedInvoice => ({
 // Convert custom invoice to unified format
 const normalizeCustomInvoice = (invoice: CustomInvoice): UnifiedInvoice => ({
   id: invoice.id,
-  number: invoice.description,
+  number: (invoice as any).invoice_number || invoice.description,
   date: new Date(invoice.invoice_date),
   description: invoice.description,
   amount: invoice.amount,
@@ -149,6 +149,7 @@ export function InvoicesTable() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Invoice #</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
@@ -159,6 +160,9 @@ export function InvoicesTable() {
             <TableBody>
               {allInvoices.map((invoice) => (
                 <TableRow key={`${invoice.source}-${invoice.id}`}>
+                  <TableCell className="font-mono text-sm">
+                    {invoice.number}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {invoice.description}
                   </TableCell>

@@ -6,6 +6,7 @@ export interface CustomInvoice {
   id: string;
   user_id: string;
   description: string;
+  invoice_number: string | null;
   amount: number;
   currency: string;
   status: 'pending' | 'paid' | 'overdue' | 'cancelled';

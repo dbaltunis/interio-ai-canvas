@@ -107,10 +107,14 @@ export function SubscriptionCard() {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Monthly Cost</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              {subscription.isCustomBilling ? 'Annual Subscription' : 'Monthly Cost'}
+            </p>
             <p className="text-2xl font-bold">
-              {subscription.currency === 'gbp' ? '£' : '$'}
-              {subscription.monthlyTotal?.toFixed(2) || subscription.pricePerSeat?.toFixed(2) || '99.00'}
+              {subscription.currency === 'gbp' || subscription.currency === 'GBP' ? '£' : '$'}
+              {subscription.isCustomBilling 
+                ? 'Custom' 
+                : (subscription.monthlyTotal?.toFixed(2) || subscription.pricePerSeat?.toFixed(2) || '99.00')}
             </p>
           </div>
           
@@ -122,18 +126,20 @@ export function SubscriptionCard() {
             <p className="text-2xl font-bold">{subscription.currentSeats || 1}</p>
           </div>
           
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Price Per Seat</p>
-            <p className="text-lg font-semibold">
-              {subscription.currency === 'gbp' ? '£' : '$'}
-              {subscription.pricePerSeat?.toFixed(2) || '99.00'}/mo
-            </p>
-          </div>
+          {!subscription.isCustomBilling && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Price Per Seat</p>
+              <p className="text-lg font-semibold">
+                {subscription.currency === 'gbp' || subscription.currency === 'GBP' ? '£' : '$'}
+                {subscription.pricePerSeat?.toFixed(2) || '99.00'}/mo
+              </p>
+            </div>
+          )}
           
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              Next Billing
+              {subscription.isCustomBilling ? 'Renewal Date' : 'Next Billing'}
             </p>
             <p className="text-lg font-semibold">
               {subscription.nextBillingDate 
@@ -142,6 +148,14 @@ export function SubscriptionCard() {
             </p>
           </div>
         </div>
+
+        {subscription.isCustomBilling && (
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-sm text-muted-foreground">
+              Your subscription is billed annually via invoice. Contact support for billing inquiries.
+            </p>
+          </div>
+        )}
 
         {subscription.currentPeriodStart && subscription.currentPeriodEnd && (
           <div className="bg-muted/50 rounded-lg p-3">

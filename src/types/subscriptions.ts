@@ -95,7 +95,7 @@ export interface ManualQuoteItem {
 }
 
 export type AccountType = 'production' | 'test' | 'partner' | 'reseller' | 'internal';
-export type SubscriptionType = 'standard' | 'partner' | 'reseller' | 'test' | 'lifetime';
+export type SubscriptionType = 'standard' | 'partner' | 'reseller' | 'test' | 'lifetime' | 'invoice';
 
 export interface AdminAccountStats {
   totalAccounts: number;

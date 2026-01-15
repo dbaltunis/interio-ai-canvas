@@ -2604,6 +2604,7 @@ export type Database = {
           hosted_url: string | null
           id: string
           invoice_date: string
+          invoice_number: string | null
           notes: string | null
           paid_at: string | null
           payment_type: string
@@ -2623,6 +2624,7 @@ export type Database = {
           hosted_url?: string | null
           id?: string
           invoice_date?: string
+          invoice_number?: string | null
           notes?: string | null
           paid_at?: string | null
           payment_type?: string
@@ -2642,6 +2644,7 @@ export type Database = {
           hosted_url?: string | null
           id?: string
           invoice_date?: string
+          invoice_number?: string | null
           notes?: string | null
           paid_at?: string | null
           payment_type?: string
