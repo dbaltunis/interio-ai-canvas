@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
+import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
@@ -281,8 +282,9 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
       <CardContent className="pt-0">
         {!projects || projects.length === 0 ? (
           <div className="empty-state">
-            <Calendar className="empty-state-icon" />
-            <p className="empty-state-title">No projects found</p>
+            <PixelCalendarIcon size={48} className="mx-auto mb-2" />
+            <p className="empty-state-title">Ready for projects</p>
+            <p className="empty-state-text text-xs">Start your first project with this client</p>
             {hasCreateJobsPermission && (
               <Button className="mt-3" variant="outline" size="sm" onClick={handleCreateProject} disabled={isCreating}>
                 <Plus className="h-3.5 w-3.5 mr-1" />

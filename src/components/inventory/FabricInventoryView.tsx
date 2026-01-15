@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Package, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Home } from "lucide-react";
+import { Package, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
+import { PixelFabricIcon } from "@/components/icons/PixelArtIcons";
 import { TagFilterChips } from "./TagFilterChips";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
@@ -652,13 +653,13 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
             {filteredItems.length === 0 && (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="p-4 rounded-full bg-muted">
-                    <Home className="h-8 w-8 text-muted-foreground" />
+                  <div className="flex justify-center">
+                    <PixelFabricIcon size={64} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">No fabrics found</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {searchQuery ? 'Try adjusting your search' : 'Add your first fabric to get started'}
+                    <h3 className="text-lg font-semibold text-foreground">Build your fabric collection</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      {searchQuery ? 'Try adjusting your search' : 'Beautiful designs start here. Add your first fabric to begin.'}
                     </p>
                   </div>
                 </div>

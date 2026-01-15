@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
+import { PixelHardwareIcon } from "@/components/icons/PixelArtIcons";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -499,13 +500,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
             {filteredItems.length === 0 && (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="p-4 rounded-full bg-muted">
-                    <Minus className="h-8 w-8 text-muted-foreground" />
+                  <div className="flex justify-center">
+                    <PixelHardwareIcon size={64} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">No hardware found</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {searchQuery ? 'Try adjusting your search' : 'Add your first hardware item to get started'}
+                    <h3 className="text-lg font-semibold text-foreground">Add your first track or rod</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      {searchQuery ? 'Try adjusting your search' : 'The foundation of every installation. Build your hardware library.'}
                     </p>
                   </div>
                 </div>

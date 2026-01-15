@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PixelClipboardIcon } from "@/components/icons/PixelArtIcons";
 import {
   Popover,
   PopoverContent,
@@ -781,9 +783,17 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
 
   if (groupedData.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No jobs found matching your criteria.</p>
-      </div>
+      <Card className="p-12 text-center">
+        <div className="space-y-4">
+          <div className="flex justify-center mb-4">
+            <PixelClipboardIcon size={64} />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">Your first project awaits!</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto">
+            Create something amazing today. Every masterpiece starts with a single step.
+          </p>
+        </div>
+      </Card>
     );
   }
 

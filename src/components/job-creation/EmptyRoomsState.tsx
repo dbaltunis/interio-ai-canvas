@@ -1,7 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Home } from "lucide-react";
+import { Plus } from "lucide-react";
+import { PixelHomeIcon } from "@/components/icons/PixelArtIcons";
 
 interface EmptyRoomsStateProps {
   onCreateRoom: () => void;
@@ -14,7 +14,9 @@ export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom, isReadOnly = fal
     <Card className="bg-gradient-to-br from-brand-light to-white border-brand-secondary/20">
       <CardContent className="p-12 text-center">
         <div className="mb-6">
-          <Home className="h-16 w-16 text-brand-primary mx-auto mb-4" />
+          <div className="flex justify-center mb-4">
+            <PixelHomeIcon size={64} />
+          </div>
           <h3 className="text-2xl font-semibold text-brand-primary mb-2">
             No rooms added yet
           </h3>

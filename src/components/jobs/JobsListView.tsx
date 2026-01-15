@@ -13,6 +13,7 @@ import { JobListView } from "./JobListView";
 import { JobsFilters } from "./JobsFilters";
 import { JobsGridSkeleton } from "./skeleton/JobsGridSkeleton";
 import { JobsListSkeleton } from "./skeleton/JobsListSkeleton";
+import { PixelClipboardIcon } from "@/components/icons/PixelArtIcons";
 
 interface JobsListViewProps {
   onNewJob: () => void;
@@ -217,12 +218,14 @@ export const JobsListView = ({
       {processedJobs.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="space-y-4">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-lg font-medium">No jobs found</h3>
-            <p className="text-muted-foreground mb-4">
+            <div className="flex justify-center mb-4">
+              <PixelClipboardIcon size={64} />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Your first project awaits!</h3>
+            <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
               {searchTerm || searchClient || searchJobNumber ? 
                 'No jobs match your current filters.' : 
-                'Get started by creating your first job.'
+                'Create something amazing today. Every masterpiece starts with a single step.'
               }
             </p>
             <Button onClick={onNewJob} variant="brand">

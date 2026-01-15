@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 import { 
   MoreHorizontal, 
   Mail, 
@@ -290,8 +291,12 @@ export const InteractiveCRMTable = () => {
       </div>
       
       {clients.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          No clients found. Add your first client to get started.
+        <div className="text-center py-12">
+          <div className="flex justify-center mb-4">
+            <PixelUserIcon size={64} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2 text-foreground">Your future clients are waiting!</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">Start building relationships that last.</p>
         </div>
       )}
     </Card>

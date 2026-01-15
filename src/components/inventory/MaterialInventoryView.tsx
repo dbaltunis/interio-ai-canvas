@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter, Package } from "lucide-react";
+import { PixelMaterialIcon } from "@/components/icons/PixelArtIcons";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -349,8 +350,14 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                 <TableBody>
                     {paginatedItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
-                          No materials found
+                        <TableCell colSpan={10} className="px-4 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-4">
+                            <PixelMaterialIcon size={64} />
+                            <div>
+                              <h3 className="text-lg font-semibold text-foreground">Stock your materials</h3>
+                              <p className="text-sm text-muted-foreground mt-1">Blinds, shutters, and more await. Add your first item.</p>
+                            </div>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
