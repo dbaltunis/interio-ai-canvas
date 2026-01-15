@@ -6,16 +6,20 @@ import { format } from 'date-fns';
 import { ItemStatusToggle, filterInternalNotes, type ItemStatus, type DocumentType } from './ItemStatusToggle';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkshopData } from '@/hooks/useWorkshopData';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
-// Lazy load the actual templates
-const WorkshopInformation = React.lazy(() => 
-  import('@/components/workroom/templates/WorkshopInformation').then(m => ({ default: m.WorkshopInformation }))
+// Lazy load the actual templates with automatic retry
+const WorkshopInformation = lazyWithRetry(() => 
+  import('@/components/workroom/templates/WorkshopInformation').then(m => ({ default: m.WorkshopInformation })),
+  "WorkshopInformation"
 );
-const InstallationInstructions = React.lazy(() => 
-  import('@/components/workroom/templates/InstallationInstructions').then(m => ({ default: m.InstallationInstructions }))
+const InstallationInstructions = lazyWithRetry(() => 
+  import('@/components/workroom/templates/InstallationInstructions').then(m => ({ default: m.InstallationInstructions })),
+  "InstallationInstructions"
 );
-const FittingInstructions = React.lazy(() => 
-  import('@/components/workroom/templates/FittingInstructions').then(m => ({ default: m.FittingInstructions }))
+const FittingInstructions = lazyWithRetry(() => 
+  import('@/components/workroom/templates/FittingInstructions').then(m => ({ default: m.FittingInstructions })),
+  "FittingInstructions"
 );
 
 interface ShareLinkInfo {

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { WorkshopInformation } from "./templates/WorkshopInformation";
 import { CombinedWorkshopInfo } from "./templates/CombinedWorkshopInfo";
@@ -6,10 +6,11 @@ import { LivePreview } from "../settings/templates/visual-editor/LivePreview";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
-// Lazy load the new templates
-const InstallationInstructions = lazy(() => import("./templates/InstallationInstructions").then(m => ({ default: m.InstallationInstructions })));
-const FittingInstructions = lazy(() => import("./templates/FittingInstructions").then(m => ({ default: m.FittingInstructions })));
+// Lazy load the new templates with automatic retry
+const InstallationInstructions = lazyWithRetry(() => import("./templates/InstallationInstructions").then(m => ({ default: m.InstallationInstructions })), "InstallationInstructions");
+const FittingInstructions = lazyWithRetry(() => import("./templates/FittingInstructions").then(m => ({ default: m.FittingInstructions })), "FittingInstructions");
 
 interface DocumentRendererProps {
   template: string;

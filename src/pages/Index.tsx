@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy, ComponentType } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -14,69 +14,8 @@ import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw } from "lucide-react";
-
-
-/**
- * Lazy load helper with automatic retry and exponential backoff.
- * Handles intermittent module loading failures (HMR, caching, network).
- */
-function lazyWithRetry<T extends ComponentType<any>>(
-  importFn: () => Promise<{ default: T }>,
-  moduleName: string,
-  maxRetries = 3
-): React.LazyExoticComponent<T> {
-  return lazy(async () => {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        // Wait before retry with exponential backoff (1s, 2s, 4s)
-        if (attempt > 0) {
-          console.log(`🔄 Retrying ${moduleName} (attempt ${attempt + 1}/${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        }
-        
-        const module = await importFn();
-        if (attempt > 0) {
-          console.log(`✅ ${moduleName} loaded successfully after ${attempt + 1} attempts`);
-        }
-        return module;
-      } catch (error) {
-        lastError = error as Error;
-        console.warn(`⚠️ Failed to load ${moduleName} (attempt ${attempt + 1}/${maxRetries}):`, error);
-      }
-    }
-    
-    // All retries failed - return error component
-    console.error(`❌ Failed to load ${moduleName} after ${maxRetries} attempts:`, lastError);
-    
-    return {
-      default: (() => (
-        <div className="p-6 text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
-            <RefreshCw className="h-6 w-6 text-destructive" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-destructive font-medium">Failed to load {moduleName}</p>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              {lastError?.message || 'An unexpected error occurred'}
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.location.reload()}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Reload Page
-          </Button>
-        </div>
-      )) as unknown as T
-    };
-  });
-}
+import { Loader2 } from "lucide-react";
+import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
 // Lazy load heavy components with automatic retry
 const Dashboard = lazyWithRetry(

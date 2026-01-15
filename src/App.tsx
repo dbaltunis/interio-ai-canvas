@@ -6,7 +6,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
+import { lazyWithRetry } from "./utils/lazyWithRetry";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
@@ -28,31 +29,32 @@ import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectIn
 import { SyncIndicator } from "./components/system/SyncIndicator";
 // FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
+import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import "@/styles/theme.css";
 
-// Lazy load all route components for better code splitting
-const NotFound = lazy(() => import("./pages/NotFound"));
-const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
-const Index = lazy(() => import("./pages/Index"));
-const Settings = lazy(() => import("./pages/Settings"));
-const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const PublicBookingPage = lazy(() => import("./components/calendar/PublicBookingPage").then(m => ({ default: m.PublicBookingPage })));
-const PublicStorePage = lazy(() => import("./components/public-store/PublicStorePage").then(m => ({ default: m.PublicStorePage })));
-const PublicWorkOrder = lazy(() => import("./pages/PublicWorkOrder"));
-const SubscriptionTest = lazy(() => import("./pages/SubscriptionTest").then(m => ({ default: m.SubscriptionTest })));
-const ManualQuoteTest = lazy(() => import("./pages/ManualQuoteTest").then(m => ({ default: m.ManualQuoteTest })));
-const Billing = lazy(() => import("./pages/Billing"));
-const Purchasing = lazy(() => import("./pages/Purchasing"));
-const AdminBugManagement = lazy(() => import("./pages/AdminBugManagement"));
-const Documentation = lazy(() => import("./pages/Documentation"));
-const OnlineStore = lazy(() => import("./pages/OnlineStore"));
-const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
-const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
-const AdminAccountHealth = lazy(() => import("./pages/AdminAccountHealth"));
-const OnboardingSubmissions = lazy(() => import("./pages/OnboardingSubmissions"));
-const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
-const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
+// Lazy load all route components with automatic retry for better reliability
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
+const OnboardingWizard = lazyWithRetry(() => import("./pages/OnboardingWizard"), "OnboardingWizard");
+const Index = lazyWithRetry(() => import("./pages/Index"), "Index");
+const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
+const AcceptInvitation = lazyWithRetry(() => import("./pages/AcceptInvitation"), "AcceptInvitation");
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"), "ResetPassword");
+const PublicBookingPage = lazyWithRetry(() => import("./components/calendar/PublicBookingPage").then(m => ({ default: m.PublicBookingPage })), "PublicBooking");
+const PublicStorePage = lazyWithRetry(() => import("./components/public-store/PublicStorePage").then(m => ({ default: m.PublicStorePage })), "PublicStore");
+const PublicWorkOrder = lazyWithRetry(() => import("./pages/PublicWorkOrder"), "PublicWorkOrder");
+const SubscriptionTest = lazyWithRetry(() => import("./pages/SubscriptionTest").then(m => ({ default: m.SubscriptionTest })), "SubscriptionTest");
+const ManualQuoteTest = lazyWithRetry(() => import("./pages/ManualQuoteTest").then(m => ({ default: m.ManualQuoteTest })), "ManualQuoteTest");
+const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
+const Purchasing = lazyWithRetry(() => import("./pages/Purchasing"), "Purchasing");
+const AdminBugManagement = lazyWithRetry(() => import("./pages/AdminBugManagement"), "AdminBugManagement");
+const Documentation = lazyWithRetry(() => import("./pages/Documentation"), "Documentation");
+const OnlineStore = lazyWithRetry(() => import("./pages/OnlineStore"), "OnlineStore");
+const AdminAnalytics = lazyWithRetry(() => import("./pages/AdminAnalytics"), "AdminAnalytics");
+const AdminAccountManagement = lazyWithRetry(() => import("./pages/AdminAccountManagement"), "AdminAccountManagement");
+const AdminAccountHealth = lazyWithRetry(() => import("./pages/AdminAccountHealth"), "AdminAccountHealth");
+const OnboardingSubmissions = lazyWithRetry(() => import("./pages/OnboardingSubmissions"), "OnboardingSubmissions");
+const SubscriptionSuccess = lazyWithRetry(() => import("./pages/SubscriptionSuccess"), "SubscriptionSuccess");
+const SubscriptionCanceled = lazyWithRetry(() => import("./pages/SubscriptionCanceled"), "SubscriptionCanceled");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -161,7 +163,7 @@ const App = () => {
                       <BugReportDialog />
                       <DebugPanel />
                       <TeachingOverlay />
-                  <Suspense fallback={<></>}>
+                  <Suspense fallback={<PageSkeleton />}>
                   <Routes>
                 {/* Public store routes */}
                 <Route path="/store/:storeSlug/*" element={

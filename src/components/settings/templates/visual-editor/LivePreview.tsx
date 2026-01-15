@@ -45,8 +45,10 @@ import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, 
 // Chunk rebuild: 2026-01-11T14:25
 import { groupHardwareItems, filterMeaningfulHardwareItems } from '@/utils/quotes/groupHardwareItems';
 
-// Lazy load the editable version to avoid circular dependencies and reduce bundle size
-const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
+
+// Lazy load the editable version with retry to avoid circular dependencies and reduce bundle size
+const EditableLivePreview = lazyWithRetry(() => import('./EditableLivePreview'), "EditableLivePreview");
 
 // Interactive Image Gallery Component
 const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange }: any) => {
