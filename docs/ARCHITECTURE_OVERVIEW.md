@@ -620,5 +620,53 @@ const validateTemplate = async (template) => {
 
 ---
 
+## 11. Template Health & Diagnostics
+
+### Template Configuration Requirements
+
+For a template to function correctly in the worksheet, it must have:
+
+| Requirement | Table | Check |
+|-------------|-------|-------|
+| At least 1 heading | `curtain_templates.headings` (JSON) | `Array.length > 0` |
+| At least 1 enabled option | `template_option_settings` | `is_enabled = true` |
+| Valid pricing | `curtain_templates.manufacturing_prices` | Non-empty array |
+
+### Health Check Component
+
+Use `<TemplateHealthWarning templateId={id} />` in worksheet components to alert users of misconfigured templates.
+
+### Diagnostic SQL Query
+
+Run this to find all templates with missing configuration:
+
+```sql
+-- Find templates with no enabled options
+SELECT 
+  ct.id,
+  ct.name,
+  ct.user_id,
+  COUNT(tos.id) as enabled_options,
+  jsonb_array_length(COALESCE(ct.headings, '[]'::jsonb)) as headings_count
+FROM curtain_templates ct
+LEFT JOIN template_option_settings tos 
+  ON tos.template_id = ct.id AND tos.is_enabled = true
+WHERE ct.active = true
+GROUP BY ct.id
+HAVING COUNT(tos.id) = 0 OR jsonb_array_length(COALESCE(ct.headings, '[]'::jsonb)) = 0
+ORDER BY ct.user_id;
+```
+
+### Common "Empty Worksheet" Causes
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| No options appear | No `is_enabled=true` settings | Configure template options in Settings |
+| No headings dropdown | Empty `headings` array | Add headings in template editor |
+| "Template not found" | Invalid template ID in URL | Verify template exists for account |
+| Prices show 0 | No pricing rules configured | Configure manufacturing prices |
+
+---
+
 *Last Updated: January 2025*
 *Maintainers: Development Team*
