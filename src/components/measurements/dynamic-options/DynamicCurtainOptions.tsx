@@ -971,8 +971,8 @@ export const DynamicCurtainOptions = ({
                   align="end"
                 >
                   <SelectItem value="none">No Lining</SelectItem>
-                  {template.lining_types.map((lining: any, index: number) => (
-                    <SelectItem key={index} value={lining.type}>
+                  {template.lining_types.filter((lining: any) => lining.type).map((lining: any, index: number) => (
+                    <SelectItem key={index} value={lining.type || `lining-${index}`}>
                       <div className="flex items-center justify-between w-full gap-4">
                         <span>{lining.type}</span>
                         <Badge variant="outline" className="text-xs">
@@ -1011,8 +1011,8 @@ export const DynamicCurtainOptions = ({
                   align="end"
                 >
                   <SelectItem value="__none__">Select width type...</SelectItem>
-                  {template.pricing_methods.map((method: any) => (
-                    <SelectItem key={method.id} value={method.id}>
+                  {template.pricing_methods.filter((method: any) => method.id).map((method: any, index: number) => (
+                    <SelectItem key={method.id} value={method.id || `method-${index}`}>
                       <div className="flex items-center justify-between w-full gap-4">
                         <span>{method.name}</span>
                         <Badge variant="outline" className="text-xs">
@@ -1275,10 +1275,10 @@ export const DynamicCurtainOptions = ({
                     position="popper"
                     sideOffset={5}
                   >
-                    {filteredOptionValues.map((value: any) => {
+                    {filteredOptionValues.filter((value: any) => value.id).map((value: any, index: number) => {
                       const priceLabel = formatPriceWithMethod(value);
                       return (
-                        <SelectItem key={value.id} value={value.id}>
+                        <SelectItem key={value.id} value={value.id || `value-${index}`}>
                           <div className="flex items-center justify-between w-full gap-4">
                             <span>{value.label}</span>
                             {priceLabel && (
@@ -1364,8 +1364,8 @@ export const DynamicCurtainOptions = ({
                         <SelectValue placeholder={showSubCategoryIndicator ? "⚠️ Select type..." : "Select type..."} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
-                        {visibleSubOptions.map((subOption: any) => (
-                          <SelectItem key={subOption.id} value={subOption.key}>
+                        {visibleSubOptions.filter((subOption: any) => subOption.key || subOption.id).map((subOption: any, index: number) => (
+                          <SelectItem key={subOption.id} value={subOption.key || subOption.id || `sub-${index}`}>
                             {subOption.label}
                           </SelectItem>
                         ))}
@@ -1461,8 +1461,8 @@ export const DynamicCurtainOptions = ({
                             <SelectValue placeholder={showItemIndicator ? "⚠️ Select..." : "Select..."} />
                           </SelectTrigger>
                           <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
-                            {selectedSubOption.choices.map((choice: any) => (
-                              <SelectItem key={choice.id} value={choice.value}>
+                            {selectedSubOption.choices.filter((choice: any) => choice.value || choice.id).map((choice: any, index: number) => (
+                              <SelectItem key={choice.id} value={choice.value || choice.id || `choice-${index}`}>
                                 <div className="flex items-center justify-between gap-4 w-full">
                                   <span>{choice.label}</span>
                                   {choice.price > 0 && (
