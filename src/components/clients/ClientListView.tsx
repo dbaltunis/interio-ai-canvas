@@ -315,14 +315,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                           <div className="font-semibold text-foreground truncate flex items-center gap-2">
                             <span className="truncate max-w-[200px]">
                               {client.client_type === 'B2B' ? client.company_name : client.name}
-                              {/* DEBUG: Log if lead_score is somehow in the name */}
-                              {(() => {
-                                const nameValue = client.client_type === 'B2B' ? client.company_name : client.name;
-                                if (nameValue?.includes('0') || String(client.lead_score) === '0') {
-                                  console.log('[DEBUG NAME] Client:', client.name, 'Name value:', nameValue, 'Lead score:', client.lead_score, 'Stage:', client.funnel_stage);
-                                }
-                                return null;
-                              })()}
                             </span>
                             {(client.lead_score && client.lead_score > 0 && isHotLead(client.lead_score)) && (
                               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
