@@ -121,7 +121,7 @@ serve(async (req) => {
     });
 
     // Determine if this is a custom billing arrangement
-    const isCustomBillingType = ['partner', 'reseller', 'lifetime'].includes(subscription.subscription_type || '');
+    const isCustomBillingType = ['partner', 'reseller', 'lifetime', 'invoice'].includes(subscription.subscription_type || '');
     const isCustomBilling = isCustomBillingType || (hasDealerPortal && hasUnlimitedSeats);
 
     // Count current team members

@@ -327,10 +327,11 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
                 <SelectItem value="reseller">Reseller</SelectItem>
                 <SelectItem value="test">Test</SelectItem>
                 <SelectItem value="lifetime">Lifetime</SelectItem>
+                <SelectItem value="invoice">Invoice (Annual)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-2">
-              Partner, reseller, test, and lifetime subscriptions can have special payment terms.
+              Partner, reseller, test, lifetime, and invoice subscriptions have special payment terms.
             </p>
           </div>
         </CardContent>

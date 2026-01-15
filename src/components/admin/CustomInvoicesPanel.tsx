@@ -18,6 +18,7 @@ interface CustomInvoice {
   id: string;
   user_id: string;
   description: string;
+  invoice_number: string | null;
   amount: number;
   currency: string;
   status: 'pending' | 'paid' | 'overdue' | 'cancelled';
@@ -44,6 +45,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
   // Form state
   const [formData, setFormData] = useState({
     description: '',
+    invoice_number: '',
     amount: '',
     currency: 'GBP',
     status: 'pending' as 'pending' | 'paid',
@@ -72,7 +74,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
 
   // Create invoice mutation
   const createInvoice = useMutation({
-    mutationFn: async (data: { description: string; amount: number; currency: string; status: string; invoice_date: string; due_date: string | null; payment_type: string; hosted_url: string | null; pdf_url: string | null; notes: string | null; paid_at: string | null }) => {
+    mutationFn: async (data: { description: string; invoice_number: string | null; amount: number; currency: string; status: string; invoice_date: string; due_date: string | null; payment_type: string; hosted_url: string | null; pdf_url: string | null; notes: string | null; paid_at: string | null }) => {
       const { data: result, error } = await supabase
         .from('custom_invoices')
         .insert([{ ...data, user_id: userId }])
@@ -146,6 +148,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
   const resetForm = () => {
     setFormData({
       description: '',
+      invoice_number: '',
       amount: '',
       currency: 'GBP',
       status: 'pending',
@@ -162,6 +165,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
     setEditingInvoice(invoice);
     setFormData({
       description: invoice.description,
+      invoice_number: invoice.invoice_number || '',
       amount: String(invoice.amount),
       currency: invoice.currency,
       status: invoice.status === 'paid' ? 'paid' : 'pending',
@@ -178,6 +182,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
   const handleSubmit = () => {
     const data = {
       description: formData.description,
+      invoice_number: formData.invoice_number || null,
       amount: parseFloat(formData.amount),
       currency: formData.currency,
       status: formData.status,
@@ -240,13 +245,23 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
               <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create Custom Invoice'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <div>
-                <Label>Description</Label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Annual Software 50% payment"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Invoice Number</Label>
+                  <Input
+                    value={formData.invoice_number}
+                    onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                    placeholder="CC-108"
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Annual Software Subscription"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -388,6 +403,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Invoice #</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
@@ -399,6 +415,7 @@ export function CustomInvoicesPanel({ userId }: CustomInvoicesPanelProps) {
               <TableBody>
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
+                    <TableCell className="font-mono text-sm">{invoice.invoice_number || '-'}</TableCell>
                     <TableCell className="font-medium">{invoice.description}</TableCell>
                     <TableCell>{formatCurrency(invoice.amount, invoice.currency)}</TableCell>
                     <TableCell>
