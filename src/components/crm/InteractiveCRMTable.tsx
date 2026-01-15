@@ -232,21 +232,25 @@ export const InteractiveCRMTable = () => {
                     )}
                   </td>
                   
-                  {/* Lead Score */}
+                  {/* Lead Score - only show if > 0 */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "text-xs",
-                          client.lead_score && client.lead_score >= 70 && "bg-green-100 text-green-700",
-                          client.lead_score && client.lead_score >= 40 && client.lead_score < 70 && "bg-yellow-100 text-yellow-700",
-                          (!client.lead_score || client.lead_score < 40) && "bg-gray-100 text-gray-700"
-                        )}
-                      >
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {client.lead_score || 0}
-                      </Badge>
+                      {client.lead_score && client.lead_score > 0 ? (
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs",
+                            client.lead_score >= 70 && "bg-green-100 text-green-700",
+                            client.lead_score >= 40 && client.lead_score < 70 && "bg-yellow-100 text-yellow-700",
+                            client.lead_score < 40 && "bg-gray-100 text-gray-700"
+                          )}
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          {client.lead_score}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </div>
                   </td>
                   

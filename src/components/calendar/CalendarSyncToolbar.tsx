@@ -414,8 +414,8 @@ export const CalendarSyncToolbar = ({
           </Popover>
         )}
 
-        {/* Tasks View Toggle */}
-        {onTasksClick && (
+        {/* Tasks View Toggle - Hidden per user request (kept for future use) */}
+        {/* {onTasksClick && (
           <Button
             variant="outline"
             size="sm"
@@ -434,7 +434,7 @@ export const CalendarSyncToolbar = ({
               </>
             )}
           </Button>
-        )}
+        )} */}
 
         {/* Google Calendar sync toggle (only if connected) */}
         {isConnected && (

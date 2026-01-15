@@ -46,7 +46,7 @@ export const RevenueTrendChart = () => {
   const changePercent = revenueData?.changePercent || 0;
   const isPositive = changePercent >= 0;
 
-  // Show empty state if no data
+  // Show empty state if no data - motivational message
   if (data.length === 0 || (revenueData?.currentTotal === 0 && revenueData?.previousTotal === 0)) {
     return (
       <Card variant="analytics">
@@ -55,8 +55,11 @@ export const RevenueTrendChart = () => {
             Revenue Trend
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[180px]">
-          <p className="text-xs text-muted-foreground">No revenue data for this period</p>
+        <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
+          {/* Retro pixel art style icon */}
+          <div className="mb-3 text-2xl opacity-60">📈</div>
+          <p className="text-sm font-medium text-foreground mb-1">Your first sale awaits!</p>
+          <p className="text-xs text-muted-foreground">Big deals are on the horizon</p>
         </CardContent>
       </Card>
     );
