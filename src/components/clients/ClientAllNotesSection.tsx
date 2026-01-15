@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PixelNoteIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -163,8 +164,8 @@ export const ClientAllNotesSection = ({ clientId, canEditClient = true }: Client
         {/* Unified Notes List */}
         {notes.length === 0 ? (
           <div className="empty-state">
-            <MessageSquare className="empty-state-icon" />
-            <p className="empty-state-text">No notes yet</p>
+            <PixelNoteIcon className="mx-auto mb-3" size={48} />
+            <p className="empty-state-text">No notes yet — add your first!</p>
           </div>
         ) : (
           <ScrollArea className="widget-scroll">

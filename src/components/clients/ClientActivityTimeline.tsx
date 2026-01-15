@@ -1,5 +1,5 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Mail, Calendar, FileText, User, Building, MessageSquare } from "lucide-react";
 import { useClientEmails } from "@/hooks/useClientEmails";
@@ -74,7 +74,7 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       <CardContent className="pt-0">
         {activities.length === 0 ? (
           <div className="empty-state">
-            <Clock className="empty-state-icon" />
+            <PixelCalendarIcon className="mx-auto mb-3" size={48} />
             <p className="empty-state-title">No activity recorded yet</p>
           </div>
         ) : (

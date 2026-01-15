@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -653,9 +654,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               </div>
             </div>
           ) : (
-            <div className="text-center py-6">
-              <User className="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">No client assigned to this project</p>
+            <div className="text-center py-8">
+              <PixelUserIcon className="mx-auto mb-4" size={56} />
+              <h4 className="font-medium text-foreground mb-1">No client assigned</h4>
+              <p className="text-sm text-muted-foreground mb-4">Connect a client to track this project</p>
               <Button onClick={() => setShowClientSearch(true)} disabled={isReadOnly}>
                 <Search className="h-4 w-4 mr-2" />
                 Assign Client

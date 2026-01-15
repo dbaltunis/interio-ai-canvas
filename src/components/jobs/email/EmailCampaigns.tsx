@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { PixelSendIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -277,8 +278,8 @@ export const EmailCampaigns = () => {
         <CardContent className="p-0">
           {!campaigns || campaigns.length === 0 ? (
             <div className="text-center py-12 px-6">
-              <Send className="mx-auto h-10 w-10 mb-3 text-muted-foreground" />
-              <h3 className="font-medium mb-1">No campaigns yet</h3>
+              <PixelSendIcon className="mx-auto mb-4" size={56} />
+              <h3 className="font-medium mb-1">Ready to reach your clients!</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Create your first campaign using a template above
               </p>

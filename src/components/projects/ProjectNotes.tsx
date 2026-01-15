@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { PixelNoteIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,9 +106,10 @@ export const ProjectNotes = ({ projectId }: ProjectNotesProps) => {
         </CardHeader>
         <CardContent>
           {notes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <StickyNote className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No notes added to this project yet</p>
+            <div className="text-center py-10 text-muted-foreground">
+              <PixelNoteIcon className="mx-auto mb-4" size={56} />
+              <h4 className="font-medium text-foreground mb-1">Capture your ideas!</h4>
+              <p className="text-sm">No notes added to this project yet</p>
             </div>
           ) : (
             <div className="space-y-4">

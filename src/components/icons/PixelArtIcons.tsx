@@ -518,3 +518,101 @@ export const PixelSettingsIcon: React.FC<PixelIconProps> = ({ className = "", si
     <rect x="20" y="20" width="8" height="8" className="fill-primary/30" />
   </svg>
 );
+
+// Note/Sticky Note - Elegant note with corner fold
+export const PixelNoteIcon: React.FC<PixelIconProps> = ({ className = "", size = 48 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Note base */}
+    <rect x="8" y="6" width="28" height="36" rx="2" className="fill-amber-400/20" />
+    <rect x="10" y="8" width="24" height="32" className="fill-background" />
+    
+    {/* Folded corner */}
+    <rect x="30" y="6" width="6" height="6" className="fill-amber-400/40" />
+    <rect x="30" y="6" width="4" height="4" className="fill-amber-400/60" />
+    
+    {/* Lines */}
+    <rect x="14" y="14" width="14" height="2" className="fill-primary/50" />
+    <rect x="14" y="20" width="18" height="1" className="fill-muted-foreground/30" />
+    <rect x="14" y="24" width="16" height="1" className="fill-muted-foreground/30" />
+    <rect x="14" y="28" width="18" height="1" className="fill-muted-foreground/30" />
+    <rect x="14" y="32" width="12" height="1" className="fill-muted-foreground/30" />
+    
+    {/* Pin accent */}
+    <rect x="20" y="2" width="4" height="6" rx="1" className="fill-primary/70" />
+    <rect x="21" y="3" width="2" height="3" className="fill-primary" />
+  </svg>
+);
+
+// Send/Campaign - Elegant paper airplane
+export const PixelSendIcon: React.FC<PixelIconProps> = ({ className = "", size = 48 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Paper airplane body */}
+    <rect x="6" y="22" width="4" height="4" className="fill-primary/30" />
+    <rect x="10" y="20" width="4" height="8" className="fill-primary/40" />
+    <rect x="14" y="18" width="4" height="12" className="fill-primary/50" />
+    <rect x="18" y="16" width="4" height="14" className="fill-primary/60" />
+    <rect x="22" y="14" width="6" height="16" className="fill-primary/70" />
+    <rect x="28" y="12" width="6" height="18" className="fill-primary/80" />
+    <rect x="34" y="10" width="8" height="20" className="fill-primary" />
+    
+    {/* Wing highlight */}
+    <rect x="34" y="12" width="6" height="4" className="fill-amber-400/60" />
+    <rect x="36" y="14" width="4" height="2" className="fill-amber-400" />
+    
+    {/* Motion trail */}
+    <rect x="4" y="30" width="8" height="2" className="fill-emerald-500/30" />
+    <rect x="8" y="34" width="6" height="2" className="fill-emerald-500/20" />
+  </svg>
+);
+
+// Zap/Lightning - Elegant automation symbol
+export const PixelZapIcon: React.FC<PixelIconProps> = ({ className = "", size = 48 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Lightning bolt */}
+    <rect x="24" y="2" width="8" height="4" className="fill-amber-400/60" />
+    <rect x="22" y="6" width="8" height="4" className="fill-amber-400/70" />
+    <rect x="20" y="10" width="8" height="4" className="fill-amber-400/80" />
+    <rect x="18" y="14" width="8" height="4" className="fill-amber-400/90" />
+    <rect x="16" y="18" width="16" height="4" className="fill-amber-400" />
+    
+    {/* Lower bolt */}
+    <rect x="22" y="22" width="8" height="4" className="fill-amber-500/90" />
+    <rect x="20" y="26" width="8" height="4" className="fill-amber-500/80" />
+    <rect x="18" y="30" width="8" height="4" className="fill-amber-500/70" />
+    <rect x="16" y="34" width="8" height="4" className="fill-amber-500/60" />
+    <rect x="14" y="38" width="8" height="4" className="fill-amber-500/50" />
+    <rect x="12" y="42" width="6" height="4" className="fill-amber-500/40" />
+    
+    {/* Glow effect */}
+    <rect x="32" y="16" width="4" height="2" className="fill-primary/30" />
+    <rect x="12" y="20" width="4" height="2" className="fill-primary/30" />
+  </svg>
+);
+
+// Package/Template - Elegant gift box
+export const PixelPackageIcon: React.FC<PixelIconProps> = ({ className = "", size = 48 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Ribbon top */}
+    <rect x="20" y="4" width="8" height="8" className="fill-amber-400/70" />
+    <rect x="22" y="6" width="4" height="4" className="fill-amber-400" />
+    
+    {/* Box lid */}
+    <rect x="8" y="12" width="32" height="8" className="fill-primary/50" />
+    <rect x="10" y="14" width="28" height="4" className="fill-primary/30" />
+    
+    {/* Vertical ribbon on lid */}
+    <rect x="21" y="12" width="6" height="8" className="fill-amber-400/80" />
+    
+    {/* Box body */}
+    <rect x="10" y="20" width="28" height="22" className="fill-primary/40" />
+    <rect x="12" y="22" width="24" height="18" className="fill-primary/25" />
+    
+    {/* Vertical ribbon on body */}
+    <rect x="21" y="20" width="6" height="22" className="fill-amber-400/60" />
+    <rect x="23" y="20" width="2" height="22" className="fill-amber-400/80" />
+    
+    {/* Bow accent */}
+    <rect x="16" y="6" width="4" height="4" className="fill-amber-400/50" />
+    <rect x="28" y="6" width="4" height="4" className="fill-amber-400/50" />
+  </svg>
+);

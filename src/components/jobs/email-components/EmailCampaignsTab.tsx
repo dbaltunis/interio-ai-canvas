@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { PixelMessageIcon } from "@/components/icons/PixelArtIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -191,11 +192,9 @@ export const EmailCampaignsTab = ({
         </div>
       ) : (
         <Card className="border-dashed">
-          <CardContent className="p-8">
+          <CardContent className="p-10">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-7 w-7 text-primary" />
-              </div>
+              <PixelMessageIcon className="mx-auto mb-4" size={64} />
               <h4 className="text-lg font-medium mb-2 text-foreground">No Campaigns Yet</h4>
               <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                 Create professional email campaigns with AI-powered content suggestions, 
