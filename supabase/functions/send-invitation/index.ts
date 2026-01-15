@@ -133,6 +133,13 @@ serve(async (req) => {
               type: 'text/html',
               value: emailHtml,
             }],
+            // Disable click tracking to prevent URL wrapping (fixes broken invitation links)
+            tracking_settings: {
+              click_tracking: {
+                enable: false,
+                enable_text: false
+              }
+            }
           }),
         });
 
