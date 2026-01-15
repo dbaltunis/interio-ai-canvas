@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense, useEffect } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
@@ -14,25 +14,26 @@ import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDat
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
 import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
+import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
-// Lazy load non-critical widgets for better initial load performance
-const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
-const StatusOverviewWidget = lazy(() => import("./StatusOverviewWidget").then(m => ({ default: m.StatusOverviewWidget })));
-const RecentEmailsWidget = lazy(() => import("./RecentEmailsWidget").then(m => ({ default: m.RecentEmailsWidget })));
-const RevenueTrendChart = lazy(() => import("./RevenueTrendChart").then(m => ({ default: m.RevenueTrendChart })));
-const JobsStatusChart = lazy(() => import("./JobsStatusChart").then(m => ({ default: m.JobsStatusChart })));
-const CalendarConnectionCard = lazy(() => import("./CalendarConnectionCard").then(m => ({ default: m.CalendarConnectionCard })));
-const OnlineStoreAnalyticsWidget = lazy(() => import("./OnlineStoreAnalyticsWidget").then(m => ({ default: m.OnlineStoreAnalyticsWidget })));
-const OnlineStoreOrdersWidget = lazy(() => import("./OnlineStoreOrdersWidget").then(m => ({ default: m.OnlineStoreOrdersWidget })));
-const OnlineStoreProductsWidget = lazy(() => import("./OnlineStoreProductsWidget").then(m => ({ default: m.OnlineStoreProductsWidget })));
-const ShopifyAnalyticsCard = lazy(() => import("./ShopifyAnalyticsCard").then(m => ({ default: m.ShopifyAnalyticsCard })));
-const ShopifyOrdersWidget = lazy(() => import("./ShopifyOrdersWidget").then(m => ({ default: m.ShopifyOrdersWidget })));
-const ShopifyProductsSyncWidget = lazy(() => import("./ShopifyProductsSyncWidget").then(m => ({ default: m.ShopifyProductsSyncWidget })));
-const ShopifyProductCategoriesWidget = lazy(() => import("./ShopifyProductCategoriesWidget").then(m => ({ default: m.ShopifyProductCategoriesWidget })));
-const TeamMembersWidget = lazy(() => import("./TeamMembersWidget").then(m => ({ default: m.TeamMembersWidget })));
-const DealerPerformanceWidget = lazy(() => import("./DealerPerformanceWidget"));
-const RecentlyCreatedJobsWidget = lazy(() => import("./RecentlyCreatedJobsWidget").then(m => ({ default: m.RecentlyCreatedJobsWidget })));
-const RecentAppointmentsWidget = lazy(() => import("./RecentAppointmentsWidget").then(m => ({ default: m.RecentAppointmentsWidget })));
+// Lazy load non-critical widgets for better initial load performance (with automatic retry)
+const UpcomingEventsWidget = lazyWithRetry(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })), "UpcomingEventsWidget");
+const StatusOverviewWidget = lazyWithRetry(() => import("./StatusOverviewWidget").then(m => ({ default: m.StatusOverviewWidget })), "StatusOverviewWidget");
+const RecentEmailsWidget = lazyWithRetry(() => import("./RecentEmailsWidget").then(m => ({ default: m.RecentEmailsWidget })), "RecentEmailsWidget");
+const RevenueTrendChart = lazyWithRetry(() => import("./RevenueTrendChart").then(m => ({ default: m.RevenueTrendChart })), "RevenueTrendChart");
+const JobsStatusChart = lazyWithRetry(() => import("./JobsStatusChart").then(m => ({ default: m.JobsStatusChart })), "JobsStatusChart");
+const CalendarConnectionCard = lazyWithRetry(() => import("./CalendarConnectionCard").then(m => ({ default: m.CalendarConnectionCard })), "CalendarConnectionCard");
+const OnlineStoreAnalyticsWidget = lazyWithRetry(() => import("./OnlineStoreAnalyticsWidget").then(m => ({ default: m.OnlineStoreAnalyticsWidget })), "OnlineStoreAnalyticsWidget");
+const OnlineStoreOrdersWidget = lazyWithRetry(() => import("./OnlineStoreOrdersWidget").then(m => ({ default: m.OnlineStoreOrdersWidget })), "OnlineStoreOrdersWidget");
+const OnlineStoreProductsWidget = lazyWithRetry(() => import("./OnlineStoreProductsWidget").then(m => ({ default: m.OnlineStoreProductsWidget })), "OnlineStoreProductsWidget");
+const ShopifyAnalyticsCard = lazyWithRetry(() => import("./ShopifyAnalyticsCard").then(m => ({ default: m.ShopifyAnalyticsCard })), "ShopifyAnalyticsCard");
+const ShopifyOrdersWidget = lazyWithRetry(() => import("./ShopifyOrdersWidget").then(m => ({ default: m.ShopifyOrdersWidget })), "ShopifyOrdersWidget");
+const ShopifyProductsSyncWidget = lazyWithRetry(() => import("./ShopifyProductsSyncWidget").then(m => ({ default: m.ShopifyProductsSyncWidget })), "ShopifyProductsSyncWidget");
+const ShopifyProductCategoriesWidget = lazyWithRetry(() => import("./ShopifyProductCategoriesWidget").then(m => ({ default: m.ShopifyProductCategoriesWidget })), "ShopifyProductCategoriesWidget");
+const TeamMembersWidget = lazyWithRetry(() => import("./TeamMembersWidget").then(m => ({ default: m.TeamMembersWidget })), "TeamMembersWidget");
+const DealerPerformanceWidget = lazyWithRetry(() => import("./DealerPerformanceWidget"), "DealerPerformanceWidget");
+const RecentlyCreatedJobsWidget = lazyWithRetry(() => import("./RecentlyCreatedJobsWidget").then(m => ({ default: m.RecentlyCreatedJobsWidget })), "RecentlyCreatedJobsWidget");
+const RecentAppointmentsWidget = lazyWithRetry(() => import("./RecentAppointmentsWidget").then(m => ({ default: m.RecentAppointmentsWidget })), "RecentAppointmentsWidget");
 
 // Widget skeleton fallback
 const WidgetSkeleton = () => (
