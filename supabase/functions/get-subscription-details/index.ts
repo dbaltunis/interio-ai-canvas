@@ -132,7 +132,7 @@ serve(async (req) => {
 
     const currentSeats = (teamMemberCount || 0) + 1; // +1 for owner
 
-    // If custom billing (partner/reseller/lifetime), return simplified info
+    // If custom billing (partner/reseller/lifetime/invoice), return simplified info
     if (isCustomBilling) {
       logStep("Custom billing account, returning simplified info");
       return new Response(JSON.stringify({ 
@@ -142,6 +142,7 @@ serve(async (req) => {
         currentSeats: currentSeats,
         pricePerSeat: customSeatPrice ?? 0,
         currency: "GBP",
+        currentPeriodStart: subscription.current_period_start,
         currentPeriodEnd: subscription.current_period_end,
         nextBillingDate: subscription.current_period_end,
         isStripeManaged: false,
