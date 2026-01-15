@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit, Zap, Eye, EyeOff, AlertCircle, ListFilter, CheckSqu
 import { Badge } from '@/components/ui/badge';
 import { useTreatmentOptionRules, useCreateOptionRule, useUpdateOptionRule, useDeleteOptionRule, OptionRule } from '@/hooks/useOptionRules';
 import { useTreatmentOptions } from '@/hooks/useTreatmentOptions';
+import { useToggleTemplateOption } from '@/hooks/useTemplateOptionSettings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -104,6 +105,7 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   const createRule = useCreateOptionRule();
   const updateRule = useUpdateOptionRule();
   const deleteRule = useDeleteOptionRule();
+  const toggleOption = useToggleTemplateOption();
   
   const { toast } = useToast();
 
@@ -125,6 +127,30 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
           description: "The new conditional rule has been created.",
         });
       }
+      
+      // Auto-enable target option for show_option rules
+      // This ensures the option is in the "enabled" pool so the rules engine can control it
+      if (ruleData.effect.action === 'show_option') {
+        const targetOption = options.find(opt => opt.key === ruleData.effect.target_option_key);
+        if (targetOption) {
+          try {
+            await toggleOption.mutateAsync({
+              templateId,
+              treatmentOptionId: targetOption.id,
+              isEnabled: true,
+            });
+            console.log('✅ Auto-enabled target option for show_option rule:', targetOption.label);
+            toast({
+              title: "Option Auto-Enabled",
+              description: `"${targetOption.label}" is now enabled and will appear when condition is met.`,
+            });
+          } catch (enableError) {
+            console.warn('⚠️ Could not auto-enable target option:', enableError);
+            // Don't throw - rule was still saved successfully
+          }
+        }
+      }
+      
       setEditingRule(null);
     } catch (error) {
       console.error('❌ Error saving rule:', error);
