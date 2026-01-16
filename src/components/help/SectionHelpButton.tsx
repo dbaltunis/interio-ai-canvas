@@ -12,6 +12,8 @@ import {
 import { sectionHelpContent, SectionHelpContent } from "@/config/sectionHelp";
 import { TutorialCarousel } from "./TutorialCarousel";
 import { tutorialMap } from "@/config/tutorialSteps";
+import { useTeaching } from "@/contexts/TeachingContext";
+import { motion } from "framer-motion";
 
 interface SectionHelpButtonProps {
   sectionId: string;
@@ -25,24 +27,59 @@ export const SectionHelpButton = ({
   size = "sm"
 }: SectionHelpButtonProps) => {
   const [open, setOpen] = useState(false);
+  const { hasClickedHelpButton, markHelpButtonClicked } = useTeaching();
   
   const content: SectionHelpContent | undefined = sectionHelpContent[sectionId];
+  const showPulse = !hasClickedHelpButton(sectionId);
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      markHelpButtonClicked(sectionId);
+    }
+  };
   
   if (!content) {
     return null;
   }
 
+  const helpButton = (
+    <Button
+      variant="ghost"
+      size={size === "sm" ? "icon" : "default"}
+      className={`h-6 w-6 rounded-full hover:bg-primary/10 ${className}`}
+      aria-label={`Help for ${content.title}`}
+    >
+      <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+    </Button>
+  );
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size={size === "sm" ? "icon" : "default"}
-          className={`h-6 w-6 rounded-full hover:bg-primary/10 ${className}`}
-          aria-label={`Help for ${content.title}`}
-        >
-          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
-        </Button>
+        {showPulse ? (
+          <motion.div
+            className="relative rounded-full"
+            initial={false}
+          >
+            {/* Pulsing ring effect */}
+            <motion.div
+              className="absolute inset-0 rounded-full bg-primary/20"
+              animate={{
+                scale: [1, 1.6, 1],
+                opacity: [0.5, 0, 0.5],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            {helpButton}
+          </motion.div>
+        ) : (
+          helpButton
+        )}
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader className="text-left">
