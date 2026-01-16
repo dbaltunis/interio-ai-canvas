@@ -20,94 +20,50 @@ import {
   TemplatesStep18,
 } from "@/components/help/tutorial-steps/TemplatesSteps";
 import {
-  OptionsStep1,
-  OptionsStep2,
-  OptionsStep3,
-  OptionsStep4,
-  OptionsStep5,
-  OptionsStep6,
-  OptionsStep7,
-  OptionsStep8,
+  OptionsStep1, OptionsStep2, OptionsStep3, OptionsStep4, OptionsStep5, OptionsStep6, OptionsStep7, OptionsStep8,
 } from "@/components/help/tutorial-steps/OptionsSteps";
 import {
-  HeadingsStep1,
-  HeadingsStep2,
-  HeadingsStep3,
-  HeadingsStep4,
-  HeadingsStep5,
-  HeadingsStep6,
-  HeadingsStep7,
-  HeadingsStep8,
+  HeadingsStep1, HeadingsStep2, HeadingsStep3, HeadingsStep4, HeadingsStep5, HeadingsStep6, HeadingsStep7, HeadingsStep8,
 } from "@/components/help/tutorial-steps/HeadingsSteps";
 import {
-  DefaultsStep1,
-  DefaultsStep2,
-  DefaultsStep3,
-  DefaultsStep4,
-  DefaultsStep5,
-  DefaultsStep6,
+  DefaultsStep1, DefaultsStep2, DefaultsStep3, DefaultsStep4, DefaultsStep5, DefaultsStep6,
 } from "@/components/help/tutorial-steps/DefaultsSteps";
 import {
-  SuppliersStep1,
-  SuppliersStep2,
-  SuppliersStep3,
-  SuppliersStep4,
-  SuppliersStep5,
-  SuppliersStep6,
-  SuppliersStep7,
+  SuppliersStep1, SuppliersStep2, SuppliersStep3, SuppliersStep4, SuppliersStep5, SuppliersStep6, SuppliersStep7,
 } from "@/components/help/tutorial-steps/SuppliersSteps";
 import {
-  PersonalStep1,
-  PersonalStep2,
-  PersonalStep3,
-  PersonalStep4,
-  PersonalStep5,
-  PersonalStep6,
-  PersonalStep7,
-  PersonalStep8,
-  PersonalStep9,
-  PersonalStep10,
+  PersonalStep1, PersonalStep2, PersonalStep3, PersonalStep4, PersonalStep5, PersonalStep6, PersonalStep7, PersonalStep8, PersonalStep9, PersonalStep10,
 } from "@/components/help/tutorial-steps/PersonalSteps";
 import {
-  BusinessStep1,
-  BusinessStep2,
-  BusinessStep3,
-  BusinessStep4,
-  BusinessStep5,
-  BusinessStep6,
-  BusinessStep7,
-  BusinessStep8,
-  BusinessStep9,
-  BusinessStep10,
-  BusinessStep11,
-  BusinessStep12,
-  BusinessStep13,
-  BusinessStep14,
-  BusinessStep15,
-  BusinessStep16,
+  BusinessStep1, BusinessStep2, BusinessStep3, BusinessStep4, BusinessStep5, BusinessStep6, BusinessStep7, BusinessStep8, BusinessStep9, BusinessStep10, BusinessStep11, BusinessStep12, BusinessStep13, BusinessStep14, BusinessStep15, BusinessStep16,
 } from "@/components/help/tutorial-steps/BusinessSteps";
 import {
-  UnitsStep1,
-  UnitsStep2,
-  UnitsStep3,
-  UnitsStep4,
-  UnitsStep5,
-  UnitsStep6,
+  UnitsStep1, UnitsStep2, UnitsStep3, UnitsStep4, UnitsStep5, UnitsStep6,
 } from "@/components/help/tutorial-steps/UnitsSteps";
 import {
-  PricingStep1,
-  PricingStep2,
-  PricingStep3,
-  PricingStep4,
-  PricingStep5,
-  PricingStep6,
-  PricingStep7,
-  PricingStep8,
-  PricingStep9,
-  PricingStep10,
-  PricingStep11,
-  PricingStep12,
+  PricingStep1, PricingStep2, PricingStep3, PricingStep4, PricingStep5, PricingStep6, PricingStep7, PricingStep8, PricingStep9, PricingStep10, PricingStep11, PricingStep12,
 } from "@/components/help/tutorial-steps/PricingSteps";
+import {
+  ProductsStep1, ProductsStep2, ProductsStep3, ProductsStep4, ProductsStep5, ProductsStep6, ProductsStep7, ProductsStep8, ProductsStep9, ProductsStep10, ProductsStep11, ProductsStep12,
+} from "@/components/help/tutorial-steps/ProductsSteps";
+import {
+  TeamStep1, TeamStep2, TeamStep3, TeamStep4, TeamStep5, TeamStep6, TeamStep7, TeamStep8, TeamStep9, TeamStep10,
+} from "@/components/help/tutorial-steps/TeamSteps";
+import {
+  DocumentsStep1, DocumentsStep2, DocumentsStep3, DocumentsStep4, DocumentsStep5, DocumentsStep6, DocumentsStep7, DocumentsStep8,
+} from "@/components/help/tutorial-steps/DocumentsSteps";
+import {
+  SystemStep1, SystemStep2, SystemStep3, SystemStep4, SystemStep5, SystemStep6, SystemStep7, SystemStep8, SystemStep9, SystemStep10, SystemStep11, SystemStep12, SystemStep13, SystemStep14,
+} from "@/components/help/tutorial-steps/SystemSteps";
+import {
+  CommunicationsStep1, CommunicationsStep2, CommunicationsStep3, CommunicationsStep4, CommunicationsStep5, CommunicationsStep6, CommunicationsStep7, CommunicationsStep8, CommunicationsStep9, CommunicationsStep10,
+} from "@/components/help/tutorial-steps/CommunicationsSteps";
+import {
+  NotificationsStep1, NotificationsStep2, NotificationsStep3, NotificationsStep4, NotificationsStep5, NotificationsStep6, NotificationsStep7, NotificationsStep8,
+} from "@/components/help/tutorial-steps/NotificationsSteps";
+import {
+  IntegrationsStep1, IntegrationsStep2, IntegrationsStep3, IntegrationsStep4, IntegrationsStep5, IntegrationsStep6, IntegrationsStep7, IntegrationsStep8, IntegrationsStep9, IntegrationsStep10, IntegrationsStep11, IntegrationsStep12,
+} from "@/components/help/tutorial-steps/IntegrationsSteps";
 
 export interface TutorialStep {
   title: string;
@@ -556,6 +512,143 @@ export const pricingTutorial: Tutorial = {
 };
 
 // ===========================================
+// PRODUCTS OVERVIEW TUTORIAL (12 Steps)
+// ===========================================
+export const productsTutorial: Tutorial = {
+  id: "products",
+  steps: [
+    { title: "Navigate the 5 sub-tabs", actionLabel: "View Tabs", description: "Products has 5 tabs: My Templates, Suppliers, Headings, Options, and Defaults. Each manages a different aspect of your product configuration.", Visual: ProductsStep1 },
+    { title: "Browse your templates", actionLabel: "Search", description: "View all your product templates. Use search and filters to find specific templates quickly.", Visual: ProductsStep2 },
+    { title: "Create a new template", actionLabel: "Create", description: "Click 'Add Template' to create a new product configuration from scratch.", Visual: ProductsStep3 },
+    { title: "Clone from supplier library", actionLabel: "Clone", description: "Quickly start by cloning a supplier product. All settings and pricing are pre-configured.", Visual: ProductsStep4, relatedSection: "products-suppliers" },
+    { title: "Browse supplier catalogs", actionLabel: "Browse", description: "Access supplier product catalogs. Requires TWC integration to be enabled.", Visual: ProductsStep5, relatedSection: "integrations", prerequisiteNote: "Enable TWC in Settings → Integrations" },
+    { title: "Import supplier products", actionLabel: "Import", description: "Select and import products from supplier catalogs to your account.", Visual: ProductsStep6 },
+    { title: "Manage heading inventory", actionLabel: "View", description: "View and manage your heading styles with stock levels and reorder points.", Visual: ProductsStep7, relatedSection: "products-headings" },
+    { title: "Add a new heading", actionLabel: "Add", description: "Create new heading styles with name, fullness ratio, and inventory settings.", Visual: ProductsStep8 },
+    { title: "Configure treatment options", actionLabel: "Configure", description: "Organize options by category: Linings, Motors, Controls, and more.", Visual: ProductsStep9, relatedSection: "products-options" },
+    { title: "Add an option", actionLabel: "Add", description: "Create new options with name, category, and pricing.", Visual: ProductsStep10 },
+    { title: "Set manufacturing defaults", actionLabel: "Configure", description: "Define global manufacturing settings like hem allowances and waste percentage.", Visual: ProductsStep11, relatedSection: "products-defaults" },
+    { title: "Automation settings", actionLabel: "Toggle", description: "Control auto-calculation, rounding, and other automation preferences.", Visual: ProductsStep12 },
+  ],
+};
+
+// ===========================================
+// TEAM TUTORIAL (10 Steps)
+// ===========================================
+export const teamTutorial: Tutorial = {
+  id: "team",
+  steps: [
+    { title: "Team Management overview", actionLabel: "View", description: "See your team at a glance: active members, pending invitations, and seat limits.", Visual: TeamStep1 },
+    { title: "View your subscription", actionLabel: "Check Plan", description: "See your current plan, seats used, and monthly cost.", Visual: TeamStep2 },
+    { title: "Manage billing", actionLabel: "Open Portal", description: "Access Stripe billing portal to update payment method or change plan.", Visual: TeamStep3 },
+    { title: "Invite a new member", actionLabel: "Invite", description: "Click 'Invite Member' to add someone to your team.", Visual: TeamStep4 },
+    { title: "Set member details", actionLabel: "Fill Form", description: "Enter email, name, and select a role for the new team member.", Visual: TeamStep5 },
+    { title: "Configure permissions", actionLabel: "Set Access", description: "Customize what the team member can view and edit based on their role.", Visual: TeamStep6 },
+    { title: "Review billing impact", actionLabel: "Confirm", description: "See how adding a new seat affects your monthly billing before confirming.", Visual: TeamStep7 },
+    { title: "View pending invitations", actionLabel: "Review", description: "See who hasn't accepted their invitation yet. Resend or cancel as needed.", Visual: TeamStep8 },
+    { title: "Edit existing members", actionLabel: "Edit", description: "Click a team member to change their role, permissions, or remove them.", Visual: TeamStep9 },
+    { title: "Search and filter", actionLabel: "Search", description: "Quickly find team members by name, email, or filter by role/status.", Visual: TeamStep10 },
+  ],
+};
+
+// ===========================================
+// DOCUMENTS TUTORIAL (8 Steps)
+// ===========================================
+export const documentsTutorial: Tutorial = {
+  id: "documents",
+  steps: [
+    { title: "Document template types", actionLabel: "View Types", description: "Choose from Quote, Invoice, Estimate, Proposal, Work Order, and Receipt templates.", Visual: DocumentsStep1 },
+    { title: "Browse your templates", actionLabel: "Browse", description: "View all templates with primary indicator, active status, and drag to reorder.", Visual: DocumentsStep2 },
+    { title: "Set primary template", actionLabel: "Star", description: "Click the star to make a template the default for that document type.", Visual: DocumentsStep3 },
+    { title: "Create new template", actionLabel: "Create", description: "Start from scratch or copy an existing template to create a new one.", Visual: DocumentsStep4 },
+    { title: "Edit template blocks", actionLabel: "Edit", description: "Use the block-based editor to drag and drop content sections.", Visual: DocumentsStep5 },
+    { title: "Available block types", actionLabel: "Add Blocks", description: "Add Header, Client Info, Line Items, Totals, Signature, and Payment blocks.", Visual: DocumentsStep6 },
+    { title: "Preview with sample data", actionLabel: "Preview", description: "See how your template looks with realistic sample data.", Visual: DocumentsStep7 },
+    { title: "Duplicate or delete", actionLabel: "Actions", description: "Use the menu to duplicate templates or delete ones you no longer need.", Visual: DocumentsStep8 },
+  ],
+};
+
+// ===========================================
+// SYSTEM SETTINGS TUTORIAL (14 Steps)
+// ===========================================
+export const systemTutorial: Tutorial = {
+  id: "system",
+  steps: [
+    { title: "System Settings sections", actionLabel: "Overview", description: "Configure features, numbers, inventory, statuses, appearance, and more.", Visual: SystemStep1 },
+    { title: "Enable/disable features", actionLabel: "Toggle", description: "Turn features on or off for your account with feature flags.", Visual: SystemStep2 },
+    { title: "Configure number sequences", actionLabel: "Set Numbers", description: "Set prefixes and starting numbers for quotes and jobs.", Visual: SystemStep3 },
+    { title: "Reset counters", actionLabel: "Reset", description: "Start number sequences from a specific value if needed.", Visual: SystemStep4 },
+    { title: "Inventory deduction settings", actionLabel: "Configure", description: "Choose when inventory is deducted: on quote, job creation, or installation.", Visual: SystemStep5 },
+    { title: "Manage custom statuses", actionLabel: "Edit", description: "Create and customize job status labels and colors.", Visual: SystemStep6 },
+    { title: "Select theme", actionLabel: "Choose", description: "Switch between Light, Dark, or System theme.", Visual: SystemStep7 },
+    { title: "Accent color", actionLabel: "Pick Color", description: "Choose an accent color to brand your interface.", Visual: SystemStep8 },
+    { title: "Compact mode", actionLabel: "Toggle", description: "Enable compact mode for a denser UI with less padding.", Visual: SystemStep9 },
+    { title: "Configure email templates", actionLabel: "Edit", description: "Customize system email templates for various triggers.", Visual: SystemStep10 },
+    { title: "Notification channels", actionLabel: "Configure", description: "Enable or disable email, SMS, desktop notifications, and digests.", Visual: SystemStep11 },
+    { title: "Terms & Conditions", actionLabel: "Edit", description: "Add your business terms and conditions for quotes and invoices.", Visual: SystemStep12 },
+    { title: "Privacy Policy", actionLabel: "Edit", description: "Manage your privacy policy text and export as PDF.", Visual: SystemStep13 },
+    { title: "Maintenance tools", actionLabel: "Access", description: "Backup database, export data, and run security audits.", Visual: SystemStep14 },
+  ],
+};
+
+// ===========================================
+// COMMUNICATIONS TUTORIAL (10 Steps)
+// ===========================================
+export const communicationsTutorial: Tutorial = {
+  id: "communications",
+  steps: [
+    { title: "Communication channels status", actionLabel: "View", description: "See which channels are active: Email (included), SMS, and WhatsApp (optional).", Visual: CommunicationsStep1 },
+    { title: "Navigate 3 tabs", actionLabel: "Switch Tabs", description: "Access Email, SMS, and WhatsApp configuration tabs.", Visual: CommunicationsStep2 },
+    { title: "Shared vs Custom email", actionLabel: "Choose", description: "Use shared email (included) or configure custom domain with SendGrid.", Visual: CommunicationsStep3, relatedSection: "integrations" },
+    { title: "Configure sender details", actionLabel: "Edit", description: "Set your From Address, From Name, and Reply-To email.", Visual: CommunicationsStep4 },
+    { title: "Email signature", actionLabel: "Edit", description: "Create a professional email signature for all outgoing messages.", Visual: CommunicationsStep5 },
+    { title: "Connect Twilio for SMS", actionLabel: "Connect", description: "Enter your Twilio Account SID, Auth Token, and phone number.", Visual: CommunicationsStep6, prerequisiteNote: "Create Twilio account at twilio.com" },
+    { title: "SMS status indicator", actionLabel: "Verify", description: "Check connection status and send test SMS messages.", Visual: CommunicationsStep7 },
+    { title: "Connect WhatsApp via Twilio", actionLabel: "Setup", description: "Follow the wizard to connect WhatsApp Business through Twilio.", Visual: CommunicationsStep8 },
+    { title: "Verify WhatsApp connection", actionLabel: "Verify", description: "Confirm your WhatsApp Business account is verified and active.", Visual: CommunicationsStep9 },
+    { title: "Manage message templates", actionLabel: "Edit", description: "Create and manage WhatsApp message templates (requires approval).", Visual: CommunicationsStep10 },
+  ],
+};
+
+// ===========================================
+// NOTIFICATIONS TUTORIAL (8 Steps)
+// ===========================================
+export const notificationsTutorial: Tutorial = {
+  id: "notifications",
+  steps: [
+    { title: "Notification capabilities", actionLabel: "Overview", description: "Manage templates, broadcasts (Pro), and automation settings.", Visual: NotificationsStep1 },
+    { title: "Premium features", actionLabel: "Upgrade", description: "Broadcast messaging requires Professional or Enterprise plan.", Visual: NotificationsStep2 },
+    { title: "Test notification delivery", actionLabel: "Test", description: "Send test notifications to verify email and SMS are working.", Visual: NotificationsStep3 },
+    { title: "Browse message templates", actionLabel: "Browse", description: "View all notification templates organized by trigger event.", Visual: NotificationsStep4 },
+    { title: "Edit a template", actionLabel: "Edit", description: "Customize subject line and message body for each notification.", Visual: NotificationsStep5 },
+    { title: "Available variables", actionLabel: "Reference", description: "Use variables like {{client_name}} and {{quote_total}} in templates.", Visual: NotificationsStep6 },
+    { title: "Send broadcast (Pro)", actionLabel: "Compose", description: "Send bulk messages to multiple clients at once.", Visual: NotificationsStep7, prerequisiteNote: "Requires Pro or Enterprise plan" },
+    { title: "Schedule broadcasts", actionLabel: "Schedule", description: "Set a future date and time for broadcast delivery.", Visual: NotificationsStep8 },
+  ],
+};
+
+// ===========================================
+// INTEGRATIONS TUTORIAL (12 Steps)
+// ===========================================
+export const integrationsTutorial: Tutorial = {
+  id: "integrations",
+  steps: [
+    { title: "Integration categories", actionLabel: "View", description: "See connected integrations and available options at a glance.", Visual: IntegrationsStep1 },
+    { title: "Navigate integration tabs", actionLabel: "Browse", description: "Access 10 integration categories: Email, Calendar, PIM, ERP, and more.", Visual: IntegrationsStep2 },
+    { title: "Configure SendGrid", actionLabel: "Setup", description: "Connect SendGrid for custom domain email sending.", Visual: IntegrationsStep3 },
+    { title: "Connect Google Calendar", actionLabel: "Connect", description: "Sync appointments with Google Calendar using OAuth.", Visual: IntegrationsStep4 },
+    { title: "Connect TIG PIM", actionLabel: "Configure", description: "Integrate with TIG Product Information Management.", Visual: IntegrationsStep5 },
+    { title: "Connect MYOB Exo", actionLabel: "Setup", description: "Follow the wizard to connect MYOB accounting software.", Visual: IntegrationsStep6 },
+    { title: "Connect RFMS", actionLabel: "Connect", description: "Integrate with RFMS furnishing software for orders.", Visual: IntegrationsStep7 },
+    { title: "Automation (coming soon)", actionLabel: "Preview", description: "Zapier, Make, and n8n integration coming soon.", Visual: IntegrationsStep8 },
+    { title: "Connect Stripe", actionLabel: "Configure", description: "Set up Stripe for payment processing.", Visual: IntegrationsStep9 },
+    { title: "Website API settings", actionLabel: "Configure", description: "Generate API keys and configure webhooks for your website.", Visual: IntegrationsStep10 },
+    { title: "Connect TWC", actionLabel: "Connect", description: "Access supplier catalogs from The Window Covering.", Visual: IntegrationsStep11 },
+    { title: "Connect Shopify (gated)", actionLabel: "Request", description: "Shopify integration requires admin permission.", Visual: IntegrationsStep12, prerequisiteNote: "Contact admin for permission" },
+  ],
+};
+
+// ===========================================
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
@@ -570,4 +663,11 @@ export const tutorialMap: Record<string, Tutorial> = {
   "business": businessTutorial,
   "units": unitsTutorial,
   "pricing": pricingTutorial,
+  "products": productsTutorial,
+  "team": teamTutorial,
+  "documents": documentsTutorial,
+  "system": systemTutorial,
+  "communications": communicationsTutorial,
+  "notifications": notificationsTutorial,
+  "integrations": integrationsTutorial,
 };
