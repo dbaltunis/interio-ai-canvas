@@ -9,7 +9,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { AnimatedDemoPlayer } from "./AnimatedDemoPlayer";
 import { sectionHelpContent, SectionHelpContent } from "@/config/sectionHelp";
 
 interface SectionHelpButtonProps {
@@ -55,13 +54,15 @@ export const SectionHelpButton = ({
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
-          {/* Animated Demo */}
-          {content.demoSteps && content.demoSteps.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-foreground">See How It Works</h4>
-              <AnimatedDemoPlayer steps={content.demoSteps} />
+          {/* Animated Demo Placeholder - Ready for future content */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-foreground">Quick Guide</h4>
+            <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
+              <div className="text-muted-foreground text-sm">
+                Animated tutorial coming soon
+              </div>
             </div>
-          )}
+          </div>
           
           {/* Key Points */}
           {content.keyPoints && content.keyPoints.length > 0 && (

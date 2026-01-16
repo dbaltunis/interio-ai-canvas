@@ -21,6 +21,7 @@ import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { SettingsFooter } from "../SettingsFooter";
 import { MeasurementUnitsLoadingSkeleton } from "./measurement-units/MeasurementUnitsLoadingSkeleton";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const MeasurementUnitsTab = () => {
   const {
@@ -62,6 +63,7 @@ export const MeasurementUnitsTab = () => {
           <h3 className="text-lg font-semibold text-brand-primary">Measurement Units</h3>
           <p className="text-sm text-brand-neutral">Configure your preferred measurement units and currency</p>
         </div>
+        <SectionHelpButton sectionId="units" />
       </div>
 
       <SettingsInheritanceInfo 

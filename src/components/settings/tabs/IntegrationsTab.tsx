@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const IntegrationsTab = () => {
   const { user } = useAuth();
@@ -97,11 +98,15 @@ export const IntegrationsTab = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Integrations</h3>
-        <p className="text-sm text-muted-foreground">
-          Connect with external services like ERP, PIM, calendars, and payments
-        </p>
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Integrations</h3>
+          <p className="text-sm text-muted-foreground">
+            Connect with external services like ERP, PIM, calendars, and payments
+          </p>
+        </div>
+        <SectionHelpButton sectionId="integrations" />
       </div>
 
       {/* Integration Status Overview */}

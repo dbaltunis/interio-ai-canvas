@@ -19,6 +19,8 @@ import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { compressImage, needsCompression, formatFileSize } from "@/utils/imageUtils";
 import { useFormattedDate, useFormattedTime } from "@/hooks/useFormattedDate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+
 export const PersonalSettingsTab = () => {
   const {
     data: userProfile,
@@ -466,6 +468,15 @@ export const PersonalSettingsTab = () => {
     return <LoadingFallback title="Loading personal settings..." rows={6} />;
   }
   return <div className="space-y-8 max-w-4xl animate-fade-in">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Personal Settings</h3>
+          <p className="text-sm text-muted-foreground">Manage your profile and preferences</p>
+        </div>
+        <SectionHelpButton sectionId="personal" />
+      </div>
+
       {/* Enhanced Profile Information */}
       <FormSection title="Profile Information" description="Update your personal information and profile picture" icon={<User className="h-5 w-5" />} isEditing={isEditing} onEdit={handleEdit} onSave={handleSave} onCancel={handleCancel} isSaving={updateProfile.isPending} savedSuccessfully={savedSuccessfully}>
         {/* Enhanced Avatar Section */}
