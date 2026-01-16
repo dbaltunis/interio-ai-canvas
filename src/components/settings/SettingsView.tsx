@@ -349,7 +349,7 @@ export const SettingsView = () => {
           
           {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Calculator className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Markup & Tax</span>
+              <span className="hidden sm:inline">Pricing</span>
             </TabsTrigger>}
           
           {(canManageTeam || canViewTeamMembers) && <TabsTrigger 

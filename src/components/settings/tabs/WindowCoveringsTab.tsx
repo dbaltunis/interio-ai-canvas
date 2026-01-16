@@ -5,7 +5,6 @@ import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
-import { OptionsArchitectureGuide } from "./components/OptionsArchitectureGuide";
 import { TWCLibraryBrowser } from "@/components/integrations/TWCLibraryBrowser";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -13,7 +12,7 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { Layers, Settings, Sliders, HelpCircle, Truck } from "lucide-react";
+import { Layers, Settings, Sliders, Truck, Lock } from "lucide-react";
 
 interface CreateTemplateData {
   name: string;
@@ -114,8 +113,8 @@ export const WindowCoveringsTab = ({
     }
   };
 
-  // Dynamic grid columns based on TWC integration
-  const tabCount = hasTWCIntegration ? 6 : 5;
+  // Fixed 5 tabs - Suppliers always visible
+  const tabCount = 5;
 
   return (
     <div className="space-y-6">
@@ -125,7 +124,7 @@ export const WindowCoveringsTab = ({
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${tabCount === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger 
                 value="templates" 
                 className="data-[state=active]:bg-primary/10"
@@ -135,12 +134,16 @@ export const WindowCoveringsTab = ({
                 <Layers className="h-4 w-4 mr-2" />
                 My Templates
               </TabsTrigger>
-              {hasTWCIntegration && (
-                <TabsTrigger value="suppliers" className="data-[state=active]:bg-primary/10">
-                  <Truck className="h-4 w-4 mr-2" />
-                  Suppliers
-                </TabsTrigger>
-              )}
+              <TabsTrigger 
+                value="suppliers" 
+                className="data-[state=active]:bg-primary/10"
+                disabled={!hasTWCIntegration}
+                title={!hasTWCIntegration ? "Enable supplier integration in Settings → Integrations" : undefined}
+              >
+                {!hasTWCIntegration && <Lock className="h-3 w-3 mr-1 opacity-50" />}
+                <Truck className="h-4 w-4 mr-2" />
+                Suppliers
+              </TabsTrigger>
               <TabsTrigger value="headings" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
                 Headings
@@ -152,10 +155,6 @@ export const WindowCoveringsTab = ({
               <TabsTrigger value="defaults" className="data-[state=active]:bg-primary/10">
                 <Settings className="h-4 w-4 mr-2" />
                 Defaults
-              </TabsTrigger>
-              <TabsTrigger value="guide" className="data-[state=active]:bg-primary/10">
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Guide
               </TabsTrigger>
             </TabsList>
 
@@ -171,11 +170,24 @@ export const WindowCoveringsTab = ({
             </TabsContent>
             )}
 
-            {hasTWCIntegration && (
-              <TabsContent value="suppliers" className="mt-6">
+            <TabsContent value="suppliers" className="mt-6">
+              {hasTWCIntegration ? (
                 <TWCLibraryBrowser />
-              </TabsContent>
-            )}
+              ) : (
+                <div className="text-center py-12 space-y-4">
+                  <Lock className="h-12 w-12 mx-auto text-muted-foreground/50" />
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Supplier Integration Required</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      Connect to supplier catalogs to access their product libraries, pricing, and automated ordering.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Go to <span className="font-medium">Settings → Integrations</span> to enable supplier connections.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="headings" className="mt-6">
               <HeadingInventoryManager />
@@ -187,10 +199,6 @@ export const WindowCoveringsTab = ({
 
             <TabsContent value="defaults" className="mt-6">
               <ManufacturingDefaults />
-            </TabsContent>
-
-            <TabsContent value="guide" className="mt-6">
-              <OptionsArchitectureGuide />
             </TabsContent>
           </Tabs>
         </CardContent>
