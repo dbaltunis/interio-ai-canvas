@@ -30,6 +30,7 @@ import { SyncIndicator } from "./components/system/SyncIndicator";
 // FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
+import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
 
 // Lazy load all route components with automatic retry for better reliability
@@ -70,6 +71,12 @@ const queryClient = new QueryClient({
         return failureCount < 2;
       },
     },
+    mutations: {
+      onError: (error: Error) => {
+        // Global mutation error tracking via Sentry
+        captureException(error, { source: 'react-query-mutation' });
+      },
+    },
   },
 });
 
@@ -79,6 +86,13 @@ function NavObserver() {
   
   useEffect(() => {
     console.warn('[NAV] location changed ->', location.pathname + location.search + location.hash);
+    
+    // Set route context for Sentry error tracking
+    setSentryContext('navigation', {
+      path: location.pathname,
+      search: location.search,
+      hash: location.hash,
+    });
     
     // Handle Shopify OAuth callback
     const params = new URLSearchParams(location.search);
