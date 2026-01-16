@@ -16,8 +16,7 @@ import { useIsDealer } from '@/hooks/useIsDealer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-// Hidden for now - TeachingHelpButton needs completion before deployment
-// import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
+import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -294,8 +293,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </nav>
           {/* Right: Tips + User Profile */}
           <div className="flex items-center gap-2">
-            {/* Hidden for now - TeachingHelpButton needs completion */}
-            {/* <TeachingHelpButton /> */}
+            <TeachingHelpButton />
             <UserProfile
               onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
               showCollaborationIndicator={hasActivity}
