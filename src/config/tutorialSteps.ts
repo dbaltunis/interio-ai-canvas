@@ -21,6 +21,8 @@ import {
 } from "@/components/help/tutorial-steps/TemplatesSteps";
 import {
   OptionsStep1, OptionsStep2, OptionsStep3, OptionsStep4, OptionsStep5, OptionsStep6, OptionsStep7, OptionsStep8,
+  OptionsStep9, OptionsStep10, OptionsStep11, OptionsStep12, OptionsStep13, OptionsStep14, OptionsStep15,
+  OptionsStep16, OptionsStep17, OptionsStep18, OptionsStep19, OptionsStep20,
 } from "@/components/help/tutorial-steps/OptionsSteps";
 import {
   HeadingsStep1, HeadingsStep2, HeadingsStep3, HeadingsStep4, HeadingsStep5, HeadingsStep6, HeadingsStep7, HeadingsStep8,
@@ -326,60 +328,141 @@ export const headingsTutorial: Tutorial = {
 };
 
 // ===========================================
-// OPTIONS TUTORIAL - COMPREHENSIVE (8 Steps)
+// OPTIONS TUTORIAL - COMPREHENSIVE (20 Steps)
+// Covers: Overview, Creating, Inventory Sync, Pricing, Rules
 // ===========================================
 export const optionsTutorial: Tutorial = {
   id: "products-options",
   steps: [
+    // SECTION 1: OPTIONS OVERVIEW (Steps 1-3)
     {
-      title: "Click Add Option Type",
-      actionLabel: "Click Button",
-      description: "Start by clicking the 'Add Option Type' button to create a new configurable option for your products.",
+      title: "Navigate to the Options tab",
+      actionLabel: "Click Tab",
+      description: "Access Settings → Products → Options to configure add-ons like linings, motors, and controls for each treatment category.",
       Visual: OptionsStep1,
     },
     {
-      title: "Enter the option name",
-      actionLabel: "Type Name",
-      description: "Give your option a clear, descriptive name like 'Lining Type', 'Control Side', or 'Motor Brand'.",
+      title: "Understand option types",
+      actionLabel: "View Structure",
+      description: "The left sidebar shows option types (Control, Lining, Motor). Click a type to see its values on the right.",
       Visual: OptionsStep2,
     },
     {
-      title: "Select a category",
-      actionLabel: "Choose Category",
-      description: "Categorize your option (Hardware, Fabric Options, Accessories) to keep things organized.",
+      title: "View option values and badges",
+      actionLabel: "Review",
+      description: "Each value shows pricing, method (Fixed, Per m²), and inventory link status. Linked options track stock automatically.",
       Visual: OptionsStep3,
     },
+    // SECTION 2: CREATING OPTIONS MANUALLY (Steps 4-7)
     {
-      title: "Add option values",
-      actionLabel: "Add Values",
-      description: "Click 'Add Value' to create the choices for this option. Each value can have its own pricing.",
+      title: "Click Add Option Type",
+      actionLabel: "Click Button",
+      description: "Start by clicking 'Add Option Type' to create a new configurable option for your products.",
       Visual: OptionsStep4,
     },
     {
-      title: "Set prices for each value",
-      actionLabel: "Enter Prices",
-      description: "Enter the cost price (your cost) and retail price (customer sees) for each option value.",
+      title: "Enter option name and key",
+      actionLabel: "Type Name",
+      description: "Give your option a descriptive label. The system auto-generates a key used for conditional rules.",
       Visual: OptionsStep5,
     },
     {
-      title: "Configure pricing type",
-      actionLabel: "Select Type",
-      description: "Choose how the option price is calculated: fixed amount, per unit, or based on treatment area.",
+      title: "Add option values with prices",
+      actionLabel: "Add Values",
+      description: "Click 'Add Value' to create choices. Each value can have its own price and can be reordered via drag-and-drop.",
       Visual: OptionsStep6,
     },
     {
-      title: "Save your option type",
-      actionLabel: "Click Save",
-      description: "Review your settings and click 'Save Option Type' to add it to your library.",
+      title: "Configure pricing method",
+      actionLabel: "Select Method",
+      description: "Choose how price is calculated: Fixed, Per Linear Meter, Per Square Meter, Per Panel, or Grid-Based for complex pricing.",
       Visual: OptionsStep7,
     },
+    // SECTION 3: SYNC FROM INVENTORY LIBRARY (Steps 8-11)
     {
-      title: "Option ready to use!",
-      actionLabel: "Done",
-      description: "Your new option appears in the list and can now be enabled in any template via the Options tab.",
+      title: "Open inventory sync dialog",
+      actionLabel: "Sync",
+      description: "Click 'Sync from Library' to import options directly from your inventory - this is the game changer that saves hours!",
       Visual: OptionsStep8,
+      relatedSection: "inventory",
+      prerequisiteNote: "Add items to inventory first",
+    },
+    {
+      title: "Select inventory category",
+      actionLabel: "Choose Category",
+      description: "Pick a category (Linings, Fabrics, Motors, Hardware) to browse available inventory items for import.",
+      Visual: OptionsStep9,
+    },
+    {
+      title: "Choose pricing mode",
+      actionLabel: "Set Pricing",
+      description: "Decide how prices are imported: Use Selling Price, Cost Price, or Cost + Markup %. Prices stay linked for auto-updates.",
+      Visual: OptionsStep10,
+    },
+    {
+      title: "Confirm bulk import",
+      actionLabel: "Import",
+      description: "Review selected items and click Import. Bulk importing entire catalogs saves hours of manual data entry!",
+      Visual: OptionsStep11,
+    },
+    // SECTION 4: PRICING CONFIGURATION (Steps 12-14)
+    {
+      title: "Set up grid-based pricing",
+      actionLabel: "Upload Grid",
+      description: "For complex pricing, upload a CSV with width × drop matrix. The system looks up exact prices based on dimensions.",
+      Visual: OptionsStep12,
+    },
+    {
+      title: "Understand pricing hierarchy",
+      actionLabel: "Learn",
+      description: "Prices resolve in order: Grid → Category Markup → Default. First match wins. This gives you flexible price control.",
+      Visual: OptionsStep13,
+    },
+    {
+      title: "Test pricing calculation",
+      actionLabel: "Preview",
+      description: "Enter sample dimensions to preview the calculated price. Verify your grid and formulas are working correctly.",
+      Visual: OptionsStep14,
+    },
+    // SECTION 5: CONDITIONAL RULES - THE GAME CHANGER (Steps 15-20)
+    {
+      title: "Navigate to Rules tab",
+      actionLabel: "Open Rules",
+      description: "Access the Rules tab in any template to create conditional logic. Rules automate option visibility - zero extra clicks!",
+      Visual: OptionsStep15,
       relatedSection: "products-templates",
-      prerequisiteNote: "Enable this option in Templates → Options tab",
+    },
+    {
+      title: "Understand rule actions",
+      actionLabel: "Learn Actions",
+      description: "Five powerful actions: Show Option, Hide Option, Require Option, Set Default, and Filter Values. Master these to automate everything.",
+      Visual: OptionsStep16,
+    },
+    {
+      title: "Create WHEN condition",
+      actionLabel: "Set Condition",
+      description: "Define when the rule triggers: WHEN [Source Option] [equals/contains/in_list] [Value]. This is your trigger condition.",
+      Visual: OptionsStep17,
+    },
+    {
+      title: "Define THEN effect",
+      actionLabel: "Set Effect",
+      description: "Define what happens: THEN [Show/Hide/Require/Set Default/Filter] [Target Option]. The rule summary shows readable output.",
+      Visual: OptionsStep18,
+    },
+    {
+      title: "Use quick templates",
+      actionLabel: "Apply Template",
+      description: "Start with pre-built rule patterns that cover 80% of common cases. Motorised→Remote, Width>3m→Support, and more.",
+      Visual: OptionsStep19,
+    },
+    {
+      title: "See rules in action!",
+      actionLabel: "Test",
+      description: "Rules run automatically during quote creation. Select 'Motorised' and watch 'Remote Control Type' appear instantly - no training needed!",
+      Visual: OptionsStep20,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Rules apply automatically in quotes",
     },
   ],
 };
