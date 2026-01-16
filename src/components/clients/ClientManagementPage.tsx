@@ -41,7 +41,7 @@ export const ClientManagementPage = ({
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showHelp, setShowHelp] = useState(false);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // CRM Filters
   const [filters, setFilters] = useState({
@@ -422,7 +422,17 @@ export const ClientManagementPage = ({
       />
 
       {/* Pagination */}
-      <JobsPagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} />
+      <JobsPagination 
+        currentPage={currentPage} 
+        totalItems={totalItems} 
+        itemsPerPage={itemsPerPage} 
+        onPageChange={handlePageChange}
+        onItemsPerPageChange={(newSize) => {
+          setItemsPerPage(newSize);
+          setCurrentPage(1); // Reset to first page when changing page size
+        }}
+        itemsPerPageOptions={[20, 50, 100]}
+      />
 
       {/* Create Client Dialog with Lead Intelligence */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
