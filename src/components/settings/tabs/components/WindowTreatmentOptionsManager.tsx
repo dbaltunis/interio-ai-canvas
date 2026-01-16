@@ -26,6 +26,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { SortableOptionItem } from "./SortableOptionItem";
 import { InventorySyncDialog } from "./InventorySyncDialog";
 import { HeadingFilter, HEADING_TYPES } from "./HeadingFilter";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -1280,7 +1281,10 @@ export const WindowTreatmentOptionsManager = () => {
   return (
       <Card>
         <CardHeader>
-          <CardTitle>Window Treatment Options</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Window Treatment Options</CardTitle>
+            <SectionHelpButton sectionId="products-options" />
+          </div>
         </CardHeader>
       <CardContent>
         {/* Treatment Type Selection */}

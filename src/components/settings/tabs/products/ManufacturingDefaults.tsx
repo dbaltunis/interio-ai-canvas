@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 interface ManufacturingDefaults {
   return_left: number;
@@ -229,7 +230,10 @@ export const ManufacturingDefaults = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Manufacturing Defaults (Curtains Only)</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Manufacturing Defaults (Curtains Only)</CardTitle>
+            <SectionHelpButton sectionId="products-defaults" />
+          </div>
           <CardDescription>
             Configure default allowances for curtain templates. Set to 0 for blinds, shutters, and other products.
           </CardDescription>

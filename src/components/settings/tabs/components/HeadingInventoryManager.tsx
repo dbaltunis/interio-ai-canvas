@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EyeletRingSelector, type EyeletRing } from "@/components/inventory/EyeletRingSelector";
 import { useEyeletRings } from "@/hooks/useEyeletRings";
 import { useQueryClient } from "@tanstack/react-query";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 // Extended type to include image_url and advanced settings
 interface HeadingItem extends EnhancedInventoryItem {
@@ -461,7 +462,10 @@ export const HeadingInventoryManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Heading Library</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Heading Library</CardTitle>
+            <SectionHelpButton sectionId="products-headings" />
+          </div>
           <CardDescription>
             Create and manage heading styles for all fabric treatments (curtains, sheers, romans)
           </CardDescription>
