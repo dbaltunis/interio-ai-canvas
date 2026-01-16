@@ -1,4 +1,4 @@
-import { useState, ComponentType } from "react";
+import { useState } from "react";
 import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,22 +10,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { sectionHelpContent, SectionHelpContent } from "@/config/sectionHelp";
-import { 
-  TemplatesDemoScene,
-  SuppliersDemoScene,
-  HeadingsDemoScene,
-  OptionsDemoScene,
-  DefaultsDemoScene 
-} from "./demos";
-
-// Map section IDs to their demo scene components
-const demoSceneMap: Record<string, ComponentType> = {
-  'products-templates': TemplatesDemoScene,
-  'products-suppliers': SuppliersDemoScene,
-  'products-headings': HeadingsDemoScene,
-  'products-options': OptionsDemoScene,
-  'products-defaults': DefaultsDemoScene,
-};
+import { TutorialCarousel } from "./TutorialCarousel";
+import { tutorialMap } from "@/config/tutorialSteps";
 
 interface SectionHelpButtonProps {
   sectionId: string;
@@ -58,7 +44,7 @@ export const SectionHelpButton = ({
           <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader className="text-left">
           <SheetTitle className="flex items-center gap-2">
             {content.icon && <content.icon className="h-5 w-5 text-primary" />}
@@ -70,18 +56,15 @@ export const SectionHelpButton = ({
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
-          {/* Animated Demo */}
+          {/* Tutorial Carousel */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground">Quick Guide</h4>
-            {demoSceneMap[sectionId] ? (
-              (() => {
-                const DemoComponent = demoSceneMap[sectionId];
-                return <DemoComponent />;
-              })()
+            {tutorialMap[sectionId] && tutorialMap[sectionId].steps.length > 0 && tutorialMap[sectionId].steps[0].Visual !== (() => null) ? (
+              <TutorialCarousel steps={tutorialMap[sectionId].steps} />
             ) : (
               <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
                 <div className="text-muted-foreground text-sm">
-                  Demo coming soon
+                  Tutorial coming soon
                 </div>
               </div>
             )}
