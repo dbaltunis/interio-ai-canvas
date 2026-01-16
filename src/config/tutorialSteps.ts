@@ -6,6 +6,18 @@ import {
   TemplatesStep4, 
   TemplatesStep5,
   TemplatesStep6,
+  TemplatesStep7,
+  TemplatesStep8,
+  TemplatesStep9,
+  TemplatesStep10,
+  TemplatesStep11,
+  TemplatesStep12,
+  TemplatesStep13,
+  TemplatesStep14,
+  TemplatesStep15,
+  TemplatesStep16,
+  TemplatesStep17,
+  TemplatesStep18,
 } from "@/components/help/tutorial-steps/TemplatesSteps";
 
 export interface TutorialStep {
@@ -13,6 +25,8 @@ export interface TutorialStep {
   actionLabel: string;
   description: string;
   Visual: ComponentType;
+  relatedSection?: string;
+  prerequisiteNote?: string;
 }
 
 export interface Tutorial {
@@ -20,10 +34,13 @@ export interface Tutorial {
   steps: TutorialStep[];
 }
 
-// Templates Tutorial
+// ===========================================
+// TEMPLATES TUTORIAL - COMPREHENSIVE (18 Steps)
+// ===========================================
 export const templatesTutorial: Tutorial = {
   id: "products-templates",
   steps: [
+    // PART 1: BASIC TAB (Steps 1-4)
     {
       title: "Start by clicking Add Template",
       actionLabel: "Click Button",
@@ -45,25 +62,113 @@ export const templatesTutorial: Tutorial = {
     {
       title: "Select the product category",
       actionLabel: "Select Category",
-      description: "Choose which product type this template is for. This determines which options and pricing rules apply.",
+      description: "Choose which product type this template is for. The category determines which tabs appear (e.g., curtains show Heading tab).",
       Visual: TemplatesStep4,
     },
+    // PART 2: HEADING TAB (Steps 5-6)
+    {
+      title: "Navigate to the Heading tab",
+      actionLabel: "Click Tab",
+      description: "For curtain products, click the Heading tab to configure heading styles and fullness ratios.",
+      Visual: TemplatesStep5,
+    },
+    {
+      title: "Select a heading style",
+      actionLabel: "Select Heading",
+      description: "Choose a heading style like Wave Fold, Pinch Pleat, or S-Fold. Each has a different fullness ratio that affects fabric calculation.",
+      Visual: TemplatesStep6,
+      relatedSection: "products-headings",
+      prerequisiteNote: "Create heading styles in Products → Headings first",
+    },
+    // PART 3: OPTIONS TAB (Steps 7-9)
+    {
+      title: "Navigate to the Options tab",
+      actionLabel: "Click Tab",
+      description: "Click the Options tab to configure which options appear when quoting this product.",
+      Visual: TemplatesStep7,
+    },
+    {
+      title: "Enable options for this template",
+      actionLabel: "Toggle Options",
+      description: "Use the switches to enable or disable specific options. Only enabled options will appear when creating quotes with this template.",
+      Visual: TemplatesStep8,
+      relatedSection: "products-options",
+      prerequisiteNote: "Options must first be created in Products → Options",
+    },
+    {
+      title: "Set default option values",
+      actionLabel: "Select Default",
+      description: "For each enabled option, you can set a default value that will be pre-selected when creating new quotes.",
+      Visual: TemplatesStep9,
+    },
+    // PART 4: PRICING TAB (Steps 10-12)
+    {
+      title: "Navigate to the Pricing tab",
+      actionLabel: "Click Tab",
+      description: "Click the Pricing tab to configure how prices are calculated for this template.",
+      Visual: TemplatesStep10,
+    },
+    {
+      title: "Select a pricing method",
+      actionLabel: "Select Method",
+      description: "Choose how prices are calculated: Pricing Grid (width × drop matrix), Per Square Meter, or Per Linear Meter.",
+      Visual: TemplatesStep11,
+    },
+    {
+      title: "Assign a pricing grid",
+      actionLabel: "Select Grid",
+      description: "If using Pricing Grid method, select which grid to use. Grids from suppliers like TWC include fabric cost in the price.",
+      Visual: TemplatesStep12,
+      relatedSection: "settings-pricing",
+      prerequisiteNote: "Set up pricing grids in Settings → Pricing",
+    },
+    // PART 5: MANUFACTURING TAB (Steps 13-14)
+    {
+      title: "Navigate to the Manufacturing tab",
+      actionLabel: "Click Tab",
+      description: "Click Manufacturing to set fabric allowances and waste percentages specific to this template.",
+      Visual: TemplatesStep13,
+    },
+    {
+      title: "Set manufacturing defaults",
+      actionLabel: "Enter Values",
+      description: "Configure header allowance, bottom hem, side allowance, and waste percentage. These override global defaults for this template only.",
+      Visual: TemplatesStep14,
+      relatedSection: "products-defaults",
+      prerequisiteNote: "Global defaults are set in Products → Defaults",
+    },
+    // PART 6: SAVE & COMPLETION (Steps 15-16)
     {
       title: "Save your new template",
       actionLabel: "Click Save",
-      description: "Once you've configured the template settings, click Save to add it to your templates list.",
-      Visual: TemplatesStep5,
+      description: "Once you've configured all tabs, click 'Create Template' to save. You can edit the template later to make changes.",
+      Visual: TemplatesStep15,
     },
     {
       title: "Template created successfully!",
       actionLabel: "Done",
-      description: "Your new template now appears in the list and is ready to use when creating quotes for clients.",
-      Visual: TemplatesStep6,
+      description: "Your new template now appears in the list and is ready to use when creating quotes. Notice the 'New' badge on recently created templates.",
+      Visual: TemplatesStep16,
+    },
+    // PART 7: RULES TAB - ADVANCED (Steps 17-18)
+    {
+      title: "Access the Rules tab (Advanced)",
+      actionLabel: "Re-open Template",
+      description: "The Rules tab appears after saving. Re-open your template to add conditional logic that enforces business rules.",
+      Visual: TemplatesStep17,
+    },
+    {
+      title: "Create conditional rules",
+      actionLabel: "Add Rule",
+      description: "Rules automatically apply conditions like 'If width > 3000mm, require motorized control'. Great for enforcing product constraints.",
+      Visual: TemplatesStep18,
     },
   ],
 };
 
-// Suppliers Tutorial (placeholder - will be implemented)
+// ===========================================
+// SUPPLIERS TUTORIAL (placeholder)
+// ===========================================
 export const suppliersTutorial: Tutorial = {
   id: "products-suppliers",
   steps: [
@@ -76,7 +181,9 @@ export const suppliersTutorial: Tutorial = {
   ],
 };
 
-// Headings Tutorial (placeholder - will be implemented)
+// ===========================================
+// HEADINGS TUTORIAL (placeholder)
+// ===========================================
 export const headingsTutorial: Tutorial = {
   id: "products-headings",
   steps: [
@@ -89,7 +196,9 @@ export const headingsTutorial: Tutorial = {
   ],
 };
 
-// Options Tutorial (placeholder - will be implemented)
+// ===========================================
+// OPTIONS TUTORIAL (placeholder)
+// ===========================================
 export const optionsTutorial: Tutorial = {
   id: "products-options",
   steps: [
@@ -102,7 +211,9 @@ export const optionsTutorial: Tutorial = {
   ],
 };
 
-// Defaults Tutorial (placeholder - will be implemented)
+// ===========================================
+// DEFAULTS TUTORIAL (placeholder)
+// ===========================================
 export const defaultsTutorial: Tutorial = {
   id: "products-defaults",
   steps: [
@@ -115,7 +226,9 @@ export const defaultsTutorial: Tutorial = {
   ],
 };
 
-// Map of all tutorials by section ID
+// ===========================================
+// TUTORIAL MAP
+// ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
   "products-templates": templatesTutorial,
   "products-suppliers": suppliersTutorial,

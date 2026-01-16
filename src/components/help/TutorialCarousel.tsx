@@ -1,6 +1,6 @@
 import { useState, useEffect, ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Link2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,18 +9,22 @@ export interface TutorialStep {
   actionLabel: string;
   description: string;
   Visual: ComponentType;
+  relatedSection?: string;
+  prerequisiteNote?: string;
 }
 
 interface TutorialCarouselProps {
   steps: TutorialStep[];
   autoPlay?: boolean;
   stepDuration?: number;
+  onNavigateToSection?: (sectionId: string) => void;
 }
 
 export const TutorialCarousel = ({ 
   steps, 
   autoPlay = true, 
-  stepDuration = 4000 
+  stepDuration = 5000,
+  onNavigateToSection,
 }: TutorialCarouselProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);

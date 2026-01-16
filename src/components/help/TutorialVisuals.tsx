@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
 
 // Pulsing highlight ring for interactive elements
 export const HighlightRing = ({ 
   children, 
   className 
 }: { 
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) => (
   <div className={cn("relative inline-block", className)}>
@@ -44,20 +44,17 @@ export const HighlightRing = ({
 // Highlighted button with pulsing effect
 export const HighlightedButton = ({ 
   children,
-  icon: Icon,
   variant = "default",
-  size = "default",
+  size = "sm",
   className,
 }: { 
-  children: React.ReactNode;
-  icon?: LucideIcon;
+  children: ReactNode;
   variant?: "default" | "outline" | "secondary" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
 }) => (
   <HighlightRing>
-    <Button variant={variant} size={size} className={cn("pointer-events-none", className)}>
-      {Icon && <Icon className="mr-2 h-4 w-4" />}
+    <Button variant={variant} size={size} className={cn("pointer-events-none h-7 text-xs", className)}>
       {children}
     </Button>
   </HighlightRing>
@@ -88,7 +85,7 @@ export const HighlightedCard = ({
   children,
   className,
 }: { 
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) => (
   <HighlightRing className={className}>
@@ -96,55 +93,6 @@ export const HighlightedCard = ({
       {children}
     </Card>
   </HighlightRing>
-);
-
-// Animated cursor pointer
-export const AnimatedCursor = ({ 
-  x, 
-  y,
-  isClicking = false,
-}: { 
-  x: number; 
-  y: number;
-  isClicking?: boolean;
-}) => (
-  <motion.div
-    className="absolute pointer-events-none z-50"
-    animate={{ 
-      x, 
-      y,
-      scale: isClicking ? 0.9 : 1,
-    }}
-    transition={{ 
-      type: "spring", 
-      damping: 20, 
-      stiffness: 300 
-    }}
-  >
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="drop-shadow-lg"
-    >
-      <path
-        d="M5 3L19 12L12 13L9 20L5 3Z"
-        fill="hsl(var(--foreground))"
-        stroke="hsl(var(--background))"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-    {isClicking && (
-      <motion.div
-        className="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-primary/30"
-        initial={{ scale: 0, opacity: 1 }}
-        animate={{ scale: 2, opacity: 0 }}
-        transition={{ duration: 0.4 }}
-      />
-    )}
-  </motion.div>
 );
 
 // Mock table row for list demonstrations
@@ -158,11 +106,11 @@ export const MockTableRow = ({
   highlighted?: boolean;
 }) => (
   <div className={cn(
-    "flex items-center justify-between py-2.5 px-3 rounded-md transition-colors",
+    "flex items-center justify-between py-2 px-2.5 rounded-md transition-colors",
     highlighted ? "bg-primary/10 border border-primary/20" : "bg-muted/50"
   )}>
-    <span className="text-sm font-medium">{name}</span>
-    <span className="text-sm text-muted-foreground">{value}</span>
+    <span className="text-xs font-medium">{name}</span>
+    <span className="text-xs text-muted-foreground">{value}</span>
   </div>
 );
 
@@ -172,9 +120,9 @@ export const MockHeader = ({
   action,
 }: { 
   title: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) => (
-  <div className="flex items-center justify-between pb-3 mb-3 border-b border-border">
+  <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
     <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     {action}
   </div>
