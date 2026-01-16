@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Bell, Shield, Database, Download, Loader2 } from "lucide-react";
+import { Mail, Shield, Download, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
@@ -17,20 +17,18 @@ import { InventoryDeductionSettings } from "@/components/settings/InventoryDeduc
 import { StatusManagement } from "../user-management/StatusManagement";
 import { toast } from "sonner";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+import { AccentThemeSelector } from "./system/AccentThemeSelector";
+import { NotificationSettingsCard } from "./system/NotificationSettingsCard";
+import { SystemMaintenanceCard } from "./system/SystemMaintenanceCard";
+import { useNavigate } from "react-router-dom";
 
 export const SystemSettingsTab = () => {
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    desktop: true,
-    reminders: true,
-  });
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
-  const [accent, setAccent] = useState<'primary' | 'secondary'>('primary');
   const { data: profile } = useCurrentUserProfile();
   const { data: businessSettings } = useBusinessSettings();
   const updateBusinessSettings = useUpdateBusinessSettings();
+  const navigate = useNavigate();
   
   // Terms & Conditions state
   const [termsAndConditions, setTermsAndConditions] = useState('');
@@ -65,15 +63,6 @@ export const SystemSettingsTab = () => {
       toast.error('Failed to save Terms & Conditions');
     }
   };
-
-  useEffect(() => {
-    const existing = document.documentElement.getAttribute('data-accent') as 'primary' | 'secondary' | null;
-    if (existing) setAccent(existing);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-accent', accent);
-  }, [accent]);
 
   return (
     <div className="space-y-6">
@@ -110,12 +99,12 @@ export const SystemSettingsTab = () => {
             Appearance
           </CardTitle>
           <CardDescription>
-            Theme and density preferences
+            Theme, accent colors, and density preferences
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label>Theme</Label>
+            <Label>Theme Mode</Label>
             <Select value={theme ?? 'system'} onValueChange={setTheme}>
               <SelectTrigger>
                 <SelectValue placeholder="Select theme" />
@@ -129,21 +118,12 @@ export const SystemSettingsTab = () => {
             <p className="text-xs text-muted-foreground">Current: {resolvedTheme} mode</p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Accent color</Label>
-            <Select value={accent} onValueChange={(v) => setAccent(v as 'primary' | 'secondary')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select accent" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="primary">Brand Primary</SelectItem>
-                <SelectItem value="secondary">Brand Secondary</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">Used for buttons, links and highlights</p>
+          <div className="space-y-3">
+            <Label>Accent Color Palette</Label>
+            <AccentThemeSelector />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-2 border-t">
             <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
                 Compact mode
@@ -158,105 +138,31 @@ export const SystemSettingsTab = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Email Templates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Templates
-            </CardTitle>
-            <CardDescription>
-              Manage system email templates
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 border rounded">
-                <span className="text-sm">Welcome Email</span>
-                <Button variant="ghost" size="sm">Edit</Button>
-              </div>
-              <div className="flex items-center justify-between p-2 border rounded">
-                <span className="text-sm">Quote Approval</span>
-                <Button variant="ghost" size="sm">Edit</Button>
-              </div>
-              <div className="flex items-center justify-between p-2 border rounded">
-                <span className="text-sm">Installation Reminder</span>
-                <Button variant="ghost" size="sm">Edit</Button>
-              </div>
-              <div className="flex items-center justify-between p-2 border rounded">
-                <span className="text-sm">Payment Reminder</span>
-                <Button variant="ghost" size="sm">Edit</Button>
-              </div>
-            </div>
-            
-            <Button className="w-full" variant="outline">
-              <Mail className="h-4 w-4 mr-2" />
-              Add Email Template
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Notification Settings */}
+      {/* Email Templates Link */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notification Settings
+            <Mail className="h-5 w-5" />
+            Email Templates
           </CardTitle>
           <CardDescription>
-            Configure how and when you receive notifications
+            Manage system email templates for automated communications
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
-                <p className="text-xs text-muted-foreground">Receive updates via email</p>
-              </div>
-              <Switch 
-                checked={notifications.email}
-                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email: checked }))}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>SMS Notifications</Label>
-                <p className="text-xs text-muted-foreground">Receive updates via SMS</p>
-              </div>
-              <Switch 
-                checked={notifications.sms}
-                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, sms: checked }))}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Desktop Notifications</Label>
-                <p className="text-xs text-muted-foreground">Show browser notifications</p>
-              </div>
-              <Switch 
-                checked={notifications.desktop}
-                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, desktop: checked }))}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Appointment Reminders</Label>
-                <p className="text-xs text-muted-foreground">Remind about appointments</p>
-              </div>
-              <Switch 
-                checked={notifications.reminders}
-                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, reminders: checked }))}
-              />
-            </div>
-          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate('/settings', { state: { tab: 'communications' } })}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Go to Email Templates
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Notification Settings - Now uses persistent component */}
+      <NotificationSettingsCard />
 
       {/* Terms & Conditions */}
       <Card>
@@ -308,36 +214,8 @@ export const SystemSettingsTab = () => {
         </CardContent>
       </Card>
 
-      {/* System Maintenance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            System Maintenance
-          </CardTitle>
-          <CardDescription>
-            Database and system maintenance tools
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-20 flex-col">
-              <Database className="h-6 w-6 mb-2" />
-              <span>Backup Database</span>
-            </Button>
-            
-            <Button variant="outline" className="h-20 flex-col">
-              <Download className="h-6 w-6 mb-2" />
-              <span>Export Data</span>
-            </Button>
-            
-            <Button variant="outline" className="h-20 flex-col">
-              <Shield className="h-6 w-6 mb-2" />
-              <span>Security Audit</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* System Maintenance - Now uses functional component */}
+      <SystemMaintenanceCard />
     </div>
   );
 };
