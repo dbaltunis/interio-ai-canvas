@@ -1,6 +1,6 @@
 import { useState, useEffect, ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause, Link2, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,7 @@ export const TutorialCarousel = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [direction, setDirection] = useState(1);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -75,28 +76,51 @@ export const TutorialCarousel = ({
   };
 
   return (
-    <div className="flex flex-col bg-muted/30 rounded-xl border border-border overflow-hidden">
+    <div className={cn(
+      "flex flex-col bg-muted/30 rounded-xl border border-border overflow-hidden transition-all duration-300",
+      isMaximized && "fixed inset-4 z-50 shadow-2xl"
+    )}>
       {/* Header with step counter */}
       <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className={cn(
+          "font-medium text-muted-foreground",
+          isMaximized ? "text-base" : "text-sm"
+        )}>
           Step {currentStep + 1} of {steps.length}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0"
-          onClick={() => setIsPlaying(!isPlaying)}
-        >
-          {isPlaying ? (
-            <Pause className="h-3.5 w-3.5" />
-          ) : (
-            <Play className="h-3.5 w-3.5" />
-          )}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => setIsPlaying(!isPlaying)}
+          >
+            {isPlaying ? (
+              <Pause className="h-3.5 w-3.5" />
+            ) : (
+              <Play className="h-3.5 w-3.5" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? (
+              <Minimize2 className="h-3.5 w-3.5" />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Visual area */}
-      <div className="relative min-h-[280px] p-4 overflow-hidden">
+      <div className={cn(
+        "relative p-4 overflow-hidden flex-1",
+        isMaximized ? "min-h-[400px]" : "min-h-[280px]"
+      )}>
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}
@@ -106,7 +130,7 @@ export const TutorialCarousel = ({
             animate="center"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="w-full"
+            className={cn("w-full", isMaximized && "scale-110 origin-top")}
           >
             <StepVisual />
           </motion.div>
@@ -114,18 +138,38 @@ export const TutorialCarousel = ({
       </div>
 
       {/* Action and description area */}
-      <div className="px-4 py-4 bg-background border-t border-border space-y-2">
+      <div className={cn(
+        "px-4 py-4 bg-background border-t border-border space-y-2",
+        isMaximized && "py-6"
+      )}>
         <div className="flex items-center gap-2">
-          <span className="px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide">
+          <span className={cn(
+            "px-2 py-1 rounded bg-primary/10 text-primary font-semibold uppercase tracking-wide",
+            isMaximized ? "text-sm" : "text-xs"
+          )}>
             {step.actionLabel}
           </span>
         </div>
-        <h4 className="text-base font-semibold text-foreground">
+        <h4 className={cn(
+          "font-semibold text-foreground",
+          isMaximized ? "text-lg" : "text-base"
+        )}>
           {step.title}
         </h4>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className={cn(
+          "text-muted-foreground leading-relaxed",
+          isMaximized ? "text-base" : "text-sm"
+        )}>
           {step.description}
         </p>
+        {step.prerequisiteNote && (
+          <p className={cn(
+            "text-amber-600 dark:text-amber-400 italic",
+            isMaximized ? "text-sm" : "text-xs"
+          )}>
+            ⚠️ {step.prerequisiteNote}
+          </p>
+        )}
       </div>
 
       {/* Navigation */}
@@ -141,7 +185,7 @@ export const TutorialCarousel = ({
         </Button>
 
         {/* Step dots */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-center max-w-[200px]">
           {steps.map((_, index) => (
             <button
               key={index}

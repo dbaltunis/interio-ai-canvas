@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Save, Check, Settings2, Layers } from "lucide-react";
+import { Plus, Save, Check, Settings2, Layers, GripVertical, Eye, EyeOff, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { 
   HighlightRing, 
   HighlightedButton, 
@@ -197,7 +197,7 @@ export const TemplatesStep5 = () => (
   </div>
 );
 
-// Step 6: Select heading style
+// Step 6: Select heading styles (CORRECTED: Checkbox grid for selecting EXISTING headings)
 export const TemplatesStep6 = () => (
   <div className="space-y-3">
     <Card className="p-3 border-2 border-primary/30 shadow-lg">
@@ -206,20 +206,57 @@ export const TemplatesStep6 = () => (
         <span className="text-sm font-semibold">Create New Template</span>
       </div>
       <MockTabs activeTab="Heading" />
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium">Heading Style</Label>
+      <div className="space-y-2">
+        <div>
+          <Label className="text-xs font-medium">Available Heading Styles</Label>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Select which heading styles are available for this template
+          </p>
+        </div>
+        {/* Checkbox grid matching real HeadingStyleSelector */}
+        <div className="grid grid-cols-2 gap-2">
           <HighlightRing className="w-full">
-            <div className="h-9 rounded-md border border-primary bg-background px-3 py-2 text-sm flex items-center justify-between">
-              <span>Wave Fold (2.2x)</span>
-              <Check className="h-4 w-4 text-primary" />
+            <div className="flex items-start gap-2 p-2 rounded-lg border border-primary bg-background">
+              <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-primary bg-primary flex items-center justify-center">
+                <Check className="h-2.5 w-2.5 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-medium">Wave Fold</span>
+                  <Badge className="text-[8px] h-3.5 bg-blue-100 text-blue-700">TWC</Badge>
+                </div>
+                <Badge variant="outline" className="text-[8px] h-3.5 mt-1">2.2x fullness</Badge>
+              </div>
             </div>
           </HighlightRing>
+          <div className="flex items-start gap-2 p-2 rounded-lg border border-border bg-background">
+            <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-muted-foreground/30" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-medium">S-Fold</span>
+              <div className="flex items-center gap-1 mt-1">
+                <Badge variant="outline" className="text-[8px] h-3.5">2.0x fullness</Badge>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 p-2 rounded-lg border border-border bg-background">
+            <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-primary bg-primary flex items-center justify-center">
+              <Check className="h-2.5 w-2.5 text-primary-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-medium">Pencil Pleat</span>
+              <Badge variant="outline" className="text-[8px] h-3.5 mt-1">2.5x fullness</Badge>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 p-2 rounded-lg border border-border bg-muted/30 opacity-60">
+            <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-muted-foreground/30" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-muted-foreground">Eyelet</span>
+            </div>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Fullness Ratio</Label>
-          <Input value="2.2" readOnly className="text-sm w-20 pointer-events-none" />
-        </div>
+        <p className="text-[9px] text-muted-foreground italic">
+          ⚠️ Heading styles must be created first in Products → Headings
+        </p>
       </div>
     </Card>
     <CrossReference label="Products → Headings" />
@@ -252,7 +289,7 @@ export const TemplatesStep7 = () => (
   </div>
 );
 
-// Step 8: Enable/disable options
+// Step 8: Enable/disable options (CORRECTED: Accordion with drag handles)
 export const TemplatesStep8 = () => (
   <div className="space-y-3">
     <Card className="p-3 border-2 border-primary/30 shadow-lg">
@@ -262,33 +299,78 @@ export const TemplatesStep8 = () => (
       </div>
       <MockTabs activeTab="Options" />
       <div className="space-y-2">
-        <p className="text-[10px] text-muted-foreground">Enable options for this template:</p>
+        <p className="text-[10px] text-muted-foreground">Drag to reorder, toggle to enable/disable:</p>
+        
+        {/* Accordion item - expanded */}
         <HighlightRing className="w-full">
-          <div className="flex items-center justify-between p-2 rounded-md border border-primary bg-background">
-            <div>
-              <span className="text-xs font-medium">Lining</span>
-              <p className="text-[10px] text-muted-foreground">Blockout, thermal</p>
+          <div className="rounded-lg border border-primary bg-background">
+            <div className="flex items-center justify-between px-2 py-2">
+              <div className="flex items-center gap-2">
+                <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
+                <span className="text-xs font-medium">Lining</span>
+                <Badge className="text-[8px] h-3.5 bg-blue-100 text-blue-700">TWC</Badge>
+                <Badge variant="secondary" className="text-[8px] h-3.5">4 visible</Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-muted-foreground">Enabled</span>
+                <Switch checked={true} className="pointer-events-none scale-75" />
+              </div>
             </div>
-            <Switch checked={true} className="pointer-events-none" />
+            {/* Expanded content - value visibility toggles */}
+            <div className="px-2 pb-2 pt-1 border-t border-border bg-muted/20">
+              <div className="flex items-center gap-1 mb-1.5">
+                <span className="text-[9px] text-muted-foreground">Click to show/hide values:</span>
+                <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1.5">
+                  <Eye className="h-2.5 w-2.5 mr-0.5" />
+                  Show All
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Badge variant="secondary" className="text-[8px] h-5 gap-1 cursor-pointer">
+                  <Eye className="h-2.5 w-2.5" />
+                  Standard Blockout
+                </Badge>
+                <Badge variant="secondary" className="text-[8px] h-5 gap-1 cursor-pointer">
+                  <Eye className="h-2.5 w-2.5" />
+                  Thermal
+                </Badge>
+                <Badge variant="outline" className="text-[8px] h-5 gap-1 cursor-pointer text-muted-foreground">
+                  <EyeOff className="h-2.5 w-2.5" />
+                  Unlined
+                </Badge>
+              </div>
+            </div>
           </div>
         </HighlightRing>
-        <div className="flex items-center justify-between p-2 rounded-md border border-border bg-background">
-          <div>
-            <span className="text-xs font-medium">Control Type</span>
-            <p className="text-[10px] text-muted-foreground">Cord, wand</p>
+
+        {/* Collapsed accordion items */}
+        <div className="rounded-lg border border-border bg-background">
+          <div className="flex items-center justify-between px-2 py-2">
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium">Control Type</span>
+              <Badge variant="secondary" className="text-[8px] h-3.5">3 visible</Badge>
+            </div>
+            <Switch checked={true} className="pointer-events-none scale-75" />
           </div>
-          <Switch checked={true} className="pointer-events-none" />
         </div>
-        <div className="flex items-center justify-between p-2 rounded-md border border-border bg-muted/30">
-          <span className="text-xs text-muted-foreground">Valance</span>
-          <Switch checked={false} className="pointer-events-none" />
+        
+        <div className="rounded-lg border border-border bg-muted/30">
+          <div className="flex items-center justify-between px-2 py-2">
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Valance</span>
+              <Badge variant="destructive" className="text-[8px] h-3.5">Disabled</Badge>
+            </div>
+            <Switch checked={false} className="pointer-events-none scale-75" />
+          </div>
         </div>
       </div>
     </Card>
   </div>
 );
 
-// Step 9: Set default option values
+// Step 9: Individual value visibility (CORRECTED: Eye/EyeOff toggles)
 export const TemplatesStep9 = () => (
   <div className="space-y-3">
     <Card className="p-3 border-2 border-primary/30 shadow-lg">
@@ -298,20 +380,40 @@ export const TemplatesStep9 = () => (
       </div>
       <MockTabs activeTab="Options" />
       <div className="space-y-2">
-        <p className="text-[10px] text-muted-foreground">Set default values:</p>
-        <div className="p-2 rounded-md border border-border bg-background space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium">Lining</span>
-            <Badge variant="secondary" className="text-[10px]">Enabled</Badge>
+        <div className="rounded-lg border border-border bg-background">
+          <div className="flex items-center justify-between px-2 py-2 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium">Lining</span>
+              <Badge variant="secondary" className="text-[8px] h-3.5">Enabled</Badge>
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Default Value</Label>
-            <HighlightRing className="w-full">
-              <div className="h-8 rounded-md border border-primary bg-background px-2 py-1.5 text-xs flex items-center justify-between">
-                <span>Standard Blockout</span>
-                <Check className="h-3 w-3 text-primary" />
-              </div>
-            </HighlightRing>
+          <div className="p-2 space-y-2">
+            <p className="text-[9px] text-muted-foreground">
+              Click individual values to show/hide for this template:
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <HighlightRing>
+                <Badge variant="secondary" className="text-[9px] h-6 gap-1.5 cursor-pointer hover:bg-secondary/80">
+                  <Eye className="h-3 w-3 text-green-600" />
+                  Standard Blockout
+                </Badge>
+              </HighlightRing>
+              <Badge variant="secondary" className="text-[9px] h-6 gap-1.5 cursor-pointer">
+                <Eye className="h-3 w-3 text-green-600" />
+                Thermal Lining
+              </Badge>
+              <Badge variant="outline" className="text-[9px] h-6 gap-1.5 cursor-pointer text-muted-foreground">
+                <EyeOff className="h-3 w-3" />
+                Premium Blackout
+              </Badge>
+              <Badge variant="outline" className="text-[9px] h-6 gap-1.5 cursor-pointer text-muted-foreground">
+                <EyeOff className="h-3 w-3" />
+                Unlined
+              </Badge>
+            </div>
+            <p className="text-[8px] text-muted-foreground italic pt-1">
+              Hidden values won't appear when quoting this product
+            </p>
           </div>
         </div>
       </div>
@@ -350,7 +452,7 @@ export const TemplatesStep10 = () => (
   </div>
 );
 
-// Step 11: Select pricing method
+// Step 11: Select pricing method (CORRECTED: Shows actual methods)
 export const TemplatesStep11 = () => (
   <div className="space-y-3">
     <Card className="p-3 border-2 border-primary/30 shadow-lg">
@@ -361,21 +463,31 @@ export const TemplatesStep11 = () => (
       <MockTabs activeTab="Pricing" />
       <div className="space-y-2">
         <Label className="text-xs font-medium">Pricing Method</Label>
-        <RadioGroup defaultValue="grid" className="space-y-1.5">
-          <HighlightRing className="w-full">
-            <div className="flex items-center space-x-2 p-2 rounded-md border border-primary bg-background">
-              <RadioGroupItem value="grid" id="grid" checked className="pointer-events-none" />
-              <div>
-                <Label htmlFor="grid" className="text-xs font-medium">Pricing Grid</Label>
-                <p className="text-[10px] text-muted-foreground">Width × drop matrix</p>
-              </div>
-            </div>
-          </HighlightRing>
-          <div className="flex items-center space-x-2 p-2 rounded-md border border-border bg-background">
-            <RadioGroupItem value="sqm" id="sqm" className="pointer-events-none" />
-            <Label htmlFor="sqm" className="text-xs">Per Square Meter</Label>
+        <HighlightRing className="w-full">
+          <Select defaultValue="pricing_grid">
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Select method..." />
+            </SelectTrigger>
+          </Select>
+        </HighlightRing>
+        <div className="grid grid-cols-2 gap-1.5 text-[9px] text-muted-foreground">
+          <div className="p-1.5 rounded border border-border bg-muted/30">
+            <span className="font-medium">Per Running Metre</span>
+            <p className="text-[8px]">Price per linear metre of fabric</p>
           </div>
-        </RadioGroup>
+          <div className="p-1.5 rounded border border-border bg-muted/30">
+            <span className="font-medium">Per Panel</span>
+            <p className="text-[8px]">Fixed price per curtain panel</p>
+          </div>
+          <div className="p-1.5 rounded border border-primary/50 bg-primary/5">
+            <span className="font-medium text-primary">Pricing Grid</span>
+            <p className="text-[8px]">Width × drop matrix lookup</p>
+          </div>
+          <div className="p-1.5 rounded border border-border bg-muted/30">
+            <span className="font-medium">Per m²</span>
+            <p className="text-[8px]">Square meter calculation</p>
+          </div>
+        </div>
       </div>
     </Card>
   </div>
@@ -587,7 +699,7 @@ export const TemplatesStep17 = () => (
   </div>
 );
 
-// Step 18: Create a rule
+// Step 18: Create a rule (CORRECTED: Matches real OptionRulesManager UI)
 export const TemplatesStep18 = () => (
   <div className="space-y-3">
     <Card className="p-3 border-2 border-primary/30 shadow-lg">
@@ -604,20 +716,42 @@ export const TemplatesStep18 = () => (
             Add Rule
           </Button>
         </div>
+        
+        {/* Rule card matching real OptionRulesManager */}
         <HighlightRing className="w-full">
-          <div className="p-2 rounded-md border border-primary bg-muted/30 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[10px]">
-              <Badge variant="outline" className="text-[10px] h-4">IF</Badge>
-              <span>Width &gt; 3000mm</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px]">
-              <Badge variant="secondary" className="text-[10px] h-4">THEN</Badge>
-              <span>Require: Motorized</span>
+          <div className="p-2 rounded-lg border border-primary bg-background">
+            <div className="flex items-start gap-2">
+              <div className="p-1.5 rounded bg-muted shrink-0">
+                <Eye className="h-3 w-3 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-medium">Show Motor Brand when motorized</p>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  <Badge variant="outline" className="text-[8px] h-4">
+                    When: Control Type
+                  </Badge>
+                  <Badge variant="outline" className="text-[8px] h-4">
+                    equals: Motorized
+                  </Badge>
+                  <Badge variant="secondary" className="text-[8px] h-4">
+                    Show: Motor Brand
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-5 w-5 pointer-events-none">
+                  <Edit className="h-2.5 w-2.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive pointer-events-none">
+                  <Trash2 className="h-2.5 w-2.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </HighlightRing>
-        <p className="text-[10px] text-muted-foreground">
-          Rules enforce business logic when quoting
+        
+        <p className="text-[9px] text-muted-foreground italic">
+          Actions: Show/Hide option, Require option, Set default, Filter values
         </p>
       </div>
     </Card>
