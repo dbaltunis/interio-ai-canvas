@@ -1,4 +1,3 @@
-
 import {
   Pagination,
   PaginationContent,
@@ -8,12 +7,21 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface JobsPaginationProps {
   currentPage: number;
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  itemsPerPageOptions?: number[];
 }
 
 // Smart pagination: shows first, last, current ±1, with ellipsis for gaps
@@ -57,14 +65,17 @@ export const JobsPagination = ({
   currentPage, 
   totalItems, 
   itemsPerPage, 
-  onPageChange 
+  onPageChange,
+  onItemsPerPageChange,
+  itemsPerPageOptions = [20, 50, 100]
 }: JobsPaginationProps) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
-  if (totalPages <= 1) return null;
+  // Show items per page selector even if only 1 page
+  if (totalPages <= 1 && !onItemsPerPageChange) return null;
 
   // Ensure currentPage is valid
-  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const safePage = Math.max(1, Math.min(currentPage, totalPages || 1));
   const pageNumbers = getPageNumbers(safePage, totalPages);
 
   const handlePageChange = (page: number) => {
@@ -74,48 +85,72 @@ export const JobsPagination = ({
     }
   };
 
-  const startItem = ((safePage - 1) * itemsPerPage) + 1;
+  const startItem = totalItems === 0 ? 0 : ((safePage - 1) * itemsPerPage) + 1;
   const endItem = Math.min(safePage * itemsPerPage, totalItems);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-2 py-4">
-      <div className="text-sm text-muted-foreground">
-        Showing {startItem} to {endItem} of {totalItems} items
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <span>Showing {startItem} to {endItem} of {totalItems} items</span>
+        
+        {/* Items per page selector */}
+        {onItemsPerPageChange && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs">Show:</span>
+            <Select
+              value={String(itemsPerPage)}
+              onValueChange={(value) => onItemsPerPageChange(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {itemsPerPageOptions.map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
-      <Pagination>
-        <PaginationContent className="flex-wrap justify-center">
-          <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => handlePageChange(safePage - 1)}
-              className={safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-          
-          {pageNumbers.map((page, index) => (
-            <PaginationItem key={`${page}-${index}`}>
-              {page === 'ellipsis' ? (
-                <PaginationEllipsis className="hidden sm:flex" />
-              ) : (
-                <PaginationLink
-                  onClick={() => handlePageChange(page)}
-                  isActive={safePage === page}
-                  className="cursor-pointer"
-                >
-                  {page}
-                </PaginationLink>
-              )}
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent className="flex-wrap justify-center">
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => handlePageChange(safePage - 1)}
+                className={safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
             </PaginationItem>
-          ))}
-          
-          <PaginationItem>
-            <PaginationNext 
-              onClick={() => handlePageChange(safePage + 1)}
-              className={safePage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+            
+            {pageNumbers.map((page, index) => (
+              <PaginationItem key={`${page}-${index}`}>
+                {page === 'ellipsis' ? (
+                  <PaginationEllipsis className="hidden sm:flex" />
+                ) : (
+                  <PaginationLink
+                    onClick={() => handlePageChange(page)}
+                    isActive={safePage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                )}
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => handlePageChange(safePage + 1)}
+                className={safePage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };

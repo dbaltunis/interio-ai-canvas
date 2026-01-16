@@ -1,8 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Download, Tag, Trash2, X, UserCheck } from "lucide-react";
+import { Mail, Download, Trash2, X, UserCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SelectedClient } from "@/hooks/useClientSelection";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -10,6 +21,9 @@ interface BulkActionsBarProps {
   onStartCampaign: () => void;
   onExport: () => void;
   onClearSelection: () => void;
+  onDelete?: () => void;
+  canDelete?: boolean;
+  isDeleting?: boolean;
 }
 
 export const BulkActionsBar = ({
@@ -18,7 +32,17 @@ export const BulkActionsBar = ({
   onStartCampaign,
   onExport,
   onClearSelection,
+  onDelete,
+  canDelete = false,
+  isDeleting = false,
 }: BulkActionsBarProps) => {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleConfirmDelete = () => {
+    onDelete?.();
+    setDeleteDialogOpen(false);
+  };
+
   return (
     <AnimatePresence>
       {selectedCount > 0 && (
@@ -27,7 +51,7 @@ export const BulkActionsBar = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50"
         >
           <div className="bg-background border border-border shadow-lg rounded-lg px-4 py-3 flex items-center gap-4">
             {/* Selection Count */}
@@ -65,6 +89,45 @@ export const BulkActionsBar = ({
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+
+              {/* Delete Button */}
+              {canDelete && onDelete && (
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedCount} Client{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <p>
+                          Are you sure you want to delete <strong>{selectedCount}</strong> selected client{selectedCount > 1 ? 's' : ''}?
+                        </p>
+                        <p className="text-destructive font-medium">
+                          This action cannot be undone. All associated data will be permanently deleted.
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleConfirmDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : `Delete ${selectedCount} Client${selectedCount > 1 ? 's' : ''}`}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
 
             <div className="h-6 w-px bg-border" />

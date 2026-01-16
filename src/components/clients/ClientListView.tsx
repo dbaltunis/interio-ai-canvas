@@ -520,6 +520,20 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
         onStartCampaign={() => setShowCampaignWizard(true)}
         onExport={handleExportSelected}
         onClearSelection={clearSelection}
+        onDelete={() => {
+          // Bulk delete all selected clients
+          const clientIds = selectedClients.map(c => c.id);
+          clientIds.forEach(id => {
+            deleteClient.mutate(id);
+          });
+          clearSelection();
+          toast({
+            title: `Deleted ${clientIds.length} client${clientIds.length > 1 ? 's' : ''}`,
+            variant: "success",
+          });
+        }}
+        canDelete={canDeleteClients}
+        isDeleting={deleteClient.isPending}
       />
 
       {/* Campaign Wizard */}
