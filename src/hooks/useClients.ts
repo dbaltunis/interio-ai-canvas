@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { formatMutationError, getErrorTitle } from "@/utils/errorMessages";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Client = Tables<"clients">;
@@ -227,7 +228,7 @@ export const useDeleteClient = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, name }: { id: string; name?: string }) => {
       // First, update all projects that reference this client to remove the client reference
       const { error: projectUpdateError } = await supabase
         .from("projects")
@@ -296,20 +297,25 @@ export const useDeleteClient = () => {
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        // Throw error with context for better error messages
+        const enhancedError = new Error(formatMutationError('delete', 'client', name, error));
+        (enhancedError as any).originalError = error;
+        throw enhancedError;
+      }
+      return { ...data, deletedName: name };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log("Client deletion successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       console.log("Queries invalidated, deletion complete");
-      // Removed unnecessary success toast
+      // Success toast is now handled in the component for better context
     },
     onError: (error: any) => {
       console.error("Failed to delete client:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete client. Please try again.",
+        title: getErrorTitle(error),
+        description: error.message || "Failed to delete client. Please try again.",
         variant: "destructive"
       });
     },
