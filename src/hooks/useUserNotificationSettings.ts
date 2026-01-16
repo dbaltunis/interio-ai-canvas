@@ -7,6 +7,8 @@ export interface UserNotificationSettings {
   user_id: string;
   email_notifications_enabled: boolean;
   sms_notifications_enabled: boolean;
+  desktop_notifications_enabled: boolean;
+  appointment_reminders_enabled: boolean;
   email_service_provider: 'sendgrid' | 'resend' | 'mailgun';
   email_api_key_encrypted?: string;
   email_from_address?: string;

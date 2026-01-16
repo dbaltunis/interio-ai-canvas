@@ -26,8 +26,8 @@ export const NotificationSettingsCard = () => {
     if (settings) {
       setEmailEnabled(settings.email_notifications_enabled ?? true);
       setSmsEnabled(settings.sms_notifications_enabled ?? false);
-      setDesktopEnabled((settings as any).desktop_notifications_enabled ?? false);
-      setRemindersEnabled((settings as any).appointment_reminders_enabled ?? true);
+      setDesktopEnabled(settings.desktop_notifications_enabled ?? false);
+      setRemindersEnabled(settings.appointment_reminders_enabled ?? true);
     }
   }, [settings]);
 
