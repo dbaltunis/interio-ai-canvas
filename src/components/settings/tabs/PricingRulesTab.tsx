@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { Shield } from "lucide-react";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -137,6 +138,15 @@ export const PricingRulesTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Pricing & Tax</h3>
+          <p className="text-sm text-muted-foreground">Configure pricing grids, markup, and tax settings</p>
+        </div>
+        <SectionHelpButton sectionId="pricing" />
+      </div>
+
       <SettingsInheritanceInfo 
         settingsType="pricing and markup" 
         isInheriting={isInheritingSettings}

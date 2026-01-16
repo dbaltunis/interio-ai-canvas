@@ -12,7 +12,6 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { Layers, Settings, Sliders, Truck, Lock } from "lucide-react";
 
 interface CreateTemplateData {
@@ -120,9 +119,8 @@ export const WindowCoveringsTab = ({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Window Coverings Management</CardTitle>
-          <SectionHelpButton sectionId="products-templates" />
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

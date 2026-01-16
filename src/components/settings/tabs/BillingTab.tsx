@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const BillingTab = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
@@ -106,6 +107,15 @@ export const BillingTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Billing & Subscription</h3>
+          <p className="text-sm text-muted-foreground">Manage your plan and payment details</p>
+        </div>
+        <SectionHelpButton sectionId="billing" />
+      </div>
+
       {/* Current Subscription */}
       <Card>
         <CardHeader>
