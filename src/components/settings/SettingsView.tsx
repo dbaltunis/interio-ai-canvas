@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Users, FileText, Globe, Bell, User, Building2, Calculator, MessageCircle, CreditCard } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { SettingsGroupedNavigation } from "./SettingsGroupedNavigation";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -305,94 +305,25 @@ export const SettingsView = () => {
 
   return <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-transparent border-b border-border h-auto flex flex-wrap gap-1 justify-start pb-0 rounded-none">
-          <TabsTrigger 
-            value="personal" 
-            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            disabled={!canViewProfile && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canViewProfile && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view profile" : undefined}
-          >
-            <User className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Personal</span>
-          </TabsTrigger>
-          
-          {canViewBilling && <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-            <CreditCard className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Billing</span>
-          </TabsTrigger>}
-          
-          <TabsTrigger 
-            value="business" 
-            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            disabled={!canManageBusinessSettings && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canManageBusinessSettings && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to manage business settings" : undefined}
-          >
-            <Building2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Business</span>
-          </TabsTrigger>
-
-          
-          {canViewSettingsForTabs && <TabsTrigger value="units" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              <Ruler className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Units</span>
-            </TabsTrigger>}
-          
-          <TabsTrigger 
-            value="window-coverings" 
-            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            disabled={!canViewWindowTreatmentsForTabs && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canViewWindowTreatmentsForTabs && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view products & templates" : undefined}
-          >
-            <Package className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Products</span>
-          </TabsTrigger>
-          
-          {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              <Calculator className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Pricing</span>
-            </TabsTrigger>}
-          
-          {(canManageTeam || canViewTeamMembers) && <TabsTrigger 
-            value="users" 
-            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            disabled={!canViewTeamMembers && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canViewTeamMembers && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view team members" : undefined}
-          >
-            <Users className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Team</span>
-          </TabsTrigger>}
-          
-          {canViewSettingsForTabs && <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Documents</span>
-            </TabsTrigger>}
-          
-          
-          {canViewSettingsForTabs && <TabsTrigger value="system" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              <Globe className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">System</span>
-            </TabsTrigger>}
-          
-          {canViewSettingsForTabs && <TabsTrigger value="communications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              <MessageCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Communications</span>
-            </TabsTrigger>}
-          
-          {canViewNotifications && <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-            <Bell className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>}
-          
-          <TabsTrigger 
-            value="integrations" 
-            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            disabled={!canManageIntegrations && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canManageIntegrations && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to manage integrations" : undefined}
-          >
-            <Zap className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Integrations</span>
-          </TabsTrigger>
-        </TabsList>
+        <SettingsGroupedNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          permissions={{
+            canViewProfile,
+            canViewBilling,
+            canManageBusinessSettings,
+            canViewSettingsForTabs,
+            canViewWindowTreatmentsForTabs,
+            canManageMarkup,
+            canViewTeamMembers,
+            canManageTeam,
+            canViewNotifications,
+            canManageIntegrations,
+            permissionsLoading,
+            roleLoading,
+            explicitPermissionsLoaded: explicitPermissions !== undefined,
+          }}
+        />
 
         {canViewProfile && (
           <TabsContent value="personal" className="animate-fade-in">
