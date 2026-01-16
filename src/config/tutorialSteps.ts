@@ -56,6 +56,38 @@ import {
   SuppliersStep6,
   SuppliersStep7,
 } from "@/components/help/tutorial-steps/SuppliersSteps";
+import {
+  PersonalStep1,
+  PersonalStep2,
+  PersonalStep3,
+  PersonalStep4,
+  PersonalStep5,
+  PersonalStep6,
+} from "@/components/help/tutorial-steps/PersonalSteps";
+import {
+  BusinessStep1,
+  BusinessStep2,
+  BusinessStep3,
+  BusinessStep4,
+  BusinessStep5,
+  BusinessStep6,
+  BusinessStep7,
+} from "@/components/help/tutorial-steps/BusinessSteps";
+import {
+  UnitsStep1,
+  UnitsStep2,
+  UnitsStep3,
+  UnitsStep4,
+  UnitsStep5,
+} from "@/components/help/tutorial-steps/UnitsSteps";
+import {
+  PricingStep1,
+  PricingStep2,
+  PricingStep3,
+  PricingStep4,
+  PricingStep5,
+  PricingStep6,
+} from "@/components/help/tutorial-steps/PricingSteps";
 
 export interface TutorialStep {
   title: string;
@@ -424,6 +456,190 @@ export const defaultsTutorial: Tutorial = {
 };
 
 // ===========================================
+// PERSONAL SETTINGS TUTORIAL (6 Steps)
+// ===========================================
+export const personalTutorial: Tutorial = {
+  id: "settings-personal",
+  steps: [
+    {
+      title: "Upload your profile picture",
+      actionLabel: "Upload Photo",
+      description: "Add a profile photo that appears on documents and in team views. Click the camera icon to upload.",
+      Visual: PersonalStep1,
+    },
+    {
+      title: "Enter your details",
+      actionLabel: "Fill Form",
+      description: "Enter your full name, email, and phone number. These details appear on quotes and client communications.",
+      Visual: PersonalStep2,
+    },
+    {
+      title: "Set your timezone",
+      actionLabel: "Select Zone",
+      description: "Choose your timezone for accurate appointment scheduling and date/time displays throughout the app.",
+      Visual: PersonalStep3,
+    },
+    {
+      title: "Configure notifications",
+      actionLabel: "Toggle Settings",
+      description: "Choose how you want to receive alerts: email, SMS, push notifications, or any combination.",
+      Visual: PersonalStep4,
+    },
+    {
+      title: "Change password (optional)",
+      actionLabel: "Update Security",
+      description: "Update your password for enhanced security. Use a strong password with mixed characters.",
+      Visual: PersonalStep5,
+    },
+    {
+      title: "Save your profile",
+      actionLabel: "Save",
+      description: "Click save to apply all changes. Your profile is now complete and ready to use.",
+      Visual: PersonalStep6,
+    },
+  ],
+};
+
+// ===========================================
+// BUSINESS SETTINGS TUTORIAL (7 Steps)
+// ===========================================
+export const businessTutorial: Tutorial = {
+  id: "settings-business",
+  steps: [
+    {
+      title: "Upload your company logo",
+      actionLabel: "Upload Logo",
+      description: "Your logo appears on quotes, invoices, and client communications. Use a high-quality PNG with transparent background.",
+      Visual: BusinessStep1,
+    },
+    {
+      title: "Enter company details",
+      actionLabel: "Fill Details",
+      description: "Add your company name, trading name, address, and contact information for professional documents.",
+      Visual: BusinessStep2,
+    },
+    {
+      title: "Add tax registration",
+      actionLabel: "Enter Tax Info",
+      description: "Enter your ABN, VAT, or GST registration number. Required for generating valid tax invoices.",
+      Visual: BusinessStep3,
+    },
+    {
+      title: "Set currency and region",
+      actionLabel: "Configure Region",
+      description: "Select your country and preferred currency. This affects formatting throughout the application.",
+      Visual: BusinessStep4,
+      relatedSection: "settings-units",
+      prerequisiteNote: "Fine-tune units in Settings → Units",
+    },
+    {
+      title: "Add bank details",
+      actionLabel: "Enter Banking",
+      description: "Your bank details appear on invoices so clients know where to send payments.",
+      Visual: BusinessStep5,
+    },
+    {
+      title: "Preview on documents",
+      actionLabel: "Preview",
+      description: "See how your logo, company name, and details will appear on quotes and invoices.",
+      Visual: BusinessStep6,
+    },
+    {
+      title: "Save business settings",
+      actionLabel: "Save",
+      description: "Click save to apply. All new documents will use these business details automatically.",
+      Visual: BusinessStep7,
+    },
+  ],
+};
+
+// ===========================================
+// UNITS SETTINGS TUTORIAL (5 Steps)
+// ===========================================
+export const unitsTutorial: Tutorial = {
+  id: "settings-units",
+  steps: [
+    {
+      title: "Choose measurement system",
+      actionLabel: "Select System",
+      description: "Pick Metric (cm, m), Imperial (inches, feet), or Mixed for custom unit combinations.",
+      Visual: UnitsStep1,
+    },
+    {
+      title: "Configure length units",
+      actionLabel: "Set Units",
+      description: "Choose your primary length unit for measurements. This affects how dimensions are displayed.",
+      Visual: UnitsStep2,
+    },
+    {
+      title: "Set area and fabric units",
+      actionLabel: "Configure",
+      description: "Choose units for area calculations and fabric measurements (linear meters, yards, etc.).",
+      Visual: UnitsStep3,
+    },
+    {
+      title: "Select currency",
+      actionLabel: "Choose Currency",
+      description: "Set your preferred currency for all pricing. Symbol and formatting update automatically.",
+      Visual: UnitsStep4,
+    },
+    {
+      title: "Preview and save",
+      actionLabel: "Save",
+      description: "Review example values with your chosen units. Save to apply across all quotes and documents.",
+      Visual: UnitsStep5,
+    },
+  ],
+};
+
+// ===========================================
+// PRICING SETTINGS TUTORIAL (6 Steps)
+// ===========================================
+export const pricingTutorial: Tutorial = {
+  id: "settings-pricing",
+  steps: [
+    {
+      title: "Set default markup",
+      actionLabel: "Enter %",
+      description: "Define your standard profit margin. This applies to all products unless overridden at category level.",
+      Visual: PricingStep1,
+    },
+    {
+      title: "Configure category markups",
+      actionLabel: "Set Categories",
+      description: "Override the default markup for specific product categories like Curtains, Blinds, or Hardware.",
+      Visual: PricingStep2,
+    },
+    {
+      title: "Upload pricing grids",
+      actionLabel: "Upload",
+      description: "Import width × drop pricing matrices from CSV or Excel files for quick template setup.",
+      Visual: PricingStep3,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Assign grids in Templates → Pricing tab",
+    },
+    {
+      title: "Set tax type",
+      actionLabel: "Configure Tax",
+      description: "Choose your tax type (GST, VAT, Sales Tax) and enter the rate for accurate invoicing.",
+      Visual: PricingStep4,
+    },
+    {
+      title: "Choose tax display",
+      actionLabel: "Toggle Display",
+      description: "Decide whether prices shown to clients include or exclude tax, and whether to show tax breakdown.",
+      Visual: PricingStep5,
+    },
+    {
+      title: "Save pricing rules",
+      actionLabel: "Save",
+      description: "Your pricing configuration is now active. All new quotes will use these rules automatically.",
+      Visual: PricingStep6,
+    },
+  ],
+};
+
+// ===========================================
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
@@ -432,4 +648,8 @@ export const tutorialMap: Record<string, Tutorial> = {
   "products-headings": headingsTutorial,
   "products-options": optionsTutorial,
   "products-defaults": defaultsTutorial,
+  "settings-personal": personalTutorial,
+  "settings-business": businessTutorial,
+  "settings-units": unitsTutorial,
+  "settings-pricing": pricingTutorial,
 };
