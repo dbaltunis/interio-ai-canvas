@@ -51,7 +51,7 @@ export const BulkActionsBar = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-fit mx-auto"
+          className="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-fit mx-auto"
         >
           <div className="bg-background border border-border shadow-lg rounded-lg px-3 py-2.5 flex flex-wrap items-center justify-center gap-2 sm:gap-3 sm:px-4 sm:py-3">
             {/* Selection Count */}
