@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ComponentType } from "react";
 import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,22 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { sectionHelpContent, SectionHelpContent } from "@/config/sectionHelp";
+import { 
+  TemplatesDemoScene,
+  SuppliersDemoScene,
+  HeadingsDemoScene,
+  OptionsDemoScene,
+  DefaultsDemoScene 
+} from "./demos";
+
+// Map section IDs to their demo scene components
+const demoSceneMap: Record<string, ComponentType> = {
+  'products-templates': TemplatesDemoScene,
+  'products-suppliers': SuppliersDemoScene,
+  'products-headings': HeadingsDemoScene,
+  'products-options': OptionsDemoScene,
+  'products-defaults': DefaultsDemoScene,
+};
 
 interface SectionHelpButtonProps {
   sectionId: string;
@@ -54,14 +70,21 @@ export const SectionHelpButton = ({
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
-          {/* Animated Demo Placeholder - Ready for future content */}
+          {/* Animated Demo */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground">Quick Guide</h4>
-            <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
-              <div className="text-muted-foreground text-sm">
-                Animated tutorial coming soon
+            {demoSceneMap[sectionId] ? (
+              (() => {
+                const DemoComponent = demoSceneMap[sectionId];
+                return <DemoComponent />;
+              })()
+            ) : (
+              <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
+                <div className="text-muted-foreground text-sm">
+                  Demo coming soon
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
           {/* Key Points */}
