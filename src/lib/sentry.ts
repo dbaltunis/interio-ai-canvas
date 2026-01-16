@@ -7,14 +7,7 @@ let isInitialized = false;
  * Call this once at app startup after React is ready
  */
 export const initSentry = async () => {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
-  
-  if (!dsn) {
-    if (import.meta.env.MODE === 'production') {
-      console.warn('[Sentry] No DSN configured - error tracking disabled');
-    }
-    return;
-  }
+  const dsn = 'https://23fc4fece9363a2c541ef51b7d807ce9@o4510719264030720.ingest.de.sentry.io/4510719267504208';
 
   try {
     // Dynamic import to avoid loading Sentry before React is ready
