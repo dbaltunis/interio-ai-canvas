@@ -38,6 +38,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { setTheme } = useTheme();
   const queryClient = useQueryClient();
 
+  // Apply cached accent theme immediately for fast visual feedback
+  useEffect(() => {
+    const cachedAccent = localStorage.getItem('accent-theme');
+    const validThemes = ['brand', 'winter', 'spring', 'summer', 'autumn'];
+    if (cachedAccent && validThemes.includes(cachedAccent)) {
+      document.documentElement.setAttribute('data-accent', cachedAccent);
+    } else {
+      document.documentElement.setAttribute('data-accent', 'brand');
+    }
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -74,33 +85,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const currentPath = window.location.pathname;
           const isAuthPage = currentPath === '/auth' || currentPath === '/reset-password';
           
-          try {
-            // Load theme from user profile or use saved theme
-            if (session?.user?.id) {
-              (async () => {
-                try {
-                  const { data: profile } = await supabase
-                    .from('user_profiles')
-                    .select('theme_preference')
-                    .eq('user_id', session.user.id)
-                    .single();
+            try {
+              // Load theme from user profile or use saved theme
+              if (session?.user?.id) {
+                (async () => {
+                  try {
+                    const { data: profile } = await supabase
+                      .from('user_profiles')
+                      .select('theme_preference, accent_theme')
+                      .eq('user_id', session.user.id)
+                      .single();
                   
-                  if (profile?.theme_preference) {
-                    setTheme(profile.theme_preference);
-                  } else if (!localStorage.getItem('theme')) {
-                    setTheme('light');
+                    // Apply dark/light theme
+                    if (profile?.theme_preference) {
+                      setTheme(profile.theme_preference);
+                    } else if (!localStorage.getItem('theme')) {
+                      setTheme('light');
+                    }
+                    
+                    // Apply accent color theme
+                    if (profile?.accent_theme) {
+                      document.documentElement.setAttribute('data-accent', profile.accent_theme);
+                      localStorage.setItem('accent-theme', profile.accent_theme);
+                    } else {
+                      document.documentElement.setAttribute('data-accent', 'brand');
+                    }
+                  } catch (e) {
+                    console.warn('Failed to load theme preferences:', e);
+                    if (!localStorage.getItem('theme')) {
+                      setTheme('light');
+                    }
+                    document.documentElement.setAttribute('data-accent', 'brand');
                   }
-                } catch (e) {
-                  console.warn('Failed to load theme preference:', e);
-                  if (!localStorage.getItem('theme')) {
-                    setTheme('light');
-                  }
-                }
-              })();
-            } else if (!localStorage.getItem('theme')) {
-              setTheme('light');
-            }
-          } catch {}
+                })();
+              } else if (!localStorage.getItem('theme')) {
+                setTheme('light');
+              }
+            } catch {}
           // Defer non-critical operations to avoid blocking initial render
           setTimeout(() => {
             try {
