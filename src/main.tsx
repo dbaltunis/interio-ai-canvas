@@ -1,9 +1,12 @@
 import { createRoot } from 'react-dom/client'
-import { initSentry } from './lib/sentry'
 import App from './App.tsx'
 import './index.css'
 
-// Initialize Sentry before rendering for early error capture
-initSentry();
+// Render app first, then initialize Sentry after React is ready
+const root = createRoot(document.getElementById("root")!);
+root.render(<App />);
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Initialize Sentry after React is mounted (async, non-blocking)
+import('./lib/sentry').then(({ initSentry }) => {
+  initSentry();
+});
