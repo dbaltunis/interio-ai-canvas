@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { FileText, User, Building, Package, DollarSign, Calendar } from "lucide-react";
+import { FileText, User, Building, Package, DollarSign, Calendar, Shield } from "lucide-react";
 
 interface PlaceholderPanelProps {
   onInsertPlaceholder: (placeholder: string) => void;
@@ -63,6 +63,15 @@ const placeholderGroups = [
     items: [
       { token: "{{today}}", label: "Today's Date" },
       { token: "{{time}}", label: "Current Time" },
+    ]
+  },
+  {
+    title: "Legal",
+    icon: Shield,
+    color: "text-slate-500",
+    items: [
+      { token: "{{system_terms}}", label: "Terms & Conditions" },
+      { token: "{{privacy_policy}}", label: "Privacy Policy" },
     ]
   },
 ];

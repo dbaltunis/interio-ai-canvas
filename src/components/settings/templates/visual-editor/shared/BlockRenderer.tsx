@@ -755,10 +755,12 @@ export const ClientInfoBlock: React.FC<BlockRendererProps> = ({
 
 // ============= TERMS AND CONDITIONS BLOCK =============
 export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
-  block
+  block,
+  projectData
 }) => {
   const content = block.content || {};
   const style = block.style || {};
+  const businessSettings = projectData?.businessSettings || {};
 
   // Support both new array format and legacy term1-4 format
   const getTermsToRender = (): string[] => {
@@ -792,13 +794,14 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
           termsToRender.map((term, index) => (
             <p key={index}>{term}</p>
           ))
+        ) : businessSettings?.general_terms_and_conditions ? (
+          <div className="whitespace-pre-wrap">
+            {businessSettings.general_terms_and_conditions}
+          </div>
         ) : (
-          <>
-            <p>1. Payment Terms: 50% deposit required upon acceptance. Remaining balance due upon completion.</p>
-            <p>2. Timeline: Project completion estimated at 2-3 weeks from deposit receipt.</p>
-            <p>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</p>
-            <p>4. Cancellation: This quote is valid for 30 days.</p>
-          </>
+          <p className="text-muted-foreground italic">
+            No terms configured. Add them in Settings → System → Terms & Conditions.
+          </p>
         )}
       </div>
     </div>

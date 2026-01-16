@@ -153,7 +153,7 @@ export const SystemSettingsTab = () => {
           <Button 
             variant="outline" 
             className="w-full"
-            onClick={() => navigate('/settings', { state: { tab: 'communications' } })}
+            onClick={() => navigate('/settings?tab=communications')}
           >
             <Mail className="h-4 w-4 mr-2" />
             Go to Email Templates
