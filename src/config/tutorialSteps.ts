@@ -456,186 +456,82 @@ export const defaultsTutorial: Tutorial = {
 };
 
 // ===========================================
-// PERSONAL SETTINGS TUTORIAL (6 Steps)
+// PERSONAL SETTINGS TUTORIAL (10 Steps)
 // ===========================================
 export const personalTutorial: Tutorial = {
   id: "personal",
   steps: [
-    {
-      title: "Upload your profile picture",
-      actionLabel: "Upload Photo",
-      description: "Add a profile photo that appears on documents and in team views. Click the camera icon to upload.",
-      Visual: PersonalStep1,
-    },
-    {
-      title: "Enter your details",
-      actionLabel: "Fill Form",
-      description: "Enter your full name, email, and phone number. These details appear on quotes and client communications.",
-      Visual: PersonalStep2,
-    },
-    {
-      title: "Set your timezone",
-      actionLabel: "Select Zone",
-      description: "Choose your timezone for accurate appointment scheduling and date/time displays throughout the app.",
-      Visual: PersonalStep3,
-    },
-    {
-      title: "Configure notifications",
-      actionLabel: "Toggle Settings",
-      description: "Choose how you want to receive alerts: email, SMS, push notifications, or any combination.",
-      Visual: PersonalStep4,
-    },
-    {
-      title: "Change password (optional)",
-      actionLabel: "Update Security",
-      description: "Update your password for enhanced security. Use a strong password with mixed characters.",
-      Visual: PersonalStep5,
-    },
-    {
-      title: "Save your profile",
-      actionLabel: "Save",
-      description: "Click save to apply all changes. Your profile is now complete and ready to use.",
-      Visual: PersonalStep6,
-    },
+    { title: "Upload your profile picture", actionLabel: "Upload Photo", description: "Add a profile photo that appears on documents and in team views. Click the camera icon to upload.", Visual: PersonalStep1 },
+    { title: "Enter your profile details", actionLabel: "Fill Form", description: "Enter your first name, last name, display name, and phone number. These appear on quotes and communications.", Visual: PersonalStep2 },
+    { title: "Change email address", actionLabel: "Update Email", description: "Your current email is shown. Click 'Change Email' to update it - a verification email will be sent.", Visual: PersonalStep3 },
+    { title: "Configure notifications", actionLabel: "Toggle Settings", description: "Enable email and SMS notifications. Use the test buttons to verify they work correctly.", Visual: PersonalStep4 },
+    { title: "Update your password", actionLabel: "Change Password", description: "Enter your current password, then set a new one. Both new password fields must match.", Visual: PersonalStep5 },
+    { title: "Password security", actionLabel: "Check Strength", description: "Passwords must be at least 6 characters. A strength indicator shows how secure your password is.", Visual: PersonalStep6 },
+    { title: "Select date format", actionLabel: "Choose Format", description: "Choose how dates are displayed: MM/DD/YYYY (US), DD/MM/YYYY (UK/AU), YYYY-MM-DD (ISO), or DD-MMM-YYYY.", Visual: PersonalStep7 },
+    { title: "Set your timezone", actionLabel: "Select Timezone", description: "Choose your timezone for accurate appointment scheduling and notification timing.", Visual: PersonalStep8 },
+    { title: "Language settings", actionLabel: "View Options", description: "Currently English is the default language. Additional languages are coming soon.", Visual: PersonalStep9 },
+    { title: "Save your profile", actionLabel: "Save", description: "Review your settings preview and click Save Profile to apply all changes.", Visual: PersonalStep10 },
   ],
 };
 
 // ===========================================
-// BUSINESS SETTINGS TUTORIAL (7 Steps)
+// BUSINESS SETTINGS TUTORIAL (16 Steps)
 // ===========================================
 export const businessTutorial: Tutorial = {
   id: "business",
   steps: [
-    {
-      title: "Upload your company logo",
-      actionLabel: "Upload Logo",
-      description: "Your logo appears on quotes, invoices, and client communications. Use a high-quality PNG with transparent background.",
-      Visual: BusinessStep1,
-    },
-    {
-      title: "Enter company details",
-      actionLabel: "Fill Details",
-      description: "Add your company name, trading name, address, and contact information for professional documents.",
-      Visual: BusinessStep2,
-    },
-    {
-      title: "Add tax registration",
-      actionLabel: "Enter Tax Info",
-      description: "Enter your ABN, VAT, or GST registration number. Required for generating valid tax invoices.",
-      Visual: BusinessStep3,
-    },
-    {
-      title: "Set currency and region",
-      actionLabel: "Configure Region",
-      description: "Select your country and preferred currency. This affects formatting throughout the application.",
-      Visual: BusinessStep4,
-      relatedSection: "settings-units",
-      prerequisiteNote: "Fine-tune units in Settings → Units",
-    },
-    {
-      title: "Add bank details",
-      actionLabel: "Enter Banking",
-      description: "Your bank details appear on invoices so clients know where to send payments.",
-      Visual: BusinessStep5,
-    },
-    {
-      title: "Preview on documents",
-      actionLabel: "Preview",
-      description: "See how your logo, company name, and details will appear on quotes and invoices.",
-      Visual: BusinessStep6,
-    },
-    {
-      title: "Save business settings",
-      actionLabel: "Save",
-      description: "Click save to apply. All new documents will use these business details automatically.",
-      Visual: BusinessStep7,
-    },
+    { title: "Enter company details", actionLabel: "Fill Details", description: "Add your trading name (shown to clients) and legal name (for contracts and invoices).", Visual: BusinessStep1 },
+    { title: "Select organization type", actionLabel: "Choose Type", description: "Select your business structure: Sole Trader, Partnership, Pty Ltd, Corporation, or Non-Profit.", Visual: BusinessStep2 },
+    { title: "Upload company logo", actionLabel: "Upload Logo", description: "Your logo appears on quotes, invoices, and documents. Use 500×200px PNG with transparent background.", Visual: BusinessStep3 },
+    { title: "Select your country first", actionLabel: "Choose Country", description: "Select your country to automatically show the correct registration labels (ABN, VAT, EIN, etc.).", Visual: BusinessStep4 },
+    { title: "Enter registration numbers", actionLabel: "Add Numbers", description: "Enter your business registration numbers. Labels adapt based on your country selection.", Visual: BusinessStep5 },
+    { title: "Tax identification", actionLabel: "Enter Tax ID", description: "Add your tax registration number. Required for generating valid tax invoices.", Visual: BusinessStep6 },
+    { title: "Add contact details", actionLabel: "Enter Contacts", description: "Add your business email, phone, and website. These appear on documents and client communications.", Visual: BusinessStep7 },
+    { title: "Enter business address", actionLabel: "Fill Address", description: "Your complete business address appears on quotes, invoices, and contracts.", Visual: BusinessStep8 },
+    { title: "Set payment terms", actionLabel: "Choose Terms", description: "Set default payment terms (7, 14, 21, 30 days, etc.) applied to new quotes and invoices.", Visual: BusinessStep9 },
+    { title: "Financial year end", actionLabel: "Set Date", description: "Configure your financial year end date for reporting and tax calculations.", Visual: BusinessStep10 },
+    { title: "Enter bank details", actionLabel: "Add Banking", description: "Add your bank name and account name. These appear on invoices for client payments.", Visual: BusinessStep11 },
+    { title: "Country-specific banking", actionLabel: "Fill Fields", description: "Enter account details: BSB + Account (Australia), Sort Code (UK), or IBAN + SWIFT (Europe).", Visual: BusinessStep12 },
+    { title: "Invoice reference prefix", actionLabel: "Set Prefix", description: "Set a prefix for payment references (e.g., 'INV') shown on invoices.", Visual: BusinessStep13 },
+    { title: "Late payment policies", actionLabel: "Configure", description: "Set interest rate, late fees, and payment terms text for overdue invoices.", Visual: BusinessStep14 },
+    { title: "Advanced settings (Admin)", actionLabel: "Toggle", description: "Admin-only settings like in-app template editing. Only visible to account administrators.", Visual: BusinessStep15 },
+    { title: "Save each section", actionLabel: "Save", description: "Each section saves independently. Click Edit to modify, then Save or Cancel.", Visual: BusinessStep16 },
   ],
 };
 
 // ===========================================
-// UNITS SETTINGS TUTORIAL (5 Steps)
+// UNITS SETTINGS TUTORIAL (6 Steps)
 // ===========================================
 export const unitsTutorial: Tutorial = {
   id: "units",
   steps: [
-    {
-      title: "Choose measurement system",
-      actionLabel: "Select System",
-      description: "Pick Metric (cm, m), Imperial (inches, feet), or Mixed for custom unit combinations.",
-      Visual: UnitsStep1,
-    },
-    {
-      title: "Configure length units",
-      actionLabel: "Set Units",
-      description: "Choose your primary length unit for measurements. This affects how dimensions are displayed.",
-      Visual: UnitsStep2,
-    },
-    {
-      title: "Set area and fabric units",
-      actionLabel: "Configure",
-      description: "Choose units for area calculations and fabric measurements (linear meters, yards, etc.).",
-      Visual: UnitsStep3,
-    },
-    {
-      title: "Select currency",
-      actionLabel: "Choose Currency",
-      description: "Set your preferred currency for all pricing. Symbol and formatting update automatically.",
-      Visual: UnitsStep4,
-    },
-    {
-      title: "Preview and save",
-      actionLabel: "Save",
-      description: "Review example values with your chosen units. Save to apply across all quotes and documents.",
-      Visual: UnitsStep5,
-    },
+    { title: "Choose measurement system", actionLabel: "Select System", description: "Pick Metric (cm, m), Imperial (inches, feet), or Mixed to customize each unit type separately.", Visual: UnitsStep1 },
+    { title: "Configure length units", actionLabel: "Set Length", description: "Choose your primary length unit (mm, cm, m, inches, feet) for window measurements and dimensions.", Visual: UnitsStep2 },
+    { title: "Configure area units", actionLabel: "Set Area", description: "Choose units for area calculations: square meters, square feet, etc.", Visual: UnitsStep3 },
+    { title: "Configure fabric units", actionLabel: "Set Fabric", description: "Choose units for fabric measurements: linear meters, yards, feet. Used for ordering quantities.", Visual: UnitsStep4 },
+    { title: "Select your currency", actionLabel: "Choose Currency", description: "Set your currency (AUD, USD, GBP, EUR, etc.). This is used throughout all quotes and invoices.", Visual: UnitsStep5 },
+    { title: "Preview and save", actionLabel: "Save", description: "Review your settings preview showing example measurements and pricing, then save.", Visual: UnitsStep6 },
   ],
 };
 
 // ===========================================
-// PRICING SETTINGS TUTORIAL (6 Steps)
+// PRICING SETTINGS TUTORIAL (12 Steps)
 // ===========================================
 export const pricingTutorial: Tutorial = {
   id: "pricing",
   steps: [
-    {
-      title: "Set default markup",
-      actionLabel: "Enter %",
-      description: "Define your standard profit margin. This applies to all products unless overridden at category level.",
-      Visual: PricingStep1,
-    },
-    {
-      title: "Configure category markups",
-      actionLabel: "Set Categories",
-      description: "Override the default markup for specific product categories like Curtains, Blinds, or Hardware.",
-      Visual: PricingStep2,
-    },
-    {
-      title: "Upload pricing grids",
-      actionLabel: "Upload",
-      description: "Import width × drop pricing matrices from CSV or Excel files for quick template setup.",
-      Visual: PricingStep3,
-      relatedSection: "products-templates",
-      prerequisiteNote: "Assign grids in Templates → Pricing tab",
-    },
-    {
-      title: "Set tax type",
-      actionLabel: "Configure Tax",
-      description: "Choose your tax type (GST, VAT, Sales Tax) and enter the rate for accurate invoicing.",
-      Visual: PricingStep4,
-    },
-    {
-      title: "Choose tax display",
-      actionLabel: "Toggle Display",
-      description: "Decide whether prices shown to clients include or exclude tax, and whether to show tax breakdown.",
-      Visual: PricingStep5,
-    },
-    {
-      title: "Save pricing rules",
-      actionLabel: "Save",
-      description: "Your pricing configuration is now active. All new quotes will use these rules automatically.",
-      Visual: PricingStep6,
-    },
+    { title: "Understanding the two tabs", actionLabel: "View Tabs", description: "Pricing has two tabs: 'Pricing Grids' for uploading price matrices, and 'Settings' for tax and markup configuration.", Visual: PricingStep1 },
+    { title: "Browse pricing grids", actionLabel: "View Grids", description: "The Pricing Grids tab shows all your uploaded width×drop pricing matrices organized by product type.", Visual: PricingStep2 },
+    { title: "Upload new pricing grid", actionLabel: "Upload", description: "Upload CSV or Excel files containing width×drop pricing matrices for quick template setup.", Visual: PricingStep3, relatedSection: "products-templates", prerequisiteNote: "Assign grids in Templates → Pricing tab" },
+    { title: "Set grid-specific markup", actionLabel: "Set Markup", description: "Each pricing grid can have its own markup percentage that overrides category and default settings.", Visual: PricingStep4 },
+    { title: "Markup hierarchy explained", actionLabel: "Learn", description: "Markup priority: Grid → Category → Default → Minimum Floor. System checks each level in order.", Visual: PricingStep5 },
+    { title: "Select tax type", actionLabel: "Choose Type", description: "Choose your tax type: No Tax, VAT, GST, or Sales Tax. This affects how tax is calculated.", Visual: PricingStep6 },
+    { title: "Set tax rate", actionLabel: "Enter Rate", description: "Enter your tax percentage (e.g., 10 for 10%, 20 for 20%). Preview shows example calculations.", Visual: PricingStep7 },
+    { title: "Tax inclusive toggle", actionLabel: "Configure", description: "Toggle whether displayed prices include tax or if tax is added separately at checkout.", Visual: PricingStep8 },
+    { title: "Set default markup", actionLabel: "Enter %", description: "Set your default profit margin percentage. Applied when no grid or category markup is set.", Visual: PricingStep9 },
+    { title: "Set minimum margin floor", actionLabel: "Set Floor", description: "Set a minimum markup floor. No item will ever have markup below this percentage.", Visual: PricingStep10 },
+    { title: "Configure category markups", actionLabel: "Set Categories", description: "Override default markup for specific categories: Curtains, Blinds, Hardware, Fabrics, Installation.", Visual: PricingStep11 },
+    { title: "Save your settings", actionLabel: "Save", description: "Each section has its own save button. Save Tax, Global, and Category settings independently.", Visual: PricingStep12 },
   ],
 };
 
