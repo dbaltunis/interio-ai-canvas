@@ -25,6 +25,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
+import { formatBulkOperationResult } from "@/utils/errorMessages";
 
 interface Client {
   id: string;
@@ -151,7 +152,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
     }
 
     if (clientToDelete) {
-      deleteClient.mutate(clientToDelete.id, {
+      deleteClient.mutate({ id: clientToDelete.id, name: clientToDelete.name }, {
         onSuccess: () => {
           toast({
             title: `Client "${clientToDelete.name}" has been deleted`,
@@ -160,12 +161,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
           setDeleteDialogOpen(false);
           setClientToDelete(null);
         },
-        onError: (error) => {
-          toast({
-            title: "Failed to delete client",
-            variant: "destructive",
-          });
-          console.error("Delete error:", error);
+        onError: () => {
+          // Error toast is handled in the hook with context
+          setDeleteDialogOpen(false);
+          setClientToDelete(null);
         }
       });
     }
@@ -520,16 +519,25 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
         onStartCampaign={() => setShowCampaignWizard(true)}
         onExport={handleExportSelected}
         onClearSelection={clearSelection}
-        onDelete={() => {
-          // Bulk delete all selected clients
-          const clientIds = selectedClients.map(c => c.id);
-          clientIds.forEach(id => {
-            deleteClient.mutate(id);
-          });
+        onDelete={async () => {
+          // Bulk delete all selected clients with proper error reporting
+          const clients = [...selectedClients];
+          const results = await Promise.allSettled(
+            clients.map(client => 
+              deleteClient.mutateAsync({ id: client.id, name: client.name })
+            )
+          );
+          
+          const succeeded = results.filter(r => r.status === 'fulfilled').length;
+          const failed = results.filter(r => r.status === 'rejected').length;
+          
           clearSelection();
+          
+          const result = formatBulkOperationResult('Deleted', 'client', succeeded, failed, clients.length);
           toast({
-            title: `Deleted ${clientIds.length} client${clientIds.length > 1 ? 's' : ''}`,
-            variant: "success",
+            title: result.title,
+            description: result.description || undefined,
+            variant: result.isError ? "destructive" : "success",
           });
         }}
         canDelete={canDeleteClients}
