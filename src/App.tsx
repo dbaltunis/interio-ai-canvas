@@ -168,12 +168,12 @@ const App = () => {
               }}
             >
               <ThemeDarkSync />
-              <AccentThemeSync />
               <InteractionUnlockGuard />
               <Toaster />
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <AccentThemeSync />
                   <AccountStatusGuard>
                   <TeachingProvider>
                   <TutorialProvider>
