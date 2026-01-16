@@ -125,7 +125,90 @@
   :root { --document: 0 0% 100%; --document-foreground: 222 47% 11%; }
   .dark { --document: 0 0% 100%; --document-foreground: 222 47% 11%; }
 
-  /* Accent switcher (applies across all themes) */
+  /* ==========================================
+     SEASONAL COLOR PALETTES (Lovable-style)
+     ========================================== */
+  
+  /* BRAND - Default teal/sage palette */
+  :root[data-accent='brand'] {
+    --primary: var(--brand-dark-teal);
+    --primary-foreground: 0 0% 100%;
+    --accent: var(--brand-teal-bright);
+    --accent-foreground: 0 0% 100%;
+    --ring: var(--brand-dark-teal);
+    --secondary: var(--brand-sage);
+    --secondary-foreground: 200 24% 34%;
+  }
+  
+  /* WINTER - Cool blues, silvers, deep navy */
+  :root[data-accent='winter'] {
+    --primary: 220 70% 40%; /* Deep navy blue */
+    --primary-foreground: 0 0% 100%;
+    --accent: 210 80% 55%; /* Bright ice blue */
+    --accent-foreground: 0 0% 100%;
+    --ring: 220 70% 40%;
+    --secondary: 215 25% 75%; /* Silver frost */
+    --secondary-foreground: 220 70% 25%;
+    /* Winter palette: Navy, Ice Blue, Silver, Steel, Slate, Frost, Pearl */
+    --chart-1: 220 70% 40%;
+    --chart-2: 210 80% 55%;
+    --chart-3: 215 25% 60%;
+    --chart-4: 205 35% 45%;
+    --chart-5: 220 15% 80%;
+  }
+  
+  /* SPRING - Fresh greens, soft pinks, lavender */
+  :root[data-accent='spring'] {
+    --primary: 145 60% 40%; /* Fresh green */
+    --primary-foreground: 0 0% 100%;
+    --accent: 340 65% 60%; /* Soft pink */
+    --accent-foreground: 0 0% 100%;
+    --ring: 145 60% 40%;
+    --secondary: 270 40% 75%; /* Lavender */
+    --secondary-foreground: 145 60% 25%;
+    /* Spring palette: Mint, Rose, Lavender, Peach, Sky, Sage, Blush */
+    --chart-1: 145 60% 40%;
+    --chart-2: 340 65% 60%;
+    --chart-3: 270 40% 65%;
+    --chart-4: 25 80% 70%;
+    --chart-5: 195 70% 65%;
+  }
+  
+  /* SUMMER - Warm yellows, coral, turquoise */
+  :root[data-accent='summer'] {
+    --primary: 35 90% 50%; /* Sunny gold */
+    --primary-foreground: 0 0% 15%;
+    --accent: 180 70% 45%; /* Turquoise */
+    --accent-foreground: 0 0% 100%;
+    --ring: 35 90% 50%;
+    --secondary: 15 80% 60%; /* Coral */
+    --secondary-foreground: 0 0% 15%;
+    /* Summer palette: Gold, Turquoise, Coral, Ocean, Sand, Sunset, Azure */
+    --chart-1: 35 90% 50%;
+    --chart-2: 180 70% 45%;
+    --chart-3: 15 80% 60%;
+    --chart-4: 200 80% 55%;
+    --chart-5: 45 70% 75%;
+  }
+  
+  /* AUTUMN - Rich oranges, burgundy, gold */
+  :root[data-accent='autumn'] {
+    --primary: 20 85% 45%; /* Burnt orange */
+    --primary-foreground: 0 0% 100%;
+    --accent: 350 60% 40%; /* Burgundy */
+    --accent-foreground: 0 0% 100%;
+    --ring: 20 85% 45%;
+    --secondary: 40 70% 50%; /* Gold */
+    --secondary-foreground: 20 85% 20%;
+    /* Autumn palette: Burnt Orange, Burgundy, Gold, Rust, Maple, Amber, Crimson */
+    --chart-1: 20 85% 45%;
+    --chart-2: 350 60% 40%;
+    --chart-3: 40 70% 50%;
+    --chart-4: 15 70% 35%;
+    --chart-5: 30 80% 55%;
+  }
+  
+  /* Legacy accent switcher for backward compatibility */
   :root[data-accent='primary'] {
     --primary: var(--brand-dark-teal);
     --accent: var(--brand-dark-teal);
@@ -135,11 +218,6 @@
     --primary: var(--brand-sage);
     --accent: var(--brand-sage-dark);
     --ring: var(--brand-sage-dark);
-  }
-  :root[data-accent='bright'] {
-    --primary: var(--brand-teal-bright);
-    --accent: var(--brand-teal-bright);
-    --ring: var(--brand-teal-bright);
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,14 @@ export const EmailTemplateEditor = ({ template, open, onOpenChange }: EmailTempl
   const [subject, setSubject] = useState(template?.subject || "");
   const [content, setContent] = useState(template?.content || "");
   const updateTemplate = useUpdateGeneralEmailTemplate();
+
+  // Sync state when template changes
+  useEffect(() => {
+    if (template) {
+      setSubject(template.subject || "");
+      setContent(template.content || "");
+    }
+  }, [template]);
 
   const availableVariables = template ? getAvailableVariables(template.template_type) : [];
   const exampleData = getExampleTemplateData();

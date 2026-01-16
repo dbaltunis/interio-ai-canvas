@@ -8954,7 +8954,9 @@ export type Database = {
       user_notification_settings: {
         Row: {
           account_owner_id: string | null
+          appointment_reminders_enabled: boolean | null
           created_at: string
+          desktop_notifications_enabled: boolean | null
           email_api_key_encrypted: string | null
           email_from_address: string | null
           email_from_name: string | null
@@ -8970,7 +8972,9 @@ export type Database = {
         }
         Insert: {
           account_owner_id?: string | null
+          appointment_reminders_enabled?: boolean | null
           created_at?: string
+          desktop_notifications_enabled?: boolean | null
           email_api_key_encrypted?: string | null
           email_from_address?: string | null
           email_from_name?: string | null
@@ -8986,7 +8990,9 @@ export type Database = {
         }
         Update: {
           account_owner_id?: string | null
+          appointment_reminders_enabled?: boolean | null
           created_at?: string
+          desktop_notifications_enabled?: boolean | null
           email_api_key_encrypted?: string | null
           email_from_address?: string | null
           email_from_name?: string | null
@@ -9105,6 +9111,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          accent_theme: string | null
           account_status: string | null
           account_type: string | null
           avatar_url: string | null
@@ -9134,6 +9141,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accent_theme?: string | null
           account_status?: string | null
           account_type?: string | null
           avatar_url?: string | null
@@ -9163,6 +9171,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accent_theme?: string | null
           account_status?: string | null
           account_type?: string | null
           avatar_url?: string | null
