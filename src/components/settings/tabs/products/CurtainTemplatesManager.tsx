@@ -10,6 +10,7 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 interface CreateTemplateData {
   name: string;
@@ -126,9 +127,9 @@ export const CurtainTemplatesManager = ({
   };
   return <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Window Covering Templates</h3>
-          
+          <SectionHelpButton sectionId="products-templates" />
         </div>
         <Button 
           onClick={handleAddTemplate} 

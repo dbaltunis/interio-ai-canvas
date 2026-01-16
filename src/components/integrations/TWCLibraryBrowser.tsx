@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TWCImportedProducts } from "./TWCImportedProducts";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const TWCLibraryBrowser = () => {
   const { data: products, isLoading, error } = useTWCProducts();
@@ -127,10 +128,13 @@ export const TWCLibraryBrowser = () => {
       {/* Browse TWC Catalog Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Browse TWC Catalog
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Browse TWC Catalog
+            </CardTitle>
+            <SectionHelpButton sectionId="products-suppliers" />
+          </div>
           <CardDescription>
             Select products from TWC's catalog to import into your inventory
           </CardDescription>
