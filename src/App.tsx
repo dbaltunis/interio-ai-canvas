@@ -25,7 +25,7 @@ import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 import { DebugPanel } from "./components/debug/DebugPanel";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
-import { AccentThemeSync } from "./components/system/AccentThemeSync";
+
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
 import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
@@ -173,7 +173,7 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
-                  <AccentThemeSync />
+                  
                   <AccountStatusGuard>
                   <TeachingProvider>
                   <TutorialProvider>
