@@ -90,18 +90,18 @@ export const JobsPagination = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-2 py-4">
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <span>Showing {startItem} to {endItem} of {totalItems} items</span>
+      <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+        <span className="whitespace-nowrap">Showing {startItem} to {endItem} of {totalItems} items</span>
         
         {/* Items per page selector */}
         {onItemsPerPageChange && (
           <div className="flex items-center gap-2">
-            <span className="text-xs">Show:</span>
+            <span className="text-xs whitespace-nowrap">Show:</span>
             <Select
               value={String(itemsPerPage)}
               onValueChange={(value) => onItemsPerPageChange(Number(value))}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-[80px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
