@@ -247,8 +247,8 @@ export const TeachingHelpButton = ({
               }}
               className="w-full justify-center gap-2 text-xs"
             >
-              <PlayCircle className="h-3 w-3" />
-              Watch Video Tutorials
+              <HelpCircle className="h-3 w-3" />
+              Interactive Guides
             </Button>
             <Button
               variant="ghost"
