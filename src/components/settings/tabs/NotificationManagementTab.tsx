@@ -7,6 +7,7 @@ import { NotificationTemplatesManager } from "@/components/notifications/Notific
 import { BroadcastNotificationPanel } from "@/components/notifications/BroadcastNotificationPanel";
 import { NotificationTestPanel } from "@/components/notifications/NotificationTestPanel";
 import { useUserSubscription } from "@/hooks/useUserSubscription";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const NotificationManagementTab = () => {
   const { data: subscription } = useUserSubscription();
@@ -16,11 +17,14 @@ export const NotificationManagementTab = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h3 className="text-lg font-medium">Notifications</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure when and how notifications are sent to you and your clients
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Notifications</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure when and how notifications are sent to you and your clients
+          </p>
+        </div>
+        <SectionHelpButton sectionId="notifications" />
       </div>
 
       {/* Notification Status Overview */}
