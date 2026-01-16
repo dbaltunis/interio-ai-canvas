@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { linkUserToAccount } from '@/hooks/useAccountLinking';
 import { useQueryClient } from '@tanstack/react-query';
+import { setSentryUser, setSentryContext } from '@/lib/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -51,6 +51,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.log('🔒 [v2.3.7] User signed out - clearing ALL cached data');
           queryClient.clear(); // Nuclear option: remove ALL cached queries
           sessionStorage.clear(); // Clear tab state
+          
+          // Clear Sentry user context on logout
+          setSentryUser(null);
           return;
         }
 
@@ -58,6 +61,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // ✅ v2.3.7: Invalidate all queries on sign-in to force fresh fetch
           console.log('🔑 [v2.3.7] User signed in - invalidating all queries for fresh data');
           queryClient.invalidateQueries();
+          
+          // Set Sentry user context for error tracking
+          if (session?.user) {
+            setSentryUser({
+              id: session.user.id,
+              email: session.user.email,
+            });
+          }
           
           // Only navigate to home on initial sign-in, not on session refresh
           const currentPath = window.location.pathname;

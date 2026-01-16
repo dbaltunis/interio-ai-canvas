@@ -47,6 +47,7 @@
     "@react-pdf/renderer": "^4.3.1",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@sentry/react": "^8.55.0",
     "@storybook/addon-a11y": "^7.6.20",
     "@storybook/addon-essentials": "^7.6.20",
     "@storybook/react": "^7.6.20",
