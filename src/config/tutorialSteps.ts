@@ -63,6 +63,10 @@ import {
   PersonalStep4,
   PersonalStep5,
   PersonalStep6,
+  PersonalStep7,
+  PersonalStep8,
+  PersonalStep9,
+  PersonalStep10,
 } from "@/components/help/tutorial-steps/PersonalSteps";
 import {
   BusinessStep1,
@@ -72,6 +76,15 @@ import {
   BusinessStep5,
   BusinessStep6,
   BusinessStep7,
+  BusinessStep8,
+  BusinessStep9,
+  BusinessStep10,
+  BusinessStep11,
+  BusinessStep12,
+  BusinessStep13,
+  BusinessStep14,
+  BusinessStep15,
+  BusinessStep16,
 } from "@/components/help/tutorial-steps/BusinessSteps";
 import {
   UnitsStep1,
@@ -79,6 +92,7 @@ import {
   UnitsStep3,
   UnitsStep4,
   UnitsStep5,
+  UnitsStep6,
 } from "@/components/help/tutorial-steps/UnitsSteps";
 import {
   PricingStep1,
@@ -87,6 +101,12 @@ import {
   PricingStep4,
   PricingStep5,
   PricingStep6,
+  PricingStep7,
+  PricingStep8,
+  PricingStep9,
+  PricingStep10,
+  PricingStep11,
+  PricingStep12,
 } from "@/components/help/tutorial-steps/PricingSteps";
 
 export interface TutorialStep {
