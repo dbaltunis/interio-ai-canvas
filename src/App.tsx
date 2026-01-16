@@ -18,6 +18,8 @@ import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import { PresenceProvider } from "./contexts/PresenceContext";
 import { TeachingProvider } from "./contexts/TeachingContext";
+import { TutorialProvider } from "./contexts/TutorialContext";
+import { TutorialPlayer } from "./components/tutorials/TutorialPlayer";
 import { DebugModeProvider } from "./contexts/DebugModeContext";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 import { DebugPanel } from "./components/debug/DebugPanel";
@@ -172,11 +174,13 @@ const App = () => {
                 <AuthProvider>
                   <AccountStatusGuard>
                   <TeachingProvider>
+                  <TutorialProvider>
                   <PresenceProvider>
                     <EmailRealtimeProvider>
                       <BugReportDialog />
                       <DebugPanel />
                       <TeachingOverlay />
+                      <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
                   <Routes>
                 {/* Public store routes */}
@@ -365,6 +369,7 @@ const App = () => {
               </Suspense>
                     </EmailRealtimeProvider>
                   </PresenceProvider>
+                  </TutorialProvider>
                   </TeachingProvider>
                   </AccountStatusGuard>
                   <ProjectInventoryTrackingHandler />

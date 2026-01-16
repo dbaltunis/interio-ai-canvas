@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lightbulb, RotateCcw, Check, Sparkles, ExternalLink } from 'lucide-react';
+import { Lightbulb, RotateCcw, Check, Sparkles, ExternalLink, PlayCircle, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { HelpCenterDrawer } from '@/components/help/HelpCenterDrawer';
 
 interface TeachingHelpButtonProps {
   className?: string;
@@ -33,6 +34,7 @@ export const TeachingHelpButton = ({
   className,
 }: TeachingHelpButtonProps) => {
   const [open, setOpen] = useState(false);
+  const [helpCenterOpen, setHelpCenterOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -235,7 +237,19 @@ export const TeachingHelpButton = ({
           </ScrollArea>
 
           {/* Footer */}
-          <div className="p-3 border-t bg-muted/30">
+          <div className="p-3 border-t bg-muted/30 space-y-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                setOpen(false);
+                setHelpCenterOpen(true);
+              }}
+              className="w-full justify-center gap-2 text-xs"
+            >
+              <PlayCircle className="h-3 w-3" />
+              Watch Video Tutorials
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -248,6 +262,9 @@ export const TeachingHelpButton = ({
           </div>
         </PopoverContent>
       </Popover>
+      
+      {/* Help Center Drawer */}
+      <HelpCenterDrawer open={helpCenterOpen} onOpenChange={setHelpCenterOpen} />
     </TooltipProvider>
   );
 };
