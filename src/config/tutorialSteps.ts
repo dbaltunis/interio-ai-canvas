@@ -459,7 +459,7 @@ export const defaultsTutorial: Tutorial = {
 // PERSONAL SETTINGS TUTORIAL (6 Steps)
 // ===========================================
 export const personalTutorial: Tutorial = {
-  id: "settings-personal",
+  id: "personal",
   steps: [
     {
       title: "Upload your profile picture",
@@ -504,7 +504,7 @@ export const personalTutorial: Tutorial = {
 // BUSINESS SETTINGS TUTORIAL (7 Steps)
 // ===========================================
 export const businessTutorial: Tutorial = {
-  id: "settings-business",
+  id: "business",
   steps: [
     {
       title: "Upload your company logo",
@@ -557,7 +557,7 @@ export const businessTutorial: Tutorial = {
 // UNITS SETTINGS TUTORIAL (5 Steps)
 // ===========================================
 export const unitsTutorial: Tutorial = {
-  id: "settings-units",
+  id: "units",
   steps: [
     {
       title: "Choose measurement system",
@@ -596,7 +596,7 @@ export const unitsTutorial: Tutorial = {
 // PRICING SETTINGS TUTORIAL (6 Steps)
 // ===========================================
 export const pricingTutorial: Tutorial = {
-  id: "settings-pricing",
+  id: "pricing",
   steps: [
     {
       title: "Set default markup",
@@ -643,13 +643,15 @@ export const pricingTutorial: Tutorial = {
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
+  // Products sub-tabs
   "products-templates": templatesTutorial,
   "products-suppliers": suppliersTutorial,
   "products-headings": headingsTutorial,
   "products-options": optionsTutorial,
   "products-defaults": defaultsTutorial,
-  "settings-personal": personalTutorial,
-  "settings-business": businessTutorial,
-  "settings-units": unitsTutorial,
-  "settings-pricing": pricingTutorial,
+  // Main Settings tabs
+  "personal": personalTutorial,
+  "business": businessTutorial,
+  "units": unitsTutorial,
+  "pricing": pricingTutorial,
 };
