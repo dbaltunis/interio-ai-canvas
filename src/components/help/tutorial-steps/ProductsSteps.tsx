@@ -306,7 +306,7 @@ export const ProductsStep8 = () => (
   </div>
 );
 
-// Step 9: Configure treatment options
+// Step 9: Configure treatment options (with cross-reference to detailed tutorial)
 export const ProductsStep9 = () => (
   <div className="space-y-4">
     <MockTabStrip activeTab="options" />
@@ -326,15 +326,15 @@ export const ProductsStep9 = () => (
         </motion.div>
       ))}
     </div>
-    <div className="border rounded-lg p-3 bg-muted/30">
+    <div className="border rounded-lg p-3 bg-primary/5 border-primary/30">
       <p className="text-xs text-muted-foreground">
-        Options are grouped by category and can be enabled per template
+        <span className="font-medium text-primary">📚 Deep Dive Available:</span> Options is a powerful system with inventory sync, pricing methods, and conditional rules. See the dedicated <span className="font-medium">Options Tutorial (20 steps)</span> for complete coverage.
       </p>
     </div>
   </div>
 );
 
-// Step 10: Add an option
+// Step 10: Add an option (with cross-reference)
 export const ProductsStep10 = () => (
   <div className="space-y-4">
     <div className="flex items-center justify-between">
@@ -365,6 +365,9 @@ export const ProductsStep10 = () => (
         </div>
       </CardContent>
     </Card>
+    <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+      💡 Options can be synced from inventory, use grid pricing, and have conditional rules. See the full Options tutorial for details.
+    </div>
   </div>
 );
 
