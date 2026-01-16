@@ -19,6 +19,16 @@ import {
   TemplatesStep17,
   TemplatesStep18,
 } from "@/components/help/tutorial-steps/TemplatesSteps";
+import {
+  OptionsStep1,
+  OptionsStep2,
+  OptionsStep3,
+  OptionsStep4,
+  OptionsStep5,
+  OptionsStep6,
+  OptionsStep7,
+  OptionsStep8,
+} from "@/components/help/tutorial-steps/OptionsSteps";
 
 export interface TutorialStep {
   title: string;
@@ -197,16 +207,60 @@ export const headingsTutorial: Tutorial = {
 };
 
 // ===========================================
-// OPTIONS TUTORIAL (placeholder)
+// OPTIONS TUTORIAL - COMPREHENSIVE (8 Steps)
 // ===========================================
 export const optionsTutorial: Tutorial = {
   id: "products-options",
   steps: [
     {
-      title: "Add a new option category",
-      actionLabel: "Click Add",
-      description: "Create option categories like 'Fabric Type' or 'Lining' with associated values and prices.",
-      Visual: () => null, // Placeholder
+      title: "Click Add Option Type",
+      actionLabel: "Click Button",
+      description: "Start by clicking the 'Add Option Type' button to create a new configurable option for your products.",
+      Visual: OptionsStep1,
+    },
+    {
+      title: "Enter the option name",
+      actionLabel: "Type Name",
+      description: "Give your option a clear, descriptive name like 'Lining Type', 'Control Side', or 'Motor Brand'.",
+      Visual: OptionsStep2,
+    },
+    {
+      title: "Select a category",
+      actionLabel: "Choose Category",
+      description: "Categorize your option (Hardware, Fabric Options, Accessories) to keep things organized.",
+      Visual: OptionsStep3,
+    },
+    {
+      title: "Add option values",
+      actionLabel: "Add Values",
+      description: "Click 'Add Value' to create the choices for this option. Each value can have its own pricing.",
+      Visual: OptionsStep4,
+    },
+    {
+      title: "Set prices for each value",
+      actionLabel: "Enter Prices",
+      description: "Enter the cost price (your cost) and retail price (customer sees) for each option value.",
+      Visual: OptionsStep5,
+    },
+    {
+      title: "Configure pricing type",
+      actionLabel: "Select Type",
+      description: "Choose how the option price is calculated: fixed amount, per unit, or based on treatment area.",
+      Visual: OptionsStep6,
+    },
+    {
+      title: "Save your option type",
+      actionLabel: "Click Save",
+      description: "Review your settings and click 'Save Option Type' to add it to your library.",
+      Visual: OptionsStep7,
+    },
+    {
+      title: "Option ready to use!",
+      actionLabel: "Done",
+      description: "Your new option appears in the list and can now be enabled in any template via the Options tab.",
+      Visual: OptionsStep8,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Enable this option in Templates → Options tab",
     },
   ],
 };

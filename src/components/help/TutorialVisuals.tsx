@@ -160,3 +160,133 @@ export const TypingText = ({
     </motion.span>
   );
 };
+
+// ===========================================
+// REUSABLE MOCK COMPONENTS FOR TUTORIALS
+// ===========================================
+
+// Pulsing highlight wrapper - simpler version
+export const PulsingHighlight = ({ 
+  children, 
+  className 
+}: { 
+  children: ReactNode;
+  className?: string;
+}) => (
+  <div className={cn("relative inline-block", className)}>
+    <motion.div
+      className="absolute -inset-1 rounded-lg bg-primary/20"
+      animate={{
+        scale: [1, 1.02, 1],
+        opacity: [0.4, 0.7, 0.4],
+      }}
+      transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+    <div className="relative">{children}</div>
+  </div>
+);
+
+// Mock Card component
+export const MockCard = ({ 
+  children, 
+  className 
+}: { 
+  children: ReactNode;
+  className?: string;
+}) => (
+  <div className={cn(
+    "rounded-lg border border-border bg-card text-card-foreground",
+    className
+  )}>
+    {children}
+  </div>
+);
+
+// Mock Button component
+export const MockButton = ({ 
+  children, 
+  variant = "default",
+  size = "default",
+  className 
+}: { 
+  children: ReactNode;
+  variant?: "default" | "primary" | "outline" | "ghost" | "secondary";
+  size?: "default" | "sm" | "lg";
+  className?: string;
+}) => {
+  const variantClasses = {
+    default: "bg-secondary text-secondary-foreground",
+    primary: "bg-primary text-primary-foreground",
+    outline: "border border-input bg-background hover:bg-accent",
+    ghost: "hover:bg-accent hover:text-accent-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+  };
+  
+  const sizeClasses = {
+    default: "h-9 px-4 py-2 text-sm",
+    sm: "h-7 px-3 text-xs",
+    lg: "h-10 px-6 text-base",
+  };
+
+  return (
+    <div className={cn(
+      "inline-flex items-center justify-center rounded-md font-medium cursor-pointer",
+      variantClasses[variant],
+      sizeClasses[size],
+      className
+    )}>
+      {children}
+    </div>
+  );
+};
+
+// Mock Input component
+export const MockInput = ({ 
+  children, 
+  placeholder,
+  className 
+}: { 
+  children?: ReactNode;
+  placeholder?: string;
+  className?: string;
+}) => (
+  <div className={cn(
+    "h-8 px-3 py-1 rounded-md border border-input bg-background text-sm flex items-center",
+    !children && "text-muted-foreground",
+    className
+  )}>
+    {children || placeholder}
+  </div>
+);
+
+// Mock Badge component
+export const MockBadge = ({ 
+  children, 
+  variant = "default",
+  className 
+}: { 
+  children: ReactNode;
+  variant?: "default" | "primary" | "secondary" | "outline";
+  className?: string;
+}) => {
+  const variantClasses = {
+    default: "bg-primary/10 text-primary",
+    primary: "bg-primary text-primary-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+    outline: "border border-input bg-transparent",
+  };
+
+  return (
+    <span className={cn(
+      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+      variantClasses[variant],
+      className
+    )}>
+      {children}
+    </span>
+  );
+};

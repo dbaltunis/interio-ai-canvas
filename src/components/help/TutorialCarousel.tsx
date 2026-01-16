@@ -76,10 +76,20 @@ export const TutorialCarousel = ({
   };
 
   return (
-    <div className={cn(
-      "flex flex-col bg-muted/30 rounded-xl border border-border overflow-hidden transition-all duration-300",
-      isMaximized && "fixed inset-4 z-50 shadow-2xl"
-    )}>
+    <>
+      {/* Backdrop overlay when maximized */}
+      {isMaximized && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[99]" 
+          onClick={() => setIsMaximized(false)}
+        />
+      )}
+      <div className={cn(
+        "flex flex-col rounded-xl border border-border overflow-hidden transition-all duration-300",
+        isMaximized 
+          ? "fixed inset-4 z-[100] bg-background shadow-2xl" 
+          : "bg-muted/30"
+      )}>
       {/* Header with step counter */}
       <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
         <span className={cn(
@@ -210,6 +220,7 @@ export const TutorialCarousel = ({
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
