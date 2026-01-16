@@ -81,7 +81,7 @@ export const TeamStep2 = () => (
       </CardContent>
     </Card>
     <p className="text-xs text-muted-foreground text-center">
-      Each additional seat is $29/month
+      Each additional seat is £99/month
     </p>
   </div>
 );
@@ -236,11 +236,11 @@ export const TeamStep7 = () => (
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">+ New seat</span>
-        <span className="text-primary">+$29.00</span>
+        <span className="text-primary">+£99.00</span>
       </div>
       <div className="border-t pt-2 flex justify-between text-sm font-medium">
         <span>New total</span>
-        <span>$278.00/month</span>
+        <span>£348.00/month</span>
       </div>
     </div>
     <Button className="w-full">Confirm & Send Invitation</Button>

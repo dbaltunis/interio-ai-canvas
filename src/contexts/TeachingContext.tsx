@@ -7,6 +7,7 @@ interface TeachingProgress {
   seenTeachingPoints: string[];
   dismissedForever: string[];
   completedSequences: string[];
+  clickedHelpButtons: string[];
   lastActivity: {
     page: string;
     section?: string;
@@ -31,6 +32,8 @@ interface TeachingContextValue {
   // Queries
   hasSeenTeaching: (id: string) => boolean;
   isDismissedForever: (id: string) => boolean;
+  hasClickedHelpButton: (sectionId: string) => boolean;
+  markHelpButtonClicked: (sectionId: string) => void;
   getAvailableTeachings: (page: string, section?: string) => TeachingPoint[];
   getNextTeaching: (page: string, section?: string) => TeachingPoint | null;
   
@@ -42,6 +45,7 @@ const defaultProgress: TeachingProgress = {
   seenTeachingPoints: [],
   dismissedForever: [],
   completedSequences: [],
+  clickedHelpButtons: [],
   lastActivity: null,
 };
 
@@ -205,9 +209,24 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       seenTeachingPoints: [],
       completedSequences: [],
-      // Keep dismissedForever intact
+      // Keep dismissedForever and clickedHelpButtons intact
     }));
     setActiveTeaching(null);
+  }, []);
+
+  // Check if user has clicked a help button
+  const hasClickedHelpButton = useCallback((sectionId: string): boolean => {
+    return progress.clickedHelpButtons.includes(sectionId);
+  }, [progress.clickedHelpButtons]);
+
+  // Mark a help button as clicked
+  const markHelpButtonClicked = useCallback((sectionId: string) => {
+    setProgress(prev => ({
+      ...prev,
+      clickedHelpButtons: prev.clickedHelpButtons.includes(sectionId)
+        ? prev.clickedHelpButtons
+        : [...prev.clickedHelpButtons, sectionId],
+    }));
   }, []);
 
   // Set current page for context-aware teaching
@@ -251,6 +270,8 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     setTeachingEnabled: setIsTeachingEnabled,
     hasSeenTeaching,
     isDismissedForever,
+    hasClickedHelpButton,
+    markHelpButtonClicked,
     getAvailableTeachings,
     getNextTeaching,
     setCurrentPage,

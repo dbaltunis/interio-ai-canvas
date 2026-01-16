@@ -328,7 +328,7 @@ export const OptionsStep8 = () => (
     <div className="text-xs text-muted-foreground bg-primary/10 border border-primary/30 rounded p-3">
       <div className="flex items-center gap-2 mb-1">
         <Sparkles className="h-4 w-4 text-primary" />
-        <span className="font-medium text-primary">Game Changer!</span>
+        <span className="font-medium text-primary">Time Saver</span>
       </div>
       Sync options directly from your inventory library - import hundreds of materials, fabrics, or hardware items in seconds with prices intact.
     </div>
@@ -601,7 +601,7 @@ export const OptionsStep15 = () => (
     <div className="text-center mb-2">
       <MockBadge variant="primary" className="mb-2">
         <Sparkles className="h-3 w-3 mr-1" />
-        Game Changer
+        Powerful Feature
       </MockBadge>
       <h4 className="font-semibold text-sm text-foreground">Conditional Rules</h4>
       <p className="text-xs text-muted-foreground">Automate option visibility based on selections</p>

@@ -90,7 +90,7 @@ export const IntegrationsStep2 = () => (
         { label: "Calendar", desc: "Google" },
         { label: "PIM", desc: "TIG" },
         { label: "ERP", desc: "MYOB" },
-        { label: "RFMS", desc: "Furnishing" },
+        { label: "RFMS", desc: "Flooring" },
         { label: "Payments", desc: "Stripe" },
       ].map((item, i) => (
         <div key={i} className="text-center p-2 border rounded bg-muted/30">
@@ -256,12 +256,12 @@ export const IntegrationsStep7 = () => (
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Store className="h-4 w-4 text-teal-500" />
-          RFMS Furnishing Software
+          RFMS Flooring Software
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Connect to RFMS for seamless order management and inventory sync.
+          Connect to RFMS for flooring software integration and order management.
         </p>
         <div className="space-y-1">
           <label className="text-xs font-medium">Company ID</label>
