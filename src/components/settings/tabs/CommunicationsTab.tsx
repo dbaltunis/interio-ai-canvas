@@ -11,6 +11,8 @@ import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+
 export const CommunicationsTab = () => {
   const {
     hasSendGridIntegration
@@ -47,10 +49,13 @@ export const CommunicationsTab = () => {
   });
   const hasOwnWhatsApp = whatsappSettings?.use_own_account && whatsappSettings?.verified;
   return <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h3 className="text-lg font-medium">Communications</h3>
-        
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Communications</h3>
+          <p className="text-sm text-muted-foreground">Configure email, SMS, and WhatsApp settings</p>
+        </div>
+        <SectionHelpButton sectionId="communications" />
       </div>
 
       {/* Quick Start Guide */}

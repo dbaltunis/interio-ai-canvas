@@ -12,6 +12,7 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { Layers, Settings, Sliders, Truck, Lock } from "lucide-react";
 
 interface CreateTemplateData {
@@ -118,6 +119,15 @@ export const WindowCoveringsTab = ({
 
   return (
     <div className="space-y-6">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Products</h3>
+          <p className="text-sm text-muted-foreground">Manage templates, options, and manufacturing settings</p>
+        </div>
+        <SectionHelpButton sectionId="products" />
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Window Coverings Management</CardTitle>

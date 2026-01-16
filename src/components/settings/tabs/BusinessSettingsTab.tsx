@@ -13,6 +13,7 @@ import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { SimpleLogoUpload } from "./SimpleLogoUpload";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { getRegistrationLabels, ORGANIZATION_TYPES, PAYMENT_TERMS_OPTIONS, COUNTRIES } from "@/utils/businessRegistrationLabels";
@@ -438,6 +439,15 @@ export const BusinessSettingsTab = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Business Settings</h3>
+          <p className="text-sm text-muted-foreground">Configure your company details and branding</p>
+        </div>
+        <SectionHelpButton sectionId="business" />
+      </div>
+
       {/* Company Information */}
       <FormSection
         key="company-section"

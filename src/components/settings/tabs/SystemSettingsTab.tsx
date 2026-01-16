@@ -16,6 +16,7 @@ import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSett
 import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
 import { StatusManagement } from "../user-management/StatusManagement";
 import { toast } from "sonner";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -76,6 +77,15 @@ export const SystemSettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Help */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">System Settings</h3>
+          <p className="text-sm text-muted-foreground">Configure app preferences and maintenance</p>
+        </div>
+        <SectionHelpButton sectionId="system" />
+      </div>
+
       <SettingsInheritanceInfo 
         settingsType="system and feature" 
         isInheriting={isInheritingSettings}
