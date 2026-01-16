@@ -29,6 +29,33 @@ import {
   OptionsStep7,
   OptionsStep8,
 } from "@/components/help/tutorial-steps/OptionsSteps";
+import {
+  HeadingsStep1,
+  HeadingsStep2,
+  HeadingsStep3,
+  HeadingsStep4,
+  HeadingsStep5,
+  HeadingsStep6,
+  HeadingsStep7,
+  HeadingsStep8,
+} from "@/components/help/tutorial-steps/HeadingsSteps";
+import {
+  DefaultsStep1,
+  DefaultsStep2,
+  DefaultsStep3,
+  DefaultsStep4,
+  DefaultsStep5,
+  DefaultsStep6,
+} from "@/components/help/tutorial-steps/DefaultsSteps";
+import {
+  SuppliersStep1,
+  SuppliersStep2,
+  SuppliersStep3,
+  SuppliersStep4,
+  SuppliersStep5,
+  SuppliersStep6,
+  SuppliersStep7,
+} from "@/components/help/tutorial-steps/SuppliersSteps";
 
 export interface TutorialStep {
   title: string;
@@ -177,31 +204,115 @@ export const templatesTutorial: Tutorial = {
 };
 
 // ===========================================
-// SUPPLIERS TUTORIAL (placeholder)
+// SUPPLIERS TUTORIAL - COMPREHENSIVE (7 Steps)
 // ===========================================
 export const suppliersTutorial: Tutorial = {
   id: "products-suppliers",
   steps: [
     {
+      title: "Integration required first",
+      actionLabel: "Enable",
+      description: "Supplier catalogs require integration. Enable The Window Covering (TWC) in Settings → Integrations.",
+      Visual: SuppliersStep1,
+      relatedSection: "settings-integrations",
+      prerequisiteNote: "Enable in Settings → Integrations first",
+    },
+    {
       title: "Browse the supplier catalog",
-      actionLabel: "Navigate",
-      description: "Access the TWC supplier catalog to find pre-configured products you can import as templates.",
-      Visual: () => null, // Placeholder
+      actionLabel: "Search",
+      description: "Use the search bar to find specific products or browse the full catalog of available items.",
+      Visual: SuppliersStep2,
+    },
+    {
+      title: "Filter by product type",
+      actionLabel: "Filter",
+      description: "Narrow down results by selecting a product type like Roller Blinds, Curtains, or Roman Blinds.",
+      Visual: SuppliersStep3,
+    },
+    {
+      title: "Select products to import",
+      actionLabel: "Select",
+      description: "Click checkboxes to select one or more products. Selected products will show pricing and details.",
+      Visual: SuppliersStep4,
+    },
+    {
+      title: "Import selected products",
+      actionLabel: "Import",
+      description: "Click 'Import Selected' to copy products to your account with all options and pricing intact.",
+      Visual: SuppliersStep5,
+    },
+    {
+      title: "View your imported products",
+      actionLabel: "Review",
+      description: "Imported products appear in your list with a 'Synced' badge. Pricing updates automatically.",
+      Visual: SuppliersStep6,
+    },
+    {
+      title: "Create template from import",
+      actionLabel: "Create",
+      description: "Turn an imported product into a ready-to-use template with one click. Customize as needed.",
+      Visual: SuppliersStep7,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Complete template setup in My Templates",
     },
   ],
 };
 
 // ===========================================
-// HEADINGS TUTORIAL (placeholder)
+// HEADINGS TUTORIAL - COMPREHENSIVE (8 Steps)
 // ===========================================
 export const headingsTutorial: Tutorial = {
   id: "products-headings",
   steps: [
     {
-      title: "Create a new heading style",
-      actionLabel: "Click Add",
-      description: "Add custom heading styles with specific fullness ratios and pricing for your curtain products.",
-      Visual: () => null, // Placeholder
+      title: "Click Add Heading Style",
+      actionLabel: "Click Button",
+      description: "Start by clicking 'Add Heading Style' to create a new heading for your curtain products.",
+      Visual: HeadingsStep1,
+    },
+    {
+      title: "Enter the heading name",
+      actionLabel: "Type Name",
+      description: "Give your heading a descriptive name like 'Pinch Pleat', 'Wave Fold', or 'Eyelet'.",
+      Visual: HeadingsStep2,
+    },
+    {
+      title: "Select heading type",
+      actionLabel: "Choose Type",
+      description: "Select the type of heading construction. This helps categorize and organize your headings.",
+      Visual: HeadingsStep3,
+    },
+    {
+      title: "Set the fullness ratio",
+      actionLabel: "Enter Ratio",
+      description: "Fullness determines how much fabric is used. 2.2× means 220cm of fabric per 100cm of track.",
+      Visual: HeadingsStep4,
+    },
+    {
+      title: "Add multiple fullness options",
+      actionLabel: "Add Options",
+      description: "Offer different fullness levels (Standard, Recommended, Luxury) for customer choice.",
+      Visual: HeadingsStep5,
+    },
+    {
+      title: "Set pricing (optional)",
+      actionLabel: "Enter Price",
+      description: "Add a cost price per linear metre for this heading style. Used in manufacturing calculations.",
+      Visual: HeadingsStep6,
+    },
+    {
+      title: "Configure extra fabric allowance",
+      actionLabel: "Set Allowance",
+      description: "Add extra centimeters per width for heading construction or pattern matching needs.",
+      Visual: HeadingsStep7,
+    },
+    {
+      title: "Save and use in templates",
+      actionLabel: "Save",
+      description: "Your heading is now available to enable in curtain templates via the Heading tab.",
+      Visual: HeadingsStep8,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Enable in Templates → Heading tab",
     },
   ],
 };
@@ -266,16 +377,48 @@ export const optionsTutorial: Tutorial = {
 };
 
 // ===========================================
-// DEFAULTS TUTORIAL (placeholder)
+// DEFAULTS TUTORIAL - COMPREHENSIVE (6 Steps)
 // ===========================================
 export const defaultsTutorial: Tutorial = {
   id: "products-defaults",
   steps: [
     {
-      title: "Configure manufacturing defaults",
-      actionLabel: "Edit Settings",
-      description: "Set default values for hem allowance, side allowance, and fabric waste percentages.",
-      Visual: () => null, // Placeholder
+      title: "Understanding global defaults",
+      actionLabel: "Learn",
+      description: "These values apply to all curtain templates unless overridden. Changes affect all future quotes.",
+      Visual: DefaultsStep1,
+    },
+    {
+      title: "Set return & overlap values",
+      actionLabel: "Configure",
+      description: "Define how curtains wrap around track ends (returns) and meet in the center (overlap).",
+      Visual: DefaultsStep2,
+    },
+    {
+      title: "Configure hem allowances",
+      actionLabel: "Set Hems",
+      description: "Set the extra fabric needed for bottom hems, headers, side hems, and lining hems.",
+      Visual: DefaultsStep3,
+    },
+    {
+      title: "Set waste percentage",
+      actionLabel: "Enter %",
+      description: "Account for cutting waste and defects. 5% means ordering 10.5m when 10m is calculated.",
+      Visual: DefaultsStep4,
+    },
+    {
+      title: "Choose measurement unit",
+      actionLabel: "Select Unit",
+      description: "Pick centimeters or inches for all manufacturing values in quotes and worksheets.",
+      Visual: DefaultsStep5,
+    },
+    {
+      title: "Save your defaults",
+      actionLabel: "Save",
+      description: "Click save to apply. Override these per-template in Templates → Manufacturing tab.",
+      Visual: DefaultsStep6,
+      relatedSection: "products-templates",
+      prerequisiteNote: "Override per template in Templates → Manufacturing tab",
     },
   ],
 };
