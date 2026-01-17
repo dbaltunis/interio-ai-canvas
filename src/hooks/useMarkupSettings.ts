@@ -92,21 +92,63 @@ export const useUpdateMarkupSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const currentSettings = businessSettings?.pricing_settings 
-        ? (typeof businessSettings.pricing_settings === 'string' 
-           ? JSON.parse(businessSettings.pricing_settings) 
-           : businessSettings.pricing_settings)
-        : defaultMarkupSettings;
+      // Fetch fresh business settings to avoid stale closure
+      const { data: freshBusinessSettings } = await supabase
+        .from('business_settings')
+        .select('id, pricing_settings')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      // Deep merge category_markups to preserve all keys (product + manufacturing)
+      const currentSettings = freshBusinessSettings?.pricing_settings 
+        ? (typeof freshBusinessSettings.pricing_settings === 'string' 
+           ? JSON.parse(freshBusinessSettings.pricing_settings) 
+           : freshBusinessSettings.pricing_settings)
+        : { ...defaultMarkupSettings };
+
+      // Ensure category_markups exists with all defaults
+      const currentCategoryMarkups = {
+        ...defaultMarkupSettings.category_markups,
+        ...(currentSettings.category_markups || {})
+      };
+
+      // Deep merge: preserve all existing values, only override what's in newSettings
       const updatedSettings = {
+        ...defaultMarkupSettings,
         ...currentSettings,
         ...newSettings,
-        category_markups: {
-          ...(currentSettings.category_markups || {}),
-          ...(newSettings.category_markups || {})
-        }
+        category_markups: newSettings.category_markups 
+          ? { ...currentCategoryMarkups, ...newSettings.category_markups }
+          : currentCategoryMarkups
       };
+
+      console.log('[MARKUP SAVE] Current:', currentCategoryMarkups);
+      console.log('[MARKUP SAVE] New:', newSettings.category_markups);
+      console.log('[MARKUP SAVE] Final:', updatedSettings.category_markups);
+
+      // Update existing business settings or create new one
+      if (freshBusinessSettings?.id) {
+        const { data, error } = await supabase
+          .from('business_settings')
+          .update({ pricing_settings: updatedSettings })
+          .eq('id', freshBusinessSettings.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('business_settings')
+          .insert({
+            user_id: user.id,
+            pricing_settings: updatedSettings
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
 
       // Update existing business settings or create new one
       if (businessSettings?.id) {
