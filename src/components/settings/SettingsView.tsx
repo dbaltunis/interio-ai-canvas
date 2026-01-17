@@ -219,6 +219,15 @@ export const SettingsView = () => {
     }
   }, [activeTab, canViewWindowTreatments, permissionsLoading, roleLoading, explicitPermissions]);
 
+  // Sync activeTab with URL tab parameter changes (e.g., when clicking "Go to Email Templates" button)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const newTabParam = urlParams.get('tab') || urlParams.get('section');
+    if (newTabParam && newTabParam !== activeTab) {
+      setActiveTab(newTabParam);
+    }
+  }, [location.search]);
+
   // Redirect away from users tab if user doesn't have permission
   useEffect(() => {
     if (activeTab === "users" && !canViewTeamMembers && !permissionsLoading && !roleLoading && explicitPermissions !== undefined) {

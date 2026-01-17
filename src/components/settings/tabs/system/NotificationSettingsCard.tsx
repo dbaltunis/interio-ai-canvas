@@ -57,19 +57,28 @@ export const NotificationSettingsCard = () => {
 
   const handleDesktopToggle = async (enabled: boolean) => {
     if (enabled) {
-      // Request browser permission
-      if (!('Notification' in window)) {
-        toast.error('Desktop notifications are not supported in this browser');
-        return;
+      try {
+        // Check browser support
+        if (!('Notification' in window)) {
+          toast.error('Desktop notifications are not supported in this browser');
+          return;
+        }
+        
+        // Check if running in iframe (preview mode) - permission requests fail in iframes
+        if (window.self !== window.top) {
+          toast.info('Desktop notifications require the app to run in its own window. Your preference will be saved.');
+        } else {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            toast.error('Desktop notification permission denied');
+            return;
+          }
+          toast.success('Desktop notifications enabled');
+        }
+      } catch (error) {
+        console.warn('Notification permission request failed:', error);
+        toast.info('Desktop notifications may not work in this context. Your preference will be saved.');
       }
-      
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        toast.error('Desktop notification permission denied');
-        return;
-      }
-      
-      toast.success('Desktop notifications enabled');
     }
     
     handleToggle('desktop_notifications_enabled', enabled, setDesktopEnabled);
