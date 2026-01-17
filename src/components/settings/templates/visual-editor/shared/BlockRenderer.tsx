@@ -808,6 +808,41 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= PRIVACY POLICY BLOCK =============
+export const PrivacyPolicyBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData
+}) => {
+  const content = block.content || {};
+  const style = block.style || {};
+  const businessSettings = projectData?.businessSettings || {};
+
+  return (
+    <div 
+      className="mb-6 rounded-lg"
+      style={{
+        padding: style.padding || '16px',
+        backgroundColor: style.backgroundColor || 'transparent'
+      }}
+    >
+      <h3 className="text-lg font-semibold mb-4 text-gray-900">
+        {content.title || 'Privacy Policy'}
+      </h3>
+      <div className="text-sm text-gray-600 space-y-3">
+        {businessSettings?.privacy_policy ? (
+          <div className="whitespace-pre-wrap">
+            {businessSettings.privacy_policy}
+          </div>
+        ) : (
+          <p className="text-muted-foreground italic">
+            No privacy policy configured. Add it in Settings → System → Terms & Conditions.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ============= INVOICE STATUS BLOCK (Shows payment status, amount paid, balance due) =============
 export const InvoiceStatusBlock: React.FC<BlockRendererProps> = ({
   block,
@@ -1235,6 +1270,10 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
     case 'terms-conditions':
     case 'terms':
       return <TermsConditionsBlock {...props} />;
+    
+    // Privacy policy block
+    case 'privacy-policy':
+      return <PrivacyPolicyBlock {...props} />;
       
     default:
       return null; // Let parent handle unknown types
