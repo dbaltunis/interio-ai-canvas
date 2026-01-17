@@ -1706,8 +1706,9 @@ const LivePreviewBlock = ({
       );
 
     case 'terms-conditions':
-      // ALWAYS prioritize system terms from business settings - block content is ONLY a fallback
-      const systemTerms = projectData?.businessSettings?.general_terms_and_conditions;
+      // ALWAYS prioritize system terms from userBusinessSettings prop (global settings) - block content is ONLY a fallback
+      const systemTerms = userBusinessSettings?.general_terms_and_conditions 
+        || projectData?.businessSettings?.general_terms_and_conditions;
       const termsToShow = systemTerms ? (
         <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
       ) : (content.term1 || content.term2 || content.term3 || content.term4) ? (
@@ -1732,8 +1733,9 @@ const LivePreviewBlock = ({
       );
 
     case 'privacy-policy':
-      // Use system privacy policy from business settings
-      const privacyPolicy = projectData?.businessSettings?.privacy_policy;
+      // Use system privacy policy from userBusinessSettings prop (global settings) - fallback to projectData
+      const privacyPolicy = userBusinessSettings?.privacy_policy 
+        || projectData?.businessSettings?.privacy_policy;
       return (
         <div style={{ marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
