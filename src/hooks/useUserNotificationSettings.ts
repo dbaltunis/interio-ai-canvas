@@ -33,6 +33,8 @@ export const useUserNotificationSettings = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      console.log('[useUserNotificationSettings] Query result:', { data, error, userId: user.id });
+
       if (error) {
         console.error("Error fetching notification settings:", error);
         throw error;
