@@ -6,6 +6,9 @@
  * HORIZONTAL (Railroaded): Fabric runs side to side
  * 
  * NO HIDDEN DEFAULTS - all values must come from template
+ * 
+ * BUG FIX (2025-01-17): Removed duplicate horizontalPiecesNeeded calculation
+ * that was overwriting the correct centralized formula result, causing 50% overcharge.
  */
 
 import { FabricCalculationParams, OrientationResult } from './types';
@@ -107,6 +110,12 @@ export const calculateOrientation = (
   if (orientation === 'horizontal') {
     // Railroaded/Wide fabric: fabric runs horizontally (sideways)
     effectiveFabricWidth = fabricWidth;
+    
+    // CRITICAL FIX (2025-01-17): Use ONLY the centralized formula result for piece count
+    // Previously this value was being OVERWRITTEN below when requiredLength > fabricWidth,
+    // using requiredLength (which includes pattern repeat rounding) instead of totalDropCm.
+    // This caused horizontalPiecesNeeded to be 3 instead of 2 for a 260cm drop with 140cm fabric,
+    // resulting in 50% overcharge (15.90m instead of 10.30m).
     horizontalPiecesNeeded = formulaResult.widthsRequired;
 
     const requiredLengthUnrounded = totalDropRaw;
@@ -116,17 +125,25 @@ export const calculateOrientation = (
     const requiredWidthUnrounded = totalWidthRaw + totalSideHemAllowance;
     requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     
-    // Handle multiple horizontal pieces when drop exceeds fabric width
-    if (requiredLength > fabricWidth) {
-      horizontalPiecesNeeded = Math.ceil(requiredLength / fabricWidth);
-      
-      // Calculate what's used from the last piece and leftover
-      const totalUsedHeight = requiredLength;
+    // Debug logging for horizontal calculation verification
+    console.log('🔧 HORIZONTAL FABRIC CALC:', {
+      totalDropCm: formulaResult.totalDropCm,
+      fabricWidthCm: fabricWidth,
+      formulaWidthsRequired: formulaResult.widthsRequired,
+      horizontalPiecesNeeded,
+      expectedPieces: Math.ceil(formulaResult.totalDropCm / fabricWidth),
+      requiredLengthWithRepeat: requiredLength,
+      MATCHES_EXPECTED: horizontalPiecesNeeded === Math.ceil(formulaResult.totalDropCm / fabricWidth)
+    });
+    
+    // Calculate leftover from last piece (for user info only - does NOT affect piece count)
+    if (horizontalPiecesNeeded > 1) {
+      const totalUsedHeight = formulaResult.totalDropCm;
       const lastPieceUsage = totalUsedHeight % fabricWidth;
       leftoverFromLastPiece = lastPieceUsage > 0 ? fabricWidth - lastPieceUsage : 0;
       
       warnings.push(
-        `⚠️ Second width required: Drop height exceeds fabric width`
+        `⚠️ Multiple widths required: Drop height (${formulaResult.totalDropCm.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm)`
       );
       
       if (leftoverFromLastPiece > 0) {
@@ -134,9 +151,9 @@ export const calculateOrientation = (
           `📏 Leftover from last piece: ${leftoverFromLastPiece.toFixed(1)}cm (${((leftoverFromLastPiece / fabricWidth) * 100).toFixed(1)}% of fabric width)`
         );
       }
-      
-      feasible = true;
     }
+    
+    feasible = true;
   } else {
     // Vertical/Standard fabric: fabric runs vertically (normal orientation)
     effectiveFabricWidth = fabricWidth;
