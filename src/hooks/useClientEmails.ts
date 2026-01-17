@@ -1,23 +1,28 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useClientEmails = (clientId: string) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["client-emails", clientId],
     queryFn: async () => {
       console.log('useClientEmails: Fetching emails for client', clientId);
       
-      // First, get the client's email address
+      // First, get the client's email address - use maybeSingle to handle deleted clients
       const { data: client, error: clientError } = await supabase
         .from("clients")
         .select("email")
         .eq("id", clientId)
-        .single();
+        .maybeSingle();
 
       if (clientError) {
         console.error('useClientEmails: Error fetching client:', clientError);
         throw clientError;
+      }
+
+      // Handle case where client was deleted - return empty array, not an error
+      if (!client) {
+        console.warn(`useClientEmails: Client ${clientId} not found - may have been deleted`);
+        return { emails: [] as any[], clientNotFound: true };
       }
 
       console.log('useClientEmails: Client email found:', client?.email);
@@ -37,8 +42,15 @@ export const useClientEmails = (clientId: string) => {
       }
       
       console.log('useClientEmails: Found emails:', data?.length || 0);
-      return data || [];
+      return { emails: data || [], clientNotFound: false };
     },
     enabled: !!clientId,
   });
+
+  // Return emails array directly for backward compatibility, plus additional metadata
+  return {
+    ...query,
+    data: query.data?.emails || [],
+    clientNotFound: query.data?.clientNotFound || false,
+  };
 };
