@@ -23,7 +23,14 @@ export const NotificationSettingsCard = () => {
 
   // Sync with database when settings load
   useEffect(() => {
+    console.log('[NotificationSettingsCard] Settings received:', settings);
     if (settings) {
+      console.log('[NotificationSettingsCard] Setting states:', {
+        email: settings.email_notifications_enabled,
+        sms: settings.sms_notifications_enabled,
+        desktop: settings.desktop_notifications_enabled,
+        reminders: settings.appointment_reminders_enabled
+      });
       setEmailEnabled(settings.email_notifications_enabled ?? true);
       setSmsEnabled(settings.sms_notifications_enabled ?? false);
       setDesktopEnabled(settings.desktop_notifications_enabled ?? false);
