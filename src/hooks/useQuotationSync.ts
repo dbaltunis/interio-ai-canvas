@@ -79,6 +79,7 @@ export const useQuotationSync = ({
     windowCosts: Record<string, number>;
     roomProductsCount: number;
     breakdownHash?: string;
+    markupHash?: string;
   }>({
     treatmentCount: 0,
     roomCount: 0,
@@ -86,7 +87,8 @@ export const useQuotationSync = ({
     totalCost: 0,
     windowCosts: {},
     roomProductsCount: 0,
-    breakdownHash: ''
+    breakdownHash: '',
+    markupHash: ''
   });
 
   // Build quotation items from current project data
@@ -788,6 +790,19 @@ export const useQuotationSync = ({
     
     const breakdownChanged = currentBreakdownHash !== previousDataRef.current.breakdownHash;
 
+    // Check if markup settings have changed (CRITICAL: triggers re-sync when user changes markup %)
+    const currentMarkupHash = JSON.stringify({
+      default: markupSettings?.default_markup_percentage,
+      material: markupSettings?.material_markup_percentage,
+      labor: markupSettings?.labor_markup_percentage,
+      categories: markupSettings?.category_markups
+    });
+    const markupChanged = currentMarkupHash !== previousDataRef.current.markupHash;
+    
+    if (markupChanged) {
+      console.log('[QUOTE SYNC] 💰 Markup settings changed, will refresh prices');
+    }
+
     // Check if data has changed
     const hasChanges = 
       currentData.treatmentCount !== previousDataRef.current.treatmentCount ||
@@ -797,7 +812,11 @@ export const useQuotationSync = ({
       Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01 ||
       windowIdsChanged ||
       windowValuesChanged ||
-      breakdownChanged;
+      breakdownChanged ||
+      markupChanged;
+    
+    // Update markup hash for next comparison
+    previousDataRef.current.markupHash = currentMarkupHash;
 
     if (!hasChanges) {
       return; // No changes detected
@@ -991,7 +1010,7 @@ export const useQuotationSync = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [projectId, treatments, rooms, surfaces, projectSummaries, projectSummaries?.windows, allRoomProducts]);
+  }, [projectId, treatments, rooms, surfaces, projectSummaries, projectSummaries?.windows, allRoomProducts, markupSettings]);
 
   return {
     isLoading: createQuote.isPending || updateQuote.isPending,
