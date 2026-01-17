@@ -93,8 +93,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const returnLeft = template?.return_left || 0;
   const returnRight = template?.return_right || 0;
   const seamHems = template?.seam_hems || 0;
-  const headerHem = template?.header_allowance || 8;
-  const bottomHem = template?.bottom_hem || 8;
+  // Use nullish coalescing - 0 is valid for "no hem"
+  const headerHem = template?.header_allowance ?? 8;
+  const bottomHem = template?.bottom_hem ?? 8;
   // ✅ FIX: Use 1 (no multiplication) as fallback, log warning if missing
   const fullnessRatio = template?.fullness_ratio || (() => {
     console.warn('⚠️ calculateTreatmentPricing: No fullness_ratio in template, using 1 (no multiplication)');

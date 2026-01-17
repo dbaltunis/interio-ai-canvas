@@ -637,11 +637,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // CRITICAL FIX: Also apply defaults when values are explicitly 0
           const templateToUse = existingWindowSummary.template_details || selectedTemplate;
           if (templateToUse) {
-            // Apply defaults if values don't exist OR are 0
+            // Apply defaults if values don't exist - FIXED: 0 is a valid explicit value
             const safeValue = (saved: any, ...fallbacks: any[]) => {
-              if (saved !== null && saved !== undefined && saved !== 0 && saved !== '0') return saved;
+              // Only treat null/undefined as missing - 0 is valid for "no hem/allowance"
+              if (saved !== null && saved !== undefined) return saved;
               for (const fb of fallbacks) {
-                if (fb !== null && fb !== undefined && fb !== 0 && fb !== '0') return fb;
+                if (fb !== null && fb !== undefined) return fb;
               }
               return fallbacks[fallbacks.length - 1];
             };
