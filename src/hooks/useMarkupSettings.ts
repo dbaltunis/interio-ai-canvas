@@ -65,9 +65,14 @@ export const useMarkupSettings = () => {
           ? JSON.parse(businessSettings.pricing_settings) 
           : businessSettings.pricing_settings;
         
+        // Deep merge category_markups to preserve all keys including new manufacturing ones
         return {
           ...defaultMarkupSettings,
-          ...pricingSettings
+          ...pricingSettings,
+          category_markups: {
+            ...defaultMarkupSettings.category_markups,
+            ...(pricingSettings.category_markups || {})
+          }
         } as MarkupSettings;
       } catch (error) {
         console.error('Error parsing pricing settings:', error);
@@ -93,9 +98,14 @@ export const useUpdateMarkupSettings = () => {
            : businessSettings.pricing_settings)
         : defaultMarkupSettings;
 
+      // Deep merge category_markups to preserve all keys (product + manufacturing)
       const updatedSettings = {
         ...currentSettings,
-        ...newSettings
+        ...newSettings,
+        category_markups: {
+          ...(currentSettings.category_markups || {}),
+          ...(newSettings.category_markups || {})
+        }
       };
 
       // Update existing business settings or create new one
