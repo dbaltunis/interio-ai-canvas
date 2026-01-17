@@ -72,25 +72,25 @@ export const QuotationTab = ({
   const urlTemplateId = searchParams.get('templateId');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(urlTemplateId || '');
   
-  // Validate template exists in database before using
+  // Validate template exists in database before using (check quote_templates, not curtain_templates)
   const { data: templateExists } = useQuery({
-    queryKey: ['validate-template-exists', urlTemplateId],
+    queryKey: ['validate-quote-template-exists', urlTemplateId],
     queryFn: async () => {
       if (!urlTemplateId) return null;
       const { data } = await supabase
-        .from('curtain_templates')
-        .select('id')
+        .from('quote_templates')
+        .select('id, name')
         .eq('id', urlTemplateId)
         .maybeSingle();
-      return !!data;
+      return data ? { exists: true, name: data.name } : { exists: false, name: null };
     },
     enabled: !!urlTemplateId,
     staleTime: 30000,
   });
   
-  // Clear invalid template ID from URL
+  // Clear invalid template ID from URL with improved error message
   useEffect(() => {
-    if (urlTemplateId && templateExists === false) {
+    if (urlTemplateId && templateExists && templateExists.exists === false) {
       setSearchParams(prev => {
         prev.delete('templateId');
         prev.delete('windowId');
@@ -99,8 +99,8 @@ export const QuotationTab = ({
       setSelectedTemplateId('');
       
       toast({
-        title: "Template not found",
-        description: "The template in the URL no longer exists. Please select a new template.",
+        title: "Quote template not found",
+        description: "The previously selected template may have been deleted or deactivated. Please select a different template from the dropdown.",
         variant: "destructive",
       });
     }
