@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Printer, FileCheck, Eye, Filter } from "lucide-react";
+import { Download, Mail, MoreVertical, Printer, FileCheck, Eye, Filter, AlertTriangle } from "lucide-react";
 import { generateQuotePDF, generateQuotePDFBlob } from "@/utils/generateQuotePDF";
 import { PrintableWorkOrder } from "@/components/jobs/workorder/PrintableWorkOrder";
 import { WorkOrderPreviewModal } from "@/components/jobs/workorder/WorkOrderPreviewModal";
@@ -17,6 +17,7 @@ import { ActionBar } from "@/components/ui/action-bar";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface WorkOrderTabProps {
   projectId: string;
@@ -30,6 +31,7 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedRoom, setSelectedRoom] = useState<string>('all');
   const [selectedTreatmentType, setSelectedTreatmentType] = useState<string>('all');
+  const [templateWarningDismissed, setTemplateWarningDismissed] = useState(false);
   
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -61,7 +63,31 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
     },
   });
 
-  // Set default template
+  // Check if selected template still exists
+  const selectedTemplateExists = useMemo(() => {
+    if (!selectedTemplateId) return true;
+    return activeTemplates?.some(t => t.id.toString() === selectedTemplateId) ?? true;
+  }, [selectedTemplateId, activeTemplates]);
+
+  // Clear invalid template and show warning
+  useEffect(() => {
+    if (selectedTemplateId && activeTemplates && !selectedTemplateExists && !templateWarningDismissed) {
+      toast({
+        title: "Work order template not found",
+        description: "The previously selected template may have been deleted or deactivated. A new template has been selected.",
+        variant: "destructive",
+      });
+      // Auto-select first available template
+      if (activeTemplates.length > 0) {
+        setSelectedTemplateId(activeTemplates[0].id.toString());
+      } else {
+        setSelectedTemplateId('');
+      }
+      setTemplateWarningDismissed(true);
+    }
+  }, [selectedTemplateId, activeTemplates, selectedTemplateExists, templateWarningDismissed, toast]);
+
+  // Set default template on initial load
   useEffect(() => {
     if (activeTemplates && activeTemplates.length > 0 && !selectedTemplateId) {
       setSelectedTemplateId(activeTemplates[0].id.toString());

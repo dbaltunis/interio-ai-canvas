@@ -60,6 +60,9 @@ export const FabricSelectionSection = ({
   );
 
   const selectedFabricItem = fabricItems.find(item => item.id === selectedFabric);
+  
+  // Check if selected fabric no longer exists (was deleted)
+  const fabricNotFound = selectedFabric && !isLoading && !selectedFabricItem;
 
   const formatPrice = (price: number) => {
     const symbol = getCurrencySymbol(units.currency);
@@ -73,6 +76,14 @@ export const FabricSelectionSection = ({
 
   return (
     <div className="space-y-2 animate-fade-in">
+      {/* Warning for deleted fabric */}
+      {fabricNotFound && (
+        <div className="p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2">
+          <span className="flex-shrink-0">⚠️</span>
+          <span>The previously selected fabric is no longer available. Please select a different fabric from the list.</span>
+        </div>
+      )}
+      
       {/* Compact Fabric Selection */}
       <div>
         <Label className="text-xs font-medium">Choose Fabric</Label>
