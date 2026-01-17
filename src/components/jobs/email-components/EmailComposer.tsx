@@ -13,7 +13,7 @@ import {
   Paperclip,
   X
 } from "lucide-react";
-import { useEmailTemplates } from "@/hooks/useEmailTemplates";
+import { useGeneralEmailTemplates } from "@/hooks/useGeneralEmailTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { RichTextEditor } from "./RichTextEditor";
 import { AppointmentSchedulerSelector } from "./AppointmentSchedulerSelector";
@@ -39,12 +39,12 @@ export const EmailComposer = ({
   sendEmailMutation,
   emailSettings
 }: EmailComposerProps) => {
-  const { data: emailTemplates } = useEmailTemplates();
+  const { data: emailTemplates } = useGeneralEmailTemplates();
   const { toast } = useToast();
   const [attachments, setAttachments] = useState<File[]>([]);
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = emailTemplates?.find(t => t.id === templateId);
+    const template = emailTemplates?.find((t: any) => t.id === templateId);
     if (template) {
       setNewEmail({
         ...newEmail,
@@ -158,9 +158,9 @@ export const EmailComposer = ({
                   <SelectValue placeholder="Choose a template..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {emailTemplates?.map((template) => (
+                  {emailTemplates?.map((template: any) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.subject}
+                      {template.template_type}: {template.subject}
                     </SelectItem>
                   ))}
                 </SelectContent>

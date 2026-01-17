@@ -85,28 +85,40 @@
   padding-bottom: 0.5rem !important;
 }
 
-/* Common Tailwind utility overrides (best‑effort) */
-.compact [class*="p-8"] { padding: 1.25rem !important; }
-.compact [class*="px-8"] { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
-.compact [class*="py-8"] { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
-.compact [class*="p-6"] { padding: 1rem !important; }
-.compact [class*="px-6"] { padding-left: 1rem !important; padding-right: 1rem !important; }
-.compact [class*="py-6"] { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-.compact [class*="p-5"] { padding: 0.875rem !important; }
-.compact [class*="px-5"] { padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
-.compact [class*="py-5"] { padding-top: 0.875rem !important; padding-bottom: 0.875rem !important; }
-.compact [class*="p-4"] { padding: 0.75rem !important; }
-.compact [class*="px-4"] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
-.compact [class*="py-4"] { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
-.compact [class*="gap-8"] { gap: 1.25rem !important; }
-.compact [class*="gap-6"] { gap: 1rem !important; }
-.compact [class*="gap-5"] { gap: 0.875rem !important; }
-.compact [class*="gap-4"] { gap: 0.75rem !important; }
+/* 
+ * Compact mode Tailwind overrides - use CSS variables for safer targeting
+ * These reduce spacing by ~25% for denser layouts
+ */
+.compact {
+  --compact-scale: 0.75;
+}
+
+/* Cards and major containers */
+.compact .p-8 { padding: 1.25rem !important; }
+.compact .px-8 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+.compact .py-8 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+.compact .p-6 { padding: 1rem !important; }
+.compact .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+.compact .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+.compact .p-5 { padding: 0.875rem !important; }
+.compact .px-5 { padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
+.compact .py-5 { padding-top: 0.875rem !important; padding-bottom: 0.875rem !important; }
+.compact .p-4 { padding: 0.75rem !important; }
+.compact .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+.compact .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+
+/* Gap utilities */
+.compact .gap-8 { gap: 1.25rem !important; }
+.compact .gap-6 { gap: 1rem !important; }
+.compact .gap-5 { gap: 0.875rem !important; }
+.compact .gap-4 { gap: 0.75rem !important; }
+
 /* Space utilities */
-.compact [class*="space-y-6"] > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem !important; }
-.compact [class*="space-y-4"] > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem !important; }
-.compact [class*="space-x-6"] > :not([hidden]) ~ :not([hidden]) { margin-left: 1rem !important; }
-.compact [class*="space-x-4"] > :not([hidden]) ~ :not([hidden]) { margin-left: 0.75rem !important; }
+.compact .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem !important; }
+.compact .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem !important; }
+.compact .space-x-6 > :not([hidden]) ~ :not([hidden]) { margin-left: 1rem !important; }
+.compact .space-x-4 > :not([hidden]) ~ :not([hidden]) { margin-left: 0.75rem !important; }
+
 /* Headings */
 .compact h1, .compact h2, .compact h3, .compact h4, .compact h5, .compact h6 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
 
