@@ -1706,18 +1706,17 @@ const LivePreviewBlock = ({
       );
 
     case 'terms-conditions':
-      // Use system terms from business settings, with block content as override
+      // ALWAYS prioritize system terms from business settings - block content is ONLY a fallback
       const systemTerms = projectData?.businessSettings?.general_terms_and_conditions;
-      const blockTerms = content.term1 || content.term2 || content.term3 || content.term4;
-      const termsToShow = blockTerms ? (
+      const termsToShow = systemTerms ? (
+        <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
+      ) : (content.term1 || content.term2 || content.term3 || content.term4) ? (
         <>
           {content.term1 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term1}</div>}
           {content.term2 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term2}</div>}
           {content.term3 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term3}</div>}
           {content.term4 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term4}</div>}
         </>
-      ) : systemTerms ? (
-        <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
       ) : (
         <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
       );

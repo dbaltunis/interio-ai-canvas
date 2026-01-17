@@ -1781,7 +1781,8 @@ export const EditableLivePreview = ({
     { type: 'footer', name: 'Footer', icon: FileText, description: 'Document footer', badge: null, badgeColor: null },
     
     // ===== QUOTE/PROPOSAL BLOCKS =====
-    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Uses system terms from Settings', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'privacy-policy', name: 'Privacy Policy', icon: FileText, description: 'Uses privacy policy from Settings', badge: 'Quote', badgeColor: 'blue' },
     { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Client acceptance signature', badge: 'Quote', badgeColor: 'blue' },
     { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded', badge: 'Quote', badgeColor: 'blue' },
     { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule', badge: 'Quote', badgeColor: 'blue' },
@@ -1913,6 +1914,10 @@ export const EditableLivePreview = ({
       case 'terms-conditions':
         return {
           title: 'Terms & Conditions'
+        };
+      case 'privacy-policy':
+        return {
+          title: 'Privacy Policy'
         };
       case 'payment-info':
         return {

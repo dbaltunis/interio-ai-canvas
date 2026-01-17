@@ -52,11 +52,12 @@ export const useCreateOrUpdateNotificationSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // First try to update existing settings
+      // First try to find existing settings for THIS user
       const { data: existingSettings } = await supabase
         .from("user_notification_settings")
         .select("id")
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (existingSettings) {
         // Update existing settings
