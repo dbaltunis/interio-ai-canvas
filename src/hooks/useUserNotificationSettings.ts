@@ -24,12 +24,17 @@ export const useUserNotificationSettings = () => {
   return useQuery({
     queryKey: ["user-notification-settings"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from("user_notification_settings")
         .select("*")
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
+        console.error("Error fetching notification settings:", error);
         throw error;
       }
       

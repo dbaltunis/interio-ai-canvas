@@ -1706,16 +1706,44 @@ const LivePreviewBlock = ({
       );
 
     case 'terms-conditions':
+      // Use system terms from business settings, with block content as override
+      const systemTerms = projectData?.businessSettings?.general_terms_and_conditions;
+      const blockTerms = content.term1 || content.term2 || content.term3 || content.term4;
+      const termsToShow = blockTerms ? (
+        <>
+          {content.term1 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term1}</div>}
+          {content.term2 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term2}</div>}
+          {content.term3 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term3}</div>}
+          {content.term4 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term4}</div>}
+        </>
+      ) : systemTerms ? (
+        <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
+      ) : (
+        <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
+      );
       return (
-        <div style={{ marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000 !important', backgroundColor: 'transparent !important' }}>
+        <div style={{ marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
             {content.title || 'Terms & Conditions'}
           </h3>
-          <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
-            <div style={{ marginBottom: '12px', color: '#000 !important' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
-            <div style={{ marginBottom: '12px', color: '#000 !important' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
-            <div style={{ marginBottom: '12px', color: '#000 !important' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
-            <div style={{ marginBottom: '12px', color: '#000 !important' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
+          <div style={{ fontSize: '14px', color: '#000' }}>
+            {termsToShow}
+          </div>
+        </div>
+      );
+
+    case 'privacy-policy':
+      // Use system privacy policy from business settings
+      const privacyPolicy = projectData?.businessSettings?.privacy_policy;
+      return (
+        <div style={{ marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
+            {content.title || 'Privacy Policy'}
+          </h3>
+          <div style={{ fontSize: '14px', color: '#000', whiteSpace: 'pre-wrap' }}>
+            {privacyPolicy || (
+              <span style={{ color: '#6b7280', fontStyle: 'italic' }}>No privacy policy configured. Add it in Settings → System → Terms & Conditions.</span>
+            )}
           </div>
         </div>
       );
