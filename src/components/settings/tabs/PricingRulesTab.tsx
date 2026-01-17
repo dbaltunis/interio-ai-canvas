@@ -350,42 +350,85 @@ export const PricingRulesTab = () => {
               </CardTitle>
               <CardDescription>Override default markup for specific categories (0 = use default)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { id: 'curtainMarkup', label: 'Curtains & Drapes', key: 'curtains' },
-                  { id: 'blindMarkup', label: 'Blinds', key: 'blinds' },
-                  { id: 'shutterMarkup', label: 'Shutters', key: 'shutters' },
-                  { id: 'hardwareMarkup', label: 'Hardware', key: 'hardware' },
-                  { id: 'fabricMarkup', label: 'Fabrics', key: 'fabric' },
-                  { id: 'installationMarkup', label: 'Installation', key: 'installation' }
-                ].map(({ id, label, key }) => {
-                  const value = formData.category_markups[key] || 0;
-                  const effective = value > 0 ? value : formData.default_markup_percentage;
-                  const usesDefault = value === 0;
-                  return (
-                    <div key={id} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={id}>{label}</Label>
-                        <span className="text-xs text-muted-foreground">
-                          {usesDefault ? `→ Default (${effective}%)` : `→ ${effective}%`}
-                        </span>
+            <CardContent className="space-y-6">
+              {/* Product Categories */}
+              <div>
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Product Categories</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'curtainMarkup', label: 'Curtains & Drapes', key: 'curtains' },
+                    { id: 'blindMarkup', label: 'Blinds', key: 'blinds' },
+                    { id: 'shutterMarkup', label: 'Shutters', key: 'shutters' },
+                    { id: 'hardwareMarkup', label: 'Hardware', key: 'hardware' },
+                    { id: 'fabricMarkup', label: 'Fabrics', key: 'fabric' },
+                    { id: 'installationMarkup', label: 'Installation', key: 'installation' }
+                  ].map(({ id, label, key }) => {
+                    const value = formData.category_markups[key] || 0;
+                    const effective = value > 0 ? value : formData.default_markup_percentage;
+                    const usesDefault = value === 0;
+                    return (
+                      <div key={id} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={id}>{label}</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {usesDefault ? `→ Default (${effective}%)` : `→ ${effective}%`}
+                          </span>
+                        </div>
+                        <Input 
+                          id={id} 
+                          type="number" 
+                          step="0.1" 
+                          value={value}
+                          placeholder="0"
+                          onChange={(e) => setFormData(prev => prev ? {
+                            ...prev, 
+                            category_markups: {...prev.category_markups, [key]: Number(e.target.value)}
+                          } : null)}
+                        />
                       </div>
-                      <Input 
-                        id={id} 
-                        type="number" 
-                        step="0.1" 
-                        value={value}
-                        placeholder="0"
-                        onChange={(e) => setFormData(prev => prev ? {
-                          ...prev, 
-                          category_markups: {...prev.category_markups, [key]: Number(e.target.value)}
-                        } : null)}
-                      />
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Manufacturing/Sewing Markups */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Manufacturing / Sewing</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'curtainMakingMarkup', label: 'Curtain Making', key: 'curtain_making' },
+                    { id: 'romanMakingMarkup', label: 'Roman Blind Making', key: 'roman_making' },
+                    { id: 'blindMakingMarkup', label: 'Blind Manufacturing', key: 'blind_making' },
+                    { id: 'shutterMakingMarkup', label: 'Shutter Manufacturing', key: 'shutter_making' }
+                  ].map(({ id, label, key }) => {
+                    const value = formData.category_markups[key] || 0;
+                    const effective = value > 0 ? value : formData.default_markup_percentage;
+                    const usesDefault = value === 0;
+                    return (
+                      <div key={id} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={id}>{label}</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {usesDefault ? `→ Default (${effective}%)` : `→ ${effective}%`}
+                          </span>
+                        </div>
+                        <Input 
+                          id={id} 
+                          type="number" 
+                          step="0.1" 
+                          value={value}
+                          placeholder="0"
+                          onChange={(e) => setFormData(prev => prev ? {
+                            ...prev, 
+                            category_markups: {...prev.category_markups, [key]: Number(e.target.value)}
+                          } : null)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <Button 
                 className="bg-primary hover:bg-primary/90"
                 onClick={handleSaveCategorySettings}

@@ -14,6 +14,11 @@ export interface MarkupSettings {
     curtains: number;
     blinds: number;
     shutters: number;
+    // Manufacturing markups by treatment type
+    curtain_making: number;
+    blind_making: number;
+    shutter_making: number;
+    roman_making: number;
     [key: string]: number;
   };
   minimum_markup_percentage: number;
@@ -32,7 +37,12 @@ export const defaultMarkupSettings: MarkupSettings = {
     installation: 0,
     curtains: 0,
     blinds: 0,
-    shutters: 0
+    shutters: 0,
+    // Manufacturing markups by treatment type
+    curtain_making: 0,
+    blind_making: 0,
+    shutter_making: 0,
+    roman_making: 0
   },
   minimum_markup_percentage: 0,
   dynamic_pricing_enabled: false,

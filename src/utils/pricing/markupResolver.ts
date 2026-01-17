@@ -97,9 +97,9 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     }
   }
   
-  // 5. Check material vs labor markup
+  // 5. Check material vs labor markup (including manufacturing/sewing)
   if (context.category) {
-    const isLabor = ['installation', 'service', 'fitting', 'labor', 'labour'].some(
+    const isLabor = ['installation', 'service', 'fitting', 'labor', 'labour', 'manufacturing', 'sewing', 'stitching', 'making'].some(
       t => context.category!.toLowerCase().includes(t)
     );
     if (isLabor && settings.labor_markup_percentage > 0) {
