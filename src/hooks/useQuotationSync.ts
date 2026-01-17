@@ -404,7 +404,12 @@ export const useQuotationSync = ({
               category: mfgMarkupKey,
               markupSettings
             });
-            console.log(`[QUOTE ITEM] Manufacturing markup: ${mfgMarkupKey} → ${mfgMarkupResult.percentage}% (source: ${mfgMarkupResult.sourceName})`);
+            console.log(`[QUOTE ITEM] Manufacturing markup lookup:`, {
+              mfgMarkupKey,
+              resolvedPercentage: mfgMarkupResult.percentage,
+              source: mfgMarkupResult.sourceName,
+              allCategoryMarkups: markupSettings?.category_markups
+            });
             
             const mfgCostPrice = summary.manufacturing_cost;
             const mfgSellingPrice = applyMarkup(mfgCostPrice, mfgMarkupResult.percentage);

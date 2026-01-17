@@ -65,13 +65,29 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
   // 4. Check category markup
   if (context.category) {
     const catKey = context.category.toLowerCase().replace(/[\s-]/g, '_');
+    
+    // First try exact key match (e.g., 'curtain_making')
     const catMarkup = settings.category_markups?.[catKey];
-    if (catMarkup && catMarkup > 0) {
+    if (catMarkup !== undefined && catMarkup > 0) {
       return {
         percentage: catMarkup,
         source: 'category',
         sourceName: `Category: ${context.category}`
       };
+    }
+    
+    // For manufacturing keys, fall back to parent category if specific markup not set
+    // e.g., curtain_making → curtains if curtain_making is 0 or undefined
+    if (catKey.endsWith('_making')) {
+      const parentCategory = catKey.replace('_making', 's'); // curtain_making → curtains
+      const parentMarkup = settings.category_markups?.[parentCategory];
+      if (parentMarkup !== undefined && parentMarkup > 0) {
+        return {
+          percentage: parentMarkup,
+          source: 'category',
+          sourceName: `Category: ${parentCategory} (manufacturing fallback)`
+        };
+      }
     }
     
     // Try common category mappings
