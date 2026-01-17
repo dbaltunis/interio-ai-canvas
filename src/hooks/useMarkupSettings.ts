@@ -147,31 +147,7 @@ export const useUpdateMarkupSettings = () => {
           .single();
 
         if (error) throw error;
-        return data;
-      }
-
-      // Update existing business settings or create new one
-      if (businessSettings?.id) {
-        const { data, error } = await supabase
-          .from('business_settings')
-          .update({ pricing_settings: updatedSettings })
-          .eq('id', businessSettings.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('business_settings')
-          .insert({
-            user_id: user.id,
-            pricing_settings: updatedSettings
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
+        console.log('[MARKUP SAVE] Successfully saved to DB:', updatedSettings);
         return data;
       }
     },

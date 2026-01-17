@@ -72,6 +72,8 @@ export const PricingRulesTab = () => {
   const handleSaveCategorySettings = async () => {
     if (!formData) return;
     
+    console.log('[SAVE] Sending category_markups:', formData.category_markups);
+    
     await updateMarkupSettings.mutateAsync({
       category_markups: formData.category_markups
     });
