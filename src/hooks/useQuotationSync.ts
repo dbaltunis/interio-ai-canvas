@@ -389,9 +389,25 @@ export const useQuotationSync = ({
           // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
           if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && treatmentCategory !== 'wallpaper') {
             console.log('[QUOTE ITEM] Adding manufacturing (NOT wallpaper)');
-            // MARKUP FIX: Apply markup to manufacturing prices
+            
+            // MARKUP FIX: Resolve manufacturing-specific markup based on treatment type
+            // Maps: curtain → curtain_making, roman → roman_making, blind → blind_making, shutter → shutter_making
+            const mfgMarkupKey = treatmentCategory === 'roman' 
+              ? 'roman_making' 
+              : treatmentCategory === 'shutter' || treatmentCategory === 'shutters'
+                ? 'shutter_making'
+                : treatmentCategory === 'blind' || treatmentCategory === 'blinds'
+                  ? 'blind_making'
+                  : 'curtain_making'; // Default for curtains
+            
+            const mfgMarkupResult = resolveMarkup({
+              category: mfgMarkupKey,
+              markupSettings
+            });
+            console.log(`[QUOTE ITEM] Manufacturing markup: ${mfgMarkupKey} → ${mfgMarkupResult.percentage}% (source: ${mfgMarkupResult.sourceName})`);
+            
             const mfgCostPrice = summary.manufacturing_cost;
-            const mfgSellingPrice = applyMarkup(mfgCostPrice, markupResult.percentage);
+            const mfgSellingPrice = applyMarkup(mfgCostPrice, mfgMarkupResult.percentage);
             
             parentItem.children.push({
               id: `${window.window_id}-manufacturing`,
