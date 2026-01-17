@@ -836,9 +836,10 @@ export const AdaptiveFabricPricingDisplay = ({
                 // ✅ CRITICAL: measurements.rail_width and drop are stored in MM, convert to CM
                 const widthCm = (parseFloat(measurements.rail_width || '0')) / 10;
                 const heightCm = (parseFloat(measurements.drop || '0')) / 10;
-                const headerHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
-                const bottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
-                const sideHem = template?.blind_side_hem_cm || 0;
+                // Use template values - only fall back to defaults if truly undefined
+                const headerHem = template?.blind_header_hem_cm ?? template?.header_allowance ?? 8;
+                const bottomHem = template?.blind_bottom_hem_cm ?? template?.bottom_hem ?? 8;
+                const sideHem = template?.blind_side_hem_cm ?? 0;
                 const wastePercent = template?.waste_percent || 0;
                 const effectiveWidth = widthCm + sideHem * 2;
                 const effectiveHeight = heightCm + headerHem + bottomHem;
