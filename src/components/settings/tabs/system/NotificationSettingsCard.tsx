@@ -119,28 +119,16 @@ export const NotificationSettingsCard = () => {
           {/* SMS Notifications */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Label>SMS Notifications</Label>
-                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-              </div>
+              <Label>SMS Notifications</Label>
               <p className="text-xs text-muted-foreground">Receive updates via SMS</p>
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Switch 
-                      checked={smsEnabled}
-                      disabled
-                      className="opacity-50"
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>SMS notifications coming soon</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Switch 
+              checked={smsEnabled}
+              onCheckedChange={(checked) => 
+                handleToggle('sms_notifications_enabled', checked, setSmsEnabled)
+              }
+              disabled={updateSettings.isPending}
+            />
           </div>
           
           {/* Desktop Notifications */}
