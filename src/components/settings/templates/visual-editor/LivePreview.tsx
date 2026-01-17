@@ -1706,28 +1706,48 @@ const LivePreviewBlock = ({
       );
 
     case 'terms-conditions':
-      // ALWAYS prioritize system terms from userBusinessSettings prop (global settings) - block content is ONLY a fallback
+      // System T&C - pulls from Settings → System → Terms & Conditions
       const systemTerms = userBusinessSettings?.general_terms_and_conditions 
         || projectData?.businessSettings?.general_terms_and_conditions;
-      const termsToShow = systemTerms ? (
-        <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
-      ) : (content.term1 || content.term2 || content.term3 || content.term4) ? (
-        <>
-          {content.term1 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term1}</div>}
-          {content.term2 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term2}</div>}
-          {content.term3 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term3}</div>}
-          {content.term4 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term4}</div>}
-        </>
-      ) : (
-        <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
-      );
       return (
         <div style={{ marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
             {content.title || 'Terms & Conditions'}
           </h3>
           <div style={{ fontSize: '14px', color: '#000' }}>
-            {termsToShow}
+            {systemTerms ? (
+              <div style={{ whiteSpace: 'pre-wrap', color: '#000' }}>{systemTerms}</div>
+            ) : (
+              <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'terms-conditions-custom':
+      // Custom T&C - fully editable block content (for PDF/preview, uses stored terms array)
+      const customTermsArray = Array.isArray(content.terms) ? content.terms : [];
+      const hasCustomTerms = customTermsArray.length > 0 || content.term1 || content.term2 || content.term3 || content.term4;
+      return (
+        <div style={{ marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
+            {content.title || 'Terms & Conditions'}
+          </h3>
+          <div style={{ fontSize: '14px', color: '#000' }}>
+            {customTermsArray.length > 0 ? (
+              customTermsArray.map((term: string, idx: number) => (
+                <div key={idx} style={{ marginBottom: '12px', color: '#000' }}>{term}</div>
+              ))
+            ) : hasCustomTerms ? (
+              <>
+                {content.term1 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term1}</div>}
+                {content.term2 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term2}</div>}
+                {content.term3 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term3}</div>}
+                {content.term4 && <div style={{ marginBottom: '12px', color: '#000' }}>{content.term4}</div>}
+              </>
+            ) : (
+              <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No custom terms added yet. Edit this block to add your own terms.</div>
+            )}
           </div>
         </div>
       );
