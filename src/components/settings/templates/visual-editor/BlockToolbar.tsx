@@ -81,9 +81,25 @@ const ALL_BLOCK_TYPES = [
   // ===== QUOTE/PROPOSAL BLOCKS =====
   {
     type: 'terms-conditions',
-    label: 'Terms & Conditions',
+    label: 'System Terms & Conditions',
     icon: FileText,
-    description: 'Legal terms and acceptance conditions',
+    description: 'Pulls T&C from Settings → System',
+    badge: 'Quote',
+    badgeColor: 'blue'
+  },
+  {
+    type: 'terms-conditions-custom',
+    label: 'Custom Terms & Conditions',
+    icon: Type,
+    description: 'Write your own editable terms',
+    badge: 'Quote',
+    badgeColor: 'blue'
+  },
+  {
+    type: 'privacy-policy',
+    label: 'Privacy Policy',
+    icon: FileText,
+    description: 'Pulls privacy policy from Settings',
     badge: 'Quote',
     badgeColor: 'blue'
   },

@@ -61,8 +61,9 @@ const componentCategories = [
     name: "Business Content",
     icon: FileText,
     components: [
-      { type: 'terms-conditions', name: 'Terms & Conditions', icon: ScrollText, description: 'Uses system terms from Settings' },
-      { type: 'privacy-policy', name: 'Privacy Policy', icon: ScrollText, description: 'Uses privacy policy from Settings' },
+      { type: 'terms-conditions', name: 'System Terms & Conditions', icon: ScrollText, description: 'Pulls T&C from Settings → System' },
+      { type: 'terms-conditions-custom', name: 'Custom Terms & Conditions', icon: Type, description: 'Write your own editable terms' },
+      { type: 'privacy-policy', name: 'Privacy Policy', icon: ScrollText, description: 'Pulls privacy policy from Settings' },
       { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
       { type: 'project-scope', name: 'Project Scope', icon: Target, description: 'What\'s included and excluded' },
     ]

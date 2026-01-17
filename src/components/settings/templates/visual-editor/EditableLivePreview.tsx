@@ -855,36 +855,9 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         });
       };
 
-      // Check for system-wide T&C first
+      // System T&C - always pulls from Settings, not editable in template
       const systemTerms = userBusinessSettings?.general_terms_and_conditions;
       
-      if (systemTerms) {
-        return (
-          <EditableContainer 
-            onStyleChange={updateBlockStyle}
-            currentStyles={{
-              padding: style.padding || '16px',
-              margin: style.margin || '0 0 24px 0',
-              backgroundColor: style.backgroundColor || 'transparent'
-            }}
-            className="mb-6"
-          >
-            <EditableText
-              value={content.title || 'Terms & Conditions'}
-              onChange={(value) => updateBlockContent({ title: value })}
-              className="text-lg font-semibold mb-4 text-brand-primary"
-              placeholder="Section Title"
-            />
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs mb-3">
-              ✓ Using system-wide Terms & Conditions from Settings → System → Terms & Conditions
-            </div>
-            <div className="text-sm whitespace-pre-wrap text-gray-700">
-              {systemTerms}
-            </div>
-          </EditableContainer>
-        );
-      }
-
       return (
         <EditableContainer 
           onStyleChange={updateBlockStyle}
@@ -901,22 +874,82 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             className="text-lg font-semibold mb-4 text-brand-primary"
             placeholder="Section Title"
           />
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs mb-3">
-            ⚠ No system T&C configured. Add them in Settings → System → Terms & Conditions, or edit below.
+          {systemTerms ? (
+            <>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs mb-3">
+                ✓ Using system-wide Terms & Conditions from Settings → System → Terms & Conditions
+              </div>
+              <div className="text-sm whitespace-pre-wrap text-gray-700">
+                {systemTerms}
+              </div>
+            </>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+              ⚠ No system T&C configured. Add them in Settings → System → Terms & Conditions.
+            </div>
+          )}
+        </EditableContainer>
+      );
+    }
+
+    case 'terms-conditions-custom': {
+      // Custom T&C - fully editable in template
+      // Convert legacy term1-4 to terms array
+      const customTermsArray = Array.isArray(content.terms) 
+        ? content.terms 
+        : [content.term1, content.term2, content.term3, content.term4].filter(Boolean);
+      
+      if (customTermsArray.length === 0) {
+        customTermsArray.push('');
+      }
+      
+      const handleCustomTermChange = (index: number, value: string) => {
+        const newTerms = [...customTermsArray];
+        newTerms[index] = value;
+        updateBlockContent({ terms: newTerms });
+      };
+      
+      const handleAddCustomTerm = () => {
+        updateBlockContent({ terms: [...customTermsArray, ''] });
+      };
+      
+      const handleDeleteCustomTerm = (index: number) => {
+        const newTerms = customTermsArray.filter((_, i) => i !== index);
+        updateBlockContent({ terms: newTerms.length > 0 ? newTerms : [''] });
+      };
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Terms & Conditions'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary"
+            placeholder="Section Title"
+          />
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-purple-700 text-xs mb-3">
+            ✎ Custom Terms - Edit below to add your own terms & conditions
           </div>
           <div className="text-sm space-y-3">
-            {termsArray.map((term, index) => (
+            {customTermsArray.map((term, index) => (
               <div key={index} className="flex items-start gap-2 group">
                 <div className="flex-1">
                   <EditableText
                     value={term}
-                    onChange={(value) => handleTermChange(index, value)}
+                    onChange={(value) => handleCustomTermChange(index, value)}
                     multiline
                     placeholder={`Term ${index + 1}...`}
                   />
                 </div>
                 <button
-                  onClick={() => handleDeleteTerm(index)}
+                  onClick={() => handleDeleteCustomTerm(index)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-destructive hover:bg-destructive/10 rounded mt-1"
                   title="Delete term"
                 >
@@ -928,7 +961,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             ))}
           </div>
           <button
-            onClick={handleAddTerm}
+            onClick={handleAddCustomTerm}
             className="mt-3 text-sm text-primary hover:text-primary/80 flex items-center gap-1"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
