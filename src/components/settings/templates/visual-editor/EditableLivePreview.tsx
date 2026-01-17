@@ -855,6 +855,36 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         });
       };
 
+      // Check for system-wide T&C first
+      const systemTerms = userBusinessSettings?.general_terms_and_conditions;
+      
+      if (systemTerms) {
+        return (
+          <EditableContainer 
+            onStyleChange={updateBlockStyle}
+            currentStyles={{
+              padding: style.padding || '16px',
+              margin: style.margin || '0 0 24px 0',
+              backgroundColor: style.backgroundColor || 'transparent'
+            }}
+            className="mb-6"
+          >
+            <EditableText
+              value={content.title || 'Terms & Conditions'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-lg font-semibold mb-4 text-brand-primary"
+              placeholder="Section Title"
+            />
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs mb-3">
+              ✓ Using system-wide Terms & Conditions from Settings → System → Terms & Conditions
+            </div>
+            <div className="text-sm whitespace-pre-wrap text-gray-700">
+              {systemTerms}
+            </div>
+          </EditableContainer>
+        );
+      }
+
       return (
         <EditableContainer 
           onStyleChange={updateBlockStyle}
@@ -871,6 +901,9 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             className="text-lg font-semibold mb-4 text-brand-primary"
             placeholder="Section Title"
           />
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs mb-3">
+            ⚠ No system T&C configured. Add them in Settings → System → Terms & Conditions, or edit below.
+          </div>
           <div className="text-sm space-y-3">
             {termsArray.map((term, index) => (
               <div key={index} className="flex items-start gap-2 group">
@@ -1724,6 +1757,43 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           </div>
         </EditableContainer>
       );
+
+    case 'privacy-policy': {
+      const systemPrivacyPolicy = userBusinessSettings?.privacy_policy;
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Privacy Policy'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary"
+            placeholder="Section Title"
+          />
+          {systemPrivacyPolicy ? (
+            <>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs mb-3">
+                ✓ Using system-wide Privacy Policy from Settings → System → Terms & Conditions
+              </div>
+              <div className="text-sm whitespace-pre-wrap text-gray-700">
+                {systemPrivacyPolicy}
+              </div>
+            </>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+              ⚠ No Privacy Policy configured. Add it in Settings → System → Terms & Conditions.
+            </div>
+          )}
+        </EditableContainer>
+      );
+    }
 
     default:
       return (
