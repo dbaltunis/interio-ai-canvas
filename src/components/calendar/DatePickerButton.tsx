@@ -53,6 +53,7 @@ export const DatePickerButton = ({
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         <div className="p-2 border-b bg-muted/30">
           <p className="text-xs text-muted-foreground">
