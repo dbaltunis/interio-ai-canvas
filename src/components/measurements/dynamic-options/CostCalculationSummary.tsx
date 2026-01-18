@@ -406,29 +406,33 @@ export const CostCalculationSummary = ({
     // - Shows prices for authorized users (canViewCosts = true)
     // - Shows "Included" for dealers (canViewCosts = false)
     // =========================================================
-    const markupPercentage = markupSettings?.default_markup_percentage || 0;
-    const quotePrice = markupPercentage > 0 ? applyMarkup(blindCosts.totalCost, markupPercentage) : blindCosts.totalCost;
-
-    // ✅ SELLING PRICES: Calculate item selling price (cost + markup) for ALL users
-    const getSellingPrice = (costPrice: number) => {
-      return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
-    };
-
-    // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP (e.g., blind_making at 100%)
+    
+    // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS FOR BLINDS
+    const fabricMarkupResult = resolveMarkup({
+      category: 'blinds',
+      markupSettings
+    });
+    const fabricMarkupPercent = fabricMarkupResult.percentage;
+    
     const mfgMarkupKey = 'blind_making';
     const mfgMarkupResult = resolveMarkup({
       category: mfgMarkupKey,
       markupSettings
     });
     const mfgMarkupPercent = mfgMarkupResult.percentage;
+    
+    // Default markup for display
+    const markupPercentage = markupSettings?.default_markup_percentage || 0;
 
     // Build items for table display with per-item markup
     const tableItems: QuoteSummaryItem[] = [
       {
         name: isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric',
-        details: `${blindCosts.squareMeters.toFixed(2)} sqm = ${getSellingPrice(blindCosts.fabricCost).toFixed(2)}`,
+        details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
-        category: 'fabric'
+        category: 'fabric',
+        markupPercentage: fabricMarkupPercent,
+        sellingPrice: applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
       }
     ];
 
@@ -443,7 +447,7 @@ export const CostCalculationSummary = ({
       });
     }
 
-    // Add options
+    // Add options with category-specific markups
     selectedOptions
       .filter(opt => {
         const isLiningOption = opt.name?.toLowerCase().includes('lining');
@@ -465,20 +469,33 @@ export const CostCalculationSummary = ({
             displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
           }
         }
-
-        tableItems.push({
-          name: option.name,
-          details: optAny.pricingDetails || '',
-          price: displayPrice,
-          category: optAny.category || 'option'
+        
+        // Resolve option-specific markup
+        const optionCategory = optAny.category || 'option';
+        const optionMarkupResult = resolveMarkup({
+          category: optionCategory,
+          markupSettings
         });
+        const optionMarkupPercent = optionMarkupResult.percentage;
+
+        if (displayPrice > 0) {
+          tableItems.push({
+            name: option.name,
+            details: optAny.pricingDetails || '',
+            price: displayPrice,
+            category: optionCategory,
+            markupPercentage: optionMarkupPercent,
+            sellingPrice: applyMarkup(displayPrice, optionMarkupPercent)
+          });
+        }
       });
 
+    // Pass markupPercentage=0 since all items have sellingPrice pre-calculated
     return (
       <QuoteSummaryTable
         items={tableItems}
         totalCost={blindCosts.totalCost}
-        markupPercentage={markupPercentage}
+        markupPercentage={0}
         canViewCosts={canViewCosts}
         canViewMarkup={canViewMarkup}
         selectedColor={measurements?.selected_color}
@@ -683,9 +700,25 @@ export const CostCalculationSummary = ({
   // - Shows actual prices for authorized users (canViewCosts = true)
   // - Shows "Included" for dealers/restricted users (canViewCosts = false)
   // =========================================================
-  const markupPercentage = markupSettings?.default_markup_percentage || 0;
-  const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
-
+  // =========================================================
+  // CATEGORY-SPECIFIC MARKUP RESOLUTION FOR ALL ITEMS
+  // Each item type uses its own markup from settings hierarchy
+  // =========================================================
+  
+  // ✅ RESOLVE FABRIC MARKUP (e.g., curtains at 40%)
+  const fabricMarkupResult = resolveMarkup({
+    category: treatmentCategory || 'curtains',
+    markupSettings
+  });
+  const fabricMarkupPercent = fabricMarkupResult.percentage;
+  
+  // ✅ RESOLVE LINING MARKUP (specific 'lining' category or fallback to material)
+  const liningMarkupResult = resolveMarkup({
+    category: 'lining',
+    markupSettings
+  });
+  const liningMarkupPercent = liningMarkupResult.percentage;
+  
   // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP (e.g., curtain_making/roman_making at 100%)
   const isRomanTreatment = template.name?.toLowerCase().includes('roman') || treatmentCategory?.includes('roman');
   const mfgMarkupKey = isRomanTreatment ? 'roman_making' : 'curtain_making';
@@ -694,16 +727,21 @@ export const CostCalculationSummary = ({
     markupSettings
   });
   const mfgMarkupPercent = mfgMarkupResult.percentage;
-
-  // ✅ SELLING PRICES: Calculate item selling price (cost + markup) for ALL users
-  const getSellingPrice = (costPrice: number) => {
-    return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
-  };
+  
+  // ✅ RESOLVE HEADING MARKUP
+  const headingMarkupResult = resolveMarkup({
+    category: 'heading',
+    markupSettings
+  });
+  const headingMarkupPercent = headingMarkupResult.percentage;
+  
+  // Default markup for display/totals
+  const markupPercentage = markupSettings?.default_markup_percentage || 0;
 
   // Build items for table display with per-item markup
   const tableItems: QuoteSummaryItem[] = [];
 
-  // Fabric - with clear math display: "1.85m × £26.50/m = £49.03"
+  // Fabric - with clear math display and category-specific markup
   if (fabricCost > 0) {
     let fabricDetails = '';
     if (fabricDisplayData) {
@@ -722,17 +760,21 @@ export const CostCalculationSummary = ({
       name: 'Fabric',
       details: fabricDetails,
       price: fabricCost,
-      category: 'fabric'
+      category: 'fabric',
+      markupPercentage: fabricMarkupPercent,
+      sellingPrice: applyMarkup(fabricCost, fabricMarkupPercent)
     });
   }
 
-  // Lining
+  // Lining - with category-specific markup
   if (liningCost > 0) {
     tableItems.push({
       name: 'Lining',
       details: '',
       price: liningCost,
-      category: 'lining'
+      category: 'lining',
+      markupPercentage: liningMarkupPercent,
+      sellingPrice: applyMarkup(liningCost, liningMarkupPercent)
     });
   }
 
@@ -760,34 +802,47 @@ export const CostCalculationSummary = ({
     });
   }
 
-  // Heading
+  // Heading - with category-specific markup
   if (headingCost > 0) {
     tableItems.push({
       name: 'Heading',
       details: '',
       price: headingCost,
-      category: 'heading'
+      category: 'heading',
+      markupPercentage: headingMarkupPercent,
+      sellingPrice: applyMarkup(headingCost, headingMarkupPercent)
     });
   }
 
-  // Options (use pre-calculated values)
+  // Options - resolve markup per option category
   selectedOptions.forEach(option => {
     const optAny = option as any;
     const displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
+    const optionCategory = optAny.category || 'option';
+    
+    // Resolve option-specific markup
+    const optionMarkupResult = resolveMarkup({
+      category: optionCategory,
+      markupSettings
+    });
+    const optionMarkupPercent = optionMarkupResult.percentage;
     
     tableItems.push({
       name: option.name,
       details: optAny.pricingDetails || '',
       price: displayPrice,
-      category: optAny.category || 'option'
+      category: optionCategory,
+      markupPercentage: optionMarkupPercent,
+      sellingPrice: applyMarkup(displayPrice, optionMarkupPercent)
     });
   });
 
+  // Pass markupPercentage=0 since all items have sellingPrice pre-calculated
   return (
     <QuoteSummaryTable
       items={tableItems}
       totalCost={totalCost}
-      markupPercentage={markupPercentage}
+      markupPercentage={0}
       canViewCosts={canViewCosts}
       canViewMarkup={canViewMarkup}
       selectedColor={measurements?.selected_color}

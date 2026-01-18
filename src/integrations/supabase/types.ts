@@ -6683,6 +6683,7 @@ export type Database = {
           discount_type: string | null
           discount_value: number | null
           draft_number: string | null
+          excluded_items: string[] | null
           id: string
           invoice_number: string | null
           materials_status: string | null
@@ -6725,6 +6726,7 @@ export type Database = {
           discount_type?: string | null
           discount_value?: number | null
           draft_number?: string | null
+          excluded_items?: string[] | null
           id?: string
           invoice_number?: string | null
           materials_status?: string | null
@@ -6767,6 +6769,7 @@ export type Database = {
           discount_type?: string | null
           discount_value?: number | null
           draft_number?: string | null
+          excluded_items?: string[] | null
           id?: string
           invoice_number?: string | null
           materials_status?: string | null
