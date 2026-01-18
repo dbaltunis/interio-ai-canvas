@@ -72,7 +72,14 @@ export const PricingRulesTab = () => {
   const handleSaveCategorySettings = async () => {
     if (!formData) return;
     
-    console.log('[SAVE] Sending category_markups:', formData.category_markups);
+    console.log('[SAVE] ====== CATEGORY MARKUP SAVE ======');
+    console.log('[SAVE] Full category_markups:', JSON.stringify(formData.category_markups, null, 2));
+    console.log('[SAVE] Manufacturing values:', {
+      curtain_making: formData.category_markups.curtain_making,
+      blind_making: formData.category_markups.blind_making,
+      roman_making: formData.category_markups.roman_making,
+      shutter_making: formData.category_markups.shutter_making
+    });
     
     await updateMarkupSettings.mutateAsync({
       category_markups: formData.category_markups
@@ -106,6 +113,12 @@ export const PricingRulesTab = () => {
     setShowWizard(false);
     setWizardProductType(undefined);
     setWizardPriceGroup(undefined);
+  };
+
+  // Helper: Convert markup % to margin %
+  const markupToMargin = (markup: number): number => {
+    if (markup <= 0) return 0;
+    return (markup / (100 + markup)) * 100;
   };
 
   // Loading state
@@ -183,6 +196,33 @@ export const PricingRulesTab = () => {
 
         {/* Settings Tab (Markup & Tax) */}
         <TabsContent value="settings" className="space-y-6">
+          {/* Markup vs Margin Explainer */}
+          <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Info className="h-4 w-4 text-amber-600" />
+                Understanding Markup vs Margin
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-amber-800 dark:text-amber-300">Markup (what you enter)</p>
+                  <p className="text-muted-foreground text-xs">Added to cost price</p>
+                  <p className="text-xs mt-1">100% markup = Cost × 2</p>
+                </div>
+                <div>
+                  <p className="font-medium text-amber-800 dark:text-amber-300">Margin (for reference)</p>
+                  <p className="text-muted-foreground text-xs">% of selling price that is profit</p>
+                  <p className="text-xs mt-1">100% markup = 50% margin</p>
+                </div>
+              </div>
+              <div className="mt-3 p-2 bg-background rounded border text-xs">
+                <span className="font-medium">Example:</span> £100 cost + 100% markup = £200 selling price (50% margin)
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Markup Hierarchy Guide */}
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">
@@ -368,12 +408,15 @@ export const PricingRulesTab = () => {
                     const value = formData.category_markups[key] || 0;
                     const effective = value > 0 ? value : formData.default_markup_percentage;
                     const usesDefault = value === 0;
+                    const marginEquiv = markupToMargin(effective);
                     return (
                       <div key={id} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Label htmlFor={id}>{label}</Label>
                           <span className="text-xs text-muted-foreground">
-                            {usesDefault ? `→ Default (${effective}%)` : `→ ${effective}%`}
+                            {usesDefault 
+                              ? `→ Default (${effective}% markup = ${marginEquiv.toFixed(1)}% margin)` 
+                              : `→ ${effective}% markup = ${marginEquiv.toFixed(1)}% margin`}
                           </span>
                         </div>
                         <Input 
@@ -406,12 +449,15 @@ export const PricingRulesTab = () => {
                     const value = formData.category_markups[key] || 0;
                     const effective = value > 0 ? value : formData.default_markup_percentage;
                     const usesDefault = value === 0;
+                    const marginEquiv = markupToMargin(effective);
                     return (
                       <div key={id} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Label htmlFor={id}>{label}</Label>
                           <span className="text-xs text-muted-foreground">
-                            {usesDefault ? `→ Default (${effective}%)` : `→ ${effective}%`}
+                            {usesDefault 
+                              ? `→ Default (${effective}% markup = ${marginEquiv.toFixed(1)}% margin)` 
+                              : `→ ${effective}% markup = ${marginEquiv.toFixed(1)}% margin`}
                           </span>
                         </div>
                         <Input 

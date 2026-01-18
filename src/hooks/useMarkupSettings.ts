@@ -54,9 +54,10 @@ export const useMarkupSettings = () => {
   const { data: businessSettings } = useBusinessSettings();
   
   return useQuery({
-    queryKey: ["markup-settings"],
+    queryKey: ["markup-settings", businessSettings?.id],
     queryFn: async () => {
       if (!businessSettings?.pricing_settings) {
+        console.log('[MARKUP LOAD] No pricing_settings found, returning defaults');
         return defaultMarkupSettings;
       }
       
@@ -66,7 +67,7 @@ export const useMarkupSettings = () => {
           : businessSettings.pricing_settings;
         
         // Deep merge category_markups to preserve all keys including new manufacturing ones
-        return {
+        const merged = {
           ...defaultMarkupSettings,
           ...pricingSettings,
           category_markups: {
@@ -74,6 +75,9 @@ export const useMarkupSettings = () => {
             ...(pricingSettings.category_markups || {})
           }
         } as MarkupSettings;
+        
+        console.log('[MARKUP LOAD] Loaded from DB:', merged.category_markups);
+        return merged;
       } catch (error) {
         console.error('Error parsing pricing settings:', error);
         return defaultMarkupSettings;
@@ -121,12 +125,20 @@ export const useUpdateMarkupSettings = () => {
           : currentCategoryMarkups
       };
 
-      console.log('[MARKUP SAVE] Current:', currentCategoryMarkups);
-      console.log('[MARKUP SAVE] New:', newSettings.category_markups);
-      console.log('[MARKUP SAVE] Final:', updatedSettings.category_markups);
+      console.log('[MARKUP SAVE] ====== SAVE OPERATION ======');
+      console.log('[MARKUP SAVE] Current from DB:', JSON.stringify(currentCategoryMarkups, null, 2));
+      console.log('[MARKUP SAVE] New from form:', JSON.stringify(newSettings.category_markups, null, 2));
+      console.log('[MARKUP SAVE] Final merged:', JSON.stringify(updatedSettings.category_markups, null, 2));
+      console.log('[MARKUP SAVE] Manufacturing keys:', {
+        curtain_making: updatedSettings.category_markups.curtain_making,
+        blind_making: updatedSettings.category_markups.blind_making,
+        roman_making: updatedSettings.category_markups.roman_making,
+        shutter_making: updatedSettings.category_markups.shutter_making
+      });
 
       // Update existing business settings or create new one
       if (freshBusinessSettings?.id) {
+        console.log('[MARKUP SAVE] Updating existing record ID:', freshBusinessSettings.id);
         const { data, error } = await supabase
           .from('business_settings')
           .update({ pricing_settings: updatedSettings })
@@ -134,9 +146,14 @@ export const useUpdateMarkupSettings = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('[MARKUP SAVE] UPDATE ERROR:', error);
+          throw error;
+        }
+        console.log('[MARKUP SAVE] ✅ Successfully updated in DB');
         return data;
       } else {
+        console.log('[MARKUP SAVE] Creating new record for user');
         const { data, error } = await supabase
           .from('business_settings')
           .insert({
@@ -146,8 +163,11 @@ export const useUpdateMarkupSettings = () => {
           .select()
           .single();
 
-        if (error) throw error;
-        console.log('[MARKUP SAVE] Successfully saved to DB:', updatedSettings);
+        if (error) {
+          console.error('[MARKUP SAVE] INSERT ERROR:', error);
+          throw error;
+        }
+        console.log('[MARKUP SAVE] ✅ Successfully inserted in DB');
         return data;
       }
     },
