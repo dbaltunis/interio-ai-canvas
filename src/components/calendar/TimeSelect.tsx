@@ -69,6 +69,7 @@ export const TimeSelect = ({
         <Button
           variant="outline"
           disabled={disabled}
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "h-8 justify-start text-left font-normal text-xs gap-2 min-w-[100px]",
             !value && "text-muted-foreground",
@@ -85,9 +86,6 @@ export const TimeSelect = ({
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-        onFocusOutside={(e) => e.preventDefault()}
       >
         {label && (
           <div className="px-3 py-2 border-b bg-muted/30">
