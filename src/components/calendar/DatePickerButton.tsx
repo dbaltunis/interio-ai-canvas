@@ -49,20 +49,6 @@ export const DatePickerButton = ({
       <PopoverContent 
         className="w-auto p-0 pointer-events-auto" 
         align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
       >
         <div className="p-2 border-b bg-muted/30 pointer-events-auto">
           <p className="text-xs text-muted-foreground">
