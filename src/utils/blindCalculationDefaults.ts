@@ -121,5 +121,15 @@ export const logBlindCalculation = (
   });
 };
 
-// Legacy alias for backward compatibility
-export const getBlindHemDefaults = getBlindHemValues;
+/**
+ * @deprecated Use getBlindHemValues instead. This alias will be removed in a future version.
+ * WARNING: Despite the name "Defaults", this function THROWS if hem values are missing!
+ * It does NOT return default values.
+ */
+export const getBlindHemDefaults = (template: any): BlindHemValues => {
+  console.warn(
+    '⚠️ [DEPRECATED] getBlindHemDefaults is deprecated and misleadingly named. ' +
+    'Use getBlindHemValues instead. This function throws errors for missing values - it does NOT return defaults!'
+  );
+  return getBlindHemValues(template);
+};

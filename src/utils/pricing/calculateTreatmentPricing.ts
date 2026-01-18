@@ -105,9 +105,11 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     console.warn('⚠️ calculateTreatmentPricing: Missing hem values in template, using 0. Configure hems for accurate calculations.');
   }
   
-  // ✅ FIX: Use 1 (no multiplication) as fallback, log warning if missing
+  // ✅ FIX: Use 1 (no multiplication) as fallback, track if fallback was used
+  let fullnessUsedFallback = false;
   const fullnessRatio = template?.fullness_ratio || (() => {
     console.warn('⚠️ calculateTreatmentPricing: No fullness_ratio in template, using 1 (no multiplication)');
+    fullnessUsedFallback = true;
     return 1;
   })();
 
@@ -337,6 +339,13 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     fabric_capacity_width_total_cm: fabricCapacityWidthTotal,
     leftover_width_total_cm: leftoverWidthTotal,
     leftover_per_panel_cm: leftoverPerPanel,
+    // ✅ FIX: Add warnings array for UI to display configuration issues
+    fullness_used_fallback: fullnessUsedFallback,
+    warnings: [
+      ...(fullnessUsedFallback ? ['Fullness ratio not set in template - using 1.0 (no fullness multiplication)'] : []),
+      ...(headerHemRaw == null ? ['Header hem not configured in template'] : []),
+      ...(bottomHemRaw == null ? ['Bottom hem not configured in template'] : []),
+    ].filter(Boolean),
     breakdown: [
       // Fabric with detailed quantity and unit price
       ...(fabricCost > 0 ? [{
