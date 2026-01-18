@@ -45,6 +45,9 @@ export interface OrientationResult {
     bottomHem: number;
     sideHem: number;
     seamHem: number;
+    // ✅ Pattern repeat cutting guidance (display only - does NOT affect pricing)
+    cuttingLengthWithRepeat?: number;
+    patternRepeatNote?: string | null;
   };
 }
 

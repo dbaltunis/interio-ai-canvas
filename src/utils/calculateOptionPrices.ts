@@ -102,15 +102,33 @@ export const calculateOptionPrices = (
     // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric linear meters!
     const optionNameLower = (option.name || '').toLowerCase();
     const optionKeyLower = (option.optionKey || option.option_key || '').toLowerCase();
-    const isHardware = optionNameLower.includes('hardware') || 
-                       optionNameLower.includes('track') || 
-                       optionNameLower.includes('pole') || 
-                       optionNameLower.includes('rod') ||
-                       optionNameLower.includes('rail') ||
-                       optionKeyLower.includes('hardware') ||
-                       optionKeyLower.includes('track') ||
-                       optionKeyLower.includes('pole');
     
+    // ✅ FIX: Prefer explicit category over keyword detection for reliability
+    const optionCategory = ((option as any).category || (option as any).optionCategory || '').toLowerCase();
+    const isHardwareByCategory = optionCategory === 'hardware' || 
+                                  optionCategory === 'track' || 
+                                  optionCategory === 'accessories' ||
+                                  optionCategory === 'motorization';
+    
+    // Fallback to keyword detection for legacy data without category
+    const isHardwareByKeyword = optionNameLower.includes('hardware') || 
+                                optionNameLower.includes('track') || 
+                                optionNameLower.includes('pole') || 
+                                optionNameLower.includes('rod') ||
+                                optionNameLower.includes('rail') ||
+                                optionNameLower.includes('motor') ||
+                                optionKeyLower.includes('hardware') ||
+                                optionKeyLower.includes('track') ||
+                                optionKeyLower.includes('pole');
+    
+    // Prefer explicit category, fall back to keyword matching
+    const isHardware = isHardwareByCategory || isHardwareByKeyword;
+    
+    // Log warning when relying on keyword detection (helps identify data that needs category)
+    if (isHardwareByKeyword && !isHardwareByCategory) {
+      console.warn(`⚠️ [calculateOptionPrices] Option "${option.name}" detected as hardware by keyword. Consider setting category='hardware' explicitly for reliability.`);
+    }
+
     // Check if hardware has a FIXED LENGTH in its name (e.g., "2.4m", "3m", "1.8m")
     const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
     const hasFixedLength = isHardware && fixedLengthMatch;

@@ -197,20 +197,28 @@ export const calculateOrientation = (
     }
   }
 
-  // Calculate seams
-  const verticalSeamsRequired = Math.max(0, widthsRequired - 1);
-  const horizontalSeamsRequired = horizontalPiecesNeeded ? Math.max(0, horizontalPiecesNeeded - 1) : 0;
-  const seamsRequired = verticalSeamsRequired + horizontalSeamsRequired;
-  const totalSeamAllowance = (verticalSeamsRequired * seamHem! * 2) + (horizontalSeamsRequired * seamHem! * 2);
+  // ✅ FIX: Use centralized formula result for seams instead of recalculating locally
+  // This prevents double-counting seams that was causing incorrect fabric totals.
+  // formulaResult already calculated seams correctly based on widths and pieces.
+  const seamsRequired = formulaResult.seamsCount ?? 0;
+  const totalSeamAllowance = formulaResult.seamAllowanceCm ?? 0;
   
-  // Total fabric length
-  let totalLengthCm;
-  if (orientation === 'horizontal') {
-    totalLengthCm = (widthsRequired * requiredWidth) + totalSeamAllowance;
-  } else {
-    totalLengthCm = (widthsRequired * requiredLength) + totalSeamAllowance;
-  }
+  // Debug: Verify we're using formula result (not local recalculation)
+  console.log('🧵 Seam calculation (from centralized formula):', {
+    seamsRequired,
+    totalSeamAllowance,
+    source: 'formulaResult (not recalculated)'
+  });
   
+  // ✅ FIX: Use centralized formula's linear meters directly instead of recalculating
+  // Pattern repeat adjustments for cutting guidance are kept separate from pricing calculation
+  const totalLengthCm = formulaResult.linearMetersCm;
+  
+  // Pattern repeat is for CUTTING GUIDANCE ONLY - display to user but don't override formula
+  const cuttingLengthWithRepeat = orientation === 'vertical' && verticalPatternRepeatCm > 0
+    ? Math.ceil(formulaResult.totalDropCm / verticalPatternRepeatCm) * verticalPatternRepeatCm
+    : formulaResult.totalDropCm;
+
   // Convert to units
   const totalYards = totalLengthCm / 91.44;
   const totalMeters = totalLengthCm / 100;
@@ -252,7 +260,12 @@ export const calculateOrientation = (
       headerHem: headerHem!,
       bottomHem: bottomHem!,
       sideHem: sideHem!,
-      seamHem: seamHem!
+      seamHem: seamHem!,
+      // ✅ Pattern repeat cutting guidance (display only - does NOT affect pricing)
+      cuttingLengthWithRepeat: cuttingLengthWithRepeat,
+      patternRepeatNote: verticalPatternRepeatCm > 0 
+        ? `Cut at ${cuttingLengthWithRepeat}cm to match ${verticalPatternRepeatCm}cm vertical repeat` 
+        : null
     }
   };
 };
