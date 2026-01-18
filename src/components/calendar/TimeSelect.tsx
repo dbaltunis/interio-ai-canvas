@@ -56,13 +56,15 @@ export const TimeSelect = ({
     }
   }, [open]);
 
-  const handleTimeClick = (time: string) => {
+  const handleTimeClick = (time: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onChange(time);
     setOpen(false);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -80,19 +82,21 @@ export const TimeSelect = ({
       <PopoverContent 
         className="w-[140px] p-0 pointer-events-auto" 
         align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {label && (
-          <div className="px-3 py-2 border-b bg-muted/30 pointer-events-auto">
+          <div className="px-3 py-2 border-b bg-muted/30">
             <span className="text-xs font-medium text-muted-foreground">{label}</span>
           </div>
         )}
-        {/* Using native scrollable div instead of ScrollArea for better compatibility */}
         <div 
           ref={scrollContainerRef}
-          className="h-[200px] overflow-y-auto overscroll-contain pointer-events-auto"
+          className="h-[200px] overflow-y-auto overscroll-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <div className="p-1 pointer-events-auto">
+          <div className="p-1">
             {TIME_SLOTS.map((time) => {
               const isSelected = time === value;
               const [hours] = time.split(':').map(Number);
@@ -103,9 +107,9 @@ export const TimeSelect = ({
                   key={time}
                   type="button"
                   ref={isSelected ? selectedRef : undefined}
-                  onClick={() => handleTimeClick(time)}
+                  onMouseDown={(e) => handleTimeClick(time, e)}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors pointer-events-auto cursor-pointer",
+                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors cursor-pointer",
                     "hover:bg-accent hover:text-accent-foreground",
                     isSelected && "bg-primary text-primary-foreground",
                     !isSelected && isBusinessHour && "font-medium"
