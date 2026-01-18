@@ -463,11 +463,7 @@ export const QuotationTab = ({
     });
 
     // Calculate totals from included items only
-    // CRITICAL FIX: Use selling price (total or unit_price) - NEVER fall back to item.price (cost)
-    const includedSubtotal = documentItems.reduce((sum, item) => {
-      const sellingTotal = item.total ?? (item.unit_price ? item.unit_price * (item.quantity || 1) : 0);
-      return sum + sellingTotal;
-    }, 0);
+    const includedSubtotal = documentItems.reduce((sum, item) => sum + (item.total || item.price || 0), 0);
     const includedTaxAmount = includedSubtotal * taxRate;
     const includedTotal = includedSubtotal + includedTaxAmount;
     const subtotalAfterDiscount = includedSubtotal - discountAmount;
