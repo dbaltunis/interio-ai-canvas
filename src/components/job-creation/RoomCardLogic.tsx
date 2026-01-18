@@ -34,14 +34,14 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
     [allTreatments, room.id]
   );
   
-  // DISPLAY-ONLY ARCHITECTURE: Sum saved totals WITH MARKUP for retail display
+  // DISPLAY-ONLY ARCHITECTURE: Use stored total_selling (with per-item markups) for retail display
   const roomTotal = useMemo(() => {
     console.log(`📊 [RETAIL] Room total for ${room.name}`);
     
     let totalCost = 0;
     let totalSelling = 0;
 
-    // Sum all window summaries for this room - apply markup for retail display
+    // Sum all window summaries for this room - USE STORED total_selling
     const windowSummariesForRoom = (projectSummaries?.windows || [])
       .filter((w) => w.room_id === room.id);
     
@@ -51,17 +51,24 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
       const costPrice = Number(w.summary.total_cost || 0);
       totalCost += costPrice;
       
-      // Apply markup to get selling price
-      const markupResult = resolveMarkup({
-        gridMarkup: w.summary.pricing_grid_markup || undefined,
-        category: w.summary.treatment_category || w.summary.treatment_type,
-        subcategory: w.summary.subcategory || undefined,
-        markupSettings: markupSettings || undefined
-      });
-      const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
-      totalSelling += sellingPrice;
-      
-      console.log(`  Window ${w.window_id}: Cost ${costPrice} → Sell ${sellingPrice} (${markupResult.percentage}% markup)`);
+      // ✅ CRITICAL FIX: Use stored total_selling (calculated with per-item markups)
+      // Fall back to recalculation ONLY if total_selling is not yet saved
+      const storedSelling = Number(w.summary.total_selling || 0);
+      if (storedSelling > 0) {
+        totalSelling += storedSelling;
+        console.log(`  Window ${w.window_id}: Cost ${costPrice} → Stored Sell ${storedSelling}`);
+      } else {
+        // Fallback for old data without total_selling
+        const markupResult = resolveMarkup({
+          gridMarkup: w.summary.pricing_grid_markup || undefined,
+          category: w.summary.treatment_category || w.summary.treatment_type,
+          subcategory: w.summary.subcategory || undefined,
+          markupSettings: markupSettings || undefined
+        });
+        const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+        totalSelling += sellingPrice;
+        console.log(`  Window ${w.window_id}: Cost ${costPrice} → Fallback Sell ${sellingPrice} (${markupResult.percentage}% markup)`);
+      }
     });
 
     // Add room products/services (these already have markup applied at point of sale)
@@ -75,15 +82,21 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
     return totalSelling; // Return RETAIL price for display
   }, [projectSummaries, room.id, room.name, roomProducts, markupSettings]);
 
-  // DISPLAY-ONLY: Sum selling prices WITH MARKUP for retail display
+  // DISPLAY-ONLY: Use stored total_selling for retail display
   const projectTotal = useMemo(() => {
     if (!projectSummaries?.windows) return 0;
     
     return projectSummaries.windows.reduce((sum, w) => {
       if (!w.summary) return sum;
-      const costPrice = Number(w.summary.total_cost || 0);
       
-      // Apply markup to get selling price
+      // ✅ CRITICAL FIX: Use stored total_selling (calculated with per-item markups)
+      const storedSelling = Number(w.summary.total_selling || 0);
+      if (storedSelling > 0) {
+        return sum + storedSelling;
+      }
+      
+      // Fallback for old data without total_selling
+      const costPrice = Number(w.summary.total_cost || 0);
       const markupResult = resolveMarkup({
         gridMarkup: w.summary.pricing_grid_markup || undefined,
         category: w.summary.treatment_category || w.summary.treatment_type,
