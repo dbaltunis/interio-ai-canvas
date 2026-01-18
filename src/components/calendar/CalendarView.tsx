@@ -48,8 +48,10 @@ import { ConflictDialog } from "./ConflictDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
+import { useAutoTimezone } from "@/hooks/useAutoTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
 import { formatUserTime, formatUserDate } from "@/utils/dateFormatUtils";
@@ -162,6 +164,16 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { userTimezone, isTimezoneDifferent } = useTimezone();
   const { data: preferences } = useCalendarPreferences();
   const { data: userPreferences } = useUserPreferences();
+  
+  // Auto-detect timezone and handle mismatches
+  const { 
+    timezoneMismatch, 
+    browserTimezone, 
+    savedTimezone, 
+    updateToDeviceTimezone, 
+    dismissMismatch,
+    getTimezoneDisplayName 
+  } = useAutoTimezone();
   
   // Get user's timezone for date conversions
   const displayTimezone = userPreferences?.timezone || userTimezone;
@@ -547,6 +559,26 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             showTasksView={showTasksView}
           />
         </div>
+
+        {/* Timezone mismatch banner */}
+        {timezoneMismatch && (
+          <Alert className="mx-4 mt-2 mb-0 bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+            <Clock className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-amber-800 dark:text-amber-200 text-sm">
+                Your device is in <strong>{getTimezoneDisplayName(browserTimezone)}</strong>, but your calendar uses <strong>{getTimezoneDisplayName(savedTimezone)}</strong>
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={dismissMismatch} className="text-xs h-7">
+                  Keep {getTimezoneDisplayName(savedTimezone).split(' ')[0]}
+                </Button>
+                <Button size="sm" onClick={updateToDeviceTimezone} className="text-xs h-7 bg-amber-600 hover:bg-amber-700 text-white">
+                  Use {getTimezoneDisplayName(browserTimezone).split(' ')[0]}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Scrollable Content - Calendar or Tasks */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
