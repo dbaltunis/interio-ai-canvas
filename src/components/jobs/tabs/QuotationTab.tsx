@@ -819,6 +819,28 @@ export const QuotationTab = ({
               <span className="hidden lg:inline ml-2">Discount</span>
             </Button>
 
+            {/* Edit Items Toggle Button */}
+            <Button 
+              variant={isExclusionEditMode ? "default" : "outline"}
+              size="sm" 
+              onClick={() => setIsExclusionEditMode(!isExclusionEditMode)}
+              disabled={isReadOnly}
+              className="h-9 px-2 lg:px-4"
+              title={isExclusionEditMode ? "Done Editing" : "Edit Items"}
+            >
+              {isExclusionEditMode ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span className="hidden lg:inline ml-2">Done</span>
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4" />
+                  <span className="hidden lg:inline ml-2">Edit Items</span>
+                </>
+              )}
+            </Button>
+
             {/* Payment Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1061,7 +1083,7 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={!isExclusionEditMode} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} excludedItems={excludedItems} onToggleExclusion={toggleExclusion} isExclusionEditMode={isExclusionEditMode} quoteId={activeQuoteId || quoteId} />
               </div>
             </div>
           </div>

@@ -245,16 +245,27 @@ export const useQuotationSync = ({
           };
           const itemCurrency = getMeasurementCurrency();
           
-          // MARKUP INTEGRATION: Calculate selling price from cost
+          // MARKUP INTEGRATION: Use pre-calculated selling price from worksheet
+          // CRITICAL FIX: Worksheet calculates per-item markups (fabric, manufacturing, etc.)
+          // and stores the result in total_selling. We must USE that value, not recalculate.
           const costPrice = summary.total_cost || 0;
+          const storedSelling = summary.total_selling || 0;
+          
+          // Resolve markup for fallback and metadata purposes
           const markupResult = resolveMarkup({
-            productMarkup: undefined, // Could add product-level markup from inventory
+            productMarkup: undefined,
             gridMarkup: summary.pricing_grid_markup || undefined,
             category: treatmentCategory,
             subcategory: summary.subcategory || undefined,
             markupSettings: markupSettings || undefined
           });
-          const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+          
+          // Use stored total_selling if available (has per-item markups already applied)
+          // Only fallback to recalculation for legacy data without total_selling
+          const sellingPrice = storedSelling > 0 
+            ? storedSelling 
+            : applyMarkup(costPrice, markupResult.percentage);
+          
           const grossMargin = calculateGrossMargin(costPrice, sellingPrice);
           
           const parentItem = {
