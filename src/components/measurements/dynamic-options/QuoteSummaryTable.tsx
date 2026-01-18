@@ -15,7 +15,6 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup } from "@/utils/pricing/markupResolver";
 import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export interface QuoteSummaryItem {
   name: string;
@@ -36,10 +35,8 @@ interface QuoteSummaryTableProps {
   canViewCosts?: boolean;
   canViewMarkup?: boolean;
   selectedColor?: string;
-  // Exclusion support
-  excludedItems?: string[];
-  onExcludeToggle?: (itemName: string, excluded: boolean) => void;
-  editMode?: boolean;  // Show checkboxes only in edit mode
+  // NOTE: Exclusion feature removed - was causing quote breakage
+  // Exclusion should be implemented in document layer only (PDF generation)
 }
 
 export const QuoteSummaryTable = ({
@@ -48,10 +45,7 @@ export const QuoteSummaryTable = ({
   markupPercentage = 0,
   canViewCosts = true,
   canViewMarkup = true,
-  selectedColor,
-  excludedItems = [],
-  onExcludeToggle,
-  editMode = false
+  selectedColor
 }: QuoteSummaryTableProps) => {
   const { units } = useMeasurementUnits();
   
@@ -125,17 +119,13 @@ export const QuoteSummaryTable = ({
     item.category !== 'hardware_accessory'
   );
 
-  // Calculate totals (excluding excluded items)
-  const includedItems = items.filter(item => !excludedItems.includes(item.name));
-  const adjustedTotalCost = includedItems.reduce((sum, item) => sum + item.price, 0);
+  // Calculate totals - all items included (no exclusion feature)
+  const adjustedTotalCost = items.reduce((sum, item) => sum + item.price, 0);
   
   // Calculate quote price with per-item markups
-  const adjustedQuotePrice = includedItems.reduce((sum, item) => {
+  const adjustedQuotePrice = items.reduce((sum, item) => {
     return sum + getItemSellingPrice(item);
   }, 0);
-
-  const isExcluded = (itemName: string) => excludedItems.includes(itemName);
-  const showCheckboxes = editMode && onExcludeToggle;
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
@@ -149,7 +139,6 @@ export const QuoteSummaryTable = ({
         <table className="w-full text-sm min-w-[280px]">
           <thead className="bg-muted/20 text-xs text-muted-foreground">
             <tr>
-              {showCheckboxes && <th className="w-8 sm:w-10 px-2 sm:px-3 py-2"></th>}
               <th className="text-left px-2 sm:px-3 py-2 font-medium text-xs sm:text-sm">Item</th>
               <th className="text-left px-2 sm:px-3 py-2 font-medium text-xs sm:text-sm hidden sm:table-cell">Details</th>
               <th className="text-right px-2 sm:px-3 py-2 font-medium text-xs sm:text-sm">Price</th>
@@ -158,7 +147,6 @@ export const QuoteSummaryTable = ({
         <tbody>
           {/* Non-hardware items first */}
           {nonHardwareItems.map((item, index) => {
-            const excluded = isExcluded(item.name);
             const sellingPrice = getItemSellingPrice(item);
             const displayDetails = canViewCosts 
               ? item.details 
@@ -167,17 +155,9 @@ export const QuoteSummaryTable = ({
             return (
               <tr 
                 key={`item-${index}`} 
-                className={`border-b border-border/50 ${excluded ? 'opacity-50' : ''}`}
+                className="border-b border-border/50"
               >
-                {showCheckboxes && (
-                  <td className="px-2 sm:px-3 py-2">
-                    <Checkbox
-                      checked={!excluded}
-                      onCheckedChange={(checked) => onExcludeToggle?.(item.name, !checked)}
-                    />
-                  </td>
-                )}
-                <td className={`px-2 sm:px-3 py-2 font-medium text-foreground text-xs sm:text-sm ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 font-medium text-foreground text-xs sm:text-sm">
                   {item.name}
                   {index === 0 && selectedColor && (
                     <span className="ml-2 text-xs text-muted-foreground capitalize">({selectedColor})</span>
@@ -189,10 +169,10 @@ export const QuoteSummaryTable = ({
                     </span>
                   )}
                 </td>
-                <td className={`px-2 sm:px-3 py-2 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">
                   {displayDetails || (item.quantity && item.unitPrice ? `${item.quantity} × ${formatPrice(item.unitPrice)}` : '')}
                 </td>
-                <td className={`px-2 sm:px-3 py-2 text-right tabular-nums font-medium text-foreground text-xs sm:text-sm ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 text-right tabular-nums font-medium text-foreground text-xs sm:text-sm">
                   {sellingPrice > 0 ? formatPrice(sellingPrice) : (
                     <span className="text-muted-foreground font-normal">Included</span>
                   )}
@@ -203,7 +183,6 @@ export const QuoteSummaryTable = ({
 
           {/* Hardware items (flattened) */}
           {filteredHardwareItems.map((item: any, index: number) => {
-            const excluded = isExcluded(item.name);
             const itemPrice = item.total_cost || item.price || 0;
             const sellingPrice = markupPercentage > 0 ? applyMarkup(itemPrice, markupPercentage) : itemPrice;
             const displayDetails = canViewCosts
@@ -213,17 +192,9 @@ export const QuoteSummaryTable = ({
             return (
               <tr 
                 key={`hw-${index}`} 
-                className={`border-b border-border/50 ${excluded ? 'opacity-50' : ''}`}
+                className="border-b border-border/50"
               >
-                {showCheckboxes && (
-                  <td className="px-2 sm:px-3 py-2">
-                    <Checkbox
-                      checked={!excluded}
-                      onCheckedChange={(checked) => onExcludeToggle?.(item.name, !checked)}
-                    />
-                  </td>
-                )}
-                <td className={`px-2 sm:px-3 py-2 font-medium text-foreground text-xs sm:text-sm ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 font-medium text-foreground text-xs sm:text-sm">
                   {item.name}
                   {/* Mobile: show details below item name */}
                   {displayDetails && (
@@ -232,10 +203,10 @@ export const QuoteSummaryTable = ({
                     </span>
                   )}
                 </td>
-                <td className={`px-2 sm:px-3 py-2 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">
                   {displayDetails}
                 </td>
-                <td className={`px-2 sm:px-3 py-2 text-right tabular-nums font-medium text-foreground text-xs sm:text-sm ${excluded ? 'line-through' : ''}`}>
+                <td className="px-2 sm:px-3 py-2 text-right tabular-nums font-medium text-foreground text-xs sm:text-sm">
                   {sellingPrice > 0 ? formatPrice(sellingPrice) : (
                     <span className="text-muted-foreground font-normal">Included</span>
                   )}
@@ -248,7 +219,6 @@ export const QuoteSummaryTable = ({
           {/* Cost Total - Only for authorized users */}
           {canViewCosts && (
             <tr className="border-t border-border bg-muted/10">
-              {showCheckboxes && <td></td>}
               <td className="px-2 sm:px-3 py-2 text-muted-foreground font-medium text-xs sm:text-sm">Cost Total</td>
               <td className="hidden sm:table-cell"></td>
               <td className="px-2 sm:px-3 py-2 text-right font-semibold text-muted-foreground tabular-nums text-xs sm:text-sm">
@@ -258,7 +228,6 @@ export const QuoteSummaryTable = ({
           )}
           {/* Quote Price - Always visible */}
           <tr className="bg-emerald-50 dark:bg-emerald-950/30">
-            {showCheckboxes && <td></td>}
             <td className="px-2 sm:px-3 py-2 sm:py-2.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm">
               Quote Price
               {canViewMarkup && markupPercentage > 0 && (
