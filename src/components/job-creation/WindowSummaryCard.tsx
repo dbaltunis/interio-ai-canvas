@@ -145,12 +145,31 @@ export function WindowSummaryCard({
     });
 
     // Helper to apply markup to a single item
+    // CRITICAL: For manufacturing items, use the specific making category (curtain_making, blind_making)
     const applyMarkupToItem = (item: any) => {
       if (!markupSettings) return item;
       
+      const itemCategory = item.category;
+      
+      // For manufacturing items, use the specific making category directly
+      // This ensures we get the 100% manufacturing markup instead of the parent category's 50%
+      const isMakingCategory = itemCategory?.includes('making') || itemCategory === 'manufacturing';
+      
+      let effectiveCategory: string;
+      if (isMakingCategory) {
+        // Use the stored making category directly, or derive it from treatment type
+        const treatmentCat = summary.treatment_category || summary.treatment_type || 'curtains';
+        effectiveCategory = itemCategory?.includes('making') 
+          ? itemCategory 
+          : (treatmentCat.includes('blind') ? 'blind_making' : 
+             treatmentCat.includes('roman') ? 'roman_making' : 'curtain_making');
+      } else {
+        effectiveCategory = summary.treatment_category || summary.treatment_type || 'curtains';
+      }
+      
       const markupResult = resolveMarkup({
-        category: summary.treatment_category || summary.treatment_type,
-        subcategory: item.category,
+        category: effectiveCategory,
+        subcategory: isMakingCategory ? undefined : itemCategory,
         markupSettings: markupSettings
       });
       
@@ -317,13 +336,18 @@ export function WindowSummaryCard({
     }
 
     // Only add manufacturing cost separately if NOT using pricing grid (and not wallpaper)
+    // CRITICAL: Use correct making category (curtain_making, blind_making) for proper markup resolution
     if (treatmentType !== 'wallpaper' && !usePricingGrid && manufacturingCost > 0) {
+      const treatmentCat = summary.treatment_category || summary.treatment_type || 'curtains';
+      const makingCategory = treatmentCat.includes('blind') ? 'blind_making' : 
+                            treatmentCat.includes('roman') ? 'roman_making' : 'curtain_making';
+      
       items.push({
         id: 'manufacturing',
         name: 'Manufacturing',
         description: summary.manufacturing_type || 'Assembly & Manufacturing',
         total_cost: manufacturingCost,
-        category: 'manufacturing',
+        category: makingCategory,
         details: { type: summary.manufacturing_type },
       });
     }
