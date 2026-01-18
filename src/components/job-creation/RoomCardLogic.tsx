@@ -56,9 +56,9 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
       const storedSelling = Number(w.summary.total_selling || 0);
       if (storedSelling > 0) {
         totalSelling += storedSelling;
-        console.log(`  Window ${w.window_id}: Cost ${costPrice} → Stored Sell ${storedSelling}`);
+        console.log(`📊 [ROOM CARD] Window ${w.window_id}: Cost ${costPrice.toFixed(2)} → STORED Sell ${storedSelling.toFixed(2)} ✅`);
       } else {
-        // Fallback for old data without total_selling
+        // Fallback for old data without total_selling - NEEDS RE-SAVE
         const markupResult = resolveMarkup({
           gridMarkup: w.summary.pricing_grid_markup || undefined,
           category: w.summary.treatment_category || w.summary.treatment_type,
@@ -67,7 +67,7 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
         });
         const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
         totalSelling += sellingPrice;
-        console.log(`  Window ${w.window_id}: Cost ${costPrice} → Fallback Sell ${sellingPrice} (${markupResult.percentage}% markup)`);
+        console.log(`📊 [ROOM CARD] Window ${w.window_id}: Cost ${costPrice.toFixed(2)} → FALLBACK Sell ${sellingPrice.toFixed(2)} (${markupResult.percentage}% markup) ⚠️ NEEDS RE-SAVE`);
       }
     });
 
