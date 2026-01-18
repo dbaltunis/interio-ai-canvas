@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,19 +44,25 @@ export const TimeSelect = ({
   disabled = false 
 }: TimeSelectProps) => {
   const [open, setOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   // Scroll to selected time when popover opens
   useEffect(() => {
-    if (open && selectedRef.current) {
+    if (open && selectedRef.current && scrollContainerRef.current) {
       setTimeout(() => {
         selectedRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
-      }, 0);
+      }, 50);
     }
   }, [open]);
 
+  const handleTimeClick = (time: string) => {
+    onChange(time);
+    setOpen(false);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -77,32 +82,45 @@ export const TimeSelect = ({
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          // Don't close if clicking inside the popover
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+        }}
       >
         {label && (
-          <div className="px-3 py-2 border-b bg-muted/30">
+          <div className="px-3 py-2 border-b bg-muted/30 pointer-events-auto">
             <span className="text-xs font-medium text-muted-foreground">{label}</span>
           </div>
         )}
-        <ScrollArea className="h-[200px] pointer-events-auto">
+        {/* Using native scrollable div instead of ScrollArea for better compatibility */}
+        <div 
+          ref={scrollContainerRef}
+          className="h-[200px] overflow-y-auto overscroll-contain pointer-events-auto"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           <div className="p-1 pointer-events-auto">
             {TIME_SLOTS.map((time) => {
               const isSelected = time === value;
-              // Highlight common meeting times
               const [hours] = time.split(':').map(Number);
               const isBusinessHour = hours >= 9 && hours <= 17;
               
               return (
                 <button
                   key={time}
+                  type="button"
                   ref={isSelected ? selectedRef : undefined}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChange(time);
-                    setOpen(false);
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => handleTimeClick(time)}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors pointer-events-auto",
+                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors pointer-events-auto cursor-pointer",
                     "hover:bg-accent hover:text-accent-foreground",
                     isSelected && "bg-primary text-primary-foreground",
                     !isSelected && isBusinessHour && "font-medium"
@@ -113,7 +131,7 @@ export const TimeSelect = ({
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );
