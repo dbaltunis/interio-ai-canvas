@@ -80,21 +80,6 @@ export const TimeSelect = ({
       <PopoverContent 
         className="w-[140px] p-0 pointer-events-auto" 
         align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => {
-          // Don't close if clicking inside the popover
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
       >
         {label && (
           <div className="px-3 py-2 border-b bg-muted/30 pointer-events-auto">
