@@ -149,6 +149,10 @@ interface CostCalculationSummaryProps {
    * This eliminates the recalculation anti-pattern by using the same values for display and save.
    */
   onCurtainCostsCalculated?: (costs: CurtainCostsCallback) => void;
+  // ✅ NEW: Item exclusion support for quotes
+  editMode?: boolean;
+  excludedItems?: string[];
+  onExcludeToggle?: (itemName: string, excluded: boolean) => void;
 }
 
 export const CostCalculationSummary = ({
@@ -173,6 +177,10 @@ export const CostCalculationSummary = ({
   savedTotalCost,
   onBlindCostsCalculated,
   onCurtainCostsCalculated,
+  // ✅ NEW: Item exclusion props
+  editMode = false,
+  excludedItems = [],
+  onExcludeToggle,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -363,6 +371,9 @@ export const CostCalculationSummary = ({
         markupPercentage={markupPercentage}
         canViewCosts={canViewCosts}
         canViewMarkup={canViewMarkup}
+        editMode={editMode}
+        excludedItems={excludedItems}
+        onExcludeToggle={onExcludeToggle}
       />
     );
   }
@@ -482,6 +493,9 @@ export const CostCalculationSummary = ({
         canViewCosts={canViewCosts}
         canViewMarkup={canViewMarkup}
         selectedColor={measurements?.selected_color}
+        editMode={editMode}
+        excludedItems={excludedItems}
+        onExcludeToggle={onExcludeToggle}
       />
     );
     } catch (error) {
@@ -791,6 +805,9 @@ export const CostCalculationSummary = ({
       canViewCosts={canViewCosts}
       canViewMarkup={canViewMarkup}
       selectedColor={measurements?.selected_color}
+      editMode={editMode}
+      excludedItems={excludedItems}
+      onExcludeToggle={onExcludeToggle}
     />
   );
 };
