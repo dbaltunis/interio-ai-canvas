@@ -744,16 +744,16 @@ export const UnifiedAppointmentDialog = ({
           </Collapsible>
         </div>
 
-        {/* Footer Actions - Sticky */}
-        <div className="px-4 py-3 border-t bg-background sticky bottom-0 flex items-center justify-between gap-2">
+        {/* Footer Actions - Clean and minimal */}
+        <div className="px-4 py-2 border-t bg-muted/30 flex items-center justify-between gap-2">
           {isEditing && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive h-7 w-7"
                   disabled={deleteAppointment.isPending}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -776,13 +776,13 @@ export const UnifiedAppointmentDialog = ({
             </AlertDialog>
           )}
           
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1.5 ml-auto">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="h-8"
+              className="h-7 px-3 text-xs"
             >
               Cancel
             </Button>
@@ -790,10 +790,10 @@ export const UnifiedAppointmentDialog = ({
               onClick={handleSubmit}
               disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isSaving}
               size="sm"
-              className="h-8"
+              className="h-7 px-4 text-xs"
             >
               {isSaving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
                 isEditing ? 'Save' : 'Create'
               )}

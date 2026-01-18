@@ -172,35 +172,27 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   return (
     <>
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b bg-background sticky top-0 z-10 p-4">
-        <div className="text-center">
-          <div className="text-xs font-medium text-muted-foreground mb-1">
-            {format(currentDate, 'EEEE')}
+      {/* Header - more compact */}
+      <div className="border-b bg-background/95 backdrop-blur sticky top-0 z-10 py-2 px-3">
+        <div className="flex items-center justify-center gap-3">
+          <div className="text-xs font-medium text-muted-foreground">
+            {format(currentDate, 'EEE')}
           </div>
-          <div className={`text-2xl font-bold ${
+          <div className={`text-lg font-semibold ${
             isToday(currentDate) 
-              ? 'bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mx-auto' 
+              ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center' 
               : ''
           }`}>
             {format(currentDate, 'd')}
           </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {format(currentDate, 'MMMM yyyy')}
+          <div className="text-xs text-muted-foreground">
+            {format(currentDate, 'MMM yyyy')}
           </div>
         </div>
       </div>
-
-      {/* All-day events section */}
-      <div className="border-b bg-muted/30 p-2">
-        <div className="text-xs font-medium text-muted-foreground mb-2">All day</div>
-        <div className="min-h-8">
-          {/* All-day events would go here */}
-        </div>
-      </div>
       
-      {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-white pb-32">
+      {/* Scrollable time grid - cleaner styling */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-card pb-32">
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
@@ -208,24 +200,24 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             return (
               <div 
                 key={time} 
-                className={`h-12 flex border-b ${
-                  isHourSlot ? 'border-border' : 'border-dashed border-muted'
+                className={`h-12 flex ${
+                  isHourSlot ? 'border-b border-border/20' : ''
                 }`}
               >
-                {/* Time label */}
-                <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r">
+                {/* Time label - narrower */}
+                <div className="w-14 py-2 px-1 text-right flex-shrink-0">
                   {isHourSlot && (
-                    <span className="font-medium">{time}</span>
+                    <span className="text-[10px] font-medium text-muted-foreground">{time}</span>
                   )}
                 </div>
                 
                 {/* Time slot */}
                 <div 
-                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative bg-white"
+                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative border-l border-border/10"
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
-                  title={`${format(currentDate, 'MMM d')} at ${time}`}
+                  title={`Click to create event at ${time}`}
                 >
-                  {/* Current time indicator */}
+                  {/* Current time indicator - cleaner */}
                   {isToday(currentDate) && (() => {
                     const now = new Date();
                     const currentHour = now.getHours();
@@ -241,10 +233,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         
                         return (
                           <div 
-                            className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                            className="absolute left-0 right-0 h-0.5 bg-destructive z-20"
                             style={{ top: `${top}px` }}
                           >
-                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
                           </div>
                         );
                       }
@@ -350,49 +342,41 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 return (
                   <div
                     key={event.id}
-                    className="absolute left-2 right-2 rounded-lg border border-border bg-white shadow-sm hover:shadow-md transition-all pointer-events-auto cursor-pointer group overflow-hidden"
+                    className="absolute left-1 right-1 rounded-md overflow-hidden pointer-events-auto cursor-pointer group transition-all hover:shadow-md"
                     style={{
                       top: `${style.top}px`,
                       height: `${style.height}px`,
                       zIndex: 10 + eventIndex,
+                      backgroundColor: eventColor ? `${eventColor}15` : 'hsl(var(--muted) / 0.3)',
+                      borderLeft: `3px solid ${eventColor}`,
                     }}
-                      onClick={() => onEventClick?.(event.id)}
-                      title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}\n${event.description || ''}`}
+                    onClick={() => onEventClick?.(event.id)}
+                    title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}`}
                   >
-                    {/* Left color border */}
-                    <div 
-                      className="absolute left-0 top-0 bottom-0 w-1 opacity-80 group-hover:opacity-100 transition-opacity"
-                      style={{ backgroundColor: eventColor }}
-                    />
-                    
-                    <div className="ml-3 p-2 pr-8 h-full flex flex-col justify-center">
+                    <div className="px-2 py-1 h-full flex flex-col justify-center">
                       {/* Title */}
-                      <div className="font-medium text-sm leading-tight line-clamp-1 group-hover:text-primary transition-colors text-foreground">
+                      <div className="font-medium text-xs leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
                         {event.title}
                       </div>
                       
-                      {/* Time - only show if there's enough height */}
-                      {style.height > 50 && (
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                      {/* Time - compact */}
+                      {style.height > 40 && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
                           {TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - {TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}
                         </div>
                       )}
                       
-                      {/* Location - only show if there's enough height */}
-                      {style.height > 70 && event.location && (
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                      {/* Location - compact */}
+                      {style.height > 60 && event.location && (
+                        <div className="flex items-center text-[10px] text-muted-foreground mt-0.5">
+                          <MapPin className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
                           <span className="truncate">{event.location}</span>
                         </div>
                       )}
                       
-                      {/* Video meeting icon */}
-                      {style.height > 50 && (event.video_meeting_link || event.video_provider) && (
-                        <div className="flex items-center text-xs text-blue-500 mt-1">
-                          <Video className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="text-xs">Video meeting</span>
-                        </div>
+                      {/* Video icon inline */}
+                      {style.height > 40 && (event.video_meeting_link || event.video_provider) && (
+                        <Video className="h-3 w-3 text-blue-500 mt-0.5" />
                       )}
                       
                       {/* Attendees - only show if there's enough height */}
