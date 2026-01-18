@@ -31,7 +31,7 @@ export const DatePickerButton = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -47,11 +47,14 @@ export const DatePickerButton = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 pointer-events-auto" 
+        className="w-auto p-0" 
         align="start"
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         <div className="p-2 border-b bg-muted/30">
           <p className="text-xs text-muted-foreground">
