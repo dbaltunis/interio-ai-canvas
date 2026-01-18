@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Percent, Receipt, Grid3X3, Settings2, Info } from "lucide-react";
+import { Calculator, Percent, Receipt, Grid3X3, Settings2, Info, Check } from "lucide-react";
 import { PricingGridCardDashboard } from "../pricing-grids/PricingGridCardDashboard";
 import { PricingGridUploadWizard } from "../pricing-grids/PricingGridUploadWizard";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
@@ -17,6 +17,7 @@ import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { Shield } from "lucide-react";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+import { toast } from "sonner";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -39,9 +40,20 @@ export const PricingRulesTab = () => {
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
   const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
 
+  // Track original values for dirty-state detection
+  const [originalTaxSettings, setOriginalTaxSettings] = useState<{rate: number; type: string; inclusive: boolean} | null>(null);
+  const [originalGlobalSettings, setOriginalGlobalSettings] = useState<{default: number; minimum: number} | null>(null);
+  const [originalCategoryMarkups, setOriginalCategoryMarkups] = useState<Record<string, number> | null>(null);
+
   useEffect(() => {
     if (markupSettings) {
       setFormData(markupSettings);
+      // Set original values for dirty tracking
+      setOriginalGlobalSettings({
+        default: markupSettings.default_markup_percentage,
+        minimum: markupSettings.minimum_markup_percentage
+      });
+      setOriginalCategoryMarkups({ ...markupSettings.category_markups });
     }
   }, [markupSettings]);
 
@@ -54,8 +66,35 @@ export const PricingRulesTab = () => {
       }
       const pricingSettings = businessSettings.pricing_settings as any;
       setTaxInclusive(pricingSettings?.tax_inclusive || false);
+      
+      // Set original values for dirty tracking
+      setOriginalTaxSettings({
+        rate: businessSettings.tax_rate || 0,
+        type: validTaxType,
+        inclusive: pricingSettings?.tax_inclusive || false
+      });
     }
   }, [businessSettings]);
+
+  // Dirty state calculations
+  const hasTaxChanges = useMemo(() => {
+    if (!originalTaxSettings) return false;
+    return taxRate !== originalTaxSettings.rate || 
+           taxType !== originalTaxSettings.type || 
+           taxInclusive !== originalTaxSettings.inclusive;
+  }, [taxRate, taxType, taxInclusive, originalTaxSettings]);
+
+  const hasGlobalChanges = useMemo(() => {
+    if (!originalGlobalSettings || !formData) return false;
+    return formData.default_markup_percentage !== originalGlobalSettings.default ||
+           formData.minimum_markup_percentage !== originalGlobalSettings.minimum;
+  }, [formData, originalGlobalSettings]);
+
+  const hasCategoryChanges = useMemo(() => {
+    if (!originalCategoryMarkups || !formData) return false;
+    const currentMarkups = formData.category_markups;
+    return Object.keys(currentMarkups).some(key => currentMarkups[key] !== originalCategoryMarkups[key]);
+  }, [formData, originalCategoryMarkups]);
 
   const handleSaveGlobalSettings = async () => {
     if (!formData) return;
@@ -67,6 +106,13 @@ export const PricingRulesTab = () => {
       quantity_discounts_enabled: formData.quantity_discounts_enabled,
       show_markup_to_staff: formData.show_markup_to_staff
     });
+    
+    // Update original values after successful save
+    setOriginalGlobalSettings({
+      default: formData.default_markup_percentage,
+      minimum: formData.minimum_markup_percentage
+    });
+    toast.success("Global settings saved");
   };
 
   const handleSaveCategorySettings = async () => {
@@ -84,6 +130,10 @@ export const PricingRulesTab = () => {
     await updateMarkupSettings.mutateAsync({
       category_markups: formData.category_markups
     });
+    
+    // Update original values after successful save
+    setOriginalCategoryMarkups({ ...formData.category_markups });
+    toast.success("Category markup saved");
   };
 
   const handleSaveTaxSettings = async () => {
@@ -101,6 +151,14 @@ export const PricingRulesTab = () => {
       tax_type: taxType,
       pricing_settings: updatedPricingSettings
     });
+    
+    // Update original values after successful save
+    setOriginalTaxSettings({
+      rate: taxRate,
+      type: taxType,
+      inclusive: taxInclusive
+    });
+    toast.success("Tax settings saved");
   };
 
   const handleAddGrid = (productType?: string, priceGroup?: string) => {
@@ -324,11 +382,14 @@ export const PricingRulesTab = () => {
               </div>
               
               <Button 
-                className="bg-primary hover:bg-primary/90"
                 onClick={handleSaveTaxSettings}
-                disabled={updateBusinessSettings.isPending}
+                disabled={!hasTaxChanges || updateBusinessSettings.isPending}
+                variant={hasTaxChanges ? "default" : "secondary"}
+                className={hasTaxChanges ? "bg-primary hover:bg-primary/90" : ""}
               >
-                Save Tax Settings
+                {updateBusinessSettings.isPending ? "Saving..." : hasTaxChanges ? "Save Tax Settings" : (
+                  <><Check className="h-4 w-4 mr-1" /> Saved</>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -374,11 +435,14 @@ export const PricingRulesTab = () => {
               </div>
 
               <Button
-                className="bg-primary hover:bg-primary/90"
                 onClick={handleSaveGlobalSettings}
-                disabled={updateMarkupSettings.isPending}
+                disabled={!hasGlobalChanges || updateMarkupSettings.isPending}
+                variant={hasGlobalChanges ? "default" : "secondary"}
+                className={hasGlobalChanges ? "bg-primary hover:bg-primary/90" : ""}
               >
-                Save Global Settings
+                {updateMarkupSettings.isPending ? "Saving..." : hasGlobalChanges ? "Save Global Settings" : (
+                  <><Check className="h-4 w-4 mr-1" /> Saved</>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -478,11 +542,14 @@ export const PricingRulesTab = () => {
               </div>
 
               <Button 
-                className="bg-primary hover:bg-primary/90"
                 onClick={handleSaveCategorySettings}
-                disabled={updateMarkupSettings.isPending}
+                disabled={!hasCategoryChanges || updateMarkupSettings.isPending}
+                variant={hasCategoryChanges ? "default" : "secondary"}
+                className={hasCategoryChanges ? "bg-primary hover:bg-primary/90" : ""}
               >
-                Save Category Markup
+                {updateMarkupSettings.isPending ? "Saving..." : hasCategoryChanges ? "Save Category Markup" : (
+                  <><Check className="h-4 w-4 mr-1" /> Saved</>
+                )}
               </Button>
             </CardContent>
           </Card>
