@@ -971,6 +971,27 @@ export const QuotationTab = ({
             <ImageIconLucide className="h-4 w-4 mr-2" />
             {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
           </Button>
+          
+          {/* Edit Items Button - Toggle exclusion mode */}
+          <Button 
+            variant={isExclusionEditMode ? "default" : "ghost"} 
+            size="sm" 
+            onClick={() => setIsExclusionEditMode(!isExclusionEditMode)}
+            className="h-8"
+            disabled={isReadOnly}
+          >
+            {isExclusionEditMode ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Done
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Items
+              </>
+            )}
+          </Button>
         </div>
       </Card>
 
@@ -1061,7 +1082,7 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${isExclusionEditMode}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={!isExclusionEditMode} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} excludedItems={excludedItems} onToggleExclusion={toggleExclusion} isExclusionEditMode={isExclusionEditMode} />
               </div>
             </div>
           </div>
