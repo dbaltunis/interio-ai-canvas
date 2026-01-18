@@ -96,7 +96,9 @@ export const TimeSelect = ({
         <div 
           ref={scrollContainerRef}
           className="h-[200px] overflow-y-auto overscroll-contain"
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
         >
           <div className="p-1">
             {TIME_SLOTS.map((time) => {
