@@ -32,6 +32,7 @@ import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectIn
 import { SyncIndicator } from "./components/system/SyncIndicator";
 // FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
+import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
@@ -182,6 +183,7 @@ const App = () => {
                       <BugReportDialog />
                       <DebugPanel />
                       <TeachingOverlay />
+                      <TeachingActiveSpotlight />
                       <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
                   <Routes>

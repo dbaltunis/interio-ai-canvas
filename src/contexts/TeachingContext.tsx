@@ -18,6 +18,7 @@ interface TeachingProgress {
 interface TeachingContextValue {
   // State
   activeTeaching: TeachingPoint | null;
+  activeSpotlight: TeachingPoint | null;
   progress: TeachingProgress;
   isTeachingEnabled: boolean;
   
@@ -28,6 +29,10 @@ interface TeachingContextValue {
   completeTeaching: (id: string) => void;
   resetAllTeaching: () => void;
   setTeachingEnabled: (enabled: boolean) => void;
+  
+  // Spotlight actions
+  showSpotlightForTip: (tip: TeachingPoint) => void;
+  dismissSpotlight: () => void;
   
   // Queries
   hasSeenTeaching: (id: string) => boolean;
@@ -54,6 +59,7 @@ const TeachingContext = createContext<TeachingContextValue | undefined>(undefine
 export const TeachingProvider = ({ children }: { children: ReactNode }) => {
   const [progress, setProgress] = useState<TeachingProgress>(defaultProgress);
   const [activeTeaching, setActiveTeaching] = useState<TeachingPoint | null>(null);
+  const [activeSpotlight, setActiveSpotlight] = useState<TeachingPoint | null>(null);
   const [isTeachingEnabled, setIsTeachingEnabled] = useState(true);
   const [currentPage, setCurrentPageState] = useState<{ page: string; section?: string } | null>(null);
   const [initialized, setInitialized] = useState(false);
@@ -158,6 +164,16 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isDismissedForever]);
 
+  // Show spotlight overlay for a tip (after navigation)
+  const showSpotlightForTip = useCallback((tip: TeachingPoint) => {
+    setActiveSpotlight(tip);
+  }, []);
+
+  // Dismiss the spotlight overlay
+  const dismissSpotlight = useCallback(() => {
+    setActiveSpotlight(null);
+  }, []);
+
   // Dismiss current teaching (mark as seen)
   const dismissTeaching = useCallback((id: string) => {
     setProgress(prev => ({
@@ -170,7 +186,10 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     if (activeTeaching?.id === id) {
       setActiveTeaching(null);
     }
-  }, [activeTeaching]);
+    if (activeSpotlight?.id === id) {
+      setActiveSpotlight(null);
+    }
+  }, [activeTeaching, activeSpotlight]);
 
   // Dismiss forever (won't show again even after reset)
   const dismissForever = useCallback((id: string) => {
@@ -187,7 +206,10 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     if (activeTeaching?.id === id) {
       setActiveTeaching(null);
     }
-  }, [activeTeaching]);
+    if (activeSpotlight?.id === id) {
+      setActiveSpotlight(null);
+    }
+  }, [activeTeaching, activeSpotlight]);
 
   // Complete teaching and optionally show next in sequence
   const completeTeaching = useCallback((id: string) => {
@@ -212,6 +234,7 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
       // Keep dismissedForever and clickedHelpButtons intact
     }));
     setActiveTeaching(null);
+    setActiveSpotlight(null);
   }, []);
 
   // Check if user has clicked a help button
@@ -260,6 +283,7 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
 
   const value: TeachingContextValue = {
     activeTeaching,
+    activeSpotlight,
     progress,
     isTeachingEnabled,
     showTeaching,
@@ -268,6 +292,8 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     completeTeaching,
     resetAllTeaching,
     setTeachingEnabled: setIsTeachingEnabled,
+    showSpotlightForTip,
+    dismissSpotlight,
     hasSeenTeaching,
     isDismissedForever,
     hasClickedHelpButton,

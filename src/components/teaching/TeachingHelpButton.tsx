@@ -27,6 +27,7 @@ import { HelpCenterDrawer } from '@/components/help/HelpCenterDrawer';
 import { TipCard } from './TipCard';
 import { TipSearchInput } from './TipSearchInput';
 import { RecommendedTips } from './RecommendedTips';
+import { TipConfirmationDialog } from './TipConfirmationDialog';
 
 interface TeachingHelpButtonProps {
   className?: string;
@@ -51,6 +52,7 @@ export const TeachingHelpButton = ({
   const [helpCenterOpen, setHelpCenterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabCategory>('all');
+  const [confirmationTip, setConfirmationTip] = useState<TeachingPoint | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -61,6 +63,7 @@ export const TeachingHelpButton = ({
     hasSeenTeaching,
     isDismissedForever,
     completeTeaching,
+    showSpotlightForTip,
   } = useTeaching();
 
   // Keyboard shortcut: ⌘? or Ctrl+?
@@ -131,7 +134,19 @@ export const TeachingHelpButton = ({
     return "Start exploring your new app!";
   };
 
-  const handleShowTeaching = (tp: TeachingPoint) => {
+  // Handle tip selection - show confirmation dialog
+  const handleTipSelect = (tp: TeachingPoint) => {
+    setConfirmationTip(tp);
+  };
+
+  // Handle confirmed navigation with spotlight
+  const handleConfirmedNavigation = () => {
+    if (!confirmationTip) return;
+    
+    const tp = confirmationTip;
+    setConfirmationTip(null);
+    setOpen(false);
+    
     // Build the navigation URL based on trigger config
     let targetUrl = '/';
     
@@ -143,35 +158,32 @@ export const TeachingHelpButton = ({
       targetUrl = tp.trigger.page;
     }
     
-    setOpen(false);
-    
     // Navigate to the page
     navigate(targetUrl);
     
-    // Show the tip content as a toast so user always sees the guidance
+    // After navigation, scroll to element and show spotlight
     setTimeout(() => {
-      // Try to scroll to the target element if it exists
       if (tp.targetSelector) {
         const element = document.querySelector(tp.targetSelector);
         if (element) {
+          // Smooth scroll to element
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Highlight the element briefly
-          element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          
+          // Wait for scroll to complete, then show spotlight
           setTimeout(() => {
-            element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
-          }, 3000);
+            showSpotlightForTip(tp);
+          }, 500);
+          return;
         }
       }
       
-      // Show tip as toast
+      // No target selector - just show toast and complete
       toast.info(tp.title, {
         description: tp.description,
         duration: 6000,
       });
-      
-      // Mark as seen
       completeTeaching(tp.id);
-    }, 500);
+    }, 300);
   };
 
   const isAllComplete = progressPercent === 100;
@@ -278,7 +290,7 @@ export const TeachingHelpButton = ({
           {!searchQuery && contextualTips.length > 0 && (
             <RecommendedTips
               tips={contextualTips}
-              onSelect={handleShowTeaching}
+              onSelect={handleTipSelect}
             />
           )}
 
@@ -352,7 +364,7 @@ export const TeachingHelpButton = ({
                         tip={tip}
                         isSeen={hasSeenTeaching(tip.id)}
                         isDismissed={isDismissedForever(tip.id)}
-                        onSelect={handleShowTeaching}
+                        onSelect={handleTipSelect}
                         index={index}
                       />
                     ))
@@ -397,6 +409,14 @@ export const TeachingHelpButton = ({
       
       {/* Help Center Drawer */}
       <HelpCenterDrawer open={helpCenterOpen} onOpenChange={setHelpCenterOpen} />
+      
+      {/* Tip Confirmation Dialog */}
+      <TipConfirmationDialog
+        tip={confirmationTip}
+        open={!!confirmationTip}
+        onOpenChange={(open) => !open && setConfirmationTip(null)}
+        onConfirm={handleConfirmedNavigation}
+      />
     </TooltipProvider>
   );
 };
