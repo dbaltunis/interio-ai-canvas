@@ -350,7 +350,6 @@ interface LivePreviewBlockProps {
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
   onDataChange?: any;
-  onExcludeToggle?: (itemId: string, excluded: boolean) => void;
 }
 
 const LivePreviewBlock = ({ 
@@ -367,8 +366,7 @@ const LivePreviewBlock = ({
   layout: propsLayout,
   onSettingsChange,
   quoteId,
-  onDataChange,
-  onExcludeToggle
+  onDataChange
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
@@ -1833,28 +1831,9 @@ const LivePreviewBlock = ({
     case 'products': // PRIMARY - products table rendering
     case 'items': // ALIAS
     case 'line-items': // ALIAS
-      console.log('📦 [LivePreview] Rendering products block, editMode:', isEditable, 'hasToggle:', !!onExcludeToggle);
+      console.log('📦 [LivePreview] Rendering products block');
       const tableConfig = content.tableConfig || {};
       const columns = tableConfig.columns || ['description', 'quantity', 'unit_price', 'total'];
-      
-      // In edit mode, show ALL items (allItems) so user can toggle exclusions
-      // In view/print mode, show only included items (items)
-      const displayItems = isEditable 
-        ? (projectData?.allItems || projectData?.items || [])
-        : (projectData?.items || []);
-      const excludedItemIds = projectData?.excludedItems || [];
-      
-      // Helper for clear math display
-      const buildMathDisplay = (item: any): string => {
-        if (item.quantity && item.cost_unit_price) {
-          const unit = item.unit || 'm';
-          return `${item.quantity}${unit} × ${formatCurrency(item.cost_unit_price, projectData?.currency || getDefaultCurrency())}/${unit}`;
-        }
-        if (item.calculation_details) {
-          return item.calculation_details;
-        }
-        return item.description || '';
-      };
       
       return (
         <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
@@ -1864,89 +1843,58 @@ const LivePreviewBlock = ({
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff !important' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb !important' }}>
-                {/* Checkbox column in edit mode */}
-                {isEditable && onExcludeToggle && (
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '50px' }}>
-                    ✓
-                  </th>
-                )}
                 {columns.includes('description') && (
                   <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important' }}>
-                    Item
+                    Item Description
                   </th>
                 )}
                 {columns.includes('quantity') && (
-                  <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '200px' }}>
-                    Details
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '100px' }}>
+                    Qty
+                  </th>
+                )}
+                {columns.includes('unit_price') && (
+                  <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '120px' }}>
+                    Unit Price
                   </th>
                 )}
                 {columns.includes('total') && (
                   <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '120px' }}>
-                    Price
+                    Total
                   </th>
                 )}
               </tr>
             </thead>
             <tbody>
-              {displayItems && displayItems.length > 0 ? (
-                displayItems.map((item: any, index: number) => {
-                  const itemId = item.id || item.name || `item-${index}`;
-                  const isExcluded = excludedItemIds.includes(itemId);
-                  
-                  return (
-                    <tr 
-                      key={index} 
-                      style={{ 
-                        borderBottom: '1px solid #e5e7eb',
-                        opacity: isExcluded ? 0.5 : 1,
-                        textDecoration: isExcluded ? 'line-through' : 'none'
-                      }}
-                    >
-                      {/* Checkbox for exclusion toggle */}
-                      {isEditable && onExcludeToggle && (
-                        <td style={{ padding: '12px 8px', textAlign: 'center', backgroundColor: 'transparent !important' }}>
-                          <input 
-                            type="checkbox"
-                            checked={!isExcluded}
-                            onChange={(e) => onExcludeToggle(itemId, !e.target.checked)}
-                            style={{ 
-                              width: '18px', 
-                              height: '18px', 
-                              cursor: 'pointer',
-                              accentColor: '#3b82f6'
-                            }}
-                          />
-                        </td>
-                      )}
-                      {columns.includes('description') && (
-                        <td style={{ padding: '12px 8px', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
-                          <div style={{ fontWeight: '500', marginBottom: '4px' }}>{item.name || item.description}</div>
-                          {item.room && <div style={{ fontSize: '12px', color: '#6b7280 !important' }}>Room: {item.room}</div>}
-                        </td>
-                      )}
-                      {columns.includes('quantity') && (
-                        <td style={{ padding: '12px 8px', fontSize: '13px', color: '#6b7280 !important', backgroundColor: 'transparent !important' }}>
-                          {/* Clear math display: quantity × unit_price = total */}
-                          {item.quantity && (item.unit_price || item.price) ? (
-                            <span>
-                              {item.quantity} {item.unit || 'unit'} × {formatCurrency(item.unit_price || item.price || 0, projectData?.currency || getDefaultCurrency())}
-                            </span>
-                          ) : (
-                            buildMathDisplay(item) || `${item.quantity || 1} unit`
-                          )}
-                        </td>
-                      )}
-                      {columns.includes('total') && (
-                        <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
-                          {formatCurrency(item.total || (item.quantity || 1) * (item.unit_price || item.price || 0), projectData?.currency || getDefaultCurrency())}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
+              {projectData?.items && projectData.items.length > 0 ? (
+                projectData.items.map((item: any, index: number) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    {columns.includes('description') && (
+                      <td style={{ padding: '12px 8px', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        <div style={{ fontWeight: '500', marginBottom: '4px' }}>{item.name || item.description}</div>
+                        {item.room && <div style={{ fontSize: '12px', color: '#6b7280 !important' }}>Room: {item.room}</div>}
+                      </td>
+                    )}
+                    {columns.includes('quantity') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'center', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {item.quantity || 1}
+                      </td>
+                    )}
+                    {columns.includes('unit_price') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {formatCurrency(item.unit_price || item.price || 0, projectData?.currency || getDefaultCurrency())}
+                      </td>
+                    )}
+                    {columns.includes('total') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {formatCurrency((item.quantity || 1) * (item.unit_price || item.price || 0), projectData?.currency || getDefaultCurrency())}
+                      </td>
+                    )}
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td colSpan={columns.length + (isEditable && onExcludeToggle ? 1 : 0)} style={{ padding: '24px', textAlign: 'center', color: '#6b7280 !important', fontStyle: 'italic', backgroundColor: '#ffffff !important' }}>
+                  <td colSpan={columns.length} style={{ padding: '24px', textAlign: 'center', color: '#6b7280 !important', fontStyle: 'italic', backgroundColor: '#ffffff !important' }}>
                     Products will appear here
                   </td>
                 </tr>
@@ -2186,7 +2134,6 @@ interface LivePreviewProps {
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
-  onExcludeToggle?: (itemId: string, excluded: boolean) => void;
 }
 
 export const LivePreview = ({ 
@@ -2203,8 +2150,7 @@ export const LivePreview = ({
   groupByRoom,
   layout,
   onSettingsChange,
-  quoteId,
-  onExcludeToggle
+  quoteId
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
@@ -2256,7 +2202,7 @@ export const LivePreview = ({
             key={block.id || index}
             block={block}
             projectData={projectData}
-            isEditable={isEditable}
+            isEditable={false}
             isPrintMode={true}
             documentType={documentType}
             userBusinessSettings={businessSettings}
@@ -2268,7 +2214,6 @@ export const LivePreview = ({
             onSettingsChange={onSettingsChange}
             quoteId={quoteId}
             onDataChange={quoteCustomData}
-            onExcludeToggle={onExcludeToggle}
           />
         ))}
       </div>
@@ -2341,7 +2286,6 @@ export const LivePreview = ({
                 onSettingsChange={onSettingsChange}
                 quoteId={quoteId}
                 onDataChange={quoteCustomData}
-                onExcludeToggle={onExcludeToggle}
               />
             ))}
             
