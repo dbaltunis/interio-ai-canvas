@@ -64,7 +64,7 @@ export const TimeSelect = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -80,11 +80,14 @@ export const TimeSelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[140px] p-0 pointer-events-auto" 
+        className="w-[140px] p-0" 
         align="start"
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         {label && (
           <div className="px-3 py-2 border-b bg-muted/30">

@@ -32,15 +32,33 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, style, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
+>(({ className, children, style, onPointerDownOutside, onInteractOutside, onOpenAutoFocus, ...props }, ref) => {
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
         style={style}
-        onPointerDownOutside={onPointerDownOutside}
-        onInteractOutside={onInteractOutside}
+        onPointerDownOutside={(e) => {
+          // Don't close dialog when clicking inside a popover
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+          onPointerDownOutside?.(e);
+        }}
+        onInteractOutside={(e) => {
+          // Don't close dialog when interacting with a popover
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+          onInteractOutside?.(e);
+        }}
+        onOpenAutoFocus={(e) => {
+          // Allow nested components to manage their own focus
+          onOpenAutoFocus?.(e);
+        }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
           "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-4 md:gap-5 lg:gap-6 border bg-card text-card-foreground border-border p-5 md:p-6 lg:p-8 shadow-modal duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-2xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
