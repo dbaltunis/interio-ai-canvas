@@ -93,6 +93,23 @@ export const useQuotationSync = ({
 
   // Build quotation items from current project data
   const buildQuotationItems = () => {
+    // CRITICAL GUARD: Don't build quote until markup settings are loaded
+    // This prevents race condition where quote builds with wrong/default markups
+    if (!markupSettings) {
+      console.log('[QUOTE SYNC] Markup settings not loaded yet, skipping build');
+      return {
+        items: [],
+        baseSubtotal: 0,
+        subtotal: 0,
+        taxAmount: 0,
+        total: 0,
+        costTotal: 0,
+        sellingTotal: 0,
+        profitTotal: 0,
+        grossMarginPercent: 0
+      };
+    }
+    
     const items: any[] = [];
     let totalCostPrice = 0; // Track total cost for profit calculation
     let totalSellingPrice = 0; // Track total selling for profit calculation
