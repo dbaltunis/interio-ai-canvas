@@ -27,7 +27,8 @@ function validateParams(params: FabricCalculationParams): void {
   
   if (!params.railWidth || params.railWidth <= 0) missing.push('railWidth');
   if (!params.drop || params.drop <= 0) missing.push('drop');
-  if (!params.fullness || params.fullness <= 0) missing.push('fullness');
+  // FIX: Use == null to properly check for null/undefined while allowing 0 check separately
+  if (params.fullness == null || params.fullness <= 0) missing.push('fullness');
   if (!params.fabricWidth || params.fabricWidth <= 0) missing.push('fabricWidth');
   if (params.headerHem == null) missing.push('headerHem');
   if (params.bottomHem == null) missing.push('bottomHem');

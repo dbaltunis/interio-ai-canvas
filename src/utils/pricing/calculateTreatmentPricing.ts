@@ -93,9 +93,18 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const returnLeft = template?.return_left || 0;
   const returnRight = template?.return_right || 0;
   const seamHems = template?.seam_hems || 0;
-  // Use nullish coalescing - 0 is valid for "no hem"
-  const headerHem = template?.header_allowance ?? 8;
-  const bottomHem = template?.bottom_hem ?? 8;
+  // ✅ FIX: Use proper nullish chain with 0 as final fallback (not arbitrary 8cm)
+  const headerHemRaw = template?.header_allowance ?? template?.header_hem ?? template?.header_hem_cm;
+  const bottomHemRaw = template?.bottom_hem ?? template?.bottom_allowance ?? template?.bottom_hem_cm;
+  
+  // Use 0 as fallback (no hem) instead of arbitrary 8cm
+  const headerHem = headerHemRaw ?? 0;
+  const bottomHem = bottomHemRaw ?? 0;
+  
+  if (headerHemRaw == null || bottomHemRaw == null) {
+    console.warn('⚠️ calculateTreatmentPricing: Missing hem values in template, using 0. Configure hems for accurate calculations.');
+  }
+  
   // ✅ FIX: Use 1 (no multiplication) as fallback, log warning if missing
   const fullnessRatio = template?.fullness_ratio || (() => {
     console.warn('⚠️ calculateTreatmentPricing: No fullness_ratio in template, using 1 (no multiplication)');

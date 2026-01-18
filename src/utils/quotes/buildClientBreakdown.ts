@@ -1,6 +1,7 @@
 import { MeasurementUnits, defaultMeasurementUnits, convertLength } from '@/hooks/useBusinessSettings';
 import { MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
 import { resolveMarkup, applyMarkup } from '@/utils/pricing/markupResolver';
+import { getCurrencySymbol } from '@/utils/formatCurrency';
 
 export interface ClientBreakdownItem {
   id?: string;
@@ -300,8 +301,10 @@ export const buildClientBreakdown = (
       
       if (isAccessory) {
         // For accessories, format description with quantity and pricing
+        // CRITICAL FIX: Use dynamic currency symbol instead of hardcoded ₹
+        const currencySymbol = getCurrencySymbol(units.currency);
         if (accessoryQuantity > 1 && accessoryUnitPrice > 0) {
-          formattedDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+          formattedDescription = `${accessoryQuantity} × ${currencySymbol}${accessoryUnitPrice.toFixed(2)}`;
           if (pricingDetails) {
             formattedDescription += ` (${pricingDetails})`;
           }
