@@ -137,7 +137,7 @@ export const SettingsGroupedNavigation = ({
         },
         { 
           value: 'pricing', 
-          label: 'Pricing', 
+          label: 'Pricing & Tax', 
           icon: Calculator, 
           canView: canManageMarkup,
           disabled: !canManageMarkup,
