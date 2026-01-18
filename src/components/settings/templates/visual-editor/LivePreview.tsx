@@ -2134,6 +2134,7 @@ interface LivePreviewProps {
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
+  onExcludeToggle?: (itemId: string, excluded: boolean) => void;
 }
 
 export const LivePreview = ({ 
@@ -2150,7 +2151,8 @@ export const LivePreview = ({
   groupByRoom,
   layout,
   onSettingsChange,
-  quoteId
+  quoteId,
+  onExcludeToggle
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
