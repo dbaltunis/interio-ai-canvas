@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Info, Settings, AlertCircle, TrendingUp, Wrench, ChevronDown } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { convertLength } from "@/hooks/useBusinessSettings";
 import { userInputToCM } from "@/utils/measurementBoundary";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
@@ -13,41 +11,13 @@ import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
-import { getPricingMethodLabel, getPricingMethodSuffix, getLengthUnitLabel, getAreaUnitLabel } from "@/utils/pricingMethodLabels";
-import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
-import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
+import { formatFromCM } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { SavedCostBreakdownDisplay } from "./SavedCostBreakdownDisplay";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
-import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
+import { applyMarkup } from "@/utils/pricing/markupResolver";
 import { useUserRole } from "@/hooks/useUserRole";
-import { groupHardwareItems, isMainHardwareItem } from "@/utils/quotes/groupHardwareItems";
-
-// Simple SVG icons
-const FabricSwatchIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M6 6 L8 8 L6 10 L8 12 L6 14 L8 16 L6 18 L18 18 L16 16 L18 14 L16 12 L18 10 L16 8 L18 6 Z" />
-    <line x1="8" y1="9" x2="16" y2="9" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-    <line x1="8" y1="15" x2="16" y2="15" />
-  </svg>
-);
-
-const SewingMachineIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="16" width="18" height="4" rx="1" />
-    <rect x="6" y="8" width="12" height="8" rx="1" />
-    <rect x="10" y="6" width="4" height="2" rx="0.5" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <circle cx="8" cy="4" r="1" />
-  </svg>
-);
-
-const AssemblyIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-  </svg>
-);
+import { QuoteSummaryTable } from "./QuoteSummaryTable";
 
 interface ManufacturingDetails {
   pricingType: string;
@@ -379,59 +349,21 @@ export const CostCalculationSummary = ({
       );
     }
 
+    const markupPercentage = markupSettings?.default_markup_percentage || 0;
+
     return (
-      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Calculator className="h-4 w-4 text-primary" />
-            <h3 className="text-base font-semibold text-card-foreground">Wallpaper Cost Summary</h3>
-          </div>
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Trade Prices</span>
-        </div>
-
-        <div className="grid gap-2 text-sm">
-          {/* Wallpaper Material */}
-          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">Wallpaper Material</span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {fabricToUse.name} - {wallpaperCalc.quantity.toFixed(2)} {wallpaperCalc.unitLabel}{wallpaperCalc.quantity > 1 && wallpaperCalc.unitLabel !== 'm²' ? 's' : ''}
-                </span>
-              </div>
-            </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(wallpaperCalc.totalCost)}</span>
-          </div>
-        </div>
-
-        {/* Total */}
-        <div className="border-t-2 border-primary/20 pt-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-card-foreground">Total</span>
-            <span className="text-xl font-bold text-primary">{formatPrice(wallpaperCalc.totalCost)}</span>
-          </div>
-        </div>
-
-        {/* Pricing Details */}
-        <details className="text-xs text-muted-foreground group">
-          <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1.5 hover:text-primary transition-colors border-t border-border/50 pt-2">
-            <Info className="h-3.5 w-3.5" />
-            <span>Wallpaper Details</span>
-            <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
-          </summary>
-          <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
-            <div className="space-y-0.5">
-              <div className="text-card-foreground font-medium">Wallpaper: {fabricToUse.name}</div>
-              <div>Wall Area: {wallpaperCalc.squareMeters.toFixed(2)} m²</div>
-              <div>Strips Required: {wallpaperCalc.stripsNeeded}</div>
-              <div>Total Length: {wallpaperCalc.totalMeters.toFixed(2)}m</div>
-              {wallpaperCalc.soldBy === 'per_roll' && <div>Rolls: {wallpaperCalc.rollsNeeded}</div>}
-              <div>Sold By: {wallpaperCalc.unitLabel}</div>
-            </div>
-          </div>
-        </details>
-      </div>
+      <QuoteSummaryTable
+        items={[{
+          name: 'Wallpaper Material',
+          details: `${wallpaperCalc.quantity.toFixed(2)} ${wallpaperCalc.unitLabel} (${wallpaperCalc.squareMeters.toFixed(2)} m²)`,
+          price: wallpaperCalc.totalCost,
+          category: 'fabric'
+        }]}
+        totalCost={wallpaperCalc.totalCost}
+        markupPercentage={markupPercentage}
+        canViewCosts={canViewCosts}
+        canViewMarkup={canViewMarkup}
+      />
     );
   }
 
@@ -482,189 +414,65 @@ export const CostCalculationSummary = ({
       return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
     };
 
+    // Build items for table display
+    const tableItems = [
+      {
+        name: isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric',
+        details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
+        price: blindCosts.fabricCost,
+        category: 'fabric'
+      }
+    ];
+
+    if (blindCosts.manufacturingCost > 0) {
+      tableItems.push({
+        name: 'Manufacturing',
+        details: '',
+        price: blindCosts.manufacturingCost,
+        category: 'manufacturing'
+      });
+    }
+
+    // Add options
+    selectedOptions
+      .filter(opt => {
+        const isLiningOption = opt.name?.toLowerCase().includes('lining');
+        const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
+        if (isLiningOption && isBlindTreatment) return false;
+        return true;
+      })
+      .forEach(option => {
+        const optAny = option as any;
+        let displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
+        
+        // Only recalculate if no calculatedPrice exists
+        if (optAny.calculatedPrice === undefined) {
+          if (option.pricingMethod === 'per-meter') {
+            displayPrice = (option.price || 0) * (width / 100);
+          } else if (option.pricingMethod === 'per-sqm') {
+            displayPrice = (option.price || 0) * blindCosts.squareMeters;
+          } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
+            displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
+          }
+        }
+
+        tableItems.push({
+          name: option.name,
+          details: optAny.pricingDetails || '',
+          price: displayPrice,
+          category: optAny.category || 'option'
+        });
+      });
+
     return (
-      <div className="bg-card border border-border/40 rounded-xl shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/30 border-b border-border/40">
-          <div className="p-1.5 bg-primary/10 rounded-lg">
-            <Calculator className="h-4 w-4 text-primary" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Quote Summary</h3>
-        </div>
-
-        <div className="px-4 py-3 space-y-1">
-          {/* Fabric/Material */}
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="p-1 bg-primary/10 rounded">
-                <FabricSwatchIcon className="h-3 w-3 text-primary" />
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'}</span>
-                {measurements?.selected_color && (
-                  <div className="flex items-center gap-1.5">
-                    <div 
-                      className="w-4 h-4 rounded-full border border-border shadow-sm" 
-                      style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
-                    />
-                    <span className="text-xs text-muted-foreground capitalize">{measurements.selected_color}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {formatPrice(getSellingPrice(blindCosts.fabricCost))}
-            </span>
-          </div>
-
-          {/* Manufacturing */}
-          {blindCosts.manufacturingCost > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-border/30">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1 bg-primary/10 rounded">
-                  <AssemblyIcon className="h-3 w-3 text-primary" />
-                </div>
-                <span className="text-sm text-foreground font-medium">Manufacturing</span>
-              </div>
-              <span className="text-sm font-semibold text-foreground tabular-nums">
-                {formatPrice(getSellingPrice(blindCosts.manufacturingCost))}
-              </span>
-            </div>
-          )}
-
-          {/* Options */}
-          {blindCosts.optionsCost > 0 && selectedOptions.length > 0 && (
-            <div className="py-2 border-b border-border/30">
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="p-1 bg-primary/10 rounded">
-                  <Settings className="h-3 w-3 text-primary" />
-                </div>
-                <span className="text-sm text-foreground font-medium">Options</span>
-              </div>
-              <div className="pl-7 space-y-1.5">
-                {selectedOptions
-                  .filter(opt => {
-                    const isLiningOption = opt.name?.toLowerCase().includes('lining');
-                    const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
-                    if (isLiningOption && isBlindTreatment) return false;
-                    return (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData);
-                  })
-                  .map((option, index) => {
-                    let displayPrice = option.price || 0;
-                    
-                    // Calculate display price based on pricing method
-                    if (option.pricingMethod === 'per-meter') {
-                      displayPrice = (option.price || 0) * (width / 100);
-                    } else if (option.pricingMethod === 'per-sqm') {
-                      displayPrice = (option.price || 0) * blindCosts.squareMeters;
-                    } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
-                      if (Array.isArray(option.pricingGridData) && option.pricingGridData.length > 0 && 'width' in option.pricingGridData[0]) {
-                        const widthValues = option.pricingGridData.map((entry: any) => parseInt(entry.width));
-                        const closestWidth = widthValues.reduce((prev: number, curr: number) => {
-                          return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
-                        });
-                        const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
-                        displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
-                      } else {
-                        displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
-                      }
-                    }
-                    
-                    return (
-                      <div key={index} className="flex items-center justify-between text-xs py-0.5">
-                        <span className="text-muted-foreground">• {option.name}</span>
-                        <span className="font-medium text-foreground tabular-nums">
-                          {formatPrice(getSellingPrice(displayPrice))}
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quote Price Footer */}
-        <div className="px-4 py-3 bg-muted/20 border-t border-border/40">
-          {/* Cost Total - Only for authorized users */}
-          {canViewCosts && (
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-border/30">
-              <span className="text-xs font-medium text-muted-foreground">Cost Total</span>
-              <span className="text-sm font-semibold text-muted-foreground tabular-nums">{formatPrice(blindCosts.totalCost)}</span>
-            </div>
-          )}
-          
-          {/* Quote Price - Always visible */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-emerald-500/10 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-emerald-600" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-emerald-600">Quote Price</span>
-                {canViewMarkup && markupPercentage > 0 && (
-                  <span className="text-[10px] text-muted-foreground">{markupPercentage}% markup</span>
-                )}
-              </div>
-            </div>
-            <span className="text-lg font-bold text-emerald-600 tabular-nums">{formatPrice(quotePrice)}</span>
-          </div>
-        </div>
-
-        {/* Pricing Details Accordion */}
-        <details className="group">
-          <summary className="cursor-pointer px-4 py-2.5 flex items-center gap-2 hover:bg-muted/30 transition-colors text-xs font-medium text-muted-foreground border-t border-border/40">
-            <Info className="h-3.5 w-3.5" />
-            <span>Pricing Details</span>
-            <span className="ml-auto text-[10px] group-open:rotate-180 transition-transform duration-200">▼</span>
-          </summary>
-          <div className="px-4 py-3 bg-muted/10 space-y-2 text-xs">
-            <div className="space-y-1 text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Template:</span>
-                <span className="text-foreground font-medium">{template.name}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Method:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground font-medium">{template.pricing_type}</span>
-                  {template.pricing_type === 'pricing_grid' && fabricToUse?.pricing_grid_data && (
-                    <PricingGridPreview 
-                      gridData={fabricToUse.pricing_grid_data} 
-                      gridName={fabricToUse.name || 'Product Pricing'}
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <span>Area:</span>
-                <span className="text-foreground font-medium">{blindCosts.squareMeters.toFixed(2)} sqm</span>
-              </div>
-            </div>
-
-            {selectedOptions && selectedOptions.length > 0 && (
-              <div className="pt-2 border-t border-border/30 space-y-1">
-                <div className="font-medium text-foreground mb-1">Selected Options:</div>
-                {selectedOptions
-                  .filter(opt => {
-                    const isLiningOption = opt.name?.toLowerCase().includes('lining');
-                    const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
-                    if (isLiningOption && isBlindTreatment) return false;
-                    return true;
-                  })
-                  .map((option, index) => (
-                    <div key={index} className="flex items-center justify-between text-muted-foreground">
-                      <span>• {option.name}</span>
-                      <span className="font-medium text-foreground tabular-nums">
-                        {formatPrice(getSellingPrice(option.price || 0))}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        </details>
-      </div>
+      <QuoteSummaryTable
+        items={tableItems}
+        totalCost={blindCosts.totalCost}
+        markupPercentage={markupPercentage}
+        canViewCosts={canViewCosts}
+        canViewMarkup={canViewMarkup}
+        selectedColor={measurements?.selected_color}
+      />
     );
     } catch (error) {
       console.error('Blind cost calculation error:', error);
@@ -873,353 +681,86 @@ export const CostCalculationSummary = ({
     return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
   };
 
+  // Build items for table display
+  const tableItems: Array<{ name: string; details: string; price: number; category?: string }> = [];
+
+  // Fabric
+  if (fabricCost > 0) {
+    const fabricDetails = fabricDisplayData 
+      ? (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName
+          ? `Grid: ${fabricDisplayData.gridName}`
+          : `${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`)
+      : (linearMeters > 0 ? `${linearMeters.toFixed(2)}m` : '');
+    
+    tableItems.push({
+      name: 'Fabric',
+      details: fabricDetails,
+      price: fabricCost,
+      category: 'fabric'
+    });
+  }
+
+  // Lining
+  if (liningCost > 0) {
+    tableItems.push({
+      name: 'Lining',
+      details: '',
+      price: liningCost,
+      category: 'lining'
+    });
+  }
+
+  // Manufacturing
+  if (manufacturingCost > 0) {
+    const mfgDetails = manufacturingDetails 
+      ? (() => {
+          const { pricingType, pricePerUnit, quantity } = manufacturingDetails;
+          if (pricingType === 'per_drop') return `${formatPrice(pricePerUnit)}/drop × ${quantity}`;
+          if (pricingType === 'per_panel') return `${formatPrice(pricePerUnit)}/panel × ${quantity}`;
+          if (pricingType === 'per_metre') return `${formatPrice(pricePerUnit)}/m × ${quantity}`;
+          return '';
+        })()
+      : '';
+    
+    tableItems.push({
+      name: manufacturingDetails?.manufacturingType ? `Manufacturing (${manufacturingDetails.manufacturingType})` : 'Manufacturing',
+      details: mfgDetails,
+      price: manufacturingCost,
+      category: 'manufacturing'
+    });
+  }
+
+  // Heading
+  if (headingCost > 0) {
+    tableItems.push({
+      name: 'Heading',
+      details: '',
+      price: headingCost,
+      category: 'heading'
+    });
+  }
+
+  // Options (use pre-calculated values)
+  selectedOptions.forEach(option => {
+    const optAny = option as any;
+    const displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
+    
+    tableItems.push({
+      name: option.name,
+      details: optAny.pricingDetails || '',
+      price: displayPrice,
+      category: optAny.category || 'option'
+    });
+  });
+
   return (
-    <div className="bg-card border border-border/40 rounded-xl shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/30 border-b border-border/40">
-        <div className="p-1.5 bg-primary/10 rounded-lg">
-          <Calculator className="h-4 w-4 text-primary" />
-        </div>
-        <h3 className="text-sm font-semibold text-foreground tracking-tight">Quote Summary</h3>
-      </div>
-
-      {/* Fabric calculation explanation */}
-      {(fabricDisplayData || fabricCalculation?.fabricOrientation) && (
-        <div className="mx-4 mt-3 p-2.5 bg-muted/30 rounded-lg border border-border/30">
-          <div className="flex items-start gap-2">
-            <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {(() => {
-                const orientation = fabricDisplayData?.orientation || fabricCalculation?.fabricOrientation || 'vertical';
-                const widthsReq = fabricDisplayData?.horizontalPieces ?? engineResult?.widths_required ?? fabricCalculation?.widthsRequired ?? 1;
-                const horizontalPieces = fabricDisplayData?.horizontalPieces || fabricCalculation?.horizontalPiecesNeeded || 1;
-                const meters = fabricDisplayData?.totalMeters ?? engineResult?.linear_meters ?? fabricCalculation?.linearMeters ?? 0;
-                const pricePerM = fabricDisplayData?.pricePerMeter || fabricCalculation?.pricePerMeter || 0;
-                
-                if (orientation === 'horizontal') {
-                  if (horizontalPieces && horizontalPieces > 1) {
-                    return (
-                      <>
-                        <strong className="text-amber-600">Railroaded with Horizontal Seaming:</strong>
-                        <br />
-                        Curtain height exceeds fabric width, requiring {horizontalPieces} horizontal pieces per panel with {horizontalPieces - 1} seam(s).
-                        Total: {widthsReq} piece(s) × {meters.toFixed(2)}m = {formatPrice(meters * pricePerM)}
-                        {fabricCalculation?.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
-                          <><br />Leftover: {formatFromCM(fabricCalculation.leftoverFromLastPiece, units.length)} tracked for future use</>
-                        )}
-                      </>
-                    );
-                  }
-                  return (
-                    <>
-                      <strong className="text-primary">Railroaded Fabric:</strong> Fabric rotated 90°. Using {widthsReq} piece(s) × {(meters/widthsReq).toFixed(2)}m each = {meters.toFixed(2)}m total
-                    </>
-                  );
-                } else {
-                  return (
-                    <>
-                      <strong className="text-primary">Standard Vertical:</strong> Using {widthsReq} fabric width(s) × {(meters/widthsReq).toFixed(2)}m per width = {meters.toFixed(2)}m total
-                    </>
-                  );
-                }
-              })()}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="px-4 py-3 space-y-1">
-        {fabricCost > 0 && (
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="p-1 bg-primary/10 rounded">
-                <FabricSwatchIcon className="h-3 w-3 text-primary" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'}</span>
-                  {measurements?.selected_color && (
-                    <div className="flex items-center gap-1.5">
-                      <div 
-                        className="w-3.5 h-3.5 rounded-full border border-border shadow-sm" 
-                        style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
-                      />
-                      <span className="text-[10px] text-muted-foreground capitalize">{measurements.selected_color}</span>
-                    </div>
-                  )}
-                </div>
-                {fabricDisplayData ? (
-                  <>
-                    <span className="text-[10px] text-muted-foreground truncate">
-                      {fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName
-                        ? `Grid: ${fabricDisplayData.gridName}`
-                        : fabricDisplayData.usesLeftover && fabricDisplayData.orientation === 'horizontal'
-                          ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                          : fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
-                            ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                            : `${formatFabricLength(fabricDisplayData.linearMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                      }
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/70 mt-0.5">
-                      {fabricDisplayData.usesPricingGrid
-                        ? `📊 Grid pricing applied (includes material & manufacturing)`
-                        : fabricDisplayData.orientation === 'horizontal'
-                          ? fabricDisplayData.usesLeftover 
-                            ? `✓ Using leftover fabric - charged for 1 piece only`
-                            : `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
-                          : `📏 Standard vertical: ${fabricDisplayData.horizontalPieces} width(s)`
-                      }
-                    </span>
-                  </>
-                ) : fabricCalculation && (
-                  <>
-                    <span className="text-[10px] text-muted-foreground truncate">
-                      {(() => {
-                        const orientation = fabricCalculation.fabricOrientation || 'vertical';
-                        const horizontalPieces = fabricCalculation.horizontalPiecesNeeded || 1;
-                        const lm = fabricCalculation.linearMeters || 0;
-                        const pricePerM = fabricCalculation.pricePerMeter || 0;
-                        
-                        if (orientation === 'horizontal' && horizontalPieces > 1) {
-                          const totalMeters = lm * horizontalPieces;
-                          return `${formatFabricLength(lm)} × ${horizontalPieces} pieces = ${formatFabricLength(totalMeters)} × ${formatPricePerFabricUnit(pricePerM)}`;
-                        }
-                        return `${formatFabricLength(lm)} × ${formatPricePerFabricUnit(pricePerM)}`;
-                      })()}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/70 mt-0.5">
-                      {(() => {
-                        const orientation = fabricCalculation.fabricOrientation || 'vertical';
-                        const widthsReq = fabricCalculation.widthsRequired || 1;
-                        const horizontalPieces = fabricCalculation.horizontalPiecesNeeded;
-                        
-                        if (orientation === 'horizontal') {
-                          if (horizontalPieces && horizontalPieces > 1) {
-                            return `⚡ Railroaded orientation: ${horizontalPieces} piece(s) needed`;
-                          }
-                          return `⚡ Railroaded orientation: ${widthsReq} piece(s) needed`;
-                        } else {
-                          return `📐 Standard vertical: ${widthsReq} width(s) needed`;
-                        }
-                      })()}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {formatPrice(getSellingPrice(fabricCost))}
-            </span>
-          </div>
-        )}
-
-        {manufacturingCost > 0 ? (
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1 bg-primary/10 rounded">
-                <SewingMachineIcon className="h-3 w-3 text-primary" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-foreground font-medium">
-                  Manufacturing {manufacturingDetails?.manufacturingType ? `(${manufacturingDetails.manufacturingType})` : ''}
-                </span>
-                {manufacturingDetails && manufacturingDetails.pricePerUnit > 0 && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {(() => {
-                      const { pricingType, pricePerUnit, quantity, quantityLabel } = manufacturingDetails;
-                      
-                      if (pricingType === 'per_metre') {
-                        return `${formatPricePerFabricUnit(pricePerUnit)} × ${formatFabricLength(quantity)}`;
-                      } else if (pricingType === 'per_panel') {
-                        return `${formatPrice(pricePerUnit)}/panel × ${quantity} ${quantity === 1 ? 'panel' : 'panels'}`;
-                      } else if (pricingType === 'per_drop') {
-                        return `${formatPrice(pricePerUnit)}/drop × ${quantity} ${quantity === 1 ? 'drop' : 'drops'}`;
-                      } else if (pricingType === 'height_range') {
-                        return `${formatPrice(pricePerUnit)} (height range) × ${quantity} ${quantityLabel}`;
-                      }
-                      return quantityLabel || '';
-                    })()}
-                  </span>
-                )}
-              </div>
-            </div>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {formatPrice(getSellingPrice(manufacturingCost))}
-            </span>
-          </div>
-        ) : (
-          (() => {
-            const tc = template?.treatment_category?.toLowerCase() || '';
-            const requiresManufacturing = ['curtains', 'curtain', 'romans', 'roman', 'roman_blinds', 'roman blind'].some(
-              t => tc.includes(t)
-            );
-            
-            const usingPricingGrid = fabricToUse?.pricing_grid_data || 
-                                      template?.pricing_type === 'pricing_grid' ||
-                                      template?.pricing_grid_data;
-            
-            if (!requiresManufacturing || usingPricingGrid) return null;
-            
-            return (
-              <div className="flex items-center justify-between py-2 border-b border-border/30 bg-amber-50 dark:bg-amber-950/30 -mx-4 px-4 rounded-lg mx-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1 bg-amber-500/10 rounded">
-                    <AlertCircle className="h-3 w-3 text-amber-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">Manufacturing Not Configured</span>
-                    <span className="text-[10px] text-amber-600 dark:text-amber-500">
-                      Set pricing in Settings → Templates → Pricing tab
-                    </span>
-                  </div>
-                </div>
-                <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">{formatPrice(0)}</span>
-              </div>
-            );
-          })()
-        )}
-
-        {headingCost > 0 && (
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1 bg-primary/10 rounded">
-                <Settings className="h-3 w-3 text-primary" />
-              </div>
-              <span className="text-sm text-foreground font-medium">Heading</span>
-            </div>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {formatPrice(getSellingPrice(headingCost))}
-            </span>
-          </div>
-        )}
-
-        {/* Options with Hardware Grouping for Client-Friendly Display */}
-        {selectedOptions && selectedOptions.length > 0 && (() => {
-          // ✅ CRITICAL FIX: Do NOT recalculate option prices - use pre-calculated values ONLY
-          // Previous bug: recalculating prices here caused double-calculation (50 × 2 = 150 instead of 100)
-          const processedOptions = selectedOptions.map((option) => {
-            const optionAny = option as any;
-            
-            // ✅ ALWAYS use calculatedPrice if it exists - it was calculated correctly upstream
-            // Only fall back to basePrice for legacy data or display-only options
-            const displayPrice = optionAny.calculatedPrice ?? option.price ?? 0;
-            const pricingDetails = optionAny.pricingDetails || '';
-            
-            return {
-              ...option,
-              displayPrice,
-              pricingDetails,
-              category: optionAny.category,
-              optionKey: option.optionKey
-            };
-          });
-          
-          // Group hardware items for client-friendly display
-          const { hardwareGroup, otherItems } = groupHardwareItems(processedOptions.map(opt => ({
-            ...opt,
-            calculatedPrice: opt.displayPrice
-          })));
-          
-          return (
-            <>
-              {/* Hardware Section - Grouped with collapsible breakdown */}
-              {hardwareGroup && hardwareGroup.items.length > 0 && (
-                <details className="py-2 border-b border-border/30 group/hw">
-                  <summary className="flex items-center justify-between cursor-pointer list-none">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-1 bg-primary/10 rounded">
-                        <Wrench className="h-3 w-3 text-primary" />
-                      </div>
-                      <span className="text-sm text-foreground font-medium">Hardware</span>
-                      <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground tabular-nums">
-                      {formatPrice(getSellingPrice(hardwareGroup.total))}
-                    </span>
-                  </summary>
-                  
-                  {/* Breakdown items - indented */}
-                  <div className="ml-6 mt-2 space-y-1 border-l-2 border-muted pl-3">
-                    {hardwareGroup.items.map((item, idx) => {
-                      const itemAny = item as any;
-                      const isAccessory = itemAny.category === 'hardware_accessory';
-                      const itemPrice = itemAny.displayPrice ?? itemAny.calculatedPrice ?? item.total_cost ?? item.price ?? 0;
-                      
-                      return (
-                        <div key={idx} className="flex items-start justify-between text-xs gap-2">
-                          <div className="flex flex-col">
-                            <span className={isAccessory ? 'text-muted-foreground' : 'text-foreground'}>
-                              {isAccessory ? `└ ${item.name}` : item.name}
-                            </span>
-                            {itemAny.pricingDetails && (
-                              <span className="text-[10px] text-muted-foreground/70">
-                                {itemAny.pricingDetails}
-                              </span>
-                            )}
-                          </div>
-                          <span className={`tabular-nums ${isAccessory ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                            {itemPrice > 0 ? formatPrice(getSellingPrice(itemPrice)) : <span className="text-muted-foreground">Included</span>}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </details>
-              )}
-              
-              {/* Non-hardware options */}
-              {otherItems.map((option, idx) => {
-                const optAny = option as any;
-                const displayPrice = optAny.displayPrice ?? optAny.calculatedPrice ?? option.price ?? 0;
-                const pricingDetails = optAny.pricingDetails || '';
-                
-                return (
-                  <div key={idx} className="flex items-center justify-between py-2 border-b border-border/30">
-                    <div className="flex flex-col">
-                      <span className="text-sm text-foreground font-medium">{option.name}</span>
-                      {pricingDetails && displayPrice > 0 && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {pricingDetails}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold text-foreground tabular-nums">
-                      {displayPrice > 0 ? formatPrice(getSellingPrice(displayPrice)) : <span className="text-muted-foreground text-xs">Included</span>}
-                    </span>
-                  </div>
-                );
-              })}
-            </>
-          );
-        })()}
-      </div>
-
-      {/* Quote Price Footer */}
-      <div className="px-4 py-3 bg-muted/20 border-t border-border/40">
-        {/* Cost Total - Only for authorized users */}
-        {canViewCosts && (
-          <div className="flex items-center justify-between mb-2 pb-2 border-b border-border/30">
-            <span className="text-xs font-medium text-muted-foreground">Cost Total</span>
-            <span className="text-sm font-semibold text-muted-foreground tabular-nums">{formatPrice(totalCost)}</span>
-          </div>
-        )}
-        
-        {/* Quote Price - Always visible */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-emerald-500/10 rounded-lg">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-emerald-600">Quote Price</span>
-              {canViewMarkup && markupPercentage > 0 && (
-                <span className="text-[10px] text-muted-foreground">{markupPercentage}% markup</span>
-              )}
-            </div>
-          </div>
-          <span className="text-lg font-bold text-emerald-600 tabular-nums">{formatPrice(quotePrice)}</span>
-        </div>
-      </div>
-    </div>
+    <QuoteSummaryTable
+      items={tableItems}
+      totalCost={totalCost}
+      markupPercentage={markupPercentage}
+      canViewCosts={canViewCosts}
+      canViewMarkup={canViewMarkup}
+      selectedColor={measurements?.selected_color}
+    />
   );
 };
