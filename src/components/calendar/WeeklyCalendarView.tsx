@@ -432,59 +432,24 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col h-full pt-3" onMouseUp={handleMouseUp}>
-        {/* Calendar Legend */}
-        <div className="flex items-center justify-between px-4 pb-2 border-b mb-2">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded border border-dashed border-green-500 bg-green-500/40"></div>
-              <span>Available Slots (click to share)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded border-l-4 border-blue-500" style={{ backgroundColor: 'hsl(217 91% 60% / 0.8)' }}></div>
-              <span>Customer Bookings (click for details)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
-              <span>Your Events</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full border-2 border-muted-foreground bg-white"></div>
-              <span>Tasks</span>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => archiveCompletedTasks.mutate()}
-            disabled={archiveCompletedTasks.isPending}
-            className="h-7 text-xs"
-          >
-            <Archive className="h-3 w-3 mr-1" />
-            {archiveCompletedTasks.isPending ? "Archiving..." : "Archive Completed"}
-          </Button>
-        </div>
-
-        {/* Week header with dates - Sticky header that stays fixed on scroll */}
-        <div className="flex border-b bg-background flex-shrink-0 sticky top-0 z-10">
-          <div className="w-16 border-r flex-shrink-0"></div>
+      <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
+        {/* Week header with dates - Clean and minimal */}
+        <div className="flex border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 sticky top-0 z-10">
+          <div className="w-14 border-r flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
               {weekDays.map(day => {
                 const isCurrentDay = isToday(day);
-                const dayEvents = getAllEventsForDate(day);
-                const hasBookings = dayEvents.some(event => event.isBooking);
-                const hasRegularEvents = dayEvents.some(event => !event.isBooking);
                 
                 return (
-                  <div key={day.toString()} className="p-2 text-center border-r relative">
-                    <div className="text-xs font-medium text-muted-foreground mb-1">
+                  <div key={day.toString()} className="py-2 px-1 text-center border-r">
+                    <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-lg font-semibold relative ${
+                    <div className={`text-sm font-semibold mt-0.5 ${
                       isCurrentDay 
-                        ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' 
-                        : ''
+                        ? 'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center mx-auto' 
+                        : 'text-foreground'
                     }`}>
                       {format(day, 'd')}
                     </div>
@@ -499,13 +464,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
           <div className="flex bg-card">
             {/* Fixed time labels column */}
-            <div className="w-16 border-r bg-card flex-shrink-0">
+            <div className="w-14 border-r bg-card flex-shrink-0">
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
-                className={`h-[32px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
-                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
-                }`}
+                  className={`h-[32px] px-1.5 text-xs text-muted-foreground flex items-center justify-end ${
+                    index % 2 === 0 ? 'border-b border-border/20' : ''
+                  }`}
                 >
                   {index % 2 === 0 && (
                     <span className="font-medium text-[10px]">{time}</span>
@@ -516,13 +481,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             
             {/* Day columns */}
             <div className="flex-1 relative bg-card">
-              {/* Hour separation lines */}
+              {/* Hour separation lines - lighter */}
               {timeSlots.map((time, index) => {
-                if (index % 2 === 0) { // Only on full hours
+                if (index % 2 === 0) {
                   return (
                     <div 
                       key={time} 
-                      className="absolute left-0 right-0 border-t border-border/30" 
+                      className="absolute left-0 right-0 border-t border-border/20" 
                       style={{ top: `${index * 32}px` }}
                     />
                   );
