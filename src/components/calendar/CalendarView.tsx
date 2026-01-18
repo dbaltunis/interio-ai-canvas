@@ -282,81 +282,72 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
     return (
       <div className="h-full flex flex-col overflow-hidden">
-        {/* Month header */}
-        <div className="grid grid-cols-7 border-b flex-shrink-0">
+        {/* Month header - lighter styling */}
+        <div className="grid grid-cols-7 flex-shrink-0">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted/30">
+            <div key={day} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
               {day}
             </div>
           ))}
         </div>
         
-        {/* Calendar grid - fixed height, no scrolling */}
+        {/* Calendar grid - cleaner with lighter borders */}
         <div className={`flex-1 grid grid-cols-7 min-h-0`} style={{gridTemplateRows: `repeat(${Math.ceil(daysToShow / 7)}, 1fr)`}}>
           {days.map(day => {
             const events = getEventsForDate(day);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentMonth = isSameMonth(day, currentDate);
             const dayIsToday = isToday(day);
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             
             return (
               <div
                 key={day.toString()}
-                className={`border border-border cursor-pointer transition-colors p-2 flex flex-col min-h-0 ${
-                  isSelected ? 'bg-primary/10 border-primary' : ''
-                } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
+                className={`border-r border-b border-border/20 cursor-pointer transition-colors p-1.5 flex flex-col min-h-0 ${
+                  isSelected ? 'bg-primary/5 ring-1 ring-primary/30 ring-inset' : ''
+                } ${!isCurrentMonth ? 'text-muted-foreground/50' : ''} ${
+                  isWeekend && isCurrentMonth ? 'bg-muted/20' : 'bg-background'
+                } hover:bg-accent/30`}
                 onClick={() => {
                   setSelectedDate(day);
                   setShowCreateEventDialog(true);
                 }}
               >
-                {/* Day number */}
-                <div className={`text-sm font-medium mb-1 flex-shrink-0 ${
+                {/* Day number - refined today indicator */}
+                <div className={`text-xs font-medium mb-0.5 flex-shrink-0 ${
                   dayIsToday 
-                    ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs' 
+                    ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]' 
                     : ''
                 }`}>
                   {format(day, 'd')}
                 </div>
                 
-                {/* Events list */}
-                <div className="flex-1 space-y-1 overflow-hidden">
-                  {events.slice(0, 3).map((event, index) => (
+                {/* Events list - cleaner pills */}
+                <div className="flex-1 space-y-0.5 overflow-hidden">
+                  {events.slice(0, 3).map((event) => (
                     <div
                       key={event.id}
-                      className="text-sm cursor-pointer hover:bg-accent/30 transition-colors rounded p-1 group"
+                      className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
+                      style={{
+                        backgroundColor: event.color ? `${event.color}20` : 'hsl(var(--primary) / 0.1)',
+                        borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
+                      }}
                       title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, displayTimezone, 'HH:mm')}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEventClick(event.id);
                       }}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <div 
-                          className={`w-3 h-3 rounded-full flex-shrink-0 ${getEventDotColor(event)}`}
-                          style={{
-                            backgroundColor: event.color || undefined
-                          }}
-                        />
-                        <div className="truncate text-foreground group-hover:text-foreground/80 flex-1">
-                          <span className="font-semibold">
-                            {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
-                          </span>
-                          <span className="ml-1 font-medium">
-                            {event.title}
-                          </span>
-                        </div>
-                        {event.notification_enabled && (
-                          <Bell className="h-3 w-3 text-primary flex-shrink-0" />
-                        )}
-                        {(event.video_meeting_link) && (
-                          <Video className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                        )}
-                      </div>
+                      <span className="font-medium text-foreground/70">
+                        {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
+                      </span>
+                      <span className="ml-1 text-foreground">
+                        {event.title}
+                      </span>
                     </div>
                   ))}
                   {events.length > 3 && (
-                    <div className="text-xs text-muted-foreground font-medium pl-3.5">
+                    <div className="text-[10px] text-muted-foreground font-medium px-1">
                       +{events.length - 3} more
                     </div>
                   )}

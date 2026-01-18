@@ -433,22 +433,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
-        {/* Week header with dates - Clean and minimal */}
-        <div className="flex border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 sticky top-0 z-10">
-          <div className="w-14 border-r flex-shrink-0"></div>
+        {/* Week header - minimal and clean */}
+        <div className="flex bg-background flex-shrink-0 sticky top-0 z-10 border-b border-border/20">
+          <div className="w-12 flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
               {weekDays.map(day => {
                 const isCurrentDay = isToday(day);
+                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 
                 return (
-                  <div key={day.toString()} className="py-2 px-1 text-center border-r">
-                    <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  <div key={day.toString()} className={`py-1.5 text-center ${isWeekend ? 'bg-muted/10' : ''}`}>
+                    <div className="text-[9px] font-medium text-muted-foreground">
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-sm font-semibold mt-0.5 ${
+                    <div className={`text-xs font-medium mt-0.5 ${
                       isCurrentDay 
-                        ? 'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center mx-auto' 
+                        ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto text-[11px]' 
                         : 'text-foreground'
                     }`}>
                       {format(day, 'd')}
@@ -460,20 +461,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           </div>
         </div>
         
-        {/* Scrollable time grid - fixed overflow for proper sticky behavior */}
+        {/* Scrollable time grid */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
           <div className="flex bg-card">
-            {/* Fixed time labels column */}
-            <div className="w-14 border-r bg-card flex-shrink-0">
+            {/* Time labels - narrower */}
+            <div className="w-12 bg-card flex-shrink-0">
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
-                  className={`h-[32px] px-1.5 text-xs text-muted-foreground flex items-center justify-end ${
-                    index % 2 === 0 ? 'border-b border-border/20' : ''
-                  }`}
+                  className="h-[32px] pr-1 text-right flex items-start justify-end"
                 >
                   {index % 2 === 0 && (
-                    <span className="font-medium text-[10px]">{time}</span>
+                    <span className="text-[9px] font-medium text-muted-foreground -mt-1.5">{time}</span>
                   )}
                 </div>
               ))}
@@ -481,13 +480,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             
             {/* Day columns */}
             <div className="flex-1 relative bg-card">
-              {/* Hour separation lines - lighter */}
+              {/* Hour lines - very subtle */}
               {timeSlots.map((time, index) => {
                 if (index % 2 === 0) {
                   return (
                     <div 
                       key={time} 
-                      className="absolute left-0 right-0 border-t border-border/20" 
+                      className="absolute left-0 right-0 border-t border-border/10" 
                       style={{ top: `${index * 32}px` }}
                     />
                   );
@@ -580,18 +579,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                            showExtendedHours
                          });
                          
-                           return (
-                             <div 
-                               className="absolute left-0 right-0 h-0.5 bg-destructive z-20"
-                               style={{ top: `${top}px` }}
-                             >
-                               <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
-                               <div className="absolute right-2 -top-2 text-[10px] text-destructive font-medium bg-background px-1 rounded">
-                                 {format(now, 'HH:mm')}
-                               </div>
-                             </div>
-                           );
-                      })()}
+                            return (
+                              <div 
+                                className="absolute left-0 right-0 h-px bg-destructive z-20"
+                                style={{ top: `${top}px` }}
+                              >
+                                <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
+                              </div>
+                            );
+                       })()}
                       
                       {/* Events and Appointments with validation */}
                       {dayEvents.map((event, eventIndex) => {
@@ -738,11 +734,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             return (
                               <div
                                 ref={setNodeRef}
-                                className={`absolute ${event.isAvailableSlot ? 'p-1' : event.isBooking ? 'p-2' : 'p-2'} text-xs overflow-hidden group
-                                  transition-all duration-150 border
-                                  ${event.isAvailableSlot ? 'hover:bg-green-500/40 hover:border-green-600 hover:shadow-lg hover:scale-[1.03]' : ''}
-                                  ${event.isBooking ? 'hover:shadow-xl hover:scale-[1.01] text-white' : !event.isAvailableSlot ? 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5' : ''}
-                                  ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/40' : ''}
+                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-1.5'} text-xs overflow-hidden group
+                                  transition-all duration-100 border rounded-md
+                                  ${event.isAvailableSlot ? 'hover:bg-green-500/30' : ''}
+                                  ${event.isBooking ? 'hover:shadow-md text-white' : !event.isAvailableSlot ? 'hover:shadow-md' : ''}
+                                  ${!event.isBooking && !event.isAvailableSlot && !event.isTask ? 'hover:ring-1 hover:ring-primary/30' : ''}
                                   ${event.isBooking ? 'text-white' : eventStyling.textClass}`}
                                   style={eventStyle}
                                   onClick={(e) => {
