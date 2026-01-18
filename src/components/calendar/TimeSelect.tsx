@@ -83,8 +83,8 @@ export const TimeSelect = ({
             <span className="text-xs font-medium text-muted-foreground">{label}</span>
           </div>
         )}
-        <ScrollArea className="h-[200px]">
-          <div className="p-1">
+        <ScrollArea className="h-[200px] pointer-events-auto">
+          <div className="p-1 pointer-events-auto">
             {TIME_SLOTS.map((time) => {
               const isSelected = time === value;
               // Highlight common meeting times
@@ -95,12 +95,14 @@ export const TimeSelect = ({
                 <button
                   key={time}
                   ref={isSelected ? selectedRef : undefined}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onChange(time);
                     setOpen(false);
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors",
+                    "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors pointer-events-auto",
                     "hover:bg-accent hover:text-accent-foreground",
                     isSelected && "bg-primary text-primary-foreground",
                     !isSelected && isBusinessHour && "font-medium"
