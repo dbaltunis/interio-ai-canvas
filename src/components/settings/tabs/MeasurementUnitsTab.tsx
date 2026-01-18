@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Settings } from "lucide-react";
+import { Settings, Check } from "lucide-react";
 import { UnitSelector } from "./measurement-units/UnitSelector";
 import { MeasurementPreview } from "./measurement-units/MeasurementPreview";
 import { useMeasurementUnitsForm } from "./measurement-units/useMeasurementUnitsForm";
@@ -28,6 +28,7 @@ export const MeasurementUnitsTab = () => {
     units,
     isLoading,
     isSaving,
+    hasChanges,
     handleSystemChange,
     handleUnitChange,
     handleSave
@@ -140,10 +141,13 @@ export const MeasurementUnitsTab = () => {
             <MeasurementPreview units={units} />
             <Button 
               onClick={handleSave}
-              disabled={isSaving}
-              className="bg-brand-primary hover:bg-brand-accent"
+              disabled={!hasChanges || isSaving}
+              variant={hasChanges ? "default" : "secondary"}
+              className={hasChanges ? "bg-brand-primary hover:bg-brand-accent" : ""}
             >
-              {isSaving ? "Saving..." : "Save Settings"}
+              {isSaving ? "Saving..." : hasChanges ? "Save Settings" : (
+                <><Check className="h-4 w-4 mr-1" /> Saved</>
+              )}
             </Button>
           </div>
         </CardContent>

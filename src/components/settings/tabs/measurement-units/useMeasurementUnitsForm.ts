@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings, type MeasurementUnits, defaultMeasurementUnits } from "@/hooks/useBusinessSettings";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,10 @@ export const useMeasurementUnitsForm = () => {
     return cached || defaultMeasurementUnits;
   });
 
+  // Track original values for dirty state
+  const [originalUnits, setOriginalUnits] = useState<MeasurementUnits | null>(null);
+  const initialLoadComplete = useRef(false);
+
   useEffect(() => {
     if (businessSettings?.measurement_units) {
       try {
@@ -26,14 +30,34 @@ export const useMeasurementUnitsForm = () => {
         const newUnits = { ...defaultMeasurementUnits, ...parsedUnits };
         setUnits(newUnits);
         
+        // Set original only on first load
+        if (!initialLoadComplete.current) {
+          setOriginalUnits(newUnits);
+          initialLoadComplete.current = true;
+        }
+        
         // Update cache with latest server data
         settingsCacheService.set(CACHE_KEYS.MEASUREMENT_UNITS, newUnits);
       } catch (error) {
         console.error("Failed to parse measurement units:", error);
         setUnits(defaultMeasurementUnits);
+        if (!initialLoadComplete.current) {
+          setOriginalUnits(defaultMeasurementUnits);
+          initialLoadComplete.current = true;
+        }
       }
+    } else if (!isLoading && !initialLoadComplete.current) {
+      // No settings exist yet, set defaults as original
+      setOriginalUnits(defaultMeasurementUnits);
+      initialLoadComplete.current = true;
     }
-  }, [businessSettings]);
+  }, [businessSettings, isLoading]);
+
+  // Compute hasChanges
+  const hasChanges = useMemo(() => {
+    if (!originalUnits) return false;
+    return JSON.stringify(units) !== JSON.stringify(originalUnits);
+  }, [units, originalUnits]);
 
   const handleSystemChange = (system: 'metric' | 'imperial' | 'mixed') => {
     // Don't reset if already on this system (prevents accidental resets)
@@ -87,6 +111,9 @@ export const useMeasurementUnitsForm = () => {
       // Force refetch to ensure fresh data
       await queryClient.refetchQueries({ queryKey: ["business-settings"] });
       
+      // Update original to current (mark as saved)
+      setOriginalUnits(units);
+      
       console.log('✅ Saved measurement units to database:', units);
       toast.success("Measurement units updated successfully");
     } catch (error) {
@@ -99,6 +126,7 @@ export const useMeasurementUnitsForm = () => {
     units,
     isLoading,
     isSaving: createSettings.isPending || updateSettings.isPending,
+    hasChanges,
     handleSystemChange,
     handleUnitChange,
     handleSave
