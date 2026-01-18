@@ -12,6 +12,7 @@ import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckChec
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
+import { EventHoverCard } from "./EventHoverCard";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useMyTasks, Task, useUpdateTask, useArchiveCompletedTasks } from "@/hooks/useTasks";

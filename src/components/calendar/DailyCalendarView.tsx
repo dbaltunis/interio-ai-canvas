@@ -9,6 +9,8 @@ import { useMyTasks, Task } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
+import { EventHoverCard } from "./EventHoverCard";
+import { motion } from "framer-motion";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -340,18 +342,24 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 const eventColor = event.color || '#3b82f6'; // Default blue
                 
                 return (
-                  <div
+                  <EventHoverCard
                     key={event.id}
-                    className="absolute left-1 right-1 rounded-md overflow-hidden pointer-events-auto cursor-pointer group transition-all hover:shadow-md"
-                    style={{
-                      top: `${style.top}px`,
-                      height: `${style.height}px`,
-                      zIndex: 10 + eventIndex,
-                      backgroundColor: eventColor ? `${eventColor}15` : 'hsl(var(--muted) / 0.3)',
-                      borderLeft: `3px solid ${eventColor}`,
-                    }}
-                    onClick={() => onEventClick?.(event.id)}
-                    title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}`}
+                    event={event}
+                    onEdit={(id) => onEventClick?.(id)}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: eventIndex * 0.03, duration: 0.15 }}
+                      className="absolute left-1 right-1 rounded-md overflow-hidden pointer-events-auto cursor-pointer group transition-all hover:shadow-md"
+                      style={{
+                        top: `${style.top}px`,
+                        height: `${style.height}px`,
+                        zIndex: 10 + eventIndex,
+                        backgroundColor: eventColor ? `${eventColor}15` : 'hsl(var(--muted) / 0.3)',
+                        borderLeft: `3px solid ${eventColor}`,
+                      }}
+                      onClick={() => onEventClick?.(event.id)}
                   >
                     <div className="px-2 py-1 h-full flex flex-col justify-center">
                       {/* Title */}
@@ -406,7 +414,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       className="absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-white shadow-sm"
                       style={{ backgroundColor: eventColor }}
                     />
-                  </div>
+                    </motion.div>
+                  </EventHoverCard>
                 );
               })}
             </div>

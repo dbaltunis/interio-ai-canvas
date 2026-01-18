@@ -12,6 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Minus, Palette, Video, UserPlus, Bell, AlertCircle, Copy, Check, Mail, ChevronDown, Settings2 } from "lucide-react";
+import { TimeSelect, DurationBadge } from "./TimeSelect";
+import { DatePickerButton } from "./DatePickerButton";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useSendCalendarInvitation } from "@/hooks/useSendCalendarInvitation";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
@@ -448,28 +450,23 @@ export const UnifiedAppointmentDialog = ({
             className="text-base font-medium border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
           />
 
-          {/* Date & Time - Compact inline */}
-          <div className="flex items-center gap-2 text-sm">
-            <Input
-              type="date"
+          {/* Date & Time - Polished pickers */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <DatePickerButton
               value={event.date}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
-              className="w-auto h-8 text-xs"
+              onChange={useCallback((value) => setEvent(prev => ({ ...prev, date: value })), [])}
             />
-            <div className="flex items-center gap-1">
-              <Input
-                type="time"
+            <div className="flex items-center gap-1.5">
+              <TimeSelect
                 value={event.startTime}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
-                className="w-[90px] h-8 text-xs"
+                onChange={useCallback((value) => setEvent(prev => ({ ...prev, startTime: value })), [])}
               />
-              <span className="text-muted-foreground">–</span>
-              <Input
-                type="time"
+              <span className="text-muted-foreground text-xs">–</span>
+              <TimeSelect
                 value={event.endTime}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
-                className="w-[90px] h-8 text-xs"
+                onChange={useCallback((value) => setEvent(prev => ({ ...prev, endTime: value })), [])}
               />
+              <DurationBadge startTime={event.startTime} endTime={event.endTime} />
             </div>
           </div>
 
