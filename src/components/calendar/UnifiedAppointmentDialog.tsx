@@ -6,16 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle, Copy, Check, Mail } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Minus, Palette, Video, UserPlus, Bell, AlertCircle, Copy, Check, Mail, ChevronDown, Settings2 } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useSendCalendarInvitation } from "@/hooks/useSendCalendarInvitation";
-// CalDAV sync removed - using Google Calendar OAuth only
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
@@ -26,8 +24,7 @@ import { EventVisibilitySelector } from "./EventVisibilitySelector";
 import { TeamMemberPicker } from "./TeamMemberPicker";
 import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
+import { fromZonedTime } from "date-fns-tz";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -72,9 +69,10 @@ export const UnifiedAppointmentDialog = ({
     shared_with_organization: false
   });
 
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
   const [syncToCalendars, setSyncToCalendars] = useState(false);
-  const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [addVideoMeeting, setAddVideoMeeting] = useState(false);
   const [videoProvider, setVideoProvider] = useState<string>('google_meet');
   const [videoLink, setVideoLink] = useState("");
@@ -88,7 +86,6 @@ export const UnifiedAppointmentDialog = ({
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
   const sendInvitation = useSendCalendarInvitation();
-  // CalDAV sync removed
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
@@ -96,10 +93,8 @@ export const UnifiedAppointmentDialog = ({
   const { providers, generateMeetingLink, isGenerating } = useVideoMeetingProviders();
   const { data: preferences } = useCalendarPreferences();
   
-  // Fetch event owner profile if editing an appointment
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
 
-  // Permission checks - following the same pattern as jobs
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
@@ -122,15 +117,12 @@ export const UnifiedAppointmentDialog = ({
     enabled: !!user && !permissionsLoading,
   });
 
-  // Check if create_appointments is explicitly in user_permissions table
   const hasCreateAppointmentsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'create_appointments'
   ) ?? false;
 
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
 
-  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
-  // Note: Editing existing appointments doesn't require create permission
   const canCreateAppointments =
     userRoleData?.isSystemOwner
       ? true
@@ -150,7 +142,6 @@ export const UnifiedAppointmentDialog = ({
   useEffect(() => {
     const loadAppointment = async () => {
       if (appointment) {
-        // Get user's timezone from preferences
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -162,11 +153,9 @@ export const UnifiedAppointmentDialog = ({
 
         const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-        // Convert UTC times to user's timezone for display
         const startDate = new Date(appointment.start_time);
         const endDate = new Date(appointment.end_time);
         
-        // Use timezone utilities to convert to user's timezone
         const zonedStart = TimezoneUtils.toTimezone(startDate, userTimezone);
         const zonedEnd = TimezoneUtils.toTimezone(endDate, userTimezone);
         
@@ -176,17 +165,22 @@ export const UnifiedAppointmentDialog = ({
           date: format(zonedStart, 'yyyy-MM-dd'),
           startTime: format(zonedStart, 'HH:mm'),
           endTime: format(zonedEnd, 'HH:mm'),
-        location: appointment.location || "",
-        appointment_type: appointment.appointment_type || "meeting",
-        color: appointment.color || defaultColors[0],
-        video_meeting_link: appointment.video_meeting_link || "",
-        selectedTeamMembers: appointment.team_member_ids || [],
-        inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
-        notification_enabled: appointment.notification_enabled || false,
-        notification_minutes: appointment.notification_minutes || 15,
-        visibility: appointment.visibility || "private",
-        shared_with_organization: appointment.shared_with_organization || false
-      });
+          location: appointment.location || "",
+          appointment_type: appointment.appointment_type || "meeting",
+          color: appointment.color || defaultColors[0],
+          video_meeting_link: appointment.video_meeting_link || "",
+          selectedTeamMembers: appointment.team_member_ids || [],
+          inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
+          notification_enabled: appointment.notification_enabled || false,
+          notification_minutes: appointment.notification_minutes || 15,
+          visibility: appointment.visibility || "private",
+          shared_with_organization: appointment.shared_with_organization || false
+        });
+        
+        // Expand more options if editing and there's data
+        if (appointment.location || appointment.description) {
+          setShowMoreOptions(true);
+        }
       }
     };
     
@@ -205,15 +199,16 @@ export const UnifiedAppointmentDialog = ({
         video_meeting_link: "",
         selectedTeamMembers: [],
         inviteClientEmail: "",
-        notification_enabled: true, // Enable notifications by default for new events
+        notification_enabled: true,
         notification_minutes: 15,
         visibility: preferences?.default_event_visibility || "private",
         shared_with_organization: false
       });
+      setShowMoreOptions(false);
+      setShowAdvanced(false);
     }
   }, [appointment, selectedDate, selectedStartTime, selectedEndTime, defaultColors, preferences]);
 
-  // Validate date range
   const isValidDateRange = useMemo(() => {
     if (!event.date || !event.startTime || !event.endTime) return true;
     const start = new Date(`${event.date}T${event.startTime}`);
@@ -222,11 +217,6 @@ export const UnifiedAppointmentDialog = ({
   }, [event.date, event.startTime, event.endTime]);
 
   const handleSubmit = async () => {
-    console.log('handleSubmit called with event:', event);
-    console.log('isEditing:', isEditing);
-    console.log('appointment:', appointment);
-    
-    // Check permission for creating new appointments (editing doesn't require create permission)
     if (!isEditing) {
       const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
       if (isPermissionLoaded && !canCreateAppointments) {
@@ -237,7 +227,6 @@ export const UnifiedAppointmentDialog = ({
         });
         return;
       }
-      // Don't allow creation while permissions are loading
       if (!isPermissionLoaded) {
         toast({
           title: "Loading",
@@ -248,22 +237,13 @@ export const UnifiedAppointmentDialog = ({
     }
     
     if (!event.title || !event.date || !event.startTime || !event.endTime) {
-      console.log('Validation failed:', {
-        title: event.title,
-        date: event.date,
-        startTime: event.startTime,
-        endTime: event.endTime
-      });
       return;
     }
 
-    // Additional validation for date range
     if (!isValidDateRange) {
-      console.log('Invalid date range: end time must be after start time');
       return;
     }
 
-    // Get user's timezone
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -275,18 +255,13 @@ export const UnifiedAppointmentDialog = ({
 
     const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // Parse date/time components
     const [year, month, day] = event.date.split('-').map(Number);
     const [startHours, startMinutes] = event.startTime.split(':').map(Number);
     const [endHours, endMinutes] = event.endTime.split(':').map(Number);
     
-    // Create dates with local components - these represent the user's intended local time
-    // Using Date constructor with components creates date in system timezone
     const localStartDate = new Date(year, month - 1, day, startHours, startMinutes, 0);
     const localEndDate = new Date(year, month - 1, day, endHours, endMinutes, 0);
     
-    // fromZonedTime takes a date with these time components and interprets them
-    // as being in the specified timezone, then converts to UTC
     const startDateTime = fromZonedTime(localStartDate, userTimezone);
     const endDateTime = fromZonedTime(localEndDate, userTimezone);
 
@@ -308,8 +283,6 @@ export const UnifiedAppointmentDialog = ({
       shared_with_organization: event.visibility === 'organization' || event.shared_with_organization
     };
 
-    console.log('[UnifiedAppointmentDialog] Submitting appointment with data:', appointmentData);
-
     try {
       if (isOnline) {
         if (isEditing) {
@@ -320,10 +293,8 @@ export const UnifiedAppointmentDialog = ({
         } else {
           const newAppointment = await createAppointment.mutateAsync(appointmentData as any);
           
-          // Generate meeting link asynchronously after dialog closes
           if (addVideoMeeting && videoProvider !== 'manual' && newAppointment?.id) {
             const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
-            // Run async without blocking dialog close
             Promise.resolve().then(() => {
               generateMeetingLink({
                 appointmentId: newAppointment.id,
@@ -337,11 +308,9 @@ export const UnifiedAppointmentDialog = ({
           }
         }
         
-        // Close dialog immediately after successful mutation
         onOpenChange(false);
         resetForm();
       } else {
-        // Queue for offline processing
         if (isEditing) {
           queueOfflineOperation('update', 'appointments', { id: appointment.id, ...appointmentData });
         } else {
@@ -356,7 +325,6 @@ export const UnifiedAppointmentDialog = ({
   };
 
   const handleDelete = async () => {
-    // Prevent multiple simultaneous delete calls
     if (!appointment || !appointment.id || deleteAppointment.isPending) {
       return;
     }
@@ -396,14 +364,8 @@ export const UnifiedAppointmentDialog = ({
     setCopiedLink(false);
     setInviteEmail("");
     setInviteName("");
-  };
-
-  const handleCalendarToggle = (calendarId: string, checked: boolean) => {
-    setSelectedCalendars(prev => 
-      checked 
-        ? [...prev, calendarId]
-        : prev.filter(id => id !== calendarId)
-    );
+    setShowMoreOptions(false);
+    setShowAdvanced(false);
   };
 
   const handleTeamMemberToggle = (memberId: string, checked: boolean) => {
@@ -420,7 +382,7 @@ export const UnifiedAppointmentDialog = ({
       const currentTime = prev[field];
       const [hours, mins] = currentTime.split(':').map(Number);
       const totalMinutes = hours * 60 + mins + minutes;
-      const clampedMinutes = Math.max(0, Math.min(1439, totalMinutes)); // 0-1439 minutes in a day
+      const clampedMinutes = Math.max(0, Math.min(1439, totalMinutes));
       const newHours = Math.floor(clampedMinutes / 60);
       const newMins = clampedMinutes % 60;
       return {
@@ -447,540 +409,394 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-4">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-base font-semibold flex items-center gap-1.5">
-            <CalendarDays className="w-4 h-4" />
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+        {/* Compact Header */}
+        <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-background z-10">
+          <DialogTitle className="text-sm font-medium flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-primary" />
             {isEditing ? 'Edit Event' : 'New Event'}
+            {event.date && (
+              <span className="text-muted-foreground font-normal">
+                • {format(new Date(event.date), 'MMM d')}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
         
-        {/* Permission Warning for Creating New Appointments */}
-        {!isEditing && (() => {
-          const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-          if (isPermissionLoaded && !canCreateAppointments) {
-            return (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You don't have permission to create appointments. Please contact your administrator.
-                </AlertDescription>
-              </Alert>
-            );
-          }
-          return null;
-        })()}
-        
-        <div className="space-y-5">
-          {/* Title */}
-          <div className="space-y-1">
-            <Label htmlFor="title" className="text-xs font-medium">Event Title *</Label>
-            <Input
-              id="title"
-              placeholder="What's this event about?"
-              value={event.title}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
-              className="h-8 text-sm"
-            />
-          </div>
+        <div className="px-4 py-3 space-y-4">
+          {/* Permission Warning */}
+          {!isEditing && (() => {
+            const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+            if (isPermissionLoaded && !canCreateAppointments) {
+              return (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <AlertDescription className="text-xs">
+                    You don't have permission to create appointments.
+                  </AlertDescription>
+                </Alert>
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Title - Large and prominent */}
+          <Input
+            placeholder="Add title"
+            value={event.title}
+            onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
+            className="text-base font-medium border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+          />
 
-          {/* Date and Time Grid - Compact */}
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <Label htmlFor="date" className="text-xs font-medium flex items-center gap-1 mb-1">
-                <CalendarDays className="w-3 h-3" />
-                Date *
-              </Label>
+          {/* Date & Time - Compact inline */}
+          <div className="flex items-center gap-2 text-sm">
+            <Input
+              type="date"
+              value={event.date}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
+              className="w-auto h-8 text-xs"
+            />
+            <div className="flex items-center gap-1">
               <Input
-                id="date"
-                type="date"
-                value={event.date}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
-                className="h-8 text-sm"
+                type="time"
+                value={event.startTime}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
+                className="w-[90px] h-8 text-xs"
+              />
+              <span className="text-muted-foreground">–</span>
+              <Input
+                type="time"
+                value={event.endTime}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
+                className="w-[90px] h-8 text-xs"
               />
             </div>
-            <div>
-              <Label htmlFor="startTime" className="text-xs font-medium flex items-center gap-1 mb-1">
-                <Clock className="w-3 h-3" />
-                Start *
-              </Label>
-              <div className="flex items-center gap-0.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => adjustTime('startTime', -15)}
-                >
-                  <Minus className="w-3 h-3" />
-                </Button>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={event.startTime}
-                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
-                  className="h-8 text-sm text-center"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => adjustTime('startTime', 15)}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="endTime" className="text-xs font-medium flex items-center gap-1 mb-1">
-                <Clock className="w-3 h-3" />
-                End *
-              </Label>
-              <div className="flex items-center gap-0.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => adjustTime('endTime', -15)}
-                >
-                  <Minus className="w-3 h-3" />
-                </Button>
-                <Input
-                  id="endTime"
-                  type="time"
-                  min={event.startTime}
-                  value={event.endTime}
-                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
-                  className="h-8 text-sm text-center"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => adjustTime('endTime', 15)}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
           </div>
 
-          {/* Date validation error */}
+          {/* Quick duration chips */}
+          <div className="flex items-center gap-1">
+            {[30, 60, 90].map((minutes) => (
+              <Button
+                key={minutes}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setQuickDuration(minutes)}
+                className="h-6 px-2 text-[10px]"
+              >
+                {minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}
+              </Button>
+            ))}
+          </div>
+
           {!isValidDateRange && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>End time must be after start time</AlertDescription>
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">End time must be after start time</AlertDescription>
             </Alert>
           )}
 
-          {/* Quick Duration - Compact */}
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs font-medium text-muted-foreground shrink-0">Duration:</Label>
-            <div className="flex flex-wrap gap-1">
-              {[15, 30, 60, 90].map((minutes) => (
-                <Button
-                  key={minutes}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuickDuration(minutes)}
-                  className="h-6 px-2 text-xs"
-                >
-                  {minutes}m
-                </Button>
-              ))}
-            </div>
-          </div>
+          {/* More Details - Collapsible */}
+          <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
+                <Plus className="h-3.5 w-3.5" />
+                {showMoreOptions ? 'Less options' : 'Add location, description...'}
+                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showMoreOptions ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-2">
+              {/* Location */}
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  placeholder="Add location"
+                  value={event.location}
+                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+                  className="h-8 text-xs"
+                />
+              </div>
 
-          {/* Type and Color */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-medium">Event Type</Label>
-              <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="consultation">Consultation</SelectItem>
-                  <SelectItem value="measurement">Measurement</SelectItem>
-                  <SelectItem value="installation">Installation</SelectItem>
-                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                  <SelectItem value="reminder">Reminder</SelectItem>
-                  <SelectItem value="call">Call</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5" />
-                Color
-              </Label>
-              <Select 
-                value={event.color || defaultColors[0]} 
-                onValueChange={(value) => setEvent({ ...event, color: value })}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-5 h-5 rounded-full border-2 border-border"
-                        style={{ backgroundColor: event.color || defaultColors[0] }}
-                      />
-                      <span>{colorOptions.find(c => c.value === event.color)?.name || 'Select'}</span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {colorOptions.map((color) => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-5 h-5 rounded-full border-2 border-border"
-                          style={{ backgroundColor: color.value }}
-                        />
-                        <span>{color.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              {/* Description */}
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
+                <Textarea
+                  placeholder="Add description"
+                  value={event.description}
+                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
+                  rows={2}
+                  className="resize-none text-xs"
+                />
+              </div>
 
-          {/* Video Meeting Provider */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Video className="w-3.5 h-3.5" />
-                Video Meeting
-              </Label>
-              <Switch
-                checked={addVideoMeeting}
-                onCheckedChange={setAddVideoMeeting}
-              />
-            </div>
+              {/* Video Meeting Toggle */}
+              <div className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2">
+                  <Video className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs">Add video conferencing</span>
+                </div>
+                <Switch
+                  checked={addVideoMeeting}
+                  onCheckedChange={setAddVideoMeeting}
+                />
+              </div>
 
-            {addVideoMeeting && (
-              <div className="space-y-3 p-3 rounded-lg bg-muted/50">
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium">Provider</Label>
+              {addVideoMeeting && (
+                <div className="pl-6 space-y-2">
                   <Select value={videoProvider} onValueChange={setVideoProvider}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue>
                         <div className="flex items-center gap-2">
                           <span>{selectedProvider?.icon}</span>
-                          <span className="text-sm">{selectedProvider?.name}</span>
+                          <span>{selectedProvider?.name}</span>
                         </div>
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {connectedProviders.map((provider) => (
                         <SelectItem key={provider.provider} value={provider.provider!}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 text-xs">
                             <span>{provider.icon}</span>
                             <span>{provider.name}</span>
                             {provider.connected && provider.provider !== 'manual' && (
-                              <Badge variant="secondary" className="text-xs">Auto</Badge>
+                              <Badge variant="secondary" className="text-[10px] h-4">Auto</Badge>
                             )}
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
 
-                {videoProvider === 'manual' ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="manualVideoLink" className="text-xs font-medium">Meeting Link</Label>
+                  {videoProvider === 'manual' && (
                     <Input
-                      id="manualVideoLink"
-                      placeholder="https://meet.google.com/..."
+                      placeholder="Paste meeting link..."
                       value={videoLink}
                       onChange={(e) => setVideoLink(e.target.value)}
-                      className="h-9"
+                      className="h-8 text-xs"
                     />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span>Link will be generated automatically when you save</span>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {event.video_meeting_link && (
-                  <div className="flex items-center gap-2 p-2 rounded bg-background">
-                    <div className="flex-1 text-sm truncate text-muted-foreground">
-                      {event.video_meeting_link}
-                    </div>
+              {/* Notifications Toggle */}
+              <div className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs">Reminder</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {event.notification_enabled && (
+                    <Select 
+                      value={event.notification_minutes.toString()} 
+                      onValueChange={(v) => setEvent(prev => ({ ...prev, notification_minutes: parseInt(v) }))}
+                    >
+                      <SelectTrigger className="h-7 w-20 text-[10px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 min</SelectItem>
+                        <SelectItem value="15">15 min</SelectItem>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Switch
+                    checked={event.notification_enabled}
+                    onCheckedChange={(checked) => setEvent(prev => ({ ...prev, notification_enabled: checked }))}
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Advanced Options - Collapsible */}
+          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
+                <Settings2 className="h-3.5 w-3.5" />
+                Advanced options
+                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-2">
+              {/* Event Type & Color */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
+                  <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                      <SelectItem value="measurement">Measurement</SelectItem>
+                      <SelectItem value="installation">Installation</SelectItem>
+                      <SelectItem value="follow_up">Follow-up</SelectItem>
+                      <SelectItem value="reminder">Reminder</SelectItem>
+                      <SelectItem value="call">Call</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">Color</Label>
+                  <Select 
+                    value={event.color || defaultColors[0]} 
+                    onValueChange={(value) => setEvent({ ...event, color: value })}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded-full border"
+                            style={{ backgroundColor: event.color || defaultColors[0] }}
+                          />
+                        </div>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colorOptions.map((color) => (
+                        <SelectItem key={color.value} value={color.value}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full border"
+                              style={{ backgroundColor: color.value }}
+                            />
+                            <span className="text-xs">{color.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Visibility */}
+              <div>
+                <Label className="text-[10px] text-muted-foreground mb-1 block">Visibility</Label>
+                <EventVisibilitySelector
+                  value={event.visibility}
+                  onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
+                  hasTeamMembers={event.selectedTeamMembers.length > 0}
+                />
+              </div>
+
+              {/* Team Members */}
+              {(event.visibility === 'team' || event.visibility === 'organization') && (
+                <div>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">Team Members</Label>
+                  <TeamMemberPicker
+                    selectedMembers={event.selectedTeamMembers}
+                    onChange={(members) => setEvent(prev => ({ ...prev, selectedTeamMembers: members }))}
+                  />
+                </div>
+              )}
+
+              {/* Invite Clients */}
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  placeholder="Invite clients (email)"
+                  value={event.inviteClientEmail}
+                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, inviteClientEmail: e.target.value })), [])}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              {/* Email Invitation for existing appointments */}
+              {isEditing && appointment?.id && (
+                <div className="p-2 rounded bg-muted/50 space-y-2">
+                  <Label className="text-[10px] text-muted-foreground">Send Email Invitation</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="recipient@email.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="h-8 text-xs flex-1"
+                    />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(event.video_meeting_link)}
-                      className="h-7 w-7 p-0"
+                      onClick={() => {
+                        if (inviteEmail && appointment?.id) {
+                          sendInvitation.mutate({
+                            appointmentId: appointment.id,
+                            recipientEmail: inviteEmail,
+                            recipientName: inviteName || undefined
+                          });
+                          setInviteEmail("");
+                          setInviteName("");
+                        }
+                      }}
+                      disabled={!inviteEmail || sendInvitation.isPending}
+                      className="h-8 text-xs"
                     >
-                      {copiedLink ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {sendInvitation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
                     </Button>
                   </div>
-                )}
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
 
-                {!connectedProviders.find(p => p.provider === videoProvider)?.connected && videoProvider !== 'manual' && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      {videoProvider === 'google_meet' && 'Connect Google Calendar in Settings to enable automatic Meet links'}
-                      {videoProvider === 'zoom' && 'Connect Zoom in Settings to enable automatic meeting links'}
-                      {videoProvider === 'teams' && 'Connect Microsoft Teams in Settings to enable automatic meeting links'}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-          )}
-          </div>
-
-          {/* Email Invitations */}
-          {isEditing && appointment?.id && (
-            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" />
-                Send Email Invitation
-              </Label>
-              <div className="space-y-2">
-                <Input
-                  placeholder="Recipient name (optional)"
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  className="h-9"
-                />
-                <Input
-                  type="email"
-                  placeholder="recipient@email.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="h-9"
-                />
+        {/* Footer Actions - Sticky */}
+        <div className="px-4 py-3 border-t bg-background sticky bottom-0 flex items-center justify-between gap-2">
+          {isEditing && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (inviteEmail && appointment?.id) {
-                      sendInvitation.mutate({
-                        appointmentId: appointment.id,
-                        recipientEmail: inviteEmail,
-                        recipientName: inviteName || undefined
-                      });
-                      setInviteEmail("");
-                      setInviteName("");
-                    }
-                  }}
-                  disabled={!inviteEmail || sendInvitation.isPending}
-                  className="w-full"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                  disabled={deleteAppointment.isPending}
                 >
-                  {sendInvitation.isPending ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-3.5 h-3.5 mr-2" />
-                      Send Invitation
-                    </>
-                  )}
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
-              </div>
-            </div>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this event. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
-
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" />
-              Location
-            </Label>
-            <Input
-              id="location"
-              placeholder="Where?"
-              value={event.location}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
-              className="h-10"
-            />
-          </div>
-
-          {/* Event Visibility Selector */}
-          <EventVisibilitySelector
-            value={event.visibility}
-            onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
-            hasTeamMembers={event.selectedTeamMembers.length > 0}
-          />
-
-          {/* Team Members Picker - Only show if visibility is team or organization */}
-          {(event.visibility === 'team' || event.visibility === 'organization') && (
-            <TeamMemberPicker
-              selectedMembers={event.selectedTeamMembers}
-              onChange={(members) => setEvent(prev => ({ ...prev, selectedTeamMembers: members }))}
-            />
-          )}
-
-          {/* Client Invitations */}
-          <div className="space-y-2">
-            <Label htmlFor="clientEmails" className="text-sm font-medium flex items-center gap-1.5">
-              <UserPlus className="w-3.5 h-3.5" />
-              Invite Clients
-            </Label>
-            <Input
-              id="clientEmails"
-              placeholder="client@email.com, another@email.com"
-              value={event.inviteClientEmail}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, inviteClientEmail: e.target.value })), [])}
-              className="h-10"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              placeholder="Add details..."
-              value={event.description}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          {/* Notifications */}
-          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="notifications" className="text-sm font-medium flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5" />
-                Enable Notifications
-              </Label>
-              <Switch
-                id="notifications"
-                checked={event.notification_enabled || false}
-                onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
-              />
-            </div>
-            {event.notification_enabled && (
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">Remind me</Label>
-                <Select 
-                  value={event.notification_minutes?.toString() || '15'}
-                  onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">At event time</SelectItem>
-                    <SelectItem value="5">5 minutes before</SelectItem>
-                    <SelectItem value="15">15 minutes before</SelectItem>
-                    <SelectItem value="30">30 minutes before</SelectItem>
-                    <SelectItem value="60">1 hour before</SelectItem>
-                    <SelectItem value="120">2 hours before</SelectItem>
-                    <SelectItem value="1440">1 day before</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Notification methods are configured in Settings
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Google Calendar Badge */}
-          {isEditing && appointment?.google_event_id && (
-            <Badge variant="secondary" className="w-fit">
-              <CalendarDays className="w-3 h-3 mr-1" />
-              Synced with Google Calendar
-            </Badge>
-          )}
-
-          <Separator />
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            {(() => {
-              const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-              const shouldDisableForCreate = !isEditing && isPermissionLoaded && !canCreateAppointments;
-              const isFormValid = event.title && event.date && event.startTime && event.endTime && isValidDateRange;
-              
-              return (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isFormValid || isSaving || shouldDisableForCreate}
-                  className="flex-1 h-10"
-                  title={shouldDisableForCreate ? "You don't have permission to create appointments" : undefined}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {isEditing ? 'Updating...' : 'Creating...'}
-                    </>
-                  ) : (
-                    isEditing ? 'Update Event' : 'Create Event'
-                  )}
-                </Button>
-              );
-            })()}
-
-            {isEditing && (
-              <>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      disabled={deleteAppointment.isPending} 
-                      className="h-10 w-10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete "{appointment?.title}"? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={deleteAppointment.isPending}>
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDelete();
-                        }}
-                        disabled={deleteAppointment.isPending}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {deleteAppointment.isPending ? "Deleting..." : "Delete"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
-            )}
-            
-            <Button 
-              variant="outline" 
+          
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => onOpenChange(false)}
-              className="h-10"
+              className="h-8"
             >
               Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isSaving}
+              size="sm"
+              className="h-8"
+            >
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                isEditing ? 'Save' : 'Create'
+              )}
             </Button>
           </div>
         </div>

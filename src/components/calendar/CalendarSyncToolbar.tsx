@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo, Search } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, HelpCircle, Search, Eye, MoreHorizontal, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Switch } from "@/components/ui/switch";
@@ -62,6 +62,7 @@ export const CalendarSyncToolbar = ({
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   const isTablet = useIsTablet();
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   
   // Google Calendar sync toggle state
   const [googleSyncEnabled, setGoogleSyncEnabled] = useState(() => {
@@ -78,7 +79,6 @@ export const CalendarSyncToolbar = ({
   const handleSyncToggle = async (enabled: boolean) => {
     setGoogleSyncEnabled(enabled);
     if (enabled && isConnected) {
-      // Import and export when enabling
       await syncFromGoogle();
       await syncAllToGoogle();
     }
@@ -86,12 +86,10 @@ export const CalendarSyncToolbar = ({
 
   // Auto-sync interval - every 5 minutes when enabled
   useEffect(() => {
-    // Don't sync if not connected or sync is disabled
     if (!isConnected || !googleSyncEnabled) {
       return;
     }
 
-    // Sync immediately on mount if needed
     const lastSyncTime = integration?.last_sync;
     const shouldSyncNow = !lastSyncTime || Date.now() - new Date(lastSyncTime).getTime() > 5 * 60 * 1000;
     
@@ -101,15 +99,13 @@ export const CalendarSyncToolbar = ({
       syncAllToGoogle();
     }
 
-    // Set up interval for background sync every 5 minutes
     const interval = setInterval(() => {
-      // Double-check connection before syncing
       if (isConnected && googleSyncEnabled) {
         console.log('Background auto-sync triggered');
         syncFromGoogle();
         syncAllToGoogle();
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [isConnected, googleSyncEnabled, integration?.last_sync, syncFromGoogle, syncAllToGoogle]);
@@ -143,14 +139,12 @@ export const CalendarSyncToolbar = ({
     enabled: !!user && !permissionsLoading,
   });
 
-  // Check if create_appointments is explicitly in user_permissions table
   const hasCreateAppointmentsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'create_appointments'
   ) ?? false;
 
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
 
-  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
   const canCreateAppointments =
     userRoleData?.isSystemOwner
       ? true
@@ -158,7 +152,6 @@ export const CalendarSyncToolbar = ({
           ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
           : hasCreateAppointmentsPermission;
 
-  // Handler for scheduler click with permission check
   const handleSchedulerClick = () => {
     const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
     if (isPermissionLoaded && !canCreateAppointments) {
@@ -169,7 +162,6 @@ export const CalendarSyncToolbar = ({
       });
       return;
     }
-    // Don't allow creation while permissions are loading
     if (!isPermissionLoaded) {
       toast({
         title: "Loading",
@@ -180,182 +172,134 @@ export const CalendarSyncToolbar = ({
     onSchedulerClick?.();
   };
 
-  // Format last sync time - shorter for mobile
   const getLastSyncText = () => {
     if (!integration?.last_sync) return 'Never';
     
     const secondsAgo = Math.floor((Date.now() - new Date(integration.last_sync).getTime()) / 1000);
     
     if (secondsAgo < 60) return 'Now';
-    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
-    if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
-    return `${Math.floor(secondsAgo / 86400)}d ago`;
+    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m`;
+    if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
+    return `${Math.floor(secondsAgo / 86400)}d`;
   };
   
   const lastSyncTime = getLastSyncText();
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b flex-wrap">
-      {/* Left section - Navigation controls */}
+    <div className="flex items-center gap-1.5 px-3 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Left section - Navigation */}
       {currentDate && view && onTodayClick && onPrevClick && onNextClick && (
-        <div className="flex items-center gap-2 md:gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <CalendarIcon className="h-5 w-5 text-primary" />
-          </div>
-          <span className="text-lg font-semibold text-foreground hidden sm:inline">Calendar</span>
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={onTodayClick}
-            className="h-7 text-xs ml-2"
+            className="h-7 px-2 text-xs font-medium"
           >
             Today
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onPrevClick}
-            className="h-7 w-7"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNextClick}
-            className="h-7 w-7"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          {!isMobile && (
-            <>
-              <h2 className="text-sm font-medium ml-1 text-muted-foreground">
-                {format(currentDate, 'MMMM yyyy')}
-              </h2>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-xs text-muted-foreground ml-2 cursor-help">
-                      {getCurrentOffset(userTimezone)}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">{TimezoneUtils.getTimezoneDisplayName(userTimezone, true)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Google Calendar sync status (only if connected) */}
-      {isConnected && (
-        <div className="flex items-center gap-1.5">
-          {integration?.active ? (
-            <CheckCircle2 className="h-3 w-3 text-green-500" />
-          ) : (
-            <XCircle className="h-3 w-3 text-destructive" />
-          )}
-          <span className="text-[11px] text-muted-foreground">
-            {lastSyncTime}
-          </span>
-          {(isSyncingFromGoogle || isSyncingAll) && googleSyncEnabled && (
-            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+          
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onPrevClick}
+              className="h-7 w-7"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onNextClick}
+              className="h-7 w-7"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <h2 className="text-sm font-semibold ml-1 min-w-[120px]">
+            {format(currentDate, 'MMMM yyyy')}
+          </h2>
+          
+          {/* Sync status indicator - minimal */}
+          {isConnected && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 ml-2">
+                    {integration?.active ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-destructive" />
+                    )}
+                    {(isSyncingFromGoogle || isSyncingAll) && googleSyncEnabled && (
+                      <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  <p>Google Calendar: {lastSyncTime}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       )}
 
       <div className="flex-1" />
 
-      {/* Right section - Filters, View, and Sync controls */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {/* Appointment Scheduling Dropdown - Desktop only */}
-        {isDesktop && onSchedulerClick && onManageTemplates && onViewBookings && onViewAnalytics && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-              >
-                <CalendarIcon className="h-3.5 w-3.5" />
-                <span className="hidden lg:inline">Appointment Scheduling</span>
-                <span className="lg:hidden">Scheduling</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
-              className="w-56 pointer-events-auto !z-[99999] bg-popover"
-              onCloseAutoFocus={(e) => e.preventDefault()}
-            >
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleSchedulerClick();
-                }}
-                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
-                className="pointer-events-auto cursor-pointer"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                New Booking Template
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onManageTemplates?.();
-                }}
-                className="pointer-events-auto cursor-pointer"
-              >
-                <SettingsIcon className="h-4 w-4 mr-2" />
-                Manage Templates
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onViewBookings?.();
-                }}
-                className="pointer-events-auto cursor-pointer"
-              >
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                View Bookings
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onViewAnalytics?.();
-                }}
-                className="pointer-events-auto cursor-pointer"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Analytics
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-
-        {/* Search Input + Filters */}
+      {/* Right section - Actions */}
+      <div className="flex items-center gap-1">
+        {/* Search - expandable */}
         {onFiltersChange && (
           <>
-            {/* Always-visible Search Input */}
-            <div className="relative w-48">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search events..."
-                className="pl-9 h-7 text-xs"
-                onChange={(e) => onFiltersChange({ searchTerm: e.target.value, userIds: [], eventTypes: [], statuses: [] })}
-              />
-            </div>
-            <CalendarVisibilityFilter />
-            <CalendarFilters onFiltersChange={onFiltersChange} />
+            {showSearch ? (
+              <div className="relative w-40 animate-in slide-in-from-right-2 duration-200">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+                <Input
+                  placeholder="Search..."
+                  className="pl-7 h-7 text-xs"
+                  autoFocus
+                  onBlur={() => setShowSearch(false)}
+                  onChange={(e) => onFiltersChange({ searchTerm: e.target.value, userIds: [], eventTypes: [], statuses: [] })}
+                />
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSearch(true)}
+                className="h-7 w-7"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
           </>
         )}
 
-        {/* View selector - Moved directly under Filters to save space */}
+        {/* View & Filters Popover - Combined */}
+        {onFiltersChange && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-3">
+              <div className="space-y-3">
+                <div className="text-xs font-medium text-muted-foreground">View Options</div>
+                <CalendarVisibilityFilter />
+                <CalendarFilters onFiltersChange={onFiltersChange} />
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {/* View selector */}
         {view && onViewChange && (
           <Select value={view} onValueChange={onViewChange}>
-            <SelectTrigger className="w-24 h-7 text-xs">
+            <SelectTrigger className="w-[70px] h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
@@ -366,39 +310,15 @@ export const CalendarSyncToolbar = ({
           </Select>
         )}
 
-        {/* Scheduler button - Tablets only */}
-        {isTablet && onSchedulerClick && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSchedulerClick}
-            disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
-            className="h-7 w-7 p-0"
-            title="Booking Templates"
-          >
-            <Link2 className="h-4 w-4" />
-          </Button>
-        )}
-
-        {/* Calendar picker - Desktop (week/day view) and Tablets */}
+        {/* Calendar picker for week/day views */}
         {((isDesktop && view && view !== 'month') || isTablet) && currentDate && onDateChange && (
           <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                title="Pick a date"
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7">
                 <CalendarIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 bg-background z-50" align="end">
-              <div className="p-3 border-b bg-muted/30">
-                <p className="text-xs text-muted-foreground">
-                  Today: <span className="font-medium text-foreground">{format(new Date(), 'MMM dd, yyyy')}</span>
-                </p>
-              </div>
               <Calendar
                 mode="single"
                 selected={currentDate}
@@ -414,55 +334,76 @@ export const CalendarSyncToolbar = ({
           </Popover>
         )}
 
-        {/* Tasks View Toggle - Hidden per user request (kept for future use) */}
-        {/* {onTasksClick && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onTasksClick}
-            className="h-7 px-3 gap-1.5"
-          >
-            {showTasksView ? (
-              <>
-                <CalendarIcon className="h-4 w-4" />
-                <span className="text-xs">Calendar</span>
-              </>
-            ) : (
-              <>
-                <ListTodo className="h-4 w-4" />
-                <span className="text-xs">Tasks</span>
-              </>
-            )}
-          </Button>
-        )} */}
-
-        {/* Google Calendar sync toggle (only if connected) */}
-        {isConnected && (
-          <TooltipProvider>
-            <div className="flex items-center gap-1.5">
-              <Switch
-                id="google-sync"
-                checked={googleSyncEnabled}
-                onCheckedChange={handleSyncToggle}
-                disabled={isSyncingFromGoogle || isSyncingAll}
-              />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="cursor-help">
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p className="text-sm">
-                    <strong>Google Calendar Sync</strong>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically imports and exports all events, appointments, and tasks between your calendar and Google Calendar every 5 minutes.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
+        {/* More menu - Desktop scheduling options */}
+        {isDesktop && onSchedulerClick && onManageTemplates && onViewBookings && onViewAnalytics && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-48 pointer-events-auto !z-[99999] bg-popover"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  handleSchedulerClick();
+                }}
+                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
+                className="pointer-events-auto cursor-pointer text-xs"
+              >
+                New Booking Template
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onManageTemplates?.();
+                }}
+                className="pointer-events-auto cursor-pointer text-xs"
+              >
+                <SettingsIcon className="h-3.5 w-3.5 mr-2" />
+                Manage Templates
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onViewBookings?.();
+                }}
+                className="pointer-events-auto cursor-pointer text-xs"
+              >
+                <CalendarIcon className="h-3.5 w-3.5 mr-2" />
+                View Bookings
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onViewAnalytics?.();
+                }}
+                className="pointer-events-auto cursor-pointer text-xs"
+              >
+                <BarChart3 className="h-3.5 w-3.5 mr-2" />
+                Analytics
+              </DropdownMenuItem>
+              {isConnected && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Google Sync</span>
+                    <Switch
+                      checked={googleSyncEnabled}
+                      onCheckedChange={handleSyncToggle}
+                      disabled={isSyncingFromGoogle || isSyncingAll}
+                      className="scale-75"
+                    />
+                  </div>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>
