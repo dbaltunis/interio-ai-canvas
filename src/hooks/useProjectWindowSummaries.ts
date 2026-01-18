@@ -51,15 +51,18 @@ export const useProjectWindowSummaries = (projectId?: string) => {
       const totalsByRoom: Record<string, number> = {};
       let projectTotal = 0;
 
-      // DISPLAY-ONLY ARCHITECTURE: Use saved total_cost directly - no breakdown recalculation
+      // DISPLAY-ONLY ARCHITECTURE: Use saved total_cost and total_selling directly
       windows.forEach((w) => {
-        const amount = w.summary ? Number((w.summary as any).total_cost || 0) : 0;
+        const costAmount = w.summary ? Number((w.summary as any).total_cost || 0) : 0;
+        const sellingAmount = w.summary ? Number((w.summary as any).total_selling || 0) : 0;
         
-        console.log(`📊 [DISPLAY-ONLY] Window ${w.window_id}: ${amount}`);
+        console.log(`📊 [DISPLAY-ONLY] Window ${w.window_id}: Cost ${costAmount}, Selling ${sellingAmount}`);
         
-        projectTotal += amount;
+        // Use selling if available, otherwise cost
+        const displayAmount = sellingAmount > 0 ? sellingAmount : costAmount;
+        projectTotal += displayAmount;
         const roomId = w.room_id || "unknown";
-        totalsByRoom[roomId] = (totalsByRoom[roomId] || 0) + amount;
+        totalsByRoom[roomId] = (totalsByRoom[roomId] || 0) + displayAmount;
       });
 
       return { windows, totalsByRoom, projectTotal };

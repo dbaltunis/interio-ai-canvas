@@ -32,6 +32,8 @@ import { runShadowComparison } from "@/engine/shadowModeRunner";
 import { useCurtainEngine } from "@/engine/useCurtainEngine";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -230,6 +232,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     data: headingOptionsFromSettings = [],
     isLoading: headingOptionsLoading
   } = useHeadingOptions();
+  const { data: markupSettings } = useMarkupSettings();
   const queryClient = useQueryClient();
 
   // ✅ CRITICAL: Enrich fabric with pricing grid data BEFORE engine calculation
@@ -1588,6 +1591,53 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             ? totalCost // Already includes all components including options
             : fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost + curtainOptionsCost;
 
+          // CRITICAL FIX: Calculate total_selling with PER-ITEM MARKUPS
+          // This ensures Room Cards, Rooms Tab, and Quotes all show the same price
+          const calculateTotalSelling = () => {
+            // Determine the treatment category for markup resolution
+            const treatmentCat = treatmentCategory || 'curtains';
+            const makingCategory = `${treatmentCat.replace(/_/g, '').replace('s', '')}_making`; // curtain_making, blind_making, etc.
+            
+            // Calculate selling prices for each component with their specific category markup
+            const fabricSelling = applyMarkup(fabricCost, resolveMarkup({
+              category: treatmentCat,
+              markupSettings: markupSettings || undefined
+            }).percentage);
+            
+            const liningSelling = applyMarkup(finalLiningCost, resolveMarkup({
+              category: 'lining',
+              markupSettings: markupSettings || undefined
+            }).percentage);
+            
+            const headingSelling = applyMarkup(finalHeadingCost, resolveMarkup({
+              category: 'heading',
+              markupSettings: markupSettings || undefined
+            }).percentage);
+            
+            const manufacturingSelling = applyMarkup(manufacturingCost, resolveMarkup({
+              category: makingCategory,
+              markupSettings: markupSettings || undefined
+            }).percentage);
+            
+            const optionsSelling = applyMarkup(curtainOptionsCost, resolveMarkup({
+              category: 'options',
+              markupSettings: markupSettings || undefined
+            }).percentage);
+            
+            console.log('💰 [PER-ITEM MARKUP] Calculating total_selling:', {
+              fabricCost, fabricSelling,
+              liningCost: finalLiningCost, liningSelling,
+              headingCost: finalHeadingCost, headingSelling,
+              manufacturingCost, manufacturingSelling,
+              optionsCost: curtainOptionsCost, optionsSelling,
+              makingCategory
+            });
+            
+            return fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
+          };
+          
+          const finalTotalSelling = calculateTotalSelling();
+
           // Create summary data for windows_summary table - Save ALL 4 steps
           console.log('💾 DynamicWorksheet treatment data for save:', {
             specificTreatmentType,
@@ -1689,6 +1739,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               : null,
             
             total_cost: finalTotalCost,
+            total_selling: finalTotalSelling, // ✅ PER-ITEM MARKUP SELLING PRICE
             // CRITICAL: Save structured cost_breakdown for accurate room/project totals
             cost_breakdown: (() => {
               // Calculate pieces to charge (accounting for leftover usage)

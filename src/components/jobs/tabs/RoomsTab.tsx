@@ -155,12 +155,18 @@ export const RoomsTab = ({
   // Calculate room products total (already at selling price)
   const roomProductsTotal = allRoomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
 
-  // Calculate SELLING total with markup applied
+  // Calculate SELLING total using stored total_selling (with per-item markups)
   const sellingTotal = (projectSummaries?.windows || []).reduce((sum, w) => {
     if (!w.summary) return sum;
-    const costPrice = Number(w.summary.total_cost || 0);
     
-    // Apply markup to get selling price
+    // ✅ CRITICAL FIX: Use stored total_selling (calculated with per-item markups)
+    const storedSelling = Number(w.summary.total_selling || 0);
+    if (storedSelling > 0) {
+      return sum + storedSelling;
+    }
+    
+    // Fallback for old data without total_selling
+    const costPrice = Number(w.summary.total_cost || 0);
     const markupResult = resolveMarkup({
       gridMarkup: w.summary.pricing_grid_markup || undefined,
       category: w.summary.treatment_category || w.summary.treatment_type,

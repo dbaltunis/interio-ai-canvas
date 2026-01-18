@@ -9947,6 +9947,7 @@ export type Database = {
           template_id: string | null
           template_name: string | null
           total_cost: number | null
+          total_selling: number | null
           treatment_category: string | null
           treatment_type: string | null
           updated_at: string | null
@@ -9996,6 +9997,7 @@ export type Database = {
           template_id?: string | null
           template_name?: string | null
           total_cost?: number | null
+          total_selling?: number | null
           treatment_category?: string | null
           treatment_type?: string | null
           updated_at?: string | null
@@ -10045,6 +10047,7 @@ export type Database = {
           template_id?: string | null
           template_name?: string | null
           total_cost?: number | null
+          total_selling?: number | null
           treatment_category?: string | null
           treatment_type?: string | null
           updated_at?: string | null
