@@ -30,6 +30,8 @@ import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
+import { EventHoverCard } from "./EventHoverCard";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { DurationPicker } from "./TimePicker";
 // CalDAV imports removed - using Google Calendar OAuth only
@@ -322,29 +324,36 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                   {format(day, 'd')}
                 </div>
                 
-                {/* Events list - cleaner pills */}
+                {/* Events list - with hover cards */}
                 <div className="flex-1 space-y-0.5 overflow-hidden">
-                  {events.slice(0, 3).map((event) => (
-                    <div
+                  {events.slice(0, 3).map((event, idx) => (
+                    <EventHoverCard
                       key={event.id}
-                      className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
-                      style={{
-                        backgroundColor: event.color ? `${event.color}20` : 'hsl(var(--primary) / 0.1)',
-                        borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
-                      }}
-                      title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, displayTimezone, 'HH:mm')}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEventClick(event.id);
-                      }}
+                      event={event}
+                      onEdit={(id) => handleEventClick(id)}
                     >
-                      <span className="font-medium text-foreground/70">
-                        {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
-                      </span>
-                      <span className="ml-1 text-foreground">
-                        {event.title}
-                      </span>
-                    </div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 2 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05, duration: 0.15 }}
+                        className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
+                        style={{
+                          backgroundColor: event.color ? `${event.color}20` : 'hsl(var(--primary) / 0.1)',
+                          borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEventClick(event.id);
+                        }}
+                      >
+                        <span className="font-medium text-foreground/70">
+                          {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
+                        </span>
+                        <span className="ml-1 text-foreground">
+                          {event.title}
+                        </span>
+                      </motion.div>
+                    </EventHoverCard>
                   ))}
                   {events.length > 3 && (
                     <div className="text-[10px] text-muted-foreground font-medium px-1">
