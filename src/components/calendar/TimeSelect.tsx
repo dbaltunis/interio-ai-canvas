@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -93,14 +94,8 @@ export const TimeSelect = ({
             <span className="text-xs font-medium text-muted-foreground">{label}</span>
           </div>
         )}
-        <div 
-          ref={scrollContainerRef}
-          className="h-[200px] overflow-y-auto overscroll-contain"
-          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-        >
-          <div className="p-1">
+        <ScrollArea className="h-[200px]">
+          <div className="p-1" ref={scrollContainerRef}>
             {TIME_SLOTS.map((time) => {
               const isSelected = time === value;
               const [hours] = time.split(':').map(Number);
@@ -124,7 +119,7 @@ export const TimeSelect = ({
               );
             })}
           </div>
-        </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
