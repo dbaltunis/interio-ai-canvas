@@ -30,9 +30,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
-import { Clock, Coffee, Briefcase } from 'lucide-react';
+import { Clock, Coffee, Briefcase, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIsDealer } from '@/hooks/useIsDealer';
+import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -291,16 +292,20 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         {onlineUsers.length} of {totalUsers} online
                       </p>
                     </div>
-                    {!messageDialogOpen && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onToggle}
-                        className="text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {/* Tips & Guidance Button */}
+                      <TeachingHelpButton />
+                      {!messageDialogOpen && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onToggle}
+                          className="text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Current User Section - Compact */}
