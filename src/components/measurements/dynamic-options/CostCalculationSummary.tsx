@@ -15,9 +15,9 @@ import { formatFromCM } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { SavedCostBreakdownDisplay } from "./SavedCostBreakdownDisplay";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
-import { applyMarkup } from "@/utils/pricing/markupResolver";
+import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
 import { useUserRole } from "@/hooks/useUserRole";
-import { QuoteSummaryTable } from "./QuoteSummaryTable";
+import { QuoteSummaryTable, QuoteSummaryItem } from "./QuoteSummaryTable";
 
 interface ManufacturingDetails {
   pricingType: string;
@@ -414,11 +414,19 @@ export const CostCalculationSummary = ({
       return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
     };
 
-    // Build items for table display
-    const tableItems = [
+    // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP (e.g., blind_making at 100%)
+    const mfgMarkupKey = 'blind_making';
+    const mfgMarkupResult = resolveMarkup({
+      category: mfgMarkupKey,
+      markupSettings
+    });
+    const mfgMarkupPercent = mfgMarkupResult.percentage;
+
+    // Build items for table display with per-item markup
+    const tableItems: QuoteSummaryItem[] = [
       {
         name: isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric',
-        details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
+        details: `${blindCosts.squareMeters.toFixed(2)} sqm = ${getSellingPrice(blindCosts.fabricCost).toFixed(2)}`,
         price: blindCosts.fabricCost,
         category: 'fabric'
       }
@@ -429,7 +437,9 @@ export const CostCalculationSummary = ({
         name: 'Manufacturing',
         details: '',
         price: blindCosts.manufacturingCost,
-        category: 'manufacturing'
+        category: 'manufacturing',
+        markupPercentage: mfgMarkupPercent,  // ✅ Per-item markup
+        sellingPrice: applyMarkup(blindCosts.manufacturingCost, mfgMarkupPercent)
       });
     }
 
@@ -676,21 +686,37 @@ export const CostCalculationSummary = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
+  // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP (e.g., curtain_making/roman_making at 100%)
+  const isRomanTreatment = template.name?.toLowerCase().includes('roman') || treatmentCategory?.includes('roman');
+  const mfgMarkupKey = isRomanTreatment ? 'roman_making' : 'curtain_making';
+  const mfgMarkupResult = resolveMarkup({
+    category: mfgMarkupKey,
+    markupSettings
+  });
+  const mfgMarkupPercent = mfgMarkupResult.percentage;
+
   // ✅ SELLING PRICES: Calculate item selling price (cost + markup) for ALL users
   const getSellingPrice = (costPrice: number) => {
     return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
   };
 
-  // Build items for table display
-  const tableItems: Array<{ name: string; details: string; price: number; category?: string }> = [];
+  // Build items for table display with per-item markup
+  const tableItems: QuoteSummaryItem[] = [];
 
-  // Fabric
+  // Fabric - with clear math display: "1.85m × £26.50/m = £49.03"
   if (fabricCost > 0) {
-    const fabricDetails = fabricDisplayData 
-      ? (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName
-          ? `Grid: ${fabricDisplayData.gridName}`
-          : `${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`)
-      : (linearMeters > 0 ? `${linearMeters.toFixed(2)}m` : '');
+    let fabricDetails = '';
+    if (fabricDisplayData) {
+      if (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName) {
+        fabricDetails = `Grid: ${fabricDisplayData.gridName}`;
+      } else {
+        const meters = fabricDisplayData.totalMeters;
+        const pricePerUnit = fabricDisplayData.pricePerMeter;
+        fabricDetails = `${formatFabricLength(meters)} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(fabricCost)}`;
+      }
+    } else if (linearMeters > 0) {
+      fabricDetails = `${linearMeters.toFixed(2)}m`;
+    }
     
     tableItems.push({
       name: 'Fabric',
@@ -710,23 +736,27 @@ export const CostCalculationSummary = ({
     });
   }
 
-  // Manufacturing
+  // Manufacturing - with per-item markup and clear math display
   if (manufacturingCost > 0) {
-    const mfgDetails = manufacturingDetails 
-      ? (() => {
-          const { pricingType, pricePerUnit, quantity } = manufacturingDetails;
-          if (pricingType === 'per_drop') return `${formatPrice(pricePerUnit)}/drop × ${quantity}`;
-          if (pricingType === 'per_panel') return `${formatPrice(pricePerUnit)}/panel × ${quantity}`;
-          if (pricingType === 'per_metre') return `${formatPrice(pricePerUnit)}/m × ${quantity}`;
-          return '';
-        })()
-      : '';
+    let mfgDetails = '';
+    if (manufacturingDetails) {
+      const { pricingType, pricePerUnit, quantity } = manufacturingDetails;
+      if (pricingType === 'per_drop') {
+        mfgDetails = `${formatPrice(pricePerUnit)}/drop × ${quantity} = ${formatPrice(manufacturingCost)}`;
+      } else if (pricingType === 'per_panel') {
+        mfgDetails = `${formatPrice(pricePerUnit)}/panel × ${quantity} = ${formatPrice(manufacturingCost)}`;
+      } else if (pricingType === 'per_metre') {
+        mfgDetails = `${formatPrice(pricePerUnit)}/m × ${quantity} = ${formatPrice(manufacturingCost)}`;
+      }
+    }
     
     tableItems.push({
       name: manufacturingDetails?.manufacturingType ? `Manufacturing (${manufacturingDetails.manufacturingType})` : 'Manufacturing',
       details: mfgDetails,
       price: manufacturingCost,
-      category: 'manufacturing'
+      category: 'manufacturing',
+      markupPercentage: mfgMarkupPercent,  // ✅ Per-item markup
+      sellingPrice: applyMarkup(manufacturingCost, mfgMarkupPercent)
     });
   }
 

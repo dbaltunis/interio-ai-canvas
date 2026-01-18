@@ -3,13 +3,18 @@
  * ===================================================================
  * Clean table-based layout for ALL treatment types.
  * No icons, just clarity. Professional spreadsheet appearance.
+ * 
+ * Features:
+ * - Per-item markup support (manufacturing uses specific markup)
+ * - Clear math display with "= result"
+ * - Permission-safe: dealers see selling prices only
  */
 
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
-import { applyMarkup } from "@/utils/pricing/markupResolver";
+import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
 import type { MarkupSettings } from "@/hooks/useMarkupSettings";
-import { groupHardwareItems, filterMeaningfulHardwareItems, getGroupName } from "@/utils/quotes/groupHardwareItems";
+import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
 
 interface CostBreakdownItem {
   id: string;
@@ -58,8 +63,35 @@ export const SavedCostBreakdownDisplay = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
-  const getSellingPrice = (costPrice: number) => {
-    return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
+  // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP
+  const isRomanTreatment = templateName?.toLowerCase().includes('roman') || treatmentCategory?.includes('roman');
+  const isBlindTreatment = templateName?.toLowerCase().includes('blind') || treatmentCategory?.includes('blind');
+  const mfgMarkupKey = isRomanTreatment ? 'roman_making' : isBlindTreatment ? 'blind_making' : 'curtain_making';
+  const mfgMarkupResult = resolveMarkup({
+    category: mfgMarkupKey,
+    markupSettings: markupSettings || undefined
+  });
+  const mfgMarkupPercent = mfgMarkupResult.percentage;
+
+  const getSellingPrice = (costPrice: number, isManufacturing = false) => {
+    const markup = isManufacturing ? mfgMarkupPercent : markupPercentage;
+    return markup > 0 ? applyMarkup(costPrice, markup) : costPrice;
+  };
+
+  /**
+   * Extract quantity-only from details for dealers (hide cost prices)
+   */
+  const extractQuantityOnly = (details: string): string => {
+    if (!details) return '';
+    const parts = details.split('×');
+    if (parts.length >= 2) {
+      const left = parts[0].trim();
+      const right = parts[1].split('=')[0].trim();
+      if (left.match(/^[£$€₹]/)) return right;
+      return left;
+    }
+    if (details.match(/^\d+\.?\d*\s*(sqm|m|cm|drops?|panels?)$/i)) return details;
+    return details;
   };
 
   // Group breakdown by category
@@ -77,17 +109,33 @@ export const SavedCostBreakdownDisplay = ({
   const { hardwareGroup, otherItems: nonHardwareOptions } = groupHardwareItems(allHardwareAndOptions);
   const filteredHardwareItems = hardwareGroup ? filterMeaningfulHardwareItems(hardwareGroup.items) : [];
 
-  // Build rows for display
-  const buildDetailsString = (item: CostBreakdownItem): string => {
+  // Build rows for display with clear math: "qty × price = total"
+  const buildDetailsString = (item: CostBreakdownItem, showCosts = true): string => {
     if (item.quantity && item.unit_price) {
       const unit = item.unit || '';
-      return `${item.quantity}${unit ? ` ${unit}` : ''} × ${formatPrice(item.unit_price)}`;
+      const qtyPart = `${item.quantity}${unit ? ` ${unit}` : ''}`;
+      if (showCosts) {
+        return `${qtyPart} × ${formatPrice(item.unit_price)} = ${formatPrice(item.total_cost)}`;
+      }
+      return qtyPart; // Dealers see quantity only
     }
     if (item.description) {
       return item.description;
     }
     return '';
   };
+
+  // Calculate totals with per-item markup
+  const calculateAdjustedQuotePrice = (): number => {
+    let total = 0;
+    costBreakdown.forEach(item => {
+      const isManufacturing = item.category === 'manufacturing';
+      total += getSellingPrice(item.total_cost, isManufacturing);
+    });
+    return total;
+  };
+
+  const adjustedQuotePrice = calculateAdjustedQuotePrice();
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
@@ -115,7 +163,9 @@ export const SavedCostBreakdownDisplay = ({
                   <span className="ml-2 text-xs text-muted-foreground capitalize">({selectedColor})</span>
                 )}
               </td>
-              <td className="px-3 py-2 text-muted-foreground">{buildDetailsString(fabricItem)}</td>
+              <td className="px-3 py-2 text-muted-foreground">
+                {buildDetailsString(fabricItem, canViewCosts)}
+              </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
                 {formatPrice(getSellingPrice(fabricItem.total_cost))}
               </td>
@@ -126,20 +176,24 @@ export const SavedCostBreakdownDisplay = ({
           {liningItem && liningItem.total_cost > 0 && (
             <tr className="border-b border-border/50">
               <td className="px-3 py-2 font-medium text-foreground">{liningItem.name}</td>
-              <td className="px-3 py-2 text-muted-foreground">{buildDetailsString(liningItem)}</td>
+              <td className="px-3 py-2 text-muted-foreground">
+                {buildDetailsString(liningItem, canViewCosts)}
+              </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
                 {formatPrice(getSellingPrice(liningItem.total_cost))}
               </td>
             </tr>
           )}
 
-          {/* Manufacturing */}
+          {/* Manufacturing - with per-item markup */}
           {manufacturingItem && manufacturingItem.total_cost > 0 && (
             <tr className="border-b border-border/50">
               <td className="px-3 py-2 font-medium text-foreground">Manufacturing</td>
-              <td className="px-3 py-2 text-muted-foreground">{buildDetailsString(manufacturingItem)}</td>
+              <td className="px-3 py-2 text-muted-foreground">
+                {buildDetailsString(manufacturingItem, canViewCosts)}
+              </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {formatPrice(getSellingPrice(manufacturingItem.total_cost))}
+                {formatPrice(getSellingPrice(manufacturingItem.total_cost, true))}
               </td>
             </tr>
           )}
@@ -148,7 +202,9 @@ export const SavedCostBreakdownDisplay = ({
           {headingItem && headingItem.total_cost > 0 && (
             <tr className="border-b border-border/50">
               <td className="px-3 py-2 font-medium text-foreground">{headingItem.name}</td>
-              <td className="px-3 py-2 text-muted-foreground">{buildDetailsString(headingItem)}</td>
+              <td className="px-3 py-2 text-muted-foreground">
+                {buildDetailsString(headingItem, canViewCosts)}
+              </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
                 {formatPrice(getSellingPrice(headingItem.total_cost))}
               </td>
@@ -156,19 +212,23 @@ export const SavedCostBreakdownDisplay = ({
           )}
 
           {/* Hardware items (flattened) */}
-          {filteredHardwareItems.map((item: any, index: number) => (
-            <tr key={`hw-${index}`} className="border-b border-border/50">
-              <td className="px-3 py-2 font-medium text-foreground">{item.name}</td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {item.quantity && item.unit_price ? `${item.quantity} × ${formatPrice(item.unit_price)}` : ''}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {(item.total_cost || 0) > 0 ? formatPrice(getSellingPrice(item.total_cost || 0)) : (
-                  <span className="text-muted-foreground font-normal">Included</span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {filteredHardwareItems.map((item: any, index: number) => {
+            const details = canViewCosts
+              ? (item.quantity && item.unit_price ? `${item.quantity} × ${formatPrice(item.unit_price)}` : '')
+              : (item.quantity ? `${item.quantity}` : '');
+            
+            return (
+              <tr key={`hw-${index}`} className="border-b border-border/50">
+                <td className="px-3 py-2 font-medium text-foreground">{item.name}</td>
+                <td className="px-3 py-2 text-muted-foreground">{details}</td>
+                <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
+                  {(item.total_cost || 0) > 0 ? formatPrice(getSellingPrice(item.total_cost || 0)) : (
+                    <span className="text-muted-foreground font-normal">Included</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
 
           {/* Non-hardware options */}
           {nonHardwareOptions
@@ -176,7 +236,9 @@ export const SavedCostBreakdownDisplay = ({
             .map((option, index) => (
               <tr key={`opt-${index}`} className="border-b border-border/50">
                 <td className="px-3 py-2 font-medium text-foreground">{option.name}</td>
-                <td className="px-3 py-2 text-muted-foreground">{buildDetailsString(option as CostBreakdownItem)}</td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {buildDetailsString(option as CostBreakdownItem, canViewCosts)}
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
                   {(option.total_cost || 0) > 0 ? formatPrice(getSellingPrice(option.total_cost || 0)) : (
                     <span className="text-muted-foreground font-normal">Included</span>
@@ -204,7 +266,7 @@ export const SavedCostBreakdownDisplay = ({
               )}
             </td>
             <td className="px-3 py-2.5 text-right font-bold text-emerald-700 dark:text-emerald-400 text-lg tabular-nums">
-              {formatPrice(quotePrice)}
+              {formatPrice(adjustedQuotePrice)}
             </td>
           </tr>
         </tfoot>
