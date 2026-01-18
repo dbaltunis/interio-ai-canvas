@@ -109,7 +109,7 @@ export const TimeSelect = ({
                   key={time}
                   type="button"
                   ref={isSelected ? selectedRef : undefined}
-                  onMouseDown={(e) => handleTimeClick(time, e)}
+                  onClick={(e) => handleTimeClick(time, e)}
                   className={cn(
                     "w-full text-left px-3 py-1.5 text-xs rounded-sm transition-colors cursor-pointer",
                     "hover:bg-accent hover:text-accent-foreground",
