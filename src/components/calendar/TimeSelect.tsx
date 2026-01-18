@@ -72,7 +72,12 @@ export const TimeSelect = ({
           {formatTimeDisplay(value)}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[140px] p-0" align="start">
+      <PopoverContent 
+        className="w-[140px] p-0 pointer-events-auto" 
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {label && (
           <div className="px-3 py-2 border-b bg-muted/30">
             <span className="text-xs font-medium text-muted-foreground">{label}</span>

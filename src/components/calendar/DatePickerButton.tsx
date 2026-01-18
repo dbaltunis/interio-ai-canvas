@@ -46,7 +46,12 @@ export const DatePickerButton = ({
           {selectedDate ? format(selectedDate, 'EEE, MMM d') : 'Pick date'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+      <PopoverContent 
+        className="w-auto p-0 pointer-events-auto" 
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="p-2 border-b bg-muted/30">
           <p className="text-xs text-muted-foreground">
             Today: <span className="font-medium text-foreground">{format(new Date(), 'MMM d, yyyy')}</span>
@@ -56,7 +61,6 @@ export const DatePickerButton = ({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
-          initialFocus
           className="pointer-events-auto"
         />
       </PopoverContent>
