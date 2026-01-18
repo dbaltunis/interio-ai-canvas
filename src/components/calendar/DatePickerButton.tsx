@@ -61,7 +61,8 @@ export const DatePickerButton = ({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
-          className="pointer-events-auto"
+          initialFocus
+          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
