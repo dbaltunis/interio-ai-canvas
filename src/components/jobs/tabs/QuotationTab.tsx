@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -17,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown, Edit, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -118,6 +119,10 @@ export const QuotationTab = ({
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
+  
+  // Item exclusion state for documents
+  const [editMode, setEditMode] = useState(false);
+  const [excludedItems, setExcludedItems] = useState<string[]>([]);
   const {
     data: projects
   } = useProjects();
@@ -162,6 +167,49 @@ export const QuotationTab = ({
       setActiveQuoteId(quoteVersions[0].id);
     }
   }, [quoteId, quoteVersions, activeQuoteId]);
+
+  // Load excluded items from currentQuote when it changes
+  useEffect(() => {
+    if (currentQuote?.excluded_items && Array.isArray(currentQuote.excluded_items)) {
+      setExcludedItems(currentQuote.excluded_items as string[]);
+    } else {
+      setExcludedItems([]);
+    }
+  }, [currentQuote?.id, currentQuote?.excluded_items]);
+
+  // Handler for toggling item exclusion
+  const handleExcludeToggle = useCallback(async (itemId: string, excluded: boolean) => {
+    const newExcluded = excluded 
+      ? [...excludedItems, itemId]
+      : excludedItems.filter(id => id !== itemId);
+    
+    setExcludedItems(newExcluded);
+    
+    // Persist to database if we have a quote
+    const effectiveQuoteId = activeQuoteId || quoteId || quoteVersions?.[0]?.id;
+    if (effectiveQuoteId) {
+      try {
+        const { error } = await supabase
+          .from('quotes')
+          .update({ excluded_items: newExcluded })
+          .eq('id', effectiveQuoteId);
+        
+        if (error) {
+          console.error('Failed to save excluded items:', error);
+          toast({
+            title: "Error",
+            description: "Failed to save item exclusion",
+            variant: "destructive"
+          });
+        } else {
+          // Invalidate to refresh quote data
+          queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
+        }
+      } catch (err) {
+        console.error('Error saving excluded items:', err);
+      }
+    }
+  }, [excludedItems, activeQuoteId, quoteId, quoteVersions, projectId, queryClient, toast]);
 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
@@ -407,29 +455,36 @@ export const QuotationTab = ({
     // Calculate discount if applicable - check for discount_type, not just amount
     const hasDiscount = !!currentQuote?.discount_type;
     const discountAmount = currentQuote?.discount_amount || 0;
-    const subtotalAfterDiscount = subtotal - discountAmount;
+
+    // Filter items for document display (exclude marked items)
+    const documentItems = sourceTreatments.filter(item => {
+      const itemId = item.id || item.name || '';
+      return !excludedItems.includes(itemId);
+    });
+
+    // Calculate totals from included items only
+    const includedSubtotal = documentItems.reduce((sum, item) => sum + (item.total || item.price || 0), 0);
+    const includedTaxAmount = includedSubtotal * taxRate;
+    const includedTotal = includedSubtotal + includedTaxAmount;
+    const subtotalAfterDiscount = includedSubtotal - discountAmount;
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+
     console.log('📊 QuotationTab - projectData calculation:', {
       currentQuoteId: currentQuote?.id,
       hasDiscount,
+      excludedItemsCount: excludedItems.length,
+      documentItemsCount: documentItems.length,
       discountType: currentQuote?.discount_type,
-      discountValue: currentQuote?.discount_value,
-      discountScope: currentQuote?.discount_scope,
       discountAmount,
-      originalSubtotal: subtotal,
+      includedSubtotal,
       subtotalAfterDiscount,
-      originalTaxAmount: taxAmount,
+      includedTaxAmount,
       taxAmountAfterDiscount,
-      originalTotal: total,
-      totalAfterDiscount,
-      willPassToLivePreview: {
-        subtotal: subtotal,
-        taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
-        total: hasDiscount ? totalAfterDiscount : total,
-        hasDiscountObject: hasDiscount
-      }
+      includedTotal,
+      totalAfterDiscount
     });
+
     return {
       quoteId: currentQuote?.id,
       project: {
@@ -441,15 +496,18 @@ export const QuotationTab = ({
       },
       client,
       businessSettings,
-      items: sourceTreatments,
-      treatments: sourceTreatments,
+      // For documents: use documentItems (filtered) for display, but keep allItems for editing
+      items: documentItems,
+      allItems: sourceTreatments, // All items for edit mode display
+      excludedItems, // Pass excluded item IDs for checkbox state
+      treatments: documentItems,
       workshopItems: workshopItems || [],
       rooms: rooms || [],
       surfaces: surfaces || [],
-      subtotal: hasDiscount ? subtotalAfterDiscount : subtotal,
+      subtotal: hasDiscount ? subtotalAfterDiscount : includedSubtotal,
       taxRate,
-      taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
-      total: hasDiscount ? totalAfterDiscount : total,
+      taxAmount: hasDiscount ? taxAmountAfterDiscount : includedTaxAmount,
+      total: hasDiscount ? totalAfterDiscount : includedTotal,
       currency,
       markupPercentage,
       amountPaid: currentQuote?.amount_paid || 0,
@@ -467,7 +525,7 @@ export const QuotationTab = ({
         status: currentQuote.payment_status
       } : undefined
     };
-  }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
+  }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote, excludedItems]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -946,6 +1004,21 @@ export const QuotationTab = ({
         <div className="flex items-center gap-3 mt-4 pt-3 border-t flex-wrap">
           <span className="text-xs font-medium text-muted-foreground">Display Options:</span>
           
+          {/* Edit Items Toggle */}
+          <Button 
+            variant={editMode ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setEditMode(!editMode)}
+            disabled={isReadOnly}
+            className="h-8"
+          >
+            {editMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+            {editMode ? 'Done' : 'Edit Items'}
+            {excludedItems.length > 0 && !editMode && (
+              <Badge variant="secondary" className="ml-2 text-xs">{excludedItems.length} excluded</Badge>
+            )}
+          </Button>
+          
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Switch checked={templateSettings.groupByRoom} onCheckedChange={checked => {
             handleUpdateTemplateSettings('groupByRoom', checked);
@@ -1056,7 +1129,7 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${editMode}`} blocks={templateBlocks} projectData={projectData} isEditable={editMode} isPrintMode={!editMode} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} onExcludeToggle={handleExcludeToggle} />
               </div>
             </div>
           </div>
