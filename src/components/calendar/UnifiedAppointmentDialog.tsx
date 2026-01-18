@@ -257,15 +257,33 @@ export const UnifiedAppointmentDialog = ({
 
     const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    // Get browser's timezone for comparison
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
     const [year, month, day] = event.date.split('-').map(Number);
     const [startHours, startMinutes] = event.startTime.split(':').map(Number);
     const [endHours, endMinutes] = event.endTime.split(':').map(Number);
     
+    // Create date objects in browser's local timezone
     const localStartDate = new Date(year, month - 1, day, startHours, startMinutes, 0);
     const localEndDate = new Date(year, month - 1, day, endHours, endMinutes, 0);
     
-    const startDateTime = fromZonedTime(localStartDate, userTimezone);
-    const endDateTime = fromZonedTime(localEndDate, userTimezone);
+    // If browser timezone matches user preference, use local dates directly
+    // Otherwise, apply timezone conversion for users who set a different timezone
+    let startDateTime: Date;
+    let endDateTime: Date;
+    
+    if (browserTimezone === userTimezone) {
+      // Browser timezone matches preference - no conversion needed
+      // new Date() already creates time in browser's local timezone
+      startDateTime = localStartDate;
+      endDateTime = localEndDate;
+    } else {
+      // User has set a different timezone than their browser
+      // fromZonedTime converts "time as displayed in userTimezone" to UTC
+      startDateTime = fromZonedTime(localStartDate, userTimezone);
+      endDateTime = fromZonedTime(localEndDate, userTimezone);
+    }
 
     const appointmentData = {
       title: event.title,
