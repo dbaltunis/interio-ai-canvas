@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown, Edit, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -39,6 +39,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
 import { useQuotePayment } from "@/hooks/useQuotePayment";
+import { useQuoteExclusions } from "@/hooks/useQuoteExclusions";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -118,6 +119,10 @@ export const QuotationTab = ({
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
+  const [isExclusionEditMode, setIsExclusionEditMode] = useState(false);
+  
+  // Quote item exclusions hook
+  const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
   const {
     data: projects
   } = useProjects();

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
 import {
   Building2,
@@ -29,7 +30,8 @@ import {
   Space,
   Info,
   CreditCard,
-  CheckCircle2
+  CheckCircle2,
+  SquareCheck
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SignatureCanvas } from './SignatureCanvas';
@@ -350,6 +352,10 @@ interface LivePreviewBlockProps {
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
   onDataChange?: any;
+  // Item exclusion props
+  excludedItems?: string[];
+  onToggleExclusion?: (itemId: string) => void;
+  isExclusionEditMode?: boolean;
 }
 
 const LivePreviewBlock = ({ 
@@ -366,7 +372,10 @@ const LivePreviewBlock = ({
   layout: propsLayout,
   onSettingsChange,
   quoteId,
-  onDataChange
+  onDataChange,
+  excludedItems = [],
+  onToggleExclusion,
+  isExclusionEditMode = false
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
@@ -1119,7 +1128,8 @@ const LivePreviewBlock = ({
           <div style={{ overflow: 'visible', width: '100%', backgroundColor: '#ffffff' }}>
             <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%', backgroundColor: '#ffffff' }}>
               <colgroup>
-                <col style={{ width: '20%' }} />
+                {isExclusionEditMode && <col style={{ width: '40px' }} />}
+                <col style={{ width: isExclusionEditMode ? '18%' : '20%' }} />
                 <col style={{ width: 'auto' }} />
                 <col style={{ width: '80px' }} />
                 <col style={{ width: '100px' }} />
@@ -1127,6 +1137,11 @@ const LivePreviewBlock = ({
               </colgroup>
               <thead style={{ backgroundColor: '#ffffff' }}>
                 <tr style={{ borderBottom: isPrintMode ? 'none' : '1px solid #333', backgroundColor: '#ffffff' }}>
+                  {isExclusionEditMode && (
+                    <th style={{ textAlign: 'center', padding: '8px 4px', fontSize: '12px', fontWeight: '500', color: '#6b7280', backgroundColor: '#ffffff' }}>
+                      <SquareCheck className="h-4 w-4 mx-auto text-muted-foreground" />
+                    </th>
+                  )}
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Product/Service</th>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Description</th>
                   <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Quantity</th>
@@ -1143,18 +1158,28 @@ const LivePreviewBlock = ({
                 </tr>
               </thead>
               <tbody style={{ backgroundColor: '#ffffff' }}>
-                {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
+                {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => {
+                  // Filter items based on exclusion mode - when printing/viewing, hide excluded items
+                  const visibleItems = (!isExclusionEditMode && excludedItems.length > 0)
+                    ? (items as any[]).filter((item: any) => !excludedItems.includes(item.id))
+                    : (items as any[]);
+                  
+                  // Don't render room header if all items are excluded
+                  if (visibleItems.length === 0 && !isExclusionEditMode) return null;
+                  
+                  return (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr style={{ backgroundColor: '#ffffff' }}>
-                        <td colSpan={5} style={{ padding: '8px 6px 4px 6px', fontSize: '14px', fontWeight: '500', color: '#000', borderTop: '1px solid rgba(0,0,0,0.15)', backgroundColor: '#fff' }}>
+                        <td colSpan={isExclusionEditMode ? 6 : 5} style={{ padding: '8px 6px 4px 6px', fontSize: '14px', fontWeight: '500', color: '#000', borderTop: '1px solid rgba(0,0,0,0.15)', backgroundColor: '#fff' }}>
                           {roomName}
                         </td>
                       </tr>
                     )}
-                    {(items as any[]).map((item: any, itemIndex: number) => {
+                    {(isExclusionEditMode ? (items as any[]) : visibleItems).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
+                      const isItemExcluded = excludedItems.includes(item.id);
                       console.log('[PRODUCT ROW]', {
                         itemNumber,
                         itemName: item.name || item.surface_name,
@@ -1162,6 +1187,7 @@ const LivePreviewBlock = ({
                         unit_price: item.unit_price,
                         total: item.total,
                         breakdownCount: breakdown.length,
+                        isExcluded: isItemExcluded,
                         allItemData: item
                       });
                       
@@ -1170,9 +1196,21 @@ const LivePreviewBlock = ({
                           {/* Main product row */}
                           <tr style={{ 
                             borderBottom: (breakdown.length > 0 && effectiveShowDetailed) || isPrintMode ? 'none' : '1px solid #ddd',
-                            backgroundColor: '#fff'
+                            backgroundColor: isItemExcluded ? '#fef2f2' : '#fff',
+                            opacity: isItemExcluded ? 0.6 : 1,
+                            textDecoration: isItemExcluded ? 'line-through' : 'none'
                           }}>
-                            <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: '#000', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
+                            {/* Checkbox column for exclusion */}
+                            {isExclusionEditMode && (
+                              <td style={{ padding: '5px 4px', verticalAlign: 'top', textAlign: 'center', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                                <Checkbox
+                                  checked={!isItemExcluded}
+                                  onCheckedChange={() => onToggleExclusion?.(item.id)}
+                                  className="h-4 w-4"
+                                />
+                              </td>
+                            )}
+                            <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', verticalAlign: 'top', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {showImages && item.image_url && (
                                   <img 
@@ -1185,7 +1223,8 @@ const LivePreviewBlock = ({
                                       objectFit: 'cover', 
                                       borderRadius: '2px',
                                       border: isPrintMode ? 'none' : '1px solid #ddd',
-                                      flexShrink: 0
+                                      flexShrink: 0,
+                                      opacity: isItemExcluded ? 0.5 : 1
                                     }}
                                   />
                                 )}
@@ -1197,16 +1236,16 @@ const LivePreviewBlock = ({
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '13px', color: isItemExcluded ? '#9ca3af' : '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.description || item.notes || '-'}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.quantity || 1}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {formatCurrency((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '500', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
                             </td>
                           </tr>
@@ -1309,7 +1348,8 @@ const LivePreviewBlock = ({
                       );
                     })}
                   </React.Fragment>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2134,6 +2174,10 @@ interface LivePreviewProps {
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
+  // Item exclusion props
+  excludedItems?: string[];
+  onToggleExclusion?: (itemId: string) => void;
+  isExclusionEditMode?: boolean;
 }
 
 export const LivePreview = ({ 
@@ -2150,7 +2194,10 @@ export const LivePreview = ({
   groupByRoom,
   layout,
   onSettingsChange,
-  quoteId
+  quoteId,
+  excludedItems = [],
+  onToggleExclusion,
+  isExclusionEditMode = false
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
@@ -2214,6 +2261,9 @@ export const LivePreview = ({
             onSettingsChange={onSettingsChange}
             quoteId={quoteId}
             onDataChange={quoteCustomData}
+            excludedItems={excludedItems}
+            onToggleExclusion={onToggleExclusion}
+            isExclusionEditMode={isExclusionEditMode}
           />
         ))}
       </div>
@@ -2286,6 +2336,9 @@ export const LivePreview = ({
                 onSettingsChange={onSettingsChange}
                 quoteId={quoteId}
                 onDataChange={quoteCustomData}
+                excludedItems={excludedItems}
+                onToggleExclusion={onToggleExclusion}
+                isExclusionEditMode={isExclusionEditMode}
               />
             ))}
             
