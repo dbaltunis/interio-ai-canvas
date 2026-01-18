@@ -79,14 +79,28 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     // For manufacturing keys, fall back to parent category if specific markup not set
     // e.g., curtain_making → curtains if curtain_making is 0 or undefined
     if (catKey.endsWith('_making')) {
-      const parentCategory = catKey.replace('_making', 's'); // curtain_making → curtains
-      const parentMarkup = settings.category_markups?.[parentCategory];
-      if (parentMarkup !== undefined && parentMarkup > 0) {
-        return {
-          percentage: parentMarkup,
-          source: 'category',
-          sourceName: `Category: ${parentCategory} (manufacturing fallback)`
-        };
+      // CRITICAL FIX: Handle plural variations correctly
+      // roman_making → romans OR roman, roller_making → blinds, etc.
+      const parentMappings: Record<string, string[]> = {
+        'curtain_making': ['curtains', 'curtain'],
+        'blind_making': ['blinds', 'blind'],
+        'roman_making': ['romans', 'roman', 'blinds'], // Romans are a type of blind
+        'roller_making': ['blinds', 'roller'],
+        'shutter_making': ['shutters', 'shutter'],
+        'venetian_making': ['blinds', 'venetian'],
+      };
+      
+      const possibleParents = parentMappings[catKey] || [catKey.replace('_making', 's'), catKey.replace('_making', '')];
+      
+      for (const parentCategory of possibleParents) {
+        const parentMarkup = settings.category_markups?.[parentCategory];
+        if (parentMarkup !== undefined && parentMarkup > 0) {
+          return {
+            percentage: parentMarkup,
+            source: 'category',
+            sourceName: `Category: ${parentCategory} (manufacturing fallback)`
+          };
+        }
       }
     }
     

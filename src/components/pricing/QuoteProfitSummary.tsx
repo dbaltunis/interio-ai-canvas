@@ -18,6 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface QuoteItem {
   id: string;
   name: string;
+  cost_unit_price?: number; // Primary cost field from buildClientBreakdown
   cost_price?: number;
   cost_total?: number;
   unit_price?: number;
@@ -226,7 +227,8 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {items.map((item) => {
-                      const itemCost = item.cost_price || item.cost_total || 0;
+                      // CRITICAL FIX: Check cost_unit_price first (from buildClientBreakdown)
+                      const itemCost = item.cost_unit_price || item.cost_price || item.cost_total || 0;
                       const itemSell = item.unit_price || item.total || 0;
                       
                       // Calculate proportional discount for this item

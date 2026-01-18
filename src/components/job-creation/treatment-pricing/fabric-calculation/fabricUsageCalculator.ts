@@ -169,24 +169,37 @@ export const calculateFabricUsage = (
     fabricType.includes('paisley')
   );
 
-  // ✅ FIX: Get hems from template FIRST, then form data, then fallback
-  const headerHem = parseFloat(formData.header_hem) || 
+  // ✅ FIX: Get hems from template FIRST, then form data - NO HARDCODED FALLBACKS
+  // Use nullish coalescing (??) instead of OR (||) to allow 0 as valid value
+  const headerHemRaw = parseFloat(formData.header_hem) || 
                    parseFloat(selectedTemplate?.header_allowance) || 
                    parseFloat(selectedTemplate?.header_hem) || 
-                   15; // Last resort fallback
+                   parseFloat(selectedTemplate?.header_hem_cm);
   
-  const bottomHem = parseFloat(formData.bottom_hem) || 
+  const bottomHemRaw = parseFloat(formData.bottom_hem) || 
                    parseFloat(selectedTemplate?.bottom_hem) || 
-                   parseFloat(selectedTemplate?.bottom_allowance) || 
-                   10; // Last resort fallback
+                   parseFloat(selectedTemplate?.bottom_allowance) ||
+                   parseFloat(selectedTemplate?.bottom_hem_cm);
   
-  const sideHem = parseFloat(formData.side_hem) || 
-                 parseFloat(selectedTemplate?.side_hem) || 
-                 5; // Last resort fallback
+  const sideHemRaw = parseFloat(formData.side_hem) || 
+                 parseFloat(selectedTemplate?.side_hem) ||
+                 parseFloat(selectedTemplate?.side_hem_cm);
   
-  const seamHem = parseFloat(formData.seam_hem) || 
-                 parseFloat(selectedTemplate?.seam_allowance) || 
-                 3; // Last resort fallback
+  const seamHemRaw = parseFloat(formData.seam_hem) || 
+                 parseFloat(selectedTemplate?.seam_allowance) ||
+                 parseFloat(selectedTemplate?.seam_hem_cm);
+  
+  // CRITICAL: Use 0 as fallback (no hem) instead of arbitrary values
+  // Log warning if hems are missing from template configuration
+  const headerHem = !isNaN(headerHemRaw) ? headerHemRaw : 0;
+  const bottomHem = !isNaN(bottomHemRaw) ? bottomHemRaw : 0;
+  const sideHem = !isNaN(sideHemRaw) ? sideHemRaw : 0;
+  const seamHem = !isNaN(seamHemRaw) ? seamHemRaw : 0;
+  
+  if (isNaN(headerHemRaw) || isNaN(bottomHemRaw)) {
+    console.warn('⚠️ [fabricUsageCalculator] Missing hem values in template:', selectedTemplate?.name, 
+      '- Using 0 as default. Configure hems in template for accurate calculations.');
+  }
   
   console.log('🎯 Hem calculations:', {
     headerHem: { form: formData.header_hem, template: selectedTemplate?.header_allowance, final: headerHem },

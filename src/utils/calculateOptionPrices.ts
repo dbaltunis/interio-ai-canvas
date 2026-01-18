@@ -47,8 +47,8 @@ export const calculateOptionPrices = (
   const rawHeight = Number(measurements?.drop) || Number(measurements?.height) || 0;
   const measurementUnit = (measurements?.unit || 'mm')?.toLowerCase();
   
-  // CRITICAL: Convert to CM based on the actual unit
-  // Measurements can come in user's display unit (CM) OR database unit (MM)
+  // CRITICAL: Convert to CM based on the EXPLICIT unit - no guessing
+  // Measurements can come in user's display unit OR database unit (MM)
   let widthCm: number, heightCm: number;
   if (measurementUnit === 'cm') {
     // Already in CM - use directly
@@ -58,11 +58,20 @@ export const calculateOptionPrices = (
     // In meters - multiply by 100
     widthCm = rawWidth * 100;
     heightCm = rawHeight * 100;
+  } else if (measurementUnit === 'inches' || measurementUnit === 'in') {
+    // In inches - multiply by 2.54
+    widthCm = rawWidth * 2.54;
+    heightCm = rawHeight * 2.54;
+  } else if (measurementUnit === 'mm') {
+    // Database standard MM - divide by 10
+    widthCm = rawWidth / 10;
+    heightCm = rawHeight / 10;
   } else {
-    // Assume MM (database standard) - divide by 10
-    // But if value < 1000, it's likely already in CM (safety check)
-    widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
-    heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
+    // UNKNOWN UNIT: Log warning and assume MM (database standard)
+    // This prevents silent errors from incorrect unit assumptions
+    console.warn(`⚠️ [calculateOptionPrices] Unknown measurement unit "${measurementUnit}", assuming MM. Pass explicit unit for accuracy.`);
+    widthCm = rawWidth / 10;
+    heightCm = rawHeight / 10;
   }
   
   // Convert to meters for per-meter calculations

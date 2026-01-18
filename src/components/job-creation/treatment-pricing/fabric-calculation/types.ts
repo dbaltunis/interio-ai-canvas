@@ -2,7 +2,7 @@
 export interface FabricCalculationParams {
   railWidth: number;
   drop: number;
-  fullness: number;
+  fullness: number | null; // Can be null when heading not selected
   fabricWidth: number;
   quantity: number;
   pooling: number;
