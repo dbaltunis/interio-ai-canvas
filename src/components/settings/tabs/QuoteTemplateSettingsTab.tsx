@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Image as ImageIcon, Settings, Eye } from "lucide-react";
+import { FileText, Image as ImageIcon, Settings, Eye, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 
@@ -23,7 +23,7 @@ export const QuoteTemplateSettingsTab = () => {
   const [showPreview, setShowPreview] = useState(false);
 
   // Fetch active template
-  const { data: activeTemplate, refetch } = useQuery({
+  const { data: activeTemplate, refetch, isLoading: isLoadingTemplate } = useQuery({
     queryKey: ["active-quote-template"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,7 +39,7 @@ export const QuoteTemplateSettingsTab = () => {
     }
   });
 
-  const [templateData, setTemplateData] = useState({
+  const defaultTemplateData = {
     // Document Layout
     orientation: 'portrait' as 'portrait' | 'landscape',
     marginTop: 8,
@@ -96,7 +96,13 @@ export const QuoteTemplateSettingsTab = () => {
     // Styling
     accentColor: "#3b82f6",
     fontFamily: "Helvetica",
-  });
+  };
+
+  const [templateData, setTemplateData] = useState(defaultTemplateData);
+  
+  // Track original values for dirty state
+  const [originalTemplateData, setOriginalTemplateData] = useState<typeof templateData | null>(null);
+
 
   // Load saved template data
   useEffect(() => {
@@ -145,8 +151,18 @@ export const QuoteTemplateSettingsTab = () => {
       });
       
       setTemplateData(newData);
+      setOriginalTemplateData(newData);
+    } else if (!isLoadingTemplate && !activeTemplate) {
+      // No template exists, set defaults as original
+      setOriginalTemplateData(templateData);
     }
-  }, [activeTemplate]);
+  }, [activeTemplate, isLoadingTemplate]);
+
+  // Compute hasChanges
+  const hasChanges = useMemo(() => {
+    if (!originalTemplateData) return false;
+    return JSON.stringify(templateData) !== JSON.stringify(originalTemplateData);
+  }, [templateData, originalTemplateData]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -252,6 +268,8 @@ export const QuoteTemplateSettingsTab = () => {
       }
 
       await refetch();
+      // Update original to current (mark as saved)
+      setOriginalTemplateData(templateData);
       
       toast({
         title: "Template Saved",
@@ -817,8 +835,14 @@ export const QuoteTemplateSettingsTab = () => {
           <Eye className="h-4 w-4 mr-2" />
           Preview Document
         </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Template Settings"}
+        <Button 
+          onClick={handleSave} 
+          disabled={!hasChanges || isSaving}
+          variant={hasChanges ? "default" : "secondary"}
+        >
+          {isSaving ? "Saving..." : hasChanges ? "Save Template Settings" : (
+            <><Check className="h-4 w-4 mr-1" /> Saved</>
+          )}
         </Button>
       </div>
 

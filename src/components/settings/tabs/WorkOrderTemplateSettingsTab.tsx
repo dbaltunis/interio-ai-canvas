@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, Save } from "lucide-react";
+import { Eye, Save, Check } from "lucide-react";
 import { WorkOrderPreviewModal } from "@/components/jobs/workorder/WorkOrderPreviewModal";
 import { PrintableWorkOrder } from "@/components/jobs/workorder/PrintableWorkOrder";
 import { generateQuotePDF } from "@/utils/generateQuotePDF";
@@ -52,6 +52,9 @@ export const WorkOrderTemplateSettingsTab = () => {
     showProgressBars: true,
   });
 
+  // Track original values for dirty state
+  const [originalTemplateData, setOriginalTemplateData] = useState<typeof templateData | null>(null);
+
   // Load template data when activeTemplate changes
   useEffect(() => {
     if (activeTemplate?.blocks) {
@@ -59,7 +62,7 @@ export const WorkOrderTemplateSettingsTab = () => {
       const docSettings = (blocks.find((b: any) => b.type === 'document-settings') as any)?.content || {};
       const displaySettings = (blocks.find((b: any) => b.type === 'workorder-items') as any)?.content || {};
 
-      setTemplateData({
+      const loadedData = {
         orientation: docSettings.orientation || 'portrait',
         marginTop: docSettings.marginTop || 8,
         marginRight: docSettings.marginRight || 8,
@@ -74,9 +77,21 @@ export const WorkOrderTemplateSettingsTab = () => {
         showAssignee: displaySettings.showAssignee !== false,
         showDueDates: displaySettings.showDueDates !== false,
         showProgressBars: displaySettings.showProgressBars !== false,
-      });
+      };
+
+      setTemplateData(loadedData);
+      setOriginalTemplateData(loadedData);
+    } else if (!activeTemplate) {
+      // No template exists, set current as original
+      setOriginalTemplateData(templateData);
     }
   }, [activeTemplate]);
+
+  // Compute hasChanges
+  const hasChanges = useMemo(() => {
+    if (!originalTemplateData) return false;
+    return JSON.stringify(templateData) !== JSON.stringify(originalTemplateData);
+  }, [templateData, originalTemplateData]);
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
@@ -139,6 +154,8 @@ export const WorkOrderTemplateSettingsTab = () => {
       }
 
       await refetch();
+      // Update original to current (mark as saved)
+      setOriginalTemplateData(templateData);
       toast({
         title: "Settings saved",
         description: "Work order template settings have been updated",
@@ -460,9 +477,18 @@ export const WorkOrderTemplateSettingsTab = () => {
       </Tabs>
 
       <div className="flex items-center gap-3">
-        <Button onClick={handleSaveSettings} disabled={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
-          {isSaving ? "Saving..." : "Save Settings"}
+        <Button 
+          onClick={handleSaveSettings} 
+          disabled={!hasChanges || isSaving}
+          variant={hasChanges ? "default" : "secondary"}
+        >
+          {isSaving ? (
+            <><Save className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+          ) : hasChanges ? (
+            <><Save className="h-4 w-4 mr-2" /> Save Settings</>
+          ) : (
+            <><Check className="h-4 w-4 mr-1" /> Saved</>
+          )}
         </Button>
         <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
           <Eye className="h-4 w-4 mr-2" />

@@ -4,8 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Shield, Download, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Mail, Shield, Download, Loader2, Check } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { FeatureFlagsSettings } from "@/components/settings/FeatureFlagsSettings";
@@ -26,7 +26,7 @@ export const SystemSettingsTab = () => {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
   const { data: profile } = useCurrentUserProfile();
-  const { data: businessSettings } = useBusinessSettings();
+  const { data: businessSettings, isLoading: isLoadingSettings } = useBusinessSettings();
   const updateBusinessSettings = useUpdateBusinessSettings();
   const navigate = useNavigate();
   
@@ -34,13 +34,26 @@ export const SystemSettingsTab = () => {
   const [termsAndConditions, setTermsAndConditions] = useState('');
   const [privacyPolicy, setPrivacyPolicy] = useState('');
   
+  // Track original values for dirty state
+  const [originalTerms, setOriginalTerms] = useState('');
+  const [originalPrivacy, setOriginalPrivacy] = useState('');
+  
   // Load existing values when businessSettings loads
   useEffect(() => {
     if (businessSettings) {
-      setTermsAndConditions(businessSettings.general_terms_and_conditions || '');
-      setPrivacyPolicy(businessSettings.privacy_policy || '');
+      const terms = businessSettings.general_terms_and_conditions || '';
+      const privacy = businessSettings.privacy_policy || '';
+      setTermsAndConditions(terms);
+      setPrivacyPolicy(privacy);
+      setOriginalTerms(terms);
+      setOriginalPrivacy(privacy);
     }
   }, [businessSettings]);
+  
+  // Compute hasChanges for Terms section
+  const hasTermsChanges = useMemo(() => {
+    return termsAndConditions !== originalTerms || privacyPolicy !== originalPrivacy;
+  }, [termsAndConditions, privacyPolicy, originalTerms, originalPrivacy]);
   
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
   const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
@@ -57,6 +70,9 @@ export const SystemSettingsTab = () => {
         general_terms_and_conditions: termsAndConditions,
         privacy_policy: privacyPolicy,
       });
+      // Update original values after save
+      setOriginalTerms(termsAndConditions);
+      setOriginalPrivacy(privacyPolicy);
       toast.success('Terms & Conditions saved successfully');
     } catch (error) {
       console.error('Error saving terms:', error);
@@ -199,12 +215,16 @@ export const SystemSettingsTab = () => {
           <div className="flex gap-2">
             <Button 
               onClick={handleSaveTerms}
-              disabled={updateBusinessSettings.isPending}
+              disabled={!hasTermsChanges || updateBusinessSettings.isPending}
+              variant={hasTermsChanges ? "default" : "secondary"}
             >
-              {updateBusinessSettings.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {updateBusinessSettings.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : hasTermsChanges ? (
+                "Save Changes"
+              ) : (
+                <><Check className="h-4 w-4 mr-1" /> Saved</>
               )}
-              Save Changes
             </Button>
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />

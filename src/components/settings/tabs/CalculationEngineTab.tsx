@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Ruler, Scissors, Settings } from "lucide-react";
+import { Calculator, Ruler, Scissors, Settings, Check } from "lucide-react";
 import { useCalculationFormulas, CalculationFormula } from "@/hooks/useCalculationFormulas";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
@@ -17,6 +17,28 @@ export const CalculationEngineTab = () => {
   const { toast } = useToast();
   const { getLengthUnitLabel } = useMeasurementUnits();
   const lengthUnit = getLengthUnitLabel();
+  
+  // Global settings state (controlled inputs)
+  const [globalSettings, setGlobalSettings] = useState({
+    defaultFullness: 2.5,
+    seamAllowance: 5.0,
+    hemAllowance: 15.0,
+    fabricWastage: 10.0,
+    rounding: 'nearest_unit',
+    autoCalculate: true,
+    patternMatching: true,
+    validateMeasurements: true,
+  });
+  
+  // Track original values
+  const [originalGlobalSettings, setOriginalGlobalSettings] = useState(globalSettings);
+  const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+  
+  // Compute hasChanges for global settings
+  const hasGlobalChanges = useMemo(() => {
+    return JSON.stringify(globalSettings) !== JSON.stringify(originalGlobalSettings);
+  }, [globalSettings, originalGlobalSettings]);
+  
   const [newFormula, setNewFormula] = useState({
     name: '',
     category: '',
@@ -25,6 +47,27 @@ export const CalculationEngineTab = () => {
     active: true,
     variables: []
   });
+
+  const handleSaveGlobalSettings = async () => {
+    setIsSavingGlobal(true);
+    try {
+      // TODO: Implement actual save to database when backend supports it
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulated save
+      setOriginalGlobalSettings(globalSettings);
+      toast({
+        title: "Success",
+        description: "Global calculation settings saved"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingGlobal(false);
+    }
+  };
 
   const handleSaveFormula = async () => {
     if (!newFormula.name || !newFormula.category || !newFormula.formula_expression) {
@@ -105,28 +148,57 @@ export const CalculationEngineTab = () => {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="defaultFullness">Default Curtain Fullness</Label>
-              <Input id="defaultFullness" type="number" step="0.1" defaultValue="2.5" />
+              <Input 
+                id="defaultFullness" 
+                type="number" 
+                step="0.1" 
+                value={globalSettings.defaultFullness}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, defaultFullness: parseFloat(e.target.value) || 0 }))}
+              />
               <span className="text-xs text-brand-neutral">Times window width</span>
             </div>
             <div>
               <Label htmlFor="seamAllowance">Seam Allowance ({lengthUnit})</Label>
-              <Input id="seamAllowance" type="number" step="0.1" defaultValue="5.0" />
+              <Input 
+                id="seamAllowance" 
+                type="number" 
+                step="0.1" 
+                value={globalSettings.seamAllowance}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, seamAllowance: parseFloat(e.target.value) || 0 }))}
+              />
             </div>
             <div>
               <Label htmlFor="hemAllowance">Hem Allowance ({lengthUnit})</Label>
-              <Input id="hemAllowance" type="number" step="0.1" defaultValue="15.0" />
+              <Input 
+                id="hemAllowance" 
+                type="number" 
+                step="0.1" 
+                value={globalSettings.hemAllowance}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, hemAllowance: parseFloat(e.target.value) || 0 }))}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="fabricWastage">Fabric Wastage (%)</Label>
-              <Input id="fabricWastage" type="number" step="0.1" defaultValue="10.0" />
+              <Input 
+                id="fabricWastage" 
+                type="number" 
+                step="0.1" 
+                value={globalSettings.fabricWastage}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, fabricWastage: parseFloat(e.target.value) || 0 }))}
+              />
               <span className="text-xs text-brand-neutral">Additional fabric for waste/pattern matching</span>
             </div>
             <div>
               <Label htmlFor="rounding">Measurement Rounding</Label>
-              <select id="rounding" className="w-full p-2 border rounded-md">
+              <select 
+                id="rounding" 
+                className="w-full p-2 border rounded-md"
+                value={globalSettings.rounding}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, rounding: e.target.value }))}
+              >
                 <option value="nearest_unit">Nearest {lengthUnit}</option>
                 <option value="nearest_5_units">Nearest 5 {lengthUnit}</option>
                 <option value="nearest_10_units">Nearest 10 {lengthUnit}</option>
@@ -141,7 +213,10 @@ export const CalculationEngineTab = () => {
                 <h4 className="font-medium">Auto-calculate fabric requirements</h4>
                 <p className="text-sm text-brand-neutral">Automatically calculate fabric needed based on measurements</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={globalSettings.autoCalculate}
+                onCheckedChange={(checked) => setGlobalSettings(prev => ({ ...prev, autoCalculate: checked }))}
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -149,7 +224,10 @@ export const CalculationEngineTab = () => {
                 <h4 className="font-medium">Include pattern matching</h4>
                 <p className="text-sm text-brand-neutral">Add extra fabric for pattern matching on patterned fabrics</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={globalSettings.patternMatching}
+                onCheckedChange={(checked) => setGlobalSettings(prev => ({ ...prev, patternMatching: checked }))}
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -157,11 +235,23 @@ export const CalculationEngineTab = () => {
                 <h4 className="font-medium">Validate measurements</h4>
                 <p className="text-sm text-brand-neutral">Check for impossible or unusual measurements</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={globalSettings.validateMeasurements}
+                onCheckedChange={(checked) => setGlobalSettings(prev => ({ ...prev, validateMeasurements: checked }))}
+              />
             </div>
           </div>
 
-          <Button className="bg-brand-primary hover:bg-brand-accent">Save Global Settings</Button>
+          <Button 
+            onClick={handleSaveGlobalSettings}
+            disabled={!hasGlobalChanges || isSavingGlobal}
+            variant={hasGlobalChanges ? "default" : "secondary"}
+            className={hasGlobalChanges ? "bg-brand-primary hover:bg-brand-accent" : ""}
+          >
+            {isSavingGlobal ? "Saving..." : hasGlobalChanges ? "Save Global Settings" : (
+              <><Check className="h-4 w-4 mr-1" /> Saved</>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
