@@ -36,6 +36,7 @@ export const DatePickerButton = ({
         <Button
           variant="outline"
           disabled={disabled}
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "h-8 justify-start text-left font-normal text-xs gap-2 min-w-[130px]",
             !value && "text-muted-foreground",
@@ -52,9 +53,6 @@ export const DatePickerButton = ({
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-        onFocusOutside={(e) => e.preventDefault()}
       >
         <div className="p-2 border-b bg-muted/30">
           <p className="text-xs text-muted-foreground">
