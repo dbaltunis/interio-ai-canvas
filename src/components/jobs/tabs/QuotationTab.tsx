@@ -119,7 +119,8 @@ export const QuotationTab = ({
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
-  const [isExclusionEditMode, setIsExclusionEditMode] = useState(false);
+  // TEMPORARILY DISABLED: Exclusion edit mode caused quote breaking issues
+  const isExclusionEditMode = false; // useState(false) - revert when reimplemented
   
   // Quote item exclusions hook
   const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
@@ -819,7 +820,8 @@ export const QuotationTab = ({
               <span className="hidden lg:inline ml-2">Discount</span>
             </Button>
 
-            {/* Edit Items Toggle Button */}
+            {/* Edit Items Toggle Button - TEMPORARILY HIDDEN
+               Needs reimplementation to avoid breaking quotes
             <Button 
               variant={isExclusionEditMode ? "default" : "outline"}
               size="sm" 
@@ -840,6 +842,7 @@ export const QuotationTab = ({
                 </>
               )}
             </Button>
+            */}
 
             {/* Payment Dropdown */}
             <DropdownMenu>

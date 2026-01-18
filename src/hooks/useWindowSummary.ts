@@ -15,6 +15,7 @@ export interface WindowSummary {
   manufacturing_type: string;
   manufacturing_cost: number;
   total_cost: number;
+  total_selling?: number; // CRITICAL: Pre-calculated selling price with per-item markups
   template_id?: string;
   pricing_type: string;
   waste_percent: number;

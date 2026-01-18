@@ -15,6 +15,9 @@ export interface ClientBreakdownItem {
   color?: string; // Color for fallback display when no image
   pricingDetails?: string; // Pricing breakdown info (e.g., "18.00/m × 5.30m")
   details?: Record<string, any>;
+  // Markup tracking for profit display
+  markup_percentage?: number;
+  markup_source?: string;
 }
 
 /**
@@ -28,10 +31,38 @@ const applyMarkupToItem = (
 ): ClientBreakdownItem => {
   if (!markupSettings) return item;
   
-  // Resolve markup based on item category and treatment category
+  // CRITICAL FIX: Determine correct markup category based on item type
+  // Each category has its own markup (e.g., curtain_making: 100%, lining: 50%)
+  const itemCategory = (item.category || '').toLowerCase();
+  let markupCategory: string;
+  
+  if (itemCategory === 'manufacturing' || itemCategory === 'making') {
+    // Use treatment-specific making category
+    const treatmentCat = (treatmentCategory || 'curtain').toLowerCase();
+    if (treatmentCat.includes('roman')) {
+      markupCategory = 'roman_making';
+    } else if (treatmentCat.includes('blind')) {
+      markupCategory = 'blind_making';
+    } else if (treatmentCat.includes('shutter')) {
+      markupCategory = 'shutter_making';
+    } else {
+      markupCategory = 'curtain_making';
+    }
+  } else if (itemCategory === 'fabric' || itemCategory === 'material') {
+    // Use treatment category for fabric/material
+    markupCategory = treatmentCategory || 'curtains';
+  } else if (itemCategory === 'lining') {
+    markupCategory = 'lining';
+  } else if (itemCategory === 'heading') {
+    markupCategory = 'heading';
+  } else if (itemCategory === 'hardware' || itemCategory === 'hardware_accessory') {
+    markupCategory = 'hardware';
+  } else {
+    markupCategory = 'options';
+  }
+  
   const markupResult = resolveMarkup({
-    category: treatmentCategory || item.category,
-    subcategory: item.category,
+    category: markupCategory,
     markupSettings
   });
   
@@ -42,10 +73,15 @@ const applyMarkupToItem = (
   const costPrice = Number(item.total_cost) || 0;
   const unitCost = Number(item.unit_price) || 0;
   
+  console.log(`[MARKUP] ${item.name}: ${itemCategory} → ${markupCategory} = ${markupPercentage}%`);
+  
   return {
     ...item,
     total_cost: applyMarkup(costPrice, markupPercentage),
-    unit_price: unitCost > 0 ? applyMarkup(unitCost, markupPercentage) : undefined
+    unit_price: unitCost > 0 ? applyMarkup(unitCost, markupPercentage) : undefined,
+    // Track markup for profit display
+    markup_percentage: markupPercentage,
+    markup_source: markupResult.sourceName
   };
 };
 
