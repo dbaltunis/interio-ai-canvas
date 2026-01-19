@@ -22,8 +22,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsDealer } from "@/hooks/useIsDealer";
-import { HelpDrawer } from "@/components/ui/help-drawer";
-import { HelpIcon } from "@/components/ui/help-icon";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FilterButton } from "../library/FilterButton";
@@ -34,7 +33,7 @@ export const ModernInventoryDashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [activeTab, setActiveTab] = useState("fabrics");
   const [showSearch, setShowSearch] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  
   const [showScanner, setShowScanner] = useState(false);
   const [scannedItemId, setScannedItemId] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -228,7 +227,7 @@ export const ModernInventoryDashboard = () => {
           )}>
             Library
           </h1>
-          {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
+          <SectionHelpButton sectionId="library" size="sm" />
           <Badge variant="secondary" className="text-xs">
             {inventoryLoading ? (
               <span className="animate-pulse">Loading...</span>
@@ -413,31 +412,6 @@ export const ModernInventoryDashboard = () => {
           </TabsContent>
         )}
       </Tabs>
-      
-      <HelpDrawer
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-        title="Inventory Management"
-        sections={{
-          purpose: {
-            title: "What this page is for",
-            content: "Track and manage all your window treatment materials including fabrics, hardware, tracks, and pre-configured assembly kits. Monitor stock levels and vendor relationships."
-          },
-          actions: {
-            title: "Common actions",
-            content: "Add new inventory items, track stock levels, create assembly kits, manage vendor relationships, import/export inventory data, and set reorder alerts."
-          },
-          tips: {
-            title: "Tips & best practices",
-            content: "Set reorder points for critical items. Use categories consistently. Keep vendor information updated. Regular stock audits help maintain accuracy."
-          },
-          shortcuts: [
-            { key: "Ctrl + A", description: "Add new item" },
-            { key: "Ctrl + F", description: "Toggle search" },
-            { key: "Tab", description: "Switch between tabs" }
-          ]
-        }}
-      />
 
       <QRCodeScanner
         open={showScanner}
