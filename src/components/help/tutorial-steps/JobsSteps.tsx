@@ -941,86 +941,79 @@ const MockTreatmentGrid = ({
 };
 
 // Fabric/Inventory selector - MATCHING REAL InventorySelectionPanel.tsx
+// Limited to 2 rows max for demo container constraint
 const MockFabricGrid = ({
   highlightedFabric = 0,
   showTabs = true,
+  compact = true,
 }: {
   highlightedFabric?: number;
   showTabs?: boolean;
+  compact?: boolean;
 }) => {
   const fabrics = [
-    { name: "ADARA", color: "bg-amber-200", price: "£26.50/m", width: "2900.0mm", category: "curtains", inStock: true },
-    { name: "BELMONT", color: "bg-gray-300", price: "£32.00/m", width: "1400.0mm", category: "curtains", inStock: true },
-    { name: "CAIRO", color: "bg-blue-200", price: "£45.00/m", width: "3000.0mm", category: "curtains", inStock: false },
-    { name: "DEVON", color: "bg-green-200", price: "£28.50/m", width: "1450.0mm", category: "curtains", inStock: true },
+    { name: "ADARA", color: "bg-amber-200", price: "£26.50/m", width: "2900mm", inStock: true },
+    { name: "BELMONT", color: "bg-gray-300", price: "£32.00/m", width: "1400mm", inStock: true },
+    { name: "CAIRO", color: "bg-blue-200", price: "£45.00/m", width: "3000mm", inStock: false },
+    { name: "DEVON", color: "bg-green-200", price: "£28.50/m", width: "1450mm", inStock: true },
   ];
 
-  const grades = ["All", "1", "2", "3", "4", "5", "6", "Budget"];
+  const grades = ["All", "1", "2", "3", "Budget"];
 
   return (
-    <div className="space-y-3">
-      {/* Grade tabs - matching real InventorySelectionPanel */}
+    <div className="space-y-2 max-h-[200px] overflow-hidden">
+      {/* Grade tabs */}
       {showTabs && (
-        <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        <div className="flex items-center gap-0.5 overflow-x-auto">
           {grades.map((grade, i) => (
             <div
               key={grade}
-              className={`px-2.5 py-1 rounded-md text-[9px] font-medium whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded text-[8px] font-medium whitespace-nowrap ${
                 i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              {grade === "All" ? "All Materials" : grade}
+              {grade === "All" ? "All" : grade}
             </div>
           ))}
         </div>
       )}
       
-      {/* Action buttons - matching real layout */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-[10px] font-medium">
-          <ScanLine className="h-3.5 w-3.5" />
-          Scan QR
+      {/* Action buttons */}
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 px-2 py-1 rounded border border-border text-[9px]">
+          <ScanLine className="h-3 w-3" /> QR
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-[10px] font-medium">
-          <FileType className="h-3.5 w-3.5" />
-          Manual Entry
+        <div className="flex items-center gap-1 px-2 py-1 rounded border border-border text-[9px]">
+          <FileType className="h-3 w-3" /> Manual
         </div>
       </div>
       
-      {/* Fabric cards grid - matching real 4-col layout */}
-      <div className="grid grid-cols-2 gap-2">
-        {fabrics.map((fabric, i) => (
+      {/* Fabric cards - 2x2 grid limited */}
+      <div className="grid grid-cols-2 gap-1.5">
+        {fabrics.slice(0, 4).map((fabric, i) => (
           <motion.div 
             key={fabric.name}
-            className={`rounded-lg border cursor-pointer transition-all overflow-hidden ${
+            className={`rounded-lg border overflow-hidden ${
               highlightedFabric === i 
                 ? "border-primary bg-primary/5 shadow-sm" 
-                : "border-border hover:border-primary/30"
+                : "border-border"
             }`}
             animate={highlightedFabric === i ? { scale: 1.02 } : {}}
           >
-            {/* Fabric image placeholder with texture */}
-            <div className={`h-16 ${fabric.color} relative`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
-              {/* Out of stock badge */}
+            <div className={`h-10 ${fabric.color} relative`}>
               {!fabric.inStock && (
-                <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-medium rounded">
-                  Out
+                <div className="absolute top-0.5 right-0.5 px-1 bg-red-500 text-white text-[7px] rounded">Out</div>
+              )}
+              {highlightedFabric === i && (
+                <div className="absolute top-0.5 left-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-2 w-2 text-primary-foreground" />
                 </div>
               )}
             </div>
-            
-            {/* Fabric details */}
-            <div className="p-2 space-y-0.5">
-              <div className="flex items-center gap-1">
-                <p className="text-[10px] font-semibold truncate">{fabric.name}</p>
-                {highlightedFabric === i && (
-                  <CircleCheck className="h-3 w-3 text-primary flex-shrink-0" />
-                )}
-              </div>
-              <p className="text-[9px] text-muted-foreground">{fabric.width} wide</p>
-              <p className="text-[9px] text-muted-foreground">For: {fabric.category}</p>
-              <p className="text-[10px] font-medium text-primary">{fabric.price}</p>
+            <div className="p-1.5">
+              <p className="text-[9px] font-semibold truncate">{fabric.name}</p>
+              <p className="text-[8px] text-muted-foreground">{fabric.width}</p>
+              <p className="text-[9px] font-medium text-primary">{fabric.price}</p>
             </div>
           </motion.div>
         ))}
@@ -2275,117 +2268,167 @@ export const JobsStep18 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 19: Enter Measurements
+// Step 19: Enter Measurements - MATCHING REAL VisualMeasurementSheet with treatment-specific options
 export const JobsStep19 = ({ phase = 0 }: StepProps) => {
-  const activeField = phase < 0.5 ? "width" : "drop";
-  const widthValue = typingProgress(phase, 0.1, 0.4, "1650");
-  const dropValue = typingProgress(phase, 0.5, 0.9, "2250");
+  const activeField = phase < 0.4 ? "width" : phase < 0.7 ? "drop" : "options";
+  const widthValue = typingProgress(phase, 0.05, 0.35, "1650");
+  const dropValue = typingProgress(phase, 0.4, 0.65, "2250");
+  const showOptions = phase > 0.7;
 
   return (
-    <MockCard className="p-3 rounded-xl">
-      <div className="flex items-center gap-2 mb-3">
-        <Ruler className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Measurements</h3>
+    <MockCard className="p-2.5 rounded-xl max-h-[260px] overflow-hidden">
+      <div className="flex items-center gap-2 mb-2">
+        <Ruler className="h-3.5 w-3.5 text-primary" />
+        <h3 className="text-xs font-semibold">Curtain Measurements</h3>
       </div>
       
-      {/* Diagram */}
-      <div className="bg-muted/30 rounded-lg p-3 mb-3">
-        <div className="flex items-center justify-center">
-          <div className="relative w-20 h-24 border-2 border-dashed border-primary/50 rounded-lg">
-            <div className="absolute -top-3 left-0 right-0 text-center">
-              <span className="text-[9px] font-medium text-primary px-1 bg-card">{widthValue || "W"}mm</span>
-            </div>
-            <div className="absolute -right-6 top-0 bottom-0 flex items-center">
-              <span className="text-[9px] font-medium text-primary px-1 bg-card">{dropValue || "D"}mm</span>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Square className="h-8 w-8 text-muted-foreground" />
+      {/* Measurement inputs with green W/H badges - matching real app */}
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-[9px]">W</span>
+            <label className="text-[9px] text-muted-foreground">Rail Width</label>
+          </div>
+          <motion.div 
+            className={`h-7 rounded border px-2 flex items-center text-[10px] ${
+              activeField === "width" ? "border-primary bg-primary/5" : "border-border"
+            }`}
+            animate={activeField === "width" ? { scale: 1.01 } : {}}
+          >
+            {widthValue || "0"}
+            <span className="ml-auto text-[8px] text-muted-foreground bg-muted px-1 rounded">mm</span>
+          </motion.div>
+        </div>
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-[9px]">H</span>
+            <label className="text-[9px] text-muted-foreground">Drop</label>
+          </div>
+          <motion.div 
+            className={`h-7 rounded border px-2 flex items-center text-[10px] ${
+              activeField === "drop" ? "border-primary bg-primary/5" : "border-border"
+            }`}
+            animate={activeField === "drop" ? { scale: 1.01 } : {}}
+          >
+            {dropValue || "0"}
+            <span className="ml-auto text-[8px] text-muted-foreground bg-muted px-1 rounded">mm</span>
+          </motion.div>
+        </div>
+      </div>
+      
+      {/* Curtain-specific options - matching real VisualMeasurementSheet */}
+      <div className="space-y-2">
+        {/* Curtain Type - Pair/Single radio */}
+        <div>
+          <label className="text-[9px] font-medium mb-1 block">Curtain Type</label>
+          <div className="grid grid-cols-2 gap-1">
+            <motion.div 
+              className={`p-1.5 rounded border text-center text-[9px] ${
+                showOptions ? "border-primary bg-primary/5 font-medium" : "border-border"
+              }`}
+              animate={showOptions && activeField === "options" ? { scale: 1.02 } : {}}
+            >
+              <CircleDot className="h-3 w-3 mx-auto mb-0.5 text-primary" />
+              Pair (Two panels)
+            </motion.div>
+            <div className="p-1.5 rounded border border-border text-center text-[9px] text-muted-foreground">
+              <CircleDot className="h-3 w-3 mx-auto mb-0.5" />
+              Single
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Inputs */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] text-muted-foreground mb-1 block">Width (mm)</label>
-          <motion.div 
-            className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
-              activeField === "width" ? "border-primary bg-primary/5" : "border-border"
-            }`}
-            animate={activeField === "width" ? { scale: 1.02 } : {}}
-          >
-            {widthValue || "0"}
-            {activeField === "width" && (
-              <motion.span 
-                className="w-0.5 h-4 bg-primary ml-0.5"
-                animate={{ opacity: [1, 0, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              />
-            )}
-          </motion.div>
-        </div>
-        <div>
-          <label className="text-[10px] text-muted-foreground mb-1 block">Drop (mm)</label>
-          <motion.div 
-            className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
-              activeField === "drop" ? "border-primary bg-primary/5" : "border-border"
-            }`}
-            animate={activeField === "drop" ? { scale: 1.02 } : {}}
-          >
-            {dropValue || "0"}
-            {activeField === "drop" && (
-              <motion.span 
-                className="w-0.5 h-4 bg-primary ml-0.5"
-                animate={{ opacity: [1, 0, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              />
-            )}
-          </motion.div>
+        
+        {/* Heading Type dropdown */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[9px] text-muted-foreground mb-0.5 block">Heading Type</label>
+            <div className="h-6 rounded border border-border px-2 flex items-center justify-between text-[9px]">
+              <span>Wave</span>
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] text-muted-foreground mb-0.5 block">Pooling</label>
+            <div className="h-6 rounded border border-border px-2 flex items-center justify-between text-[9px]">
+              <span>Floor level</span>
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </div>
+          </div>
         </div>
       </div>
     </MockCard>
   );
 };
 
-// Step 20: Measurement Options
+// Step 20: Measurement Options - Blinds version for variety
 export const JobsStep20 = ({ phase = 0 }: StepProps) => {
-  const options = [
-    { name: "Hem Allowance", value: "100mm", active: phase > 0.2 },
-    { name: "Returns", value: "Yes", active: phase > 0.4 },
-    { name: "Stack Position", value: "Right", active: phase > 0.6 },
-    { name: "Mount Type", value: "Face fix", active: phase > 0.8 },
-  ];
+  const showMount = phase > 0.2;
+  const showOperation = phase > 0.5;
+  const showMotor = phase > 0.75;
 
   return (
-    <MockCard className="p-3 rounded-xl">
-      <div className="flex items-center gap-2 mb-3">
-        <Settings2 className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Measurement Options</h3>
+    <MockCard className="p-2.5 rounded-xl max-h-[260px] overflow-hidden">
+      <div className="flex items-center gap-2 mb-2">
+        <Blinds className="h-3.5 w-3.5 text-primary" />
+        <h3 className="text-xs font-semibold">Blind Options</h3>
       </div>
       
-      <div className="space-y-2">
-        {options.map((opt, i) => (
+      {/* Mount Type - Inside/Outside */}
+      <div className="mb-2">
+        <label className="text-[9px] font-medium mb-1 block">Mount Type</label>
+        <div className="grid grid-cols-2 gap-1">
           <motion.div 
-            key={opt.name}
-            className={`p-2.5 rounded-lg border transition-all ${
-              opt.active ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"
+            className={`p-1.5 rounded border text-center text-[9px] ${
+              showMount ? "border-primary bg-primary/5 font-medium" : "border-border"
             }`}
-            animate={opt.active && options[i + 1] && !options[i + 1].active ? { scale: [1, 1.02, 1] } : {}}
-            transition={{ duration: 0.5 }}
+            animate={showMount && !showOperation ? { scale: 1.02 } : {}}
           >
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-medium">{opt.name}</span>
-              <motion.span 
-                className={`text-[10px] ${opt.active ? "text-primary font-medium" : "text-muted-foreground"}`}
-                animate={opt.active ? { scale: [1, 1.1, 1] } : {}}
-              >
-                {opt.value}
-              </motion.span>
-            </div>
+            Inside Recess
           </motion.div>
-        ))}
+          <div className="p-1.5 rounded border border-border text-center text-[9px] text-muted-foreground">
+            Face Fix
+          </div>
+        </div>
       </div>
+      
+      {/* Operation Side */}
+      <div className="mb-2">
+        <label className="text-[9px] text-muted-foreground mb-1 block">Operation Side</label>
+        <motion.div 
+          className={`h-7 rounded border px-2 flex items-center justify-between text-[9px] ${
+            showOperation && !showMotor ? "border-primary bg-primary/5" : "border-border"
+          }`}
+          animate={showOperation && !showMotor ? { scale: 1.01 } : {}}
+        >
+          <span>Right</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </motion.div>
+      </div>
+      
+      {/* Motor Type */}
+      <div className="mb-2">
+        <label className="text-[9px] text-muted-foreground mb-1 block">Motor Type</label>
+        <motion.div 
+          className={`h-7 rounded border px-2 flex items-center justify-between text-[9px] ${
+            showMotor ? "border-primary bg-primary/5" : "border-border"
+          }`}
+          animate={showMotor ? { scale: 1.01 } : {}}
+        >
+          <span>Somfy RTS</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </motion.div>
+      </div>
+      
+      {/* Summary */}
+      {showMotor && (
+        <motion.div 
+          className="p-1.5 bg-green-50 border border-green-200 rounded text-[9px] text-green-700"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          ✓ Motorized inside-mount roller blind configured
+        </motion.div>
+      )}
     </MockCard>
   );
 };
