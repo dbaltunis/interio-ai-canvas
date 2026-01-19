@@ -38,24 +38,25 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   };
 
   // Direct upload for compact mode - uses files directly instead of state
-  const handleDirectUpload = async (files: FileList) => {
-    if (!files || files.length === 0) return;
+  const handleDirectUpload = async (fileList: FileList) => {
+    if (!fileList || fileList.length === 0) return;
 
-    const fileNames = Array.from(files).map(f => f.name);
+    const fileNames = Array.from(fileList).map(f => f.name);
     setUploadingFiles(fileNames);
 
     try {
-      for (let i = 0; i < files.length; i++) {
+      for (let i = 0; i < fileList.length; i++) {
+        const currentFile = fileList[i];
         await uploadFile.mutateAsync({
-          file: files[i],
+          file: currentFile,
           clientId,
           userId,
           projectId: undefined,
         });
         // Remove uploaded file from progress list
-        setUploadingFiles(prev => prev.filter(name => name !== files[i].name));
+        setUploadingFiles(prev => prev.filter(name => name !== currentFile.name));
       }
-      toast.success(`${files.length} file${files.length > 1 ? 's' : ''} uploaded successfully`);
+      toast.success(`${fileList.length} file${fileList.length > 1 ? 's' : ''} uploaded successfully`);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
