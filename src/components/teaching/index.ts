@@ -9,3 +9,6 @@ export { TipCard } from './TipCard';
 export { TipSearchInput } from './TipSearchInput';
 export { RecommendedTips } from './RecommendedTips';
 export { TipConfirmationDialog } from './TipConfirmationDialog';
+export { TipsPanel } from './TipsPanel';
+export { WelcomeTour, useRestartWelcomeTour } from './WelcomeTour';
+export { BadgeCelebration } from './BadgeCelebration';
