@@ -57,9 +57,6 @@ export const SectionHelpButton = ({
             {content.icon && <content.icon className="h-5 w-5 text-primary" />}
             {content.title}
           </SheetTitle>
-          <SheetDescription className="text-left">
-            {content.briefDescription}
-          </SheetDescription>
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
