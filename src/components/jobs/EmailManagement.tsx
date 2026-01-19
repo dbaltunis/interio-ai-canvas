@@ -3,14 +3,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Settings, MessageSquare, Shield, Send, Users, Filter } from "lucide-react";
-import { EmailDashboard } from "./email/EmailDashboard";
+import { 
+  Mail, Settings, MessageSquare, Shield, Send, Users, 
+  BarChart3, FileText, Sparkles, Inbox
+} from "lucide-react";
+import { EmailInbox } from "./email/EmailInbox";
 import { EmailComposer } from "./email/EmailComposer";
-import { EmailCampaigns } from "./email/EmailCampaigns";
-import { EmailAnalytics } from "./email/EmailAnalytics";
+import { EmailCampaignsModern } from "./email/EmailCampaignsModern";
+import { EmailAnalyticsDashboard } from "./email/EmailAnalyticsDashboard";
+import { EmailTemplateLibrary } from "./email/EmailTemplateLibrary";
 import { EmailSettings } from "./email/EmailSettings";
-import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
-import { WhatsAppMessageHistory } from "@/components/messaging/WhatsAppMessageHistory";
 import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
 import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
@@ -21,10 +23,10 @@ import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 
 export const EmailManagement = () => {
-  const [activeTab, setActiveTab] = useState("messages");
+  const [activeTab, setActiveTab] = useState("inbox");
+  const [showComposer, setShowComposer] = useState(false);
   const canAccessEmails = useHasPermission('view_jobs');
   const [showHelp, setShowHelp] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const { hasEmailSettings, isLoading: integrationLoading } = useEmailSetupStatus();
   const { data: emails = [] } = useEmails();
   const { user } = useAuth();
@@ -88,7 +90,7 @@ export const EmailManagement = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg">
-            <MessageSquare className="h-5 w-5 text-primary" />
+            <Mail className="h-5 w-5 text-primary" />
           </div>
           <h1 className="text-lg font-semibold text-foreground">Messages</h1>
           <HelpIcon onClick={() => setShowHelp(true)} />
@@ -97,17 +99,6 @@ export const EmailManagement = () => {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          {activeTab === "messages" && (
-            <Button 
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-          )}
-          
           <div className="relative group">
             <Button 
               onClick={() => {
@@ -127,13 +118,13 @@ export const EmailManagement = () => {
                   });
                   return;
                 }
-                setActiveTab("composer");
+                setShowComposer(true);
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!hasEmailSettings || !isPermissionLoaded || !canSendEmails}
             >
               <Send className="h-4 w-4 mr-2" />
-              New Message
+              Compose
             </Button>
             {(!hasEmailSettings || !isPermissionLoaded || !canSendEmails) && (
               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50">
@@ -151,18 +142,32 @@ export const EmailManagement = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-transparent border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
           <TabsTrigger 
-            value="messages" 
+            value="inbox" 
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground"
           >
-            <Mail className="w-4 h-4" />
-            All Messages
+            <Inbox className="w-4 h-4" />
+            Inbox
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground"
           >
-            <Users className="w-4 h-4" />
+            <Send className="w-4 h-4" />
             Campaigns
+          </TabsTrigger>
+          <TabsTrigger 
+            value="templates" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground"
+          >
+            <FileText className="w-4 h-4" />
+            Templates
+          </TabsTrigger>
+          <TabsTrigger 
+            value="analytics" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
@@ -178,35 +183,23 @@ export const EmailManagement = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "composer":
-        return (
-          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
-            <CardContent className="p-6">
-              <EmailComposer onClose={() => setActiveTab("messages")} />
-            </CardContent>
-          </Card>
-        );
       case "campaigns":
         return (
-          <div className="space-y-6 animate-fade-in">
-            <EmailCampaigns />
+          <div className="animate-fade-in">
+            <EmailCampaignsModern />
+          </div>
+        );
+      case "templates":
+        return (
+          <div className="animate-fade-in">
+            <EmailTemplateLibrary />
           </div>
         );
       case "analytics":
         return (
-          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
-            <CardContent className="p-6">
-              <EmailAnalytics />
-            </CardContent>
-          </Card>
-        );
-      case "whatsapp":
-        return (
-          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
-            <CardContent className="p-6">
-              <WhatsAppMessageHistory />
-            </CardContent>
-          </Card>
+          <div className="animate-fade-in">
+            <EmailAnalyticsDashboard />
+          </div>
         );
       case "settings":
         return (
@@ -218,10 +211,8 @@ export const EmailManagement = () => {
         );
       default:
         return (
-          <div className="space-y-6 animate-fade-in">
-            <EmailIntegrationBanners onEmailSettingsClick={handleEmailSettingsClick} />
-            <EmailAnalytics />
-            <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
+          <div className="animate-fade-in">
+            <EmailInbox onComposeClick={() => setShowComposer(true)} />
           </div>
         );
     }
@@ -233,6 +224,15 @@ export const EmailManagement = () => {
         {renderHeader()}
         {renderContent()}
       </div>
+
+      {/* Composer Modal */}
+      {showComposer && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <EmailComposer onClose={() => setShowComposer(false)} />
+          </div>
+        </div>
+      )}
       
       <HelpDrawer
         isOpen={showHelp}
