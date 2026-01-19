@@ -738,23 +738,21 @@ export const integrationsTutorial: Tutorial = {
 };
 
 // ===========================================
-// CLIENTS TUTORIAL (12 Steps)
+// CLIENTS TUTORIAL (10 Streamlined Steps)
 // ===========================================
 export const clientsTutorial: Tutorial = {
   id: "clients",
   steps: [
-    { title: "View your client list", actionLabel: "Overview", description: "See all your clients in a searchable, filterable table with quick stats.", Visual: ClientsStep1 },
-    { title: "Search and filter clients", actionLabel: "Filter", description: "Use the search bar and status filters to find specific clients quickly.", Visual: ClientsStep2 },
-    { title: "Add a new client", actionLabel: "Click", description: "Click 'New Client' to open the client creation form with lead intelligence.", Visual: ClientsStep3 },
-    { title: "Select clients with checkboxes", actionLabel: "Select", description: "Use the row checkboxes to select individual clients for bulk actions.", Visual: ClientsStep4 },
-    { title: "First client selected", actionLabel: "Check", description: "The selected client is highlighted. Click another to add to selection.", Visual: ClientsStep5 },
-    { title: "Multiple clients selected", actionLabel: "Multi-Select", description: "Select multiple clients to perform bulk operations on them.", Visual: ClientsStep6 },
-    { title: "Bulk actions bar appears", actionLabel: "Actions", description: "When clients are selected, a bulk actions bar appears at the bottom.", Visual: ClientsStep7 },
-    { title: "Explore bulk action options", actionLabel: "View", description: "The bar shows Email, Export, and Delete buttons for bulk operations.", Visual: ClientsStep8 },
-    { title: "Send bulk email campaign", actionLabel: "Email", description: "Click Email to compose and send a message to all selected clients.", Visual: ClientsStep9 },
-    { title: "Export selected clients", actionLabel: "Export", description: "Export client data to CSV for use in other applications.", Visual: ClientsStep10 },
-    { title: "Delete selected clients", actionLabel: "Delete", description: "Remove selected clients with a confirmation dialog for safety.", Visual: ClientsStep11 },
-    { title: "Clear selection", actionLabel: "Clear", description: "Click the X to deselect all clients and hide the actions bar.", Visual: ClientsStep12 },
+    { title: "Your Client Hub", actionLabel: "Overview", description: "See all clients with stats, search, and quick actions at a glance.", Visual: ClientsStep1, duration: 4000 },
+    { title: "Find Anyone Instantly", actionLabel: "Search", description: "Type to search and apply filters - find any client in seconds.", Visual: ClientsStep2, duration: 5000 },
+    { title: "Add New Clients", actionLabel: "Create", description: "One click to add clients with AI-powered lead intelligence.", Visual: ClientsStep3, duration: 5000 },
+    { title: "Power Select", actionLabel: "Select", description: "Rapidly select multiple clients for bulk operations.", Visual: ClientsStep4, duration: 5000 },
+    { title: "Bulk Actions Unleashed", actionLabel: "Actions", description: "Email campaigns, export data, or remove - all in one bar.", Visual: ClientsStep5, duration: 5000 },
+    { title: "Open Client Details", actionLabel: "Click", description: "Click any row to open the full client profile drawer.", Visual: ClientsStep6, duration: 5000 },
+    { title: "Quick Communication", actionLabel: "Actions", description: "Email, call, WhatsApp, log activity - one click away.", Visual: ClientsStep7, duration: 5000 },
+    { title: "Pipeline Management", actionLabel: "Stage", description: "Move clients through your sales pipeline with a click.", Visual: ClientsStep8, duration: 5000 },
+    { title: "Full Profile Access", actionLabel: "Tabs", description: "Switch between Activity, Emails, Files, and Projects.", Visual: ClientsStep9, duration: 5000 },
+    { title: "Start a Project", actionLabel: "Create", description: "Launch new projects directly from client profiles.", Visual: ClientsStep10, duration: 5000 },
   ],
 };
 
