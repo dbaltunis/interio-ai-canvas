@@ -47,21 +47,21 @@ const FACTOR_CONFIG = [
   { 
     key: 'domainAuth' as const, 
     label: 'Domain Authentication', 
-    sharedLabel: 'Domain Authentication (Handled by InterioApp)',
+    sharedLabel: 'Domain Authentication',
     weight: '40%',
     icon: Shield,
     helpText: 'SPF, DKIM, DMARC records',
     fixUrl: 'https://app.sendgrid.com/settings/sender_auth',
-    sharedMessage: 'Fully configured via noreply@interioapp.com',
+    sharedMessage: 'Shared service has limited trust vs. custom domain',
   },
   { 
     key: 'reputation' as const, 
     label: 'Sender Reputation', 
-    sharedLabel: 'Sender Reputation (Established Domain)',
+    sharedLabel: 'Sender Reputation',
     weight: '25%',
     icon: TrendingUp,
     helpText: 'Based on domain age & sending history',
-    sharedMessage: 'interioapp.com has good sending history',
+    sharedMessage: 'Shared domain reputation varies based on all users',
   },
   { 
     key: 'content' as const, 
@@ -170,6 +170,11 @@ export const DeliverabilityScoreCard = ({
                 </div>
               );
             })}
+            {usingSharedService && (
+              <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded text-xs text-amber-800 dark:text-amber-200">
+                <strong>Note:</strong> Shared email service may have lower deliverability. Consider SendGrid.
+              </div>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -221,17 +226,17 @@ export const DeliverabilityScoreCard = ({
       {/* Breakdown */}
       {showDetails && (
         <div className="p-4 space-y-3">
-          {/* Shared service banner */}
+          {/* Shared service warning banner */}
           {usingSharedService && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 mb-3">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 mb-3">
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-blue-600 mt-0.5" />
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900 dark:text-blue-100">
-                    Sending via InterioApp Shared Service
+                  <p className="font-medium text-amber-900 dark:text-amber-100">
+                    Using Shared Email Service
                   </p>
-                  <p className="text-blue-700 dark:text-blue-300 text-xs mt-0.5">
-                    Domain authentication is fully handled. Emails sent from noreply@interioapp.com
+                  <p className="text-amber-700 dark:text-amber-300 text-xs mt-0.5">
+                    Emails sent from noreply@interioapp.com may have lower deliverability than custom domain authentication. For better results, integrate SendGrid with your own domain.
                   </p>
                 </div>
               </div>
@@ -243,7 +248,7 @@ export const DeliverabilityScoreCard = ({
             const Icon = factor.icon;
             const scorePercentage = (data.score / data.max) * 100;
             const isSharedFactor = usingSharedService && (factor.key === 'domainAuth' || factor.key === 'reputation');
-            const displayLabel = isSharedFactor && factor.sharedLabel ? factor.sharedLabel : factor.label;
+            const displayLabel = factor.label;
 
             return (
               <div key={factor.key} className="space-y-1.5">

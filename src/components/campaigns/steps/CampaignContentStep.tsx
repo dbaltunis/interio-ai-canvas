@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Lightbulb, 
-  Sparkles, 
   AlertTriangle, 
   Loader2, 
-  Wand2,
   Eye,
   Edit3,
   CheckCircle2,
@@ -19,9 +20,10 @@ import {
   RefreshCw,
   Heart,
   Megaphone,
-  Shield
+  Shield,
+  Users,
+  Mail
 } from "lucide-react";
-import { useCampaignAssistant } from "@/hooks/useCampaignAssistant";
 import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 import { EmailPreviewPane } from "@/components/campaigns/shared/EmailPreviewPane";
 import { TemplateGallery } from "@/components/campaigns/shared/TemplateGallery";
@@ -29,6 +31,7 @@ import { DeliverabilityScoreCard } from "@/components/campaigns/DeliverabilitySc
 import { useEmailDeliverability, analyzeEmailContent, calculateDeliverabilityScore } from "@/hooks/useEmailDeliverability";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SelectedClient } from "@/hooks/useClientSelection";
 
 interface CampaignContentStepProps {
   name: string;
@@ -36,6 +39,7 @@ interface CampaignContentStepProps {
   subject: string;
   content: string;
   recipientCount?: number;
+  recipients?: SelectedClient[];
   fromTemplate?: boolean;
   templateName?: string;
   onUpdateName: (name: string) => void;
@@ -56,25 +60,13 @@ const CAMPAIGN_TYPES = [
   { value: 'announcement' as const, label: 'Announce', icon: Megaphone, color: 'text-orange-500 bg-orange-50 border-orange-200' },
 ];
 
-// Comprehensive spam word list for local detection
-const SPAM_WORDS = [
-  'free', 'urgent', 'act now', 'limited time', 'click here', 'buy now',
-  'order now', 'don\'t miss', 'exclusive deal', 'special offer', 'winner',
-  'congratulations', 'you won', 'cash prize', 'make money', 'earn money',
-  'extra income', 'no obligation', 'risk free', 'satisfaction guaranteed',
-  'double your', 'increase your', 'unlimited', '100% free', 'best price',
-  'lowest price', 'amazing', 'incredible', 'unbelievable', 'miracle',
-  '!!!', '???', 'URGENT', 'IMPORTANT', 'ACT NOW', 'LIMITED',
-  'credit card', 'no credit check', 'no questions asked', 'apply now',
-  'call now', 'subscribe', 'unsubscribe', 'opt-in', 'opt-out'
-];
-
 export const CampaignContentStep = ({
   name,
   type,
   subject,
   content,
   recipientCount = 0,
+  recipients = [],
   fromTemplate = false,
   templateName,
   onUpdateName,
@@ -82,11 +74,9 @@ export const CampaignContentStep = ({
   onUpdateSubject,
   onUpdateContent,
 }: CampaignContentStepProps) => {
-  const [aiSubjects, setAiSubjects] = useState<string[]>([]);
-  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
-  const { isLoading, getSubjectIdeas, generateEmailContent } = useCampaignAssistant();
+  const [showRecipientList, setShowRecipientList] = useState(false);
   
   // Fetch deliverability data
   const { data: deliverabilityData, isLoading: isLoadingDeliverability } = useEmailDeliverability();
@@ -101,61 +91,6 @@ export const CampaignContentStep = ({
     calculateDeliverabilityScore(deliverabilityData, contentAnalysis, []),
     [deliverabilityData, contentAnalysis]
   );
-
-
-  const handleGetAISubjects = async () => {
-    const result = await getSubjectIdeas({
-      recipientCount,
-      campaignType: type as any,
-    });
-    if (result?.subjects) {
-      setAiSubjects(result.subjects);
-    }
-  };
-
-  const handleGenerateContent = async () => {
-    setIsGeneratingContent(true);
-    try {
-      const result = await generateEmailContent({
-        recipientCount,
-        campaignType: type,
-      });
-      
-      if (result) {
-        if (result.subject) onUpdateSubject(result.subject);
-        if (result.content) onUpdateContent(result.content);
-        toast.success('AI content generated successfully');
-      }
-      setShowTemplates(false);
-    } catch (error) {
-      console.error('Failed to generate content:', error);
-      // Fallback to basic template if AI fails
-      const fallbackTemplates: Record<string, string> = {
-        'outreach': `<p>Hi {{client_name}},</p>
-<p>I hope this email finds you well. I wanted to reach out because I believe we could help {{company_name}} achieve its goals.</p>
-<p>Would you be open to a brief conversation to explore how we might work together?</p>
-<p>Looking forward to connecting!</p>
-<p>Best regards</p>`,
-        'follow-up': `<p>Hi {{client_name}},</p>
-<p>I wanted to follow up on my previous message. I understand how busy things can get at {{company_name}}.</p>
-<p>Is there a better time for us to connect? I'd love to learn more about your current priorities.</p>
-<p>Best regards</p>`,
-        're-engagement': `<p>Hi {{client_name}},</p>
-<p>It's been a while since we last connected, and I wanted to check in to see how things are going at {{company_name}}.</p>
-<p>We've made some exciting updates that I think could benefit you. Would you like to catch up sometime this week?</p>
-<p>Looking forward to reconnecting!</p>`,
-        'announcement': `<p>Hi {{client_name}},</p>
-<p>I'm excited to share some news with you!</p>
-<p>[Your announcement here]</p>
-<p>As a valued connection, I wanted to make sure you were among the first to know. Let me know if you have any questions!</p>
-<p>Best regards</p>`,
-      };
-      onUpdateContent(fallbackTemplates[type] || fallbackTemplates['outreach']);
-      setShowTemplates(false);
-    } finally {
-      setIsGeneratingContent(false);
-    }
-  };
 
   const insertToken = (token: string, label: string) => {
     onUpdateContent(content + ' ' + token);
@@ -173,8 +108,64 @@ export const CampaignContentStep = ({
   const charCount = plainTextContent.length;
   const wordCount = plainTextContent.split(/\s+/).filter(Boolean).length;
 
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const actualRecipientCount = recipients.length || recipientCount;
+
   return (
     <div className="space-y-5">
+      {/* Recipient Count Banner */}
+      {actualRecipientCount > 0 && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              Sending to <span className="text-primary">{actualRecipientCount}</span> recipient{actualRecipientCount !== 1 ? 's' : ''}
+            </span>
+          </div>
+          {recipients.length > 0 && (
+            <Dialog open={showRecipientList} onOpenChange={setShowRecipientList}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  View List
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Campaign Recipients ({recipients.length})
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="h-[300px] mt-4">
+                  <div className="space-y-2 pr-4">
+                    {recipients.map((recipient) => (
+                      <div 
+                        key={recipient.id} 
+                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/40 text-primary text-xs font-medium">
+                            {getInitials(recipient.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{recipient.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      )}
+
       {/* Campaign Name - With optional template badge */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -222,20 +213,6 @@ export const CampaignContentStep = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="subject" className="text-sm font-medium">Email Subject</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleGetAISubjects}
-                disabled={isLoading}
-                className="h-7 text-xs gap-1.5"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Wand2 className="h-3.5 w-3.5" />
-                )}
-                AI Suggestions
-              </Button>
             </div>
             <Input
               id="subject"
@@ -244,25 +221,6 @@ export const CampaignContentStep = ({
               onChange={(e) => onUpdateSubject(e.target.value)}
               className="text-base h-11"
             />
-            
-            {/* AI Subject Suggestions */}
-            {aiSubjects.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-xl border border-primary/20">
-                <span className="text-xs text-muted-foreground w-full mb-1 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> AI Suggestions:
-                </span>
-                {aiSubjects.map((suggestion, i) => (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-primary/10 hover:border-primary/40 transition-colors py-1.5 px-3"
-                    onClick={() => onUpdateSubject(suggestion)}
-                  >
-                    {suggestion}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Email Content with Split View */}
@@ -278,20 +236,6 @@ export const CampaignContentStep = ({
                 >
                   <Lightbulb className="h-3.5 w-3.5" />
                   Templates
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateContent}
-                  disabled={isGeneratingContent}
-                  className="h-7 text-xs gap-1.5"
-                >
-                  {isGeneratingContent ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-3.5 w-3.5" />
-                  )}
-                  Generate with AI
                 </Button>
               </div>
             </div>

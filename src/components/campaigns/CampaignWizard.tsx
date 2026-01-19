@@ -210,6 +210,7 @@ export const CampaignWizard = ({
             subject={campaignData.subject}
             content={campaignData.content}
             recipientCount={campaignData.recipients.length}
+            recipients={campaignData.recipients}
             fromTemplate={initialData?.fromTemplate}
             templateName={initialData?.templateName}
             onUpdateName={(name) => updateCampaignData({ name })}
