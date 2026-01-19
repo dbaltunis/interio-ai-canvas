@@ -66,6 +66,12 @@ import {
 import {
   IntegrationsStep1, IntegrationsStep2, IntegrationsStep3, IntegrationsStep4, IntegrationsStep5, IntegrationsStep6, IntegrationsStep7, IntegrationsStep8, IntegrationsStep9, IntegrationsStep10, IntegrationsStep11, IntegrationsStep12,
 } from "@/components/help/tutorial-steps/IntegrationsSteps";
+import {
+  ClientsStep1, ClientsStep2, ClientsStep3, ClientsStep4, ClientsStep5, ClientsStep6, ClientsStep7, ClientsStep8, ClientsStep9, ClientsStep10, ClientsStep11, ClientsStep12,
+} from "@/components/help/tutorial-steps/ClientsSteps";
+import {
+  ClientDetailStep1, ClientDetailStep2, ClientDetailStep3, ClientDetailStep4, ClientDetailStep5, ClientDetailStep6, ClientDetailStep7, ClientDetailStep8, ClientDetailStep9, ClientDetailStep10, ClientDetailStep11, ClientDetailStep12, ClientDetailStep13, ClientDetailStep14, ClientDetailStep15, ClientDetailStep16, ClientDetailStep17,
+} from "@/components/help/tutorial-steps/ClientDetailSteps";
 
 export interface TutorialStep {
   title: string;
@@ -732,6 +738,53 @@ export const integrationsTutorial: Tutorial = {
 };
 
 // ===========================================
+// CLIENTS TUTORIAL (12 Steps)
+// ===========================================
+export const clientsTutorial: Tutorial = {
+  id: "clients",
+  steps: [
+    { title: "View your client list", actionLabel: "Overview", description: "See all your clients in a searchable, filterable table with quick stats.", Visual: ClientsStep1 },
+    { title: "Search and filter clients", actionLabel: "Filter", description: "Use the search bar and status filters to find specific clients quickly.", Visual: ClientsStep2 },
+    { title: "Add a new client", actionLabel: "Click", description: "Click 'New Client' to open the client creation form with lead intelligence.", Visual: ClientsStep3 },
+    { title: "Select clients with checkboxes", actionLabel: "Select", description: "Use the row checkboxes to select individual clients for bulk actions.", Visual: ClientsStep4 },
+    { title: "First client selected", actionLabel: "Check", description: "The selected client is highlighted. Click another to add to selection.", Visual: ClientsStep5 },
+    { title: "Multiple clients selected", actionLabel: "Multi-Select", description: "Select multiple clients to perform bulk operations on them.", Visual: ClientsStep6 },
+    { title: "Bulk actions bar appears", actionLabel: "Actions", description: "When clients are selected, a bulk actions bar appears at the bottom.", Visual: ClientsStep7 },
+    { title: "Explore bulk action options", actionLabel: "View", description: "The bar shows Email, Export, and Delete buttons for bulk operations.", Visual: ClientsStep8 },
+    { title: "Send bulk email campaign", actionLabel: "Email", description: "Click Email to compose and send a message to all selected clients.", Visual: ClientsStep9 },
+    { title: "Export selected clients", actionLabel: "Export", description: "Export client data to CSV for use in other applications.", Visual: ClientsStep10 },
+    { title: "Delete selected clients", actionLabel: "Delete", description: "Remove selected clients with a confirmation dialog for safety.", Visual: ClientsStep11 },
+    { title: "Clear selection", actionLabel: "Clear", description: "Click the X to deselect all clients and hide the actions bar.", Visual: ClientsStep12 },
+  ],
+};
+
+// ===========================================
+// CLIENT DETAIL TUTORIAL (17 Steps)
+// ===========================================
+export const clientDetailTutorial: Tutorial = {
+  id: "clients-detail",
+  steps: [
+    { title: "Click to open a client", actionLabel: "Click", description: "Click any row in the clients table to open the detail drawer.", Visual: ClientDetailStep1 },
+    { title: "Client drawer opens", actionLabel: "View", description: "The drawer slides in from the right with full client details.", Visual: ClientDetailStep2 },
+    { title: "Client header overview", actionLabel: "Header", description: "See the client's name, avatar, role, and current pipeline stage.", Visual: ClientDetailStep3 },
+    { title: "Change pipeline stage", actionLabel: "Stage", description: "Click the stage badge to move the client through your sales pipeline.", Visual: ClientDetailStep4 },
+    { title: "Quick actions bar", actionLabel: "Actions", description: "Use WhatsApp, Call, Email, and Log Activity buttons for fast communication.", Visual: ClientDetailStep5 },
+    { title: "New project and edit", actionLabel: "Create", description: "Start a new project or edit the client profile from the action buttons.", Visual: ClientDetailStep6 },
+    { title: "View contact details", actionLabel: "Details", description: "See email, phone, and address in the Details tab.", Visual: ClientDetailStep7 },
+    { title: "Inline editing", actionLabel: "Edit", description: "Hover over any field and click the edit icon to modify it inline.", Visual: ClientDetailStep8 },
+    { title: "Save or cancel changes", actionLabel: "Save", description: "Click the check to save or X to cancel your changes.", Visual: ClientDetailStep9 },
+    { title: "Manage notes", actionLabel: "Notes", description: "Add and edit notes to track important client information.", Visual: ClientDetailStep10 },
+    { title: "Navigate tabs", actionLabel: "Tabs", description: "Switch between Activity, Details, Emails, and Files tabs.", Visual: ClientDetailStep11 },
+    { title: "Activity timeline", actionLabel: "Activity", description: "View all client interactions including calls, emails, and meetings.", Visual: ClientDetailStep12 },
+    { title: "Email history", actionLabel: "Emails", description: "See all emails sent to and received from this client.", Visual: ClientDetailStep13 },
+    { title: "Client files", actionLabel: "Files", description: "Upload and manage documents, images, and other files.", Visual: ClientDetailStep14 },
+    { title: "View projects", actionLabel: "Projects", description: "See all projects associated with this client.", Visual: ClientDetailStep15 },
+    { title: "Project details", actionLabel: "View", description: "Each project shows status, value, and quick actions.", Visual: ClientDetailStep16 },
+    { title: "Create new project", actionLabel: "Create", description: "Click to start a new quote or project for this client.", Visual: ClientDetailStep17 },
+  ],
+};
+
+// ===========================================
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
@@ -753,4 +806,7 @@ export const tutorialMap: Record<string, Tutorial> = {
   "communications": communicationsTutorial,
   "notifications": notificationsTutorial,
   "integrations": integrationsTutorial,
+  // Client pages
+  "clients": clientsTutorial,
+  "clients-detail": clientDetailTutorial,
 };

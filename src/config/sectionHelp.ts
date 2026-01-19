@@ -1,4 +1,4 @@
-import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings } from "lucide-react";
+import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings, UserCircle } from "lucide-react";
 
 export interface SectionHelpContent {
   id: string;
@@ -236,5 +236,35 @@ export const sectionHelpContent: Record<string, SectionHelpContent> = {
       "These defaults apply to new quotes automatically"
     ],
     relatedSections: ["Options", "Headings"]
+  },
+
+  // ===== CLIENT PAGES =====
+
+  clients: {
+    id: "clients",
+    title: "Client Management",
+    icon: Users,
+    briefDescription: "Manage your clients and leads with bulk actions, email campaigns, and detailed profiles.",
+    keyPoints: [
+      "View, search, and filter your client list",
+      "Select multiple clients for bulk email, export, or delete",
+      "Track client stages (Lead, Contacted, Qualified, etc.)",
+      "Quick access to contact info and project history"
+    ],
+    relatedSections: ["Jobs", "Emails"]
+  },
+
+  "clients-detail": {
+    id: "clients-detail",
+    title: "Client Details",
+    icon: UserCircle,
+    briefDescription: "View and edit individual client profiles, track activity, and manage projects.",
+    keyPoints: [
+      "Edit contact information inline with one click",
+      "Track communication history and log activities",
+      "Create new projects directly from client profile",
+      "Quick actions: Email, Call, WhatsApp, Log Activity"
+    ],
+    relatedSections: ["Clients", "Jobs"]
   }
 };

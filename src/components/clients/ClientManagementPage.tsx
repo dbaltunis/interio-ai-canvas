@@ -21,8 +21,8 @@ import { JobsPagination } from "../jobs/JobsPagination";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { ClientManagementSkeleton } from "./skeleton/ClientManagementSkeleton";
 import { HelpDrawer } from "@/components/ui/help-drawer";
-import { HelpIcon } from "@/components/ui/help-icon";
 import { Badge } from "@/components/ui/badge";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileClientView } from "./MobileClientView";
 interface ClientManagementPageProps {
@@ -375,7 +375,7 @@ export const ClientManagementPage = ({
               <Users className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">Clients</h1>
-            <HelpIcon onClick={() => setShowHelp(true)} />
+            <SectionHelpButton sectionId="clients" />
             <Badge variant="secondary" className="text-xs">
               {totalItems} clients
             </Badge>
