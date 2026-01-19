@@ -233,7 +233,7 @@ const MockTab = ({
   label, 
   active = false, 
   highlight = false,
-  icon?: React.ElementType,
+  icon,
 }: { 
   label: string;
   active?: boolean;
