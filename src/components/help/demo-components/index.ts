@@ -15,3 +15,9 @@ export { DemoClientCard, type DemoClientData } from "./DemoClientCard";
 export { DemoStageBadge } from "./DemoStageBadge";
 export { DemoClientHeader } from "./DemoClientHeader";
 export { DemoClientDrawer } from "./DemoClientDrawer";
+
+// Messages/Email demo components
+export { DemoEmailCard } from "./DemoEmailCard";
+export { DemoCampaignCard } from "./DemoCampaignCard";
+export { DemoEmailAnalytics, DemoMiniChart } from "./DemoEmailAnalytics";
+export { DemoTemplateCard } from "./DemoTemplateCard";

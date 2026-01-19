@@ -270,6 +270,20 @@ export const sectionHelpContent: Record<string, SectionHelpContent> = {
 
   // ===== JOBS PAGE =====
 
+  messages: {
+    id: "messages",
+    title: "Messages & Email Marketing",
+    icon: MessageCircle,
+    briefDescription: "Send emails, manage campaigns, and track engagement with your clients.",
+    keyPoints: [
+      "Split-pane inbox for viewing sent emails and replies",
+      "Create bulk email campaigns with templates",
+      "Track open rates, click rates, and engagement",
+      "AI-powered content generation and spam checking"
+    ],
+    relatedSections: ["Clients", "Documents"]
+  },
+
   jobs: {
     id: "jobs",
     title: "Jobs & Projects",
