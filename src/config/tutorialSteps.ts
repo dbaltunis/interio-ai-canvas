@@ -67,7 +67,7 @@ import {
   IntegrationsStep1, IntegrationsStep2, IntegrationsStep3, IntegrationsStep4, IntegrationsStep5, IntegrationsStep6, IntegrationsStep7, IntegrationsStep8, IntegrationsStep9, IntegrationsStep10, IntegrationsStep11, IntegrationsStep12,
 } from "@/components/help/tutorial-steps/IntegrationsSteps";
 import {
-  ClientsStep1, ClientsStep2, ClientsStep3, ClientsStep4, ClientsStep5, ClientsStep6, ClientsStep7, ClientsStep8, ClientsStep9, ClientsStep10, ClientsStep11, ClientsStep12,
+  ClientsStep1, ClientsStep2, ClientsStep3, ClientsStep4, ClientsStep5, ClientsStep6, ClientsStep7, ClientsStep8, ClientsStep9, ClientsStep10,
 } from "@/components/help/tutorial-steps/ClientsSteps";
 import {
   ClientDetailStep1, ClientDetailStep2, ClientDetailStep3, ClientDetailStep4, ClientDetailStep5, ClientDetailStep6, ClientDetailStep7, ClientDetailStep8, ClientDetailStep9, ClientDetailStep10, ClientDetailStep11, ClientDetailStep12, ClientDetailStep13, ClientDetailStep14, ClientDetailStep15, ClientDetailStep16, ClientDetailStep17,
