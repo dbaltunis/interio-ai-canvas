@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Plus, Search, FileText, Send, Calendar, Users, 
-  Edit, Trash2, Copy, MoreHorizontal, Star, Sparkles
+  Trash2, Copy, MoreHorizontal, Star, Sparkles, Edit
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,13 +14,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useGeneralEmailTemplates, useUpdateGeneralEmailTemplate } from "@/hooks/useGeneralEmailTemplates";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  useGeneralEmailTemplates, 
+  useDeleteGeneralEmailTemplate, 
+  useDuplicateGeneralEmailTemplate,
+  EmailTemplate 
+} from "@/hooks/useGeneralEmailTemplates";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getTemplateTypeLabel } from "@/utils/emailTemplateVariables";
 
 interface EmailTemplateLibraryProps {
   onSelectTemplate?: (template: { subject: string; content: string }) => void;
   onCreateNew?: () => void;
+  onEditTemplate?: (template: EmailTemplate) => void;
 }
 
 const TEMPLATE_CATEGORIES = [
@@ -32,80 +48,102 @@ const TEMPLATE_CATEGORIES = [
   { id: 'welcome', label: 'Welcome', icon: Users },
 ];
 
-const DEFAULT_TEMPLATES = [
-  {
-    id: 'quote_sent',
-    type: 'quote',
-    name: 'Quote Sent',
-    subject: 'Your Quote from {{company_name}}',
-    content: '<p>Hi {{client_name}},</p><p>Please find attached your quote for the project we discussed.</p><p>Let me know if you have any questions!</p>',
-    isDefault: true,
-  },
-  {
-    id: 'follow_up',
-    type: 'follow_up',
-    name: 'Project Follow-up',
-    subject: 'Following up on your project',
-    content: '<p>Hi {{client_name}},</p><p>I wanted to check in and see how everything is going with your project.</p>',
-    isDefault: true,
-  },
-  {
-    id: 'welcome',
-    type: 'welcome',
-    name: 'Welcome New Client',
-    subject: 'Welcome to {{company_name}}!',
-    content: '<p>Hi {{client_name}},</p><p>Welcome aboard! We\'re excited to work with you.</p>',
-    isDefault: true,
-  },
-];
+// Helper to strip HTML and get plain text preview
+const getPlainTextPreview = (html: string): string => {
+  // Remove style tags and their content
+  let text = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  // Remove script tags
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  // Replace common block elements with spaces
+  text = text.replace(/<\/(p|div|h[1-6]|li|br|tr)>/gi, ' ');
+  // Remove remaining HTML tags
+  text = text.replace(/<[^>]+>/g, '');
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  // Collapse whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
+};
 
-export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew }: EmailTemplateLibraryProps) => {
+// Check if template is a "default" system template based on type
+const isDefaultTemplate = (templateType: string): boolean => {
+  const defaultTypes = [
+    'quote', 'booking_confirmation', 'reminder', 'thank_you', 
+    'lead_initial_contact', 'welcome', 'payment_reminder'
+  ];
+  return defaultTypes.includes(templateType);
+};
+
+export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew, onEditTemplate }: EmailTemplateLibraryProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const { data: customTemplates = [], isLoading } = useGeneralEmailTemplates();
-  const { toast } = useToast();
-
-  // Combine default and custom templates
-  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates.map(t => ({
-    id: t.id,
-    type: t.template_type,
-    name: t.template_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    subject: t.subject,
-    content: t.content,
-    isDefault: false,
-  }))];
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  
+  const { data: templates = [], isLoading } = useGeneralEmailTemplates();
+  const deleteTemplate = useDeleteGeneralEmailTemplate();
+  const duplicateTemplate = useDuplicateGeneralEmailTemplate();
 
   // Filter templates
-  const filteredTemplates = allTemplates.filter(template => {
+  const filteredTemplates = templates.filter(template => {
     const matchesSearch = 
-      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.template_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       template.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || template.type === selectedCategory;
+    
+    // Map template types to categories
+    const typeToCategory: Record<string, string> = {
+      'quote': 'quote',
+      'quote_sent': 'quote',
+      'quote_approved': 'quote',
+      'quote_rejected': 'quote',
+      'follow_up': 'follow_up',
+      'project_follow_up': 'follow_up',
+      'booking_confirmation': 'announcement',
+      'reminder': 'announcement',
+      'welcome': 'welcome',
+      'lead_initial_contact': 'welcome',
+    };
+    
+    const templateCategory = typeToCategory[template.template_type] || 'other';
+    const matchesCategory = selectedCategory === 'all' || templateCategory === selectedCategory;
+    
     return matchesSearch && matchesCategory;
   });
 
-  const handleUseTemplate = (template: { subject: string; content: string }) => {
+  const handleUseTemplate = (template: EmailTemplate) => {
     if (onSelectTemplate) {
-      onSelectTemplate(template);
-      toast({
-        title: "Template Applied",
-        description: "The template has been loaded into the composer.",
-      });
+      onSelectTemplate({ subject: template.subject, content: template.content });
     }
   };
 
-  const handleDuplicate = (template: typeof allTemplates[0]) => {
-    toast({
-      title: "Template Duplicated",
-      description: `"${template.name}" has been duplicated.`,
-    });
+  const handleDuplicate = async (template: EmailTemplate, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await duplicateTemplate.mutateAsync(template);
   };
 
-  const handleDelete = (templateId: string) => {
-    toast({
-      title: "Template Deleted",
-      description: "The template has been removed.",
-    });
+  const handleDeleteClick = (templateId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTemplateToDelete(templateId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (templateToDelete) {
+      await deleteTemplate.mutateAsync(templateToDelete);
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+    }
+  };
+
+  const handleEdit = (template: EmailTemplate, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEditTemplate) {
+      onEditTemplate(template);
+    }
   };
 
   return (
@@ -209,86 +247,115 @@ export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew }: EmailTem
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.map((template) => (
-            <Card 
-              key={template.id} 
-              className="group hover:shadow-md transition-all hover:border-primary/30 cursor-pointer"
-              onClick={() => handleUseTemplate({ subject: template.subject, content: template.content })}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {template.isDefault && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Star className="h-3 w-3 mr-1 fill-current" />
-                        Default
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs capitalize">
-                      {template.type.replace(/_/g, ' ')}
-                    </Badge>
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        handleUseTemplate({ subject: template.subject, content: template.content });
-                      }}>
-                        <Send className="h-4 w-4 mr-2" />
-                        Use Template
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        handleDuplicate(template);
-                      }}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      {!template.isDefault && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(template.id);
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </>
+          {filteredTemplates.map((template) => {
+            const isDefault = isDefaultTemplate(template.template_type);
+            const plainTextPreview = getPlainTextPreview(template.content);
+            
+            return (
+              <Card 
+                key={template.id} 
+                className="group hover:shadow-md transition-all hover:border-primary/30 cursor-pointer"
+                onClick={() => handleUseTemplate(template)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {isDefault && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Star className="h-3 w-3 mr-1 fill-current" />
+                          Default
+                        </Badge>
                       )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {getTemplateTypeLabel(template.template_type)}
+                      </Badge>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          handleUseTemplate(template);
+                        }}>
+                          <Send className="h-4 w-4 mr-2" />
+                          Use Template
+                        </DropdownMenuItem>
+                        {onEditTemplate && (
+                          <DropdownMenuItem onClick={(e) => handleEdit(template, e)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDuplicate(template, e)}
+                          disabled={duplicateTemplate.isPending}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        {!isDefault && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDeleteClick(template.id, e)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-                <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-                  {template.name}
-                </h3>
-                <p className="text-xs text-muted-foreground mb-3 truncate">
-                  {template.subject}
-                </p>
+                  <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
+                    {getTemplateTypeLabel(template.template_type)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3 truncate">
+                    {template.subject}
+                  </p>
 
-                {/* Preview */}
-                <div className="p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground line-clamp-3">
-                  {template.content.replace(/<[^>]*>/g, '').slice(0, 120)}...
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Preview - clean text only */}
+                  <div className="p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground line-clamp-3">
+                    {plainTextPreview.slice(0, 150)}{plainTextPreview.length > 150 ? '...' : ''}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the email template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTemplate.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
