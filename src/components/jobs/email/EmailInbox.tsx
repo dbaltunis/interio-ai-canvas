@@ -342,21 +342,19 @@ export const EmailInbox = ({ onComposeClick }: EmailInboxProps) => {
               {/* Tracking Info */}
               {selectedMessage.channel === 'email' && (
                 <div className="mt-8 p-4 rounded-lg bg-muted/30 border">
-                  <h4 className="text-sm font-medium mb-3">Email Tracking</h4>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">{selectedMessage.openCount || 0}</div>
-                      <div className="text-xs text-muted-foreground">Opens</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">{selectedMessage.clickCount || 0}</div>
-                      <div className="text-xs text-muted-foreground">Clicks</div>
-                    </div>
-                    <div>
-                      <div className="flex justify-center">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium">Email Tracking</h4>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Coming Soon</span>
+                  </div>
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      Open and click tracking will be available in a future update.
+                    </p>
+                    <div className="flex justify-center gap-4 mt-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         {getStatusIcon(selectedMessage.status)}
+                        <span className="capitalize">{selectedMessage.status}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1 capitalize">{selectedMessage.status}</div>
                     </div>
                   </div>
                 </div>
