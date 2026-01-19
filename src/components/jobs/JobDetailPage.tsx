@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
+import { 
+  PixelUserIcon, 
+  PixelClipboardIcon, 
+  PixelDocumentIcon, 
+  PixelTeamIcon 
+} from "@/components/icons/PixelArtIcons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -826,10 +832,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   };
 
   const allTabs = [
-    { id: "details", label: "Client", mobileLabel: "Client", icon: User, disabled: false },
-    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package, disabled: false },
-    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText, disabled: false },
-    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench, disabled: !canViewWorkroomExplicit },
+    { id: "details", label: "Client", mobileLabel: "Client", icon: PixelUserIcon, disabled: false },
+    { id: "rooms", label: "Project", mobileLabel: "Project", icon: PixelClipboardIcon, disabled: false },
+    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: PixelDocumentIcon, disabled: false },
+    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: PixelTeamIcon, disabled: !canViewWorkroomExplicit },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -954,7 +960,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                       title={isDisabled ? "You don't have permission to view this tab" : undefined}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon size={16} className="flex-shrink-0" />
                       <span>{tab.label}</span>
                     </Button>
                   );
@@ -978,7 +984,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                       title={isDisabled ? "You don't have permission to view this tab" : undefined}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon size={16} className="flex-shrink-0" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.mobileLabel}</span>
                     </Button>
@@ -1016,7 +1022,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                             isActive ? "bg-primary/10 text-foreground font-semibold" : ""
                           }`}
                         >
-                          <Icon className="h-4 w-4" />
+                          <Icon size={16} className="flex-shrink-0" />
                           <span>{tab.label}</span>
                         </DropdownMenuItem>
                       );
