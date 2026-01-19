@@ -4,7 +4,13 @@ import {
   Briefcase, Search, Filter, Plus, MoreHorizontal, X, Check,
   ChevronDown, FileText, Ruler, FolderOpen, Activity, Settings2,
   DollarSign, Home, Layers, Sparkles, ArrowRight, Send, CheckCircle,
-  Eye, Edit2, Copy, Archive, Trash2, StickyNote, Play
+  Eye, Edit2, Copy, Archive, Trash2, StickyNote, Play, Pause,
+  ChevronRight, Users, MapPin, Phone, Mail, Calendar, Clock,
+  Receipt, Download, Printer, CreditCard, Building2, Share2, Link2,
+  Hammer, Truck, ClipboardList, Package, Scissors, Maximize2,
+  Square, CircleDot, ArrowUpDown, Grip, Image, Palette, Grid3X3,
+  LayoutGrid, List, Tag, Percent, ExternalLink, QrCode, Wrench,
+  AlertCircle, Info, HelpCircle, Blinds, ChevronUp
 } from "lucide-react";
 import { MockCard } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress } from "@/lib/demoAnimations";
@@ -14,10 +20,12 @@ interface StepProps {
 }
 
 // ===========================================
-// MOBILE-OPTIMIZED JOBS DEMO COMPONENTS
-// Designed for small container (~500px width)
-// Uses card-based layout for better readability
+// COMPREHENSIVE JOBS/PROJECTS TUTORIAL
+// 35+ Steps covering the complete job lifecycle
+// Mobile-optimized card-based layout
 // ===========================================
+
+// ===== SHARED COMPONENTS =====
 
 // Job status badge with exact colors
 const MockStatusBadge = ({ 
@@ -29,7 +37,7 @@ const MockStatusBadge = ({
   status: "draft" | "sent" | "approved" | "in_progress" | "completed" | "cancelled";
   highlight?: boolean;
   pulse?: boolean;
-  size?: "sm" | "xs";
+  size?: "sm" | "xs" | "md";
 }) => {
   const colors: Record<string, string> = {
     draft: "bg-muted text-muted-foreground border-border",
@@ -49,9 +57,15 @@ const MockStatusBadge = ({
     cancelled: "Cancelled",
   };
 
+  const sizeClasses = {
+    xs: "px-1.5 py-0.5 text-[9px]",
+    sm: "px-2 py-0.5 text-[10px]",
+    md: "px-2.5 py-1 text-[11px]",
+  };
+
   return (
     <motion.span 
-      className={`px-1.5 py-0.5 rounded-md ${size === "xs" ? "text-[9px]" : "text-[10px]"} font-medium border ${colors[status]} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      className={`${sizeClasses[size]} rounded-md font-medium border ${colors[status]} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""}`}
       animate={pulse ? { scale: [1, 1.1, 1] } : {}}
       transition={{ duration: 0.3 }}
     >
@@ -60,7 +74,7 @@ const MockStatusBadge = ({
   );
 };
 
-// Job avatar - client initials
+// Avatar component
 const MockJobAvatar = ({ name, className = "", size = "sm" }: { name: string; className?: string; size?: "sm" | "md" | "lg" }) => {
   const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-pink-500", "bg-cyan-500"];
@@ -86,55 +100,41 @@ interface JobData {
   total: string;
 }
 
-// Card-based job display - mobile friendly
-const MockJobCard = ({ 
-  job,
-  highlighted = false,
-  onClick,
-}: { 
-  job: JobData;
-  highlighted?: boolean;
-  onClick?: () => void;
-}) => {
-  return (
-    <motion.div 
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
-        highlighted ? "bg-primary/5 border-primary/30 ring-2 ring-primary/20" : 
-        "bg-card border-border/60 hover:bg-muted/40"
-      }`}
-      animate={highlighted ? { scale: 1.01 } : {}}
-      onClick={onClick}
-    >
-      <MockJobAvatar name={job.client} size="md" />
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono text-muted-foreground">{job.jobNumber}</span>
-          <span className="text-sm font-semibold truncate">{job.clientShort}</span>
-        </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <MockStatusBadge status={job.status} size="xs" />
-          <span className="text-[10px] text-muted-foreground truncate">{job.project}</span>
-        </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-            <Home className="h-3 w-3" />
-            {job.rooms}
-          </span>
-          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-            <Layers className="h-3 w-3" />
-            {job.windows}
-          </span>
-          <span className="text-[10px] font-medium text-primary">{job.total}</span>
-        </div>
-      </div>
-      
-      <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-    </motion.div>
-  );
-};
+// Sample job data
+const sampleJobs: JobData[] = [
+  { jobNumber: "JOB-2024-001", client: "Sarah Johnson", clientShort: "Sarah J.", status: "approved", project: "Living Room Renovation", rooms: 2, windows: 5, total: "$4,250" },
+  { jobNumber: "JOB-2024-002", client: "Chen Industries", clientShort: "Chen Ind.", status: "in_progress", project: "Office Windows", rooms: 4, windows: 12, total: "$12,800" },
+  { jobNumber: "JOB-2024-003", client: "Emma Wilson", clientShort: "Emma W.", status: "draft", project: "Master Bedroom", rooms: 1, windows: 3, total: "$1,950" },
+  { jobNumber: "JOB-2024-004", client: "Thompson Group", clientShort: "Thompson G.", status: "sent", project: "Conference Room", rooms: 1, windows: 6, total: "$5,100" },
+];
 
-// Compact header for jobs demo
+// Room data
+interface RoomData {
+  name: string;
+  type: string;
+  icon: any;
+  windows: number;
+  treatments: string[];
+  total: string;
+}
+
+const sampleRooms: RoomData[] = [
+  { name: "Living Room", type: "living", icon: Home, windows: 3, treatments: ["Sheer Curtains", "Roller Blinds"], total: "$2,450" },
+  { name: "Master Bedroom", type: "bedroom", icon: Home, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800" },
+];
+
+// Treatment types
+const treatmentTypes = [
+  { name: "Sheer Curtains", icon: Layers, color: "bg-pink-100 text-pink-600" },
+  { name: "Blockout Curtains", icon: Layers, color: "bg-purple-100 text-purple-600" },
+  { name: "Roller Blinds", icon: Blinds, color: "bg-blue-100 text-blue-600" },
+  { name: "Venetian Blinds", icon: Grid3X3, color: "bg-cyan-100 text-cyan-600" },
+  { name: "Roman Blinds", icon: Layers, color: "bg-orange-100 text-orange-600" },
+  { name: "Shutters", icon: Square, color: "bg-green-100 text-green-600" },
+];
+
+// ===== HEADER COMPONENTS =====
+
 const MockJobsHeader = ({ 
   totalJobs = 24,
   searchValue = "",
@@ -160,7 +160,6 @@ const MockJobsHeader = ({
     </div>
     
     <div className="flex items-center gap-1.5">
-      {/* Compact search */}
       <motion.div 
         className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] ${
           searchActive ? "bg-background border border-primary w-24" : "bg-muted w-8 justify-center"
@@ -170,7 +169,6 @@ const MockJobsHeader = ({
         {searchActive && <span className="truncate">{searchValue || "..."}</span>}
       </motion.div>
       
-      {/* Filter */}
       <motion.div 
         className={`p-1.5 rounded-lg ${filterActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
         animate={filterActive ? { scale: 1.05 } : { scale: 1 }}
@@ -178,7 +176,6 @@ const MockJobsHeader = ({
         <Filter className="h-3.5 w-3.5" />
       </motion.div>
       
-      {/* New Job */}
       <motion.div 
         className={`flex items-center gap-1 px-2 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium ${newButtonHighlight ? "ring-2 ring-primary/50 ring-offset-1" : ""}`}
         animate={newButtonHighlight ? { scale: 1.05 } : { scale: 1 }}
@@ -190,8 +187,161 @@ const MockJobsHeader = ({
   </div>
 );
 
-// Job create dialog mockup
-const MockJobCreateDialog = ({ visible = false, typing = "" }: { visible?: boolean; typing?: string }) => (
+// Job card - mobile friendly
+const MockJobCard = ({ 
+  job,
+  highlighted = false,
+  showActions = false,
+  compact = false,
+}: { 
+  job: JobData;
+  highlighted?: boolean;
+  showActions?: boolean;
+  compact?: boolean;
+}) => (
+  <motion.div 
+    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
+      highlighted ? "bg-primary/5 border-primary/30 ring-2 ring-primary/20" : 
+      "bg-card border-border/60 hover:bg-muted/40"
+    }`}
+    animate={highlighted ? { scale: 1.01 } : {}}
+  >
+    <MockJobAvatar name={job.client} size={compact ? "sm" : "md"} />
+    
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-mono text-muted-foreground">{job.jobNumber}</span>
+        <span className={`${compact ? "text-xs" : "text-sm"} font-semibold truncate`}>{job.clientShort}</span>
+      </div>
+      <div className="flex items-center gap-2 mt-0.5">
+        <MockStatusBadge status={job.status} size="xs" />
+        <span className="text-[10px] text-muted-foreground truncate">{job.project}</span>
+      </div>
+      {!compact && (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Home className="h-3 w-3" />
+            {job.rooms}
+          </span>
+          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Layers className="h-3 w-3" />
+            {job.windows}
+          </span>
+          <span className="text-[10px] font-medium text-primary">{job.total}</span>
+        </div>
+      )}
+    </div>
+    
+    {showActions && <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+  </motion.div>
+);
+
+// Room card
+const MockRoomCard = ({ 
+  room, 
+  highlighted = false, 
+  expanded = false,
+  onExpand,
+}: { 
+  room: RoomData; 
+  highlighted?: boolean;
+  expanded?: boolean;
+  onExpand?: () => void;
+}) => (
+  <motion.div 
+    className={`rounded-lg border overflow-hidden transition-all ${
+      highlighted ? "bg-primary/5 border-primary/30 ring-2 ring-primary/20" : "bg-card border-border/60"
+    }`}
+    animate={highlighted ? { scale: 1.01 } : {}}
+  >
+    <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer" onClick={onExpand}>
+      <div className="p-1.5 bg-muted rounded-lg">
+        <room.icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{room.name}</span>
+          <span className="text-[10px] text-muted-foreground">• {room.windows} windows</span>
+        </div>
+        <div className="flex items-center gap-1 mt-0.5">
+          {room.treatments.map((t, i) => (
+            <span key={i} className="px-1.5 py-0.5 bg-muted text-[9px] rounded">{t}</span>
+          ))}
+        </div>
+      </div>
+      <span className="text-sm font-medium text-primary">{room.total}</span>
+      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+    </div>
+    
+    <AnimatePresence>
+      {expanded && (
+        <motion.div 
+          className="px-3 pb-3 pt-1 border-t border-border/50"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+        >
+          <div className="space-y-1.5">
+            {[1, 2, 3].slice(0, room.windows).map((w) => (
+              <div key={w} className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                <Square className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[10px]">Window {w}</span>
+                <span className="text-[9px] text-muted-foreground">1500 x 2100mm</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </motion.div>
+);
+
+// Window card for worksheet
+const MockWindowCard = ({ 
+  windowNum = 1,
+  dimensions = "1500 x 2100",
+  treatment = "Roller Blind",
+  highlighted = false,
+}: {
+  windowNum?: number;
+  dimensions?: string;
+  treatment?: string;
+  highlighted?: boolean;
+}) => (
+  <motion.div 
+    className={`p-2.5 rounded-lg border transition-all ${
+      highlighted ? "bg-primary/5 border-primary/30 ring-2 ring-primary/20" : "bg-card border-border/60"
+    }`}
+    animate={highlighted ? { scale: 1.02 } : {}}
+  >
+    <div className="flex items-center gap-2">
+      <div className="p-1.5 bg-muted rounded">
+        <Square className="h-3.5 w-3.5 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-medium">Window {windowNum}</span>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[10px] text-muted-foreground">{dimensions}mm</span>
+          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] rounded">{treatment}</span>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    </div>
+  </motion.div>
+);
+
+// ===== DIALOG COMPONENTS =====
+
+// Job create dialog
+const MockJobCreateDialog = ({ 
+  visible = false, 
+  typing = "",
+  step = 1,
+}: { 
+  visible?: boolean; 
+  typing?: string;
+  step?: number;
+}) => (
   <AnimatePresence>
     {visible && (
       <motion.div 
@@ -201,49 +351,83 @@ const MockJobCreateDialog = ({ visible = false, typing = "" }: { visible?: boole
         exit={{ opacity: 0 }}
       >
         <motion.div 
-          className="bg-card border border-border rounded-xl shadow-xl p-4 w-[85%] max-w-[280px]"
+          className="bg-card border border-border rounded-xl shadow-xl p-4 w-[90%] max-w-[300px]"
           initial={{ scale: 0.95, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: 20 }}
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold">Create New Job</h3>
-            <X className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </div>
           
-          <div className="space-y-2">
-            <div>
-              <label className="text-[10px] text-muted-foreground mb-0.5 block">Select Client *</label>
-              <div className="h-8 bg-background rounded-lg border border-border px-2 flex items-center text-[10px]">
-                <span className="text-muted-foreground">Choose a client...</span>
-              </div>
-            </div>
-            <div>
-              <label className="text-[10px] text-muted-foreground mb-0.5 block">Project Name *</label>
-              <div className="h-8 bg-background rounded-lg border border-primary px-2 flex items-center text-[10px]">
-                {typing}
-                <motion.span 
-                  className="w-0.5 h-4 bg-primary ml-0.5"
-                  animate={{ opacity: [1, 0, 1] }}
-                  transition={{ duration: 0.8, repeat: Infinity }}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-[10px] text-muted-foreground mb-0.5 block">Initial Status</label>
-              <div className="h-8 bg-background rounded-lg border border-border px-2 flex items-center justify-between text-[10px]">
-                <span>Draft</span>
-                <ChevronDown className="h-3 w-3" />
-              </div>
-            </div>
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-1 mb-4">
+            {[1, 2, 3].map((s) => (
+              <div 
+                key={s}
+                className={`h-1.5 rounded-full transition-all ${
+                  s === step ? "w-4 bg-primary" : s < step ? "w-1.5 bg-primary" : "w-1.5 bg-muted"
+                }`}
+              />
+            ))}
           </div>
           
-          <div className="flex justify-end gap-2 mt-4">
-            <div className="px-3 py-1.5 text-[10px] border border-border rounded-lg">Cancel</div>
-            <div className="px-3 py-1.5 text-[10px] bg-primary text-primary-foreground rounded-lg font-medium flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              Create Job
+          <div className="space-y-3">
+            {step === 1 && (
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Select Client *</label>
+                <div className="h-9 bg-background rounded-lg border border-border px-3 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Choose a client...</span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </div>
+              </div>
+            )}
+            {step === 2 && (
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Project Name *</label>
+                <div className="h-9 bg-background rounded-lg border border-primary px-3 flex items-center text-xs">
+                  {typing}
+                  <motion.span 
+                    className="w-0.5 h-4 bg-primary ml-0.5"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  />
+                </div>
+              </div>
+            )}
+            {step === 3 && (
+              <>
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Initial Status</label>
+                  <div className="h-9 bg-background rounded-lg border border-border px-3 flex items-center justify-between text-xs">
+                    <MockStatusBadge status="draft" size="xs" />
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Priority</label>
+                  <div className="flex gap-2">
+                    {["Low", "Normal", "High"].map((p) => (
+                      <div key={p} className={`flex-1 py-1.5 text-center rounded-lg text-[10px] border ${p === "Normal" ? "border-primary bg-primary/10" : "border-border"}`}>{p}</div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <div className="flex justify-between gap-2 mt-4">
+            <div className="px-3 py-1.5 text-[10px] border border-border rounded-lg">
+              {step > 1 ? "Back" : "Cancel"}
             </div>
+            <motion.div 
+              className="px-3 py-1.5 text-[10px] bg-primary text-primary-foreground rounded-lg font-medium flex items-center gap-1"
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              {step === 3 ? <><Sparkles className="h-3 w-3" /> Create Job</> : <>Next <ChevronRight className="h-3 w-3" /></>}
+            </motion.div>
           </div>
         </motion.div>
       </motion.div>
@@ -251,158 +435,35 @@ const MockJobCreateDialog = ({ visible = false, typing = "" }: { visible?: boole
   </AnimatePresence>
 );
 
-// Job detail panel - FULL WIDTH for small container demo
-const MockJobDetailPanel = ({ 
-  visible = false, 
-  activeTab = "quote",
-  job = sampleJobs[0],
-}: { 
-  visible?: boolean; 
-  activeTab?: string;
-  job?: JobData;
-}) => (
+// Client selector dropdown
+const MockClientSelector = ({ visible = false, selectedClient = "" }: { visible?: boolean; selectedClient?: string }) => (
   <AnimatePresence>
     {visible && (
       <motion.div 
-        className="absolute inset-0 z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        className="absolute left-0 right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg z-20 max-h-[180px] overflow-y-auto"
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -5 }}
       >
-        <motion.div 
-          className="absolute inset-0 bg-card shadow-xl overflow-hidden rounded-xl"
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25 }}
-        >
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/60">
-            <div className="p-3 pb-2">
-              <div className="flex items-start gap-3">
-                <MockJobAvatar name={job.client} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono text-muted-foreground">{job.jobNumber}</span>
-                  </div>
-                  <h3 className="text-sm font-semibold leading-tight">{job.clientShort}</h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{job.project}</p>
-                  
-                  {/* Status selector */}
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <MockStatusBadge status={job.status} />
-                  </div>
-                </div>
-                <X className="h-4 w-4 text-muted-foreground cursor-pointer" />
-              </div>
-            </div>
-            
-            {/* Quick stats */}
-            <div className="px-3 pb-2">
-              <div className="flex gap-3">
-                <div className="flex items-center gap-1 text-[10px]">
-                  <Home className="h-3 w-3 text-muted-foreground" />
-                  <span>{job.rooms} rooms</span>
-                </div>
-                <div className="flex items-center gap-1 text-[10px]">
-                  <Layers className="h-3 w-3 text-muted-foreground" />
-                  <span>{job.windows} windows</span>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-medium text-primary">
-                  <DollarSign className="h-3 w-3" />
-                  <span>{job.total}</span>
-                </div>
-              </div>
-            </div>
+        <div className="p-2">
+          <div className="flex items-center gap-2 px-2 py-1.5 bg-muted rounded-lg mb-2">
+            <Search className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">Search clients...</span>
           </div>
-          
-          {/* Tabs */}
-          <div className="px-3 pt-2">
-            <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg">
-              {[
-                { id: "quote", icon: FileText, label: "Quote" },
-                { id: "measure", icon: Ruler, label: "Measure" },
-                { id: "docs", icon: FolderOpen, label: "Docs" },
-                { id: "activity", icon: Activity, label: "Activity" },
-              ].map((tab) => (
-                <motion.div 
-                  key={tab.id}
-                  className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium cursor-pointer ${activeTab === tab.id ? "bg-background shadow-sm" : "text-muted-foreground"}`}
-                  animate={activeTab === tab.id ? { scale: 1.02 } : { scale: 1 }}
-                >
-                  <tab.icon className="h-3 w-3" />
-                  <span>{tab.label}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Tab Content */}
-          <div className="p-3 space-y-2">
-            {activeTab === "quote" && (
-              <>
-                <div className="p-2.5 bg-muted/30 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-medium">Living Room</p>
-                      <p className="text-[9px] text-muted-foreground">2 windows • Roller Blinds</p>
-                    </div>
-                    <span className="text-[10px] font-medium text-primary">$1,250</span>
-                  </div>
-                </div>
-                <div className="p-2.5 bg-muted/30 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-medium">Master Bedroom</p>
-                      <p className="text-[9px] text-muted-foreground">3 windows • Curtains</p>
-                    </div>
-                    <span className="text-[10px] font-medium text-primary">$2,100</span>
-                  </div>
-                </div>
-              </>
-            )}
-            {activeTab === "measure" && (
-              <div className="text-center py-4">
-                <Ruler className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-[10px] text-muted-foreground">Measurement data</p>
-              </div>
-            )}
-            {activeTab === "docs" && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 bg-muted/30 rounded-xl text-center">
-                  <FileText className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                  <p className="text-[9px] truncate">Quote.pdf</p>
-                </div>
-                <div className="p-2.5 bg-muted/30 rounded-xl text-center">
-                  <FolderOpen className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                  <p className="text-[9px] truncate">Photos</p>
-                </div>
-              </div>
-            )}
-            {activeTab === "activity" && (
-              <>
-                <div className="flex gap-2 p-2.5 bg-muted/30 rounded-xl">
-                  <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
-                    <Check className="h-3 w-3 text-green-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-medium">Quote approved</p>
-                    <p className="text-[9px] text-muted-foreground">Yesterday at 3:45 PM</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 p-2.5 bg-muted/30 rounded-xl">
-                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Send className="h-3 w-3 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-medium">Quote sent to client</p>
-                    <p className="text-[9px] text-muted-foreground">2 days ago</p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
+          {["Sarah Johnson", "Chen Industries", "Emma Wilson", "Thompson Group"].map((client, i) => (
+            <motion.div 
+              key={client}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] cursor-pointer ${
+                selectedClient === client ? "bg-primary/10 text-primary" : "hover:bg-accent"
+              }`}
+              animate={selectedClient === client ? { x: [0, 3, 0] } : {}}
+            >
+              <MockJobAvatar name={client} size="sm" />
+              <span>{client}</span>
+              {selectedClient === client && <Check className="h-3 w-3 ml-auto" />}
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
     )}
   </AnimatePresence>
@@ -443,6 +504,486 @@ const MockActionsMenu = ({ visible = false, highlightAction = "" }: { visible?: 
   </AnimatePresence>
 );
 
+// ===== WORKSHEET & MEASUREMENT COMPONENTS =====
+
+const MockWorksheetPanel = ({
+  visible = false,
+  activeField = "",
+  widthValue = "",
+  dropValue = "",
+}: {
+  visible?: boolean;
+  activeField?: string;
+  widthValue?: string;
+  dropValue?: string;
+}) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div 
+        className="absolute inset-0 bg-card z-10 rounded-xl overflow-hidden"
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25 }}
+      >
+        {/* Header */}
+        <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <h3 className="text-sm font-semibold">Window 1 Worksheet</h3>
+                <p className="text-[10px] text-muted-foreground">Living Room • Roller Blind</p>
+              </div>
+            </div>
+            <X className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+        
+        {/* Measurement diagram */}
+        <div className="p-3">
+          <div className="bg-muted/30 rounded-lg p-3 mb-3">
+            <div className="flex items-center justify-center">
+              <div className="relative w-20 h-28 border-2 border-dashed border-primary/50 rounded-lg">
+                {/* Width arrow */}
+                <div className="absolute -top-3 left-0 right-0 flex items-center justify-center">
+                  <ArrowUpDown className="h-3 w-3 text-primary rotate-90" />
+                  <span className="text-[9px] font-medium text-primary ml-1">W</span>
+                </div>
+                {/* Drop arrow */}
+                <div className="absolute -right-4 top-0 bottom-0 flex flex-col items-center justify-center">
+                  <ArrowUpDown className="h-3 w-3 text-primary" />
+                  <span className="text-[9px] font-medium text-primary mt-1">D</span>
+                </div>
+                {/* Window icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Square className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Measurement inputs */}
+          <div className="space-y-2">
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Width (mm)</label>
+              <motion.div 
+                className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
+                  activeField === "width" ? "border-primary bg-primary/5" : "border-border bg-background"
+                }`}
+                animate={activeField === "width" ? { scale: 1.02 } : {}}
+              >
+                {widthValue || "1500"}
+                {activeField === "width" && (
+                  <motion.span 
+                    className="w-0.5 h-4 bg-primary ml-0.5"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  />
+                )}
+                <span className="ml-auto text-[10px] text-muted-foreground">mm</span>
+              </motion.div>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Drop (mm)</label>
+              <motion.div 
+                className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
+                  activeField === "drop" ? "border-primary bg-primary/5" : "border-border bg-background"
+                }`}
+                animate={activeField === "drop" ? { scale: 1.02 } : {}}
+              >
+                {dropValue || "2100"}
+                {activeField === "drop" && (
+                  <motion.span 
+                    className="w-0.5 h-4 bg-primary ml-0.5"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  />
+                )}
+                <span className="ml-auto text-[10px] text-muted-foreground">mm</span>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// ChevronLeft wasn't imported, adding it inline
+const ChevronLeft = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+  </svg>
+);
+
+// Treatment selector grid
+const MockTreatmentGrid = ({ 
+  visible = false,
+  highlightedTreatment = "",
+}: {
+  visible?: boolean;
+  highlightedTreatment?: string;
+}) => (
+  <div className={`grid grid-cols-2 gap-2 ${visible ? "" : "opacity-50"}`}>
+    {treatmentTypes.map((treatment) => (
+      <motion.div 
+        key={treatment.name}
+        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${
+          highlightedTreatment === treatment.name 
+            ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+            : "border-border hover:border-primary/50"
+        }`}
+        animate={highlightedTreatment === treatment.name ? { scale: 1.03 } : {}}
+      >
+        <div className={`mx-auto w-8 h-8 rounded-lg ${treatment.color} flex items-center justify-center mb-1.5`}>
+          <treatment.icon className="h-4 w-4" />
+        </div>
+        <span className="text-[10px] font-medium">{treatment.name}</span>
+      </motion.div>
+    ))}
+  </div>
+);
+
+// Fabric selector
+const MockFabricGrid = ({
+  highlightedFabric = 0,
+}: {
+  highlightedFabric?: number;
+}) => {
+  const fabrics = [
+    { name: "Ivory Linen", color: "bg-amber-100", price: "$45/m" },
+    { name: "Charcoal Cotton", color: "bg-gray-600", price: "$52/m" },
+    { name: "Navy Velvet", color: "bg-blue-900", price: "$68/m" },
+    { name: "Sage Green", color: "bg-green-200", price: "$48/m" },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {fabrics.map((fabric, i) => (
+        <motion.div 
+          key={fabric.name}
+          className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+            highlightedFabric === i 
+              ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+              : "border-border"
+          }`}
+          animate={highlightedFabric === i ? { scale: 1.03 } : {}}
+        >
+          <div className={`h-10 rounded-lg ${fabric.color} mb-2`} />
+          <p className="text-[10px] font-medium truncate">{fabric.name}</p>
+          <p className="text-[9px] text-primary">{fabric.price}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// ===== QUOTE & INVOICE COMPONENTS =====
+
+const MockQuotePreview = ({
+  showDiscount = false,
+  discountAmount = "",
+  showPayment = false,
+}: {
+  showDiscount?: boolean;
+  discountAmount?: string;
+  showPayment?: boolean;
+}) => (
+  <div className="space-y-2">
+    {/* Line items */}
+    <div className="p-2.5 bg-muted/30 rounded-lg">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-medium">Living Room</span>
+        <span className="text-[10px] font-medium">$2,450</span>
+      </div>
+      <div className="text-[9px] text-muted-foreground">
+        3 windows • Sheer Curtains, Roller Blinds
+      </div>
+    </div>
+    <div className="p-2.5 bg-muted/30 rounded-lg">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-medium">Master Bedroom</span>
+        <span className="text-[10px] font-medium">$1,800</span>
+      </div>
+      <div className="text-[9px] text-muted-foreground">
+        2 windows • Blockout Curtains
+      </div>
+    </div>
+    
+    {/* Totals */}
+    <div className="pt-2 border-t border-border space-y-1">
+      <div className="flex justify-between text-[10px]">
+        <span>Subtotal</span>
+        <span>$4,250</span>
+      </div>
+      
+      <AnimatePresence>
+        {showDiscount && (
+          <motion.div 
+            className="flex justify-between text-[10px] text-green-600"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+          >
+            <span>Discount ({discountAmount || "10%"})</span>
+            <span>-$425</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <div className="flex justify-between text-[10px]">
+        <span>Tax (10%)</span>
+        <span>{showDiscount ? "$383" : "$425"}</span>
+      </div>
+      
+      <div className="flex justify-between text-sm font-semibold pt-1">
+        <span>Total</span>
+        <span className="text-primary">{showDiscount ? "$4,208" : "$4,675"}</span>
+      </div>
+      
+      <AnimatePresence>
+        {showPayment && (
+          <motion.div 
+            className="mt-2 p-2 bg-blue-50 rounded-lg"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+          >
+            <div className="flex justify-between text-[10px] text-blue-700">
+              <span>Deposit Required (50%)</span>
+              <span className="font-medium">$2,104</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </div>
+);
+
+// Email dialog
+const MockEmailDialog = ({
+  visible = false,
+  typing = "",
+}: {
+  visible?: boolean;
+  typing?: string;
+}) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div 
+        className="absolute inset-0 bg-background/90 backdrop-blur-sm z-20 flex items-center justify-center p-3"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div 
+          className="bg-card border border-border rounded-xl shadow-xl p-3 w-full max-w-[280px]"
+          initial={{ scale: 0.95, y: 10 }}
+          animate={{ scale: 1, y: 0 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Send Quote</h3>
+            </div>
+            <X className="h-4 w-4 text-muted-foreground" />
+          </div>
+          
+          <div className="space-y-2">
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">To</label>
+              <div className="h-8 bg-muted rounded-lg px-2 flex items-center text-[10px]">
+                sarah.johnson@email.com
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Subject</label>
+              <div className="h-8 bg-background border border-border rounded-lg px-2 flex items-center text-[10px]">
+                Quote for Living Room Renovation
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Message</label>
+              <div className="h-16 bg-background border border-primary rounded-lg p-2 text-[10px]">
+                {typing}
+                <motion.span 
+                  className="inline-block w-0.5 h-3 bg-primary ml-0.5"
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <FileText className="h-3 w-3" />
+              Quote.pdf attached
+            </div>
+            <motion.div 
+              className="ml-auto px-3 py-1.5 text-[10px] bg-primary text-primary-foreground rounded-lg font-medium flex items-center gap-1"
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <Send className="h-3 w-3" />
+              Send
+            </motion.div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// Work order preview
+const MockWorkOrderPreview = ({
+  showFilters = false,
+  activeFilter = "",
+}: {
+  showFilters?: boolean;
+  activeFilter?: string;
+}) => (
+  <div className="space-y-2">
+    {showFilters && (
+      <div className="flex gap-1 mb-2">
+        {["All", "Curtains", "Blinds"].map((filter) => (
+          <motion.div 
+            key={filter}
+            className={`px-2 py-1 rounded-lg text-[10px] cursor-pointer ${
+              activeFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted"
+            }`}
+            animate={activeFilter === filter ? { scale: 1.05 } : {}}
+          >
+            {filter}
+          </motion.div>
+        ))}
+      </div>
+    )}
+    
+    <div className="p-2.5 bg-muted/30 rounded-lg border-l-3 border-l-blue-500">
+      <div className="flex items-center gap-2 mb-1">
+        <Scissors className="h-3.5 w-3.5 text-blue-500" />
+        <span className="text-[10px] font-medium">Sheer Curtains - Living Room</span>
+      </div>
+      <div className="grid grid-cols-2 gap-1 text-[9px] text-muted-foreground">
+        <span>Width: 3000mm</span>
+        <span>Drop: 2400mm</span>
+        <span>Fabric: Ivory Linen</span>
+        <span>Qty: 2 panels</span>
+      </div>
+    </div>
+    
+    <div className="p-2.5 bg-muted/30 rounded-lg border-l-3 border-l-purple-500">
+      <div className="flex items-center gap-2 mb-1">
+        <Blinds className="h-3.5 w-3.5 text-purple-500" />
+        <span className="text-[10px] font-medium">Roller Blind - Living Room</span>
+      </div>
+      <div className="grid grid-cols-2 gap-1 text-[9px] text-muted-foreground">
+        <span>Width: 1500mm</span>
+        <span>Drop: 2100mm</span>
+        <span>Fabric: Charcoal</span>
+        <span>Motor: Yes</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Share link panel
+const MockShareLinkPanel = ({
+  visible = false,
+  linkCreated = false,
+}: {
+  visible?: boolean;
+  linkCreated?: boolean;
+}) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div 
+        className="p-3 bg-muted/30 rounded-lg border border-border"
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <Share2 className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium">Share Work Order</span>
+        </div>
+        
+        {!linkCreated ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-8 bg-background border border-border rounded-lg px-2 flex items-center text-[10px] text-muted-foreground">
+                Enter recipient email...
+              </div>
+            </div>
+            <motion.div 
+              className="w-full py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium text-center"
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              Create Share Link
+            </motion.div>
+          </div>
+        ) : (
+          <motion.div 
+            className="p-2 bg-green-50 border border-green-200 rounded-lg"
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Link2 className="h-3.5 w-3.5 text-green-600" />
+              <span className="text-[10px] font-medium text-green-700">Link Created!</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-7 bg-white border border-green-200 rounded px-2 flex items-center text-[9px] text-muted-foreground truncate">
+                https://app.example.com/share/wo-abc123
+              </div>
+              <div className="px-2 py-1 bg-green-600 text-white rounded text-[9px]">Copy</div>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// Installation checklist
+const MockInstallationChecklist = ({
+  checkedItems = 0,
+}: {
+  checkedItems?: number;
+}) => {
+  const items = [
+    "Materials delivered",
+    "Site access confirmed",
+    "Customer notified",
+    "Tools prepared",
+    "Installation complete",
+  ];
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item, i) => (
+        <motion.div 
+          key={item}
+          className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg"
+          animate={i === checkedItems ? { scale: [1, 1.02, 1] } : {}}
+        >
+          <motion.div 
+            className={`h-4 w-4 rounded border flex items-center justify-center ${
+              i < checkedItems ? "bg-green-500 border-green-500" : "border-border"
+            }`}
+            animate={i < checkedItems ? { scale: [1, 1.2, 1] } : {}}
+          >
+            {i < checkedItems && <Check className="h-3 w-3 text-white" />}
+          </motion.div>
+          <span className={`text-[10px] ${i < checkedItems ? "line-through text-muted-foreground" : ""}`}>
+            {item}
+          </span>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 // Status flow visualization
 const MockStatusFlow = ({ currentStatus = 0, animating = false }: { currentStatus?: number; animating?: boolean }) => {
   const statuses = [
@@ -454,7 +995,7 @@ const MockStatusFlow = ({ currentStatus = 0, animating = false }: { currentStatu
   ];
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 flex-wrap justify-center">
       {statuses.map((status, i) => (
         <React.Fragment key={status.label}>
           <motion.div 
@@ -478,198 +1019,95 @@ const MockStatusFlow = ({ currentStatus = 0, animating = false }: { currentStatu
   );
 };
 
-// Sample job data
-const sampleJobs: JobData[] = [
-  { jobNumber: "JOB-001", client: "Sarah Johnson", clientShort: "Sarah J.", status: "approved", project: "Living Room", rooms: 2, windows: 5, total: "$4,250" },
-  { jobNumber: "JOB-002", client: "Chen Industries", clientShort: "Chen Ind.", status: "in_progress", project: "Office Renovation", rooms: 4, windows: 12, total: "$12,800" },
-  { jobNumber: "JOB-003", client: "Emma Wilson", clientShort: "Emma W.", status: "draft", project: "Master Bedroom", rooms: 1, windows: 3, total: "$1,950" },
-  { jobNumber: "JOB-004", client: "Thompson Group", clientShort: "Thompson G.", status: "sent", project: "Conference Room", rooms: 1, windows: 6, total: "$5,100" },
-];
-
 // ===========================================
-// STREAMLINED STEP COMPONENTS - MOBILE OPTIMIZED
+// STEP COMPONENTS (35+ Steps)
 // ===========================================
 
-// Step 1: Jobs Overview - Card list with quick fade in
+// ===== PART 1: DASHBOARD & NAVIGATION (Steps 1-3) =====
+
+// Step 1: Jobs Overview
 export const JobsStep1 = ({ phase = 0 }: StepProps) => {
   const visibleCards = Math.min(4, Math.floor(phase * 8) + 1);
   
   return (
-    <div className="space-y-0">
-      <MockCard className="overflow-hidden rounded-xl">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <MockJobsHeader />
-        </motion.div>
-        
-        <div className="p-2 space-y-2">
-          {sampleJobs.map((job, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ 
-                opacity: i < visibleCards ? 1 : 0,
-                x: i < visibleCards ? 0 : -10,
-              }}
-              transition={{ duration: 0.15, delay: i * 0.05 }}
-            >
-              <MockJobCard job={job} />
-            </motion.div>
-          ))}
-        </div>
-      </MockCard>
-    </div>
+    <MockCard className="overflow-hidden rounded-xl">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+        <MockJobsHeader />
+      </motion.div>
+      
+      <div className="p-2 space-y-2">
+        {sampleJobs.map((job, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: i < visibleCards ? 1 : 0, x: i < visibleCards ? 0 : -10 }}
+            transition={{ duration: 0.15, delay: i * 0.05 }}
+          >
+            <MockJobCard job={job} showActions />
+          </motion.div>
+        ))}
+      </div>
+    </MockCard>
   );
 };
 
-// Step 2: Search + Filter
+// Step 2: Search & Filter
 export const JobsStep2 = ({ phase = 0 }: StepProps) => {
   const searchActive = phase > 0.12;
   const searchText = typingProgress(phase, 0.18, 0.45, "Living");
   const filterActive = phase > 0.65;
-  
-  // Filter jobs based on search
-  const filteredJobs = phase > 0.4 
-    ? sampleJobs.filter(j => j.project.toLowerCase().includes("living"))
-    : sampleJobs;
+  const filteredJobs = phase > 0.4 ? sampleJobs.filter(j => j.project.toLowerCase().includes("living")) : sampleJobs;
 
   return (
-    <div className="space-y-0 relative">
-      <MockCard className="overflow-hidden rounded-xl">
-        <MockJobsHeader 
-          searchValue={searchText} 
-          searchActive={searchActive}
-          filterActive={filterActive}
-        />
-        
-        <div className="p-2 space-y-2">
-          <AnimatePresence mode="popLayout">
-            {filteredJobs.slice(0, 4).map((job) => (
-              <motion.div
-                key={job.jobNumber}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MockJobCard job={job} highlighted={phase > 0.5 && job.project.includes("Living")} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </MockCard>
-    </div>
-  );
-};
-
-// Step 3: Create New Job
-export const JobsStep3 = ({ phase = 0 }: StepProps) => {
-  const showForm = phase > 0.25 && phase < 0.9;
-  const buttonHover = phase > 0.15 && phase < 0.28;
-  const typingText = typingProgress(phase, 0.4, 0.7, "Kitchen Renovation");
-
-  return (
-    <div className="space-y-0 relative">
-      <MockCard className="overflow-hidden rounded-xl">
-        <MockJobsHeader newButtonHighlight={buttonHover} />
-        
-        <div className="p-2 space-y-2">
-          {sampleJobs.slice(0, 3).map((job, i) => (
-            <MockJobCard key={i} job={job} />
+    <MockCard className="overflow-hidden rounded-xl">
+      <MockJobsHeader searchValue={searchText} searchActive={searchActive} filterActive={filterActive} />
+      
+      <div className="p-2 space-y-2">
+        <AnimatePresence mode="popLayout">
+          {filteredJobs.slice(0, 4).map((job) => (
+            <motion.div
+              key={job.jobNumber}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <MockJobCard job={job} highlighted={phase > 0.5 && job.project.includes("Living")} showActions />
+            </motion.div>
           ))}
-        </div>
-      </MockCard>
-      
-      <MockJobCreateDialog visible={showForm} typing={typingText} />
-    </div>
+        </AnimatePresence>
+      </div>
+    </MockCard>
   );
 };
 
-// Step 4: Open Job Details
-export const JobsStep4 = ({ phase = 0 }: StepProps) => {
-  const cardHighlight = phase > 0.2 && phase < 0.45;
-  const panelVisible = phase > 0.48;
-
-  return (
-    <div className="space-y-0 relative h-[300px]">
-      <MockCard className="overflow-hidden rounded-xl">
-        <MockJobsHeader />
-        
-        <div className="p-2 space-y-2">
-          <MockJobCard job={sampleJobs[0]} highlighted={cardHighlight} />
-          <MockJobCard job={sampleJobs[1]} />
-          <MockJobCard job={sampleJobs[2]} />
-        </div>
-      </MockCard>
-      
-      <MockJobDetailPanel visible={panelVisible} activeTab="quote" job={sampleJobs[0]} />
-    </div>
-  );
-};
-
-// Step 5: Status Flow Visualization
-export const JobsStep5 = ({ phase = 0 }: StepProps) => {
-  const currentStatus = Math.floor(phase * 5);
-  const animating = true;
-
-  return (
-    <div className="space-y-4 flex flex-col items-center justify-center h-[280px]">
-      <motion.div 
-        className="text-center mb-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <h3 className="text-sm font-semibold mb-1">Job Pipeline</h3>
-        <p className="text-[10px] text-muted-foreground">Move jobs through stages automatically</p>
-      </motion.div>
-      
-      <MockStatusFlow currentStatus={currentStatus} animating={animating} />
-      
-      <motion.p 
-        className="text-[10px] text-muted-foreground text-center mt-4"
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Each stage triggers notifications & updates
-      </motion.p>
-    </div>
-  );
-};
-
-// Step 6: Quick Actions Menu
-export const JobsStep6 = ({ phase = 0 }: StepProps) => {
+// Step 3: Quick Actions
+export const JobsStep3 = ({ phase = 0 }: StepProps) => {
   const actions = ["view", "edit", "notes", "duplicate", "archive"];
   const actionIndex = Math.floor(phase * 5);
   const highlightAction = actions[Math.min(actionIndex, actions.length - 1)];
-  const menuVisible = phase > 0.1;
 
   return (
-    <div className="space-y-3 relative">
+    <div className="relative">
       <MockCard className="p-3 rounded-xl">
         <div className="flex items-center gap-3 relative">
           <MockJobAvatar name="Sarah Johnson" size="md" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-mono text-muted-foreground">JOB-001</span>
+              <span className="text-[10px] font-mono text-muted-foreground">JOB-2024-001</span>
               <span className="text-sm font-semibold">Sarah J.</span>
             </div>
             <p className="text-[10px] text-muted-foreground">Living Room • $4,250</p>
           </div>
-          <motion.div 
-            className="p-1.5 rounded-lg bg-muted"
-            animate={{ scale: phase > 0.05 ? 1.1 : 1 }}
-          >
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+          <motion.div className="p-1.5 rounded-lg bg-primary/10" animate={{ scale: 1.1 }}>
+            <MoreHorizontal className="h-4 w-4 text-primary" />
           </motion.div>
-          <MockActionsMenu visible={menuVisible} highlightAction={highlightAction} />
+          <MockActionsMenu visible highlightAction={highlightAction} />
         </div>
       </MockCard>
       
       <motion.p 
-        className="text-[10px] text-muted-foreground text-center"
+        className="text-[10px] text-muted-foreground text-center mt-3"
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
@@ -679,38 +1117,1499 @@ export const JobsStep6 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 7: Project Content - Rooms and Windows
-export const JobsStep7 = ({ phase = 0 }: StepProps) => {
-  const activeTab = phase < 0.33 ? "quote" : phase < 0.66 ? "measure" : "docs";
+// ===== PART 2: JOB CREATION (Steps 4-7) =====
+
+// Step 4: Click New Job Button
+export const JobsStep4 = ({ phase = 0 }: StepProps) => {
+  const buttonHighlight = phase > 0.2;
+  const showDialog = phase > 0.5;
 
   return (
-    <div className="space-y-0 relative h-[280px]">
-      <MockJobDetailPanel visible activeTab={activeTab} job={sampleJobs[0]} />
+    <div className="relative">
+      <MockCard className="overflow-hidden rounded-xl">
+        <MockJobsHeader newButtonHighlight={buttonHighlight && !showDialog} />
+        <div className="p-2 space-y-2">
+          {sampleJobs.slice(0, 2).map((job, i) => (
+            <MockJobCard key={i} job={job} showActions />
+          ))}
+        </div>
+      </MockCard>
+      
+      <MockJobCreateDialog visible={showDialog} step={1} />
     </div>
   );
 };
 
-// Step 8: Job Completion Celebration
-export const JobsStep8 = ({ phase = 0 }: StepProps) => {
-  const showSuccess = phase > 0.4;
-  const showConfetti = phase > 0.5;
+// Step 5: Select Client
+export const JobsStep5 = ({ phase = 0 }: StepProps) => {
+  const showDropdown = phase > 0.2 && phase < 0.8;
+  const selectedClient = phase > 0.5 ? "Sarah Johnson" : "";
+  const showConfirm = phase > 0.75;
 
   return (
-    <div className="space-y-0 relative h-[280px]">
-      <MockCard className="overflow-hidden rounded-xl h-full">
-        <MockJobsHeader />
-        
-        <div className="p-2 space-y-2">
-          <MockJobCard job={{ ...sampleJobs[0], status: phase > 0.35 ? "completed" : "in_progress" }} />
-          <MockJobCard job={sampleJobs[1]} />
+    <div className="relative">
+      <MockCard className="p-4 rounded-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold">Select Client</h3>
+          <span className="text-[10px] text-muted-foreground">Step 1 of 3</span>
         </div>
+        
+        <div className="relative">
+          <label className="text-[10px] text-muted-foreground mb-1 block">Client *</label>
+          <motion.div 
+            className={`h-9 rounded-lg border px-3 flex items-center justify-between text-xs ${
+              showDropdown ? "border-primary" : "border-border"
+            }`}
+            animate={showDropdown ? { scale: 1.02 } : {}}
+          >
+            {selectedClient ? (
+              <div className="flex items-center gap-2">
+                <MockJobAvatar name={selectedClient} size="sm" />
+                <span>{selectedClient}</span>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">Choose a client...</span>
+            )}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </motion.div>
+          <MockClientSelector visible={showDropdown} selectedClient={selectedClient} />
+        </div>
+        
+        {showConfirm && (
+          <motion.div 
+            className="mt-4 flex justify-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="px-3 py-1.5 text-[10px] bg-primary text-primary-foreground rounded-lg font-medium flex items-center gap-1">
+              Next <ChevronRight className="h-3 w-3" />
+            </div>
+          </motion.div>
+        )}
       </MockCard>
+    </div>
+  );
+};
+
+// Step 6: Project Details
+export const JobsStep6 = ({ phase = 0 }: StepProps) => {
+  const projectName = typingProgress(phase, 0.1, 0.5, "Kitchen Renovation");
+
+  return (
+    <MockCard className="p-4 rounded-xl">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold">Project Details</h3>
+        <span className="text-[10px] text-muted-foreground">Step 2 of 3</span>
+      </div>
       
-      {/* Success overlay */}
+      <div className="space-y-3">
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Project Name *</label>
+          <motion.div 
+            className="h-9 rounded-lg border border-primary bg-primary/5 px-3 flex items-center text-xs"
+            animate={{ scale: [1, 1.01, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            {projectName}
+            <motion.span 
+              className="w-0.5 h-4 bg-primary ml-0.5"
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+            />
+          </motion.div>
+        </div>
+        
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Description</label>
+          <div className="h-16 rounded-lg border border-border bg-background px-3 py-2 text-[10px] text-muted-foreground">
+            Optional project notes...
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-4">
+          <div className="px-3 py-1.5 text-[10px] border border-border rounded-lg">Back</div>
+          <motion.div 
+            className="flex-1 py-1.5 text-[10px] bg-primary text-primary-foreground rounded-lg font-medium text-center flex items-center justify-center gap-1"
+            animate={phase > 0.6 ? { scale: [1, 1.02, 1] } : {}}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            Next <ChevronRight className="h-3 w-3" />
+          </motion.div>
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 7: Job Created Success
+export const JobsStep7 = ({ phase = 0 }: StepProps) => {
+  const showSuccess = phase > 0.3;
+
+  return (
+    <div className="relative h-[280px]">
+      {!showSuccess && (
+        <MockCard className="overflow-hidden rounded-xl">
+          <MockJobsHeader />
+          <div className="p-2 space-y-2">
+            {sampleJobs.slice(0, 3).map((job, i) => (
+              <MockJobCard key={i} job={job} showActions />
+            ))}
+          </div>
+        </MockCard>
+      )}
+      
       <AnimatePresence>
         {showSuccess && (
           <motion.div 
-            className="absolute inset-0 bg-background/90 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl"
+            className="absolute inset-0 bg-card rounded-xl flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <motion.div 
+              className="text-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", damping: 15 }}
+            >
+              <motion.div 
+                className="w-14 h-14 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.5, repeat: 2 }}
+              >
+                <CheckCircle className="h-7 w-7 text-green-600" />
+              </motion.div>
+              <h3 className="text-sm font-semibold mb-1">Job Created!</h3>
+              <p className="text-[10px] text-muted-foreground">Kitchen Renovation</p>
+              <p className="text-[10px] text-muted-foreground">for Sarah Johnson</p>
+              
+              <motion.div 
+                className="mt-4 px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium inline-flex items-center gap-1"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Plus className="h-3 w-3" />
+                Add Rooms
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ===== PART 3: ROOM MANAGEMENT (Steps 8-11) =====
+
+// Step 8: Job Detail View
+export const JobsStep8 = ({ phase = 0 }: StepProps) => {
+  const tabs = ["Rooms", "Quote", "Work Order", "Workroom"];
+  const activeTab = tabs[Math.floor(phase * 3.9) % 4];
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      {/* Job header */}
+      <div className="px-3 py-2.5 border-b border-border">
+        <div className="flex items-center gap-3">
+          <MockJobAvatar name="Sarah Johnson" size="lg" />
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono text-muted-foreground">JOB-2024-001</span>
+            </div>
+            <h3 className="text-sm font-semibold">Living Room Renovation</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              <MockStatusBadge status="approved" size="xs" />
+              <span className="text-[10px] text-primary font-medium">$4,250</span>
+            </div>
+          </div>
+          <X className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+      
+      {/* Tabs */}
+      <div className="px-3 pt-2">
+        <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          {tabs.map((tab) => (
+            <motion.div 
+              key={tab}
+              className={`flex-1 py-1.5 text-center rounded-md text-[10px] font-medium cursor-pointer ${
+                activeTab === tab ? "bg-background shadow-sm" : "text-muted-foreground"
+              }`}
+              animate={activeTab === tab ? { scale: 1.02 } : { scale: 1 }}
+            >
+              {tab}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Tab content placeholder */}
+      <div className="p-3">
+        <div className="h-24 bg-muted/30 rounded-lg flex items-center justify-center">
+          <span className="text-[10px] text-muted-foreground">{activeTab} content</span>
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 9: Add Rooms
+export const JobsStep9 = ({ phase = 0 }: StepProps) => {
+  const showAddButton = phase < 0.4;
+  const showRoomForm = phase >= 0.4 && phase < 0.8;
+  const showNewRoom = phase >= 0.8;
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Rooms</h3>
+        {showAddButton && (
+          <motion.div 
+            className="px-2 py-1 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium flex items-center gap-1"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <Plus className="h-3 w-3" />
+            Add Room
+          </motion.div>
+        )}
+      </div>
+      
+      <div className="p-3 space-y-2">
+        {showRoomForm && (
+          <motion.div 
+            className="p-3 border-2 border-dashed border-primary rounded-lg"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+          >
+            <label className="text-[10px] text-muted-foreground mb-1 block">Room Name</label>
+            <div className="h-8 rounded-lg border border-primary bg-primary/5 px-2 flex items-center text-xs">
+              Living Room
+              <motion.span 
+                className="w-0.5 h-4 bg-primary ml-0.5"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
+        )}
+        
+        {showNewRoom && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <MockRoomCard room={sampleRooms[0]} highlighted />
+          </motion.div>
+        )}
+        
+        {!showRoomForm && !showNewRoom && (
+          <div className="py-6 text-center">
+            <Home className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-[10px] text-muted-foreground">No rooms yet. Add your first room!</p>
+          </div>
+        )}
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 10: Room Templates
+export const JobsStep10 = ({ phase = 0 }: StepProps) => {
+  const templates = [
+    { name: "Living Room", icon: Home },
+    { name: "Bedroom", icon: Home },
+    { name: "Kitchen", icon: Home },
+    { name: "Office", icon: Building2 },
+    { name: "Bathroom", icon: Home },
+    { name: "Custom", icon: Plus },
+  ];
+  const highlightIndex = Math.floor(phase * 5.9);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-3">Choose Room Template</h3>
+      
+      <div className="grid grid-cols-3 gap-2">
+        {templates.map((template, i) => (
+          <motion.div 
+            key={template.name}
+            className={`p-2.5 rounded-lg border text-center cursor-pointer ${
+              i === highlightIndex ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"
+            }`}
+            animate={i === highlightIndex ? { scale: 1.05 } : {}}
+          >
+            <div className={`mx-auto w-8 h-8 rounded-lg ${i === highlightIndex ? "bg-primary/20" : "bg-muted"} flex items-center justify-center mb-1`}>
+              <template.icon className={`h-4 w-4 ${i === highlightIndex ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <span className="text-[9px] font-medium">{template.name}</span>
+          </motion.div>
+        ))}
+      </div>
+      
+      <motion.p 
+        className="text-[10px] text-muted-foreground text-center mt-3"
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        Templates include common window layouts
+      </motion.p>
+    </MockCard>
+  );
+};
+
+// Step 11: Copy & Paste Rooms
+export const JobsStep11 = ({ phase = 0 }: StepProps) => {
+  const showCopyMenu = phase > 0.2 && phase < 0.5;
+  const showPasteButton = phase >= 0.5 && phase < 0.8;
+  const showPasted = phase >= 0.8;
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Rooms</h3>
+        {showPasteButton && (
+          <motion.div 
+            className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-medium flex items-center gap-1"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <Copy className="h-3 w-3" />
+            Paste Room
+          </motion.div>
+        )}
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div className="relative">
+          <MockRoomCard room={sampleRooms[0]} highlighted={showCopyMenu} />
+          
+          {showCopyMenu && (
+            <motion.div 
+              className="absolute right-2 top-2 bg-popover border border-border rounded-lg shadow-lg py-1 z-10"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <motion.div 
+                className="flex items-center gap-2 px-3 py-1.5 text-[10px] bg-primary/10 text-primary"
+                animate={{ x: [0, 3, 0] }}
+              >
+                <Copy className="h-3 w-3" />
+                Copy Room
+              </motion.div>
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] hover:bg-accent">
+                <Edit2 className="h-3 w-3" />
+                Edit
+              </div>
+            </motion.div>
+          )}
+        </div>
+        
+        {showPasted && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <MockRoomCard 
+              room={{ ...sampleRooms[0], name: "Living Room (Copy)" }} 
+              highlighted 
+            />
+          </motion.div>
+        )}
+      </div>
+    </MockCard>
+  );
+};
+
+// ===== PART 4: WINDOWS & SURFACES (Steps 12-14) =====
+
+// Step 12: Add Window
+export const JobsStep12 = ({ phase = 0 }: StepProps) => {
+  const showAddButton = phase < 0.3;
+  const showWindowForm = phase >= 0.3 && phase < 0.7;
+  const showNewWindow = phase >= 0.7;
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Home className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-semibold">Living Room</span>
+        </div>
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium">Windows</span>
+          {showAddButton && (
+            <motion.div 
+              className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium flex items-center gap-1"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <Plus className="h-3 w-3" />
+              Add
+            </motion.div>
+          )}
+        </div>
+        
+        {showWindowForm && (
+          <motion.div 
+            className="p-3 border-2 border-dashed border-primary rounded-lg space-y-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-muted-foreground">Width (mm)</label>
+                <div className="h-7 border border-primary rounded px-2 flex items-center text-[10px]">
+                  1500
+                </div>
+              </div>
+              <div>
+                <label className="text-[9px] text-muted-foreground">Drop (mm)</label>
+                <div className="h-7 border border-border rounded px-2 flex items-center text-[10px]">
+                  2100
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
+        {showNewWindow && (
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+            <MockWindowCard windowNum={1} highlighted />
+          </motion.div>
+        )}
+        
+        <MockWindowCard windowNum={2} dimensions="1800 x 2400" treatment="Curtains" />
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 13: Window Types
+export const JobsStep13 = ({ phase = 0 }: StepProps) => {
+  const windowTypes = [
+    { name: "Standard", icon: Square },
+    { name: "Bay Window", icon: Maximize2 },
+    { name: "French Door", icon: Grid3X3 },
+    { name: "Sliding Door", icon: ArrowRight },
+  ];
+  const highlightIndex = Math.floor(phase * 3.9);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-3">Select Window Type</h3>
+      
+      <div className="grid grid-cols-2 gap-2">
+        {windowTypes.map((type, i) => (
+          <motion.div 
+            key={type.name}
+            className={`p-3 rounded-lg border text-center cursor-pointer ${
+              i === highlightIndex ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"
+            }`}
+            animate={i === highlightIndex ? { scale: 1.03 } : {}}
+          >
+            <div className={`mx-auto w-10 h-10 rounded-lg ${i === highlightIndex ? "bg-primary/20" : "bg-muted"} flex items-center justify-center mb-2`}>
+              <type.icon className={`h-5 w-5 ${i === highlightIndex ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <span className="text-[10px] font-medium">{type.name}</span>
+          </motion.div>
+        ))}
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 14: Surface Details
+export const JobsStep14 = ({ phase = 0 }: StepProps) => {
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-1.5 bg-muted rounded">
+          <Square className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">Window 1</h3>
+          <p className="text-[10px] text-muted-foreground">Living Room • Bay Window</p>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <div className="p-2.5 bg-muted/30 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-medium">Dimensions</span>
+            <span className="text-[10px]">1500 x 2100 mm</span>
+          </div>
+        </div>
+        
+        <motion.div 
+          className="p-2.5 bg-primary/5 border border-primary/30 rounded-lg"
+          animate={phase > 0.3 ? { scale: [1, 1.02, 1] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-medium">Treatment</span>
+            <motion.div 
+              className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px]"
+              animate={phase > 0.5 ? { scale: [1, 1.1, 1] } : {}}
+            >
+              Roller Blind
+            </motion.div>
+          </div>
+        </motion.div>
+        
+        <div className="p-2.5 bg-muted/30 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-medium">Mount Type</span>
+            <span className="text-[10px]">Inside mount</span>
+          </div>
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// ===== PART 5: TREATMENT SELECTION (Steps 15-17) =====
+
+// Step 15: Treatment Grid
+export const JobsStep15 = ({ phase = 0 }: StepProps) => {
+  const treatments = treatmentTypes.slice(0, 6);
+  const highlightIndex = Math.floor(phase * 5.9);
+  const highlightedName = treatments[highlightIndex]?.name || "";
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-3">Select Treatment</h3>
+      <MockTreatmentGrid visible highlightedTreatment={highlightedName} />
+    </MockCard>
+  );
+};
+
+// Step 16: Treatment Categories
+export const JobsStep16 = ({ phase = 0 }: StepProps) => {
+  const categories = ["Curtains", "Blinds", "Shutters"];
+  const activeCategory = categories[Math.floor(phase * 2.9)];
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-2">Treatment Categories</h3>
+      
+      {/* Category tabs */}
+      <div className="flex gap-1 mb-3">
+        {categories.map((cat) => (
+          <motion.div 
+            key={cat}
+            className={`px-3 py-1.5 rounded-lg text-[10px] font-medium cursor-pointer ${
+              activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-muted"
+            }`}
+            animate={activeCategory === cat ? { scale: 1.05 } : {}}
+          >
+            {cat}
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Category content */}
+      <div className="grid grid-cols-2 gap-2">
+        {treatmentTypes
+          .filter(t => 
+            activeCategory === "Curtains" ? t.name.includes("Curtain") :
+            activeCategory === "Blinds" ? t.name.includes("Blind") :
+            t.name.includes("Shutter")
+          )
+          .slice(0, 4)
+          .map((treatment, i) => (
+            <motion.div 
+              key={treatment.name}
+              className="p-2.5 rounded-lg border border-border text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <div className={`mx-auto w-8 h-8 rounded-lg ${treatment.color} flex items-center justify-center mb-1`}>
+                <treatment.icon className="h-4 w-4" />
+              </div>
+              <span className="text-[9px] font-medium">{treatment.name}</span>
+            </motion.div>
+          ))}
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 17: Treatment Applied
+export const JobsStep17 = ({ phase = 0 }: StepProps) => {
+  const showBefore = phase < 0.4;
+  const showAfter = phase >= 0.4;
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-3">Window 1 - Living Room</h3>
+      
+      <motion.div 
+        className={`p-3 rounded-lg border transition-all ${
+          showAfter ? "bg-green-50 border-green-200" : "bg-muted/30 border-border"
+        }`}
+        animate={showAfter ? { scale: [1, 1.02, 1] } : {}}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${showAfter ? "bg-green-100" : "bg-muted"}`}>
+            <Square className={`h-5 w-5 ${showAfter ? "text-green-600" : "text-muted-foreground"}`} />
+          </div>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium">Window 1</span>
+              {showAfter && (
+                <motion.span 
+                  className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px]"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  Roller Blind
+                </motion.span>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground">1500 x 2100mm</span>
+          </div>
+          
+          {showAfter && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+      
+      {showAfter && (
+        <motion.p 
+          className="text-[10px] text-green-600 text-center mt-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          ✓ Treatment assigned successfully
+        </motion.p>
+      )}
+    </MockCard>
+  );
+};
+
+// ===== PART 6: MEASUREMENTS WORKSHEET (Steps 18-20) =====
+
+// Step 18: Open Worksheet
+export const JobsStep18 = ({ phase = 0 }: StepProps) => {
+  const showWorksheet = phase > 0.4;
+
+  return (
+    <div className="relative h-[280px]">
+      <MockCard className="overflow-hidden rounded-xl">
+        <div className="px-3 py-2.5 border-b border-border">
+          <span className="text-sm font-semibold">Living Room Windows</span>
+        </div>
+        <div className="p-3 space-y-2">
+          <motion.div
+            animate={!showWorksheet && phase > 0.2 ? { scale: [1, 1.02, 1] } : {}}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <MockWindowCard windowNum={1} highlighted={!showWorksheet && phase > 0.2} />
+          </motion.div>
+          <MockWindowCard windowNum={2} dimensions="1800 x 2400" treatment="Curtains" />
+        </div>
+      </MockCard>
+      
+      <MockWorksheetPanel visible={showWorksheet} />
+    </div>
+  );
+};
+
+// Step 19: Enter Measurements
+export const JobsStep19 = ({ phase = 0 }: StepProps) => {
+  const activeField = phase < 0.5 ? "width" : "drop";
+  const widthValue = typingProgress(phase, 0.1, 0.4, "1650");
+  const dropValue = typingProgress(phase, 0.5, 0.9, "2250");
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Ruler className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Measurements</h3>
+      </div>
+      
+      {/* Diagram */}
+      <div className="bg-muted/30 rounded-lg p-3 mb-3">
+        <div className="flex items-center justify-center">
+          <div className="relative w-20 h-24 border-2 border-dashed border-primary/50 rounded-lg">
+            <div className="absolute -top-3 left-0 right-0 text-center">
+              <span className="text-[9px] font-medium text-primary px-1 bg-card">{widthValue || "W"}mm</span>
+            </div>
+            <div className="absolute -right-6 top-0 bottom-0 flex items-center">
+              <span className="text-[9px] font-medium text-primary px-1 bg-card">{dropValue || "D"}mm</span>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Square className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Inputs */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Width (mm)</label>
+          <motion.div 
+            className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
+              activeField === "width" ? "border-primary bg-primary/5" : "border-border"
+            }`}
+            animate={activeField === "width" ? { scale: 1.02 } : {}}
+          >
+            {widthValue || "0"}
+            {activeField === "width" && (
+              <motion.span 
+                className="w-0.5 h-4 bg-primary ml-0.5"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+            )}
+          </motion.div>
+        </div>
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Drop (mm)</label>
+          <motion.div 
+            className={`h-9 rounded-lg border px-3 flex items-center text-xs ${
+              activeField === "drop" ? "border-primary bg-primary/5" : "border-border"
+            }`}
+            animate={activeField === "drop" ? { scale: 1.02 } : {}}
+          >
+            {dropValue || "0"}
+            {activeField === "drop" && (
+              <motion.span 
+                className="w-0.5 h-4 bg-primary ml-0.5"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+            )}
+          </motion.div>
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 20: Measurement Options
+export const JobsStep20 = ({ phase = 0 }: StepProps) => {
+  const options = [
+    { name: "Hem Allowance", value: "100mm", active: phase > 0.2 },
+    { name: "Returns", value: "Yes", active: phase > 0.4 },
+    { name: "Stack Position", value: "Right", active: phase > 0.6 },
+    { name: "Mount Type", value: "Face fix", active: phase > 0.8 },
+  ];
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Settings2 className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Measurement Options</h3>
+      </div>
+      
+      <div className="space-y-2">
+        {options.map((opt, i) => (
+          <motion.div 
+            key={opt.name}
+            className={`p-2.5 rounded-lg border transition-all ${
+              opt.active ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"
+            }`}
+            animate={opt.active && options[i + 1] && !options[i + 1].active ? { scale: [1, 1.02, 1] } : {}}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-medium">{opt.name}</span>
+              <motion.span 
+                className={`text-[10px] ${opt.active ? "text-primary font-medium" : "text-muted-foreground"}`}
+                animate={opt.active ? { scale: [1, 1.1, 1] } : {}}
+              >
+                {opt.value}
+              </motion.span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </MockCard>
+  );
+};
+
+// ===== PART 7: FABRIC & MATERIAL (Steps 21-23) =====
+
+// Step 21: Fabric Selector
+export const JobsStep21 = ({ phase = 0 }: StepProps) => {
+  const highlightedFabric = Math.floor(phase * 3.9);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold">Select Fabric</h3>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Search className="h-3 w-3" />
+          Search
+        </div>
+      </div>
+      
+      <MockFabricGrid highlightedFabric={highlightedFabric} />
+    </MockCard>
+  );
+};
+
+// Step 22: Fabric Details
+export const JobsStep22 = ({ phase = 0 }: StepProps) => {
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex gap-3 mb-3">
+        <div className="w-16 h-16 rounded-lg bg-amber-100" />
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold">Ivory Linen</h3>
+          <p className="text-[10px] text-muted-foreground">Premium Belgian linen blend</p>
+          <p className="text-sm font-semibold text-primary mt-1">$45/m</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { label: "Width", value: "280cm" },
+          { label: "Pattern Repeat", value: "None" },
+          { label: "Composition", value: "85% Linen, 15% Cotton" },
+          { label: "Weight", value: "240 gsm" },
+        ].map((item, i) => (
+          <motion.div 
+            key={item.label}
+            className="p-2 bg-muted/30 rounded-lg"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 + phase * 0.5 }}
+          >
+            <p className="text-[9px] text-muted-foreground">{item.label}</p>
+            <p className="text-[10px] font-medium">{item.value}</p>
+          </motion.div>
+        ))}
+      </div>
+      
+      <motion.div 
+        className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2"
+        animate={{ scale: phase > 0.7 ? [1, 1.02, 1] : 1 }}
+        transition={{ duration: 1, repeat: Infinity }}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+        <span className="text-[10px] text-green-700 font-medium">In stock - Ships in 2-3 days</span>
+      </motion.div>
+    </MockCard>
+  );
+};
+
+// Step 23: Hardware Options
+export const JobsStep23 = ({ phase = 0 }: StepProps) => {
+  const options = [
+    { category: "Heading Type", options: ["Pencil Pleat", "Wave", "Eyelet"], selected: Math.floor(phase * 2.9) },
+    { category: "Track/Rod", options: ["White Track", "Black Rod", "Brass Rod"], selected: phase > 0.5 ? 1 : 0 },
+    { category: "Lining", options: ["None", "Standard", "Blackout"], selected: phase > 0.7 ? 2 : 1 },
+  ];
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Wrench className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Hardware & Options</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {options.map((group, gi) => (
+          <div key={group.category}>
+            <label className="text-[10px] text-muted-foreground mb-1 block">{group.category}</label>
+            <div className="flex gap-1">
+              {group.options.map((opt, oi) => (
+                <motion.div 
+                  key={opt}
+                  className={`flex-1 py-1.5 text-center rounded-lg text-[9px] border cursor-pointer ${
+                    group.selected === oi ? "border-primary bg-primary/10 font-medium" : "border-border"
+                  }`}
+                  animate={group.selected === oi ? { scale: 1.02 } : {}}
+                >
+                  {opt}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </MockCard>
+  );
+};
+
+// ===== PART 8: QUOTATION (Steps 24-28) =====
+
+// Step 24: Quote Tab
+export const JobsStep24 = ({ phase = 0 }: StepProps) => {
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">Quote</span>
+        </div>
+        <MockStatusBadge status="draft" size="xs" />
+      </div>
+      
+      <div className="p-3">
+        <MockQuotePreview />
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 25: Add Discount
+export const JobsStep25 = ({ phase = 0 }: StepProps) => {
+  const showDiscountInput = phase > 0.2 && phase < 0.6;
+  const discountApplied = phase >= 0.6;
+  const discountValue = typingProgress(phase, 0.25, 0.5, "10");
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <span className="text-sm font-semibold">Quote</span>
+        <motion.div 
+          className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-medium"
+          animate={!showDiscountInput && !discountApplied ? { scale: [1, 1.05, 1] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <Percent className="h-3 w-3" />
+          Add Discount
+        </motion.div>
+      </div>
+      
+      <div className="p-3">
+        {showDiscountInput && (
+          <motion.div 
+            className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+          >
+            <label className="text-[10px] text-green-700 mb-1 block">Discount %</label>
+            <div className="h-8 bg-white border border-green-300 rounded px-2 flex items-center text-xs">
+              {discountValue}
+              <motion.span 
+                className="w-0.5 h-4 bg-green-500 ml-0.5"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+              <span className="ml-auto text-muted-foreground">%</span>
+            </div>
+          </motion.div>
+        )}
+        
+        <MockQuotePreview showDiscount={discountApplied} discountAmount="10%" />
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 26: Payment Config
+export const JobsStep26 = ({ phase = 0 }: StepProps) => {
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCard className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Payment Settings</h3>
+      </div>
+      
+      <div className="space-y-3">
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Deposit Required</label>
+          <div className="flex gap-1">
+            {["0%", "25%", "50%", "100%"].map((pct, i) => (
+              <motion.div 
+                key={pct}
+                className={`flex-1 py-1.5 text-center rounded-lg text-[10px] border ${
+                  (phase > 0.3 && i === 2) ? "border-primary bg-primary/10 font-medium" : "border-border"
+                }`}
+                animate={(phase > 0.3 && i === 2) ? { scale: 1.05 } : {}}
+              >
+                {pct}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <label className="text-[10px] text-muted-foreground mb-1 block">Payment Terms</label>
+          <motion.div 
+            className="h-9 rounded-lg border border-border px-3 flex items-center justify-between text-xs"
+            animate={phase > 0.6 ? { borderColor: "var(--primary)" } : {}}
+          >
+            <span>Net 30 days</span>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </motion.div>
+        </div>
+        
+        {phase > 0.7 && (
+          <motion.div 
+            className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="flex justify-between text-[10px]">
+              <span className="text-blue-700">Deposit Amount</span>
+              <span className="text-blue-700 font-semibold">$2,104</span>
+            </div>
+            <div className="flex justify-between text-[10px] mt-1">
+              <span className="text-blue-700">Balance Due</span>
+              <span className="text-blue-700 font-semibold">$2,104</span>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 27: PDF & Email Actions
+export const JobsStep27 = ({ phase = 0 }: StepProps) => {
+  const actions = [
+    { icon: Download, label: "Download PDF", color: "bg-blue-100 text-blue-700" },
+    { icon: Printer, label: "Print Quote", color: "bg-purple-100 text-purple-700" },
+    { icon: Mail, label: "Email Client", color: "bg-green-100 text-green-700" },
+    { icon: Share2, label: "Share Link", color: "bg-orange-100 text-orange-700" },
+  ];
+  const highlightIndex = Math.floor(phase * 3.9);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <h3 className="text-sm font-semibold mb-3">Quote Actions</h3>
+      
+      <div className="grid grid-cols-2 gap-2">
+        {actions.map((action, i) => (
+          <motion.div 
+            key={action.label}
+            className={`p-3 rounded-lg border text-center cursor-pointer ${
+              i === highlightIndex ? "border-primary ring-2 ring-primary/20" : "border-border"
+            } ${action.color}`}
+            animate={i === highlightIndex ? { scale: 1.05 } : {}}
+          >
+            <action.icon className="h-5 w-5 mx-auto mb-1" />
+            <span className="text-[10px] font-medium">{action.label}</span>
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Quick preview */}
+      <div className="mt-3 p-2.5 bg-muted/30 rounded-lg">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-1">
+            <p className="text-[10px] font-medium">Quote_JOB-2024-001.pdf</p>
+            <p className="text-[9px] text-muted-foreground">Generated • 245 KB</p>
+          </div>
+          <Eye className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 28: Send Quote Email
+export const JobsStep28 = ({ phase = 0 }: StepProps) => {
+  const showEmail = phase > 0.2;
+  const emailTyping = typingProgress(phase, 0.3, 0.8, "Hi Sarah, please find attached the quote for your living room project...");
+
+  return (
+    <div className="relative h-[300px]">
+      <MockCard className="overflow-hidden rounded-xl">
+        <div className="px-3 py-2.5 border-b border-border">
+          <span className="text-sm font-semibold">Quote Ready</span>
+        </div>
+        <div className="p-3">
+          <MockQuotePreview showDiscount showPayment />
+        </div>
+      </MockCard>
+      
+      <MockEmailDialog visible={showEmail} typing={emailTyping} />
+    </div>
+  );
+};
+
+// ===== PART 9: PAYMENTS & EXPORT (Steps 29-31) =====
+
+// Step 29: Record Payment
+export const JobsStep29 = ({ phase = 0 }: StepProps) => {
+  const showDialog = phase > 0.25;
+  const amountTyped = typingProgress(phase, 0.35, 0.6, "2104");
+
+  return (
+    <div className="relative">
+      <MockCard className="p-3 rounded-xl">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold">Payments</h3>
+          </div>
+          <motion.div 
+            className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"
+            animate={!showDialog ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            Record Payment
+          </motion.div>
+        </div>
+        
+        <div className="p-2.5 bg-muted/30 rounded-lg">
+          <div className="flex justify-between text-[10px] mb-1">
+            <span>Total Due</span>
+            <span className="font-semibold">$4,208</span>
+          </div>
+          <div className="flex justify-between text-[10px]">
+            <span>Paid</span>
+            <span className="text-green-600">$0</span>
+          </div>
+          <div className="flex justify-between text-[10px] pt-1 border-t border-border mt-1">
+            <span className="font-medium">Balance</span>
+            <span className="font-semibold text-primary">$4,208</span>
+          </div>
+        </div>
+      </MockCard>
+      
+      {showDialog && (
+        <motion.div 
+          className="absolute inset-0 bg-background/90 backdrop-blur-sm z-10 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <motion.div 
+            className="bg-card border border-border rounded-xl shadow-xl p-3 w-[90%]"
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+          >
+            <h3 className="text-sm font-semibold mb-3">Record Payment</h3>
+            
+            <div className="space-y-2">
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Amount</label>
+                <div className="h-9 rounded-lg border border-primary bg-primary/5 px-3 flex items-center text-xs">
+                  ${amountTyped}
+                  <motion.span 
+                    className="w-0.5 h-4 bg-primary ml-0.5"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Method</label>
+                <div className="flex gap-1">
+                  {["Card", "Bank", "Cash"].map((m, i) => (
+                    <div key={m} className={`flex-1 py-1.5 text-center rounded text-[10px] ${i === 0 ? "bg-primary/10 border-primary" : ""} border`}>{m}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mt-3">
+              <div className="px-3 py-1.5 text-[10px] border border-border rounded">Cancel</div>
+              <motion.div 
+                className="flex-1 py-1.5 text-[10px] bg-primary text-primary-foreground rounded text-center font-medium"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                Record Payment
+              </motion.div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// Step 30: Export Invoice
+export const JobsStep30 = ({ phase = 0 }: StepProps) => {
+  const showDropdown = phase > 0.2 && phase < 0.8;
+  const exports = [
+    { name: "Download CSV", icon: Download },
+    { name: "Export to Xero", icon: ExternalLink },
+    { name: "Export to QuickBooks", icon: ExternalLink },
+    { name: "Export to MYOB", icon: ExternalLink },
+  ];
+  const highlightIndex = Math.floor((phase - 0.2) / 0.15);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">Invoice #INV-001</h3>
+        </div>
+        <div className="relative">
+          <motion.div 
+            className="px-2 py-1 bg-muted rounded text-[10px] font-medium flex items-center gap-1"
+            animate={!showDropdown ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            Export <ChevronDown className="h-3 w-3" />
+          </motion.div>
+          
+          {showDropdown && (
+            <motion.div 
+              className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[150px] z-10"
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {exports.map((exp, i) => (
+                <motion.div 
+                  key={exp.name}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-[10px] ${
+                    i === highlightIndex ? "bg-primary/10 text-primary font-medium" : ""
+                  }`}
+                  animate={i === highlightIndex ? { x: [0, 3, 0] } : {}}
+                >
+                  <exp.icon className="h-3 w-3" />
+                  {exp.name}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </div>
+      
+      <div className="p-2.5 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <div>
+            <p className="text-[10px] font-medium text-green-700">Invoice Paid</p>
+            <p className="text-[9px] text-green-600">$4,208 • 15 Jan 2024</p>
+          </div>
+        </div>
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 31: Payment Complete
+export const JobsStep31 = ({ phase = 0 }: StepProps) => {
+  const showCelebration = phase > 0.4;
+
+  return (
+    <div className="relative h-[280px]">
+      <MockCard className="p-3 rounded-xl h-full">
+        <div className="flex items-center gap-2 mb-3">
+          <Receipt className="h-4 w-4 text-green-600" />
+          <h3 className="text-sm font-semibold">Invoice #INV-001</h3>
+          <motion.span 
+            className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[9px] font-medium"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, repeat: 2 }}
+          >
+            Paid
+          </motion.span>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="flex justify-between text-[10px] p-2 bg-muted/30 rounded">
+            <span>Subtotal</span>
+            <span>$3,825</span>
+          </div>
+          <div className="flex justify-between text-[10px] p-2 bg-muted/30 rounded">
+            <span>Tax (10%)</span>
+            <span>$383</span>
+          </div>
+          <div className="flex justify-between text-xs font-semibold p-2 bg-green-50 rounded">
+            <span>Total Paid</span>
+            <span className="text-green-600">$4,208</span>
+          </div>
+        </div>
+      </MockCard>
+      
+      {showCelebration && (
+        <motion.div 
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1.2, 1] }}
+            transition={{ type: "spring" }}
+          >
+            <span className="text-4xl">🎉</span>
+          </motion.div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ===== PART 10: WORK ORDERS & SHARING (Steps 32-35) =====
+
+// Step 32: Work Order Tab
+export const JobsStep32 = ({ phase = 0 }: StepProps) => {
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">Work Order</span>
+        </div>
+        <div className="flex gap-1">
+          <div className="px-2 py-1 bg-muted rounded text-[10px]">
+            <Download className="h-3 w-3" />
+          </div>
+          <div className="px-2 py-1 bg-muted rounded text-[10px]">
+            <Printer className="h-3 w-3" />
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-3">
+        <MockWorkOrderPreview />
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 33: Filter Work Order
+export const JobsStep33 = ({ phase = 0 }: StepProps) => {
+  const filters = ["All", "Curtains", "Blinds"];
+  const activeFilter = filters[Math.floor(phase * 2.9)];
+
+  return (
+    <MockCard className="overflow-hidden rounded-xl">
+      <div className="px-3 py-2.5 border-b border-border">
+        <span className="text-sm font-semibold">Work Order Filters</span>
+      </div>
+      
+      <div className="p-3">
+        <MockWorkOrderPreview showFilters activeFilter={activeFilter} />
+      </div>
+    </MockCard>
+  );
+};
+
+// Step 34: Share Work Order
+export const JobsStep34 = ({ phase = 0 }: StepProps) => {
+  const showPanel = phase > 0.2;
+  const linkCreated = phase > 0.6;
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold">Share with Workroom</h3>
+        {!showPanel && (
+          <motion.div 
+            className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium flex items-center gap-1"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <Share2 className="h-3 w-3" />
+            Share
+          </motion.div>
+        )}
+      </div>
+      
+      <MockShareLinkPanel visible={showPanel} linkCreated={linkCreated} />
+      
+      {linkCreated && (
+        <motion.div 
+          className="mt-3 p-2.5 bg-muted/30 rounded-lg"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <QrCode className="h-4 w-4" />
+            <span>QR code available for easy scanning</span>
+          </div>
+        </motion.div>
+      )}
+    </MockCard>
+  );
+};
+
+// Step 35: Installation Tracking
+export const JobsStep35 = ({ phase = 0 }: StepProps) => {
+  const checkedItems = Math.floor(phase * 5);
+
+  return (
+    <MockCard className="p-3 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Truck className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Installation Checklist</h3>
+      </div>
+      
+      <MockInstallationChecklist checkedItems={checkedItems} />
+      
+      {checkedItems >= 5 && (
+        <motion.div 
+          className="mt-3 p-2.5 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-[10px] text-green-700 font-medium">Installation Complete!</span>
+        </motion.div>
+      )}
+    </MockCard>
+  );
+};
+
+// ===== PART 11: JOB COMPLETION (Steps 36-37) =====
+
+// Step 36: Status Flow
+export const JobsStep36 = ({ phase = 0 }: StepProps) => {
+  const currentStatus = Math.floor(phase * 5);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[260px] gap-4">
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <h3 className="text-sm font-semibold mb-1">Job Pipeline</h3>
+        <p className="text-[10px] text-muted-foreground">Progress through each stage</p>
+      </motion.div>
+      
+      <MockStatusFlow currentStatus={currentStatus} animating />
+      
+      <motion.p 
+        className="text-[10px] text-muted-foreground text-center"
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        Automatic notifications at each stage
+      </motion.p>
+    </div>
+  );
+};
+
+// Step 37: Job Complete Celebration
+export const JobsStep37 = ({ phase = 0 }: StepProps) => {
+  const showCelebration = phase > 0.3;
+
+  return (
+    <div className="relative h-[280px]">
+      <MockCard className="overflow-hidden rounded-xl h-full">
+        <MockJobsHeader />
+        <div className="p-2 space-y-2">
+          <MockJobCard 
+            job={{ ...sampleJobs[0], status: showCelebration ? "completed" : "in_progress" }} 
+            showActions 
+          />
+        </div>
+      </MockCard>
+      
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div 
+            className="absolute inset-0 bg-background/95 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -722,24 +2621,25 @@ export const JobsStep8 = ({ phase = 0 }: StepProps) => {
             >
               <motion.div 
                 className="w-16 h-16 mx-auto mb-3 bg-emerald-100 rounded-full flex items-center justify-center"
-                animate={{ scale: [1, 1.1, 1] }}
+                animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 0.5, repeat: 2 }}
               >
                 <CheckCircle className="h-8 w-8 text-emerald-600" />
               </motion.div>
               <h3 className="text-sm font-semibold mb-1">Job Completed! 🎉</h3>
               <p className="text-[10px] text-muted-foreground">Sarah Johnson - Living Room</p>
-              <p className="text-sm font-semibold text-primary mt-2">$4,250</p>
+              <p className="text-sm font-semibold text-primary mt-2">$4,250 earned</p>
               
-              {showConfetti && (
-                <motion.div 
-                  className="mt-3"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <span className="text-2xl">🎊</span>
-                </motion.div>
-              )}
+              <motion.div 
+                className="mt-4 flex justify-center gap-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <span className="text-2xl">🎊</span>
+                <span className="text-2xl">🏆</span>
+                <span className="text-2xl">⭐</span>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}

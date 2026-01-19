@@ -792,14 +792,54 @@ export const clientDetailTutorial: Tutorial = {
 export const jobsTutorial: Tutorial = {
   id: "jobs",
   steps: [
-    { title: "Your Jobs Hub", actionLabel: "Overview", description: "See all jobs with status, search, and quick actions at a glance.", Visual: JobsStep1, duration: 4000 },
-    { title: "Find Any Job", actionLabel: "Search", description: "Type to search and apply filters - find any job instantly.", Visual: JobsStep2, duration: 5000 },
-    { title: "Create New Jobs", actionLabel: "Create", description: "One click to create new jobs with client and project details.", Visual: JobsStep3, duration: 5000 },
-    { title: "Open Job Details", actionLabel: "Click", description: "Click any job card to see full details and quote breakdown.", Visual: JobsStep4, duration: 5000 },
-    { title: "Pipeline Flow", actionLabel: "Status", description: "Move jobs through Draft → Sent → Approved → Complete.", Visual: JobsStep5, duration: 5000 },
-    { title: "Quick Actions", actionLabel: "Actions", description: "View, edit, duplicate, archive - all actions in one menu.", Visual: JobsStep6, duration: 5000 },
-    { title: "Project Content", actionLabel: "Tabs", description: "Switch between Quote, Measurements, Docs, and Activity.", Visual: JobsStep7, duration: 5000 },
-    { title: "Job Completion", actionLabel: "Complete", description: "Celebrate when jobs are completed successfully!", Visual: JobsStep8, duration: 5000 },
+    // Part 1: Dashboard & Navigation
+    { title: "Your Jobs Hub", actionLabel: "Overview", description: "See all jobs with status, client info, and totals at a glance.", Visual: JobsStep1, duration: 4000 },
+    { title: "Search & Filter", actionLabel: "Search", description: "Find any job instantly by name, client, or status.", Visual: JobsStep2, duration: 4000 },
+    { title: "Quick Actions", actionLabel: "Actions", description: "View, edit, duplicate, or archive from the actions menu.", Visual: JobsStep3, duration: 4000 },
+    // Part 2: Job Creation
+    { title: "Create New Job", actionLabel: "New", description: "Click 'New' to start creating a job for any client.", Visual: JobsStep4, duration: 4000 },
+    { title: "Select Client", actionLabel: "Client", description: "Search and select the client for this job.", Visual: JobsStep5, duration: 4000 },
+    { title: "Project Details", actionLabel: "Details", description: "Name your project and add optional description.", Visual: JobsStep6, duration: 4000 },
+    { title: "Job Created!", actionLabel: "Success", description: "Your job is ready - now add rooms and windows.", Visual: JobsStep7, duration: 4000 },
+    // Part 3: Room Management
+    { title: "Job Detail View", actionLabel: "Tabs", description: "Navigate between Rooms, Quote, Work Order, and Workroom.", Visual: JobsStep8, duration: 4000 },
+    { title: "Add Rooms", actionLabel: "Add", description: "Add rooms to organize windows by location.", Visual: JobsStep9, duration: 4000 },
+    { title: "Room Templates", actionLabel: "Template", description: "Choose from preset templates or create custom rooms.", Visual: JobsStep10, duration: 4000 },
+    { title: "Copy & Paste", actionLabel: "Copy", description: "Duplicate rooms to save time on similar spaces.", Visual: JobsStep11, duration: 4000 },
+    // Part 4: Windows & Surfaces
+    { title: "Add Windows", actionLabel: "Window", description: "Add windows or surfaces to each room.", Visual: JobsStep12, duration: 4000 },
+    { title: "Window Types", actionLabel: "Type", description: "Select from Standard, Bay, French Door, and more.", Visual: JobsStep13, duration: 4000 },
+    { title: "Surface Details", actionLabel: "Details", description: "View dimensions, treatment, and mount type.", Visual: JobsStep14, duration: 4000 },
+    // Part 5: Treatment Selection
+    { title: "Select Treatment", actionLabel: "Treatment", description: "Choose from curtains, blinds, shutters, and more.", Visual: JobsStep15, duration: 4000 },
+    { title: "Treatment Categories", actionLabel: "Category", description: "Browse treatments organized by type.", Visual: JobsStep16, duration: 4000 },
+    { title: "Treatment Applied", actionLabel: "Applied", description: "Treatment is now assigned to the window.", Visual: JobsStep17, duration: 4000 },
+    // Part 6: Measurements
+    { title: "Open Worksheet", actionLabel: "Measure", description: "Click a window to open the measurement worksheet.", Visual: JobsStep18, duration: 4000 },
+    { title: "Enter Measurements", actionLabel: "Dims", description: "Enter width and drop with visual diagram guide.", Visual: JobsStep19, duration: 4000 },
+    { title: "Measurement Options", actionLabel: "Options", description: "Configure hem, returns, stack position, and mount.", Visual: JobsStep20, duration: 4000 },
+    // Part 7: Fabric & Materials
+    { title: "Select Fabric", actionLabel: "Fabric", description: "Browse and search from your fabric library.", Visual: JobsStep21, duration: 4000 },
+    { title: "Fabric Details", actionLabel: "Details", description: "View price, width, composition, and stock status.", Visual: JobsStep22, duration: 4000 },
+    { title: "Hardware Options", actionLabel: "Hardware", description: "Choose heading type, track/rod, and lining.", Visual: JobsStep23, duration: 4000 },
+    // Part 8: Quotation
+    { title: "Quote Preview", actionLabel: "Quote", description: "Review line items with room-by-room breakdown.", Visual: JobsStep24, duration: 4000 },
+    { title: "Add Discount", actionLabel: "Discount", description: "Apply percentage or fixed discounts easily.", Visual: JobsStep25, duration: 4000 },
+    { title: "Payment Settings", actionLabel: "Payment", description: "Set deposit percentage and payment terms.", Visual: JobsStep26, duration: 4000 },
+    { title: "PDF & Actions", actionLabel: "Export", description: "Download PDF, print, email, or share link.", Visual: JobsStep27, duration: 4000 },
+    { title: "Email Quote", actionLabel: "Email", description: "Send quote directly to client with message.", Visual: JobsStep28, duration: 4000 },
+    // Part 9: Payments & Export
+    { title: "Record Payment", actionLabel: "Record", description: "Log payments with amount and method.", Visual: JobsStep29, duration: 4000 },
+    { title: "Export Invoice", actionLabel: "Export", description: "Export to Xero, QuickBooks, MYOB, or CSV.", Visual: JobsStep30, duration: 4000 },
+    { title: "Payment Complete", actionLabel: "Paid", description: "Invoice marked as paid with celebration!", Visual: JobsStep31, duration: 4000 },
+    // Part 10: Work Orders & Sharing
+    { title: "Work Order", actionLabel: "Order", description: "View detailed manufacturing specifications.", Visual: JobsStep32, duration: 4000 },
+    { title: "Filter Items", actionLabel: "Filter", description: "Filter by treatment type for focused views.", Visual: JobsStep33, duration: 4000 },
+    { title: "Share with Workroom", actionLabel: "Share", description: "Create secure links for external workrooms.", Visual: JobsStep34, duration: 4000 },
+    { title: "Installation", actionLabel: "Install", description: "Track installation progress with checklist.", Visual: JobsStep35, duration: 4000 },
+    // Part 11: Completion
+    { title: "Job Pipeline", actionLabel: "Status", description: "Move through Draft → Sent → Approved → Complete.", Visual: JobsStep36, duration: 4000 },
+    { title: "Job Complete!", actionLabel: "Done", description: "Celebrate completed jobs with your earnings!", Visual: JobsStep37, duration: 5000 },
   ],
 };
 
