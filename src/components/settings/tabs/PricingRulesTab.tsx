@@ -42,7 +42,7 @@ export const PricingRulesTab = () => {
 
   // Track original values for dirty-state detection
   const [originalTaxSettings, setOriginalTaxSettings] = useState<{rate: number; type: string; inclusive: boolean} | null>(null);
-  const [originalGlobalSettings, setOriginalGlobalSettings] = useState<{default: number; minimum: number} | null>(null);
+  const [originalGlobalSettings, setOriginalGlobalSettings] = useState<{default: number; minimum: number; material: number; labor: number} | null>(null);
   const [originalCategoryMarkups, setOriginalCategoryMarkups] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
@@ -51,7 +51,9 @@ export const PricingRulesTab = () => {
       // Set original values for dirty tracking
       setOriginalGlobalSettings({
         default: markupSettings.default_markup_percentage,
-        minimum: markupSettings.minimum_markup_percentage
+        minimum: markupSettings.minimum_markup_percentage,
+        material: markupSettings.material_markup_percentage || 0,
+        labor: markupSettings.labor_markup_percentage || 0
       });
       setOriginalCategoryMarkups({ ...markupSettings.category_markups });
     }
@@ -87,7 +89,9 @@ export const PricingRulesTab = () => {
   const hasGlobalChanges = useMemo(() => {
     if (!originalGlobalSettings || !formData) return false;
     return formData.default_markup_percentage !== originalGlobalSettings.default ||
-           formData.minimum_markup_percentage !== originalGlobalSettings.minimum;
+           formData.minimum_markup_percentage !== originalGlobalSettings.minimum ||
+           (formData.material_markup_percentage || 0) !== originalGlobalSettings.material ||
+           (formData.labor_markup_percentage || 0) !== originalGlobalSettings.labor;
   }, [formData, originalGlobalSettings]);
 
   const hasCategoryChanges = useMemo(() => {
@@ -102,6 +106,8 @@ export const PricingRulesTab = () => {
     await updateMarkupSettings.mutateAsync({
       default_markup_percentage: formData.default_markup_percentage,
       minimum_markup_percentage: formData.minimum_markup_percentage,
+      material_markup_percentage: formData.material_markup_percentage || 0,
+      labor_markup_percentage: formData.labor_markup_percentage || 0,
       dynamic_pricing_enabled: formData.dynamic_pricing_enabled,
       quantity_discounts_enabled: formData.quantity_discounts_enabled,
       show_markup_to_staff: formData.show_markup_to_staff
@@ -110,7 +116,9 @@ export const PricingRulesTab = () => {
     // Update original values after successful save
     setOriginalGlobalSettings({
       default: formData.default_markup_percentage,
-      minimum: formData.minimum_markup_percentage
+      minimum: formData.minimum_markup_percentage,
+      material: formData.material_markup_percentage || 0,
+      labor: formData.labor_markup_percentage || 0
     });
     toast.success("Global settings saved");
   };
