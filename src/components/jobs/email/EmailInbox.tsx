@@ -5,16 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Mail, MessageSquare, Search, Archive, Star, 
   RefreshCw, MoreHorizontal, ArrowLeft, Clock,
-  CheckCircle2, XCircle, Eye, MousePointerClick
+  CheckCircle2, XCircle, Eye, MousePointerClick,
+  Reply, Forward, Copy, Trash2
 } from "lucide-react";
 import { PixelMessageIcon } from "@/components/icons/PixelArtIcons";
 import { formatDistanceToNow, format } from "date-fns";
 import { useUnifiedCommunications, groupMessagesByClient, UnifiedMessage } from "@/hooks/useUnifiedCommunications";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface EmailInboxProps {
   onComposeClick?: () => void;
@@ -26,7 +35,35 @@ export const EmailInbox = ({ onComposeClick }: EmailInboxProps) => {
   const [channelFilter, setChannelFilter] = useState<'all' | 'email' | 'whatsapp'>('all');
   
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: messages = [], isLoading, refetch } = useUnifiedCommunications();
+
+  const handleCopyContent = () => {
+    if (!selectedMessage) return;
+    const textContent = (selectedMessage.fullContent || selectedMessage.preview).replace(/<[^>]*>/g, '');
+    navigator.clipboard.writeText(textContent);
+    toast({ title: "Copied", description: "Email content copied to clipboard" });
+  };
+
+  const handleReply = () => {
+    toast({ title: "Reply", description: "Opening composer to reply..." });
+    onComposeClick?.();
+  };
+
+  const handleForward = () => {
+    toast({ title: "Forward", description: "Opening composer to forward..." });
+    onComposeClick?.();
+  };
+
+  const handleArchive = () => {
+    toast({ title: "Archived", description: "Message moved to archive" });
+    setSelectedMessage(null);
+  };
+
+  const handleDelete = () => {
+    toast({ title: "Deleted", description: "Message deleted", variant: "destructive" });
+    setSelectedMessage(null);
+  };
 
   // Filter messages
   const filteredMessages = useMemo(() => {
@@ -245,9 +282,32 @@ export const EmailInbox = ({ onComposeClick }: EmailInboxProps) => {
                 To: {selectedMessage.recipientEmail || selectedMessage.recipientPhone || selectedMessage.clientName}
               </p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-popover">
+                <DropdownMenuItem onClick={handleReply}>
+                  <Reply className="h-4 w-4 mr-2" /> Reply
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleForward}>
+                  <Forward className="h-4 w-4 mr-2" /> Forward
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleCopyContent}>
+                  <Copy className="h-4 w-4 mr-2" /> Copy Content
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleArchive}>
+                  <Archive className="h-4 w-4 mr-2" /> Archive
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Message Content */}
