@@ -72,6 +72,9 @@ import {
 import {
   ClientDetailStep1, ClientDetailStep2, ClientDetailStep3, ClientDetailStep4, ClientDetailStep5, ClientDetailStep6, ClientDetailStep7, ClientDetailStep8, ClientDetailStep9, ClientDetailStep10, ClientDetailStep11, ClientDetailStep12, ClientDetailStep13, ClientDetailStep14, ClientDetailStep15, ClientDetailStep16, ClientDetailStep17,
 } from "@/components/help/tutorial-steps/ClientDetailSteps";
+import {
+  JobsStep1, JobsStep2, JobsStep3, JobsStep4, JobsStep5, JobsStep6, JobsStep7, JobsStep8,
+} from "@/components/help/tutorial-steps/JobsSteps";
 
 export interface TutorialStep {
   title: string;
@@ -784,6 +787,23 @@ export const clientDetailTutorial: Tutorial = {
 };
 
 // ===========================================
+// JOBS TUTORIAL (8 Steps)
+// ===========================================
+export const jobsTutorial: Tutorial = {
+  id: "jobs",
+  steps: [
+    { title: "Your Jobs Hub", actionLabel: "Overview", description: "See all jobs with status, search, and quick actions at a glance.", Visual: JobsStep1, duration: 4000 },
+    { title: "Find Any Job", actionLabel: "Search", description: "Type to search and apply filters - find any job instantly.", Visual: JobsStep2, duration: 5000 },
+    { title: "Create New Jobs", actionLabel: "Create", description: "One click to create new jobs with client and project details.", Visual: JobsStep3, duration: 5000 },
+    { title: "Open Job Details", actionLabel: "Click", description: "Click any job card to see full details and quote breakdown.", Visual: JobsStep4, duration: 5000 },
+    { title: "Pipeline Flow", actionLabel: "Status", description: "Move jobs through Draft → Sent → Approved → Complete.", Visual: JobsStep5, duration: 5000 },
+    { title: "Quick Actions", actionLabel: "Actions", description: "View, edit, duplicate, archive - all actions in one menu.", Visual: JobsStep6, duration: 5000 },
+    { title: "Project Content", actionLabel: "Tabs", description: "Switch between Quote, Measurements, Docs, and Activity.", Visual: JobsStep7, duration: 5000 },
+    { title: "Job Completion", actionLabel: "Complete", description: "Celebrate when jobs are completed successfully!", Visual: JobsStep8, duration: 5000 },
+  ],
+};
+
+// ===========================================
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
@@ -808,4 +828,6 @@ export const tutorialMap: Record<string, Tutorial> = {
   // Client pages
   "clients": clientsTutorial,
   "clients-detail": clientDetailTutorial,
+  // Jobs pages
+  "jobs": jobsTutorial,
 };
