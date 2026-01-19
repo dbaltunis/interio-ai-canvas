@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Mail, Phone, MapPin, Building2, User, File, Activity, 
-  Edit2, Check, X, Globe, ExternalLink, StickyNote, Briefcase
+  Edit2, Check, X, Globe, ExternalLink, StickyNote, Briefcase, HelpCircle
 } from "lucide-react";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { ClientFilesManager } from "./ClientFilesManager";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { ClientEmailHistory } from "./ClientEmailHistory";
@@ -191,7 +192,10 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <SheetTitle className="text-lg leading-tight tracking-tight">{displayName}</SheetTitle>
+                <div className="flex items-center gap-2">
+                  <SheetTitle className="text-lg leading-tight tracking-tight">{displayName}</SheetTitle>
+                  <SectionHelpButton sectionId="clients-detail" />
+                </div>
                 {client.client_type === 'B2B' && client.contact_person && (
                   <p className="text-sm text-muted-foreground mt-0.5">{client.contact_person}</p>
                 )}
