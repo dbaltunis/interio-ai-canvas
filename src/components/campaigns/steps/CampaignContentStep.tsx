@@ -86,7 +86,7 @@ export const CampaignContentStep = ({
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
-  const { isLoading, getSubjectIdeas } = useCampaignAssistant();
+  const { isLoading, getSubjectIdeas, generateEmailContent } = useCampaignAssistant();
   
   // Fetch deliverability data
   const { data: deliverabilityData, isLoading: isLoadingDeliverability } = useEmailDeliverability();
@@ -116,7 +116,21 @@ export const CampaignContentStep = ({
   const handleGenerateContent = async () => {
     setIsGeneratingContent(true);
     try {
-      const templates: Record<string, string> = {
+      const result = await generateEmailContent({
+        recipientCount,
+        campaignType: type,
+      });
+      
+      if (result) {
+        if (result.subject) onUpdateSubject(result.subject);
+        if (result.content) onUpdateContent(result.content);
+        toast.success('AI content generated successfully');
+      }
+      setShowTemplates(false);
+    } catch (error) {
+      console.error('Failed to generate content:', error);
+      // Fallback to basic template if AI fails
+      const fallbackTemplates: Record<string, string> = {
         'outreach': `<p>Hi {{client_name}},</p>
 <p>I hope this email finds you well. I wanted to reach out because I believe we could help {{company_name}} achieve its goals.</p>
 <p>Would you be open to a brief conversation to explore how we might work together?</p>
@@ -136,9 +150,7 @@ export const CampaignContentStep = ({
 <p>As a valued connection, I wanted to make sure you were among the first to know. Let me know if you have any questions!</p>
 <p>Best regards</p>`,
       };
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      onUpdateContent(templates[type] || templates['outreach']);
+      onUpdateContent(fallbackTemplates[type] || fallbackTemplates['outreach']);
       setShowTemplates(false);
     } finally {
       setIsGeneratingContent(false);

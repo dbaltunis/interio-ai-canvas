@@ -47,6 +47,9 @@ export const EmailManagement = () => {
   const [newTemplateType, setNewTemplateType] = useState('custom');
   const [newTemplateSubject, setNewTemplateSubject] = useState('');
   const createTemplate = useCreateGeneralEmailTemplate();
+  
+  // Selected template for composer
+  const [selectedTemplate, setSelectedTemplate] = useState<{ subject: string; content: string } | null>(null);
 
   if (canAccessEmails === undefined) {
     return (
@@ -213,6 +216,10 @@ export const EmailManagement = () => {
                 setEditingTemplate(template);
                 setEditorOpen(true);
               }}
+              onSelectTemplate={(template) => {
+                setSelectedTemplate(template);
+                setShowComposer(true);
+              }}
             />
           </div>
         );
@@ -250,7 +257,14 @@ export const EmailManagement = () => {
       {showComposer && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
           <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
-            <EmailComposer onClose={() => setShowComposer(false)} />
+            <EmailComposer 
+              onClose={() => {
+                setShowComposer(false);
+                setSelectedTemplate(null);
+              }}
+              initialSubject={selectedTemplate?.subject}
+              initialContent={selectedTemplate?.content}
+            />
           </div>
         </div>
       )}

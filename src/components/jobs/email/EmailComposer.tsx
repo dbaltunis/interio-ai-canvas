@@ -18,9 +18,11 @@ import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 interface EmailComposerProps {
   onClose?: () => void;
   clientId?: string;
+  initialSubject?: string;
+  initialContent?: string;
 }
 
-export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
+export const EmailComposer = ({ onClose, clientId, initialSubject, initialContent }: EmailComposerProps) => {
   const { data: clients = [] } = useClients();
   const { user } = useAuth();
   const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
@@ -31,8 +33,8 @@ export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
   const [emailData, setEmailData] = useState({
     recipients: targetClient?.email ? [targetClient.email] : [] as string[],
     cc: [] as string[],
-    subject: "",
-    content: "",
+    subject: initialSubject || "",
+    content: initialContent || "",
     template: ""
   });
   
