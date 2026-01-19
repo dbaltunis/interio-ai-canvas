@@ -205,10 +205,10 @@ export const TutorialCarousel = ({
           })}
         </div>
 
-        {/* Visual area - with max height constraint */}
+        {/* Visual area - taller to prevent scrolling */}
         <div className={cn(
           "relative p-3 overflow-y-auto flex-1",
-          isMaximized ? "min-h-[400px] max-h-[500px]" : "min-h-[240px] max-h-[280px]"
+          isMaximized ? "min-h-[500px] max-h-[600px]" : "min-h-[380px] max-h-[420px]"
         )}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -252,30 +252,40 @@ export const TutorialCarousel = ({
           </p>
         </div>
 
-        {/* Navigation with mini-dots for current group */}
-        <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-t border-border">
-          <Button variant="ghost" size="sm" onClick={goPrev} className="h-7 gap-1 text-xs">
-            <ChevronLeft className="h-3 w-3" /> Prev
+        {/* Navigation footer - clear buttons below content */}
+        <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-t border-border">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goPrev} 
+            className="h-9 gap-2 px-4 text-sm font-medium"
+          >
+            <ChevronLeft className="h-4 w-4" /> Previous
           </Button>
 
           {/* Mini dots for steps within current group */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {currentGroupSteps.map((stepIdx, i) => (
               <button
                 key={stepIdx}
                 onClick={() => goToStep(stepIdx)}
                 className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all",
+                  "w-2 h-2 rounded-full transition-all",
                   stepIdx === currentStep
-                    ? "bg-primary w-3"
+                    ? "bg-primary w-4"
                     : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
                 )}
               />
             ))}
           </div>
 
-          <Button variant="ghost" size="sm" onClick={goNext} className="h-7 gap-1 text-xs">
-            Next <ChevronRight className="h-3 w-3" />
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={goNext} 
+            className="h-9 gap-2 px-4 text-sm font-medium"
+          >
+            Next <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

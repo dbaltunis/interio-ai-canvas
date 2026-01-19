@@ -8,6 +8,13 @@ import {
 } from "lucide-react";
 import { PulsingHighlight, MockCard, MockButton, MockBadge } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress, easeOutCubic } from "@/lib/demoAnimations";
+import { 
+  DemoClientCard, 
+  DemoClientHeader, 
+  DemoClientDrawer,
+  DemoStageBadge,
+  type DemoClientData 
+} from "../demo-components";
 
 interface StepProps {
   phase?: number;
@@ -576,12 +583,12 @@ const MockStageDropdown = ({ visible = false, selected = "qualified" }: { visibl
   </AnimatePresence>
 );
 
-// Sample client data for card-based layout
-const sampleClients: ClientData[] = [
-  { name: "Sarah Johnson", shortName: "Sarah J.", email: "sarah@designstudio.com", stage: "qualified", projects: 3, value: "$12,450", isHotLead: true },
-  { name: "Chen Industries", shortName: "Chen Ind.", email: "m.chen@homeinteriors.au", company: "Chen Industries", stage: "proposal", projects: 2, value: "$8,900" },
-  { name: "Emma Williams", shortName: "Emma W.", email: "emma.w@gmail.com", stage: "lead", projects: 0, value: "$0" },
-  { name: "Brown Corp", shortName: "Brown Corp", email: "james.b@corporate.com", company: "Brown Corp", stage: "approved", projects: 5, value: "$45,200" },
+// Sample client data for card-based layout - using DemoClientData type
+const sampleClients: DemoClientData[] = [
+  { id: "1", name: "Sarah Johnson", email: "sarah@designstudio.com", stage: "qualified", projects: 3, value: "$12,450", isHotLead: true },
+  { id: "2", name: "Chen Industries", email: "m.chen@homeinteriors.au", company: "Chen Industries", stage: "proposal", projects: 2, value: "$8,900" },
+  { id: "3", name: "Emma Williams", email: "emma.w@gmail.com", stage: "lead", projects: 0, value: "$0" },
+  { id: "4", name: "Brown Corp", email: "james.b@corporate.com", company: "Brown Corp", stage: "approved", projects: 5, value: "$45,200" },
 ];
 
 // ===========================================
@@ -601,7 +608,7 @@ export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
         >
-          <MockHeader />
+          <DemoClientHeader />
         </motion.div>
         
         <div className="p-2 space-y-2">
@@ -615,7 +622,7 @@ export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
               }}
               transition={{ duration: 0.15, delay: i * 0.05 }}
             >
-              <MockClientCard client={client} />
+              <DemoClientCard client={client} />
             </motion.div>
           ))}
         </div>
@@ -638,7 +645,7 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
   return (
     <div className="space-y-0 relative">
       <MockCard className="overflow-hidden rounded-xl">
-        <MockHeader 
+        <DemoClientHeader 
           searchValue={searchText} 
           searchActive={searchActive}
           filterActive={filterActive}
@@ -654,7 +661,7 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <MockClientCard client={client} highlighted={phase > 0.5 && client.name === "Sarah Johnson"} />
+                <DemoClientCard client={client} highlighted={phase > 0.5 && client.name === "Sarah Johnson"} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -672,11 +679,11 @@ export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
   return (
     <div className="space-y-0 relative">
       <MockCard className="overflow-hidden rounded-xl">
-        <MockHeader newButtonHighlight={buttonHover} />
+        <DemoClientHeader newButtonHighlight={buttonHover} />
         
         <div className="p-2 space-y-2">
           {sampleClients.slice(0, 3).map((client, i) => (
-            <MockClientCard key={i} client={client} />
+            <DemoClientCard key={i} client={client} />
           ))}
         </div>
       </MockCard>
@@ -698,13 +705,13 @@ export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
   return (
     <div className="space-y-3 relative">
       <MockCard className="overflow-hidden rounded-xl">
-        <MockHeader totalClients={127} />
+        <DemoClientHeader totalClients={127} />
         
         <div className="p-2 space-y-2">
-          <MockClientCard client={sampleClients[0]} selected={firstChecked} />
-          <MockClientCard client={sampleClients[1]} selected={secondChecked} />
-          <MockClientCard client={sampleClients[2]} selected={thirdChecked} />
-          <MockClientCard client={sampleClients[3]} />
+          <DemoClientCard client={sampleClients[0]} selected={firstChecked} />
+          <DemoClientCard client={sampleClients[1]} selected={secondChecked} />
+          <DemoClientCard client={sampleClients[2]} selected={thirdChecked} />
+          <DemoClientCard client={sampleClients[3]} />
         </div>
       </MockCard>
       
@@ -752,32 +759,32 @@ export const ClientsStep6 = ({ phase = 0 }: StepProps) => {
   const drawerVisible = phase > 0.48;
 
   return (
-    <div className="space-y-0 relative h-[300px]">
+    <div className="space-y-0 relative h-[340px]">
       <MockCard className="overflow-hidden rounded-xl">
-        <MockHeader />
+        <DemoClientHeader />
         
         <div className="p-2 space-y-2">
-          <MockClientCard client={sampleClients[0]} highlighted={cardHighlight} />
-          <MockClientCard client={sampleClients[1]} />
-          <MockClientCard client={sampleClients[2]} />
+          <DemoClientCard client={sampleClients[0]} highlighted={cardHighlight} />
+          <DemoClientCard client={sampleClients[1]} />
+          <DemoClientCard client={sampleClients[2]} />
         </div>
       </MockCard>
       
-      <MockClientDrawer visible={drawerVisible} activeTab="activity" />
+      <DemoClientDrawer visible={drawerVisible} client={sampleClients[0]} activeTab="activity" />
     </div>
   );
 };
 
 // Step 7: Quick Actions - action highlight showcase
 export const ClientsStep7 = ({ phase = 0 }: StepProps) => {
-  const actions = ["email", "call", "whatsapp", "log", "project", "edit"];
-  const actionPhases = [0.08, 0.2, 0.32, 0.44, 0.56, 0.68];
+  const actions = ["email", "call", "whatsapp", "schedule", "edit"];
+  const actionPhases = [0.08, 0.2, 0.32, 0.44, 0.56];
   
   const currentAction = actions.find((_, i) => inPhase(phase, actionPhases[i], actionPhases[i] + 0.1));
 
   return (
-    <div className="space-y-0 relative h-[280px]">
-      <MockClientDrawer visible activeTab="activity" activeAction={currentAction} />
+    <div className="space-y-0 relative h-[340px]">
+      <DemoClientDrawer visible client={sampleClients[0]} activeTab="activity" activeAction={currentAction} />
     </div>
   );
 };
@@ -834,7 +841,7 @@ export const ClientsStep8 = ({ phase = 0 }: StepProps) => {
 
 // Step 9: Profile Tabs - tab navigation animation
 export const ClientsStep9 = ({ phase = 0 }: StepProps) => {
-  const tabs = ["activity", "details", "emails", "files"];
+  const tabs: Array<"activity" | "notes" | "files" | "projects"> = ["activity", "notes", "files", "projects"];
   const tabPhases = [0, 0.25, 0.5, 0.75];
   
   const currentTab = tabs.find((_, i) => {
@@ -843,8 +850,8 @@ export const ClientsStep9 = ({ phase = 0 }: StepProps) => {
   }) || "activity";
 
   return (
-    <div className="space-y-0 relative h-[280px]">
-      <MockClientDrawer visible activeTab={currentTab} />
+    <div className="space-y-0 relative h-[340px]">
+      <DemoClientDrawer visible client={sampleClients[0]} activeTab={currentTab} />
     </div>
   );
 };
@@ -855,8 +862,8 @@ export const ClientsStep10 = ({ phase = 0 }: StepProps) => {
   const showSuccess = phase > 0.5;
 
   return (
-    <div className="space-y-0 relative h-[280px]">
-      <MockClientDrawer visible activeTab="activity" activeAction={buttonHighlight ? "project" : null} />
+    <div className="space-y-0 relative h-[340px]">
+      <DemoClientDrawer visible client={sampleClients[0]} activeTab="activity" activeAction={buttonHighlight ? "edit" : null} />
       
       {/* Success overlay */}
       <AnimatePresence>
