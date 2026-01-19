@@ -11,7 +11,8 @@ import {
   Square, CircleDot, ArrowUpDown, Grip, Image, Palette, Grid3X3,
   LayoutGrid, List, Tag, Percent, ExternalLink, QrCode, Wrench,
   AlertCircle, Info, HelpCircle, Blinds, ChevronUp, MoreHorizontal,
-  User, ArrowLeft, Pencil
+  User, ArrowLeft, Pencil, Star, Bed, ChefHat, Bath, Briefcase,
+  ScanLine, FileType, CircleCheck
 } from "lucide-react";
 import { MockCard } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress } from "@/lib/demoAnimations";
@@ -24,10 +25,10 @@ interface StepProps {
 // COMPREHENSIVE JOBS/PROJECTS TUTORIAL
 // 35+ Steps covering the complete job lifecycle
 // Mobile-optimized card-based layout
-// UPDATED to match actual app UI exactly
+// UPDATED to match actual app UI exactly (v2)
 // ===========================================
 
-// ===== SHARED COMPONENTS - MATCHING REAL UI =====
+// ===== SHARED COMPONENTS - MATCHING REAL UI EXACTLY =====
 
 // Job status badge - EXACT match to JobStatusBadge.tsx with dot indicator
 const MockStatusBadge = ({ 
@@ -134,17 +135,17 @@ interface RoomData {
 
 const sampleRooms: RoomData[] = [
   { name: "Living Room", type: "living", icon: Home, windows: 3, treatments: ["Sheer Curtains", "Roller Blinds"], total: "$2,450.90" },
-  { name: "Master Bedroom", type: "bedroom", icon: Home, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800.00" },
+  { name: "Master Bedroom", type: "bedroom", icon: Bed, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800.00" },
 ];
 
-// Treatment types
+// Treatment types - MATCHING REAL TreatmentTypeGrid.tsx with categories
 const treatmentTypes = [
-  { name: "Sheer Curtains", icon: Layers, color: "bg-pink-100 text-pink-600" },
-  { name: "Blockout Curtains", icon: Layers, color: "bg-purple-100 text-purple-600" },
-  { name: "Roller Blinds", icon: Blinds, color: "bg-blue-100 text-blue-600" },
-  { name: "Venetian Blinds", icon: Grid3X3, color: "bg-cyan-100 text-cyan-600" },
-  { name: "Roman Blinds", icon: Layers, color: "bg-orange-100 text-orange-600" },
-  { name: "Shutters", icon: Square, color: "bg-green-100 text-green-600" },
+  { name: "Sheer Curtains", category: "CURTAINS", icon: Layers, color: "bg-pink-100 text-pink-600" },
+  { name: "Blockout Curtains", category: "CURTAINS", icon: Layers, color: "bg-purple-100 text-purple-600" },
+  { name: "S-Fold Curtains", category: "CURTAINS", icon: Layers, color: "bg-violet-100 text-violet-600" },
+  { name: "Roller Blinds", category: "BLINDS", icon: Blinds, color: "bg-blue-100 text-blue-600" },
+  { name: "Venetian Blinds", category: "BLINDS", icon: Grid3X3, color: "bg-cyan-100 text-cyan-600" },
+  { name: "Roman Blinds", category: "BLINDS", icon: Layers, color: "bg-orange-100 text-orange-600" },
 ];
 
 // ===== HEADER COMPONENTS - MATCHING REAL JobsPage.tsx =====
@@ -832,64 +833,158 @@ const ChevronLeft = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Treatment selector grid
+// Treatment selector grid - MATCHING REAL TreatmentTypeGrid.tsx with categories
 const MockTreatmentGrid = ({ 
   visible = false,
   highlightedTreatment = "",
 }: {
   visible?: boolean;
   highlightedTreatment?: string;
-}) => (
-  <div className={`grid grid-cols-2 gap-2 ${visible ? "" : "opacity-50"}`}>
-    {treatmentTypes.map((treatment) => (
-      <motion.div 
-        key={treatment.name}
-        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${
-          highlightedTreatment === treatment.name 
-            ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
-            : "border-border hover:border-primary/50"
-        }`}
-        animate={highlightedTreatment === treatment.name ? { scale: 1.03 } : {}}
-      >
-        <div className={`mx-auto w-8 h-8 rounded-lg ${treatment.color} flex items-center justify-center mb-1.5`}>
-          <treatment.icon className="h-4 w-4" />
-        </div>
-        <span className="text-[10px] font-medium">{treatment.name}</span>
-      </motion.div>
-    ))}
-  </div>
-);
-
-// Fabric selector
-const MockFabricGrid = ({
-  highlightedFabric = 0,
-}: {
-  highlightedFabric?: number;
 }) => {
-  const fabrics = [
-    { name: "Ivory Linen", color: "bg-amber-100", price: "$45/m" },
-    { name: "Charcoal Cotton", color: "bg-gray-600", price: "$52/m" },
-    { name: "Navy Velvet", color: "bg-blue-900", price: "$68/m" },
-    { name: "Sage Green", color: "bg-green-200", price: "$48/m" },
-  ];
+  // Group treatments by category like real component
+  const grouped = treatmentTypes.reduce((acc, t) => {
+    if (!acc[t.category]) acc[t.category] = [];
+    acc[t.category].push(t);
+    return acc;
+  }, {} as Record<string, typeof treatmentTypes>);
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {fabrics.map((fabric, i) => (
-        <motion.div 
-          key={fabric.name}
-          className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
-            highlightedFabric === i 
-              ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
-              : "border-border"
-          }`}
-          animate={highlightedFabric === i ? { scale: 1.03 } : {}}
-        >
-          <div className={`h-10 rounded-lg ${fabric.color} mb-2`} />
-          <p className="text-[10px] font-medium truncate">{fabric.name}</p>
-          <p className="text-[9px] text-primary">{fabric.price}</p>
-        </motion.div>
+    <div className={`space-y-3 ${visible ? "" : "opacity-50"}`}>
+      {/* Search input - matching real ImprovedTreatmentSelector */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="h-10 rounded-lg border border-border bg-background pl-9 pr-3 flex items-center text-xs text-muted-foreground">
+          Search treatments: roller blinds, curtains...
+        </div>
+      </div>
+      
+      {/* Categorized treatment cards - matching real layout */}
+      {Object.entries(grouped).map(([category, treatments]) => (
+        <div key={category} className="space-y-2">
+          {/* Category header - matching real uppercase tracking */}
+          <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1">
+            {category}
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            {treatments.map((treatment) => (
+              <motion.div 
+                key={treatment.name}
+                className={`rounded-lg border cursor-pointer transition-all overflow-hidden ${
+                  highlightedTreatment === treatment.name 
+                    ? "border-primary bg-primary/5 shadow-sm" 
+                    : "border-border hover:border-primary/30"
+                }`}
+                animate={highlightedTreatment === treatment.name ? { scale: 1.02 } : {}}
+              >
+                {/* Image preview placeholder - matching real TreatmentCard */}
+                <div className="aspect-square w-full flex items-center justify-center bg-muted border-b border-border">
+                  <div className={`w-12 h-12 rounded-lg ${treatment.color} flex items-center justify-center`}>
+                    <treatment.icon className="h-6 w-6" />
+                  </div>
+                </div>
+                {/* Name with selection indicator */}
+                <div className="p-2 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-[10px] font-semibold truncate">{treatment.name}</span>
+                    {highlightedTreatment === treatment.name && (
+                      <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       ))}
+    </div>
+  );
+};
+
+// Fabric/Inventory selector - MATCHING REAL InventorySelectionPanel.tsx
+const MockFabricGrid = ({
+  highlightedFabric = 0,
+  showTabs = true,
+}: {
+  highlightedFabric?: number;
+  showTabs?: boolean;
+}) => {
+  const fabrics = [
+    { name: "ADARA", color: "bg-amber-200", price: "£26.50/m", width: "2900.0mm", category: "curtains", inStock: true },
+    { name: "BELMONT", color: "bg-gray-300", price: "£32.00/m", width: "1400.0mm", category: "curtains", inStock: true },
+    { name: "CAIRO", color: "bg-blue-200", price: "£45.00/m", width: "3000.0mm", category: "curtains", inStock: false },
+    { name: "DEVON", color: "bg-green-200", price: "£28.50/m", width: "1450.0mm", category: "curtains", inStock: true },
+  ];
+
+  const grades = ["All", "1", "2", "3", "4", "5", "6", "Budget"];
+
+  return (
+    <div className="space-y-3">
+      {/* Grade tabs - matching real InventorySelectionPanel */}
+      {showTabs && (
+        <div className="flex items-center gap-1 overflow-x-auto pb-1">
+          {grades.map((grade, i) => (
+            <div
+              key={grade}
+              className={`px-2.5 py-1 rounded-md text-[9px] font-medium whitespace-nowrap ${
+                i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {grade === "All" ? "All Materials" : grade}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Action buttons - matching real layout */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-[10px] font-medium">
+          <ScanLine className="h-3.5 w-3.5" />
+          Scan QR
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-[10px] font-medium">
+          <FileType className="h-3.5 w-3.5" />
+          Manual Entry
+        </div>
+      </div>
+      
+      {/* Fabric cards grid - matching real 4-col layout */}
+      <div className="grid grid-cols-2 gap-2">
+        {fabrics.map((fabric, i) => (
+          <motion.div 
+            key={fabric.name}
+            className={`rounded-lg border cursor-pointer transition-all overflow-hidden ${
+              highlightedFabric === i 
+                ? "border-primary bg-primary/5 shadow-sm" 
+                : "border-border hover:border-primary/30"
+            }`}
+            animate={highlightedFabric === i ? { scale: 1.02 } : {}}
+          >
+            {/* Fabric image placeholder with texture */}
+            <div className={`h-16 ${fabric.color} relative`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
+              {/* Out of stock badge */}
+              {!fabric.inStock && (
+                <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-medium rounded">
+                  Out
+                </div>
+              )}
+            </div>
+            
+            {/* Fabric details */}
+            <div className="p-2 space-y-0.5">
+              <div className="flex items-center gap-1">
+                <p className="text-[10px] font-semibold truncate">{fabric.name}</p>
+                {highlightedFabric === i && (
+                  <CircleCheck className="h-3 w-3 text-primary flex-shrink-0" />
+                )}
+              </div>
+              <p className="text-[9px] text-muted-foreground">{fabric.width} wide</p>
+              <p className="text-[9px] text-muted-foreground">For: {fabric.category}</p>
+              <p className="text-[10px] font-medium text-primary">{fabric.price}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -1629,46 +1724,114 @@ export const JobsStep9 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 10: Room Templates
+// Step 10: Room Templates - MATCHING REAL RoomTemplates.tsx exactly
 export const JobsStep10 = ({ phase = 0 }: StepProps) => {
+  // Templates matching real ROOM_TEMPLATES data
   const templates = [
-    { name: "Living Room", icon: Home },
-    { name: "Bedroom", icon: Home },
-    { name: "Kitchen", icon: Home },
-    { name: "Office", icon: Building2 },
-    { name: "Bathroom", icon: Home },
-    { name: "Custom", icon: Plus },
+    { 
+      name: "Standard Living Room", 
+      icon: Home, 
+      description: "Main window with side panels",
+      surfaces: ["Main Window 120\"×60\"", "Side Window 60\"×60\""],
+      estimatedValue: "$1,200",
+      popular: true
+    },
+    { 
+      name: "Master Bedroom", 
+      icon: Bed, 
+      description: "Large window with blackout",
+      surfaces: ["Main Window 100\"×55\"", "Side Window 50\"×55\""],
+      estimatedValue: "$900",
+      popular: true
+    },
+    { 
+      name: "Modern Kitchen", 
+      icon: ChefHat, 
+      description: "Water-resistant treatments",
+      surfaces: ["Above Sink 60\"×40\""],
+      estimatedValue: "$600",
+      popular: false
+    },
+    { 
+      name: "Home Office", 
+      icon: Briefcase, 
+      description: "Light control for work",
+      surfaces: ["Main Window 80\"×55\""],
+      estimatedValue: "$750",
+      popular: false
+    },
   ];
-  const highlightIndex = Math.floor(phase * 5.9);
+  const highlightIndex = Math.floor(phase * 3.9);
 
   return (
     <MockCard className="p-3 rounded-xl">
-      <h3 className="text-sm font-semibold mb-3">Choose Room Template</h3>
+      <div className="text-center mb-3">
+        <h3 className="text-sm font-semibold">Room Templates</h3>
+        <p className="text-[10px] text-muted-foreground">Pre-configured room layouts</p>
+      </div>
       
-      <div className="grid grid-cols-3 gap-2">
-        {templates.map((template, i) => (
+      {/* Template cards matching real RoomTemplates.tsx Card layout */}
+      <div className="space-y-2">
+        {templates.slice(0, 3).map((template, i) => (
           <motion.div 
             key={template.name}
-            className={`p-2.5 rounded-lg border text-center cursor-pointer ${
-              i === highlightIndex ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"
+            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+              i === highlightIndex ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:shadow-sm"
             }`}
-            animate={i === highlightIndex ? { scale: 1.05 } : {}}
+            animate={i === highlightIndex ? { scale: 1.01 } : {}}
           >
-            <div className={`mx-auto w-8 h-8 rounded-lg ${i === highlightIndex ? "bg-primary/20" : "bg-muted"} flex items-center justify-center mb-1`}>
-              <template.icon className={`h-4 w-4 ${i === highlightIndex ? "text-primary" : "text-muted-foreground"}`} />
+            {/* Header matching real CardHeader */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <template.icon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold">{template.name}</span>
+                  {template.popular && (
+                    <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground mt-0.5">
+                      <Star className="h-2.5 w-2.5 fill-current" />
+                      Popular
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <span className="text-[9px] font-medium">{template.name}</span>
+            
+            {/* Description */}
+            <p className="text-[10px] text-muted-foreground mb-2">{template.description}</p>
+            
+            {/* Includes list - matching real template.surfaces */}
+            <div className="mb-2">
+              <span className="text-[9px] font-medium">Includes:</span>
+              <ul className="text-[9px] text-muted-foreground mt-0.5 space-y-0.5">
+                {template.surfaces.map((surface, idx) => (
+                  <li key={idx} className="flex items-center justify-between">
+                    <span>• {surface.split(' ')[0]} {surface.split(' ')[1]}</span>
+                    <span className="text-[8px]">{surface.split(' ').slice(2).join(' ')}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* Footer matching real - Est. Value + Use Template button */}
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <div>
+                <span className="text-[9px] text-muted-foreground">Est. Value: </span>
+                <span className="text-[10px] font-medium">{template.estimatedValue}</span>
+              </div>
+              <div className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium ${
+                i === highlightIndex 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                <Copy className="h-3 w-3" />
+                Use Template
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
-      
-      <motion.p 
-        className="text-[10px] text-muted-foreground text-center mt-3"
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Templates include common window layouts
-      </motion.p>
     </MockCard>
   );
 };
@@ -1803,35 +1966,64 @@ export const JobsStep12 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 13: Window Types
+// Step 13: Window Types - MATCHING REAL WindowTypeSelector.tsx with visual previews
 export const JobsStep13 = ({ phase = 0 }: StepProps) => {
-  const windowTypes = [
-    { name: "Standard", icon: Square },
-    { name: "Bay Window", icon: Maximize2 },
-    { name: "French Door", icon: Grid3X3 },
-    { name: "Sliding Door", icon: ArrowRight },
-  ];
-  const highlightIndex = Math.floor(phase * 3.9);
+  const highlightIndex = Math.floor(phase * 1.9);
 
   return (
     <MockCard className="p-3 rounded-xl">
-      <h3 className="text-sm font-semibold mb-3">Select Window Type</h3>
+      {/* Search input matching real WindowTypeSelector */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="h-10 rounded-lg border border-border bg-background pl-9 pr-3 flex items-center text-xs text-muted-foreground">
+          Search window types: standard, bay window...
+        </div>
+      </div>
       
       <div className="grid grid-cols-2 gap-2">
-        {windowTypes.map((type, i) => (
-          <motion.div 
-            key={type.name}
-            className={`p-3 rounded-lg border text-center cursor-pointer ${
-              i === highlightIndex ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"
-            }`}
-            animate={i === highlightIndex ? { scale: 1.03 } : {}}
-          >
-            <div className={`mx-auto w-10 h-10 rounded-lg ${i === highlightIndex ? "bg-primary/20" : "bg-muted"} flex items-center justify-center mb-2`}>
-              <type.icon className={`h-5 w-5 ${i === highlightIndex ? "text-primary" : "text-muted-foreground"}`} />
+        {/* Standard Window - matching real visual */}
+        <motion.div 
+          className={`rounded-lg border cursor-pointer overflow-hidden ${
+            highlightIndex === 0 ? "border-primary bg-primary/5 shadow-sm" : "border-border"
+          }`}
+          animate={highlightIndex === 0 ? { scale: 1.02 } : {}}
+        >
+          <div className="aspect-square w-full flex items-center justify-center bg-muted border-b border-border">
+            {/* Standard 4-pane window visual */}
+            <div className="w-16 h-16 border-2 border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 relative shadow-inner">
+              <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5 p-0.5">
+                {[0,1,2,3].map(i => <div key={i} className="bg-blue-100/50 border border-gray-400" />)}
+              </div>
+              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-600 -translate-y-1/2" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 -translate-x-1/2" />
             </div>
-            <span className="text-[10px] font-medium">{type.name}</span>
-          </motion.div>
-        ))}
+          </div>
+          <div className="p-2 text-center">
+            <span className="text-[10px] font-semibold">Standard Window</span>
+          </div>
+        </motion.div>
+        
+        {/* Room Wall - matching real brick visual */}
+        <motion.div 
+          className={`rounded-lg border cursor-pointer overflow-hidden ${
+            highlightIndex === 1 ? "border-primary bg-primary/5 shadow-sm" : "border-border"
+          }`}
+          animate={highlightIndex === 1 ? { scale: 1.02 } : {}}
+        >
+          <div className="aspect-square w-full flex items-center justify-center bg-muted border-b border-border">
+            {/* Brick wall visual */}
+            <div className="w-16 h-16 bg-gradient-to-br from-red-300 to-red-500 border-2 border-gray-700 relative overflow-hidden shadow-lg">
+              {[0,1,2,3].map(row => (
+                <div key={row} className="flex gap-px h-4" style={{ marginLeft: row % 2 ? '-4px' : '0' }}>
+                  {[0,1,2,3].map(i => <div key={i} className="flex-1 border border-red-700/40 bg-red-400" />)}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="p-2 text-center">
+            <span className="text-[10px] font-semibold">Room Wall</span>
+          </div>
+        </motion.div>
       </div>
     </MockCard>
   );
