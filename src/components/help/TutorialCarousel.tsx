@@ -181,29 +181,6 @@ export const TutorialCarousel = ({
           </div>
         </div>
 
-        {/* Grouped Navigation Tabs */}
-        <div className="flex items-center gap-0.5 px-2 py-1.5 bg-background border-b border-border overflow-x-auto">
-          {stepGroups.map((group, idx) => {
-            const isActive = group.id === currentGroupId;
-            const hasSteps = (groupedSteps[group.id]?.length || 0) > 0;
-            if (!hasSteps) return null;
-            
-            return (
-              <button
-                key={group.id}
-                onClick={() => goToGroup(group.id)}
-                className={cn(
-                  "px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap transition-all shrink-0",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                {group.shortLabel}
-              </button>
-            );
-          })}
-        </div>
 
         {/* Visual area - taller to prevent scrolling */}
         <div className={cn(
