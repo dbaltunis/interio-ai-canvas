@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, Mail, Calendar as CalendarIcon, Send, Zap, Clock, Info } from "lucide-react";
+import { Users, Mail, Calendar as CalendarIcon, Send, Zap, Clock, Info, AlertTriangle, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { CampaignData } from "../CampaignWizard";
 
@@ -70,6 +70,19 @@ export const CampaignReviewStep = ({
 
   return (
     <div className="space-y-5">
+      {/* Tracking Limitations Banner */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+        <BarChart3 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+        <div className="text-sm">
+          <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+            Tracking Limitations
+          </p>
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            Open and click tracking may be limited when using the shared InterioApp email service. Many email clients block tracking pixels by default. For accurate analytics, consider integrating SendGrid with your own domain.
+          </p>
+        </div>
+      </div>
+
       {/* Schedule Options - Compact */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">When to send?</Label>

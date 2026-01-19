@@ -58,17 +58,52 @@ interface DeliverabilityScore {
   };
 }
 
-// Comprehensive spam word list
+// Comprehensive spam word list - significantly expanded for realistic detection
 const SPAM_WORDS = [
+  // Classic spam triggers
   'free', 'urgent', 'act now', 'limited time', 'click here', 'buy now',
   'order now', 'don\'t miss', 'exclusive deal', 'special offer', 'winner',
   'congratulations', 'you won', 'cash prize', 'make money', 'earn money',
   'extra income', 'no obligation', 'risk free', 'satisfaction guaranteed',
   'double your', 'increase your', 'unlimited', '100% free', 'best price',
   'lowest price', 'amazing', 'incredible', 'unbelievable', 'miracle',
-  '!!!', '???', 'URGENT', 'IMPORTANT', 'ACT NOW', 'LIMITED',
   'credit card', 'no credit check', 'no questions asked', 'apply now',
-  'call now'
+  'call now',
+  // Urgency words
+  'hurry', 'today only', 'expires', 'deadline', 'final', 'last chance',
+  'limited offer', 'while supplies last', 'for instant access', 'now or never',
+  'don\'t delay', 'what are you waiting for', 'before it\'s too late',
+  // Money/financial triggers
+  'discount', 'save', 'cheap', 'affordable', 'bonus', 'bargain', 'clearance',
+  'prize', 'cash', 'dollars', 'money back', 'refund', 'investment', 'income',
+  'profit', 'earnings', 'financial freedom', 'get rich', 'wealth',
+  // Hype words
+  'revolutionary', 'breakthrough', 'secret', 'exclusive access', 'insider',
+  'guaranteed', 'proven', 'results', 'success', 'powerful', 'effective',
+  'transform', 'life-changing', 'game-changer', 'ultimate',
+  // Pressure tactics
+  'act immediately', 'respond now', 'take action', 'don\'t hesitate',
+  'once in a lifetime', 'be the first', 'join now', 'sign up now',
+  'register now', 'subscribe now', 'get started now',
+  // Suspicious phrases
+  'no hidden', 'no strings attached', 'this isn\'t spam', 'not spam',
+  'as seen on', 'featured on', 'endorsed by', 'recommended by',
+  'you have been selected', 'you\'ve been chosen', 'dear friend',
+  'dear valued customer', 'attention', 'important notice',
+  // Medical/health spam
+  'weight loss', 'lose weight', 'diet', 'supplement', 'cure', 'treatment',
+  'prescription', 'pharmacy', 'medication', 'pills', 'natural remedy',
+  // Format issues (detected separately but listed for awareness)
+  '!!!', '???', 'URGENT', 'IMPORTANT', 'ACT NOW', 'LIMITED', 'FREE',
+  'CLICK', 'BUY', 'ORDER', 'CALL', 'WIN', 'WINNER', 'CASH', 'PRIZE',
+];
+
+// Additional patterns to check
+const SPAM_PATTERNS = [
+  /\$\d+/g, // Dollar amounts like $100
+  /\d+%\s*(off|discount|save)/gi, // Percentage discounts
+  /\b(xxx|adult|viagra|casino)\b/gi, // Adult/gambling content
+  /\b(unsubscribe|opt.?out|remove\s+me)\b/gi, // Excessive unsubscribe mentions
 ];
 
 export const useEmailDeliverability = () => {
@@ -103,15 +138,35 @@ export const analyzeEmailContent = (
   const foundWords: string[] = [];
   const structureIssues: string[] = [];
 
-  // Check spam words
+  // Check spam words (case-insensitive)
   SPAM_WORDS.forEach(word => {
     if (textToCheck.includes(word.toLowerCase())) {
       foundWords.push(word);
     }
   });
 
-  // Calculate spam score (0-100, lower is better)
-  const spamScore = Math.min(100, foundWords.length * 15);
+  // Check spam patterns
+  SPAM_PATTERNS.forEach(pattern => {
+    const matches = textToCheck.match(pattern);
+    if (matches && matches.length > 0) {
+      foundWords.push(...matches.slice(0, 2)); // Add up to 2 matches per pattern
+    }
+  });
+
+  // Check for excessive caps in the actual text (not just subject)
+  const capsMatches = content.match(/\b[A-Z]{4,}\b/g);
+  if (capsMatches && capsMatches.length > 2) {
+    foundWords.push('EXCESSIVE CAPS');
+  }
+
+  // Check for excessive exclamation marks
+  const exclamationCount = (textToCheck.match(/!/g) || []).length;
+  if (exclamationCount > 3) {
+    foundWords.push('Too many exclamation marks');
+  }
+
+  // Calculate spam score (0-100, lower is better) - more aggressive scoring
+  const spamScore = Math.min(100, foundWords.length * 12);
 
   // Structure checks
   let structureScore = 10; // Start with full score
@@ -125,7 +180,7 @@ export const analyzeEmailContent = (
     structureScore -= 1;
   }
 
-  // Check for ALL CAPS (more than 30%)
+  // Check for ALL CAPS in subject (more than 30%)
   const capsRatio = (subject.match(/[A-Z]/g)?.length || 0) / Math.max(1, subject.replace(/[^a-zA-Z]/g, '').length);
   if (capsRatio > 0.3 && subject.length > 5) {
     structureIssues.push('Too many capital letters in subject');
@@ -149,6 +204,9 @@ export const analyzeEmailContent = (
   if (linkCount > 5) {
     structureIssues.push('Too many links (> 5)');
     structureScore -= 2;
+  } else if (linkCount > 3) {
+    structureIssues.push('Consider reducing links (> 3)');
+    structureScore -= 1;
   }
 
   // Check for personalization (good!)
@@ -163,6 +221,9 @@ export const analyzeEmailContent = (
   if (imgCount > 3 && plainContent.length < 100) {
     structureIssues.push('Too many images vs text');
     structureScore -= 2;
+  } else if (imgCount > 2 && plainContent.length < 200) {
+    structureIssues.push('High image-to-text ratio');
+    structureScore -= 1;
   }
 
   return {
@@ -190,14 +251,18 @@ export const calculateDeliverabilityScore = (
   const usingSharedService = deliverabilityData?.usingSharedService ?? false;
   const serviceInfo = deliverabilityData?.serviceInfo;
 
-  // Domain Authentication (40%)
+  // Domain Authentication (40%) - REALISTIC scoring for shared service
   if (deliverabilityData) {
-    // If using shared service, domain auth is already handled
     if (usingSharedService) {
-      breakdown.domainAuth.score = 40; // Full score
-      breakdown.domainAuth.status = 'good';
-      breakdown.reputation.score = deliverabilityData.scores.reputation;
-      breakdown.reputation.status = 'good';
+      // Shared service: domain auth is handled but NOT perfect - reduce score
+      // Shared domains have less trust than custom authenticated domains
+      breakdown.domainAuth.score = 28; // Reduced from 40 - shared domains are less trusted
+      breakdown.domainAuth.status = 'warning';
+      recommendations.push('Using shared email service - consider SendGrid with your own domain for better deliverability');
+      
+      // Reputation for shared service - also reduced
+      breakdown.reputation.score = Math.min(18, deliverabilityData.scores.reputation || 15);
+      breakdown.reputation.status = 'warning';
     } else {
       // Custom SendGrid - check their domain auth
       const { domainAuthentication } = deliverabilityData;
@@ -224,15 +289,20 @@ export const calculateDeliverabilityScore = (
   } else {
     // No data = assume worst case for domain auth, medium for reputation
     breakdown.domainAuth.score = 0;
-    breakdown.reputation.score = 15;
+    breakdown.reputation.score = 12;
     recommendations.push('Connect SendGrid for domain authentication');
   }
 
-  // Content Score (20%)
+  // Content Score (20%) - More aggressive penalties
   // Convert spam score (0-100, lower better) to content score (0-20, higher better)
-  breakdown.content.score = Math.round(20 * (1 - contentAnalysis.spamScore / 100));
-  if (contentAnalysis.spamScore > 30) {
+  const contentPenalty = Math.min(20, contentAnalysis.spamScore * 0.25);
+  breakdown.content.score = Math.round(Math.max(0, 20 - contentPenalty));
+  
+  if (contentAnalysis.spamScore > 20) {
     contentAnalysis.issues.forEach(issue => recommendations.push(issue));
+  }
+  if (contentAnalysis.spamScore > 40) {
+    recommendations.push('High spam word count detected - rewrite with neutral language');
   }
 
   // Structure Score (10%)
@@ -243,7 +313,7 @@ export const calculateDeliverabilityScore = (
 
   // Recipient Factors (5%)
   // Check for strict providers (Yahoo, Hotmail, AOL)
-  const strictProviders = ['yahoo.com', 'yahoo.co', 'hotmail.com', 'outlook.com', 'aol.com', 'live.com'];
+  const strictProviders = ['yahoo.com', 'yahoo.co', 'hotmail.com', 'outlook.com', 'aol.com', 'live.com', 'msn.com'];
   const strictCount = recipientEmails.filter(email => 
     strictProviders.some(provider => email.toLowerCase().includes(provider))
   ).length;
@@ -256,20 +326,20 @@ export const calculateDeliverabilityScore = (
     breakdown.recipient.score = 4;
   }
 
-  // Set status based on scores
-  breakdown.domainAuth.status = breakdown.domainAuth.score >= 30 ? 'good' : breakdown.domainAuth.score >= 15 ? 'warning' : 'error';
-  breakdown.reputation.status = breakdown.reputation.score >= 18 ? 'good' : breakdown.reputation.score >= 10 ? 'warning' : 'error';
-  breakdown.content.status = breakdown.content.score >= 15 ? 'good' : breakdown.content.score >= 10 ? 'warning' : 'error';
-  breakdown.structure.status = breakdown.structure.score >= 7 ? 'good' : breakdown.structure.score >= 4 ? 'warning' : 'error';
+  // Set status based on scores - stricter thresholds
+  breakdown.domainAuth.status = breakdown.domainAuth.score >= 35 ? 'good' : breakdown.domainAuth.score >= 20 ? 'warning' : 'error';
+  breakdown.reputation.status = breakdown.reputation.score >= 20 ? 'good' : breakdown.reputation.score >= 12 ? 'warning' : 'error';
+  breakdown.content.status = breakdown.content.score >= 16 ? 'good' : breakdown.content.score >= 10 ? 'warning' : 'error';
+  breakdown.structure.status = breakdown.structure.score >= 8 ? 'good' : breakdown.structure.score >= 5 ? 'warning' : 'error';
   breakdown.recipient.status = breakdown.recipient.score >= 4 ? 'good' : breakdown.recipient.score >= 3 ? 'warning' : 'error';
 
   const total = Object.values(breakdown).reduce((sum, item) => sum + item.score, 0);
   const maxTotal = 100;
   const percentage = Math.round((total / maxTotal) * 100);
 
-  // Determine warning level and if sending is allowed
+  // Determine warning level and if sending is allowed - adjusted thresholds
   let warningLevel: 'none' | 'low' | 'medium' | 'high' = 'none';
-  if (percentage < 40) warningLevel = 'high';
+  if (percentage < 45) warningLevel = 'high';
   else if (percentage < 60) warningLevel = 'medium';
   else if (percentage < 75) warningLevel = 'low';
 
