@@ -77,9 +77,10 @@ export interface TutorialStep {
   title: string;
   actionLabel: string;
   description: string;
-  Visual: ComponentType;
+  Visual: ComponentType<{ phase?: number }>;
   relatedSection?: string;
   prerequisiteNote?: string;
+  duration?: number; // Custom duration per step in ms
 }
 
 export interface Tutorial {
