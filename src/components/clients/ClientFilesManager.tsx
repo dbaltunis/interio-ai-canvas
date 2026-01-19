@@ -35,6 +35,27 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
     setSelectedFiles(event.target.files);
   };
 
+  // Direct upload for compact mode - uses files directly instead of state
+  const handleDirectUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        await uploadFile.mutateAsync({
+          file: files[i],
+          clientId,
+          userId,
+          projectId: undefined,
+        });
+      }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
+  };
+
   const handleUpload = async () => {
     if (!selectedFiles || selectedFiles.length === 0) {
       toast.error("Please select files to upload");
@@ -135,9 +156,8 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                   type="file"
                   multiple
                   onChange={(e) => {
-                    setSelectedFiles(e.target.files);
                     if (e.target.files && e.target.files.length > 0) {
-                      handleUpload();
+                      handleDirectUpload(e.target.files);
                     }
                   }}
                   className="hidden"
