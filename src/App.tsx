@@ -33,6 +33,7 @@ import { SyncIndicator } from "./components/system/SyncIndicator";
 // FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
+import { WelcomeTour } from "./components/teaching/WelcomeTour";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
@@ -184,6 +185,7 @@ const App = () => {
                       <DebugPanel />
                       <TeachingOverlay />
                       <TeachingActiveSpotlight />
+                      <WelcomeTour />
                       <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
                   <Routes>

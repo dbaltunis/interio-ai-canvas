@@ -4,7 +4,7 @@ import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AIBackground } from "@/components/common/AIBackground";
-import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
+// OnboardingProvider removed - unified into Tips & Guidance in Team Hub
 // Session timeout removed - users stay logged in via Supabase auto-refresh (v2.3.7)
 import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
@@ -412,20 +412,18 @@ const Index = () => {
   };
 
   return (
-    <OnboardingProvider>
-      <AIBackground variant="subtle" className="min-h-screen w-full">
-        <div className="relative min-h-screen pb-20 lg:pb-0 pt-safe lg:pt-0">
-          <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
+    <AIBackground variant="subtle" className="min-h-screen w-full">
+      <div className="relative min-h-screen pb-20 lg:pb-0 pt-safe lg:pt-0">
+        <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-          <main className="w-full">
-            {renderActiveComponent()}
-          </main>
-          
-          <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-          <VersionFooter />
-        </div>
-      </AIBackground>
-    </OnboardingProvider>
+        <main className="w-full">
+          {renderActiveComponent()}
+        </main>
+        
+        <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+        <VersionFooter />
+      </div>
+    </AIBackground>
   );
 };
 
