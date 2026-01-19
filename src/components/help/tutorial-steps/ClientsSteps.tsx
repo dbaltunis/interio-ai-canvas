@@ -7,8 +7,7 @@ import {
   DollarSign, ExternalLink, StickyNote, Sparkles, FolderKanban, UserCheck, Edit
 } from "lucide-react";
 import { PulsingHighlight, MockCard, MockButton, MockBadge } from "../TutorialVisuals";
-import { DemoCursor } from "../DemoCursor";
-import { inPhase, interpolatePath, isClicking, typingProgress, phaseProgress, easeOutCubic } from "@/lib/demoAnimations";
+import { inPhase, typingProgress, phaseProgress, easeOutCubic } from "@/lib/demoAnimations";
 
 interface StepProps {
   phase?: number;
@@ -625,21 +624,11 @@ export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 2: Search + Filter in ONE fluid motion
+// Step 2: Search + Filter - visual animation without cursor
 export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 175, y: 22, at: 0 },
-    { x: 175, y: 22, at: 0.15 },  // Click search
-    { x: 175, y: 22, at: 0.5 },   // Type
-    { x: 220, y: 22, at: 0.7 },   // Move to filter
-    { x: 220, y: 22, at: 1 },
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
   const searchActive = phase > 0.12;
   const searchText = typingProgress(phase, 0.18, 0.45, "Sarah");
-  const isTyping = inPhase(phase, 0.18, 0.45);
   const filterActive = phase > 0.65;
-  const clicking = isClicking(phase, [0.15, 0.68]);
   
   // Filter which clients are visible based on search
   const filteredClients = phase > 0.4 
@@ -657,7 +646,7 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
         
         <div className="p-2 space-y-2">
           <AnimatePresence mode="popLayout">
-            {filteredClients.slice(0, 4).map((client, i) => (
+            {filteredClients.slice(0, 4).map((client) => (
               <motion.div
                 key={client.name}
                 initial={{ opacity: 0, height: 0 }}
@@ -671,26 +660,14 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
           </AnimatePresence>
         </div>
       </MockCard>
-      
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} isTyping={isTyping} visible={phase > 0.05} />
     </div>
   );
 };
 
-// Step 3: Add New Client (click → form → close)
+// Step 3: Add New Client - visual animation without cursor
 export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 100, y: 50, at: 0 },
-    { x: 260, y: 22, at: 0.25 },  // Move to New button
-    { x: 260, y: 22, at: 0.35 },  // Click
-    { x: 200, y: 140, at: 0.5 },  // Move into form
-    { x: 200, y: 140, at: 0.85 }, // Stay
-    { x: 250, y: 95, at: 1 },     // Move to close
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  const showForm = phase > 0.32 && phase < 0.9;
-  const buttonHover = phase > 0.2 && phase < 0.35;
-  const clicking = isClicking(phase, [0.33, 0.88]);
+  const showForm = phase > 0.25 && phase < 0.9;
+  const buttonHover = phase > 0.15 && phase < 0.28;
 
   return (
     <div className="space-y-0 relative">
@@ -705,29 +682,16 @@ export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
       </MockCard>
       
       <MockClientForm visible={showForm} />
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05} />
     </div>
   );
 };
 
-// Step 4: Power Select - Rapid checkbox selection + bulk bar
+// Step 4: Power Select - checkbox selection animation
 export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 22, y: 65, at: 0 },
-    { x: 22, y: 65, at: 0.12 },   // Click 1st
-    { x: 22, y: 115, at: 0.25 }, // Move to 2nd
-    { x: 22, y: 115, at: 0.35 }, // Click 2nd
-    { x: 22, y: 165, at: 0.5 },  // Move to 3rd
-    { x: 22, y: 165, at: 0.6 },  // Click 3rd
-    { x: 150, y: 280, at: 0.85 }, // Move to bulk bar
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  
   const firstChecked = phase > 0.15;
   const secondChecked = phase > 0.38;
   const thirdChecked = phase > 0.62;
   const bulkBarVisible = phase > 0.5;
-  const clicking = isClicking(phase, [0.14, 0.37, 0.61]);
   
   const selectedCount = (firstChecked ? 1 : 0) + (secondChecked ? 1 : 0) + (thirdChecked ? 1 : 0);
 
@@ -747,25 +711,12 @@ export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
       <AnimatePresence>
         {bulkBarVisible && <MockBulkActionsBar count={selectedCount} />}
       </AnimatePresence>
-      
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05 && phase < 0.9} />
     </div>
   );
 };
 
-// Step 5: Bulk Actions Showcase - Rapid hover tooltips
+// Step 5: Bulk Actions Showcase - highlight animations
 export const ClientsStep5 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 180, y: 25, at: 0 },
-    { x: 180, y: 25, at: 0.15 },  // Email
-    { x: 215, y: 25, at: 0.35 },  // Export
-    { x: 215, y: 25, at: 0.5 },
-    { x: 250, y: 25, at: 0.7 },   // Delete
-    { x: 250, y: 25, at: 0.85 },
-    { x: 290, y: 25, at: 1 },     // Close
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  
   const emailHighlight = inPhase(phase, 0.1, 0.3);
   const exportHighlight = inPhase(phase, 0.35, 0.55);
   const deleteHighlight = inPhase(phase, 0.6, 0.8);
@@ -791,25 +742,14 @@ export const ClientsStep5 = ({ phase = 0 }: StepProps) => {
       >
         Hover each action to see what it does
       </motion.p>
-      
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} visible={phase > 0.05} />
     </div>
   );
 };
 
-// Step 6: Open Client Details (click card → drawer slides in)
+// Step 6: Open Client Details - card highlight → drawer
 export const ClientsStep6 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 100, y: 75, at: 0 },
-    { x: 150, y: 75, at: 0.3 },  // Move to card
-    { x: 150, y: 75, at: 0.45 }, // Click
-    { x: 200, y: 140, at: 0.8 }, // Move into drawer
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  
-  const cardHighlight = phase > 0.25 && phase < 0.5;
+  const cardHighlight = phase > 0.2 && phase < 0.45;
   const drawerVisible = phase > 0.48;
-  const clicking = isClicking(phase, [0.47]);
 
   return (
     <div className="space-y-0 relative h-[300px]">
@@ -824,53 +764,28 @@ export const ClientsStep6 = ({ phase = 0 }: StepProps) => {
       </MockCard>
       
       <MockClientDrawer visible={drawerVisible} activeTab="activity" />
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05 && phase < 0.75} />
     </div>
   );
 };
 
-// Step 7: Quick Actions - Rapid hover showcase
+// Step 7: Quick Actions - action highlight showcase
 export const ClientsStep7 = ({ phase = 0 }: StepProps) => {
   const actions = ["email", "call", "whatsapp", "log", "project", "edit"];
   const actionPhases = [0.08, 0.2, 0.32, 0.44, 0.56, 0.68];
   
   const currentAction = actions.find((_, i) => inPhase(phase, actionPhases[i], actionPhases[i] + 0.1));
-  
-  const cursorPath = [
-    { x: 195, y: 105, at: 0 },
-    { x: 195, y: 105, at: 0.12 },  // Email
-    { x: 210, y: 105, at: 0.24 },  // Call
-    { x: 225, y: 105, at: 0.36 },  // WhatsApp
-    { x: 240, y: 105, at: 0.48 },  // Log
-    { x: 255, y: 105, at: 0.60 },  // Project
-    { x: 270, y: 105, at: 0.72 },  // Edit
-    { x: 270, y: 105, at: 1 },
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
 
   return (
     <div className="space-y-0 relative h-[280px]">
       <MockClientDrawer visible activeTab="activity" activeAction={currentAction} />
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} visible={phase > 0.05 && phase < 0.85} />
     </div>
   );
 };
 
-// Step 8: Pipeline Management - Stage dropdown
+// Step 8: Pipeline Management - Stage dropdown animation
 export const ClientsStep8 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 180, y: 60, at: 0 },
-    { x: 130, y: 65, at: 0.25 },  // Move to stage badge
-    { x: 130, y: 65, at: 0.35 },  // Click
-    { x: 130, y: 115, at: 0.6 },   // Move to "Proposal"
-    { x: 130, y: 115, at: 0.75 },  // Click
-    { x: 130, y: 65, at: 1 },
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  
-  const dropdownOpen = phase > 0.38 && phase < 0.78;
-  const clicking = isClicking(phase, [0.37, 0.77]);
-  const newStage = phase > 0.78;
+  const dropdownOpen = phase > 0.3 && phase < 0.7;
+  const newStage = phase > 0.72;
 
   return (
     <div className="space-y-0 relative">
@@ -888,7 +803,7 @@ export const ClientsStep8 = ({ phase = 0 }: StepProps) => {
                   newStage 
                     ? "bg-yellow-100 text-yellow-700" 
                     : "bg-green-100 text-green-700"
-                } ${phase > 0.2 && phase < 0.4 ? "ring-2 ring-primary ring-offset-1" : ""}`}
+                } ${phase > 0.15 && phase < 0.35 ? "ring-2 ring-primary ring-offset-1" : ""}`}
                 animate={newStage ? { scale: [1, 1.1, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
@@ -913,13 +828,11 @@ export const ClientsStep8 = ({ phase = 0 }: StepProps) => {
           </motion.div>
         )}
       </MockCard>
-      
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05 && phase < 0.9} />
     </div>
   );
 };
 
-// Step 9: Profile Tabs - Navigate through tabs
+// Step 9: Profile Tabs - tab navigation animation
 export const ClientsStep9 = ({ phase = 0 }: StepProps) => {
   const tabs = ["activity", "details", "emails", "files"];
   const tabPhases = [0, 0.25, 0.5, 0.75];
@@ -928,38 +841,18 @@ export const ClientsStep9 = ({ phase = 0 }: StepProps) => {
     const nextPhase = tabPhases[i + 1] || 1;
     return phase >= tabPhases[i] && phase < nextPhase;
   }) || "activity";
-  
-  const cursorPath = [
-    { x: 190, y: 150, at: 0 },
-    { x: 210, y: 150, at: 0.25 },  // Details
-    { x: 230, y: 150, at: 0.5 },   // Emails
-    { x: 250, y: 150, at: 0.75 },  // Files
-    { x: 250, y: 150, at: 1 },
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  const clicking = isClicking(phase, [0.25, 0.5, 0.75]);
 
   return (
     <div className="space-y-0 relative h-[280px]">
       <MockClientDrawer visible activeTab={currentTab} />
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05} />
     </div>
   );
 };
 
 // Step 10: Create Project from Client - celebration
 export const ClientsStep10 = ({ phase = 0 }: StepProps) => {
-  const cursorPath = [
-    { x: 200, y: 100, at: 0 },
-    { x: 245, y: 105, at: 0.3 },  // Move to New Project button
-    { x: 245, y: 105, at: 0.45 }, // Click
-    { x: 200, y: 150, at: 0.8 },  // Move away
-  ];
-  const cursorPos = interpolatePath(phase, cursorPath);
-  
-  const buttonHighlight = phase > 0.25 && phase < 0.5;
-  const clicking = isClicking(phase, [0.47]);
-  const showSuccess = phase > 0.55;
+  const buttonHighlight = phase > 0.2 && phase < 0.45;
+  const showSuccess = phase > 0.5;
 
   return (
     <div className="space-y-0 relative h-[280px]">
@@ -1001,8 +894,6 @@ export const ClientsStep10 = ({ phase = 0 }: StepProps) => {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05 && phase < 0.6} />
     </div>
   );
 };
