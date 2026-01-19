@@ -281,9 +281,9 @@ export const CampaignWizard = ({
             </span>
           </div>
           
-          {/* Enhanced Step Indicators */}
-          <div className="space-y-3">
-            <Progress value={progress} className="h-1.5" />
+          {/* Compact Step Indicators */}
+          <div className="space-y-2">
+            <Progress value={progress} className="h-1" />
             <div className="flex justify-between gap-1">
               {STEPS.map((step) => {
                 const isCompleted = step.id < currentStep;
@@ -296,34 +296,29 @@ export const CampaignWizard = ({
                     onClick={() => handleStepClick(step.id)}
                     disabled={!isClickable}
                     className={cn(
-                      "flex-1 flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all",
+                      "flex-1 flex items-center justify-center gap-1.5 p-1.5 rounded-md transition-all",
                       isClickable && "cursor-pointer hover:bg-muted/50",
                       !isClickable && !isCurrent && "cursor-default opacity-50"
                     )}
                   >
                     <div className={cn(
-                      "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all",
+                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium transition-all shrink-0",
                       isCompleted && "bg-primary text-primary-foreground",
-                      isCurrent && "bg-primary/20 text-primary border-2 border-primary",
+                      isCurrent && "bg-primary/20 text-primary border border-primary",
                       !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
                     )}>
                       {isCompleted ? (
-                        <Check className="h-4 w-4" />
+                        <Check className="h-3 w-3" />
                       ) : (
                         step.id
                       )}
                     </div>
-                    <div className="text-center">
-                      <p className={cn(
-                        "text-xs font-medium",
-                        isCurrent ? "text-foreground" : "text-muted-foreground"
-                      )}>
-                        {step.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground hidden sm:block">
-                        {step.description}
-                      </p>
-                    </div>
+                    <span className={cn(
+                      "text-[10px] font-medium",
+                      isCurrent ? "text-foreground" : "text-muted-foreground"
+                    )}>
+                      {step.title}
+                    </span>
                   </button>
                 );
               })}

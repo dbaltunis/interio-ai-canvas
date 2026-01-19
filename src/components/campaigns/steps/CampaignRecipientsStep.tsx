@@ -4,7 +4,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Mail, AlertCircle, CheckCircle2, Send, Clock, Star, Filter, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Mail, AlertCircle, CheckCircle2, Send, Clock, Star, Filter, Users, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { SelectedClient } from "@/hooks/useClientSelection";
 
 interface CampaignRecipientsStepProps {
@@ -30,14 +31,26 @@ export const CampaignRecipientsStep = ({
 }: CampaignRecipientsStepProps) => {
   const [groupByStage, setGroupByStage] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['lead', 'contacted', 'quoted']));
+  const [searchQuery, setSearchQuery] = useState("");
   
   const withEmail = allSelected.filter(c => c.email);
   const withoutEmail = allSelected.filter(c => !c.email);
 
-  // Group clients by funnel stage
+  // Filter contacts based on search query
+  const filteredWithEmail = useMemo(() => {
+    if (!searchQuery.trim()) return withEmail;
+    const query = searchQuery.toLowerCase();
+    return withEmail.filter(client => 
+      client.name.toLowerCase().includes(query) ||
+      client.email?.toLowerCase().includes(query) ||
+      client.company_name?.toLowerCase().includes(query)
+    );
+  }, [withEmail, searchQuery]);
+
+  // Group clients by funnel stage (using filtered list)
   const groupedClients = useMemo(() => {
     const groups: Record<string, SelectedClient[]> = {};
-    withEmail.forEach(client => {
+    filteredWithEmail.forEach(client => {
       const stage = client.funnel_stage || 'unknown';
       if (!groups[stage]) groups[stage] = [];
       groups[stage].push(client);
@@ -51,7 +64,7 @@ export const CampaignRecipientsStep = ({
     });
     
     return sortedEntries;
-  }, [withEmail]);
+  }, [filteredWithEmail]);
 
   const toggleRecipient = (client: SelectedClient) => {
     const exists = recipients.find(r => r.id === client.id);
@@ -150,29 +163,41 @@ export const CampaignRecipientsStep = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg">Select Recipients</h3>
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-primary">{recipients.length}</span> of {withEmail.length} contacts selected
-          </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">Select Recipients</h3>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-primary">{recipients.length}</span> of {withEmail.length} contacts selected
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={groupByStage ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setGroupByStage(!groupByStage)}
+              className="gap-1.5"
+            >
+              <Filter className="h-3.5 w-3.5" />
+              Group
+            </Button>
+            <Button variant="outline" size="sm" onClick={selectAll}>
+              Select All
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearAll}>
+              Clear
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={groupByStage ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => setGroupByStage(!groupByStage)}
-            className="gap-1.5"
-          >
-            <Filter className="h-3.5 w-3.5" />
-            Group
-          </Button>
-          <Button variant="outline" size="sm" onClick={selectAll}>
-            Select All
-          </Button>
-          <Button variant="ghost" size="sm" onClick={clearAll}>
-            Clear
-          </Button>
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search contacts by name, email, or company..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
         </div>
       </div>
 
@@ -205,7 +230,7 @@ export const CampaignRecipientsStep = ({
       </div>
 
       {/* Recipients List */}
-      <ScrollArea className="h-[300px] rounded-xl border border-border bg-muted/20">
+      <ScrollArea className="h-[400px] rounded-xl border border-border bg-muted/20">
         <div className="p-3 space-y-2">
           {groupByStage ? (
             // Grouped View
@@ -252,7 +277,7 @@ export const CampaignRecipientsStep = ({
             })
           ) : (
             // Flat List View
-            withEmail.map(renderClientRow)
+            filteredWithEmail.map(renderClientRow)
           )}
         </div>
       </ScrollArea>
