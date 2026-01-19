@@ -117,12 +117,14 @@ export const GlobalMarkupSettings: React.FC = () => {
             <span className="text-muted-foreground">→</span>
             <Badge variant="secondary">2. Category</Badge>
             <span className="text-muted-foreground">→</span>
-            <Badge variant="outline">3. Default</Badge>
+            <Badge variant="secondary">3. Material/Labor</Badge>
             <span className="text-muted-foreground">→</span>
-            <Badge variant="outline" className="border-destructive text-destructive">4. Minimum (floor)</Badge>
+            <Badge variant="outline">4. Default</Badge>
+            <span className="text-muted-foreground">→</span>
+            <Badge variant="outline" className="border-destructive text-destructive">5. Minimum (floor)</Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Grid markup on a pricing grid overrides everything. If no grid markup, category applies. If no category, default applies. Minimum is always enforced.
+            Grid markup overrides everything. If no grid, category applies. If no category, material/labor fallback applies. Then default. Minimum is always enforced.
           </p>
         </div>
 
@@ -149,7 +151,7 @@ export const GlobalMarkupSettings: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applied when no category or grid markup is set
+              Applied when no other markup is set
             </p>
           </div>
 
@@ -176,6 +178,71 @@ export const GlobalMarkupSettings: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               No quote item will ever have markup below this
             </p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Material & Labor Markups - Previously Hidden */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-base font-medium flex items-center gap-2">
+              Material & Labor Fallback Markups
+              <Badge variant="outline" className="text-xs font-normal">Priority 3</Badge>
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Applied when category markup is 0%. Set to 0 to skip this level and use the default markup instead.
+            </p>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2 p-3 rounded-lg border bg-card">
+              <Label htmlFor="material-markup" className="text-sm font-medium">
+                Material Markup
+              </Label>
+              <div className="relative">
+                <Input
+                  id="material-markup"
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="0.5"
+                  value={localSettings.material_markup_percentage || 0}
+                  onChange={(e) => handleChange('material_markup_percentage', parseFloat(e.target.value) || 0)}
+                  className="pr-8 h-9"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                  %
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fallback for fabric, hardware, and physical materials
+              </p>
+            </div>
+
+            <div className="space-y-2 p-3 rounded-lg border bg-card">
+              <Label htmlFor="labor-markup" className="text-sm font-medium">
+                Labor Markup
+              </Label>
+              <div className="relative">
+                <Input
+                  id="labor-markup"
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="0.5"
+                  value={localSettings.labor_markup_percentage || 0}
+                  onChange={(e) => handleChange('labor_markup_percentage', parseFloat(e.target.value) || 0)}
+                  className="pr-8 h-9"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                  %
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fallback for stitching, installation, and labor services
+              </p>
+            </div>
           </div>
         </div>
 
