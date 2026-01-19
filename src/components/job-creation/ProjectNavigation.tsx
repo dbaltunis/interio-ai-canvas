@@ -1,8 +1,15 @@
 
 import { Button } from "@/components/ui/button";
-import { User, Box, FileText, Wrench, Mail, Calendar } from "lucide-react";
 import { useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { 
+  PixelUserIcon, 
+  PixelClipboardIcon, 
+  PixelDocumentIcon, 
+  PixelTeamIcon, 
+  PixelSendIcon, 
+  PixelCalendarIcon 
+} from "@/components/icons/PixelArtIcons";
 
 interface ProjectNavigationProps {
   activeTab: string;
@@ -25,12 +32,12 @@ export const ProjectNavigation = ({
   const canViewCalendar = useHasPermission('view_calendar');
 
   const allNavItems = [
-    { id: "client", label: "Client", icon: User },
-    { id: "jobs", label: "Rooms & Treatments", icon: Box },
-    { id: "quote", label: "Quotation", icon: FileText },
-    { id: "workshop", label: "Workroom", icon: Wrench, permission: canViewWorkroom },
-    { id: "emails", label: "Messages", icon: Mail, permission: canViewEmails },
-    { id: "calendar", label: "Calendar", icon: Calendar, permission: canViewCalendar },
+    { id: "client", label: "Client", icon: PixelUserIcon },
+    { id: "jobs", label: "Rooms & Treatments", icon: PixelClipboardIcon },
+    { id: "quote", label: "Quotation", icon: PixelDocumentIcon },
+    { id: "workshop", label: "Workroom", icon: PixelTeamIcon, permission: canViewWorkroom },
+    { id: "emails", label: "Messages", icon: PixelSendIcon, permission: canViewEmails },
+    { id: "calendar", label: "Calendar", icon: PixelCalendarIcon, permission: canViewCalendar },
   ];
 
   // Filter nav items based on permissions
@@ -94,7 +101,7 @@ export const ProjectNavigation = ({
                 }`}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-4 w-4" />
+                <Icon size={16} className="flex-shrink-0" />
                 <span className="hidden sm:inline">{displayLabel}</span>
                 {item.id === "client" && getClientIndicator()}
               </Button>
