@@ -15,8 +15,9 @@ interface StepProps {
 }
 
 // ===========================================
-// MOCK COMPONENTS FOR CLIENTS PAGE DEMO
-// Matches real app components with 95%+ accuracy
+// MOBILE-OPTIMIZED DEMO COMPONENTS
+// Designed for small container (~500px width)
+// Uses card-based layout for better readability
 // ===========================================
 
 // Stage badge with exact colors from ClientListView.tsx getStageColor
@@ -24,10 +25,12 @@ const MockStageBadge = ({
   stage, 
   highlight = false,
   pulse = false,
+  size = "sm",
 }: { 
   stage: "lead" | "contacted" | "qualified" | "proposal" | "negotiation" | "approved" | "lost" | "client";
   highlight?: boolean;
   pulse?: boolean;
+  size?: "sm" | "xs";
 }) => {
   const colors: Record<string, string> = {
     lead: "bg-blue-100 text-blue-700 border-blue-200",
@@ -42,24 +45,24 @@ const MockStageBadge = ({
 
   return (
     <motion.span 
-      className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase border ${colors[stage]} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      className={`px-1.5 py-0.5 rounded-md ${size === "xs" ? "text-[9px]" : "text-[10px]"} font-medium uppercase border ${colors[stage]} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""}`}
       animate={pulse ? { scale: [1, 1.1, 1] } : {}}
       transition={{ duration: 0.3 }}
     >
-      {stage.replace('_', ' ')}
+      {stage}
     </motion.span>
   );
 };
 
-// Client avatar - matches real app Avatar h-10 w-10 with shadow-sm border
-const MockAvatar = ({ name, className = "", size = "sm" }: { name: string; className?: string; size?: "sm" | "lg" }) => {
-  const initials = name.split(" ").map(n => n[0]).join("").toUpperCase();
+// Client avatar - compact for demo
+const MockAvatar = ({ name, className = "", size = "sm" }: { name: string; className?: string; size?: "sm" | "md" | "lg" }) => {
+  const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-pink-500", "bg-cyan-500"];
   const colorIndex = name.length % colors.length;
-  const sizeClass = size === "lg" ? "h-12 w-12 text-base" : "h-10 w-10 text-xs";
+  const sizeClass = size === "lg" ? "h-10 w-10 text-sm" : size === "md" ? "h-9 w-9 text-xs" : "h-8 w-8 text-[10px]";
   
   return (
-    <div className={`${sizeClass} rounded-full ${colors[colorIndex]} flex items-center justify-center text-white font-semibold shadow-sm border border-border/40 ${className}`}>
+    <div className={`${sizeClass} rounded-full ${colors[colorIndex]} flex items-center justify-center text-white font-semibold shadow-sm ${className}`}>
       {initials}
     </div>
   );
@@ -76,146 +79,71 @@ const MockCheckbox = ({ checked = false, highlight = false }: { checked?: boolea
   </motion.div>
 );
 
-// Single client row - matches real ClientListView table row
-interface ClientRowProps {
+// Client data interface
+interface ClientData {
   name: string;
+  shortName: string;
   email: string;
   company?: string;
-  contactPerson?: string;
-  clientType?: "B2C" | "B2B";
   stage: "lead" | "contacted" | "qualified" | "proposal" | "negotiation" | "approved" | "lost" | "client";
   projects: number;
   value: string;
-  emails?: number;
-  whatsapp?: number;
-  files?: number;
   isHotLead?: boolean;
-  index?: number;
-  selected?: boolean;
-  highlighted?: boolean;
-  checkboxHighlight?: boolean;
-  clickable?: boolean;
 }
 
-const MockClientRow = ({ 
-  name, 
-  email,
-  company,
-  contactPerson,
-  clientType = "B2C",
-  stage, 
-  projects, 
-  value,
-  emails = 0,
-  whatsapp = 0,
-  files = 0,
-  isHotLead = false,
-  index = 1,
+// Card-based client display - mobile friendly
+const MockClientCard = ({ 
+  client,
   selected = false,
   highlighted = false,
   checkboxHighlight = false,
-  clickable = false,
-}: ClientRowProps) => {
-  const displayName = clientType === "B2B" ? company || name : name;
-  
+  onClick,
+}: { 
+  client: ClientData;
+  selected?: boolean;
+  highlighted?: boolean;
+  checkboxHighlight?: boolean;
+  onClick?: () => void;
+}) => {
   return (
     <motion.div 
-      className={`flex items-center gap-3 px-3 py-2.5 border-b border-border/40 transition-colors ${selected ? "bg-primary/5" : highlighted ? "bg-muted/40" : "bg-background"} ${clickable ? "cursor-pointer hover:bg-muted/40" : ""}`}
-      animate={highlighted ? { x: [0, 2, 0] } : {}}
-      transition={{ duration: 0.2 }}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
+        selected ? "bg-primary/5 border-primary/30" : 
+        highlighted ? "bg-muted/60 border-border" : 
+        "bg-card border-border/60 hover:bg-muted/40"
+      }`}
+      animate={highlighted ? { scale: 1.01 } : {}}
+      onClick={onClick}
     >
       <MockCheckbox checked={selected} highlight={checkboxHighlight} />
       
-      {/* Row number */}
-      <span className="text-[10px] text-muted-foreground w-4">{index}</span>
+      <MockAvatar name={client.name} size="md" />
       
-      {/* Client column */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <MockAvatar name={displayName} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold truncate max-w-[120px]">{displayName}</span>
-            {isHotLead && <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />}
-          </div>
-          {clientType === "B2B" && contactPerson && (
-            <span className="text-[10px] text-muted-foreground truncate block">{contactPerson}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold truncate">{client.shortName}</span>
+          {client.isHotLead && <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <MockStageBadge stage={client.stage} size="xs" />
+          {client.value !== "$0" && (
+            <span className="text-[10px] font-medium text-muted-foreground">{client.value}</span>
           )}
-          <span className="text-[9px] text-muted-foreground/80 truncate block">{email}</span>
+          {client.projects > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <FolderKanban className="h-3 w-3" />
+              {client.projects}
+            </span>
+          )}
         </div>
       </div>
       
-      {/* Stage */}
-      <MockStageBadge stage={stage} />
-      
-      {/* Projects */}
-      <div className="flex items-center gap-1 shrink-0">
-        {projects > 0 ? (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-muted rounded text-[10px]">
-            <FolderKanban className="h-3 w-3" />
-            {projects}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/60">—</span>
-        )}
-      </div>
-      
-      {/* Deal Value */}
-      <div className="text-right shrink-0 w-16">
-        {value !== "$0" ? (
-          <span className="text-xs font-semibold">{value}</span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/60">—</span>
-        )}
-      </div>
-      
-      {/* Communications */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center gap-0.5">
-          <Mail className="h-3 w-3 text-blue-500" />
-          <span className="text-[9px] text-muted-foreground">{emails || "—"}</span>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <MessageSquare className="h-3 w-3 text-green-500" />
-          <span className="text-[9px] text-muted-foreground">{whatsapp || "—"}</span>
-        </div>
-      </div>
-      
-      {/* Documents */}
-      <div className="shrink-0">
-        {files > 0 ? (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-muted rounded text-[10px]">
-            <FileText className="h-3 w-3" />
-            {files}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/60">—</span>
-        )}
-      </div>
-      
-      {/* Actions */}
-      <div className="shrink-0">
-        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-      </div>
+      <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
     </motion.div>
   );
 };
 
-// Table header row - matches real app columns
-const MockTableHeader = ({ selectAllHighlight = false }: { selectAllHighlight?: boolean }) => (
-  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 border-b border-border text-[9px] font-normal text-muted-foreground">
-    <MockCheckbox highlight={selectAllHighlight} />
-    <span className="w-4">#</span>
-    <span className="flex-1">Client</span>
-    <span className="w-16">Stage</span>
-    <span className="w-12">Projects</span>
-    <span className="w-16 text-right">Deal Value</span>
-    <span className="w-16">Comms</span>
-    <span className="w-12">Docs</span>
-    <span className="w-8">Actions</span>
-  </div>
-);
-
-// Header - matches real ClientManagementPage header
+// Compact header for demo
 const MockHeader = ({ 
   totalClients = 127,
   searchValue = "",
@@ -229,54 +157,49 @@ const MockHeader = ({
   filterActive?: boolean;
   newButtonHighlight?: boolean;
 }) => (
-  <div className="flex items-center justify-between p-3 border-b border-border">
+  <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-card/50">
     <div className="flex items-center gap-2">
       <div className="p-1.5 bg-primary/10 rounded-lg">
         <Users className="h-4 w-4 text-primary" />
       </div>
-      <span className="text-xs font-semibold">Clients</span>
-      <span className="px-1.5 py-0.5 bg-secondary text-secondary-foreground text-[9px] font-medium rounded">
-        {totalClients} clients
+      <span className="text-sm font-semibold">Clients</span>
+      <span className="px-1.5 py-0.5 bg-secondary text-secondary-foreground text-[10px] font-medium rounded">
+        {totalClients}
       </span>
     </div>
     
     <div className="flex items-center gap-1.5">
-      {/* Search */}
+      {/* Compact search */}
       <motion.div 
-        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] w-28 ${
-          searchActive ? "bg-background border border-primary" : "bg-muted border border-transparent"
+        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] ${
+          searchActive ? "bg-background border border-primary w-24" : "bg-muted w-8 justify-center"
         }`}
       >
-        <Search className={`h-3 w-3 ${searchActive ? "text-primary" : "text-muted-foreground"}`} />
-        <span className={searchActive ? "text-foreground" : "text-muted-foreground"}>
-          {searchValue || "Search..."}
-        </span>
+        <Search className={`h-3.5 w-3.5 ${searchActive ? "text-primary" : "text-muted-foreground"}`} />
+        {searchActive && <span className="truncate">{searchValue || "..."}</span>}
       </motion.div>
       
-      {/* Filter button */}
+      {/* Filter */}
       <motion.div 
-        className={`p-1.5 rounded-lg ${filterActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"} cursor-pointer`}
+        className={`p-1.5 rounded-lg ${filterActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
         animate={filterActive ? { scale: 1.05 } : { scale: 1 }}
       >
         <Filter className="h-3.5 w-3.5" />
       </motion.div>
       
-      {/* Download button */}
-      <div className="p-1.5 bg-muted text-muted-foreground rounded-lg cursor-pointer">
-        <Download className="h-3.5 w-3.5" />
-      </div>
-      
-      {/* New Client button */}
+      {/* New Client */}
       <motion.div 
-        className={`flex items-center gap-1 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium cursor-pointer shadow-sm ${newButtonHighlight ? "ring-2 ring-primary/50 ring-offset-1" : ""}`}
+        className={`flex items-center gap-1 px-2 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium ${newButtonHighlight ? "ring-2 ring-primary/50 ring-offset-1" : ""}`}
         animate={newButtonHighlight ? { scale: 1.05 } : { scale: 1 }}
       >
-        <Plus className="h-3 w-3" />
-        <span>New Client</span>
+        <Plus className="h-3.5 w-3.5" />
+        <span>New</span>
       </motion.div>
     </div>
   </div>
 );
+
+// Bulk actions bar - compact for demo
 
 // Bulk actions bar - matches real BulkActionsBar.tsx with UserCheck icon
 interface BulkActionsBarProps {
@@ -453,7 +376,7 @@ const MockClientForm = ({ visible = false }: { visible?: boolean }) => (
   </AnimatePresence>
 );
 
-// Client detail drawer mockup - matches ClientDetailDrawer.tsx exactly
+// Client detail drawer mockup - FULL WIDTH for small container demo
 const MockClientDrawer = ({ visible = false, activeTab = "activity", activeAction = null }: { 
   visible?: boolean; 
   activeTab?: string;
@@ -462,17 +385,16 @@ const MockClientDrawer = ({ visible = false, activeTab = "activity", activeActio
   <AnimatePresence>
     {visible && (
       <motion.div 
-        className="absolute inset-0 flex justify-end z-10"
+        className="absolute inset-0 z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
         <motion.div 
-          className="relative bg-card border-l border-border shadow-xl w-[75%] h-full overflow-hidden"
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
+          className="absolute inset-0 bg-card shadow-xl overflow-hidden rounded-xl"
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25 }}
         >
           {/* Header - matches real drawer header */}
@@ -506,24 +428,24 @@ const MockClientDrawer = ({ visible = false, activeTab = "activity", activeActio
               </div>
             </div>
             
-            {/* Quick Actions - horizontal layout matching real app */}
-            <div className="px-3 pb-3">
-              <div className="flex flex-wrap gap-1.5">
+            {/* Quick Actions - icon-only for compact demo */}
+            <div className="px-3 pb-2">
+              <div className="flex flex-wrap gap-1">
                 {[
                   { icon: Mail, label: "Email", id: "email" },
                   { icon: Phone, label: "Call", id: "call" },
-                  { icon: MessageSquare, label: "WhatsApp", id: "whatsapp", className: "text-green-600 hover:text-green-700 hover:bg-green-50" },
-                  { icon: StickyNote, label: "Log Activity", id: "log" },
-                  { icon: Briefcase, label: "New Project", id: "project" },
+                  { icon: MessageSquare, label: "WhatsApp", id: "whatsapp", className: "text-green-600" },
+                  { icon: StickyNote, label: "Log", id: "log" },
+                  { icon: Briefcase, label: "Project", id: "project" },
                   { icon: Edit, label: "Edit", id: "edit" },
                 ].map((action) => (
                   <motion.div 
                     key={action.id}
-                    className={`flex items-center gap-1 px-2 py-1.5 border border-border rounded-lg cursor-pointer text-[10px] ${activeAction === action.id ? "bg-primary/10 border-primary" : "bg-background"} ${action.className || ""}`}
+                    className={`flex items-center gap-1 px-1.5 py-1 border border-border rounded-md cursor-pointer text-[9px] ${activeAction === action.id ? "bg-primary/10 border-primary" : "bg-background"} ${action.className || ""}`}
                     animate={activeAction === action.id ? { scale: 1.05 } : { scale: 1 }}
                   >
-                    <action.icon className={`h-3.5 w-3.5 ${activeAction === action.id ? "text-primary" : ""}`} />
-                    <span className="hidden sm:inline">{action.label}</span>
+                    <action.icon className={`h-3 w-3 ${activeAction === action.id ? "text-primary" : ""}`} />
+                    <span>{action.label}</span>
                   </motion.div>
                 ))}
               </div>
@@ -655,21 +577,22 @@ const MockStageDropdown = ({ visible = false, selected = "qualified" }: { visibl
   </AnimatePresence>
 );
 
-// Sample client data - matches real data structure
-const sampleClients: ClientRowProps[] = [
-  { name: "Sarah Johnson", email: "sarah@designstudio.com", stage: "qualified", projects: 3, value: "$12,450", emails: 5, whatsapp: 2, files: 3, isHotLead: true, index: 1 },
-  { name: "Chen Industries", email: "m.chen@homeinteriors.au", company: "Chen Industries", contactPerson: "Michael Chen", clientType: "B2B", stage: "proposal", projects: 2, value: "$8,900", emails: 3, index: 2 },
-  { name: "Emma Williams", email: "emma.w@gmail.com", stage: "lead", projects: 0, value: "$0", index: 3 },
-  { name: "Brown Corp", email: "james.b@corporate.com", company: "Brown Corp", contactPerson: "James Brown", clientType: "B2B", stage: "approved", projects: 5, value: "$45,200", emails: 12, whatsapp: 4, files: 8, index: 4 },
+// Sample client data for card-based layout
+const sampleClients: ClientData[] = [
+  { name: "Sarah Johnson", shortName: "Sarah J.", email: "sarah@designstudio.com", stage: "qualified", projects: 3, value: "$12,450", isHotLead: true },
+  { name: "Chen Industries", shortName: "Chen Ind.", email: "m.chen@homeinteriors.au", company: "Chen Industries", stage: "proposal", projects: 2, value: "$8,900" },
+  { name: "Emma Williams", shortName: "Emma W.", email: "emma.w@gmail.com", stage: "lead", projects: 0, value: "$0" },
+  { name: "Brown Corp", shortName: "Brown Corp", email: "james.b@corporate.com", company: "Brown Corp", stage: "approved", projects: 5, value: "$45,200" },
 ];
 
 // ===========================================
-// STREAMLINED STEP COMPONENTS (10 Action-Packed Steps)
+// STREAMLINED STEP COMPONENTS - MOBILE OPTIMIZED
+// Uses card-based layout for better readability in small container
 // ===========================================
 
-// Step 1: Quick Intro - Table overview (fast fade in)
+// Step 1: Quick Intro - Card list overview (fast fade in)
 export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
-  const visibleRows = Math.min(4, Math.floor(phase * 8) + 1);
+  const visibleCards = Math.min(4, Math.floor(phase * 8) + 1);
   
   return (
     <div className="space-y-0">
@@ -682,20 +605,21 @@ export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
           <MockHeader />
         </motion.div>
         
-        <MockTableHeader />
-        {sampleClients.map((client, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ 
-              opacity: i < visibleRows ? 1 : 0,
-              x: i < visibleRows ? 0 : -10,
-            }}
-            transition={{ duration: 0.15, delay: i * 0.05 }}
-          >
-            <MockClientRow {...client} />
-          </motion.div>
-        ))}
+        <div className="p-2 space-y-2">
+          {sampleClients.map((client, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ 
+                opacity: i < visibleCards ? 1 : 0,
+                x: i < visibleCards ? 0 : -10,
+              }}
+              transition={{ duration: 0.15, delay: i * 0.05 }}
+            >
+              <MockClientCard client={client} />
+            </motion.div>
+          ))}
+        </div>
       </MockCard>
     </div>
   );
@@ -704,11 +628,11 @@ export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
 // Step 2: Search + Filter in ONE fluid motion
 export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
   const cursorPath = [
-    { x: 195, y: 28, at: 0 },
-    { x: 195, y: 28, at: 0.15 },  // Click search
-    { x: 195, y: 28, at: 0.5 },   // Type
-    { x: 255, y: 28, at: 0.7 },   // Move to filter
-    { x: 255, y: 28, at: 1 },
+    { x: 175, y: 22, at: 0 },
+    { x: 175, y: 22, at: 0.15 },  // Click search
+    { x: 175, y: 22, at: 0.5 },   // Type
+    { x: 220, y: 22, at: 0.7 },   // Move to filter
+    { x: 220, y: 22, at: 1 },
   ];
   const cursorPos = interpolatePath(phase, cursorPath);
   const searchActive = phase > 0.12;
@@ -731,20 +655,21 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
           filterActive={filterActive}
         />
         
-        <MockTableHeader />
-        <AnimatePresence mode="popLayout">
-          {filteredClients.slice(0, 4).map((client, i) => (
-            <motion.div
-              key={client.name}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <MockClientRow {...client} highlighted={phase > 0.5 && client.name === "Sarah Johnson"} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        <div className="p-2 space-y-2">
+          <AnimatePresence mode="popLayout">
+            {filteredClients.slice(0, 4).map((client, i) => (
+              <motion.div
+                key={client.name}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MockClientCard client={client} highlighted={phase > 0.5 && client.name === "Sarah Johnson"} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </MockCard>
       
       <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} isTyping={isTyping} visible={phase > 0.05} />
@@ -756,11 +681,11 @@ export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
 export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
   const cursorPath = [
     { x: 100, y: 50, at: 0 },
-    { x: 285, y: 28, at: 0.25 },  // Move to New button
-    { x: 285, y: 28, at: 0.35 },  // Click
-    { x: 200, y: 120, at: 0.5 },  // Move into form
-    { x: 200, y: 120, at: 0.85 }, // Stay
-    { x: 250, y: 85, at: 1 },     // Move to close
+    { x: 260, y: 22, at: 0.25 },  // Move to New button
+    { x: 260, y: 22, at: 0.35 },  // Click
+    { x: 200, y: 140, at: 0.5 },  // Move into form
+    { x: 200, y: 140, at: 0.85 }, // Stay
+    { x: 250, y: 95, at: 1 },     // Move to close
   ];
   const cursorPos = interpolatePath(phase, cursorPath);
   const showForm = phase > 0.32 && phase < 0.9;
@@ -772,10 +697,11 @@ export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
       <MockCard className="overflow-hidden rounded-xl">
         <MockHeader newButtonHighlight={buttonHover} />
         
-        <MockTableHeader />
-        {sampleClients.slice(0, 3).map((client, i) => (
-          <MockClientRow key={i} {...client} />
-        ))}
+        <div className="p-2 space-y-2">
+          {sampleClients.slice(0, 3).map((client, i) => (
+            <MockClientCard key={i} client={client} />
+          ))}
+        </div>
       </MockCard>
       
       <MockClientForm visible={showForm} />
@@ -787,13 +713,13 @@ export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
 // Step 4: Power Select - Rapid checkbox selection + bulk bar
 export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
   const cursorPath = [
-    { x: 18, y: 85, at: 0 },
-    { x: 18, y: 85, at: 0.12 },   // Click 1st
-    { x: 18, y: 120, at: 0.25 }, // Move to 2nd
-    { x: 18, y: 120, at: 0.35 }, // Click 2nd
-    { x: 18, y: 155, at: 0.5 },  // Move to 3rd
-    { x: 18, y: 155, at: 0.6 },  // Click 3rd
-    { x: 150, y: 230, at: 0.85 }, // Move to bulk bar
+    { x: 22, y: 65, at: 0 },
+    { x: 22, y: 65, at: 0.12 },   // Click 1st
+    { x: 22, y: 115, at: 0.25 }, // Move to 2nd
+    { x: 22, y: 115, at: 0.35 }, // Click 2nd
+    { x: 22, y: 165, at: 0.5 },  // Move to 3rd
+    { x: 22, y: 165, at: 0.6 },  // Click 3rd
+    { x: 150, y: 280, at: 0.85 }, // Move to bulk bar
   ];
   const cursorPos = interpolatePath(phase, cursorPath);
   
@@ -810,11 +736,12 @@ export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
       <MockCard className="overflow-hidden rounded-xl">
         <MockHeader totalClients={127} />
         
-        <MockTableHeader />
-        <MockClientRow {...sampleClients[0]} selected={firstChecked} />
-        <MockClientRow {...sampleClients[1]} selected={secondChecked} />
-        <MockClientRow {...sampleClients[2]} selected={thirdChecked} />
-        <MockClientRow {...sampleClients[3]} />
+        <div className="p-2 space-y-2">
+          <MockClientCard client={sampleClients[0]} selected={firstChecked} />
+          <MockClientCard client={sampleClients[1]} selected={secondChecked} />
+          <MockClientCard client={sampleClients[2]} selected={thirdChecked} />
+          <MockClientCard client={sampleClients[3]} />
+        </div>
       </MockCard>
       
       <AnimatePresence>
@@ -870,29 +797,30 @@ export const ClientsStep5 = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// Step 6: Open Client Details (click row → drawer slides in)
+// Step 6: Open Client Details (click card → drawer slides in)
 export const ClientsStep6 = ({ phase = 0 }: StepProps) => {
   const cursorPath = [
-    { x: 100, y: 85, at: 0 },
-    { x: 150, y: 85, at: 0.3 },  // Move to row
-    { x: 150, y: 85, at: 0.45 }, // Click
-    { x: 250, y: 120, at: 0.8 }, // Move into drawer
+    { x: 100, y: 75, at: 0 },
+    { x: 150, y: 75, at: 0.3 },  // Move to card
+    { x: 150, y: 75, at: 0.45 }, // Click
+    { x: 200, y: 140, at: 0.8 }, // Move into drawer
   ];
   const cursorPos = interpolatePath(phase, cursorPath);
   
-  const rowHighlight = phase > 0.25 && phase < 0.5;
+  const cardHighlight = phase > 0.25 && phase < 0.5;
   const drawerVisible = phase > 0.48;
   const clicking = isClicking(phase, [0.47]);
 
   return (
-    <div className="space-y-0 relative h-[280px]">
+    <div className="space-y-0 relative h-[300px]">
       <MockCard className="overflow-hidden rounded-xl">
         <MockHeader />
         
-        <MockTableHeader />
-        <MockClientRow {...sampleClients[0]} highlighted={rowHighlight} clickable />
-        <MockClientRow {...sampleClients[1]} />
-        <MockClientRow {...sampleClients[2]} />
+        <div className="p-2 space-y-2">
+          <MockClientCard client={sampleClients[0]} highlighted={cardHighlight} />
+          <MockClientCard client={sampleClients[1]} />
+          <MockClientCard client={sampleClients[2]} />
+        </div>
       </MockCard>
       
       <MockClientDrawer visible={drawerVisible} activeTab="activity" />

@@ -165,7 +165,7 @@ export const TutorialCarousel = ({
       {/* Visual area */}
       <div className={cn(
         "relative p-4 overflow-hidden flex-1",
-        isMaximized ? "min-h-[400px]" : "min-h-[280px]"
+        isMaximized ? "min-h-[500px]" : "min-h-[320px]"
       )}>
         <AnimatePresence mode="wait">
           <motion.div
