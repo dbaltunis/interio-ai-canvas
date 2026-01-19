@@ -217,6 +217,11 @@ export const CampaignWizard = ({
             onUpdateType={(type) => updateCampaignData({ type })}
             onUpdateSubject={(subject) => updateCampaignData({ subject })}
             onUpdateContent={(content) => updateCampaignData({ content })}
+            onRemoveRecipient={(recipientId) => {
+              updateCampaignData({
+                recipients: campaignData.recipients.filter(r => r.id !== recipientId)
+              });
+            }}
           />
         );
       case 3:

@@ -22,7 +22,8 @@ import {
   Megaphone,
   Shield,
   Users,
-  Mail
+  Mail,
+  X
 } from "lucide-react";
 import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 import { EmailPreviewPane } from "@/components/campaigns/shared/EmailPreviewPane";
@@ -46,6 +47,7 @@ interface CampaignContentStepProps {
   onUpdateType: (type: 'outreach' | 'follow-up' | 're-engagement' | 'announcement') => void;
   onUpdateSubject: (subject: string) => void;
   onUpdateContent: (content: string) => void;
+  onRemoveRecipient?: (recipientId: string) => void;
 }
 
 const PERSONALIZATION_TOKENS = [
@@ -73,6 +75,7 @@ export const CampaignContentStep = ({
   onUpdateType,
   onUpdateSubject,
   onUpdateContent,
+  onRemoveRecipient,
 }: CampaignContentStepProps) => {
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
@@ -145,7 +148,7 @@ export const CampaignContentStep = ({
                     {recipients.map((recipient) => (
                       <div 
                         key={recipient.id} 
-                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group"
                       >
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/40 text-primary text-xs font-medium">
@@ -156,6 +159,16 @@ export const CampaignContentStep = ({
                           <p className="text-sm font-medium truncate">{recipient.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
                         </div>
+                        {onRemoveRecipient && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveRecipient(recipient.id)}
+                            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
