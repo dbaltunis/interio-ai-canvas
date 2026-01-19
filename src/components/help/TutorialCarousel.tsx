@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, ComponentType, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Maximize2, Minimize2 } from "lucide-react";
+import { Play, Pause, Maximize2, Minimize2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -210,7 +210,7 @@ export const TutorialCarousel = ({
           </div>
         </div>
 
-        {/* Title only - no description, no navigation buttons */}
+        {/* Title */}
         <div className={cn(
           "px-3 py-2 bg-background border-t border-border",
           isMaximized && "py-3"
@@ -221,6 +221,50 @@ export const TutorialCarousel = ({
           )}>
             {step.title}
           </h4>
+        </div>
+
+        {/* Clickable Step Indicators */}
+        <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-muted/30 border-t border-border">
+          {steps.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToStep(idx)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all",
+                idx === currentStep
+                  ? "bg-primary w-4"
+                  : idx < currentStep
+                    ? "bg-primary/40"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+              )}
+              aria-label={`Go to step ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-t border-border">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goPrev} 
+            className="h-8 gap-1.5 px-3 text-xs font-medium"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> Prev
+          </Button>
+
+          <span className="text-xs text-muted-foreground">
+            {currentStep + 1} / {steps.length}
+          </span>
+
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={goNext} 
+            className="h-8 gap-1.5 px-3 text-xs font-medium"
+          >
+            Next <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
     </>
