@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Plus, Search, FileText, Send, Calendar, Users, 
-  Trash2, Copy, MoreHorizontal, Star, Sparkles, Edit
+  Trash2, Copy, MoreHorizontal, Star, Sparkles, Edit, Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,15 +25,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   useGeneralEmailTemplates, 
   useDeleteGeneralEmailTemplate, 
   useDuplicateGeneralEmailTemplate,
+  useCreateGeneralEmailTemplate,
   EmailTemplate 
 } from "@/hooks/useGeneralEmailTemplates";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTemplateTypeLabel } from "@/utils/emailTemplateVariables";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface EmailTemplateLibraryProps {
   onSelectTemplate?: (template: { subject: string; content: string }) => void;
@@ -84,9 +102,16 @@ export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew, onEditTemp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   
+  // AI Generation state
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiTemplateType, setAiTemplateType] = useState('outreach');
+  const [aiDescription, setAiDescription] = useState('');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  
   const { data: templates = [], isLoading } = useGeneralEmailTemplates();
   const deleteTemplate = useDeleteGeneralEmailTemplate();
   const duplicateTemplate = useDuplicateGeneralEmailTemplate();
+  const createTemplate = useCreateGeneralEmailTemplate();
 
   // Filter templates
   const filteredTemplates = templates.filter(template => {
@@ -143,6 +168,46 @@ export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew, onEditTemp
     e.stopPropagation();
     if (onEditTemplate) {
       onEditTemplate(template);
+    }
+  };
+
+  const handleGenerateWithAI = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('campaign-assistant', {
+        body: { 
+          action: 'generate-content', 
+          context: {
+            campaignType: aiTemplateType,
+            recipientCount: 1,
+            description: aiDescription,
+          }
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      const result = data.result as { subject: string; content: string };
+      
+      // Create the template in database
+      await createTemplate.mutateAsync({
+        template_type: aiTemplateType,
+        subject: result.subject,
+        content: result.content,
+        variables: [],
+        active: true,
+      });
+
+      toast.success('AI template created successfully!');
+      setAiDialogOpen(false);
+      setAiDescription('');
+      setAiTemplateType('outreach');
+    } catch (error) {
+      console.error('Failed to generate AI template:', error);
+      toast.error('Failed to generate template with AI');
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -207,7 +272,13 @@ export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew, onEditTemp
               <h4 className="font-medium text-sm">AI-Powered Templates</h4>
               <p className="text-xs text-muted-foreground">Let AI help you craft the perfect email for any situation</p>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="shrink-0"
+              onClick={() => setAiDialogOpen(true)}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
               Generate with AI
             </Button>
           </div>
@@ -356,6 +427,69 @@ export const EmailTemplateLibrary = ({ onSelectTemplate, onCreateNew, onEditTemp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Generation Dialog */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Generate Template with AI
+            </DialogTitle>
+            <DialogDescription>
+              Describe the type of email you need and AI will create a template for you
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Template Type</Label>
+              <Select value={aiTemplateType} onValueChange={setAiTemplateType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="outreach">Outreach</SelectItem>
+                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                  <SelectItem value="re-engagement">Re-engagement</SelectItem>
+                  <SelectItem value="announcement">Announcement</SelectItem>
+                  <SelectItem value="welcome">Welcome</SelectItem>
+                  <SelectItem value="quote">Quote</SelectItem>
+                  <SelectItem value="thank_you">Thank You</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Description (optional)</Label>
+              <Input 
+                value={aiDescription}
+                onChange={(e) => setAiDescription(e.target.value)}
+                placeholder="e.g., Professional follow-up for interior design services..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setAiDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleGenerateWithAI}
+                disabled={isGeneratingAI}
+              >
+                {isGeneratingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Template
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

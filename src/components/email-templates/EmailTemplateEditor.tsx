@@ -3,13 +3,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, Eye, Code } from "lucide-react";
 import { EmailTemplate, useUpdateGeneralEmailTemplate } from "@/hooks/useGeneralEmailTemplates";
 import { getAvailableVariables, processTemplateVariables, getExampleTemplateData, getTemplateTypeLabel } from "@/utils/emailTemplateVariables";
+import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 
 interface EmailTemplateEditorProps {
   template: EmailTemplate | null;
@@ -122,16 +122,15 @@ export const EmailTemplateEditor = ({ template, open, onOpenChange }: EmailTempl
 
             {/* Template Content */}
             <div className="space-y-2">
-              <Label htmlFor="template-content">Email Content (HTML)</Label>
-              <Textarea
-                id="template-content"
+              <Label>Email Content</Label>
+              <RichTextEditor
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter email content with HTML..."
-                className="min-h-[400px] font-mono text-sm"
+                onChange={setContent}
+                placeholder="Enter email content..."
+                className="min-h-[300px]"
               />
               <p className="text-xs text-muted-foreground">
-                You can use HTML for styling. Variables use format: {`{{variable.name}}`}
+                Use the toolbar for formatting. Variables use format: {`{{variable.name}}`}
               </p>
             </div>
 
