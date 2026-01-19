@@ -1,25 +1,54 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Send, Eye, MousePointerClick, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mail, Send, BarChart3, RefreshCw } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
+import { format, startOfDay, eachDayOfInterval } from "date-fns";
 import { useMemo } from "react";
+import { DashboardDateFilter } from "@/components/dashboard/DashboardDateFilter";
+import { useDashboardDate } from "@/contexts/DashboardDateContext";
 
 export const EmailAnalyticsDashboard = () => {
-  const { data: emails = [] } = useEmails();
+  const { data: emails = [], refetch, isRefetching } = useEmails();
   const { data: kpis } = useEmailKPIs();
   const { data: campaigns = [] } = useEmailCampaigns();
+  const { dateRange } = useDashboardDate();
 
-  // Generate last 14 days chart data
+  // Filter emails by selected date range
+  const filteredEmails = useMemo(() => {
+    return emails.filter(email => {
+      const emailDate = new Date(email.created_at);
+      return emailDate >= dateRange.startDate && emailDate <= dateRange.endDate;
+    });
+  }, [emails, dateRange]);
+
+  // Calculate KPIs from filtered emails
+  const filteredKpis = useMemo(() => {
+    const totalSent = filteredEmails.length;
+    const delivered = filteredEmails.filter(e => ['delivered', 'opened', 'clicked'].includes(e.status)).length;
+    const opened = filteredEmails.filter(e => (e.open_count || 0) > 0).length;
+    const clicked = filteredEmails.filter(e => (e.click_count || 0) > 0).length;
+    const bounced = filteredEmails.filter(e => ['bounced', 'failed'].includes(e.status)).length;
+
+    return {
+      totalSent,
+      totalDelivered: delivered,
+      deliveryRate: totalSent > 0 ? Math.round((delivered / totalSent) * 100) : 0,
+      openRate: delivered > 0 ? Math.round((opened / delivered) * 100) : 0,
+      clickRate: delivered > 0 ? Math.round((clicked / delivered) * 100) : 0,
+      totalBounced: bounced,
+      bounceRate: totalSent > 0 ? Math.round((bounced / totalSent) * 100) : 0,
+    };
+  }, [filteredEmails]);
+
+  // Generate chart data based on date range
   const chartData = useMemo(() => {
-    const endDate = new Date();
-    const startDate = subDays(endDate, 13);
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    const days = eachDayOfInterval({ start: dateRange.startDate, end: dateRange.endDate });
 
     return days.map(day => {
       const dayStart = startOfDay(day);
-      const dayEmails = emails.filter(email => {
+      const dayEmails = filteredEmails.filter(email => {
         const emailDate = startOfDay(new Date(email.created_at));
         return emailDate.getTime() === dayStart.getTime();
       });
@@ -31,7 +60,7 @@ export const EmailAnalyticsDashboard = () => {
         clicked: dayEmails.filter(e => (e.click_count || 0) > 0).length,
       };
     });
-  }, [emails]);
+  }, [filteredEmails, dateRange]);
 
   // Campaign performance data
   const campaignData = useMemo(() => {
@@ -67,33 +96,50 @@ export const EmailAnalyticsDashboard = () => {
       {/* Main Analytics Card - Shopify Style */}
       <Card variant="analytics" className="h-full flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Mail className="h-4 w-4 text-primary shrink-0" />
-            <span>Email Analytics</span>
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Performance overview • {emails.length} total emails
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Mail className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Email Analytics</span>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {filteredEmails.length} emails in selected period
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <DashboardDateFilter />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isRefetching}
+                title="Refresh analytics data"
+                className="h-7 w-7"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-0 space-y-3">
           {/* Primary KPIs - 2x2 Grid */}
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 rounded-lg border border-border/50 bg-card">
               <div className="text-[10px] text-muted-foreground mb-0.5">Total Sent</div>
-              <p className="text-lg font-bold">{kpis?.totalSent || 0}</p>
+              <p className="text-lg font-bold">{filteredKpis.totalSent}</p>
             </div>
             <div className="p-2 rounded-lg border border-border/50 bg-card">
               <div className="text-[10px] text-muted-foreground mb-0.5">Delivered</div>
-              <p className="text-lg font-bold">{kpis?.totalDelivered || 0}</p>
-              <p className="text-[10px] text-muted-foreground">{kpis?.deliveryRate || 0}% rate</p>
+              <p className="text-lg font-bold">{filteredKpis.totalDelivered}</p>
+              <p className="text-[10px] text-muted-foreground">{filteredKpis.deliveryRate}% rate</p>
             </div>
             <div className="p-2 rounded-lg border border-border/50 bg-card">
               <div className="text-[10px] text-muted-foreground mb-0.5">Open Rate</div>
-              <p className="text-lg font-bold">{kpis?.openRate || 0}%</p>
+              <p className="text-lg font-bold">{filteredKpis.openRate}%</p>
             </div>
             <div className="p-2 rounded-lg border border-border/50 bg-card">
               <div className="text-[10px] text-muted-foreground mb-0.5">Click Rate</div>
-              <p className="text-lg font-bold">{kpis?.clickRate || 0}%</p>
+              <p className="text-lg font-bold">{filteredKpis.clickRate}%</p>
             </div>
           </div>
 
@@ -101,12 +147,8 @@ export const EmailAnalyticsDashboard = () => {
           <div className="flex items-center justify-between p-2 rounded-lg border border-border/50 bg-card">
             <div className="flex items-center gap-2">
               <div className="text-[10px] text-muted-foreground">Bounced</div>
-              <p className="text-sm font-semibold">{kpis?.totalBounced || 0}</p>
-              <span className="text-[10px] text-muted-foreground">({kpis?.bounceRate || 0}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-[10px] text-muted-foreground">Avg. Read Time</div>
-              <p className="text-sm font-semibold">{kpis?.avgTimeSpent || '0m 0s'}</p>
+              <p className="text-sm font-semibold">{filteredKpis.totalBounced}</p>
+              <span className="text-[10px] text-muted-foreground">({filteredKpis.bounceRate}%)</span>
             </div>
           </div>
         </CardContent>
@@ -119,7 +161,7 @@ export const EmailAnalyticsDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <BarChart3 className="h-4 w-4 text-primary shrink-0" />
-              <span>Email Activity (Last 14 Days)</span>
+              <span>Email Activity</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
