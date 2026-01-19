@@ -25,36 +25,31 @@ import { CampaignCard } from "./CampaignCard";
 import type { SelectedClient } from "@/hooks/useClientSelection";
 import { cn } from "@/lib/utils";
 import { PixelSendIcon } from "@/components/icons/PixelArtIcons";
+import { getCampaignTemplates, CampaignTemplateKey } from "./EmailTemplateLibrary";
 
-const TEMPLATE_PRESETS = {
-  newsletter: {
-    name: 'Newsletter Campaign',
-    type: 'announcement' as const,
-    subject: 'Latest Updates from {{company_name}}',
-    content: `<p>Hi {{client_name}},</p>
-<p>We're excited to share the latest updates from our team!</p>
-<p>[Add your newsletter content here]</p>
-<p>Best regards,<br/>The Team</p>`,
-  },
-  followup: {
-    name: 'Follow-up Campaign',
-    type: 'follow-up' as const,
-    subject: 'Following up on your recent inquiry',
-    content: `<p>Hi {{client_name}},</p>
-<p>I wanted to follow up on our recent conversation and see if you have any questions about the quote we provided.</p>
-<p>We'd love to help you move forward with your project. Please let me know if there's anything I can assist with.</p>
-<p>Best regards</p>`,
-  },
-  promotion: {
-    name: 'Promotional Campaign',
-    type: 'outreach' as const,
-    subject: 'Special Offer for You!',
-    content: `<p>Hi {{client_name}},</p>
-<p>We have an exclusive offer just for you!</p>
-<p>[Add your promotional details here]</p>
-<p>Don't miss out on this limited-time opportunity.</p>
-<p>Best regards</p>`,
-  },
+// Get templates from the shared source (localStorage backed)
+const getTemplatePresets = () => {
+  const templates = getCampaignTemplates();
+  return {
+    newsletter: {
+      name: templates.newsletter.name,
+      type: templates.newsletter.type,
+      subject: templates.newsletter.subject,
+      content: templates.newsletter.content,
+    },
+    followup: {
+      name: templates.followup.name,
+      type: templates.followup.type,
+      subject: templates.followup.subject,
+      content: templates.followup.content,
+    },
+    promotion: {
+      name: templates.promotion.name,
+      type: templates.promotion.type,
+      subject: templates.promotion.subject,
+      content: templates.promotion.content,
+    },
+  };
 };
 
 type ViewMode = 'grid' | 'list';
@@ -67,10 +62,13 @@ export const EmailCampaignsModern = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
-  const [templatePreset, setTemplatePreset] = useState<keyof typeof TEMPLATE_PRESETS | null>(null);
+  const [templatePreset, setTemplatePreset] = useState<CampaignTemplateKey | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Get templates dynamically (they may have been edited)
+  const TEMPLATE_PRESETS = useMemo(() => getTemplatePresets(), [showCampaignWizard]);
 
   const clientsForWizard: SelectedClient[] = useMemo(() => {
     return rawClients.map(client => ({
@@ -107,7 +105,7 @@ export const EmailCampaignsModern = () => {
     setShowCampaignWizard(true);
   };
 
-  const handleUseTemplate = (templateKey: keyof typeof TEMPLATE_PRESETS) => {
+  const handleUseTemplate = (templateKey: CampaignTemplateKey) => {
     setTemplatePreset(templateKey);
     setShowCampaignWizard(true);
   };

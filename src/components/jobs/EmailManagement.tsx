@@ -22,9 +22,6 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { EmailTemplate } from "@/hooks/useGeneralEmailTemplates";
-import { EmailTemplateEditor } from "@/components/email-templates/EmailTemplateEditor";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("inbox");
@@ -37,9 +34,6 @@ export const EmailManagement = () => {
   const { toast } = useToast();
   const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   
-  // Template editor state
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   
   // Selected template for composer
   const [selectedTemplate, setSelectedTemplate] = useState<{ subject: string; content: string } | null>(null);
@@ -204,10 +198,6 @@ export const EmailManagement = () => {
         return (
           <div className="animate-fade-in">
             <EmailTemplateLibrary 
-              onEditTemplate={(template) => {
-                setEditingTemplate(template);
-                setEditorOpen(true);
-              }}
               onSelectTemplate={(template) => {
                 setSelectedTemplate(template);
                 setShowComposer(true);
@@ -285,12 +275,6 @@ export const EmailManagement = () => {
         }}
       />
 
-      {/* Edit Template Dialog */}
-      <EmailTemplateEditor
-        template={editingTemplate}
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-      />
     </div>
   );
 };
