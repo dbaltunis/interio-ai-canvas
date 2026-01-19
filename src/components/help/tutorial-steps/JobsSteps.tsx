@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { MockCard } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress } from "@/lib/demoAnimations";
+// Import REAL UI components for 100% visual accuracy
+import { DemoJobCard, DemoRoomHeader, DemoJobDetailHeader, DemoJobDetailTabs, DemoStatusBadge } from "../demo-components";
 
 interface StepProps {
   phase?: number;
@@ -211,7 +213,20 @@ const MockJobsHeader = ({
   </div>
 );
 
-// Job card - EXACT MATCH to MobileJobsView.tsx lines 313-396
+// Job card - NOW USES REAL DemoJobCard component for 100% accuracy
+const statusToColor: Record<string, string> = {
+  lead: "gray",
+  draft: "gray",
+  quote_sent: "blue",
+  approved: "green",
+  planning: "blue",
+  in_production: "purple",
+  completed: "green",
+  rejected: "red",
+  order_confirmed: "orange",
+  review: "yellow",
+};
+
 const MockJobCard = ({ 
   job,
   highlighted = false,
@@ -223,169 +238,62 @@ const MockJobCard = ({
   showActions?: boolean;
   compact?: boolean;
 }) => (
-  <motion.div 
-    className={`overflow-hidden rounded-xl border transition-all cursor-pointer bg-card p-4 ${
-      highlighted ? "border-primary/30 ring-2 ring-primary/20 shadow-md" : 
-      "border-border/40 hover:shadow-md hover:border-primary/20"
-    }`}
-    animate={highlighted ? { scale: 1.01 } : {}}
-  >
-    <div className="flex items-start gap-3">
-      {/* Avatar - EXACT match to MobileJobsView Avatar component */}
-      <MockJobAvatar name={job.client} size="md" />
-      
-      {/* Main Content - EXACT structure from MobileJobsView */}
-      <div className="flex-1 min-w-0 space-y-2">
-        {/* Header Row - job number + status badge */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            {/* Job number in font-mono + status badge on same line */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-muted-foreground">
-                {job.jobNumber}
-              </span>
-              <MockStatusBadge status={job.status} size="xs" />
-            </div>
-            {/* Client name - truncated at 14 chars like real app */}
-            <h4 className="font-semibold text-sm line-clamp-1">
-              {job.client.length > 14 ? job.client.substring(0, 14) + '...' : job.client}
-            </h4>
-          </div>
-          
-          {/* Three-dot menu with notes count badge - EXACT match */}
-          {showActions && (
-            <div className="h-8 w-8 flex items-center justify-center relative shrink-0 rounded-lg hover:bg-muted">
-              {job.notesCount && job.notesCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center z-10">
-                  {job.notesCount}
-                </span>
-              )}
-              <MoreVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-        
-        {/* Details Row - MapPin + project name + total */}
-        {!compact && (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{job.project}</span>
-            </div>
-            <span className="font-semibold text-foreground shrink-0">{job.total}</span>
-          </div>
-        )}
-      </div>
-    </div>
+  <motion.div animate={highlighted ? { scale: 1.01 } : {}}>
+    <DemoJobCard
+      jobNumber={job.jobNumber}
+      clientName={job.client}
+      projectName={compact ? undefined : job.project}
+      status={job.status}
+      statusColor={statusToColor[job.status] || "gray"}
+      totalAmount={job.total}
+      notesCount={job.notesCount}
+      highlighted={highlighted}
+    />
   </motion.div>
 );
 
-// ===== JOB DETAIL HEADER - EXACT MATCH to JobDetailPage.tsx lines 840-930 =====
+// ===== JOB DETAIL HEADER - NOW USES REAL DemoJobDetailHeader component =====
 
 const MockJobDetailHeader = ({ 
   clientName = "Sarah Johnson",
+  jobNumber = "P-1234",
   date = "14-Jan-2026",
   status = "draft" as const,
   showBackButton = true,
 }: {
   clientName?: string;
+  jobNumber?: string;
   date?: string;
   status?: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed";
   showBackButton?: boolean;
 }) => (
-  <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm">
-    <div className="px-3 py-3">
-      {/* Two-row responsive layout like real JobDetailPage */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        {/* Top Row: Back button + Separator + Client name + Date */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {showBackButton && (
-            <>
-              <div className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted-foreground border border-border rounded-md hover:bg-muted cursor-pointer shrink-0">
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Jobs</span>
-              </div>
-              {/* Separator line like real app */}
-              <div className="h-5 w-px bg-border/60" />
-            </>
-          )}
-          <div className="flex flex-col gap-0 min-w-0">
-            <h1 className="text-base font-bold text-foreground truncate">{clientName}</h1>
-            <span className="text-xs text-muted-foreground">{date}</span>
-          </div>
-        </div>
-        
-        {/* Bottom Row: Contact + Status dropdown + Menu */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Contact button - green like real app */}
-          <div className="flex items-center gap-1 px-2 py-1.5 text-xs border border-green-200 text-green-700 rounded-md hover:bg-green-50 cursor-pointer">
-            <MessageCircle className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline">Contact</span>
-          </div>
-          
-          {/* Status dropdown with dot indicator - EXACT match to JobStatusDropdown */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted/50">
-            <MockStatusBadge status={status} size="xs" showDot />
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </div>
-          
-          {/* Three dot menu */}
-          <div className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted cursor-pointer">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <DemoJobDetailHeader
+    jobNumber={jobNumber}
+    createdDate={date}
+    status={status}
+    statusColor={statusToColor[status] || "gray"}
+  />
 );
 
-// ===== JOB DETAIL TABS - EXACT MATCH to JobDetailPage.tsx tabs structure =====
+// ===== JOB DETAIL TABS - NOW USES REAL DemoJobDetailTabs component =====
 
 const MockJobDetailTabs = ({ 
   activeTab = "details",
   onTabChange,
+  highlightedTab,
 }: { 
   activeTab?: "details" | "rooms" | "quotation" | "workroom";
   onTabChange?: (tab: string) => void;
-}) => {
-  // EXACT tab config from JobDetailPage - Client, Project, Quote, Workroom
-  const tabs = [
-    { id: "details", label: "Client", mobileLabel: "Client", icon: User },
-    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
-    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
-    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
-  ];
+  highlightedTab?: "details" | "rooms" | "quotation" | "workroom" | null;
+}) => (
+  <DemoJobDetailTabs
+    activeTab={activeTab}
+    onTabChange={onTabChange as any}
+    highlightedTab={highlightedTab}
+  />
+);
 
-  return (
-    <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border shadow-md">
-      <div className="px-2 py-1">
-        <div className="flex items-center gap-0.5 overflow-x-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <motion.div 
-                key={tab.id}
-                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 cursor-pointer whitespace-nowrap shrink-0 rounded-none transition-all ${
-                  isActive 
-                    ? "border-primary text-foreground bg-primary/5 font-semibold" 
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-                }`}
-                animate={isActive ? { scale: 1.02 } : {}}
-                onClick={() => onTabChange?.(tab.id)}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ===== ROOM CARD - EXACT MATCH to RoomHeader.tsx lines 51-117 =====
+// ===== ROOM CARD - NOW USES REAL DemoRoomHeader component =====
 
 const MockRoomCard = ({ 
   room, 
@@ -406,40 +314,15 @@ const MockRoomCard = ({
     }`}
     animate={highlighted ? { scale: 1.01 } : {}}
   >
-    {/* Header - EXACT MATCH to RoomHeader.tsx CardHeader */}
-    <div 
-      className="relative bg-muted/30 border-b border-border p-4 cursor-pointer select-none"
-      onClick={onExpand}
-    >
-      {/* Gradient background - EXACT match from RoomHeader.tsx line 61 */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
-      </div>
-      
-      <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-3 flex-1">
-          {/* Chevron toggle - rotates 90° when collapsed */}
-          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
-          
-          <div className="flex-1">
-            {/* Room name with edit button - EXACT match line 82-97 */}
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-foreground">{room.name}</span>
-              <div className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer">
-                <Edit2 className="h-3 w-3" />
-              </div>
-            </div>
-            {/* Room total - EXACT match: text-xl font-bold text-primary */}
-            <p className="text-xl font-bold text-primary mt-1">{room.total}</p>
-          </div>
-        </div>
-        
-        {/* RoomActionsMenu - three-dot on right */}
-        <div className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted cursor-pointer" onClick={(e) => e.stopPropagation()}>
-          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-        </div>
-      </div>
-    </div>
+    {/* Header - USES REAL DemoRoomHeader for 100% accuracy */}
+    <DemoRoomHeader
+      roomName={room.name}
+      roomTotal={room.total}
+      isOpen={expanded}
+      onToggle={onExpand}
+      highlighted={highlighted}
+      compact={false}
+    />
     
     {/* Expanded content - windows/treatments */}
     <AnimatePresence>
