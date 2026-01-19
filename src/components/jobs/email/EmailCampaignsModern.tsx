@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { CampaignCard } from "./CampaignCard";
+import { CampaignDetailsDialog } from "@/components/campaigns/CampaignDetailsDialog";
 import type { SelectedClient } from "@/hooks/useClientSelection";
+import type { EmailCampaign } from "@/hooks/useEmailCampaigns";
 import { cn } from "@/lib/utils";
 import { PixelSendIcon } from "@/components/icons/PixelArtIcons";
 import { getCampaignTemplates, CampaignTemplateKey } from "./EmailTemplateLibrary";
@@ -61,6 +63,7 @@ export const EmailCampaignsModern = () => {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [viewingCampaign, setViewingCampaign] = useState<EmailCampaign | null>(null);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
   const [templatePreset, setTemplatePreset] = useState<CampaignTemplateKey | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -111,10 +114,10 @@ export const EmailCampaignsModern = () => {
   };
 
   const handleViewCampaign = (campaignId: string) => {
-    toast({
-      title: "Coming Soon",
-      description: "Campaign preview feature is in development.",
-    });
+    const campaign = campaigns.find(c => c.id === campaignId);
+    if (campaign) {
+      setViewingCampaign(campaign);
+    }
   };
 
   const handleEditCampaign = (campaignId: string) => {
@@ -389,6 +392,13 @@ export const EmailCampaignsModern = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Campaign Details Dialog */}
+      <CampaignDetailsDialog
+        campaign={viewingCampaign}
+        open={!!viewingCampaign}
+        onOpenChange={(open) => !open && setViewingCampaign(null)}
+      />
     </div>
   );
 };
