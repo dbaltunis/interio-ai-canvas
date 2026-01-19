@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Upload, File, Image, FileText, Trash2, Eye, FolderOpen, Filter } from "lucide-react";
+import { Upload, File, Image, FileText, Trash2, Eye, FolderOpen, Loader2, AlertTriangle } from "lucide-react";
 import { useClientFiles, useUploadClientFile, useDeleteClientFile, useGetClientFileUrl } from "@/hooks/useClientFiles";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { toast } from "sonner";
@@ -24,6 +24,8 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [currentFile, setCurrentFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   const { data: files, isLoading } = useClientFiles(clientId, userId);
   const { data: projects } = useClientJobs(clientId);
@@ -39,6 +41,9 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const handleDirectUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
 
+    const fileNames = Array.from(files).map(f => f.name);
+    setUploadingFiles(fileNames);
+
     try {
       for (let i = 0; i < files.length; i++) {
         await uploadFile.mutateAsync({
@@ -47,12 +52,18 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
           userId,
           projectId: undefined,
         });
+        // Remove uploaded file from progress list
+        setUploadingFiles(prev => prev.filter(name => name !== files[i].name));
       }
+      toast.success(`${files.length} file${files.length > 1 ? 's' : ''} uploaded successfully`);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error('Upload error:', error);
+      toast.error("Failed to upload some files");
+    } finally {
+      setUploadingFiles([]);
     }
   };
 
@@ -88,6 +99,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   };
 
   const handleViewFile = async (file: any) => {
+    setIsLoadingPreview(true);
     try {
       const url = await getFileUrl.mutateAsync({
         bucketName: file.bucket_name,
@@ -100,7 +112,10 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
       });
       setViewerOpen(true);
     } catch (error) {
-      toast.error("Failed to open file");
+      console.error('File preview error:', error);
+      toast.error("Failed to open file. Please try again.");
+    } finally {
+      setIsLoadingPreview(false);
     }
   };
 
@@ -206,6 +221,15 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                 +{files.length - 4} more files
               </div>
             )}
+            {/* Upload Progress Indicator */}
+            {uploadingFiles.length > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/20">
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                <span className="text-[10px] text-primary font-medium">
+                  Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
+                </span>
+              </div>
+            )}
             {canEditClient && (
               <>
                 <input
@@ -213,9 +237,8 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                   type="file"
                   multiple
                   onChange={(e) => {
-                    setSelectedFiles(e.target.files);
                     if (e.target.files && e.target.files.length > 0) {
-                      handleUpload();
+                      handleDirectUpload(e.target.files);
                     }
                   }}
                   className="hidden"
@@ -225,10 +248,10 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                   variant="outline" 
                   className="w-full h-6 text-[10px] mt-1"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadFile.isPending}
+                  disabled={uploadFile.isPending || uploadingFiles.length > 0}
                 >
                   <Upload className="h-2.5 w-2.5 mr-1" />
-                  {uploadFile.isPending ? 'Uploading...' : 'Add File'}
+                  {uploadingFiles.length > 0 ? 'Uploading...' : 'Add File'}
                 </Button>
               </>
             )}
@@ -284,6 +307,17 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
+        {/* Storage Warning Banner */}
+        <div className="flex items-start gap-3 p-3 bg-warning/10 border border-warning/30 rounded-lg">
+          <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-medium text-foreground">Storage is limited</p>
+            <p className="text-muted-foreground mt-0.5">
+              Please upload files wisely. We recommend keeping files under 10MB each and removing unused files regularly.
+            </p>
+          </div>
+        </div>
+
         {/* Upload Section with Clear Steps */}
         <div className="space-y-4 p-5 border rounded-lg bg-card">
           <div className="flex items-start justify-between">
