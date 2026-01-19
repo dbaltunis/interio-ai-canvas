@@ -19,8 +19,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
-import { HelpDrawer } from "@/components/ui/help-drawer";
-import { HelpIcon } from "@/components/ui/help-icon";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { JobsFocusHandler } from "./JobsFocusHandler";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
@@ -38,7 +37,7 @@ const JobsPage = () => {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showHelp, setShowHelp] = useState(false);
+  
   const [showColumnCustomization, setShowColumnCustomization] = useState(false);
   const [isAutoCreating, setIsAutoCreating] = useState(false);
   
@@ -491,7 +490,7 @@ const canViewJobsExplicit =
               <FolderOpen className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">Projects</h1>
-            <HelpIcon onClick={() => setShowHelp(true)} />
+            <SectionHelpButton sectionId="jobs" />
             <Badge variant="secondary" className="text-xs">
               {quotes.length} projects
             </Badge>
@@ -566,30 +565,6 @@ const canViewJobsExplicit =
         onResetToDefaults={resetToDefaults}
       />
       
-      <HelpDrawer
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-        title="Projects"
-        sections={{
-          purpose: {
-            title: "What this page is for",
-            content: "Manage all your window treatment projects from initial quotes to completed installations. Track progress, manage timelines, and organize project details."
-          },
-          actions: {
-            title: "Common actions",
-            content: "Create new projects, view project details, filter by status, search projects, and track progress through different stages."
-          },
-          tips: {
-            title: "Tips & best practices",
-            content: "Use consistent naming conventions for projects. Keep project statuses updated. Archive completed projects to reduce clutter."
-          },
-          shortcuts: [
-            { key: "Ctrl + N", description: "Create new project" },
-            { key: "Ctrl + F", description: "Focus search" },
-            { key: "Esc", description: "Clear filters" }
-          ]
-        }}
-      />
       </div>
     </>
   );
