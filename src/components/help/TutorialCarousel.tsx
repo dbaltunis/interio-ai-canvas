@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, ComponentType, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause, Maximize2, Minimize2 } from "lucide-react";
+import { Play, Pause, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -233,60 +233,17 @@ export const TutorialCarousel = ({
           </div>
         </div>
 
-        {/* Compact text area - reduced clutter */}
+        {/* Title only - no description, no navigation buttons */}
         <div className={cn(
           "px-3 py-2 bg-background border-t border-border",
           isMaximized && "py-3"
         )}>
           <h4 className={cn(
-            "font-semibold text-foreground mb-0.5",
+            "font-semibold text-foreground text-center",
             isMaximized ? "text-base" : "text-sm"
           )}>
             {step.title}
           </h4>
-          <p className={cn(
-            "text-muted-foreground line-clamp-1",
-            isMaximized ? "text-sm" : "text-xs"
-          )}>
-            {step.description.length > 80 ? step.description.substring(0, 80) + '...' : step.description}
-          </p>
-        </div>
-
-        {/* Navigation footer - clear buttons below content */}
-        <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-t border-border">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goPrev} 
-            className="h-9 gap-2 px-4 text-sm font-medium"
-          >
-            <ChevronLeft className="h-4 w-4" /> Previous
-          </Button>
-
-          {/* Mini dots for steps within current group */}
-          <div className="flex items-center gap-1.5">
-            {currentGroupSteps.map((stepIdx, i) => (
-              <button
-                key={stepIdx}
-                onClick={() => goToStep(stepIdx)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  stepIdx === currentStep
-                    ? "bg-primary w-4"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
-              />
-            ))}
-          </div>
-
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={goNext} 
-            className="h-9 gap-2 px-4 text-sm font-medium"
-          >
-            Next <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </>
