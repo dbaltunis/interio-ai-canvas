@@ -855,31 +855,23 @@ export const jobsTutorial: Tutorial = {
 };
 
 // ===========================================
-// MESSAGES TUTORIAL - 20 Steps
+// MESSAGES TUTORIAL - 12 Action-Packed Steps
 // ===========================================
 export const messagesTutorial: Tutorial = {
   id: "messages",
   steps: [
-    { title: "Welcome to Messages Hub", actionLabel: "View", description: "Your central hub for emails, campaigns, templates, and analytics.", Visual: MessagesStep1 },
-    { title: "Navigate with Tabs", actionLabel: "Click", description: "Switch between Inbox, Campaigns, Templates, and Analytics views.", Visual: MessagesStep2 },
-    { title: "Quick Compose Button", actionLabel: "Click", description: "Start a new email anytime with the floating Compose button.", Visual: MessagesStep3 },
-    { title: "Split-Pane Inbox", actionLabel: "View", description: "Gmail-style layout: message list on left, details on right.", Visual: MessagesStep4 },
-    { title: "Filter by Channel", actionLabel: "Filter", description: "Quickly filter by Email or WhatsApp messages.", Visual: MessagesStep5 },
-    { title: "View Tracking Stats", actionLabel: "View", description: "See delivery status, open counts, and click tracking.", Visual: MessagesStep6 },
-    { title: "Email Actions Menu", actionLabel: "Click", description: "Reply, Forward, Archive, or Delete with one click.", Visual: MessagesStep7 },
-    { title: "Campaigns Dashboard", actionLabel: "View", description: "Manage bulk email campaigns with status tracking.", Visual: MessagesStep8 },
-    { title: "Quick Start Templates", actionLabel: "Select", description: "Jump-start campaigns with pre-built templates.", Visual: MessagesStep9 },
-    { title: "Campaign Wizard", actionLabel: "Create", description: "Step-by-step campaign creation with preview.", Visual: MessagesStep10 },
-    { title: "Filter Campaigns", actionLabel: "Filter", description: "View drafts, scheduled, or sent campaigns.", Visual: MessagesStep11 },
-    { title: "Template Library", actionLabel: "Browse", description: "Reusable email templates organized by category.", Visual: MessagesStep12 },
-    { title: "AI-Powered Templates", actionLabel: "Generate", description: "Smart templates that personalize automatically.", Visual: MessagesStep13 },
-    { title: "Use or Duplicate", actionLabel: "Action", description: "Apply templates directly or duplicate to customize.", Visual: MessagesStep14 },
-    { title: "Analytics Dashboard", actionLabel: "View", description: "Track sent, delivered, opened, and clicked metrics.", Visual: MessagesStep15 },
-    { title: "Activity Charts", actionLabel: "Analyze", description: "Visualize email performance over time.", Visual: MessagesStep16 },
-    { title: "Compare Campaigns", actionLabel: "Compare", description: "Side-by-side campaign performance comparison.", Visual: MessagesStep17 },
-    { title: "Personalization Tokens", actionLabel: "Insert", description: "Use {{client_name}} and other tokens for personalization.", Visual: MessagesStep18 },
-    { title: "AI Writing Assistant", actionLabel: "Generate", description: "Let AI draft your email content.", Visual: MessagesStep19 },
-    { title: "Spam Check", actionLabel: "Verify", description: "Pre-send deliverability check to avoid spam folders.", Visual: MessagesStep20 },
+    { title: "Messages Hub", actionLabel: "View", description: "Your email marketing command center with live stats.", Visual: MessagesStep1, duration: 3500 },
+    { title: "Compose Email", actionLabel: "Write", description: "Click Compose, select recipient, type subject and body.", Visual: MessagesStep2, duration: 4500 },
+    { title: "Split-Pane Inbox", actionLabel: "Select", description: "Select messages to see full details and tracking stats.", Visual: MessagesStep3, duration: 4000 },
+    { title: "Email Actions", actionLabel: "Menu", description: "Reply, forward, copy, archive - all from quick menu.", Visual: MessagesStep4, duration: 4000 },
+    { title: "Launch Campaign", actionLabel: "Create", description: "Pick a template and step through the campaign wizard.", Visual: MessagesStep5, duration: 4500 },
+    { title: "Campaign Sent!", actionLabel: "Success", description: "Watch your campaign stats come alive in real-time.", Visual: MessagesStep6, duration: 4000 },
+    { title: "Template Library", actionLabel: "Browse", description: "Filter and select from your reusable template collection.", Visual: MessagesStep7, duration: 4000 },
+    { title: "AI Magic", actionLabel: "Generate", description: "Let AI write compelling email content for you.", Visual: MessagesStep8, duration: 5000 },
+    { title: "Real-Time Analytics", actionLabel: "Track", description: "KPI counters and charts animate with live data.", Visual: MessagesStep9, duration: 4000 },
+    { title: "Personalization", actionLabel: "Tokens", description: "Use tokens like {{client_name}} for personal touch.", Visual: MessagesStep10, duration: 4000 },
+    { title: "Spam Check", actionLabel: "Verify", description: "Pre-send check ensures maximum deliverability.", Visual: MessagesStep11, duration: 4000 },
+    { title: "Email Delivered!", actionLabel: "Track", description: "Watch your email journey from sent to opened.", Visual: MessagesStep12, duration: 4500 },
   ],
 };
 
