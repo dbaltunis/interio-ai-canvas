@@ -21,3 +21,19 @@ export { DemoEmailCard } from "./DemoEmailCard";
 export { DemoCampaignCard } from "./DemoCampaignCard";
 export { DemoEmailAnalytics, DemoMiniChart } from "./DemoEmailAnalytics";
 export { DemoTemplateCard } from "./DemoTemplateCard";
+
+// Settings demo components
+export {
+  AnimatedMockInput,
+  AnimatedMockToggle,
+  AnimatedMockButton,
+  AnimatedSuccessToast,
+  AnimatedFormSection,
+  AnimatedMockSelect,
+  AnimatedMockAvatar,
+  AnimatedPasswordStrength,
+  AnimatedMockCard,
+  AnimatedPreviewBox,
+  AnimatedLogoUpload,
+  typingProgress,
+} from "./DemoSettingsElements";
