@@ -406,7 +406,11 @@ export const PricingRulesTab = () => {
             <CardContent className="space-y-4">
               <div className="rounded-lg border bg-muted/30 p-3 text-xs">
                 <span className="font-medium">Priority:</span>{' '}
-                <span className="text-primary font-medium">Grid Markup</span> → Category → Default → Minimum (floor)
+                <span className="text-primary font-medium">1. Grid Markup</span> → 
+                <span className="ml-1">2. Category</span> → 
+                <span className="ml-1 text-primary font-medium">3. Material/Labor</span> → 
+                <span className="ml-1">4. Default</span> → 
+                <span className="ml-1 text-destructive">5. Minimum (floor)</span>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -419,7 +423,7 @@ export const PricingRulesTab = () => {
                     value={formData.default_markup_percentage}
                     onChange={(e) => setFormData(prev => prev ? {...prev, default_markup_percentage: Number(e.target.value)} : null)}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Applied when no category markup is set</p>
+                  <p className="text-xs text-muted-foreground mt-1">Applied when no category or material/labor markup is set</p>
                 </div>
                 <div>
                   <Label htmlFor="minimumMargin">Minimum Margin (Floor) (%)</Label>
@@ -431,6 +435,41 @@ export const PricingRulesTab = () => {
                     onChange={(e) => setFormData(prev => prev ? {...prev, minimum_markup_percentage: Number(e.target.value)} : null)}
                   />
                   <p className="text-xs text-muted-foreground mt-1">No item will ever have markup below this</p>
+                </div>
+              </div>
+
+              {/* Material & Labor Fallback Markups - Previously Hidden */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <h4 className="text-sm font-medium text-primary">Material & Labor Fallback Markups</h4>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Priority 3</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Applied when category markup is 0%. Set to 0 to skip this level and use the default markup instead.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="materialMarkup">Material Markup (%)</Label>
+                    <Input 
+                      id="materialMarkup" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.material_markup_percentage || 0}
+                      onChange={(e) => setFormData(prev => prev ? {...prev, material_markup_percentage: Number(e.target.value)} : null)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Fallback for fabric, hardware, materials</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="laborMarkup">Labor Markup (%)</Label>
+                    <Input 
+                      id="laborMarkup" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.labor_markup_percentage || 0}
+                      onChange={(e) => setFormData(prev => prev ? {...prev, labor_markup_percentage: Number(e.target.value)} : null)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Fallback for stitching, installation, labor</p>
+                  </div>
                 </div>
               </div>
 
