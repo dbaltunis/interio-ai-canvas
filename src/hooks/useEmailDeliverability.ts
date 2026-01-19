@@ -98,6 +98,24 @@ const SPAM_WORDS = [
   'CLICK', 'BUY', 'ORDER', 'CALL', 'WIN', 'WINNER', 'CASH', 'PRIZE',
 ];
 
+// Profanity and offensive words - MAJOR penalty
+const PROFANITY_WORDS = [
+  'shit', 'damn', 'hell', 'ass', 'crap', 'piss', 'bastard', 'bitch',
+  'fuck', 'fucking', 'fucked', 'dick', 'cock', 'pussy', 'slut', 'whore',
+  'asshole', 'bullshit', 'dumbass', 'jackass', 'moron', 'idiot', 'stupid',
+  'retard', 'loser', 'suck', 'sucks', 'wtf', 'stfu', 'lmao', 'lmfao',
+];
+
+// Common typos/misspellings that indicate poor quality
+const COMMON_TYPOS = [
+  'pelase', 'teh', 'recieve', 'definately', 'occured', 'seperate',
+  'untill', 'thier', 'wich', 'becuase', 'accomodate', 'occurence',
+  'refered', 'succesful', 'beleive', 'calender', 'collegue', 'comming',
+  'concious', 'embarass', 'enviroment', 'goverment', 'harrass', 'independant',
+  'liason', 'millenium', 'neccessary', 'occassion', 'persistant', 'privelege',
+  'publically', 'recomend', 'relevent', 'resistence', 'responsability', 'succesfully',
+];
+
 // Additional patterns to check
 const SPAM_PATTERNS = [
   /\$\d+/g, // Dollar amounts like $100
@@ -138,6 +156,17 @@ export const analyzeEmailContent = (
   const foundWords: string[] = [];
   const structureIssues: string[] = [];
 
+  // Check for profanity FIRST (major penalty)
+  let profanityCount = 0;
+  PROFANITY_WORDS.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = textToCheck.match(regex);
+    if (matches) {
+      profanityCount += matches.length;
+      foundWords.push(`PROFANITY: "${word}"`);
+    }
+  });
+
   // Check spam words (case-insensitive)
   SPAM_WORDS.forEach(word => {
     if (textToCheck.includes(word.toLowerCase())) {
@@ -165,11 +194,21 @@ export const analyzeEmailContent = (
     foundWords.push('Too many exclamation marks');
   }
 
-  // Calculate spam score (0-100, lower is better) - more aggressive scoring
-  const spamScore = Math.min(100, foundWords.length * 12);
+  // Calculate spam score (0-100, lower is better) - MUCH more aggressive scoring
+  // Profanity = instant major penalty (40 per word), spam words = 15 per word
+  const spamScore = Math.min(100, (profanityCount * 40) + ((foundWords.length - profanityCount) * 15));
 
   // Structure checks
   let structureScore = 10; // Start with full score
+
+  // Check for typos/misspellings
+  const typoCount = COMMON_TYPOS.filter(typo => 
+    textToCheck.includes(typo.toLowerCase())
+  ).length;
+  if (typoCount > 0) {
+    structureIssues.push(`${typoCount} possible spelling error(s)`);
+    structureScore -= Math.min(4, typoCount * 2);
+  }
 
   // Check subject length (30-60 chars optimal)
   if (subject.length < 10) {
@@ -193,10 +232,21 @@ export const analyzeEmailContent = (
     structureScore -= 2;
   }
 
-  // Check content length
-  if (plainContent.length < 50) {
+  // Check content length - more aggressive
+  if (plainContent.length < 30) {
+    structureIssues.push('Email content extremely short');
+    structureScore -= 3;
+  } else if (plainContent.length < 50) {
     structureIssues.push('Email content too short');
     structureScore -= 2;
+  }
+
+  // Check for greeting/sign-off (professionalism indicators)
+  const hasGreeting = /^(hi|hello|hey|dear|good morning|good afternoon|greetings)/i.test(plainContent.trim());
+  const hasSignoff = /(regards|best|thanks|sincerely|cheers|kind regards|warm regards|best wishes)/i.test(plainContent);
+  if (!hasGreeting && !hasSignoff && plainContent.length > 50) {
+    structureIssues.push('Missing greeting or sign-off');
+    structureScore -= 1;
   }
 
   // Check link count
@@ -228,7 +278,7 @@ export const analyzeEmailContent = (
 
   return {
     spamScore,
-    issues: foundWords.slice(0, 5).map(w => `Spam trigger: "${w}"`),
+    issues: foundWords.slice(0, 5).map(w => w.startsWith('PROFANITY') ? w : `Spam trigger: "${w}"`),
     structureScore: Math.max(0, structureScore),
     structureIssues,
   };
@@ -254,14 +304,14 @@ export const calculateDeliverabilityScore = (
   // Domain Authentication (40%) - REALISTIC scoring for shared service
   if (deliverabilityData) {
     if (usingSharedService) {
-      // Shared service: domain auth is handled but NOT perfect - reduce score
-      // Shared domains have less trust than custom authenticated domains
-      breakdown.domainAuth.score = 28; // Reduced from 40 - shared domains are less trusted
+      // Shared service: domain auth is handled but NOT as good as custom domain
+      // Lower baseline so content analysis matters MORE
+      breakdown.domainAuth.score = 20; // Significantly reduced - shared domains have less trust
       breakdown.domainAuth.status = 'warning';
       recommendations.push('Using shared email service - consider SendGrid with your own domain for better deliverability');
       
-      // Reputation for shared service - also reduced
-      breakdown.reputation.score = Math.min(18, deliverabilityData.scores.reputation || 15);
+      // Reputation for shared service - also reduced significantly
+      breakdown.reputation.score = Math.min(12, deliverabilityData.scores.reputation || 10);
       breakdown.reputation.status = 'warning';
     } else {
       // Custom SendGrid - check their domain auth
@@ -289,19 +339,25 @@ export const calculateDeliverabilityScore = (
   } else {
     // No data = assume worst case for domain auth, medium for reputation
     breakdown.domainAuth.score = 0;
-    breakdown.reputation.score = 12;
+    breakdown.reputation.score = 8;
     recommendations.push('Connect SendGrid for domain authentication');
   }
 
-  // Content Score (20%) - More aggressive penalties
+  // Content Score (20%) - MUCH more aggressive penalties
   // Convert spam score (0-100, lower better) to content score (0-20, higher better)
-  const contentPenalty = Math.min(20, contentAnalysis.spamScore * 0.25);
+  // Each spam word = 15 points in spamScore, so contentPenalty = spamScore * 0.5 (max 20)
+  const contentPenalty = Math.min(20, contentAnalysis.spamScore * 0.5);
   breakdown.content.score = Math.round(Math.max(0, 20 - contentPenalty));
   
-  if (contentAnalysis.spamScore > 20) {
+  // Add profanity warning immediately
+  if (contentAnalysis.issues.some(issue => issue.includes('PROFANITY'))) {
+    recommendations.unshift('⚠️ Profanity detected - this will likely be flagged as spam');
+  }
+  
+  if (contentAnalysis.spamScore > 15) {
     contentAnalysis.issues.forEach(issue => recommendations.push(issue));
   }
-  if (contentAnalysis.spamScore > 40) {
+  if (contentAnalysis.spamScore > 30) {
     recommendations.push('High spam word count detected - rewrite with neutral language');
   }
 
