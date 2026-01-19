@@ -8,7 +8,7 @@ export interface EmailTemplate {
   template_type: string;
   subject: string;
   content: string;
-  variables: string[];
+  variables: string[] | unknown; // DB returns Json type
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -127,10 +127,14 @@ export const useCreateGeneralEmailTemplate = () => {
 
       const { data, error } = await supabase
         .from('email_templates')
-        .insert({
+        .insert([{
           user_id: user.id,
-          ...template,
-        })
+          template_type: template.template_type,
+          subject: template.subject,
+          content: template.content,
+          active: template.active,
+          variables: template.variables as string[] || [],
+        }])
         .select()
         .single();
 
@@ -148,6 +152,79 @@ export const useCreateGeneralEmailTemplate = () => {
       toast({
         title: "Creation Failed",
         description: error.message || "Failed to create email template",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteGeneralEmailTemplate = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+      return templateId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['general-email-templates'] });
+      toast({
+        title: "Template Deleted",
+        description: "Email template has been deleted",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete email template",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDuplicateGeneralEmailTemplate = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (template: EmailTemplate) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('email_templates')
+        .insert([{
+          user_id: user.id,
+          template_type: `${template.template_type}_copy`,
+          subject: `${template.subject} (Copy)`,
+          content: template.content,
+          variables: (template.variables as string[]) || [],
+          active: false,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['general-email-templates'] });
+      toast({
+        title: "Template Duplicated",
+        description: "Template has been duplicated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Duplicate Failed",
+        description: error.message || "Failed to duplicate email template",
         variant: "destructive",
       });
     },
