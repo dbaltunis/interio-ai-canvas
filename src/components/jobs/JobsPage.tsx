@@ -484,9 +484,9 @@ const canViewJobsExplicit =
       <div className="bg-background/50 min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 lg:p-6">
         {/* Compact Header - Analytics Style */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
               <FolderOpen className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">Projects</h1>
@@ -496,9 +496,9 @@ const canViewJobsExplicit =
             </Badge>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Always-visible Search Input */}
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-48 lg:w-64 order-last sm:order-first">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search jobs..."

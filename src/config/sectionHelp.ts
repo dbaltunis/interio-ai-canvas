@@ -1,4 +1,4 @@
-import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings, UserCircle } from "lucide-react";
+import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings, UserCircle, FolderOpen } from "lucide-react";
 
 export interface SectionHelpContent {
   id: string;
@@ -266,5 +266,24 @@ export const sectionHelpContent: Record<string, SectionHelpContent> = {
       "Quick actions: Email, Call, WhatsApp, Log Activity"
     ],
     relatedSections: ["Clients", "Jobs"]
+  },
+
+  // ===== JOBS PAGE =====
+
+  jobs: {
+    id: "jobs",
+    title: "Jobs & Projects",
+    icon: FolderOpen,
+    briefDescription: "Create and manage window treatment projects from quote to installation.",
+    keyPoints: [
+      "Create jobs with rooms, windows, and treatments",
+      "Add measurements and select fabrics/materials",
+      "Generate quotes with discounts and payment terms",
+      "Send quotes via PDF or email to clients",
+      "Export invoices to Xero, QuickBooks, or other ERP systems",
+      "Create work orders and share with workrooms",
+      "Track installation progress through completion"
+    ],
+    relatedSections: ["Clients", "Documents", "Products"]
   }
 };
