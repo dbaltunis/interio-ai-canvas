@@ -223,25 +223,6 @@ export const TutorialCarousel = ({
           </h4>
         </div>
 
-        {/* Clickable Step Indicators */}
-        <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-muted/30 border-t border-border">
-          {steps.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => goToStep(idx)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                idx === currentStep
-                  ? "bg-primary w-4"
-                  : idx < currentStep
-                    ? "bg-primary/40"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-              )}
-              aria-label={`Go to step ${idx + 1}`}
-            />
-          ))}
-        </div>
-
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-t border-border">
           <Button 
@@ -265,6 +246,25 @@ export const TutorialCarousel = ({
           >
             Next <ChevronRight className="h-3.5 w-3.5" />
           </Button>
+        </div>
+
+        {/* Clickable Step Indicators */}
+        <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-muted/30 border-t border-border">
+          {steps.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToStep(idx)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all",
+                idx === currentStep
+                  ? "bg-primary w-4"
+                  : idx < currentStep
+                    ? "bg-primary/40"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+              )}
+              aria-label={`Go to step ${idx + 1}`}
+            />
+          ))}
         </div>
       </div>
     </>
