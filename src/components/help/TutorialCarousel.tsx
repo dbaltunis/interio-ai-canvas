@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Pause, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
 export interface TutorialStep {
   title: string;
   actionLabel: string;
   description: string;
-  Visual: ComponentType<{ phase?: number }>;
+  Visual: ComponentType<{
+    phase?: number;
+  }>;
   relatedSection?: string;
   prerequisiteNote?: string;
   duration?: number;
@@ -21,18 +22,39 @@ interface StepGroup {
   label: string;
   shortLabel: string;
 }
-
-const defaultStepGroups: StepGroup[] = [
-  { id: "overview", label: "Dashboard", shortLabel: "Start" },
-  { id: "job-details", label: "Job Details", shortLabel: "Details" },
-  { id: "project", label: "Rooms & Windows", shortLabel: "Rooms" },
-  { id: "inventory", label: "Materials", shortLabel: "Materials" },
-  { id: "measurements", label: "Measurements", shortLabel: "Measure" },
-  { id: "quote", label: "Quote", shortLabel: "Quote" },
-  { id: "workroom", label: "Work Orders", shortLabel: "Orders" },
-  { id: "complete", label: "Complete", shortLabel: "Done" },
-];
-
+const defaultStepGroups: StepGroup[] = [{
+  id: "overview",
+  label: "Dashboard",
+  shortLabel: "Start"
+}, {
+  id: "job-details",
+  label: "Job Details",
+  shortLabel: "Details"
+}, {
+  id: "project",
+  label: "Rooms & Windows",
+  shortLabel: "Rooms"
+}, {
+  id: "inventory",
+  label: "Materials",
+  shortLabel: "Materials"
+}, {
+  id: "measurements",
+  label: "Measurements",
+  shortLabel: "Measure"
+}, {
+  id: "quote",
+  label: "Quote",
+  shortLabel: "Quote"
+}, {
+  id: "workroom",
+  label: "Work Orders",
+  shortLabel: "Orders"
+}, {
+  id: "complete",
+  label: "Complete",
+  shortLabel: "Done"
+}];
 interface TutorialCarouselProps {
   steps: TutorialStep[];
   autoPlay?: boolean;
@@ -53,13 +75,12 @@ const getStepGroup = (stepIndex: number, totalSteps: number): string => {
   if (ratio < 0.92) return "workroom";
   return "complete";
 };
-
-export const TutorialCarousel = ({ 
-  steps, 
-  autoPlay = true, 
+export const TutorialCarousel = ({
+  steps,
+  autoPlay = true,
   stepDuration = 6000,
   onNavigateToSection,
-  stepGroups = defaultStepGroups,
+  stepGroups = defaultStepGroups
 }: TutorialCarouselProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -67,7 +88,6 @@ export const TutorialCarousel = ({
   const [phase, setPhase] = useState(0);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-
   const step = steps[currentStep];
   const currentStepDuration = step.duration || stepDuration;
 
@@ -96,16 +116,14 @@ export const TutorialCarousel = ({
     const elapsed = timestamp - startTimeRef.current;
     const progress = Math.min(elapsed / currentStepDuration, 1);
     setPhase(progress);
-
     if (progress < 1) {
       animationRef.current = requestAnimationFrame(animate);
     } else {
-      setCurrentStep((prev) => (prev + 1) % steps.length);
+      setCurrentStep(prev => (prev + 1) % steps.length);
       startTimeRef.current = 0;
       setPhase(0);
     }
   }, [currentStepDuration, steps.length]);
-
   useEffect(() => {
     if (isPlaying) {
       startTimeRef.current = 0;
@@ -117,52 +135,43 @@ export const TutorialCarousel = ({
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [isPlaying, currentStep, animate]);
-
   const goToStep = (index: number) => {
     setCurrentStep(index);
     setPhase(0);
     startTimeRef.current = 0;
   };
-
   const goToGroup = (groupId: string) => {
     const firstStep = groupedSteps[groupId]?.[0];
     if (firstStep !== undefined) goToStep(firstStep);
   };
-
   const goNext = () => {
-    setCurrentStep((prev) => (prev + 1) % steps.length);
+    setCurrentStep(prev => (prev + 1) % steps.length);
     setPhase(0);
     startTimeRef.current = 0;
   };
-
   const goPrev = () => {
-    setCurrentStep((prev) => (prev - 1 + steps.length) % steps.length);
+    setCurrentStep(prev => (prev - 1 + steps.length) % steps.length);
     setPhase(0);
     startTimeRef.current = 0;
   };
-
   const StepVisual = step.Visual;
-
   const slideVariants = {
-    enter: { opacity: 0, scale: 0.98 },
-    center: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 1.02 },
+    enter: {
+      opacity: 0,
+      scale: 0.98
+    },
+    center: {
+      opacity: 1,
+      scale: 1
+    },
+    exit: {
+      opacity: 0,
+      scale: 1.02
+    }
   };
-
-  return (
-    <>
-      {isMaximized && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[99]" 
-          onClick={() => setIsMaximized(false)}
-        />
-      )}
-      <div className={cn(
-        "flex flex-col rounded-xl border border-border overflow-hidden transition-all duration-300",
-        isMaximized 
-          ? "fixed inset-4 z-[100] bg-background shadow-2xl" 
-          : "bg-muted/30"
-      )}>
+  return <>
+      {isMaximized && <div className="fixed inset-0 bg-black/50 z-[99]" onClick={() => setIsMaximized(false)} />}
+      <div className={cn("flex flex-col rounded-xl border border-border overflow-hidden transition-all duration-300", isMaximized ? "fixed inset-4 z-[100] bg-background shadow-2xl" : "bg-muted/30")}>
         {/* Header - simplified */}
         <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border">
           <div className="flex items-center gap-2">
@@ -182,113 +191,52 @@ export const TutorialCarousel = ({
         </div>
 
         {/* Grouped Navigation Tabs */}
-        <div className="flex items-center gap-0.5 px-2 py-1.5 bg-background border-b border-border overflow-x-auto">
-          {stepGroups.map((group, idx) => {
-            const isActive = group.id === currentGroupId;
-            const hasSteps = (groupedSteps[group.id]?.length || 0) > 0;
-            if (!hasSteps) return null;
-            
-            return (
-              <button
-                key={group.id}
-                onClick={() => goToGroup(group.id)}
-                className={cn(
-                  "px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap transition-all shrink-0",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                {group.shortLabel}
-              </button>
-            );
-          })}
-        </div>
+        
 
         {/* Visual area - taller to prevent scrolling */}
-        <div className={cn(
-          "relative p-3 overflow-y-auto flex-1",
-          isMaximized ? "min-h-[500px] max-h-[600px]" : "min-h-[380px] max-h-[420px]"
-        )}>
+        <div className={cn("relative p-3 overflow-y-auto flex-1", isMaximized ? "min-h-[500px] max-h-[600px]" : "min-h-[380px] max-h-[420px]")}>
           <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="w-full"
-            >
+            <motion.div key={currentStep} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }} className="w-full">
               <StepVisual phase={phase} />
             </motion.div>
           </AnimatePresence>
           
           {/* Step progress bar */}
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted/50">
-            <motion.div 
-              className="h-full bg-primary/60"
-              style={{ width: `${phase * 100}%` }}
-            />
+            <motion.div className="h-full bg-primary/60" style={{
+            width: `${phase * 100}%`
+          }} />
           </div>
         </div>
 
         {/* Compact text area - reduced clutter */}
-        <div className={cn(
-          "px-3 py-2 bg-background border-t border-border",
-          isMaximized && "py-3"
-        )}>
-          <h4 className={cn(
-            "font-semibold text-foreground mb-0.5",
-            isMaximized ? "text-base" : "text-sm"
-          )}>
+        <div className={cn("px-3 py-2 bg-background border-t border-border", isMaximized && "py-3")}>
+          <h4 className={cn("font-semibold text-foreground mb-0.5", isMaximized ? "text-base" : "text-sm")}>
             {step.title}
           </h4>
-          <p className={cn(
-            "text-muted-foreground line-clamp-1",
-            isMaximized ? "text-sm" : "text-xs"
-          )}>
+          <p className={cn("text-muted-foreground line-clamp-1", isMaximized ? "text-sm" : "text-xs")}>
             {step.description.length > 80 ? step.description.substring(0, 80) + '...' : step.description}
           </p>
         </div>
 
         {/* Navigation footer - clear buttons below content */}
         <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-t border-border">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goPrev} 
-            className="h-9 gap-2 px-4 text-sm font-medium"
-          >
+          <Button variant="outline" size="sm" onClick={goPrev} className="h-9 gap-2 px-4 text-sm font-medium">
             <ChevronLeft className="h-4 w-4" /> Previous
           </Button>
 
           {/* Mini dots for steps within current group */}
           <div className="flex items-center gap-1.5">
-            {currentGroupSteps.map((stepIdx, i) => (
-              <button
-                key={stepIdx}
-                onClick={() => goToStep(stepIdx)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  stepIdx === currentStep
-                    ? "bg-primary w-4"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
-              />
-            ))}
+            {currentGroupSteps.map((stepIdx, i) => <button key={stepIdx} onClick={() => goToStep(stepIdx)} className={cn("w-2 h-2 rounded-full transition-all", stepIdx === currentStep ? "bg-primary w-4" : "bg-muted-foreground/30 hover:bg-muted-foreground/50")} />)}
           </div>
 
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={goNext} 
-            className="h-9 gap-2 px-4 text-sm font-medium"
-          >
+          <Button variant="default" size="sm" onClick={goNext} className="h-9 gap-2 px-4 text-sm font-medium">
             Next <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
-    </>
-  );
+    </>;
 };
