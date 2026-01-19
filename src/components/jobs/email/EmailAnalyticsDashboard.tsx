@@ -4,21 +4,18 @@ import { Mail, Send, BarChart3, RefreshCw } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { format, startOfDay, eachDayOfInterval, subDays } from "date-fns";
-import { useMemo, useState } from "react";
+import { format, startOfDay, eachDayOfInterval } from "date-fns";
+import { useMemo } from "react";
 import { DashboardDateFilter } from "@/components/dashboard/DashboardDateFilter";
-import { DashboardDateProvider } from "@/contexts/DashboardDateContext";
+import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 
 const EmailAnalyticsDashboardInner = () => {
   const { data: emails = [], refetch, isRefetching } = useEmails();
   const { data: kpis } = useEmailKPIs();
   const { data: campaigns = [] } = useEmailCampaigns();
   
-  // Local date range state
-  const [dateRange, setDateRange] = useState({
-    startDate: subDays(new Date(), 30),
-    endDate: new Date(),
-  });
+  // Use the context date range (provided by DashboardDateProvider wrapper)
+  const { dateRange } = useDashboardDate();
 
   // Filter emails by selected date range
   const filteredEmails = useMemo(() => {
