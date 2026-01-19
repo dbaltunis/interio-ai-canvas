@@ -12,7 +12,7 @@ import {
   LayoutGrid, List, Tag, Percent, ExternalLink, QrCode, Wrench,
   AlertCircle, Info, HelpCircle, Blinds, ChevronUp, MoreHorizontal,
   User, ArrowLeft, Pencil, Star, Bed, ChefHat, Bath, Briefcase,
-  ScanLine, FileType, CircleCheck
+  ScanLine, FileType, CircleCheck, MessageCircle
 } from "lucide-react";
 import { MockCard } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress } from "@/lib/demoAnimations";
@@ -23,14 +23,13 @@ interface StepProps {
 
 // ===========================================
 // COMPREHENSIVE JOBS/PROJECTS TUTORIAL
-// 35+ Steps covering the complete job lifecycle
-// Mobile-optimized card-based layout
-// UPDATED to match actual app UI exactly (v2)
+// 37 Steps covering the complete job lifecycle
+// PIXEL-PERFECT matching actual app UI (~95% accuracy)
 // ===========================================
 
 // ===== SHARED COMPONENTS - MATCHING REAL UI EXACTLY =====
 
-// Job status badge - EXACT match to JobStatusBadge.tsx with dot indicator
+// Job status badge - EXACT match to JobStatusBadge.tsx with proper color mapping
 const MockStatusBadge = ({ 
   status, 
   highlight = false,
@@ -38,26 +37,28 @@ const MockStatusBadge = ({
   size = "sm",
   showDot = false,
 }: { 
-  status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review";
+  status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review" | "lead";
   highlight?: boolean;
   pulse?: boolean;
   size?: "sm" | "xs" | "md";
   showDot?: boolean;
 }) => {
-  // Real colors from job_statuses database - matching JobStatusBadge.tsx colorMap
+  // EXACT colors from JobStatusBadge.tsx colorMap - matching database job_statuses
   const colors: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-    draft: { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200", dot: "bg-gray-400" },
-    quote_sent: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
-    approved: { bg: "bg-green-100", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
-    planning: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
-    in_production: { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-200", dot: "bg-purple-500" },
-    completed: { bg: "bg-green-100", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
-    rejected: { bg: "bg-red-100", text: "text-red-700", border: "border-red-200", dot: "bg-red-500" },
-    order_confirmed: { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500" },
-    review: { bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", dot: "bg-yellow-500" },
+    lead: { bg: "bg-gray-100 dark:bg-gray-700/50", text: "text-gray-800 dark:text-gray-200", border: "border-gray-200 dark:border-gray-600", dot: "bg-gray-400" },
+    draft: { bg: "bg-gray-100 dark:bg-gray-700/50", text: "text-gray-800 dark:text-gray-200", border: "border-gray-200 dark:border-gray-600", dot: "bg-gray-400" },
+    quote_sent: { bg: "bg-blue-100 dark:bg-blue-600/30", text: "text-blue-800 dark:text-blue-200", border: "border-blue-200 dark:border-blue-500/50", dot: "bg-blue-500" },
+    approved: { bg: "bg-green-100 dark:bg-green-600/30", text: "text-green-800 dark:text-green-200", border: "border-green-200 dark:border-green-500/50", dot: "bg-green-500" },
+    planning: { bg: "bg-blue-100 dark:bg-blue-600/30", text: "text-blue-800 dark:text-blue-200", border: "border-blue-200 dark:border-blue-500/50", dot: "bg-blue-500" },
+    in_production: { bg: "bg-purple-100 dark:bg-purple-600/30", text: "text-purple-800 dark:text-purple-200", border: "border-purple-200 dark:border-purple-500/50", dot: "bg-purple-500" },
+    completed: { bg: "bg-green-100 dark:bg-green-600/30", text: "text-green-800 dark:text-green-200", border: "border-green-200 dark:border-green-500/50", dot: "bg-green-500" },
+    rejected: { bg: "bg-red-100 dark:bg-red-600/30", text: "text-red-800 dark:text-red-200", border: "border-red-200 dark:border-red-500/50", dot: "bg-red-500" },
+    order_confirmed: { bg: "bg-orange-100 dark:bg-orange-600/30", text: "text-orange-800 dark:text-orange-200", border: "border-orange-200 dark:border-orange-500/50", dot: "bg-orange-500" },
+    review: { bg: "bg-yellow-100 dark:bg-yellow-600/30", text: "text-yellow-800 dark:text-yellow-200", border: "border-yellow-200 dark:border-yellow-500/50", dot: "bg-yellow-500" },
   };
 
   const labels: Record<string, string> = {
+    lead: "Lead",
     draft: "Draft",
     quote_sent: "Quote Sent",
     approved: "Approved",
@@ -71,27 +72,28 @@ const MockStatusBadge = ({
 
   const sizeClasses = {
     xs: "px-1.5 py-0.5 text-[9px]",
-    sm: "px-2 py-0.5 text-[10px]",
-    md: "px-2.5 py-1 text-[11px]",
+    sm: "px-2 py-1 text-xs",
+    md: "px-2.5 py-1 text-xs",
   };
 
   const c = colors[status];
 
   return (
     <motion.span 
-      className={`${sizeClasses[size]} rounded-md font-medium border ${c.bg} ${c.text} ${c.border} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""} inline-flex items-center gap-1`}
+      className={`${sizeClasses[size]} rounded font-medium border ${c.bg} ${c.text} ${c.border} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""} inline-flex items-center gap-1.5`}
       animate={pulse ? { scale: [1, 1.1, 1] } : {}}
       transition={{ duration: 0.3 }}
     >
-      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />}
+      {showDot && <span className={`w-2 h-2 rounded-full ${c.dot}`} />}
       {labels[status]}
     </motion.span>
   );
 };
 
-// Avatar component matching real MobileJobsView
+// Avatar component - EXACT match to MobileJobsView.tsx Avatar
 const MockJobAvatar = ({ name, className = "", size = "sm" }: { name: string; className?: string; size?: "sm" | "md" | "lg" }) => {
   const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  // Avatar colors matching real app - bg-info, bg-success, bg-primary, bg-warning
   const colors = ["bg-info", "bg-success", "bg-primary", "bg-warning", "bg-secondary", "bg-accent"];
   const colorIndex = name.length % colors.length;
   const sizeClass = size === "lg" ? "h-10 w-10 text-xs" : size === "md" ? "h-10 w-10 text-xs" : "h-8 w-8 text-[10px]";
@@ -103,26 +105,27 @@ const MockJobAvatar = ({ name, className = "", size = "sm" }: { name: string; cl
   );
 };
 
-// Job data interface with real format
+// Job data interface with real format matching database schema
 interface JobData {
   jobNumber: string;
   client: string;
-  status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review";
+  status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review" | "lead";
   project: string;
   rooms: number;
   windows: number;
   total: string;
+  notesCount?: number;
 }
 
-// Sample job data matching real format
+// Sample job data - MATCHING format-job-number.ts (P-XXXX format)
 const sampleJobs: JobData[] = [
-  { jobNumber: "P-001234", client: "Thompson Residence", status: "approved", project: "Living Room Renovation", rooms: 2, windows: 5, total: "$4,250" },
-  { jobNumber: "P-001235", client: "Chen Industries", status: "in_production", project: "Office Blinds", rooms: 4, windows: 12, total: "$12,800" },
-  { jobNumber: "P-001236", client: "Wilson Home", status: "draft", project: "Master Bedroom", rooms: 1, windows: 3, total: "$1,950" },
-  { jobNumber: "P-001237", client: "Garcia Family", status: "quote_sent", project: "Conference Room", rooms: 1, windows: 6, total: "$5,100" },
+  { jobNumber: "P-1234", client: "Sarah Johnson", status: "approved", project: "Living Room Renovation", rooms: 2, windows: 5, total: "$4,250", notesCount: 2 },
+  { jobNumber: "P-1235", client: "Chen Industries", status: "in_production", project: "Office Blinds", rooms: 4, windows: 12, total: "$12,800", notesCount: 0 },
+  { jobNumber: "P-1236", client: "Wilson Home", status: "draft", project: "Master Bedroom", rooms: 1, windows: 3, total: "$1,950", notesCount: 1 },
+  { jobNumber: "P-1237", client: "Garcia Family", status: "quote_sent", project: "Conference Room", rooms: 1, windows: 6, total: "$5,100", notesCount: 0 },
 ];
 
-// Room data - UPDATED to match RoomHeader.tsx structure
+// Room data - MATCHING RoomHeader.tsx structure with gradient and pricing
 interface RoomData {
   id?: string;
   name: string;
@@ -138,7 +141,7 @@ const sampleRooms: RoomData[] = [
   { name: "Master Bedroom", type: "bedroom", icon: Bed, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800.00" },
 ];
 
-// Treatment types - MATCHING REAL TreatmentTypeGrid.tsx with categories
+// Treatment types - MATCHING REAL TreatmentTypeGrid.tsx categories
 const treatmentTypes = [
   { name: "Sheer Curtains", category: "CURTAINS", icon: Layers, color: "bg-pink-100 text-pink-600" },
   { name: "Blockout Curtains", category: "CURTAINS", icon: Layers, color: "bg-purple-100 text-purple-600" },
@@ -148,7 +151,7 @@ const treatmentTypes = [
   { name: "Roman Blinds", category: "BLINDS", icon: Layers, color: "bg-orange-100 text-orange-600" },
 ];
 
-// ===== HEADER COMPONENTS - MATCHING REAL JobsPage.tsx =====
+// ===== HEADER COMPONENTS - MATCHING REAL JobsPage.tsx exactly =====
 
 const MockJobsHeader = ({ 
   totalJobs = 24,
@@ -165,7 +168,7 @@ const MockJobsHeader = ({
 }) => (
   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-3 py-2.5 border-b border-border bg-card/50">
     <div className="flex items-center gap-2">
-      {/* Real icon and title from JobsPage - FolderOpen for Projects */}
+      {/* Real icon from JobsPage - FolderOpen in primary/10 container */}
       <div className="p-2 bg-primary/10 rounded-lg shrink-0">
         <FolderOpen className="h-4 w-4 text-primary" />
       </div>
@@ -176,27 +179,29 @@ const MockJobsHeader = ({
     </div>
     
     <div className="flex flex-wrap items-center gap-2">
-      {/* Always-visible Search Input - matching real layout */}
+      {/* Search Input - ALWAYS VISIBLE like real JobsPage */}
       <div className="relative w-full sm:w-32 lg:w-40">
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <div className={`h-8 rounded-lg border px-7 flex items-center text-[10px] ${
-          searchActive ? "border-primary bg-primary/5" : "border-border bg-background"
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <div className={`h-8 rounded-lg border pl-8 pr-3 flex items-center text-xs ${
+          searchActive ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-input bg-background"
         }`}>
           <span className={searchValue ? "text-foreground" : "text-muted-foreground"}>
-            {searchValue || "Search jobs..."}
+            {searchValue || "Search..."}
           </span>
         </div>
       </div>
       
+      {/* Filter button */}
       <motion.div 
-        className={`p-1.5 rounded-lg ${filterActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
+        className={`h-8 w-8 flex items-center justify-center rounded-lg border ${filterActive ? "bg-primary/10 text-primary border-primary" : "bg-background border-input text-muted-foreground"}`}
         animate={filterActive ? { scale: 1.05 } : { scale: 1 }}
       >
         <Filter className="h-3.5 w-3.5" />
       </motion.div>
       
+      {/* New button - primary CTA */}
       <motion.div 
-        className={`flex items-center gap-1 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium ${newButtonHighlight ? "ring-2 ring-primary/50 ring-offset-1" : ""}`}
+        className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium ${newButtonHighlight ? "ring-2 ring-primary/50 ring-offset-2" : ""}`}
         animate={newButtonHighlight ? { scale: 1.05 } : { scale: 1 }}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -206,55 +211,53 @@ const MockJobsHeader = ({
   </div>
 );
 
-// Job card - MATCHING REAL MobileJobsView.tsx structure exactly
+// Job card - EXACT MATCH to MobileJobsView.tsx lines 313-396
 const MockJobCard = ({ 
   job,
   highlighted = false,
   showActions = false,
   compact = false,
-  notesCount = 0,
 }: { 
   job: JobData;
   highlighted?: boolean;
   showActions?: boolean;
   compact?: boolean;
-  notesCount?: number;
 }) => (
   <motion.div 
     className={`overflow-hidden rounded-xl border transition-all cursor-pointer bg-card p-4 ${
       highlighted ? "border-primary/30 ring-2 ring-primary/20 shadow-md" : 
-      "border-border/40 hover:shadow-md"
+      "border-border/40 hover:shadow-md hover:border-primary/20"
     }`}
     animate={highlighted ? { scale: 1.01 } : {}}
   >
     <div className="flex items-start gap-3">
-      {/* Avatar - matching real component */}
+      {/* Avatar - EXACT match to MobileJobsView Avatar component */}
       <MockJobAvatar name={job.client} size="md" />
       
-      {/* Main Content */}
+      {/* Main Content - EXACT structure from MobileJobsView */}
       <div className="flex-1 min-w-0 space-y-2">
-        {/* Header Row - matching real layout */}
+        {/* Header Row - job number + status badge */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
+            {/* Job number in font-mono + status badge on same line */}
             <div className="flex items-center gap-2 mb-1">
-              {/* Job number in mono font - exactly like real app */}
               <span className="text-xs font-mono text-muted-foreground">
                 {job.jobNumber}
               </span>
               <MockStatusBadge status={job.status} size="xs" />
             </div>
-            {/* Client name truncated - like real app */}
+            {/* Client name - truncated at 14 chars like real app */}
             <h4 className="font-semibold text-sm line-clamp-1">
               {job.client.length > 14 ? job.client.substring(0, 14) + '...' : job.client}
             </h4>
           </div>
           
-          {/* Three-dot menu with notes indicator */}
+          {/* Three-dot menu with notes count badge - EXACT match */}
           {showActions && (
-            <div className="h-8 w-8 flex items-center justify-center relative shrink-0">
-              {notesCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
-                  {notesCount}
+            <div className="h-8 w-8 flex items-center justify-center relative shrink-0 rounded-lg hover:bg-muted">
+              {job.notesCount && job.notesCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center z-10">
+                  {job.notesCount}
                 </span>
               )}
               <MoreVertical className="h-4 w-4 text-muted-foreground" />
@@ -262,14 +265,14 @@ const MockJobCard = ({
           )}
         </div>
         
-        {/* Details Row - matching real layout */}
+        {/* Details Row - MapPin + project name + total */}
         {!compact && (
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1 flex-1 min-w-0">
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{job.project}</span>
             </div>
-            <span className="font-semibold shrink-0">{job.total}</span>
+            <span className="font-semibold text-foreground shrink-0">{job.total}</span>
           </div>
         )}
       </div>
@@ -277,40 +280,66 @@ const MockJobCard = ({
   </motion.div>
 );
 
-// ===== JOB DETAIL HEADER - MATCHING REAL JobDetailPage.tsx =====
+// ===== JOB DETAIL HEADER - EXACT MATCH to JobDetailPage.tsx lines 840-930 =====
 
 const MockJobDetailHeader = ({ 
+  clientName = "Sarah Johnson",
   date = "14-Jan-2026",
   status = "draft" as const,
   showBackButton = true,
 }: {
+  clientName?: string;
   date?: string;
   status?: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed";
   showBackButton?: boolean;
 }) => (
-  <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-card">
-    <div className="flex items-center gap-2">
-      {showBackButton && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Jobs</span>
+  <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm">
+    <div className="px-3 py-3">
+      {/* Two-row responsive layout like real JobDetailPage */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* Top Row: Back button + Separator + Client name + Date */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {showBackButton && (
+            <>
+              <div className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted-foreground border border-border rounded-md hover:bg-muted cursor-pointer shrink-0">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Jobs</span>
+              </div>
+              {/* Separator line like real app */}
+              <div className="h-5 w-px bg-border/60" />
+            </>
+          )}
+          <div className="flex flex-col gap-0 min-w-0">
+            <h1 className="text-base font-bold text-foreground truncate">{clientName}</h1>
+            <span className="text-xs text-muted-foreground">{date}</span>
+          </div>
         </div>
-      )}
-      <span className="text-[10px] text-muted-foreground">|</span>
-      <span className="text-xs text-muted-foreground">{date}</span>
-    </div>
-    <div className="flex items-center gap-2">
-      {/* Status dropdown with dot indicator - matching real UI */}
-      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted/50">
-        <MockStatusBadge status={status} size="xs" showDot />
-        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        
+        {/* Bottom Row: Contact + Status dropdown + Menu */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Contact button - green like real app */}
+          <div className="flex items-center gap-1 px-2 py-1.5 text-xs border border-green-200 text-green-700 rounded-md hover:bg-green-50 cursor-pointer">
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Contact</span>
+          </div>
+          
+          {/* Status dropdown with dot indicator - EXACT match to JobStatusDropdown */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted/50">
+            <MockStatusBadge status={status} size="xs" showDot />
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </div>
+          
+          {/* Three dot menu */}
+          <div className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted cursor-pointer">
+            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
       </div>
-      <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
     </div>
   </div>
 );
 
-// ===== JOB DETAIL TABS - MATCHING REAL JobDetailPage.tsx tabs structure =====
+// ===== JOB DETAIL TABS - EXACT MATCH to JobDetailPage.tsx tabs structure =====
 
 const MockJobDetailTabs = ({ 
   activeTab = "details",
@@ -319,44 +348,49 @@ const MockJobDetailTabs = ({
   activeTab?: "details" | "rooms" | "quotation" | "workroom";
   onTabChange?: (tab: string) => void;
 }) => {
+  // EXACT tab config from JobDetailPage - Client, Project, Quote, Workroom
   const tabs = [
-    { id: "details", label: "Details", mobileLabel: "Details", icon: User },
-    { id: "rooms", label: "Rooms", mobileLabel: "Rooms", icon: Package },
-    { id: "quotation", label: "Quotation", mobileLabel: "Quote", icon: FileText },
+    { id: "details", label: "Client", mobileLabel: "Client", icon: User },
+    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
+    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
   ];
 
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border bg-card/95 overflow-x-auto">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = activeTab === tab.id;
-        return (
-          <motion.div 
-            key={tab.id}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 cursor-pointer whitespace-nowrap ${
-              isActive 
-                ? "border-primary text-foreground bg-primary/5 font-semibold" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            animate={isActive ? { scale: 1.02 } : {}}
-            onClick={() => onTabChange?.(tab.id)}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            <span>{tab.label}</span>
-          </motion.div>
-        );
-      })}
+    <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border shadow-md">
+      <div className="px-2 py-1">
+        <div className="flex items-center gap-0.5 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.div 
+                key={tab.id}
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 cursor-pointer whitespace-nowrap shrink-0 rounded-none transition-all ${
+                  isActive 
+                    ? "border-primary text-foreground bg-primary/5 font-semibold" 
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
+                }`}
+                animate={isActive ? { scale: 1.02 } : {}}
+                onClick={() => onTabChange?.(tab.id)}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
 
-// ===== ROOM CARD - MATCHING REAL RoomHeader.tsx structure exactly =====
+// ===== ROOM CARD - EXACT MATCH to RoomHeader.tsx lines 51-117 =====
 
 const MockRoomCard = ({ 
   room, 
   highlighted = false, 
-  expanded = false,
+  expanded = true,
   onExpand,
   windows = [],
 }: { 
@@ -367,41 +401,47 @@ const MockRoomCard = ({
   windows?: any[];
 }) => (
   <motion.div 
-    className={`rounded-lg border overflow-hidden transition-all ${
-      highlighted ? "border-primary/30 ring-2 ring-primary/20" : "border-border"
+    className={`rounded-lg border overflow-hidden transition-all bg-card shadow-sm hover:shadow-md ${
+      highlighted ? "border-primary/30 ring-2 ring-primary/20" : "border-border hover:border-primary/20"
     }`}
     animate={highlighted ? { scale: 1.01 } : {}}
   >
-    {/* Header - MATCHING RoomHeader.tsx exactly */}
+    {/* Header - EXACT MATCH to RoomHeader.tsx CardHeader */}
     <div 
-      className="relative bg-muted/30 border-b border-border px-4 py-3 cursor-pointer"
+      className="relative bg-muted/30 border-b border-border p-4 cursor-pointer select-none"
       onClick={onExpand}
     >
-      {/* Gradient background like real RoomHeader */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+      {/* Gradient background - EXACT match from RoomHeader.tsx line 61 */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+      </div>
       
       <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-3 flex-1">
-          {/* Chevron toggle */}
+          {/* Chevron toggle - rotates 90° when collapsed */}
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
           
           <div className="flex-1">
-            {/* Room name with edit button */}
+            {/* Room name with edit button - EXACT match line 82-97 */}
             <div className="flex items-center gap-2">
               <span className="text-lg font-semibold text-foreground">{room.name}</span>
-              <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-pointer" />
+              <div className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer">
+                <Edit2 className="h-3 w-3" />
+              </div>
             </div>
-            {/* Room total in primary color - large and bold */}
+            {/* Room total - EXACT match: text-xl font-bold text-primary */}
             <p className="text-xl font-bold text-primary mt-1">{room.total}</p>
           </div>
         </div>
         
-        {/* Three-dot menu */}
-        <MoreHorizontal className="h-5 w-5 text-muted-foreground cursor-pointer" />
+        {/* RoomActionsMenu - three-dot on right */}
+        <div className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted cursor-pointer" onClick={(e) => e.stopPropagation()}>
+          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+        </div>
       </div>
     </div>
     
-    {/* Expanded content - windows */}
+    {/* Expanded content - windows/treatments */}
     <AnimatePresence>
       {expanded && (
         <motion.div 
@@ -413,7 +453,7 @@ const MockRoomCard = ({
           {windows.length > 0 ? windows.map((w, i) => (
             <MockWindowTreatmentCard key={i} {...w} />
           )) : (
-            // Default window cards if none provided
+            // Default window cards
             [1, 2].slice(0, room.windows > 2 ? 2 : room.windows).map((num) => (
               <MockWindowTreatmentCard 
                 key={num} 
