@@ -22,6 +22,12 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useCreateGeneralEmailTemplate, EmailTemplate } from "@/hooks/useGeneralEmailTemplates";
+import { EmailTemplateEditor } from "@/components/email-templates/EmailTemplateEditor";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("inbox");
@@ -33,6 +39,14 @@ export const EmailManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
+  
+  // Template editor state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [newTemplateType, setNewTemplateType] = useState('custom');
+  const [newTemplateSubject, setNewTemplateSubject] = useState('');
+  const createTemplate = useCreateGeneralEmailTemplate();
 
   if (canAccessEmails === undefined) {
     return (
@@ -193,7 +207,13 @@ export const EmailManagement = () => {
       case "templates":
         return (
           <div className="animate-fade-in">
-            <EmailTemplateLibrary />
+            <EmailTemplateLibrary 
+              onCreateNew={() => setCreateDialogOpen(true)}
+              onEditTemplate={(template) => {
+                setEditingTemplate(template);
+                setEditorOpen(true);
+              }}
+            />
           </div>
         );
       case "analytics":
@@ -257,6 +277,68 @@ export const EmailManagement = () => {
             { key: "Tab", description: "Switch between sections" }
           ]
         }}
+      />
+
+      {/* Create Template Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Email Template</DialogTitle>
+            <DialogDescription>Create a new reusable email template</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Template Type</Label>
+              <Select value={newTemplateType} onValueChange={setNewTemplateType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="quote">Quote</SelectItem>
+                  <SelectItem value="follow_up">Follow Up</SelectItem>
+                  <SelectItem value="welcome">Welcome</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Subject Line</Label>
+              <Input 
+                value={newTemplateSubject}
+                onChange={(e) => setNewTemplateSubject(e.target.value)}
+                placeholder="Enter email subject..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+              <Button 
+                onClick={async () => {
+                  await createTemplate.mutateAsync({
+                    template_type: newTemplateType,
+                    subject: newTemplateSubject,
+                    content: '<p>Enter your email content here...</p>',
+                    variables: [],
+                    active: true,
+                  });
+                  setCreateDialogOpen(false);
+                  setNewTemplateSubject('');
+                  setNewTemplateType('custom');
+                }}
+                disabled={!newTemplateSubject.trim() || createTemplate.isPending}
+              >
+                {createTemplate.isPending ? 'Creating...' : 'Create Template'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Template Dialog */}
+      <EmailTemplateEditor
+        template={editingTemplate}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
       />
     </div>
   );
