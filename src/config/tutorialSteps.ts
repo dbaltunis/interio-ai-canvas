@@ -73,7 +73,12 @@ import {
   ClientDetailStep1, ClientDetailStep2, ClientDetailStep3, ClientDetailStep4, ClientDetailStep5, ClientDetailStep6, ClientDetailStep7, ClientDetailStep8, ClientDetailStep9, ClientDetailStep10, ClientDetailStep11, ClientDetailStep12, ClientDetailStep13, ClientDetailStep14, ClientDetailStep15, ClientDetailStep16, ClientDetailStep17,
 } from "@/components/help/tutorial-steps/ClientDetailSteps";
 import {
-  JobsStep1, JobsStep2, JobsStep3, JobsStep4, JobsStep5, JobsStep6, JobsStep7, JobsStep8,
+  JobsStep1, JobsStep2, JobsStep3, JobsStep4, JobsStep5, JobsStep6, JobsStep7,
+  JobsStep8, JobsStep9, JobsStep10, JobsStep11, JobsStep12, JobsStep13, JobsStep14,
+  JobsStep15, JobsStep16, JobsStep17, JobsStep18, JobsStep19, JobsStep20,
+  JobsStep21, JobsStep22, JobsStep23, JobsStep24, JobsStep25, JobsStep26,
+  JobsStep27, JobsStep28, JobsStep29, JobsStep30, JobsStep31, JobsStep32,
+  JobsStep33, JobsStep34, JobsStep35, JobsStep36, JobsStep37,
 } from "@/components/help/tutorial-steps/JobsSteps";
 
 export interface TutorialStep {
