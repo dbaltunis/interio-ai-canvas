@@ -10,7 +10,8 @@ import {
   Hammer, Truck, ClipboardList, Package, Scissors, Maximize2,
   Square, CircleDot, ArrowUpDown, Grip, Image, Palette, Grid3X3,
   LayoutGrid, List, Tag, Percent, ExternalLink, QrCode, Wrench,
-  AlertCircle, Info, HelpCircle, Blinds, ChevronUp, MoreHorizontal
+  AlertCircle, Info, HelpCircle, Blinds, ChevronUp, MoreHorizontal,
+  User, ArrowLeft, Pencil
 } from "lucide-react";
 import { MockCard } from "../TutorialVisuals";
 import { inPhase, typingProgress, phaseProgress } from "@/lib/demoAnimations";
@@ -23,33 +24,36 @@ interface StepProps {
 // COMPREHENSIVE JOBS/PROJECTS TUTORIAL
 // 35+ Steps covering the complete job lifecycle
 // Mobile-optimized card-based layout
+// UPDATED to match actual app UI exactly
 // ===========================================
 
-// ===== SHARED COMPONENTS =====
+// ===== SHARED COMPONENTS - MATCHING REAL UI =====
 
-// Job status badge with REAL colors from job_statuses table
+// Job status badge - EXACT match to JobStatusBadge.tsx with dot indicator
 const MockStatusBadge = ({ 
   status, 
   highlight = false,
   pulse = false,
   size = "sm",
+  showDot = false,
 }: { 
   status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review";
   highlight?: boolean;
   pulse?: boolean;
   size?: "sm" | "xs" | "md";
+  showDot?: boolean;
 }) => {
-  // Real colors from job_statuses database
-  const colors: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700 border-gray-200",
-    quote_sent: "bg-blue-100 text-blue-700 border-blue-200",
-    approved: "bg-green-100 text-green-700 border-green-200",
-    planning: "bg-blue-100 text-blue-700 border-blue-200",
-    in_production: "bg-purple-100 text-purple-700 border-purple-200",
-    completed: "bg-green-100 text-green-700 border-green-200",
-    rejected: "bg-red-100 text-red-700 border-red-200",
-    order_confirmed: "bg-orange-100 text-orange-700 border-orange-200",
-    review: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  // Real colors from job_statuses database - matching JobStatusBadge.tsx colorMap
+  const colors: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    draft: { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200", dot: "bg-gray-400" },
+    quote_sent: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
+    approved: { bg: "bg-green-100", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
+    planning: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
+    in_production: { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-200", dot: "bg-purple-500" },
+    completed: { bg: "bg-green-100", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
+    rejected: { bg: "bg-red-100", text: "text-red-700", border: "border-red-200", dot: "bg-red-500" },
+    order_confirmed: { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500" },
+    review: { bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", dot: "bg-yellow-500" },
   };
 
   const labels: Record<string, string> = {
@@ -70,12 +74,15 @@ const MockStatusBadge = ({
     md: "px-2.5 py-1 text-[11px]",
   };
 
+  const c = colors[status];
+
   return (
     <motion.span 
-      className={`${sizeClasses[size]} rounded-md font-medium border ${colors[status]} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      className={`${sizeClasses[size]} rounded-md font-medium border ${c.bg} ${c.text} ${c.border} ${highlight ? "ring-2 ring-primary ring-offset-1" : ""} inline-flex items-center gap-1`}
       animate={pulse ? { scale: [1, 1.1, 1] } : {}}
       transition={{ duration: 0.3 }}
     >
+      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />}
       {labels[status]}
     </motion.span>
   );
@@ -84,7 +91,6 @@ const MockStatusBadge = ({
 // Avatar component matching real MobileJobsView
 const MockJobAvatar = ({ name, className = "", size = "sm" }: { name: string; className?: string; size?: "sm" | "md" | "lg" }) => {
   const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-  // Using real semantic colors from the app
   const colors = ["bg-info", "bg-success", "bg-primary", "bg-warning", "bg-secondary", "bg-accent"];
   const colorIndex = name.length % colors.length;
   const sizeClass = size === "lg" ? "h-10 w-10 text-xs" : size === "md" ? "h-10 w-10 text-xs" : "h-8 w-8 text-[10px]";
@@ -98,7 +104,7 @@ const MockJobAvatar = ({ name, className = "", size = "sm" }: { name: string; cl
 
 // Job data interface with real format
 interface JobData {
-  jobNumber: string;  // Format: P-001234
+  jobNumber: string;
   client: string;
   status: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed" | "rejected" | "order_confirmed" | "review";
   project: string;
@@ -115,8 +121,9 @@ const sampleJobs: JobData[] = [
   { jobNumber: "P-001237", client: "Garcia Family", status: "quote_sent", project: "Conference Room", rooms: 1, windows: 6, total: "$5,100" },
 ];
 
-// Room data
+// Room data - UPDATED to match RoomHeader.tsx structure
 interface RoomData {
+  id?: string;
   name: string;
   type: string;
   icon: any;
@@ -126,8 +133,8 @@ interface RoomData {
 }
 
 const sampleRooms: RoomData[] = [
-  { name: "Living Room", type: "living", icon: Home, windows: 3, treatments: ["Sheer Curtains", "Roller Blinds"], total: "$2,450" },
-  { name: "Master Bedroom", type: "bedroom", icon: Home, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800" },
+  { name: "Living Room", type: "living", icon: Home, windows: 3, treatments: ["Sheer Curtains", "Roller Blinds"], total: "$2,450.90" },
+  { name: "Master Bedroom", type: "bedroom", icon: Home, windows: 2, treatments: ["Blackout Curtains"], total: "$1,800.00" },
 ];
 
 // Treatment types
@@ -157,7 +164,7 @@ const MockJobsHeader = ({
 }) => (
   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-3 py-2.5 border-b border-border bg-card/50">
     <div className="flex items-center gap-2">
-      {/* Real icon and title from JobsPage */}
+      {/* Real icon and title from JobsPage - FolderOpen for Projects */}
       <div className="p-2 bg-primary/10 rounded-lg shrink-0">
         <FolderOpen className="h-4 w-4 text-primary" />
       </div>
@@ -198,7 +205,7 @@ const MockJobsHeader = ({
   </div>
 );
 
-// Job card - MATCHING REAL MobileJobsView.tsx structure
+// Job card - MATCHING REAL MobileJobsView.tsx structure exactly
 const MockJobCard = ({ 
   job,
   highlighted = false,
@@ -269,67 +276,242 @@ const MockJobCard = ({
   </motion.div>
 );
 
-// Room card
+// ===== JOB DETAIL HEADER - MATCHING REAL JobDetailPage.tsx =====
+
+const MockJobDetailHeader = ({ 
+  date = "14-Jan-2026",
+  status = "draft" as const,
+  showBackButton = true,
+}: {
+  date?: string;
+  status?: "draft" | "quote_sent" | "approved" | "planning" | "in_production" | "completed";
+  showBackButton?: boolean;
+}) => (
+  <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-card">
+    <div className="flex items-center gap-2">
+      {showBackButton && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Jobs</span>
+        </div>
+      )}
+      <span className="text-[10px] text-muted-foreground">|</span>
+      <span className="text-xs text-muted-foreground">{date}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      {/* Status dropdown with dot indicator - matching real UI */}
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted/50">
+        <MockStatusBadge status={status} size="xs" showDot />
+        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+      </div>
+      <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
+    </div>
+  </div>
+);
+
+// ===== JOB DETAIL TABS - MATCHING REAL JobDetailPage.tsx tabs structure =====
+
+const MockJobDetailTabs = ({ 
+  activeTab = "details",
+  onTabChange,
+}: { 
+  activeTab?: "details" | "rooms" | "quotation" | "workroom";
+  onTabChange?: (tab: string) => void;
+}) => {
+  const tabs = [
+    { id: "details", label: "Details", mobileLabel: "Details", icon: User },
+    { id: "rooms", label: "Rooms", mobileLabel: "Rooms", icon: Package },
+    { id: "quotation", label: "Quotation", mobileLabel: "Quote", icon: FileText },
+    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
+  ];
+
+  return (
+    <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border bg-card/95 overflow-x-auto">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <motion.div 
+            key={tab.id}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 cursor-pointer whitespace-nowrap ${
+              isActive 
+                ? "border-primary text-foreground bg-primary/5 font-semibold" 
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+            animate={isActive ? { scale: 1.02 } : {}}
+            onClick={() => onTabChange?.(tab.id)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span>{tab.label}</span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ===== ROOM CARD - MATCHING REAL RoomHeader.tsx structure exactly =====
+
 const MockRoomCard = ({ 
   room, 
   highlighted = false, 
   expanded = false,
   onExpand,
+  windows = [],
 }: { 
   room: RoomData; 
   highlighted?: boolean;
   expanded?: boolean;
   onExpand?: () => void;
+  windows?: any[];
 }) => (
   <motion.div 
     className={`rounded-lg border overflow-hidden transition-all ${
-      highlighted ? "bg-primary/5 border-primary/30 ring-2 ring-primary/20" : "bg-card border-border/60"
+      highlighted ? "border-primary/30 ring-2 ring-primary/20" : "border-border"
     }`}
     animate={highlighted ? { scale: 1.01 } : {}}
   >
-    <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer" onClick={onExpand}>
-      <div className="p-1.5 bg-muted rounded-lg">
-        <room.icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{room.name}</span>
-          <span className="text-[10px] text-muted-foreground">• {room.windows} windows</span>
+    {/* Header - MATCHING RoomHeader.tsx exactly */}
+    <div 
+      className="relative bg-muted/30 border-b border-border px-4 py-3 cursor-pointer"
+      onClick={onExpand}
+    >
+      {/* Gradient background like real RoomHeader */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+      
+      <div className="flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-3 flex-1">
+          {/* Chevron toggle */}
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
+          
+          <div className="flex-1">
+            {/* Room name with edit button */}
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">{room.name}</span>
+              <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-pointer" />
+            </div>
+            {/* Room total in primary color - large and bold */}
+            <p className="text-xl font-bold text-primary mt-1">{room.total}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-1 mt-0.5">
-          {room.treatments.map((t, i) => (
-            <span key={i} className="px-1.5 py-0.5 bg-muted text-[9px] rounded">{t}</span>
-          ))}
-        </div>
+        
+        {/* Three-dot menu */}
+        <MoreHorizontal className="h-5 w-5 text-muted-foreground cursor-pointer" />
       </div>
-      <span className="text-sm font-medium text-primary">{room.total}</span>
-      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
     </div>
     
+    {/* Expanded content - windows */}
     <AnimatePresence>
       {expanded && (
         <motion.div 
-          className="px-3 pb-3 pt-1 border-t border-border/50"
+          className="p-4 space-y-3 bg-card"
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
         >
-          <div className="space-y-1.5">
-            {[1, 2, 3].slice(0, room.windows).map((w) => (
-              <div key={w} className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
-                <Square className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[10px]">Window {w}</span>
-                <span className="text-[9px] text-muted-foreground">1500 x 2100mm</span>
-              </div>
-            ))}
-          </div>
+          {windows.length > 0 ? windows.map((w, i) => (
+            <MockWindowTreatmentCard key={i} {...w} />
+          )) : (
+            // Default window cards if none provided
+            [1, 2].slice(0, room.windows > 2 ? 2 : room.windows).map((num) => (
+              <MockWindowTreatmentCard 
+                key={num} 
+                windowName={`Window ${num}`}
+                treatmentName={room.treatments[0] || "Curtain"}
+                treatmentDetails="Heading 1 • Unlined"
+                width="1000.00"
+                height="1000.00"
+                total="$273.54"
+              />
+            ))
+          )}
         </motion.div>
       )}
     </AnimatePresence>
   </motion.div>
 );
 
-// Window card for worksheet
+// ===== WINDOW TREATMENT CARD - MATCHING REAL LAYOUT with fabric image =====
+
+const MockWindowTreatmentCard = ({
+  windowName = "Window 1",
+  treatmentName = "Curtain testing",
+  treatmentDetails = "Heading 1 • Unlined",
+  width = "1000.00",
+  height = "1000.00",
+  total = "$273.54",
+  fabricColor = "bg-amber-200",
+  highlighted = false,
+}: {
+  windowName?: string;
+  treatmentName?: string;
+  treatmentDetails?: string;
+  width?: string;
+  height?: string;
+  total?: string;
+  fabricColor?: string;
+  highlighted?: boolean;
+}) => (
+  <motion.div 
+    className={`border rounded-lg overflow-hidden ${highlighted ? "border-primary/30 ring-2 ring-primary/20" : "border-border"}`}
+    animate={highlighted ? { scale: 1.02 } : {}}
+  >
+    {/* Window header */}
+    <div className="flex items-center justify-between p-2 bg-muted/20 border-b border-border">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">{windowName}</span>
+        <Pencil className="h-3 w-3 text-muted-foreground cursor-pointer" />
+      </div>
+      <div className="flex items-center gap-1">
+        <div className="h-7 w-7 flex items-center justify-center rounded border border-border bg-background hover:bg-muted cursor-pointer">
+          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+        <div className="h-7 w-7 flex items-center justify-center rounded border border-destructive/30 bg-background hover:bg-destructive/10 cursor-pointer">
+          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+        </div>
+      </div>
+    </div>
+    
+    {/* Treatment details with fabric image */}
+    <div className="p-3 flex gap-3">
+      {/* Fabric image placeholder */}
+      <div className={`w-16 h-20 rounded shrink-0 relative overflow-hidden ${fabricColor}`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        {/* Treatment name and details link */}
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-medium text-sm">{treatmentName}</span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground">
+            Details <ChevronRight className="h-3 w-3" />
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground mb-2">{treatmentDetails}</p>
+        
+        {/* Dimensions */}
+        <div className="grid grid-cols-2 gap-2 text-[10px]">
+          <div>
+            <span className="text-muted-foreground">Width</span>
+            <p className="font-medium">{width} mm</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Height</span>
+            <p className="font-medium">{height} mm</p>
+          </div>
+        </div>
+        
+        {/* Total */}
+        <div className="mt-2 pt-2 border-t border-border">
+          <span className="text-[10px] text-muted-foreground">Total</span>
+          <p className="font-semibold text-primary">{total}</p>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+);
+
+// Window card for worksheet (simpler version)
 const MockWindowCard = ({ 
   windowNum = 1,
   dimensions = "1500 x 2100",
