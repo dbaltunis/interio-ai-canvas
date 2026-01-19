@@ -1,10 +1,16 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, Search, Filter, Plus, Mail, Download, Trash2, X, Check,
   Phone, MapPin, ChevronDown, MoreHorizontal, Star, Calendar
 } from "lucide-react";
 import { PulsingHighlight, MockCard, MockButton, MockBadge } from "../TutorialVisuals";
+import { DemoCursor } from "../DemoCursor";
+import { inPhase, interpolatePath, isClicking, typingProgress } from "@/lib/demoAnimations";
+
+interface StepProps {
+  phase?: number;
+}
 
 // ===========================================
 // MOCK COMPONENTS FOR CLIENTS PAGE DEMO
@@ -204,192 +210,314 @@ const sampleClients: ClientRowProps[] = [
 // STEP COMPONENTS (12 Steps)
 // ===========================================
 
-// Step 1: Clients Table Overview
-export const ClientsStep1 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      {/* Header with title and actions */}
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
-          <MockBadge variant="secondary">127</MockBadge>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
-            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Search...</span>
+// Step 1: Clients Table Overview (with staggered row animation)
+export const ClientsStep1 = ({ phase = 0 }: StepProps) => {
+  // Stagger rows appearing as phase progresses
+  const visibleRows = Math.min(4, Math.floor(phase * 6) + 1);
+  
+  return (
+    <div className="space-y-3">
+      <MockCard className="overflow-hidden">
+        {/* Header with title and actions */}
+        <motion.div 
+          className="flex items-center justify-between p-3 border-b border-border"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: phase > 0.05 ? 1 : 0 }}
+        >
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+            <MockBadge variant="secondary">127</MockBadge>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
-            <Filter className="h-3.5 w-3.5" />
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium">
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Client</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Table */}
-      <MockTableHeader />
-      {sampleClients.slice(0, 4).map((client, i) => (
-        <MockClientRow key={i} {...client} />
-      ))}
-    </MockCard>
-    <p className="text-[10px] text-muted-foreground text-center">
-      Your clients table shows all contacts with their stage, projects, and value
-    </p>
-  </div>
-);
-
-// Step 2: Search and Filter
-export const ClientsStep2 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <PulsingHighlight>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-primary rounded-md text-xs">
-              <Search className="h-3.5 w-3.5 text-primary" />
-              <span className="text-foreground">Sarah...</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
+              <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Search...</span>
             </div>
-          </PulsingHighlight>
-          <PulsingHighlight>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-xs font-medium">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
               <Filter className="h-3.5 w-3.5" />
-              <span>Stage: Qualified</span>
-              <ChevronDown className="h-3 w-3" />
             </div>
-          </PulsingHighlight>
-        </div>
-      </div>
-      
-      <MockTableHeader />
-      <MockClientRow {...sampleClients[0]} highlighted />
-    </MockCard>
-    <p className="text-[10px] text-muted-foreground text-center">
-      Use search and filters to quickly find specific clients
-    </p>
-  </div>
-);
-
-// Step 3: New Client Button
-export const ClientsStep3 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
-            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Search...</span>
-          </div>
-          <PulsingHighlight>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium">
               <Plus className="h-3.5 w-3.5" />
               <span>New Client</span>
             </div>
-          </PulsingHighlight>
-        </div>
-      </div>
-      
-      <MockTableHeader />
-      {sampleClients.slice(0, 3).map((client, i) => (
-        <MockClientRow key={i} {...client} />
-      ))}
-    </MockCard>
-    <p className="text-[10px] text-muted-foreground text-center">
-      Click "New Client" to add a new contact to your CRM
-    </p>
-  </div>
-);
+          </div>
+        </motion.div>
+        
+        {/* Table */}
+        <MockTableHeader />
+        {sampleClients.slice(0, 4).map((client, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ 
+              opacity: i < visibleRows ? 1 : 0,
+              x: i < visibleRows ? 0 : -10,
+            }}
+            transition={{ duration: 0.3, delay: i * 0.08 }}
+          >
+            <MockClientRow {...client} />
+          </motion.div>
+        ))}
+      </MockCard>
+      <p className="text-[10px] text-muted-foreground text-center">
+        Your clients table shows all contacts with their stage, projects, and value
+      </p>
+    </div>
+  );
+};
 
-// Step 4: Header Checkbox Explanation
-export const ClientsStep4 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
-        </div>
-      </div>
-      
-      <MockTableHeader selectAllHighlight />
-      {sampleClients.slice(0, 4).map((client, i) => (
-        <MockClientRow key={i} {...client} checkboxHighlight={i === 0} />
-      ))}
-    </MockCard>
-    <p className="text-[10px] text-muted-foreground text-center">
-      Use checkboxes to select clients for bulk actions
-    </p>
-  </div>
-);
+// Step 2: Search and Filter (with typing animation)
+export const ClientsStep2 = ({ phase = 0 }: StepProps) => {
+  // Cursor moves to search bar, types, then filter appears
+  const cursorPath = [
+    { x: 150, y: 20, at: 0 },
+    { x: 220, y: 28, at: 0.2 },  // Move to search
+    { x: 220, y: 28, at: 0.6 },  // Stay while typing
+    { x: 290, y: 28, at: 0.8 },  // Move to filter
+  ];
+  const cursorPos = interpolatePath(phase, cursorPath);
+  const searchText = typingProgress(phase, 0.25, 0.55, "Sarah...");
+  const showFilter = phase > 0.75;
+  const clicking = isClicking(phase, [0.22, 0.78]);
+  const isTyping = inPhase(phase, 0.25, 0.55);
 
-// Step 5: First Client Selected
-export const ClientsStep5 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
+  return (
+    <div className="space-y-3 relative">
+      <MockCard className="overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-all ${
+              phase > 0.2 ? "bg-background border border-primary" : "bg-muted"
+            }`}>
+              <Search className={`h-3.5 w-3.5 ${phase > 0.2 ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={phase > 0.2 ? "text-foreground" : "text-muted-foreground"}>
+                {searchText || "Search..."}
+              </span>
+              {isTyping && <span className="w-0.5 h-3 bg-primary animate-pulse" />}
+            </div>
+            <motion.div 
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-xs font-medium"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: showFilter ? 1 : 0, scale: showFilter ? 1 : 0.9 }}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>Stage: Qualified</span>
+              <ChevronDown className="h-3 w-3" />
+            </motion.div>
+          </div>
         </div>
-      </div>
+        
+        <MockTableHeader />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: phase > 0.6 ? 1 : 0.3 }}
+        >
+          <MockClientRow {...sampleClients[0]} highlighted={phase > 0.6} />
+        </motion.div>
+      </MockCard>
       
-      <MockTableHeader />
-      <MockClientRow {...sampleClients[0]} selected />
-      <MockClientRow {...sampleClients[1]} checkboxHighlight />
-      {sampleClients.slice(2, 4).map((client, i) => (
-        <MockClientRow key={i} {...client} />
-      ))}
-    </MockCard>
-    <motion.div 
-      className="flex items-center justify-center gap-2 text-xs text-primary"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      <Check className="h-3.5 w-3.5" />
-      <span>1 client selected - click another to add to selection</span>
-    </motion.div>
-  </div>
-);
+      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} isTyping={isTyping} visible={phase > 0.05} />
+      
+      <p className="text-[10px] text-muted-foreground text-center">
+        Use search and filters to quickly find specific clients
+      </p>
+    </div>
+  );
+};
 
-// Step 6: Two Clients Selected
-export const ClientsStep6 = () => (
-  <div className="space-y-3">
-    <MockCard className="overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Clients</span>
+// Step 3: New Client Button (cursor moves to button and clicks)
+export const ClientsStep3 = ({ phase = 0 }: StepProps) => {
+  const cursorPath = [
+    { x: 100, y: 60, at: 0 },
+    { x: 290, y: 28, at: 0.4 },  // Move to New Client button
+    { x: 290, y: 28, at: 0.7 },  // Hover
+    { x: 290, y: 28, at: 1 },
+  ];
+  const cursorPos = interpolatePath(phase, cursorPath);
+  const isHovering = phase > 0.35 && phase < 0.75;
+  const clicking = isClicking(phase, [0.72]);
+
+  return (
+    <div className="space-y-3 relative">
+      <MockCard className="overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs">
+              <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Search...</span>
+            </div>
+            <motion.div 
+              className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium transition-all ${
+                isHovering ? "ring-2 ring-primary/50 ring-offset-1 scale-105" : ""
+              }`}
+              animate={{ scale: clicking ? 0.95 : isHovering ? 1.05 : 1 }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Client</span>
+            </motion.div>
+          </div>
         </div>
-      </div>
+        
+        <MockTableHeader />
+        {sampleClients.slice(0, 3).map((client, i) => (
+          <MockClientRow key={i} {...client} />
+        ))}
+      </MockCard>
       
-      <MockTableHeader />
-      <MockClientRow {...sampleClients[0]} selected />
-      <MockClientRow {...sampleClients[1]} selected />
-      {sampleClients.slice(2, 4).map((client, i) => (
-        <MockClientRow key={i} {...client} />
-      ))}
-    </MockCard>
-    <motion.div 
-      className="flex items-center justify-center gap-2 text-xs text-primary font-medium"
-      initial={{ scale: 0.9 }}
-      animate={{ scale: 1 }}
-    >
-      <Users className="h-3.5 w-3.5" />
-      <span>2 clients selected!</span>
-    </motion.div>
-  </div>
-);
+      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05} />
+      
+      <p className="text-[10px] text-muted-foreground text-center">
+        Click "New Client" to add a new contact to your CRM
+      </p>
+    </div>
+  );
+};
+
+// Step 4: Header Checkbox Explanation (cursor points at checkboxes)
+export const ClientsStep4 = ({ phase = 0 }: StepProps) => {
+  const cursorPath = [
+    { x: 25, y: 45, at: 0 },
+    { x: 25, y: 45, at: 0.3 },   // Header checkbox
+    { x: 25, y: 75, at: 0.5 },   // First row checkbox
+    { x: 25, y: 105, at: 0.7 },  // Second row checkbox
+    { x: 25, y: 135, at: 0.9 },  // Third row checkbox
+  ];
+  const cursorPos = interpolatePath(phase, cursorPath);
+  const headerHighlight = phase < 0.4;
+  const rowHighlightIndex = phase < 0.4 ? -1 : phase < 0.6 ? 0 : phase < 0.8 ? 1 : 2;
+
+  return (
+    <div className="space-y-3 relative">
+      <MockCard className="overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+          </div>
+        </div>
+        
+        <MockTableHeader selectAllHighlight={headerHighlight} />
+        {sampleClients.slice(0, 4).map((client, i) => (
+          <MockClientRow key={i} {...client} checkboxHighlight={i === rowHighlightIndex} />
+        ))}
+      </MockCard>
+      
+      <DemoCursor x={cursorPos.x} y={cursorPos.y} visible={phase > 0.05} />
+      
+      <p className="text-[10px] text-muted-foreground text-center">
+        Use checkboxes to select clients for bulk actions
+      </p>
+    </div>
+  );
+};
+
+// Step 5: First Client Selected (with cursor clicking checkboxes)
+export const ClientsStep5 = ({ phase = 0 }: StepProps) => {
+  // Cursor moves to first checkbox, clicks, then moves to second
+  const cursorPath = [
+    { x: 25, y: 75, at: 0 },
+    { x: 25, y: 75, at: 0.2 },   // Pause at first checkbox
+    { x: 25, y: 105, at: 0.6 },  // Move to second checkbox
+    { x: 25, y: 105, at: 1 },    // Stay
+  ];
+  const cursorPos = interpolatePath(phase, cursorPath);
+  const firstChecked = phase > 0.25;
+  const clicking = isClicking(phase, [0.22]);
+  const secondHighlight = phase > 0.55;
+
+  return (
+    <div className="space-y-3 relative">
+      <MockCard className="overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+          </div>
+        </div>
+        
+        <MockTableHeader />
+        <MockClientRow {...sampleClients[0]} selected={firstChecked} />
+        <MockClientRow {...sampleClients[1]} checkboxHighlight={secondHighlight} />
+        {sampleClients.slice(2, 4).map((client, i) => (
+          <MockClientRow key={i} {...client} />
+        ))}
+      </MockCard>
+      
+      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05} />
+      
+      <AnimatePresence>
+        {firstChecked && (
+          <motion.div 
+            className="flex items-center justify-center gap-2 text-xs text-primary"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <Check className="h-3.5 w-3.5" />
+            <span>1 client selected - click another to add to selection</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Step 6: Two Clients Selected (continuing the selection flow)
+export const ClientsStep6 = ({ phase = 0 }: StepProps) => {
+  // Cursor clicks second checkbox
+  const cursorPath = [
+    { x: 25, y: 105, at: 0 },
+    { x: 25, y: 105, at: 0.3 },  // Click second
+    { x: 80, y: 160, at: 0.8 },  // Move away
+  ];
+  const cursorPos = interpolatePath(phase, cursorPath);
+  const secondChecked = phase > 0.35;
+  const clicking = isClicking(phase, [0.32]);
+
+  return (
+    <div className="space-y-3 relative">
+      <MockCard className="overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Clients</span>
+          </div>
+        </div>
+        
+        <MockTableHeader />
+        <MockClientRow {...sampleClients[0]} selected />
+        <MockClientRow {...sampleClients[1]} selected={secondChecked} checkboxHighlight={!secondChecked} />
+        {sampleClients.slice(2, 4).map((client, i) => (
+          <MockClientRow key={i} {...client} />
+        ))}
+      </MockCard>
+      
+      <DemoCursor x={cursorPos.x} y={cursorPos.y} isClicking={clicking} visible={phase > 0.05 && phase < 0.9} />
+      
+      <AnimatePresence>
+        {secondChecked && (
+          <motion.div 
+            className="flex items-center justify-center gap-2 text-xs text-primary font-medium"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>2 clients selected!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 // Step 7: Bulk Actions Bar Appears
 export const ClientsStep7 = () => (

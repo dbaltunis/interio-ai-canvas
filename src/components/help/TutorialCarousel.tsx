@@ -1,4 +1,4 @@
-import { useState, useEffect, ComponentType } from "react";
+import { useState, useEffect, useRef, useCallback, ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Pause, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,10 @@ export interface TutorialStep {
   title: string;
   actionLabel: string;
   description: string;
-  Visual: ComponentType;
+  Visual: ComponentType<{ phase?: number }>;
   relatedSection?: string;
   prerequisiteNote?: string;
+  duration?: number; // Custom duration per step in ms
 }
 
 interface TutorialCarouselProps {
@@ -23,56 +24,91 @@ interface TutorialCarouselProps {
 export const TutorialCarousel = ({ 
   steps, 
   autoPlay = true, 
-  stepDuration = 5000,
+  stepDuration = 6000,
   onNavigateToSection,
 }: TutorialCarouselProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [direction, setDirection] = useState(1);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [phase, setPhase] = useState(0); // 0-1 progress within step
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    
-    const timer = setInterval(() => {
-      setDirection(1);
+  const step = steps[currentStep];
+  const currentStepDuration = step.duration || stepDuration;
+
+  // Animation loop for smooth phase progression
+  const animate = useCallback((timestamp: number) => {
+    if (!startTimeRef.current) {
+      startTimeRef.current = timestamp;
+    }
+
+    const elapsed = timestamp - startTimeRef.current;
+    const progress = Math.min(elapsed / currentStepDuration, 1);
+    setPhase(progress);
+
+    if (progress < 1) {
+      animationRef.current = requestAnimationFrame(animate);
+    } else {
+      // Auto-advance to next step
       setCurrentStep((prev) => (prev + 1) % steps.length);
-    }, stepDuration);
+      startTimeRef.current = 0;
+      setPhase(0);
+    }
+  }, [currentStepDuration, steps.length]);
 
-    return () => clearInterval(timer);
-  }, [isPlaying, steps.length, stepDuration]);
+  // Start/stop animation based on playing state
+  useEffect(() => {
+    if (isPlaying) {
+      startTimeRef.current = 0;
+      animationRef.current = requestAnimationFrame(animate);
+    } else {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying, currentStep, animate]);
 
   const goToStep = (index: number) => {
-    setDirection(index > currentStep ? 1 : -1);
     setCurrentStep(index);
+    setPhase(0);
+    startTimeRef.current = 0;
   };
 
   const goNext = () => {
-    setDirection(1);
     setCurrentStep((prev) => (prev + 1) % steps.length);
+    setPhase(0);
+    startTimeRef.current = 0;
   };
 
   const goPrev = () => {
-    setDirection(-1);
     setCurrentStep((prev) => (prev - 1 + steps.length) % steps.length);
+    setPhase(0);
+    startTimeRef.current = 0;
   };
 
-  const step = steps[currentStep];
   const StepVisual = step.Visual;
 
+  // Cross-fade transition variants
   const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 100 : -100,
+    enter: {
       opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
+      scale: 0.98,
     },
-    exit: (direction: number) => ({
-      x: direction > 0 ? -100 : 100,
+    center: {
+      opacity: 1,
+      scale: 1,
+    },
+    exit: {
       opacity: 0,
-    }),
+      scale: 1.02,
+    },
   };
 
   return (
@@ -131,20 +167,28 @@ export const TutorialCarousel = ({
         "relative p-4 overflow-hidden flex-1",
         isMaximized ? "min-h-[400px]" : "min-h-[280px]"
       )}>
-        <AnimatePresence mode="wait" custom={direction}>
+        <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
-            custom={direction}
             variants={slideVariants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className={cn("w-full", isMaximized && "scale-110 origin-top")}
           >
-            <StepVisual />
+            <StepVisual phase={phase} />
           </motion.div>
         </AnimatePresence>
+        
+        {/* Step progress bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
+          <motion.div 
+            className="h-full bg-primary/60"
+            style={{ width: `${phase * 100}%` }}
+            transition={{ duration: 0.05 }}
+          />
+        </div>
       </div>
 
       {/* Action and description area */}
