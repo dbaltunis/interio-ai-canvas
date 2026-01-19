@@ -85,6 +85,11 @@ import {
   MessagesStep6, MessagesStep7, MessagesStep8, MessagesStep9, MessagesStep10,
   MessagesStep11, MessagesStep12,
 } from "@/components/help/tutorial-steps/MessagesSteps";
+import {
+  LibraryStep1, LibraryStep2, LibraryStep3, LibraryStep4, LibraryStep5,
+  LibraryStep6, LibraryStep7, LibraryStep8, LibraryStep9, LibraryStep10,
+  LibraryStep11, LibraryStep12,
+} from "@/components/help/tutorial-steps/LibrarySteps";
 
 export interface TutorialStep {
   title: string;
@@ -771,6 +776,27 @@ export const messagesTutorial: Tutorial = {
 };
 
 // ===========================================
+// LIBRARY TUTORIAL - 12 Interactive Steps
+// ===========================================
+export const libraryTutorial: Tutorial = {
+  id: "library",
+  steps: [
+    { title: "Library Overview", actionLabel: "View", description: "Your inventory hub with fabrics, materials, and hardware.", Visual: LibraryStep1, duration: 4500 },
+    { title: "Browse Categories", actionLabel: "Navigate", description: "Switch tabs to explore different product types.", Visual: LibraryStep2, duration: 4500 },
+    { title: "Search & Filter", actionLabel: "Search", description: "Find any item by name, SKU, vendor, or tags.", Visual: LibraryStep3, duration: 4500 },
+    { title: "View Modes", actionLabel: "Toggle", description: "Switch between grid and list for your workflow.", Visual: LibraryStep4, duration: 4500 },
+    { title: "Add New Item", actionLabel: "Add", description: "Click Add to open the inventory creation wizard.", Visual: LibraryStep5, duration: 4500 },
+    { title: "Enter Details", actionLabel: "Fill", description: "Name, SKU, category, and vendor information.", Visual: LibraryStep6, duration: 5000 },
+    { title: "Set Pricing", actionLabel: "Price", description: "Configure cost, markup, and selling prices.", Visual: LibraryStep7, duration: 5000 },
+    { title: "Track Inventory", actionLabel: "Stock", description: "Enable tracking with quantity and reorder alerts.", Visual: LibraryStep8, duration: 4500 },
+    { title: "QR Code Scanner", actionLabel: "Scan", description: "Instantly find items by scanning their QR code.", Visual: LibraryStep9, duration: 5000 },
+    { title: "Manage Vendors", actionLabel: "Vendors", description: "Add suppliers and import their product catalogs.", Visual: LibraryStep10, duration: 4500 },
+    { title: "Bulk Actions", actionLabel: "Select", description: "Batch edit, export, or delete multiple items.", Visual: LibraryStep11, duration: 4500 },
+    { title: "Import/Export", actionLabel: "CSV", description: "Upload spreadsheets or export your full catalog.", Visual: LibraryStep12, duration: 4500 },
+  ],
+};
+
+// ===========================================
 // TUTORIAL MAP
 // ===========================================
 export const tutorialMap: Record<string, Tutorial> = {
@@ -799,4 +825,6 @@ export const tutorialMap: Record<string, Tutorial> = {
   "jobs": jobsTutorial,
   // Messages pages
   "messages": messagesTutorial,
+  // Library/Inventory pages
+  "library": libraryTutorial,
 };

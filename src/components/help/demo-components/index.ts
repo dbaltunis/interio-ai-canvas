@@ -37,3 +37,17 @@ export {
   AnimatedLogoUpload,
   typingProgress,
 } from "./DemoSettingsElements";
+
+// Library/Inventory demo components
+export {
+  DemoInventoryCard,
+  DemoInventoryTabs,
+  DemoLibraryHeader,
+  DemoAddItemDialog,
+  DemoQRScanner,
+  DemoVendorCard,
+  DemoBulkActionsBar,
+  DemoImportExportPanel,
+  sampleInventoryItems,
+  type DemoInventoryItemData,
+} from "./DemoInventoryElements";
