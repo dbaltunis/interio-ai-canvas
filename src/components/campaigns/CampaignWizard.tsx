@@ -158,32 +158,27 @@ export const CampaignWizard = ({
         });
       }
 
-      // Show success state briefly
-      setSendingState('success');
+      // Close dialog immediately
+      onOpenChange(false);
+      
+      // Reset wizard state
+      setCurrentStep(1);
+      setSendingState('idle');
+      setCampaignData({
+        name: '',
+        type: 'outreach',
+        subject: '',
+        content: '',
+        sendImmediately: true,
+        recipients: [],
+      });
 
-      // Close dialog after brief success display
-      setTimeout(() => {
-        onOpenChange(false);
-        
-        // Reset wizard state
-        setCurrentStep(1);
-        setSendingState('idle');
-        setCampaignData({
-          name: '',
-          type: 'outreach',
-          subject: '',
-          content: '',
-          sendImmediately: true,
-          recipients: [],
-        });
-
-        // Show toast and complete
-        const message = isImmediate 
-          ? `Campaign "${campaignName}" sent to ${recipientCount} recipients!`
-          : `Campaign "${campaignName}" scheduled successfully!`;
-        toast.success(message);
-        onComplete();
-      }, 800);
+      // Show toast and complete
+      const message = isImmediate 
+        ? `Campaign "${campaignName}" sent to ${recipientCount} recipients!`
+        : `Campaign "${campaignName}" scheduled successfully!`;
+      toast.success(message);
+      onComplete();
 
     } catch (error) {
       console.error("Campaign creation error:", error);
