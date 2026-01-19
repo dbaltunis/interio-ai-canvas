@@ -23,23 +23,23 @@ const DemoKPICard = ({ title, value, change, icon: Icon, color, highlighted }: K
     "overflow-hidden transition-all",
     highlighted && "ring-2 ring-primary"
   )}>
-    <CardContent className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+    <CardContent className="p-2 sm:p-3">
+      <div className="flex items-start justify-between gap-1">
+        <div className="space-y-0.5 min-w-0 flex-1">
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{title}</p>
+          <p className="text-base sm:text-lg font-bold leading-tight">{value}</p>
           {change !== undefined && (
             <div className={cn(
-              "flex items-center gap-1 text-xs",
+              "flex items-center gap-0.5 text-[8px] sm:text-[9px]",
               change >= 0 ? "text-green-600" : "text-red-600"
             )}>
-              {change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              <span>{Math.abs(change)}% vs last month</span>
+              {change >= 0 ? <TrendingUp className="h-2 w-2 sm:h-2.5 sm:w-2.5 flex-shrink-0" /> : <TrendingDown className="h-2 w-2 sm:h-2.5 sm:w-2.5 flex-shrink-0" />}
+              <span className="truncate">{Math.abs(change)}% vs last month</span>
             </div>
           )}
         </div>
-        <div className={cn("p-3 rounded-full", color)}>
-          <Icon className="h-5 w-5 text-white" />
+        <div className={cn("p-1.5 sm:p-2 rounded-full flex-shrink-0", color)}>
+          <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
         </div>
       </div>
     </CardContent>
@@ -59,7 +59,7 @@ export const DemoEmailAnalytics = ({ highlightedCard }: DemoEmailAnalyticsProps)
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
       {kpis.map((kpi) => (
         <DemoKPICard
           key={kpi.key}
