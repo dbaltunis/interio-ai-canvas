@@ -83,8 +83,7 @@ import {
 import {
   MessagesStep1, MessagesStep2, MessagesStep3, MessagesStep4, MessagesStep5,
   MessagesStep6, MessagesStep7, MessagesStep8, MessagesStep9, MessagesStep10,
-  MessagesStep11, MessagesStep12, MessagesStep13, MessagesStep14, MessagesStep15,
-  MessagesStep16, MessagesStep17, MessagesStep18, MessagesStep19, MessagesStep20,
+  MessagesStep11, MessagesStep12,
 } from "@/components/help/tutorial-steps/MessagesSteps";
 
 export interface TutorialStep {
