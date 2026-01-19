@@ -17,6 +17,7 @@ import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
 import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
@@ -93,7 +94,7 @@ export const EmailManagement = () => {
             <Mail className="h-5 w-5 text-primary" />
           </div>
           <h1 className="text-lg font-semibold text-foreground">Messages</h1>
-          <HelpIcon onClick={() => setShowHelp(true)} />
+          <SectionHelpButton sectionId="messages" size="sm" />
           <Badge variant="secondary" className="text-xs">
             {emails?.length || 0}
           </Badge>
