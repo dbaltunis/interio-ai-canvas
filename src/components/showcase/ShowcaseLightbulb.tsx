@@ -20,6 +20,7 @@ import type { TutorialStep } from "@/config/tutorialSteps";
 interface StepGroup {
   id: string;
   label: string;
+  shortLabel: string;
   stepRange: [number, number];
 }
 
@@ -115,11 +116,11 @@ const platformOverviewSteps: TutorialStep[] = [
 
 // Step groups for navigation
 const overviewStepGroups: StepGroup[] = [
-  { id: "dashboard", label: "Dashboard", stepRange: [0, 0] },
-  { id: "jobs", label: "Jobs", stepRange: [1, 5] },
-  { id: "crm", label: "CRM", stepRange: [6, 7] },
-  { id: "tools", label: "Tools", stepRange: [8, 10] },
-  { id: "summary", label: "Summary", stepRange: [11, 11] },
+  { id: "dashboard", label: "Dashboard", shortLabel: "Dash", stepRange: [0, 0] },
+  { id: "jobs", label: "Jobs", shortLabel: "Jobs", stepRange: [1, 5] },
+  { id: "crm", label: "CRM", shortLabel: "CRM", stepRange: [6, 7] },
+  { id: "tools", label: "Tools", shortLabel: "Tools", stepRange: [8, 10] },
+  { id: "summary", label: "Summary", shortLabel: "Done", stepRange: [11, 11] },
 ];
 
 export const ShowcaseLightbulb = () => {
