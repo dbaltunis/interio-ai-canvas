@@ -15,7 +15,7 @@ import { useIsDealer } from "@/hooks/useIsDealer";
 import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
 import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
-import { ProductShowcaseWidget } from "./ProductShowcaseWidget";
+
 
 // Lazy load non-critical widgets for better initial load performance (with automatic retry)
 const UpcomingEventsWidget = lazyWithRetry(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })), "UpcomingEventsWidget");
