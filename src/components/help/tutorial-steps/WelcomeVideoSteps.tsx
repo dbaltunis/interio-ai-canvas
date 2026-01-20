@@ -87,25 +87,23 @@ export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 2: DASHBOARD - Scrolls down and zooms to Shopify/Revenue area
+// SCENE 2: DASHBOARD - Scrolls content inside app frame, then zooms to Shopify
 export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
-  const scrollDown = inPhase(phase, 0.3, 1);
-  const zoomToShopify = inPhase(phase, 0.5, 0.9);
-  const chartProgress = phaseProgress(phase, 0.15, 0.45);
-  const donutProgress = phaseProgress(phase, 0.25, 0.5);
+  // Phase 0-0.3: Show full dashboard
+  // Phase 0.3-0.6: Scroll content down to reveal Shopify section
+  // Phase 0.6-0.9: Zoom into Shopify/Revenue area
+  const scrollProgress = phaseProgress(phase, 0.25, 0.55);
+  const zoomToShopify = inPhase(phase, 0.6, 0.95);
+  const chartProgress = phaseProgress(phase, 0.1, 0.35);
+  const donutProgress = phaseProgress(phase, 0.15, 0.4);
+  
+  // Scroll the inner content (negative Y moves content up, revealing bottom)
+  const contentScrollY = scrollProgress * -120; // pixels to scroll
   
   return (
-    <motion.div 
-      className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative"
-      animate={{ 
-        scale: zoomToShopify ? 1.25 : 1, 
-        x: zoomToShopify ? "5%" : "0%", 
-        y: zoomToShopify ? "-25%" : scrollDown ? "-15%" : "0%" 
-      }}
-      transition={{ duration: 0.8 }}
-    >
-      {/* Header */}
-      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3">
+    <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
+      {/* Fixed Header - stays in place */}
+      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3 relative z-10">
         <div className="flex items-center gap-3">
           <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
           <div className="flex items-center gap-4">
@@ -123,72 +121,84 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
         </div>
       </div>
 
-      {/* Welcome */}
-      <div className="px-4 py-3 border-b border-border bg-card/50">
-        <motion.h2 className="text-base font-semibold" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Good afternoon, John</motion.h2>
-        <p className="text-sm text-muted-foreground">24 pending quotes • 156 clients</p>
-      </div>
-
-      {/* Stats */}
-      <div className="p-3 space-y-3">
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: "Revenue", value: "£59,872", icon: DollarSign, bg: "bg-primary/5" },
-            { label: "Projects", value: "138", icon: Calendar, bg: "bg-blue-50 dark:bg-blue-900/20" },
-            { label: "Quotes", value: "177", icon: Receipt, bg: "bg-amber-50 dark:bg-amber-900/20" },
-            { label: "Clients", value: "19", icon: Users, bg: "bg-purple-50 dark:bg-purple-900/20" },
-          ].map((stat) => (
-            <div key={stat.label} className={`p-3 ${stat.bg} rounded-lg border border-border`}>
-              <stat.icon className="h-4 w-4 text-primary mb-1" />
-              <div className="text-lg font-bold">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="p-3 bg-card rounded-lg border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Revenue Trend</span>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-600">-54.9%</span>
-            </div>
-            <svg className="w-full h-16" viewBox="0 0 100 32">
-              <motion.path d="M 12 8 Q 25 12, 40 18 T 65 22 T 88 25 T 100 28" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: chartProgress }} />
-            </svg>
+      {/* Scrollable Content Area */}
+      <div className="overflow-hidden" style={{ height: 'calc(100% - 48px)' }}>
+        <motion.div 
+          className="p-3 space-y-3"
+          animate={{ 
+            y: contentScrollY,
+            scale: zoomToShopify ? 1.3 : 1,
+            x: zoomToShopify ? "15%" : "0%",
+          }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          style={{ transformOrigin: "bottom center" }}
+        >
+          {/* Welcome */}
+          <div className="px-1 py-2 border-b border-border bg-card/50 rounded-lg">
+            <h2 className="text-base font-semibold">Good afternoon, John</h2>
+            <p className="text-sm text-muted-foreground">24 pending quotes • 156 clients</p>
           </div>
-          <div className="p-3 bg-card rounded-lg border border-border">
-            <div className="text-sm font-medium mb-2">Jobs by Status</div>
-            <div className="flex items-center gap-3">
-              <svg className="w-16 h-16" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="12" fill="none" stroke="hsl(var(--muted)/0.3)" strokeWidth="3" />
-                <motion.circle cx="18" cy="18" r="12" fill="none" stroke="#9CA3AF" strokeWidth="3" strokeDasharray={`${donutProgress * 45} 100`} transform="rotate(-90 18 18)" />
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "Revenue", value: "£59,872", icon: DollarSign, bg: "bg-primary/5" },
+              { label: "Projects", value: "138", icon: Calendar, bg: "bg-blue-50 dark:bg-blue-900/20" },
+              { label: "Quotes", value: "177", icon: Receipt, bg: "bg-amber-50 dark:bg-amber-900/20" },
+              { label: "Clients", value: "19", icon: Users, bg: "bg-purple-50 dark:bg-purple-900/20" },
+            ].map((stat) => (
+              <div key={stat.label} className={`p-3 ${stat.bg} rounded-lg border border-border`}>
+                <stat.icon className="h-4 w-4 text-primary mb-1" />
+                <div className="text-lg font-bold">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-3 bg-card rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Revenue Trend</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-600">-54.9%</span>
+              </div>
+              <svg className="w-full h-16" viewBox="0 0 100 32">
+                <motion.path d="M 12 8 Q 25 12, 40 18 T 65 22 T 88 25 T 100 28" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: chartProgress }} />
               </svg>
-              <div className="text-xs space-y-1">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#9CA3AF]" /><span>Draft (97)</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#22C55E]" /><span>Approved (5)</span></div>
+            </div>
+            <div className="p-3 bg-card rounded-lg border border-border">
+              <div className="text-sm font-medium mb-2">Jobs by Status</div>
+              <div className="flex items-center gap-3">
+                <svg className="w-16 h-16" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="12" fill="none" stroke="hsl(var(--muted)/0.3)" strokeWidth="3" />
+                  <motion.circle cx="18" cy="18" r="12" fill="none" stroke="#9CA3AF" strokeWidth="3" strokeDasharray={`${donutProgress * 45} 100`} transform="rotate(-90 18 18)" />
+                </svg>
+                <div className="text-xs space-y-1">
+                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#9CA3AF]" /><span>Draft (97)</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#22C55E]" /><span>Approved (5)</span></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Shopify */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="p-3 bg-card rounded-lg border border-border">
-            <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-medium">Analytics</span></div>
-            <div className="text-xs"><span className="text-muted-foreground">Sessions:</span> <span className="font-medium">1,234</span></div>
+          {/* Shopify - This is what we scroll to and zoom */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 bg-card rounded-lg border border-border">
+              <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-medium">Analytics</span></div>
+              <div className="text-xs"><span className="text-muted-foreground">Sessions:</span> <span className="font-medium">1,234</span></div>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 rounded-lg border border-green-200">
+              <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-semibold text-green-700">Performance</span><span className="ml-auto text-[9px] px-1.5 py-0.5 bg-green-500 text-white rounded animate-pulse">Live</span></div>
+              <div className="text-xl font-bold text-green-600 text-center">£5,000</div>
+            </div>
+            <div className="p-3 bg-card rounded-lg border border-border">
+              <div className="flex items-center gap-1.5 mb-2"><Package className="h-4 w-4 text-blue-500" /><span className="text-xs font-medium">Sync</span></div>
+              <div className="text-xs"><span className="text-muted-foreground">Synced:</span> <span className="font-medium text-green-600">✓ 42</span></div>
+            </div>
           </div>
-          <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 rounded-lg border border-green-200">
-            <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-semibold text-green-700">Performance</span><span className="ml-auto text-[9px] px-1.5 py-0.5 bg-green-500 text-white rounded animate-pulse">Live</span></div>
-            <div className="text-xl font-bold text-green-600 text-center">£5,000</div>
-          </div>
-          <div className="p-3 bg-card rounded-lg border border-border">
-            <div className="flex items-center gap-1.5 mb-2"><Package className="h-4 w-4 text-blue-500" /><span className="text-xs font-medium">Sync</span></div>
-            <div className="text-xs"><span className="text-muted-foreground">Synced:</span> <span className="font-medium text-green-600">✓ 42</span></div>
-          </div>
-        </div>
+        </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
