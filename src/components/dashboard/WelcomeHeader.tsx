@@ -74,7 +74,7 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         {/* Shopify-style Date Filter */}
         <DashboardDateFilter />
 
@@ -82,37 +82,37 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
           variant="ghost"
           size="icon-sm"
           onClick={() => setTeamHubOpen(true)}
-          className="h-8 w-8 rounded-lg hover:bg-muted relative"
+          className="h-5 w-5 rounded hover:bg-muted relative"
           title="Team Hub"
         >
-          <Users className="h-4 w-4" />
+          <Users className="h-3 w-3" />
           {hasActivity && (
             <span className="absolute -top-0.5 -right-0.5">
               {unreadCount > 0 ? (
-                <Badge variant="destructive" size="sm" className="h-4 min-w-4 p-0 text-[9px] flex items-center justify-center">
+                <Badge variant="destructive" size="sm" className="h-3 min-w-3 p-0 text-[7px] flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </Badge>
               ) : (
-                <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse block" />
+                <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse block" />
               )}
             </span>
           )}
         </Button>
 
         {/* Product Tour Lightbulb */}
-        <ShowcaseLightbulb />
+        <ShowcaseLightbulb size="sm" />
 
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="h-8 w-8 rounded-lg hover:bg-muted"
+          className="h-5 w-5 rounded hover:bg-muted"
           title="Toggle theme"
         >
           {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
+            <Sun className="h-3 w-3" />
           ) : (
-            <Moon className="h-4 w-4" />
+            <Moon className="h-3 w-3" />
           )}
         </Button>
         {onCustomizeClick && (
@@ -120,10 +120,10 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
             variant="ghost"
             size="icon-sm"
             onClick={onCustomizeClick}
-            className="h-8 w-8 rounded-lg hover:bg-muted"
+            className="h-5 w-5 rounded hover:bg-muted"
             title="Customize dashboard"
           >
-            <Settings2 className="h-4 w-4" />
+            <Settings2 className="h-3 w-3" />
           </Button>
         )}
       </div>
