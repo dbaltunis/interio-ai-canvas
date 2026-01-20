@@ -63,12 +63,12 @@ const welcomeSteps: VideoStep[] = [
     chapter: "jobs" 
   },
   
-  // Scene 5: Project deep dive with tabs
+  // Scene 5: Project deep dive with tabs, payment, work order, installation, share
   { 
     title: "Project Details", 
-    description: "Navigate through Client, Project, Quote, and Workroom tabs", 
+    description: "Quote, Payment, Work Orders, Installation & Team Sharing", 
     Visual: Scene5ProjectDeepDive, 
-    duration: 12000, 
+    duration: 15000, 
     chapter: "project" 
   },
   

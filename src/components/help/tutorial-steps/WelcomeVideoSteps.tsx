@@ -2,7 +2,11 @@
  * WelcomeVideoSteps - 6-Scene Cinematic Product Showcase
  * Scenes: Logo Intro, Dashboard, Theme Toggle, Jobs & Notes, Project Deep-Dive, Closing
  * 
- * Updated for high-fidelity matching actual app UI
+ * Updated for ultra-high-fidelity matching actual app UI with:
+ * - Professional Quote document with Payment flow
+ * - Work Order with window diagrams
+ * - Installation tab
+ * - Share functionality demonstration
  */
 
 import React from "react";
@@ -12,7 +16,9 @@ import {
   Share2, FileText, Users, Home, Bed, ChefHat, Bath, MoreHorizontal,
   Clock, MessageSquare, Building2, Receipt, Layers, Eye, Tag, X,
   ShoppingBag, TrendingUp, Package, UserPlus, Copy, Link as LinkIcon, ExternalLink,
-  DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Image
+  DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Image, Mail, Percent,
+  CreditCard, Download, Send, CheckCircle2, ArrowRight, Wrench, ClipboardList,
+  CircleDot
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -117,7 +123,7 @@ export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
 
 // ===========================================
 // SCENE 2: DASHBOARD OVERVIEW
-// Duration: 8 seconds - Matches actual app UI
+// Duration: 8 seconds - Matches actual app UI exactly
 // ===========================================
 
 export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
@@ -447,8 +453,8 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
 };
 
 // ===========================================
-// SCENE 3: THEME TOGGLE (Dark/Light)
-// Duration: 6 seconds - Subtle zoom
+// SCENE 3: THEME TOGGLE (Dark/Light) - SAME PAGE
+// Duration: 6 seconds - Subtle zoom, stay on dashboard
 // ===========================================
 
 export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
@@ -456,7 +462,7 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
   const isDarkMode = inPhase(phase, 0.4, 0.7);
   const cursorVisible = inPhase(phase, 0.2, 0.8);
   
-  // Cursor position animation - more subtle
+  // Cursor position animation - targets the right-side icons
   const cursorX = zoomedToHeader ? 320 : 200;
   const cursorY = zoomedToHeader ? 55 : 40;
   const isClicking = inPhase(phase, 0.38, 0.42) || inPhase(phase, 0.68, 0.72);
@@ -481,7 +487,7 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
         )}
       </AnimatePresence>
 
-      {/* Full App Header - matches actual app */}
+      {/* Full App Header - matches actual app - icons on RIGHT */}
       <motion.div 
         className="h-11 border-b flex items-center justify-between px-3"
         animate={{
@@ -590,7 +596,7 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
         </motion.div>
       </motion.div>
 
-      {/* Content area - theme preview */}
+      {/* Content area - showing dashboard in dark/light mode */}
       <motion.div 
         className="p-3"
         animate={{ 
@@ -888,38 +894,71 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
 };
 
 // ===========================================
-// SCENE 5: PROJECT DEEP DIVE
-// Duration: 12 seconds - Professional documents
+// SCENE 5: PROJECT DEEP DIVE - EXPANDED
+// Duration: 15 seconds - Quote, Payment, Email, Work Order, Installation, Share
 // ===========================================
 
 export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
-  // Tab navigation phases
-  const showClientTab = inPhase(phase, 0, 0.25);
-  const showProjectTab = inPhase(phase, 0.25, 0.5);
-  const showQuoteTab = inPhase(phase, 0.5, 0.7);
-  const showWorkroomTab = inPhase(phase, 0.7, 1);
-  const showSharePopover = inPhase(phase, 0.85, 1);
+  // Phase breakdown for 15 seconds:
+  // 0.00-0.10: Client tab
+  // 0.10-0.20: Project tab with rooms
+  // 0.20-0.40: Quote tab with professional document
+  // 0.40-0.50: Click Payment → Show dropdown → Configure 50% deposit
+  // 0.50-0.60: Email dialog → Type message → Send
+  // 0.60-0.65: Email success → Client payment
+  // 0.65-0.80: Work Order tab with window diagram
+  // 0.80-0.90: Installation tab
+  // 0.90-1.00: Share popover
+
+  const showClientTab = inPhase(phase, 0, 0.10);
+  const showProjectTab = inPhase(phase, 0.10, 0.20);
+  const showQuoteTab = inPhase(phase, 0.20, 0.65);
+  const showPaymentDropdown = inPhase(phase, 0.42, 0.48);
+  const showPaymentConfig = inPhase(phase, 0.48, 0.52);
+  const showEmailDialog = inPhase(phase, 0.52, 0.62);
+  const showEmailSuccess = inPhase(phase, 0.60, 0.65);
+  const showWorkroomTab = inPhase(phase, 0.65, 0.80);
+  const showInstallationTab = inPhase(phase, 0.80, 0.90);
+  const showSharePopover = inPhase(phase, 0.90, 1);
   
-  const activeTab = showWorkroomTab ? "workroom" : showQuoteTab ? "quote" : showProjectTab ? "project" : "client";
+  const activeTab = showInstallationTab || showSharePopover ? "installation" : 
+                    showWorkroomTab ? "workroom" : 
+                    showQuoteTab ? "quote" : 
+                    showProjectTab ? "project" : "client";
   
-  const cursorVisible = inPhase(phase, 0.15, 0.95);
+  const cursorVisible = inPhase(phase, 0.08, 0.98);
   let cursorX = 150;
   let cursorY = 55;
   let isClicking = false;
   
-  // Cursor follows tabs
-  if (inPhase(phase, 0.2, 0.25)) {
+  // Cursor follows actions
+  if (inPhase(phase, 0.08, 0.10)) {
     cursorX = 135; cursorY = 55;
-    isClicking = inPhase(phase, 0.23, 0.25);
-  } else if (inPhase(phase, 0.45, 0.5)) {
+    isClicking = inPhase(phase, 0.09, 0.10);
+  } else if (inPhase(phase, 0.18, 0.20)) {
     cursorX = 200; cursorY = 55;
-    isClicking = inPhase(phase, 0.48, 0.5);
-  } else if (inPhase(phase, 0.65, 0.7)) {
-    cursorX = 270; cursorY = 55;
-    isClicking = inPhase(phase, 0.68, 0.7);
-  } else if (inPhase(phase, 0.8, 0.85)) {
-    cursorX = 340; cursorY = 110;
-    isClicking = inPhase(phase, 0.83, 0.85);
+    isClicking = inPhase(phase, 0.19, 0.20);
+  } else if (inPhase(phase, 0.40, 0.42)) {
+    cursorX = 340; cursorY = 85; // Payment button
+    isClicking = inPhase(phase, 0.41, 0.42);
+  } else if (inPhase(phase, 0.46, 0.48)) {
+    cursorX = 340; cursorY = 115; // Configure Payment Terms
+    isClicking = inPhase(phase, 0.47, 0.48);
+  } else if (inPhase(phase, 0.50, 0.52)) {
+    cursorX = 200; cursorY = 220; // 50% deposit option
+    isClicking = inPhase(phase, 0.51, 0.52);
+  } else if (inPhase(phase, 0.58, 0.60)) {
+    cursorX = 280; cursorY = 300; // Send Email button
+    isClicking = inPhase(phase, 0.59, 0.60);
+  } else if (inPhase(phase, 0.63, 0.65)) {
+    cursorX = 270; cursorY = 55; // Workroom tab
+    isClicking = inPhase(phase, 0.64, 0.65);
+  } else if (inPhase(phase, 0.78, 0.80)) {
+    cursorX = 340; cursorY = 55; // Installation tab
+    isClicking = inPhase(phase, 0.79, 0.80);
+  } else if (inPhase(phase, 0.88, 0.90)) {
+    cursorX = 360; cursorY = 85; // Share button
+    isClicking = inPhase(phase, 0.89, 0.90);
   }
   
   const tabs = [
@@ -927,6 +966,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
     { id: "project", label: "Project", icon: Layers },
     { id: "quote", label: "Quote", icon: Receipt },
     { id: "workroom", label: "Workroom", icon: FileText },
+    { id: "installation", label: "Installation", icon: Wrench },
   ];
   
   return (
@@ -955,7 +995,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-[10px] font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-2 text-[9px] font-medium border-b-2 transition-colors ${
               activeTab === tab.id 
                 ? "border-primary text-primary" 
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -985,15 +1025,12 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
               <div className="p-3 bg-card rounded-lg border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">SJ</span>
+                    <span className="text-sm font-bold text-primary">KM</span>
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold">Sarah Johnson</div>
-                    <div className="text-[10px] text-muted-foreground">sarah@email.com • +44 7700 900123</div>
+                    <div className="text-sm font-semibold">Katie</div>
+                    <div className="text-[10px] text-muted-foreground">krichter@micelidrapery.com</div>
                   </div>
-                  <button className="px-2 py-1 text-[9px] bg-primary/10 text-primary rounded font-medium">
-                    View Profile
-                  </button>
                 </div>
               </div>
               
@@ -1005,15 +1042,6 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 text-center">
                   <div className="text-xl font-bold text-green-600">£4,666.18</div>
                   <div className="text-[9px] text-green-600">Quote Total</div>
-                </div>
-              </div>
-              
-              <div className="p-2 bg-muted/30 rounded-lg">
-                <div className="text-[9px] font-medium mb-1">Timeline</div>
-                <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
-                  <span>Created: Jan 15</span>
-                  <span>•</span>
-                  <span>Last updated: Today</span>
                 </div>
               </div>
             </motion.div>
@@ -1029,7 +1057,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
               className="space-y-2"
             >
               {[
-                { room: "Bedroom", amount: "£2,200.90", icon: Bed, expanded: true, windows: 1 },
+                { room: "Bedroom", amount: "£2,200.90", icon: Bed, windows: 1 },
                 { room: "Room 2", amount: "£879.53", icon: Home, windows: 2 },
                 { room: "Room 3", amount: "£412.00", icon: ChefHat, windows: 1 },
                 { room: "Room 4", amount: "£1,173.75", icon: Bath, windows: 1 },
@@ -1038,167 +1066,347 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                   key={item.room}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="bg-card rounded-lg border border-border overflow-hidden"
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-card rounded-lg border border-border p-2.5 flex items-center justify-between"
                 >
-                  <div className="flex items-center justify-between p-2.5">
-                    <div className="flex items-center gap-2">
-                      <motion.div 
-                        className="w-5 h-5 rounded flex items-center justify-center"
-                        animate={{ rotate: item.expanded ? 90 : 0 }}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      </motion.div>
-                      <div className="w-7 h-7 rounded bg-muted flex items-center justify-center">
-                        <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-medium">{item.room}</span>
-                        <div className="text-[8px] text-muted-foreground">{item.windows} window{item.windows > 1 ? 's' : ''}</div>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded bg-muted flex items-center justify-center">
+                      <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-primary">{item.amount}</span>
-                      <Edit className="h-3 w-3 text-muted-foreground" />
+                    <div>
+                      <span className="text-[11px] font-medium">{item.room}</span>
+                      <div className="text-[8px] text-muted-foreground">{item.windows} window{item.windows > 1 ? 's' : ''}</div>
                     </div>
                   </div>
-                  
-                  {/* Expanded content for first room */}
-                  {item.expanded && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      className="border-t border-border p-2 bg-muted/20"
-                    >
-                      <div className="flex items-start gap-2 p-2 bg-background rounded-lg border border-border">
-                        {/* Fabric thumbnail */}
-                        <div className="w-12 h-12 rounded bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center border border-blue-200 dark:border-blue-800">
-                          <Image className="h-5 w-5 text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-[10px] font-medium">Curtain testing</div>
-                          <div className="text-[8px] text-muted-foreground">Velvet Midnight Blue</div>
-                          <div className="flex items-center gap-2 mt-1 text-[8px]">
-                            <span className="text-muted-foreground">W: 1000mm</span>
-                            <span className="text-muted-foreground">×</span>
-                            <span className="text-muted-foreground">H: 1000mm</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-bold">£273.54</div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+                  <span className="text-[11px] font-bold text-primary">{item.amount}</span>
                 </motion.div>
               ))}
             </motion.div>
           )}
 
-          {/* Quote Tab - Professional Document */}
+          {/* Quote Tab - Professional Document with Actions */}
           {showQuoteTab && (
             <motion.div
               key="quote"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="h-full"
+              className="h-full relative"
             >
+              {/* Quote Action Bar - matches screenshot */}
+              <div className="flex items-center justify-between mb-2 p-2 bg-card rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium">Quotation</span>
+                  <select className="text-[9px] px-1.5 py-0.5 border border-border rounded bg-muted/50">
+                    <option>Default Quote...</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button className="flex items-center gap-1 px-2 py-1 text-[8px] bg-muted hover:bg-muted/80 rounded border border-border">
+                    <Download className="h-2.5 w-2.5" />
+                    PDF
+                  </button>
+                  <button className="flex items-center gap-1 px-2 py-1 text-[8px] bg-muted hover:bg-muted/80 rounded border border-border">
+                    <Mail className="h-2.5 w-2.5" />
+                    Email
+                  </button>
+                  <button className="flex items-center gap-1 px-2 py-1 text-[8px] bg-muted hover:bg-muted/80 rounded border border-border">
+                    <Percent className="h-2.5 w-2.5" />
+                  </button>
+                  <div className="relative">
+                    <motion.button 
+                      className="flex items-center gap-1 px-2 py-1 text-[8px] bg-muted hover:bg-muted/80 rounded border border-border"
+                      animate={{ 
+                        backgroundColor: (showPaymentDropdown || showPaymentConfig) ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))",
+                        borderColor: (showPaymentDropdown || showPaymentConfig) ? "hsl(var(--primary))" : "hsl(var(--border))"
+                      }}
+                    >
+                      <CreditCard className="h-2.5 w-2.5" />
+                      Payment
+                      <ChevronDown className="h-2 w-2" />
+                    </motion.button>
+                    
+                    {/* Payment Dropdown */}
+                    <AnimatePresence>
+                      {showPaymentDropdown && !showPaymentConfig && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute right-0 top-full mt-1 w-40 bg-popover border border-border rounded-lg shadow-xl z-30 py-1"
+                        >
+                          <div className="px-3 py-2 text-[9px] hover:bg-primary/10 cursor-pointer flex items-center gap-2">
+                            <Settings className="h-3 w-3" />
+                            <span className="font-medium">Configure Payment Terms</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+
+              {/* Display options bar */}
+              <div className="flex items-center gap-3 mb-2 px-2 py-1.5 bg-muted/30 rounded-lg text-[8px]">
+                <span className="text-muted-foreground">Display:</span>
+                <label className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full border-2 border-primary flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  </div>
+                  <span>Group by room</span>
+                </label>
+                <span className="text-muted-foreground">Simple View</span>
+                <span className="text-muted-foreground">📷 Images</span>
+              </div>
+
+              {/* Profit Summary bar */}
+              <div className="flex items-center justify-between mb-2 px-2 py-1.5 bg-muted/30 rounded-lg">
+                <span className="text-[8px] flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  Profit Summary
+                </span>
+                <span className="text-[8px] font-medium">70% MU | -8.0% GP | £0.00</span>
+              </div>
+
               {/* Professional Quote Document */}
               <div className="bg-white dark:bg-card rounded-lg border border-border shadow-sm overflow-hidden">
                 {/* Document Header */}
-                <div className="p-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                <div className="p-2 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
                   <div className="flex items-start justify-between">
                     <div>
                       <img 
                         src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
                         alt="InterioApp" 
-                        className="h-6 w-auto mb-2"
+                        className="h-5 w-auto mb-1"
                       />
-                      <div className="text-[8px] text-muted-foreground">
-                        123 Design Street, London
+                      <div className="text-[7px] text-muted-foreground">
+                        UAB Curtains Calculator<br />
+                        Liepu 21, Klaipeda 91210
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-primary">QUOTATION</div>
-                      <div className="text-[9px] text-muted-foreground">#QT-2024-065</div>
-                      <div className="text-[8px] text-muted-foreground">Jan 20, 2026</div>
+                      <div className="text-xs font-bold text-primary">Order</div>
+                      <div className="text-[8px] text-muted-foreground"># QUOTE-021</div>
+                      <div className="text-[7px] text-muted-foreground">📅 08-Jan-2026</div>
                     </div>
                   </div>
                 </div>
                 
                 {/* Client Info */}
                 <div className="p-2 border-b border-border bg-muted/30">
-                  <div className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Bill To</div>
-                  <div className="text-[10px] font-medium">Sarah Johnson</div>
-                  <div className="text-[8px] text-muted-foreground">123 High Street, London</div>
+                  <div className="text-[7px] font-medium text-muted-foreground uppercase mb-1">👤 Bill To</div>
+                  <div className="text-[9px] font-medium">Katie</div>
+                  <div className="text-[7px] text-muted-foreground">Miceli Drapery Company</div>
+                  <div className="text-[7px] text-muted-foreground">krichter@micelidrapery.com</div>
                 </div>
                 
                 {/* Line Items with Images */}
                 <div className="divide-y divide-border">
-                  {/* Item 1 - with fabric image */}
                   <div className="p-2 flex items-start gap-2">
-                    <div className="w-10 h-10 rounded bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/20 flex items-center justify-center flex-shrink-0 border border-indigo-200 dark:border-indigo-800">
-                      <Scissors className="h-4 w-4 text-indigo-400" />
+                    <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/20 flex items-center justify-center flex-shrink-0 border border-indigo-200">
+                      <Scissors className="h-3 w-3 text-indigo-400" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-medium">Bedroom Curtains</div>
-                      <div className="text-[8px] text-muted-foreground">Velvet Midnight Blue • 2400mm × 1800mm</div>
+                    <div className="flex-1">
+                      <div className="text-[9px] font-medium">Bedroom Curtains</div>
+                      <div className="text-[7px] text-muted-foreground">Velvet Midnight • 2400×1800mm</div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-[10px] font-semibold">£1,245.00</div>
-                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
-                    </div>
+                    <div className="text-[9px] font-semibold">£1,245.00</div>
                   </div>
-                  
-                  {/* Item 2 - with track image */}
                   <div className="p-2 flex items-start gap-2">
-                    <div className="w-10 h-10 rounded bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-600">
-                      <Ruler className="h-4 w-4 text-gray-400" />
+                    <div className="w-8 h-8 rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                      <Ruler className="h-3 w-3 text-gray-400" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-medium">Ceiling Track System</div>
-                      <div className="text-[8px] text-muted-foreground">White Powder Coat • 3000mm</div>
+                    <div className="flex-1">
+                      <div className="text-[9px] font-medium">Ceiling Track System</div>
+                      <div className="text-[7px] text-muted-foreground">White • 3000mm</div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-[10px] font-semibold">£189.00</div>
-                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
-                    </div>
-                  </div>
-                  
-                  {/* Item 3 */}
-                  <div className="p-2 flex items-start gap-2">
-                    <div className="w-10 h-10 rounded bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/20 flex items-center justify-center flex-shrink-0 border border-amber-200 dark:border-amber-800">
-                      <Package className="h-4 w-4 text-amber-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-medium">Installation & Fitting</div>
-                      <div className="text-[8px] text-muted-foreground">Professional installation included</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-[10px] font-semibold">£286.80</div>
-                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
-                    </div>
+                    <div className="text-[9px] font-semibold">£189.00</div>
                   </div>
                 </div>
                 
                 {/* Totals */}
-                <div className="p-2 bg-muted/30 border-t border-border space-y-1">
-                  <div className="flex justify-between text-[9px]">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">£1,434.00</span>
+                <div className="p-2 bg-muted/30 border-t border-border">
+                  <div className="flex justify-between text-[8px]">
+                    <span>Subtotal</span>
+                    <span>£1,434.00</span>
                   </div>
-                  <div className="flex justify-between text-[9px]">
-                    <span className="text-muted-foreground">VAT (20%)</span>
-                    <span className="font-medium">£286.80</span>
+                  <div className="flex justify-between text-[8px]">
+                    <span>VAT (20%)</span>
+                    <span>£286.80</span>
                   </div>
                   <div className="h-px bg-border my-1" />
-                  <div className="flex justify-between text-sm">
-                    <span className="font-bold">Total</span>
-                    <span className="font-bold text-primary">£1,720.80</span>
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">£1,720.80</span>
                   </div>
                 </div>
               </div>
+
+              {/* Payment Configuration Dialog Overlay */}
+              <AnimatePresence>
+                {showPaymentConfig && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center z-40 p-4"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 10 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 10 }}
+                      className="bg-background rounded-xl border border-border shadow-xl w-full max-w-[280px]"
+                    >
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-semibold">Configure Payment Terms</span>
+                        </div>
+                        <X className="h-3.5 w-3.5 text-muted-foreground cursor-pointer" />
+                      </div>
+                      
+                      <div className="p-3 space-y-3">
+                        {/* Payment Type Selection */}
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 p-2 rounded-lg border border-border cursor-pointer">
+                            <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
+                            <div>
+                              <div className="text-[10px] font-medium">Full Payment</div>
+                              <div className="text-[8px] text-muted-foreground">Require full payment upfront</div>
+                            </div>
+                          </label>
+                          <motion.label 
+                            className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer"
+                            animate={{ 
+                              borderColor: "hsl(var(--primary))",
+                              backgroundColor: "hsl(var(--primary)/0.05)"
+                            }}
+                          >
+                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                            </div>
+                            <div>
+                              <div className="text-[10px] font-medium text-primary">Deposit Payment</div>
+                              <div className="text-[8px] text-muted-foreground">Partial payment now, rest later</div>
+                            </div>
+                          </motion.label>
+                        </div>
+                        
+                        {/* Deposit Percentage Input */}
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-medium">Deposit Percentage</label>
+                          <div className="flex items-center gap-2">
+                            <motion.input 
+                              type="text" 
+                              value="50"
+                              readOnly
+                              className="flex-1 px-2 py-1.5 text-sm font-bold text-center border-2 border-primary rounded-lg bg-primary/5"
+                              animate={{ scale: [1, 1.02, 1] }}
+                              transition={{ duration: 0.3 }}
+                            />
+                            <span className="text-sm font-bold text-primary">%</span>
+                          </div>
+                          <div className="text-[8px] text-muted-foreground">
+                            Deposit: £860.40 • Remaining: £860.40
+                          </div>
+                        </div>
+                        
+                        <button className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center gap-1">
+                          <Check className="h-3 w-3" />
+                          Save Payment Terms
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Email Quote Dialog Overlay */}
+              <AnimatePresence>
+                {showEmailDialog && !showPaymentConfig && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center z-40 p-3"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 10 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 10 }}
+                      className="bg-background rounded-xl border border-border shadow-xl w-full max-w-[300px]"
+                    >
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-semibold">Email Quote</span>
+                        </div>
+                        <X className="h-3.5 w-3.5 text-muted-foreground cursor-pointer" />
+                      </div>
+                      
+                      <div className="p-3 space-y-2">
+                        <div>
+                          <label className="text-[8px] font-medium text-muted-foreground">To</label>
+                          <input 
+                            type="text" 
+                            value="krichter@micelidrapery.com"
+                            readOnly
+                            className="w-full px-2 py-1 text-[9px] border border-border rounded bg-muted/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-medium text-muted-foreground">Subject</label>
+                          <input 
+                            type="text" 
+                            value="Quote for New Job 1/8/2026"
+                            readOnly
+                            className="w-full px-2 py-1 text-[9px] border border-border rounded bg-muted/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-medium text-muted-foreground">Message</label>
+                          <div className="w-full px-2 py-1.5 text-[8px] border border-border rounded bg-muted/50 min-h-[50px]">
+                            Dear Katie,<br /><br />
+                            Please find attached the quote for your project.<br /><br />
+                            Best regards
+                          </div>
+                        </div>
+                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="text-[8px] text-blue-600 flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            <span>Quote PDF will be attached automatically</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 pt-1">
+                          <button className="flex-1 py-1.5 rounded-lg border border-border text-[9px] font-medium">
+                            Cancel
+                          </button>
+                          <motion.button 
+                            className="flex-1 py-1.5 rounded-lg text-[9px] font-medium flex items-center justify-center gap-1"
+                            animate={{ 
+                              backgroundColor: showEmailSuccess ? "hsl(142.1 76.2% 36.3%)" : "hsl(var(--primary))",
+                              color: "white"
+                            }}
+                          >
+                            {showEmailSuccess ? (
+                              <>
+                                <CheckCircle2 className="h-3 w-3" />
+                                Sent!
+                              </>
+                            ) : (
+                              <>
+                                <Send className="h-3 w-3" />
+                                Send Email
+                              </>
+                            )}
+                          </motion.button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
@@ -1213,122 +1421,72 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
             >
               {/* Work Order Document */}
               <div className="bg-white dark:bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-                {/* Document Header with Share Button */}
-                <div className="p-2 border-b border-border flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <div className="text-[11px] font-semibold">Work Order</div>
-                      <div className="text-[8px] text-muted-foreground">WO-2024-065 • Bedroom Curtains</div>
+                {/* Document Header */}
+                <div className="p-2 border-b border-border bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-orange-600" />
+                      <span className="text-xs font-bold text-orange-700 dark:text-orange-400">WORK ORDER</span>
                     </div>
+                    <span className="text-[8px] text-muted-foreground">WO-2024-065</span>
                   </div>
-                  
-                  {/* Share Button */}
-                  <motion.div 
-                    className="relative"
-                    animate={{ scale: showSharePopover ? 1.08 : 1 }}
-                  >
-                    <motion.button
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-medium"
-                      animate={{
-                        backgroundColor: showSharePopover ? "hsl(var(--primary)/0.2)" : "hsl(var(--primary)/0.1)"
-                      }}
-                    >
-                      <Share2 className="h-3 w-3" />
-                      Shared
-                    </motion.button>
-                    
-                    {/* Share Popover */}
-                    <AnimatePresence>
-                      {showSharePopover && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                          className="absolute right-0 top-9 w-48 bg-popover border border-border rounded-xl shadow-xl z-20 p-3"
-                        >
-                          <div className="text-[10px] font-semibold mb-2">Shared Links</div>
-                          
-                          <div className="space-y-2">
-                            <div className="p-2 bg-muted/50 rounded-lg">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[9px] font-medium">curtain maker</span>
-                                <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />
-                              </div>
-                              <div className="flex gap-1">
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[7px] rounded font-medium">Work Order</span>
-                                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[7px] rounded font-medium">Full Details</span>
-                              </div>
-                            </div>
-                            
-                            <button className="w-full flex items-center justify-center gap-1 py-1.5 border border-dashed border-border rounded-lg text-[9px] text-muted-foreground hover:bg-muted/50 transition-colors">
-                              <Plus className="h-2.5 w-2.5" />
-                              New Link
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
+                  <div className="text-[9px] font-medium mt-1">Bedroom Curtains</div>
                 </div>
                 
-                {/* Window Diagram Section */}
-                <div className="p-2 border-b border-border">
-                  <div className="flex items-start gap-3">
-                    {/* Window Diagram */}
-                    <div className="w-24 h-20 bg-muted/30 rounded-lg border-2 border-dashed border-muted flex items-center justify-center relative">
-                      <div className="w-14 h-12 border-2 border-primary/50 rounded bg-primary/5 flex items-center justify-center">
-                        <span className="text-[8px] text-primary font-medium">Window 1</span>
+                {/* Window Diagram */}
+                <div className="p-3 border-b border-border">
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase mb-2">Window Diagram</div>
+                  <div className="relative bg-muted/30 rounded-lg p-4 flex items-center justify-center">
+                    {/* Simplified window diagram */}
+                    <div className="relative">
+                      <div className="w-32 h-24 border-2 border-primary rounded relative">
+                        {/* Window frame */}
+                        <div className="absolute inset-2 border border-dashed border-primary/50 rounded" />
+                        {/* Center cross */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-px h-full bg-primary/30" />
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-px bg-primary/30" />
+                        </div>
                       </div>
-                      {/* Stack indicator */}
-                      <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-primary/30 rounded" />
-                    </div>
-                    
-                    {/* Measurements */}
-                    <div className="flex-1 space-y-1">
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Width:</span>
-                          <span className="font-medium">2400mm</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Drop:</span>
-                          <span className="font-medium">1800mm</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Stack:</span>
-                          <span className="font-medium">Left</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Heading:</span>
-                          <span className="font-medium">Wave</span>
-                        </div>
+                      {/* Measurement labels */}
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[7px] font-medium bg-primary text-primary-foreground px-1 rounded">
+                        W: 2400mm
+                      </div>
+                      <div className="absolute -right-10 top-1/2 -translate-y-1/2 text-[7px] font-medium bg-primary text-primary-foreground px-1 rounded">
+                        H: 1800mm
+                      </div>
+                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[7px] text-muted-foreground">
+                        Stack: Left
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                {/* Materials Section */}
+                {/* Materials List */}
                 <div className="p-2 border-b border-border">
-                  <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Materials</div>
-                  <div className="space-y-1.5">
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase mb-2">Materials Required</div>
+                  <div className="space-y-1">
                     {[
-                      { name: "Velvet Midnight Blue", qty: "8.5m", color: "bg-indigo-500" },
-                      { name: "Blackout Lining", qty: "8.5m", color: "bg-gray-500" },
-                      { name: "Wave Tape", qty: "3m", color: "bg-amber-500" },
-                    ].map((material) => (
-                      <div key={material.name} className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${material.color}`} />
-                        <span className="text-[9px] flex-1">{material.name}</span>
-                        <span className="text-[9px] font-medium">{material.qty}</span>
+                      { name: "Velvet Midnight Blue", qty: "8.5m", icon: Scissors },
+                      { name: "Blackout Lining", qty: "8.5m", icon: Layers },
+                      { name: "Wave Tape", qty: "3m", icon: Ruler },
+                    ].map((item) => (
+                      <div key={item.name} className="flex items-center justify-between text-[9px] p-1.5 bg-muted/30 rounded">
+                        <div className="flex items-center gap-2">
+                          <item.icon className="h-3 w-3 text-muted-foreground" />
+                          <span>{item.name}</span>
+                        </div>
+                        <span className="font-medium">{item.qty}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 
-                {/* Instructions Section */}
+                {/* Instructions */}
                 <div className="p-2">
-                  <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Instructions</div>
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase mb-2">Manufacturing Instructions</div>
                   <div className="space-y-1">
                     {[
                       "Double pinch pleat heading",
@@ -1336,8 +1494,118 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                       "Contrast leading edge",
                     ].map((instruction, i) => (
                       <div key={i} className="flex items-center gap-2 text-[9px]">
-                        <Check className="h-3 w-3 text-green-500" />
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
                         <span>{instruction}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Installation Tab */}
+          {(showInstallationTab || showSharePopover) && (
+            <motion.div
+              key="installation"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="h-full relative"
+            >
+              {/* Installation Header with Share Button */}
+              <div className="flex items-center justify-between mb-2 p-2 bg-card rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <Wrench className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[10px] font-medium">Installation Instructions</span>
+                </div>
+                <div className="relative">
+                  <motion.button 
+                    className="flex items-center gap-1 px-2 py-1 text-[8px] bg-muted hover:bg-muted/80 rounded border border-border"
+                    animate={{ 
+                      backgroundColor: showSharePopover ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))",
+                      borderColor: showSharePopover ? "hsl(var(--primary))" : "hsl(var(--border))"
+                    }}
+                  >
+                    <Share2 className="h-2.5 w-2.5" />
+                    Share
+                  </motion.button>
+
+                  {/* Share Popover */}
+                  <AnimatePresence>
+                    {showSharePopover && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                        className="absolute right-0 top-full mt-1 w-56 bg-popover border border-border rounded-lg shadow-xl z-30 p-2"
+                      >
+                        <div className="text-[9px] font-medium mb-2">Share with Team</div>
+                        
+                        {/* Existing share */}
+                        <div className="p-2 bg-muted/50 rounded-lg mb-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-medium">Curtain Maker</span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[7px] px-1 py-0.5 bg-primary/10 text-primary rounded">Work Order</span>
+                            <span className="text-[7px] px-1 py-0.5 bg-green-100 text-green-700 rounded">Full Details</span>
+                          </div>
+                        </div>
+                        
+                        {/* Add new link */}
+                        <button className="w-full flex items-center justify-center gap-1 py-1.5 border border-dashed border-border rounded-lg text-[9px] text-muted-foreground hover:text-foreground hover:border-primary">
+                          <Plus className="h-3 w-3" />
+                          New Share Link
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Installation Document */}
+              <div className="bg-white dark:bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="p-2 border-b border-border bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-bold text-green-700 dark:text-green-400">INSTALLATION GUIDE</span>
+                  </div>
+                </div>
+                
+                {/* Pre-Installation Checklist */}
+                <div className="p-2 border-b border-border">
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase mb-2">Pre-Installation Checklist</div>
+                  <div className="space-y-1">
+                    {[
+                      "Confirm site access with client",
+                      "All materials received and checked",
+                      "Tools and ladders prepared",
+                      "Installer assigned: John Smith",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[9px]">
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Room Schedule */}
+                <div className="p-2">
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase mb-2">Room Schedule</div>
+                  <div className="space-y-1">
+                    {[
+                      { room: "Bedroom", time: "9:00 AM", status: "Ready" },
+                      { room: "Living Room", time: "11:00 AM", status: "Ready" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-[9px] p-1.5 bg-muted/30 rounded">
+                        <span className="font-medium">{item.room}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{item.time}</span>
+                          <span className="text-[7px] px-1 py-0.5 bg-green-100 text-green-700 rounded">{item.status}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1358,28 +1626,28 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
 
 export const Scene6Closing = ({ phase = 0 }: StepProps) => {
   const showLogo = inPhase(phase, 0.1, 1);
-  const showTagline = inPhase(phase, 0.3, 1);
-  const showFeatures = inPhase(phase, 0.5, 1);
+  const showMessage = inPhase(phase, 0.3, 1);
+  const showCTA = inPhase(phase, 0.5, 1);
   
   return (
     <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-background relative overflow-hidden">
-      {/* Subtle gradient */}
+      {/* Background gradient */}
       <motion.div
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-30"
         animate={{
           background: [
-            "radial-gradient(ellipse at 50% 50%, hsl(var(--primary)/0.4) 0%, transparent 60%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.3) 0%, transparent 60%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)",
           ],
         }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ 
-          opacity: showLogo ? 1 : 0, 
-          scale: showLogo ? 1 : 0.9,
-        }}
+        animate={{ opacity: showLogo ? 1 : 0, scale: showLogo ? 1 : 0.9 }}
         transition={{ duration: 0.5 }}
         className="mb-6"
       >
@@ -1390,54 +1658,36 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         />
       </motion.div>
 
-      {/* Tagline */}
-      <motion.h2
+      {/* Message */}
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: showTagline ? 1 : 0, 
-          y: showTagline ? 0 : 20 
-        }}
+        animate={{ opacity: showMessage ? 1 : 0, y: showMessage ? 0 : 20 }}
         transition={{ duration: 0.5 }}
-        className="text-xl md:text-2xl font-bold mb-2"
+        className="mb-8"
       >
-        Made-to-measure
-      </motion.h2>
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: showTagline ? 1 : 0, 
-          y: showTagline ? 0 : 20 
-        }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="text-lg text-primary font-medium mb-8"
-      >
-        blinds and curtains
-      </motion.p>
+        <h2 className="text-xl font-bold mb-2">Ready to get started?</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Your complete platform for made-to-measure window treatments
+        </p>
+      </motion.div>
 
-      {/* Feature icons */}
+      {/* Features recap */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: showFeatures ? 1 : 0 }}
-        className="flex items-center justify-center gap-6"
+        animate={{ opacity: showCTA ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-wrap justify-center gap-2 max-w-xs"
       >
-        {[
-          { icon: Users, label: "CRM" },
-          { icon: Receipt, label: "Quotes" },
-          { icon: ShoppingBag, label: "Shopify" },
-          { icon: MessageSquare, label: "Team" },
-        ].map((item, i) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: showFeatures ? 1 : 0, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="flex flex-col items-center gap-1"
+        {["Quote Builder", "Team Notes", "Work Orders", "Payments", "Installation"].map((feature, i) => (
+          <motion.span
+            key={feature}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 * i }}
+            className="px-2 py-1 text-[10px] bg-primary/10 text-primary rounded-full font-medium"
           >
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <item.icon className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-[9px] text-muted-foreground">{item.label}</span>
-          </motion.div>
+            {feature}
+          </motion.span>
         ))}
       </motion.div>
     </div>
