@@ -185,7 +185,7 @@ const App = () => {
                       <DebugPanel />
                       <TeachingOverlay />
                       <TeachingActiveSpotlight />
-                      <WelcomeTour />
+                      
                       <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
                   <Routes>
