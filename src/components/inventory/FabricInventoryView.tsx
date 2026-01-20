@@ -360,7 +360,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
-                        {item.supplier?.toUpperCase() === 'TWC' && (
+                        {(item.vendor?.name?.toUpperCase() === 'TWC' || item.supplier?.toUpperCase() === 'TWC') && (
                           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 shrink-0 text-[10px]">
                             TWC
                           </Badge>
@@ -370,10 +370,10 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-1">
-                        {item.supplier && (
+                        {(item.vendor?.name || item.supplier) && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Supplier:</span>
-                            <span className="font-medium">{item.supplier}</span>
+                            <span className="font-medium">{item.vendor?.name || item.supplier}</span>
                           </div>
                         )}
                         {item.fabric_width && (
@@ -540,7 +540,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                             </TableCell>
                             <TableCell className="text-xs font-medium">{item.name}</TableCell>
                             <TableCell className="text-xs text-muted-foreground hidden lg:table-cell">{item.sku || '-'}</TableCell>
-                            <TableCell className="text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>
+                            <TableCell className="text-xs hidden md:table-cell">{item.vendor?.name || item.supplier || '-'}</TableCell>
                             <TableCell className="text-xs hidden xl:table-cell">{item.fabric_width ? formatFromCM(item.fabric_width, units.length) : '-'}</TableCell>
                             <TableCell className="text-xs font-medium">
                               {item.pricing_grid_id ? (
