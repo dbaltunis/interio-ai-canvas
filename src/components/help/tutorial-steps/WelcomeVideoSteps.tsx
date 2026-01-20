@@ -87,16 +87,21 @@ export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 2: DASHBOARD - Larger fonts
+// SCENE 2: DASHBOARD - Scrolls down and zooms to Shopify/Revenue area
 export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
-  const zoomIn = inPhase(phase, 0.5, 0.9);
+  const scrollDown = inPhase(phase, 0.3, 1);
+  const zoomToShopify = inPhase(phase, 0.5, 0.9);
   const chartProgress = phaseProgress(phase, 0.15, 0.45);
   const donutProgress = phaseProgress(phase, 0.25, 0.5);
   
   return (
     <motion.div 
       className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative"
-      animate={{ scale: zoomIn ? 1.12 : 1, x: zoomIn ? "10%" : "0%", y: zoomIn ? "15%" : "0%" }}
+      animate={{ 
+        scale: zoomToShopify ? 1.25 : 1, 
+        x: zoomToShopify ? "5%" : "0%", 
+        y: zoomToShopify ? "-25%" : scrollDown ? "-15%" : "0%" 
+      }}
       transition={{ duration: 0.8 }}
     >
       {/* Header */}
@@ -120,8 +125,8 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
 
       {/* Welcome */}
       <div className="px-4 py-3 border-b border-border bg-card/50">
-        <motion.h2 className="text-base font-semibold" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Good afternoon, Alex</motion.h2>
-        <p className="text-sm text-muted-foreground">219 pending quotes • 458 clients</p>
+        <motion.h2 className="text-base font-semibold" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Good afternoon, John</motion.h2>
+        <p className="text-sm text-muted-foreground">24 pending quotes • 156 clients</p>
       </div>
 
       {/* Stats */}
@@ -187,20 +192,15 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 3: THEME TOGGLE - FIXED: Shows full dashboard first, THEN zooms
+// SCENE 3: THEME TOGGLE - No cursor
 export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
   const zoomedToHeader = inPhase(phase, 0.35, 0.85);
   const isDarkMode = inPhase(phase, 0.5, 0.75);
-  const cursorVisible = inPhase(phase, 0.25, 0.85);
   const focusOnToggle = inPhase(phase, 0.38, 0.48) || inPhase(phase, 0.72, 0.78);
   const isClicking = inPhase(phase, 0.46, 0.50) || inPhase(phase, 0.74, 0.78);
   
-  const cursorX = zoomedToHeader ? 315 : 280;
-  const cursorY = zoomedToHeader ? 35 : 32;
-  
   return (
     <motion.div className="h-full w-full rounded-xl overflow-hidden border border-border relative" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" }}>
-      {cursorVisible && <DemoCursor x={cursorX} y={cursorY} isClicking={isClicking} visible={true} />}
       
       <motion.div className="h-full w-full" animate={{ scale: zoomedToHeader ? 1.15 : 1, y: zoomedToHeader ? "8%" : "0%" }} transition={{ duration: 0.6 }}>
         {/* Header */}
@@ -229,8 +229,8 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
         {/* Dashboard Content - REAL content like Scene 2 */}
         <motion.div className="p-4" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" }}>
           <motion.div className="mb-4 p-3 rounded-lg border" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)", borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)" }}>
-            <motion.div className="text-base font-semibold mb-1" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>Good afternoon, Alex</motion.div>
-            <motion.div className="text-sm" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>219 pending quotes • 458 clients</motion.div>
+            <motion.div className="text-base font-semibold mb-1" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>Good afternoon, John</motion.div>
+            <motion.div className="text-sm" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>24 pending quotes • 156 clients</motion.div>
           </motion.div>
           <div className="grid grid-cols-4 gap-2">
             {[{ label: "Revenue", value: "£59,872" }, { label: "Projects", value: "138" }, { label: "Quotes", value: "177" }, { label: "Clients", value: "19" }].map((stat) => (
@@ -247,31 +247,23 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 4: JOBS & NOTES - Realistic names, larger fonts
+// SCENE 4: JOBS & NOTES - Dummy data, no cursor
 export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   const showJobsList = inPhase(phase, 0.1, 1);
   const focusOnAction = inPhase(phase, 0.25, 0.35);
   const showActionMenu = inPhase(phase, 0.35, 0.55);
   const showNoteDialog = inPhase(phase, 0.5, 0.95);
-  const noteText = typingProgress(phase, 0.55, 0.8, "Measurements confirmed ✓ @Marcus please order fabrics");
+  const noteText = typingProgress(phase, 0.55, 0.8, "Measurements confirmed ✓ @Jane please order fabrics");
   const showSuccess = inPhase(phase, 0.88, 1);
-  const cursorVisible = inPhase(phase, 0.15, 0.9);
-  
-  let cursorX = 355, cursorY = 110, isClicking = false;
-  if (inPhase(phase, 0.15, 0.35)) { cursorX = 355; cursorY = 110; isClicking = inPhase(phase, 0.32, 0.35); }
-  else if (inPhase(phase, 0.35, 0.5)) { cursorX = 325; cursorY = 160; isClicking = inPhase(phase, 0.47, 0.5); }
-  else if (inPhase(phase, 0.5, 0.85)) { cursorX = 200; cursorY = 220; }
-  else if (inPhase(phase, 0.85, 0.9)) { cursorX = 275; cursorY = 320; isClicking = inPhase(phase, 0.87, 0.89); }
   
   const jobs = [
-    { id: "JOB-065", client: "The Hendersons", status: "In Progress", amount: "£4,666", color: "bg-blue-500" },
-    { id: "JOB-064", client: "Oakwood Manor Hotel", status: "Quote Sent", amount: "£12,890", color: "bg-amber-500" },
-    { id: "JOB-063", client: "Dr. Patricia Chen", status: "Completed", amount: "£3,450", color: "bg-green-500" },
+    { id: "JOB-001", client: "Smith Family", status: "In Progress", amount: "£2,450", color: "bg-blue-500" },
+    { id: "JOB-002", client: "Riverside Hotel", status: "Quote Sent", amount: "£8,900", color: "bg-amber-500" },
+    { id: "JOB-003", client: "Jane Cooper", status: "Completed", amount: "£1,850", color: "bg-green-500" },
   ];
   
   return (
     <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
-      {cursorVisible && <DemoCursor x={cursorX} y={cursorY} isClicking={isClicking} visible={true} />}
       <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
           <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
@@ -318,9 +310,9 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-background rounded-xl border border-border shadow-xl w-full max-w-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border"><div className="flex items-center gap-2"><MessageSquare className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Write Note</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
               <div className="p-4 space-y-3">
-                <div className="text-sm text-muted-foreground">JOB-065 • The Hendersons</div>
+                <div className="text-sm text-muted-foreground">JOB-001 • Smith Family</div>
                 <div className="min-h-[80px] p-3 bg-muted/50 rounded-lg border border-border text-sm">{noteText}{inPhase(phase, 0.55, 0.8) && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="inline-block w-0.5 h-5 bg-primary ml-0.5" />}</div>
-                {noteText.includes("@Marcus") && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200"><UserPlus className="h-4 w-4 text-blue-500" /><span className="text-sm text-blue-600">Mentioning: Marcus (Team)</span></motion.div>}
+                {noteText.includes("@Jane") && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200"><UserPlus className="h-4 w-4 text-blue-500" /><span className="text-sm text-blue-600">Mentioning: Jane (Team)</span></motion.div>}
                 <motion.button className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-base font-medium flex items-center justify-center gap-2" animate={{ backgroundColor: showSuccess ? "hsl(142.1 76.2% 36.3%)" : "hsl(var(--primary))" }}>{showSuccess ? <><Check className="h-5 w-5" />Saved!</> : "Save Note"}</motion.button>
               </div>
             </motion.div>
@@ -331,7 +323,7 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 5: PROJECT DEEP DIVE - Realistic names, larger fonts
+// SCENE 5: PROJECT DEEP DIVE - Dummy data, no cursor
 export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   const showClientTab = inPhase(phase, 0, 0.10);
   const showProjectTab = inPhase(phase, 0.10, 0.20);
@@ -347,17 +339,11 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   const showSharePopover = inPhase(phase, 0.90, 1);
   
   const activeTab = showInstallationTab || showSharePopover ? "installation" : showWorkroomTab ? "workroom" : showQuoteTab ? "quote" : showProjectTab ? "project" : "client";
-  const cursorVisible = inPhase(phase, 0.08, 0.98);
-  let cursorX = 150, cursorY = 60, isClicking = false;
-  
-  if (inPhase(phase, 0.38, 0.42)) { cursorX = 345; cursorY = 100; isClicking = inPhase(phase, 0.41, 0.42); }
-  else if (inPhase(phase, 0.88, 0.90)) { cursorX = 365; cursorY = 100; isClicking = inPhase(phase, 0.89, 0.90); }
   
   const tabs = [{ id: "client", label: "Client", icon: Users }, { id: "project", label: "Project", icon: Layers }, { id: "quote", label: "Quote", icon: Receipt }, { id: "workroom", label: "Workroom", icon: FileText }, { id: "installation", label: "Install", icon: Wrench }];
   
   return (
     <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
-      {cursorVisible && <DemoCursor x={cursorX} y={cursorY} isClicking={isClicking} visible={true} />}
       <div className="h-11 border-b border-border bg-card flex items-center px-3 gap-2">
         <span className="text-sm text-muted-foreground">Jobs</span><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="text-base font-semibold">JOB-065</span>
         <div className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30"><div className="w-2 h-2 rounded-full bg-blue-500" /><span className="text-xs font-medium text-blue-700">In Progress</span></div>
@@ -372,12 +358,12 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
           {showClientTab && (
             <motion.div key="client" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
               <div className="p-4 bg-card rounded-lg border border-border flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"><span className="text-lg font-bold text-primary">TH</span></div>
-                <div><div className="text-base font-semibold">The Henderson Family</div><div className="text-sm text-muted-foreground">henderson@email.com</div></div>
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"><span className="text-lg font-bold text-primary">SF</span></div>
+                <div><div className="text-base font-semibold">Smith Family</div><div className="text-sm text-muted-foreground">smith@example.com</div></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-4 bg-card rounded-lg border text-center"><div className="text-2xl font-bold">4</div><div className="text-sm text-muted-foreground">Rooms</div></div>
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 text-center"><div className="text-2xl font-bold text-green-600">£4,666</div><div className="text-sm text-green-600">Total</div></div>
+                <div className="p-4 bg-card rounded-lg border text-center"><div className="text-2xl font-bold">3</div><div className="text-sm text-muted-foreground">Rooms</div></div>
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 text-center"><div className="text-2xl font-bold text-green-600">£2,450</div><div className="text-sm text-green-600">Total</div></div>
               </div>
             </motion.div>
           )}
@@ -402,13 +388,13 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                 </div>
               </div>
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
-                <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex items-start justify-between"><div><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-6 w-auto mb-2" /><div className="text-xs text-muted-foreground">Elegant Interiors Ltd</div></div><div className="text-right"><div className="text-base font-bold text-primary">Quotation</div><div className="text-sm text-muted-foreground"># QUOTE-065</div></div></div>
-                <div className="p-3 border-b bg-muted/30"><div className="text-xs font-medium text-muted-foreground uppercase mb-1">👤 Bill To</div><div className="text-sm font-medium">The Henderson Family</div></div>
+                <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex items-start justify-between"><div><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-6 w-auto mb-2" /><div className="text-xs text-muted-foreground">Demo Interiors Ltd</div></div><div className="text-right"><div className="text-base font-bold text-primary">Quotation</div><div className="text-sm text-muted-foreground"># QUOTE-001</div></div></div>
+                <div className="p-3 border-b bg-muted/30"><div className="text-xs font-medium text-muted-foreground uppercase mb-1">👤 Bill To</div><div className="text-sm font-medium">Smith Family</div></div>
                 <div className="divide-y">
-                  <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-indigo-100 flex items-center justify-center"><Scissors className="h-5 w-5 text-indigo-400" /></div><div className="flex-1"><div className="text-sm font-medium">Wave Silk Curtains</div><div className="text-xs text-muted-foreground">2400×2200mm</div></div><div className="text-sm font-semibold">£1,845</div></div>
-                  <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-gray-100 flex items-center justify-center"><Ruler className="h-5 w-5 text-gray-400" /></div><div className="flex-1"><div className="text-sm font-medium">Motorised Track</div><div className="text-xs text-muted-foreground">3200mm</div></div><div className="text-sm font-semibold">£355</div></div>
+                  <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-indigo-100 flex items-center justify-center"><Scissors className="h-5 w-5 text-indigo-400" /></div><div className="flex-1"><div className="text-sm font-medium">Lined Curtains</div><div className="text-xs text-muted-foreground">1800×2000mm</div></div><div className="text-sm font-semibold">£1,200</div></div>
+                  <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-gray-100 flex items-center justify-center"><Ruler className="h-5 w-5 text-gray-400" /></div><div className="flex-1"><div className="text-sm font-medium">Curtain Track</div><div className="text-xs text-muted-foreground">2400mm</div></div><div className="text-sm font-semibold">£250</div></div>
                 </div>
-                <div className="p-3 bg-muted/30 border-t"><div className="flex justify-between text-base font-bold"><span>Total</span><span className="text-primary">£2,640</span></div></div>
+                <div className="p-3 bg-muted/30 border-t"><div className="flex justify-between text-base font-bold"><span>Total</span><span className="text-primary">£1,740</span></div></div>
               </div>
               <AnimatePresence>
                 {showPaymentConfig && (
@@ -416,7 +402,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                     <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-background rounded-xl border shadow-xl w-full max-w-[300px]">
                       <div className="flex items-center justify-between px-4 py-3 border-b"><div className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Configure Payment</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
                       <div className="p-4 space-y-3">
-                        <motion.label className="flex items-center gap-3 p-3 rounded-lg border border-primary bg-primary/5"><div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center"><div className="w-2.5 h-2.5 rounded-full bg-primary" /></div><div><div className="text-sm font-medium text-primary">50% Deposit</div><div className="text-xs text-muted-foreground">£1,320 now, rest later</div></div></motion.label>
+                        <motion.label className="flex items-center gap-3 p-3 rounded-lg border border-primary bg-primary/5"><div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center"><div className="w-2.5 h-2.5 rounded-full bg-primary" /></div><div><div className="text-sm font-medium text-primary">50% Deposit</div><div className="text-xs text-muted-foreground">£870 now, rest later</div></div></motion.label>
                         <button className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5"><Check className="h-4 w-4" />Save</button>
                       </div>
                     </motion.div>
@@ -427,7 +413,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                     <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-background rounded-xl border shadow-xl w-full max-w-[320px]">
                       <div className="flex items-center justify-between px-4 py-3 border-b"><div className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Email Quote</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
                       <div className="p-4 space-y-3">
-                        <div><label className="text-xs font-medium text-muted-foreground">To</label><input type="text" value="henderson@email.com" readOnly className="w-full px-3 py-2 text-sm border rounded bg-muted/50" /></div>
+                        <div><label className="text-xs font-medium text-muted-foreground">To</label><input type="text" value="smith@example.com" readOnly className="w-full px-3 py-2 text-sm border rounded bg-muted/50" /></div>
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-200"><div className="text-sm text-blue-600 flex items-center gap-1.5"><FileText className="h-4 w-4" /><span>Quote PDF attached</span></div></div>
                         <div className="flex gap-2">
                           <button className="flex-1 py-2.5 rounded-lg border text-sm font-medium">Cancel</button>
@@ -444,8 +430,8 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
             <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
                 <div className="p-3 border-b bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20"><div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-orange-600" /><span className="text-base font-bold text-orange-700">WORK ORDER</span></div><div className="text-sm font-medium mt-1">Master Bedroom - Wave Curtains</div></div>
-                <div className="p-4 border-b"><div className="text-xs font-medium text-muted-foreground uppercase mb-3">Window Diagram</div><div className="relative bg-muted/30 rounded-lg p-5 flex items-center justify-center"><div className="relative"><div className="w-40 h-32 border-2 border-primary rounded" /><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">W: 2400mm</div><div className="absolute -right-14 top-1/2 -translate-y-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">H: 2200mm</div></div></div></div>
-                <div className="p-3"><div className="text-xs font-medium text-muted-foreground uppercase mb-2">Materials</div>{[{ name: "Midnight Silk", qty: "9.2m" }, { name: "Wave Tape", qty: "3.5m" }].map((item) => (<div key={item.name} className="flex items-center justify-between text-sm p-2.5 bg-muted/30 rounded mb-2"><span>{item.name}</span><span className="font-medium">{item.qty}</span></div>))}</div>
+                <div className="p-4 border-b"><div className="text-xs font-medium text-muted-foreground uppercase mb-3">Window Diagram</div><div className="relative bg-muted/30 rounded-lg p-5 flex items-center justify-center"><div className="relative"><div className="w-40 h-32 border-2 border-primary rounded" /><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">W: 1800mm</div><div className="absolute -right-14 top-1/2 -translate-y-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">H: 2000mm</div></div></div></div>
+                <div className="p-3"><div className="text-xs font-medium text-muted-foreground uppercase mb-2">Materials</div>{[{ name: "Lining Fabric", qty: "6.5m" }, { name: "Heading Tape", qty: "2.4m" }].map((item) => (<div key={item.name} className="flex items-center justify-between text-sm p-2.5 bg-muted/30 rounded mb-2"><span>{item.name}</span><span className="font-medium">{item.qty}</span></div>))}</div>
               </div>
             </motion.div>
           )}
@@ -455,7 +441,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                 <div className="flex items-center gap-2"><Wrench className="h-5 w-5 text-primary" /><span className="text-sm font-medium">Installation</span></div>
                 <div className="relative">
                   <motion.button className="flex items-center gap-1.5 px-3 py-2 text-xs bg-muted rounded border relative" animate={{ backgroundColor: showSharePopover ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))" }}><FocusRing active={focusOnShare} /><Share2 className="h-4 w-4" />Share</motion.button>
-                  <AnimatePresence>{showSharePopover && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-0 top-full mt-1 w-64 bg-popover border rounded-lg shadow-xl z-30 p-3"><div className="text-sm font-medium mb-2">Share with Team</div><div className="p-3 bg-muted/50 rounded-lg mb-2"><div className="flex items-center justify-between mb-1.5"><span className="text-sm font-medium">Wilson's Workroom</span><ExternalLink className="h-4 w-4 text-muted-foreground" /></div><div className="flex items-center gap-1.5"><span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">Work Order</span></div></div><button className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-dashed rounded-lg text-sm text-muted-foreground"><Plus className="h-4 w-4" />New Share Link</button></motion.div>}</AnimatePresence>
+                  <AnimatePresence>{showSharePopover && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-0 top-full mt-1 w-64 bg-popover border rounded-lg shadow-xl z-30 p-3"><div className="text-sm font-medium mb-2">Share with Team</div><div className="p-3 bg-muted/50 rounded-lg mb-2"><div className="flex items-center justify-between mb-1.5"><span className="text-sm font-medium">ABC Workroom</span><ExternalLink className="h-4 w-4 text-muted-foreground" /></div><div className="flex items-center gap-1.5"><span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">Work Order</span></div></div><button className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-dashed rounded-lg text-sm text-muted-foreground"><Plus className="h-4 w-4" />New Share Link</button></motion.div>}</AnimatePresence>
                 </div>
               </div>
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
