@@ -1,17 +1,14 @@
 /**
- * WelcomeVideoPlayer - Full-screen cinematic welcome experience
- * A story-driven 24-step onboarding that walks users through the entire InterioApp platform
+ * WelcomeVideoPlayer - Clean, cinematic welcome experience
+ * Minimal UI inspired by interioapp.com - bold headlines with teal accents
  */
 
 import { useState, useEffect, useRef, useCallback, ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Play, Pause, ChevronLeft, ChevronRight, X, Volume2, VolumeX,
-  Maximize2, Minimize2, RotateCcw
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export interface VideoStep {
   title: string;
@@ -43,10 +40,8 @@ export const WelcomeVideoPlayer = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [phase, setPhase] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const step = steps[currentStep];
   const stepDuration = step?.duration || 5000;
@@ -54,8 +49,6 @@ export const WelcomeVideoPlayer = ({
   // Get chapter info
   const currentChapter = step?.chapter || chapters[0]?.id;
   const chapterIndex = chapters.findIndex(c => c.id === currentChapter);
-  const stepsInCurrentChapter = steps.filter(s => s.chapter === currentChapter);
-  const stepWithinChapter = stepsInCurrentChapter.indexOf(step) + 1;
 
   // Animation loop
   const animate = useCallback((timestamp: number) => {
@@ -116,17 +109,11 @@ export const WelcomeVideoPlayer = ({
         case "Escape":
           onOpenChange(false);
           break;
-        case "1": case "2": case "3": case "4": case "5": case "6": case "7":
-          const chapterNum = parseInt(e.key) - 1;
-          if (chapters[chapterNum]) {
-            goToChapter(chapters[chapterNum].id);
-          }
-          break;
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, currentStep]);
+  }, [open, currentStep, onOpenChange]);
 
   const goToStep = (index: number) => {
     setCurrentStep(index);
@@ -157,109 +144,37 @@ export const WelcomeVideoPlayer = ({
     }
   };
 
-  const restart = () => {
-    setCurrentStep(0);
-    setPhase(0);
-    startTimeRef.current = 0;
-    setIsPlaying(true);
-  };
-
-  const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    } catch {
-      // Fullscreen not supported
-    }
-  };
-
   const StepVisual = step?.Visual;
-
-  const slideVariants = {
-    enter: { opacity: 0, x: 20 },
-    center: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 },
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        ref={containerRef}
-        className="max-w-5xl w-[95vw] h-[85vh] p-0 flex flex-col overflow-hidden bg-background"
+        className="max-w-4xl w-[92vw] h-[80vh] p-0 flex flex-col overflow-hidden bg-background border-0 shadow-2xl gap-0"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">IA</span>
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold">Welcome to InterioApp</h2>
-                <p className="text-[10px] text-muted-foreground">
-                  Your complete platform for made-to-measure blinds & curtains
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              Step {currentStep + 1} of {steps.length}
-            </span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <VisuallyHidden>
+          <DialogTitle>Welcome to InterioApp</DialogTitle>
+        </VisuallyHidden>
+        
+        {/* Close button - single, minimal */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-muted transition-colors"
+        >
+          <X className="h-4 w-4 text-muted-foreground" />
+        </button>
 
-        {/* Chapter Navigation */}
-        <div className="flex items-center gap-1 px-4 py-2 border-b border-border bg-muted/30 overflow-x-auto">
-          {chapters.map((chapter, i) => {
-            const isActive = chapter.id === currentChapter;
-            const isPast = chapterIndex > i;
-            return (
-              <button
-                key={chapter.id}
-                onClick={() => goToChapter(chapter.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : isPast
-                      ? "bg-primary/20 text-primary"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                )}
-              >
-                {chapter.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Visual Area */}
-        <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-muted/20 to-background">
-          <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="w-full max-w-3xl h-full">
+        {/* Visual Area - full height, immersive */}
+        <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-muted/10 to-background">
+          <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
+            <div className="w-full max-w-2xl h-full">
               <AnimatePresence mode="wait">
                 {StepVisual && (
                   <motion.div
                     key={currentStep}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                     className="w-full h-full"
                   >
                     <StepVisual phase={phase} />
@@ -269,92 +184,90 @@ export const WelcomeVideoPlayer = ({
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
-            <motion.div 
-              className="h-full bg-primary"
-              style={{ width: `${((currentStep + phase) / steps.length) * 100}%` }}
-            />
-          </div>
+          {/* Side Navigation Arrows - minimal */}
+          <button
+            onClick={goPrev}
+            disabled={currentStep === 0}
+            className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all",
+              "bg-background/60 backdrop-blur-sm hover:bg-background/90",
+              currentStep === 0 && "opacity-30 cursor-not-allowed"
+            )}
+          >
+            <ChevronLeft className="h-5 w-5 text-foreground" />
+          </button>
+          
+          <button
+            onClick={goNext}
+            disabled={currentStep === steps.length - 1}
+            className={cn(
+              "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all",
+              "bg-background/60 backdrop-blur-sm hover:bg-background/90",
+              currentStep === steps.length - 1 && "opacity-30 cursor-not-allowed"
+            )}
+          >
+            <ChevronRight className="h-5 w-5 text-foreground" />
+          </button>
         </div>
 
-        {/* Step Info */}
-        <div className="px-6 py-4 border-t border-border bg-card">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold">{step?.title}</h3>
-            <p className="text-sm text-muted-foreground">{step?.description}</p>
+        {/* Bottom Navigation - minimal, clean */}
+        <div className="px-6 py-4 border-t border-border/50 bg-background">
+          {/* Chapter Navigation - text-only with underline */}
+          <div className="flex items-center justify-center gap-6 mb-4 overflow-x-auto">
+            {chapters.map((chapter, i) => {
+              const isActive = chapter.id === currentChapter;
+              const isPast = chapterIndex > i;
+              return (
+                <button
+                  key={chapter.id}
+                  onClick={() => goToChapter(chapter.id)}
+                  className={cn(
+                    "relative text-xs font-medium transition-all whitespace-nowrap pb-1",
+                    isActive 
+                      ? "text-foreground" 
+                      : isPast
+                        ? "text-primary/70"
+                        : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {chapter.shortLabel}
+                  {/* Teal underline for active chapter */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="chapter-underline"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={goPrev}
-                disabled={currentStep === 0}
-                className="gap-1"
-              >
-                <ChevronLeft className="h-4 w-4" /> Prev
-              </Button>
-            </div>
+          {/* Progress bar + Play/Pause */}
+          <div className="flex items-center gap-4">
+            {/* Play/Pause - small, subtle */}
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+            >
+              {isPlaying 
+                ? <Pause className="h-3.5 w-3.5 text-foreground" /> 
+                : <Play className="h-3.5 w-3.5 text-foreground ml-0.5" />
+              }
+            </button>
 
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-9 w-9"
-                onClick={restart}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="default"
-                size="icon"
-                className="h-10 w-10 rounded-full"
-                onClick={() => setIsPlaying(!isPlaying)}
-              >
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-9 w-9"
-                onClick={toggleFullscreen}
-              >
-                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={goNext}
-                disabled={currentStep === steps.length - 1}
-                className="gap-1"
-              >
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Step dots */}
-          <div className="flex items-center justify-center gap-1 mt-4">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goToStep(i)}
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  i === currentStep 
-                    ? "w-6 bg-primary" 
-                    : i < currentStep 
-                      ? "w-1.5 bg-primary/40" 
-                      : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
+            {/* Progress bar - thin, full width */}
+            <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${((currentStep + phase) / steps.length) * 100}%` }}
               />
-            ))}
+            </div>
+
+            {/* Step counter */}
+            <span className="text-xs text-muted-foreground font-medium tabular-nums">
+              {currentStep + 1}/{steps.length}
+            </span>
           </div>
         </div>
       </DialogContent>
