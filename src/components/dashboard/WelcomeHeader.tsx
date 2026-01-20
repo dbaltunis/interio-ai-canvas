@@ -11,6 +11,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Badge } from "@/components/ui/badge";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { DashboardDateFilter } from "./DashboardDateFilter";
+import { ShowcaseLightbulb } from "../showcase/ShowcaseLightbulb";
 
 interface WelcomeHeaderProps {
   onCustomizeClick?: () => void;
@@ -97,6 +98,10 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
             </span>
           )}
         </Button>
+
+        {/* Product Tour Lightbulb */}
+        <ShowcaseLightbulb />
+
         <Button
           variant="ghost"
           size="icon-sm"
