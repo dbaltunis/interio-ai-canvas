@@ -543,11 +543,71 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
             </motion.div>
           )}
           {showWorkroomTab && (
-            <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+              {/* Header toolbar */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-muted rounded border"><FileText className="h-3.5 w-3.5" />Workshop Details<ChevronDown className="h-3 w-3" /></button>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded"><Share2 className="h-3.5 w-3.5" />Shared<span className="px-1.5 py-0.5 bg-primary-foreground/20 rounded text-[10px]">1</span></button>
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-muted rounded border"><Download className="h-3.5 w-3.5" />PDF</button>
+                </div>
+              </div>
+              
+              {/* Work Order Document */}
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
-                <div className="p-3 border-b bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20"><div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-orange-600" /><span className="text-base font-bold text-orange-700">WORK ORDER</span></div><div className="text-sm font-medium mt-1">Master Bedroom - Wave Curtains</div></div>
-                <div className="p-4 border-b"><div className="text-xs font-medium text-muted-foreground uppercase mb-3">Window Diagram</div><div className="relative bg-muted/30 rounded-lg p-5 flex items-center justify-center"><div className="relative"><div className="w-40 h-32 border-2 border-primary rounded" /><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">W: 1800mm</div><div className="absolute -right-14 top-1/2 -translate-y-1/2 text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded">H: 2000mm</div></div></div></div>
-                <div className="p-3"><div className="text-xs font-medium text-muted-foreground uppercase mb-2">Materials</div>{[{ name: "Lining Fabric", qty: "6.5m" }, { name: "Heading Tape", qty: "2.4m" }].map((item) => (<div key={item.name} className="flex items-center justify-between text-sm p-2.5 bg-muted/30 rounded mb-2"><span>{item.name}</span><span className="font-medium">{item.qty}</span></div>))}</div>
+                {/* Document header */}
+                <div className="p-3 border-b">
+                  <div className="text-lg font-bold">WORK ORDER</div>
+                  <div className="text-xs text-muted-foreground">Manufacturing Instructions</div>
+                </div>
+                
+                {/* Metadata grid */}
+                <div className="grid grid-cols-4 gap-2 p-3 border-b text-[10px]">
+                  <div><div className="text-muted-foreground uppercase">Project</div><div className="font-medium">Smith Family</div></div>
+                  <div><div className="text-muted-foreground uppercase">Order #</div><div className="font-medium">JOB-065</div></div>
+                  <div><div className="text-muted-foreground uppercase">Client</div><div className="font-medium">Smith</div></div>
+                  <div><div className="text-muted-foreground uppercase">Due Date</div><div className="font-medium">—</div></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-[10px] border-b border-primary">
+                  <div><div className="text-muted-foreground uppercase">Created</div><div className="font-medium">2026-01-14</div></div>
+                  <div><div className="text-muted-foreground uppercase">Assigned Maker</div><div className="font-medium">—</div></div>
+                  <div><div className="text-muted-foreground uppercase">Shipping</div><div className="font-medium">—</div></div>
+                </div>
+                
+                {/* Room section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b">
+                  <span className="text-sm font-semibold text-primary">Bedroom</span>
+                </div>
+                
+                {/* Table header */}
+                <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
+                  <span>Item</span>
+                  <span>Fabric & Details</span>
+                  <span>Measurements</span>
+                  <span>Sewing Details</span>
+                </div>
+                
+                {/* Window row */}
+                <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
+                  <div className="font-medium">Window 1</div>
+                  <div>
+                    <div className="text-primary font-medium">Fabric to Test</div>
+                    <div className="text-muted-foreground">Width: 55.1", ↔️ Horiz</div>
+                    <div className="text-primary">Usage: 11.10m (4 widths)</div>
+                  </div>
+                  <div>
+                    <div><span className="font-medium">Width:</span> 78.74in</div>
+                    <div><span className="font-medium">Drop:</span> 98.43in</div>
+                    <div className="text-muted-foreground">Curtains to Test</div>
+                  </div>
+                  <div>
+                    <div className="text-primary">Fullness: 2.5x</div>
+                    <div className="text-muted-foreground">Hem Allowances:</div>
+                    <div className="text-muted-foreground">• Header: 3.1"</div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
