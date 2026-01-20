@@ -87,13 +87,12 @@ export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 2: DASHBOARD - Scrolls content inside app frame, then zooms to Shopify
+// SCENE 2: DASHBOARD - Scrolls content once to reveal Shopify section
 export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
-  // Phase 0-0.3: Show full dashboard
-  // Phase 0.3-0.6: Scroll content down to reveal Shopify section
-  // Phase 0.6-0.9: Zoom into Shopify/Revenue area
-  const scrollProgress = phaseProgress(phase, 0.25, 0.55);
-  const zoomToShopify = inPhase(phase, 0.6, 0.95);
+  // Phase 0-0.4: Show full dashboard with charts animating
+  // Phase 0.4-0.8: Scroll down and zoom to Shopify section (single smooth animation)
+  const scrollProgress = phaseProgress(phase, 0.35, 0.6);
+  const zoomToShopify = inPhase(phase, 0.55, 0.95);
   const chartProgress = phaseProgress(phase, 0.1, 0.35);
   const donutProgress = phaseProgress(phase, 0.15, 0.4);
   
@@ -185,17 +184,17 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
 
           {/* Shopify - This is what we scroll to and zoom */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="p-3 bg-card rounded-lg border border-border">
-              <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-medium">Analytics</span></div>
-              <div className="text-xs"><span className="text-muted-foreground">Sessions:</span> <span className="font-medium">1,234</span></div>
-            </div>
             <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 rounded-lg border border-green-200">
-              <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-semibold text-green-700">Performance</span><span className="ml-auto text-[9px] px-1.5 py-0.5 bg-green-500 text-white rounded animate-pulse">Live</span></div>
+              <div className="flex items-center gap-1.5 mb-2"><ShoppingBag className="h-4 w-4 text-green-600" /><span className="text-xs font-semibold text-green-700">Shopify Sales</span><span className="ml-auto text-[9px] px-1.5 py-0.5 bg-green-500 text-white rounded animate-pulse">Live</span></div>
               <div className="text-xl font-bold text-green-600 text-center">£5,000</div>
             </div>
             <div className="p-3 bg-card rounded-lg border border-border">
-              <div className="flex items-center gap-1.5 mb-2"><Package className="h-4 w-4 text-blue-500" /><span className="text-xs font-medium">Sync</span></div>
-              <div className="text-xs"><span className="text-muted-foreground">Synced:</span> <span className="font-medium text-green-600">✓ 42</span></div>
+              <div className="flex items-center gap-1.5 mb-2"><Users className="h-4 w-4 text-purple-500" /><span className="text-xs font-medium">Clients</span></div>
+              <div className="text-lg font-bold">156</div>
+            </div>
+            <div className="p-3 bg-card rounded-lg border border-border">
+              <div className="flex items-center gap-1.5 mb-2"><DollarSign className="h-4 w-4 text-primary" /><span className="text-xs font-medium">Revenue</span></div>
+              <div className="text-lg font-bold">£59,872</div>
             </div>
           </div>
         </motion.div>
