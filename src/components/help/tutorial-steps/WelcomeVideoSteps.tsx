@@ -203,59 +203,114 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 3: THEME TOGGLE - No cursor
+// SCENE 3: THEME TOGGLE - Same dashboard as Scene 2, just toggles theme
 export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
-  const zoomedToHeader = inPhase(phase, 0.35, 0.85);
-  const isDarkMode = inPhase(phase, 0.5, 0.75);
-  const focusOnToggle = inPhase(phase, 0.38, 0.48) || inPhase(phase, 0.72, 0.78);
-  const isClicking = inPhase(phase, 0.46, 0.50) || inPhase(phase, 0.74, 0.78);
+  const isDarkMode = inPhase(phase, 0.4, 0.8);
+  const focusOnToggle = inPhase(phase, 0.32, 0.42) || inPhase(phase, 0.72, 0.82);
+  const isClicking = inPhase(phase, 0.38, 0.42) || inPhase(phase, 0.76, 0.80);
+  
+  // Dark/light mode colors
+  const bgColor = isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)";
+  const cardBg = isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(0 0% 100%)";
+  const borderColor = isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)";
+  const textColor = isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)";
+  const mutedColor = isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)";
   
   return (
-    <motion.div className="h-full w-full rounded-xl overflow-hidden border border-border relative" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" }}>
-      
-      <motion.div className="h-full w-full" animate={{ scale: zoomedToHeader ? 1.15 : 1, y: zoomedToHeader ? "8%" : "0%" }} transition={{ duration: 0.6 }}>
-        {/* Header */}
-        <motion.div className="h-12 border-b flex items-center justify-between px-3" animate={{ borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)", backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(0 0% 100%)" }}>
+    <motion.div className="h-full w-full rounded-xl overflow-hidden border border-border relative" animate={{ backgroundColor: bgColor }}>
+      {/* Header */}
+      <motion.div className="h-12 border-b flex items-center px-3" animate={{ borderColor, backgroundColor: cardBg }}>
+        <div className="flex items-center gap-3">
+          <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
           <div className="flex items-center gap-4">
-            <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
-            <div className="flex items-center gap-3">
-              {["Home", "Clients", "Jobs", "Messages"].map((nav, i) => (
-                <motion.span key={nav} className={`text-xs ${i === 0 ? "font-semibold" : ""}`} animate={{ color: i === 0 ? "hsl(var(--primary))" : isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>{nav}</motion.span>
-              ))}
-            </div>
+            {["Home", "Clients", "Jobs", "Messages", "Calendar"].map((nav, i) => (
+              <motion.span key={nav} className={`text-xs ${i === 0 ? "font-semibold" : ""}`} animate={{ color: i === 0 ? "hsl(var(--primary))" : mutedColor }}>{nav}</motion.span>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Dashboard Content - Matches Scene 2 exactly */}
+      <motion.div className="p-3 space-y-3" animate={{ backgroundColor: bgColor }}>
+        {/* Welcome with icons */}
+        <motion.div className="px-2 py-2 rounded-lg flex items-center justify-between" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+          <div>
+            <motion.h2 className="text-base font-semibold" animate={{ color: textColor }}>Good afternoon, John</motion.h2>
+            <motion.p className="text-sm" animate={{ color: mutedColor }}>24 pending quotes • 156 clients</motion.p>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded flex items-center justify-center"><Users className="h-2.5 w-2.5 text-muted-foreground" /></div>
+            <div className="w-4 h-4 rounded flex items-center justify-center"><Lightbulb className="h-2.5 w-2.5 text-amber-500" /></div>
+            <motion.div className="w-4 h-4 rounded flex items-center justify-center relative" animate={{ scale: isClicking ? 0.9 : 1 }}>
+              <FocusRing active={focusOnToggle} />
+              <AnimatePresence mode="wait">
+                {isDarkMode ? <motion.div key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="h-2.5 w-2.5 text-blue-400" /></motion.div> : <motion.div key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="h-2.5 w-2.5 text-amber-500" /></motion.div>}
+              </AnimatePresence>
+            </motion.div>
+            <div className="w-4 h-4 rounded flex items-center justify-center"><Settings className="h-2.5 w-2.5 text-muted-foreground" /></div>
           </div>
         </motion.div>
 
-        {/* Dashboard Content - REAL content like Scene 2 */}
-        <motion.div className="p-4" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" }}>
-          <motion.div className="mb-4 p-3 rounded-lg border flex items-center justify-between" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)", borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)" }}>
-            <div>
-              <motion.div className="text-base font-semibold mb-1" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>Good afternoon, John</motion.div>
-              <motion.div className="text-sm" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>24 pending quotes • 156 clients</motion.div>
+        {/* Stats - Same as Scene 2 */}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: "Revenue", value: "£59,872" },
+            { label: "Projects", value: "138" },
+            { label: "Quotes", value: "177" },
+            { label: "Clients", value: "19" },
+          ].map((stat) => (
+            <motion.div key={stat.label} className="p-2 rounded-lg" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+              <motion.div className="text-lg font-bold" animate={{ color: textColor }}>{stat.value}</motion.div>
+              <motion.div className="text-xs" animate={{ color: mutedColor }}>{stat.label}</motion.div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Charts - Same as Scene 2 */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.div className="p-3 rounded-lg" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+            <div className="flex items-center justify-between mb-2">
+              <motion.span className="text-sm font-medium" animate={{ color: textColor }}>Revenue Trend</motion.span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-600">-54.9%</span>
             </div>
-            <div className="flex items-center gap-1">
-              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Users className="h-2.5 w-2.5 text-muted-foreground" /></motion.div>
-              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Lightbulb className="h-2.5 w-2.5 text-amber-500" /></motion.div>
-              <motion.div className="w-4 h-4 rounded flex items-center justify-center relative" animate={{ scale: isClicking ? 0.9 : 1 }}>
-                <FocusRing active={focusOnToggle} />
-                <AnimatePresence mode="wait">
-                  {isDarkMode ? <motion.div key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="h-2.5 w-2.5 text-blue-400" /></motion.div> : <motion.div key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="h-2.5 w-2.5 text-amber-500" /></motion.div>}
-                </AnimatePresence>
+            <svg className="w-full h-12" viewBox="0 0 100 32">
+              <path d="M 12 8 Q 25 12, 40 18 T 65 22 T 88 25 T 100 28" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
+            </svg>
+          </motion.div>
+          <motion.div className="p-3 rounded-lg" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+            <motion.div className="text-sm font-medium mb-2" animate={{ color: textColor }}>Jobs by Status</motion.div>
+            <div className="flex items-center gap-3">
+              <svg className="w-12 h-12" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="10" fill="none" stroke="hsl(var(--muted)/0.3)" strokeWidth="3" />
+                <circle cx="18" cy="18" r="10" fill="none" stroke="#9CA3AF" strokeWidth="3" strokeDasharray="35 100" transform="rotate(-90 18 18)" />
+              </svg>
+              <motion.div className="text-xs space-y-1" animate={{ color: mutedColor }}>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#9CA3AF]" /><span>Draft (97)</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#22C55E]" /><span>Approved (5)</span></div>
               </motion.div>
-              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Settings className="h-2.5 w-2.5 text-muted-foreground" /></motion.div>
             </div>
           </motion.div>
-          <div className="grid grid-cols-4 gap-2">
-            {[{ label: "Revenue", value: "£59,872" }, { label: "Projects", value: "138" }, { label: "Quotes", value: "177" }, { label: "Clients", value: "19" }].map((stat) => (
-              <motion.div key={stat.label} className="p-2 rounded-lg border" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)", borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)" }}>
-                <motion.div className="text-base font-bold" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>{stat.value}</motion.div>
-                <motion.div className="text-xs" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>{stat.label}</motion.div>
-              </motion.div>
-            ))}
+        </div>
+
+        {/* Shopify section - Same as Scene 2 */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 rounded-lg border border-green-200">
+            <div className="flex items-center gap-1 mb-1"><ShoppingBag className="h-3 w-3 text-green-600" /><span className="text-[10px] font-semibold text-green-700">Shopify Sales</span><span className="ml-auto text-[8px] px-1 py-0.5 bg-green-500 text-white rounded">Live</span></div>
+            <div className="text-base font-bold text-green-600 text-center">£5,000</div>
           </div>
-        </motion.div>
+          <motion.div className="p-2 rounded-lg" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+            <div className="flex items-center gap-1 mb-1"><Users className="h-3 w-3 text-purple-500" /><motion.span className="text-[10px] font-medium" animate={{ color: textColor }}>Clients</motion.span></div>
+            <motion.div className="text-base font-bold" animate={{ color: textColor }}>156</motion.div>
+          </motion.div>
+          <motion.div className="p-2 rounded-lg" animate={{ backgroundColor: cardBg, borderColor }} style={{ border: '1px solid' }}>
+            <div className="flex items-center gap-1 mb-1"><DollarSign className="h-3 w-3 text-primary" /><motion.span className="text-[10px] font-medium" animate={{ color: textColor }}>Revenue</motion.span></div>
+            <motion.div className="text-base font-bold" animate={{ color: textColor }}>£59,872</motion.div>
+          </motion.div>
+        </div>
       </motion.div>
-      <motion.div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-sm font-medium" animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)", color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>{isDarkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}</motion.div>
+
+      {/* Mode indicator */}
+      <motion.div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full text-xs font-medium" animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)", color: textColor }}>{isDarkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}</motion.div>
     </motion.div>
   );
 };
