@@ -3,15 +3,124 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/constants/version";
-import { CinematicShowcasePlayer } from "./CinematicShowcasePlayer";
+import { TutorialCarousel } from "@/components/help/TutorialCarousel";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  OverviewStep1, OverviewStep2, OverviewStep3, OverviewStep4,
+  OverviewStep5, OverviewStep6, OverviewStep7, OverviewStep8,
+  OverviewStep9, OverviewStep10, OverviewStep11, OverviewStep12,
+} from "@/components/help/tutorial-steps/PlatformOverviewSteps";
+import type { TutorialStep } from "@/config/tutorialSteps";
+
+interface StepGroup {
+  id: string;
+  label: string;
+  stepRange: [number, number];
+}
 
 const STORAGE_KEY = "showcase_last_seen_version";
+
+// Platform overview tutorial steps
+const platformOverviewSteps: TutorialStep[] = [
+  {
+    title: "Your Dashboard",
+    actionLabel: "Overview",
+    description: "Quick access to everything that matters",
+    Visual: OverviewStep1,
+    duration: 5000,
+  },
+  {
+    title: "Projects Hub",
+    actionLabel: "Jobs",
+    description: "Manage all your jobs in one place",
+    Visual: OverviewStep2,
+    duration: 5000,
+  },
+  {
+    title: "Room Management",
+    actionLabel: "Rooms",
+    description: "Organize windows by room",
+    Visual: OverviewStep3,
+    duration: 5000,
+  },
+  {
+    title: "Treatment Types",
+    actionLabel: "Treatments",
+    description: "Choose from curtains, blinds, and more",
+    Visual: OverviewStep4,
+    duration: 5000,
+  },
+  {
+    title: "Visual Measurements",
+    actionLabel: "Measure",
+    description: "Intuitive measurement entry",
+    Visual: OverviewStep5,
+    duration: 5000,
+  },
+  {
+    title: "Professional Quotes",
+    actionLabel: "Quotes",
+    description: "Generate and send quotes instantly",
+    Visual: OverviewStep6,
+    duration: 5000,
+  },
+  {
+    title: "Client CRM",
+    actionLabel: "Clients",
+    description: "Track leads through your pipeline",
+    Visual: OverviewStep7,
+    duration: 5000,
+  },
+  {
+    title: "Email & Messaging",
+    actionLabel: "Messages",
+    description: "Communicate with clients seamlessly",
+    Visual: OverviewStep8,
+    duration: 5000,
+  },
+  {
+    title: "Inventory Library",
+    actionLabel: "Library",
+    description: "Manage fabrics, hardware, and pricing",
+    Visual: OverviewStep9,
+    duration: 5000,
+  },
+  {
+    title: "Calendar & Scheduling",
+    actionLabel: "Calendar",
+    description: "Schedule appointments and installations",
+    Visual: OverviewStep10,
+    duration: 5000,
+  },
+  {
+    title: "Settings & Customization",
+    actionLabel: "Settings",
+    description: "Configure your business preferences",
+    Visual: OverviewStep11,
+    duration: 5000,
+  },
+  {
+    title: "Your Complete Solution",
+    actionLabel: "Summary",
+    description: "Everything you need to succeed",
+    Visual: OverviewStep12,
+    duration: 6000,
+  },
+];
+
+// Step groups for navigation
+const overviewStepGroups: StepGroup[] = [
+  { id: "dashboard", label: "Dashboard", stepRange: [0, 0] },
+  { id: "jobs", label: "Jobs", stepRange: [1, 5] },
+  { id: "crm", label: "CRM", stepRange: [6, 7] },
+  { id: "tools", label: "Tools", stepRange: [8, 10] },
+  { id: "summary", label: "Summary", stepRange: [11, 11] },
+];
 
 export const ShowcaseLightbulb = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,10 +141,6 @@ export const ShowcaseLightbulb = () => {
     setHasNewContent(false);
   };
 
-  const handleComplete = () => {
-    setIsOpen(false);
-  };
-
   return (
     <>
       <Button
@@ -47,7 +152,7 @@ export const ShowcaseLightbulb = () => {
             ? "bg-amber-500/10 hover:bg-amber-500/20" 
             : "hover:bg-muted"
         }`}
-        title="Product Tour"
+        title="Platform Overview"
       >
         {/* Lightbulb icon */}
         <Lightbulb 
@@ -88,18 +193,25 @@ export const ShowcaseLightbulb = () => {
         )}
       </Button>
 
-      {/* Showcase Modal */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden bg-background">
-          <VisuallyHidden>
-            <DialogTitle>Product Tour</DialogTitle>
-          </VisuallyHidden>
-          <CinematicShowcasePlayer 
-            autoPlay 
-            onComplete={handleComplete}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Platform Overview Sheet */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl p-0">
+          <SheetHeader className="px-4 py-3 border-b border-border">
+            <SheetTitle className="text-base flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              Platform Overview
+            </SheetTitle>
+          </SheetHeader>
+          <div className="p-4 h-[calc(100vh-60px)] overflow-y-auto">
+            <TutorialCarousel 
+              steps={platformOverviewSteps}
+              stepGroups={overviewStepGroups}
+              autoPlay
+              stepDuration={5000}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
