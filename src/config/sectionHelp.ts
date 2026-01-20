@@ -299,5 +299,22 @@ export const sectionHelpContent: Record<string, SectionHelpContent> = {
       "Track installation progress through completion"
     ],
     relatedSections: ["Clients", "Documents", "Products"]
+  },
+
+  // ===== LIBRARY PAGE =====
+
+  library: {
+    id: "library",
+    title: "Inventory Library",
+    icon: Package,
+    briefDescription: "Manage your complete inventory of fabrics, materials, hardware, and vendor relationships.",
+    keyPoints: [
+      "Browse fabrics, materials, hardware, and wallcoverings",
+      "Add new items with pricing, stock tracking, and QR codes",
+      "Manage vendor relationships and import their catalogs",
+      "Use QR scanner for instant item lookup",
+      "Bulk edit, export, or import inventory via CSV"
+    ],
+    relatedSections: ["Products", "Jobs"]
   }
 };
