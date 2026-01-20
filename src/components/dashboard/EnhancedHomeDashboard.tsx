@@ -15,6 +15,7 @@ import { useIsDealer } from "@/hooks/useIsDealer";
 import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
 import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
+import { ProductShowcaseWidget } from "./ProductShowcaseWidget";
 
 // Lazy load non-critical widgets for better initial load performance (with automatic retry)
 const UpcomingEventsWidget = lazyWithRetry(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })), "UpcomingEventsWidget");
@@ -174,6 +175,9 @@ const DashboardContent = () => {
     <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
+
+      {/* Product Showcase Widget for first-time users */}
+      <ProductShowcaseWidget />
 
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
