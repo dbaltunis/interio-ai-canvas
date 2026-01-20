@@ -82,9 +82,17 @@ const welcomeSteps: VideoStep[] = [
   },
 ];
 
-export const ShowcaseLightbulb = () => {
+interface ShowcaseLightbulbProps {
+  size?: "sm" | "md";
+}
+
+export const ShowcaseLightbulb = ({ size = "md" }: ShowcaseLightbulbProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasNewContent, setHasNewContent] = useState(false);
+
+  const sizeClasses = size === "sm" 
+    ? { button: "h-5 w-5 rounded", icon: "h-3 w-3", dot: "w-1.5 h-1.5" }
+    : { button: "h-8 w-8 rounded-lg", icon: "h-4 w-4", dot: "w-2 h-2" };
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(STORAGE_KEY);
@@ -107,7 +115,7 @@ export const ShowcaseLightbulb = () => {
         variant="ghost"
         size="icon-sm"
         onClick={handleOpen}
-        className={`h-8 w-8 rounded-lg relative transition-all ${
+        className={`${sizeClasses.button} relative transition-all ${
           hasNewContent 
             ? "bg-amber-500/10 hover:bg-amber-500/20" 
             : "hover:bg-muted"
@@ -116,7 +124,7 @@ export const ShowcaseLightbulb = () => {
       >
         {/* Lightbulb icon */}
         <Lightbulb 
-          className={`h-4 w-4 transition-colors ${
+          className={`${sizeClasses.icon} transition-colors ${
             hasNewContent 
               ? "text-amber-500 fill-amber-500/30" 
               : "text-muted-foreground"
@@ -127,7 +135,7 @@ export const ShowcaseLightbulb = () => {
         <AnimatePresence>
           {hasNewContent && (
             <motion.span
-              className="absolute inset-0 rounded-lg bg-amber-500/20"
+              className={`absolute inset-0 ${sizeClasses.button} bg-amber-500/20`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ 
                 opacity: [0.3, 0.6, 0.3],
@@ -145,7 +153,7 @@ export const ShowcaseLightbulb = () => {
         {/* Notification dot */}
         {hasNewContent && (
           <motion.span
-            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500"
+            className={`absolute -top-0.5 -right-0.5 ${sizeClasses.dot} rounded-full bg-amber-500`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 500 }}
