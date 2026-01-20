@@ -543,7 +543,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
             </motion.div>
           )}
           {showWorkroomTab && (
-            <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+            <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 h-full">
               {/* Header toolbar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -555,59 +555,125 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                 </div>
               </div>
               
-              {/* Work Order Document */}
-              <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
-                {/* Document header */}
-                <div className="p-3 border-b">
-                  <div className="text-lg font-bold">WORK ORDER</div>
-                  <div className="text-xs text-muted-foreground">Manufacturing Instructions</div>
-                </div>
-                
-                {/* Metadata grid */}
-                <div className="grid grid-cols-4 gap-2 p-3 border-b text-[10px]">
-                  <div><div className="text-muted-foreground uppercase">Project</div><div className="font-medium">Smith Family</div></div>
-                  <div><div className="text-muted-foreground uppercase">Order #</div><div className="font-medium">JOB-065</div></div>
-                  <div><div className="text-muted-foreground uppercase">Client</div><div className="font-medium">Smith</div></div>
-                  <div><div className="text-muted-foreground uppercase">Due Date</div><div className="font-medium">—</div></div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-[10px] border-b border-primary">
-                  <div><div className="text-muted-foreground uppercase">Created</div><div className="font-medium">2026-01-14</div></div>
-                  <div><div className="text-muted-foreground uppercase">Assigned Maker</div><div className="font-medium">—</div></div>
-                  <div><div className="text-muted-foreground uppercase">Shipping</div><div className="font-medium">—</div></div>
-                </div>
-                
-                {/* Room section */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b">
-                  <span className="text-sm font-semibold text-primary">Bedroom</span>
-                </div>
-                
-                {/* Table header */}
-                <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
-                  <span>Item</span>
-                  <span>Fabric & Details</span>
-                  <span>Measurements</span>
-                  <span>Sewing Details</span>
-                </div>
-                
-                {/* Window row */}
-                <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
-                  <div className="font-medium">Window 1</div>
-                  <div>
-                    <div className="text-primary font-medium">Fabric to Test</div>
-                    <div className="text-muted-foreground">Width: 55.1", ↔️ Horiz</div>
-                    <div className="text-primary">Usage: 11.10m (4 widths)</div>
+              {/* Scrollable Work Order Document */}
+              <div className="bg-white dark:bg-card rounded-lg border shadow-sm overflow-hidden" style={{ height: 'calc(100% - 40px)' }}>
+                <motion.div 
+                  className="h-full"
+                  animate={{ y: [0, -180, -180, 0] }}
+                  transition={{ duration: 4, times: [0, 0.4, 0.8, 1], ease: "easeInOut" }}
+                >
+                  {/* Document header */}
+                  <div className="p-3 border-b">
+                    <div className="text-lg font-bold">WORK ORDER</div>
+                    <div className="text-xs text-muted-foreground">Manufacturing Instructions</div>
                   </div>
-                  <div>
-                    <div><span className="font-medium">Width:</span> 78.74in</div>
-                    <div><span className="font-medium">Drop:</span> 98.43in</div>
-                    <div className="text-muted-foreground">Curtains to Test</div>
+                  
+                  {/* Metadata grid */}
+                  <div className="grid grid-cols-4 gap-2 p-3 border-b text-[10px]">
+                    <div><div className="text-muted-foreground uppercase">Project</div><div className="font-medium">Smith Family</div></div>
+                    <div><div className="text-muted-foreground uppercase">Order #</div><div className="font-medium">JOB-065</div></div>
+                    <div><div className="text-muted-foreground uppercase">Client</div><div className="font-medium">Smith</div></div>
+                    <div><div className="text-muted-foreground uppercase">Due Date</div><div className="font-medium">—</div></div>
                   </div>
-                  <div>
-                    <div className="text-primary">Fullness: 2.5x</div>
-                    <div className="text-muted-foreground">Hem Allowances:</div>
-                    <div className="text-muted-foreground">• Header: 3.1"</div>
+                  <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-[10px] border-b border-primary">
+                    <div><div className="text-muted-foreground uppercase">Created</div><div className="font-medium">2026-01-14</div></div>
+                    <div><div className="text-muted-foreground uppercase">Assigned Maker</div><div className="font-medium">—</div></div>
+                    <div><div className="text-muted-foreground uppercase">Shipping</div><div className="font-medium">—</div></div>
                   </div>
-                </div>
+                  
+                  {/* Room 1: Bedroom */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b">
+                    <span className="text-sm font-semibold text-primary">Bedroom</span>
+                  </div>
+                  
+                  {/* Table header */}
+                  <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
+                    <span>Item</span>
+                    <span>Fabric & Details</span>
+                    <span>Measurements</span>
+                    <span>Sewing Details</span>
+                  </div>
+                  
+                  {/* Window 1 */}
+                  <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
+                    <div className="font-medium">Window 1</div>
+                    <div>
+                      <div className="text-primary font-medium">Fabric to Test</div>
+                      <div className="text-muted-foreground">Width: 55.1", ↔️ Horiz</div>
+                      <div className="text-primary">Usage: 11.10m (4 widths)</div>
+                      <div className="text-orange-500 text-[9px]">⚠️ 3 vertical seam(s)</div>
+                    </div>
+                    <div>
+                      <div><span className="font-medium">Width:</span> 78.74in</div>
+                      <div><span className="font-medium">Drop:</span> 98.43in</div>
+                      <div className="text-muted-foreground">Curtains to Test</div>
+                    </div>
+                    <div>
+                      <div className="text-primary">Fullness: 2.5x</div>
+                      <div className="text-muted-foreground">Hem Allowances:</div>
+                      <div className="text-muted-foreground">• Header: 3.1"</div>
+                      <div className="text-muted-foreground">• Bottom: 5.9"</div>
+                    </div>
+                  </div>
+                  
+                  {/* Window 2 */}
+                  <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
+                    <div>
+                      <div className="font-medium">Window 2</div>
+                      <div className="w-8 h-8 mt-1 rounded bg-amber-100 border border-amber-200" />
+                    </div>
+                    <div>
+                      <div className="text-primary font-medium">ADARA</div>
+                      <div className="text-muted-foreground">Color: shifting sand 24</div>
+                      <div className="text-muted-foreground">Width: 114.2", ↔️ Horiz</div>
+                      <div className="text-primary">Usage: 4.10m (1 width)</div>
+                    </div>
+                    <div>
+                      <div><span className="font-medium">Width:</span> 86.61in</div>
+                      <div><span className="font-medium">Drop:</span> 90.55in</div>
+                      <div className="text-muted-foreground">Curtain testing</div>
+                    </div>
+                    <div>
+                      <div className="text-primary">Fullness: 1.8x</div>
+                      <div className="text-muted-foreground">Hem Allowances:</div>
+                      <div className="text-muted-foreground">• Header: 5.9"</div>
+                      <div className="text-muted-foreground">• Bottom: 5.9"</div>
+                    </div>
+                  </div>
+                  
+                  {/* Room 2: Living Room */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b mt-2">
+                    <span className="text-sm font-semibold text-primary">Living Room</span>
+                  </div>
+                  
+                  {/* Table header for Room 2 */}
+                  <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
+                    <span>Item</span>
+                    <span>Fabric & Details</span>
+                    <span>Measurements</span>
+                    <span>Sewing Details</span>
+                  </div>
+                  
+                  {/* Window 1 - Living Room */}
+                  <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
+                    <div className="font-medium">Window 1</div>
+                    <div>
+                      <div className="text-primary font-medium">Pure Wool (50mm)</div>
+                      <div className="text-muted-foreground">Width: 60", ↔️ Horiz</div>
+                      <div className="text-primary">Usage: 8.5m (3 widths)</div>
+                    </div>
+                    <div>
+                      <div><span className="font-medium">Width:</span> 72.44in</div>
+                      <div><span className="font-medium">Drop:</span> 84.25in</div>
+                      <div className="text-muted-foreground">Roman Blind</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Manufacturing:</div>
+                      <div className="text-muted-foreground">• Chain control</div>
+                      <div className="text-muted-foreground">• Standard lining</div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           )}
