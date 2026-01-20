@@ -318,8 +318,8 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
 // SCENE 4: JOBS & NOTES - With team members and full nav
 export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   const showJobsList = inPhase(phase, 0.1, 1);
-  const focusOnAction = inPhase(phase, 0.25, 0.35);
-  const showActionMenu = inPhase(phase, 0.35, 0.55);
+  const focusOnAction = inPhase(phase, 0.20, 0.40); // Doubled duration
+  const showActionMenu = inPhase(phase, 0.40, 0.55);
   const showNoteDialog = inPhase(phase, 0.5, 0.95);
   const noteText = typingProgress(phase, 0.55, 0.8, "Measurements confirmed ✓ @Marcus please order fabrics");
   const showSuccess = inPhase(phase, 0.88, 1);
