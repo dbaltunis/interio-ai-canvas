@@ -1,132 +1,90 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { phaseProgress } from "@/lib/demoAnimations";
-import { Shield, Users, Factory, Check, X } from "lucide-react";
+import { Users, Shield, Crown, UserCog, User, Building2, FolderOpen, Eye, Edit2, Trash2, Check } from "lucide-react";
 
-interface SceneProps {
-  progress: number;
-}
+interface SceneProps { progress: number; }
 
 const roles = [
-  { 
-    icon: Users, 
-    label: "Dealer", 
-    color: "from-blue-500 to-blue-600",
-    permissions: [true, true, false, true]
-  },
-  { 
-    icon: Shield, 
-    label: "Admin", 
-    color: "from-emerald-500 to-emerald-600",
-    permissions: [true, true, true, true]
-  },
-  { 
-    icon: Factory, 
-    label: "Manufacturer", 
-    color: "from-amber-500 to-amber-600",
-    permissions: [false, true, true, false]
-  },
+  { id: "owner", label: "Owner", icon: Crown, color: "bg-amber-500" },
+  { id: "admin", label: "Admin", icon: Shield, color: "bg-purple-500" },
+  { id: "manager", label: "Manager", icon: UserCog, color: "bg-blue-500" },
+  { id: "staff", label: "Staff", icon: User, color: "bg-emerald-500" },
+  { id: "dealer", label: "Dealer", icon: Building2, color: "bg-orange-500" },
 ];
 
-const permissionLabels = ["View Quotes", "Edit Orders", "Manage Team", "Access Reports"];
+const permissionCategories = [
+  { name: "Jobs", icon: FolderOpen, perms: [{ key: "view", label: "View", icon: Eye }, { key: "create", label: "Create", icon: Edit2 }, { key: "delete", label: "Delete", icon: Trash2 }] },
+  { name: "Clients", icon: Users, perms: [{ key: "view", label: "View", icon: Eye }, { key: "edit", label: "Edit", icon: Edit2 }] },
+];
+
+const rolePerms: Record<string, Record<string, boolean>> = {
+  manager: { view: true, create: true, delete: false, "clients.view": true, "clients.edit": true },
+};
 
 export const TeamPermissionsScene = ({ progress }: SceneProps) => {
-  const cardsIn = phaseProgress(progress, 0, 0.4);
-  const togglesAnimate = phaseProgress(progress, 0.3, 0.9);
+  const rolesIn = phaseProgress(progress, 0, 0.25);
+  const permissionsIn = phaseProgress(progress, 0.2, 0.5);
+  const toggleAnim = phaseProgress(progress, 0.45, 0.7);
+  const scopeIn = phaseProgress(progress, 0.65, 0.9);
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-background to-muted/20 overflow-hidden p-4">
-      {/* Header */}
-      <motion.div
-        className="text-center mb-4"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: cardsIn, y: 0 }}
-      >
-        <h2 className="text-sm font-semibold text-foreground">Team Permissions</h2>
-        <p className="text-[10px] text-muted-foreground">Custom access for every role</p>
-      </motion.div>
-
-      {/* Role cards */}
-      <div className="flex gap-2 justify-center">
-        {roles.map((role, roleIndex) => {
-          const delay = roleIndex * 0.15;
-          const cardProgress = phaseProgress(cardsIn, delay, delay + 0.5);
+    <div className="relative w-full h-full bg-background overflow-hidden flex">
+      <motion.div className="w-[90px] bg-card border-r border-border p-2 space-y-1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: rolesIn, x: 0 }}>
+        <div className="flex items-center gap-1 mb-2"><Shield className="w-3.5 h-3.5 text-primary" /><span className="text-[9px] font-semibold">Roles</span></div>
+        {roles.map((role, i) => {
           const Icon = role.icon;
-
+          const isSelected = i === 2;
           return (
-            <motion.div
-              key={role.label}
-              className="flex-1 max-w-[100px]"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ 
-                opacity: cardProgress,
-                x: 50 - cardProgress * 50
-              }}
-            >
-              <div className="bg-card rounded-xl border border-border/50 p-2 shadow-lg">
-                {/* Role header */}
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${role.color} flex items-center justify-center mx-auto mb-2`}>
-                  <Icon className="w-4 h-4 text-white" />
-                </div>
-                <h3 className="text-[10px] font-medium text-center text-foreground mb-2">{role.label}</h3>
-                
-                {/* Permission toggles */}
-                <div className="space-y-1.5">
-                  {role.permissions.map((enabled, permIndex) => {
-                    const toggleDelay = (roleIndex * 0.1) + (permIndex * 0.08);
-                    const toggleProgress = phaseProgress(togglesAnimate, toggleDelay, toggleDelay + 0.3);
-                    
+            <motion.div key={role.id} className={`flex items-center gap-1.5 p-1.5 rounded-lg ${isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''}`} initial={{ opacity: 0 }} animate={{ opacity: phaseProgress(rolesIn, i * 0.05, i * 0.05 + 0.2) }}>
+              <div className={`w-5 h-5 rounded-md ${role.color} flex items-center justify-center`}><Icon className="w-3 h-3 text-white" /></div>
+              <span className="text-[9px] font-medium">{role.label}</span>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <motion.div className="p-2 border-b border-border" initial={{ opacity: 0 }} animate={{ opacity: permissionsIn }}>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center"><UserCog className="w-4 h-4 text-white" /></div>
+            <div><h3 className="text-[11px] font-semibold">Manager Permissions</h3><p className="text-[8px] text-muted-foreground">Manage jobs & clients</p></div>
+          </div>
+        </motion.div>
+        <div className="flex-1 p-2 space-y-2 overflow-auto">
+          {permissionCategories.map((cat, ci) => {
+            const CatIcon = cat.icon;
+            return (
+              <motion.div key={cat.name} className="bg-card border border-border rounded-lg overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: phaseProgress(permissionsIn, ci * 0.15, ci * 0.15 + 0.3), y: 0 }}>
+                <div className="flex items-center gap-1.5 p-2 bg-muted/30 border-b border-border"><CatIcon className="w-3.5 h-3.5 text-primary" /><span className="text-[10px] font-semibold">{cat.name}</span></div>
+                <div className="p-1.5 space-y-1">
+                  {cat.perms.map((perm, pi) => {
+                    const permKey = ci === 0 ? perm.key : `clients.${perm.key}`;
+                    const isOn = rolePerms.manager[permKey] ?? false;
+                    const isToggling = toggleAnim > 0.3 && toggleAnim < 0.7 && pi === 1 && ci === 0;
+                    const PermIcon = perm.icon;
                     return (
-                      <motion.div
-                        key={permIndex}
-                        className="flex items-center justify-between"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: toggleProgress }}
-                      >
-                        <span className="text-[8px] text-muted-foreground truncate max-w-[50px]">
-                          {permissionLabels[permIndex]}
-                        </span>
-                        <motion.div
-                          className={`w-6 h-3.5 rounded-full flex items-center px-0.5 ${
-                            enabled ? 'bg-primary' : 'bg-muted'
-                          }`}
-                          initial={{ scale: 0.8 }}
-                          animate={{ scale: 0.8 + toggleProgress * 0.2 }}
-                        >
-                          <motion.div
-                            className="w-2.5 h-2.5 rounded-full bg-white shadow-sm flex items-center justify-center"
-                            animate={{ 
-                              x: enabled ? toggleProgress * 8 : 0 
-                            }}
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                          >
-                            {enabled ? (
-                              <Check className="w-1.5 h-1.5 text-primary" />
-                            ) : (
-                              <X className="w-1.5 h-1.5 text-muted-foreground" />
-                            )}
-                          </motion.div>
+                      <motion.div key={perm.key} className={`flex items-center justify-between p-1.5 rounded-md ${isToggling ? 'bg-primary/10' : ''}`} animate={isToggling ? { scale: [1, 1.02, 1] } : {}}>
+                        <div className="flex items-center gap-2"><PermIcon className="w-3 h-3 text-muted-foreground" /><span className="text-[9px]">{perm.label}</span></div>
+                        <motion.div className={`w-7 h-4 rounded-full relative ${isOn ? 'bg-primary' : 'bg-muted'}`} animate={isToggling ? { scale: [1, 1.1, 1] } : {}}>
+                          <motion.div className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm" animate={{ left: isOn ? "calc(100% - 14px)" : "2px" }} />
                         </motion.div>
                       </motion.div>
                     );
                   })}
                 </div>
-              </div>
+              </motion.div>
+            );
+          })}
+          <AnimatePresence>{scopeIn > 0 && (
+            <motion.div className="bg-card border border-border rounded-lg p-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: scopeIn, y: 0 }}>
+              <div className="flex items-center gap-1.5 mb-2"><Eye className="w-3.5 h-3.5 text-primary" /><span className="text-[10px] font-semibold">Data Scope</span></div>
+              <div className="flex gap-1">{["All", "Assigned", "Own"].map((s, i) => (<motion.div key={s} className={`flex-1 py-1.5 rounded-md text-center text-[8px] font-medium ${i === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{s}</motion.div>))}</div>
             </motion.div>
-          );
-        })}
+          )}</AnimatePresence>
+        </div>
+        <motion.div className="p-2 border-t border-border" initial={{ opacity: 0 }} animate={{ opacity: scopeIn }}>
+          <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium"><Check className="w-3 h-3" />Save Permissions</button>
+        </motion.div>
       </div>
-
-      {/* Highlight glow */}
-      <motion.div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ 
-          opacity: phaseProgress(progress, 0.7, 1),
-          scale: 0.9 + phaseProgress(progress, 0.7, 1) * 0.1
-        }}
-      >
-        <span className="text-[9px] font-medium text-primary">✨ Granular Control</span>
-      </motion.div>
     </div>
   );
 };
