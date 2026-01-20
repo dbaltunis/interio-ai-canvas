@@ -315,73 +315,119 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 4: JOBS & NOTES - Dummy data, no cursor
+// SCENE 4: JOBS & NOTES - With team members and full nav
 export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   const showJobsList = inPhase(phase, 0.1, 1);
   const focusOnAction = inPhase(phase, 0.25, 0.35);
   const showActionMenu = inPhase(phase, 0.35, 0.55);
   const showNoteDialog = inPhase(phase, 0.5, 0.95);
-  const noteText = typingProgress(phase, 0.55, 0.8, "Measurements confirmed ✓ @Jane please order fabrics");
+  const noteText = typingProgress(phase, 0.55, 0.8, "Measurements confirmed ✓ @Marcus please order fabrics");
   const showSuccess = inPhase(phase, 0.88, 1);
   
   const jobs = [
-    { id: "JOB-001", client: "Smith Family", status: "In Progress", amount: "£2,450", color: "bg-blue-500" },
-    { id: "JOB-002", client: "Riverside Hotel", status: "Quote Sent", amount: "£8,900", color: "bg-amber-500" },
-    { id: "JOB-003", client: "Jane Cooper", status: "Completed", amount: "£1,850", color: "bg-green-500" },
+    { id: "JOB-001", client: "Smith Family", status: "In Progress", amount: "£2,450", color: "bg-blue-500", team: { name: "John", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John" } },
+    { id: "JOB-002", client: "Riverside Hotel", status: "Quote Sent", amount: "£8,900", color: "bg-amber-500", team: { name: "Lee", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lee" } },
+    { id: "JOB-003", client: "Jane Cooper", status: "Completed", amount: "£1,850", color: "bg-green-500", team: { name: "Rachel", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rachel" } },
   ];
   
   return (
     <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
+      {/* Header with full nav */}
       <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
           <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">Home</span>
-            <span className="text-xs font-semibold text-primary">Jobs</span>
+          <div className="flex items-center gap-4">
+            {["Home", "Clients", "Jobs", "Messages", "Calendar"].map((nav, i) => (
+              <span key={nav} className={`text-xs ${nav === "Jobs" ? "font-semibold text-primary" : "text-muted-foreground"}`}>{nav}</span>
+            ))}
           </div>
         </div>
-        <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded text-xs font-medium"><Plus className="h-4 w-4" />New Job</button>
+        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium"><Plus className="h-3 w-3" />New Job</button>
       </div>
-      <div className="px-4 py-3 border-b border-border"><h2 className="text-base font-semibold flex items-center gap-2"><FileText className="h-5 w-5 text-primary" />Jobs</h2></div>
-      <div className="p-3">
+      
+      <div className="px-3 py-2 border-b border-border"><h2 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />Jobs</h2></div>
+      
+      <div className="p-2">
         <div className="border border-border rounded-lg overflow-hidden bg-card">
-          <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase"><span>Job #</span><span>Client</span><span>Status</span><span>Amount</span><span></span></div>
+          {/* Header row */}
+          <div className="grid grid-cols-6 gap-1 px-3 py-1.5 bg-muted/50 text-[10px] font-medium text-muted-foreground uppercase">
+            <span>Job #</span>
+            <span>Client</span>
+            <span>Team</span>
+            <span>Status</span>
+            <span>Amount</span>
+            <span></span>
+          </div>
+          
+          {/* Job rows */}
           {jobs.map((job, i) => (
-            <motion.div key={job.id} initial={{ opacity: 0 }} animate={{ opacity: showJobsList ? 1 : 0 }} className={`grid grid-cols-5 gap-2 px-4 py-3 border-t border-border items-center ${i === 0 ? "bg-primary/5" : ""}`}>
-              <span className="text-sm font-medium text-primary">{job.id}</span>
-              <span className="text-sm truncate">{job.client}</span>
-              <div className="flex items-center gap-1.5"><div className={`w-2 h-2 rounded-full ${job.color}`} /><span className="text-xs">{job.status}</span></div>
-              <span className="text-sm font-semibold">{job.amount}</span>
-              {i === 0 && (
-                <div className="relative justify-self-end">
-                  <motion.div className="w-8 h-8 rounded flex items-center justify-center bg-muted relative" animate={{ backgroundColor: showActionMenu ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))" }}>
-                    <FocusRing active={focusOnAction} /><MoreHorizontal className="h-4 w-4" />
-                  </motion.div>
-                  <AnimatePresence>
-                    {showActionMenu && !showNoteDialog && (
-                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute right-0 top-9 w-44 bg-popover border border-border rounded-lg shadow-lg z-20 py-1">
-                        {[{ label: "View Job", icon: Eye }, { label: "Write Note", icon: MessageSquare, highlight: true }, { label: "Duplicate", icon: Copy }].map((item) => (
-                          <div key={item.label} className={`flex items-center gap-2.5 px-4 py-2 text-sm cursor-pointer ${item.highlight ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}><item.icon className="h-4 w-4" /><span>{item.label}</span></div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+            <motion.div 
+              key={job.id} 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: showJobsList ? 1 : 0 }} 
+              className={`grid grid-cols-6 gap-1 px-3 py-2 border-t border-border items-center ${i === 0 ? "bg-primary/5" : ""}`}
+            >
+              <span className="text-xs font-medium text-primary">{job.id}</span>
+              <span className="text-xs truncate">{job.client}</span>
+              <div className="flex items-center gap-1.5">
+                <img src={job.team.avatar} alt={job.team.name} className="w-5 h-5 rounded-full bg-muted" />
+                <span className="text-xs truncate">{job.team.name}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${job.color}`} />
+                <span className="text-[10px]">{job.status}</span>
+              </div>
+              <span className="text-xs font-semibold">{job.amount}</span>
+              
+              {/* Action button - only on first row */}
+              <div className="justify-self-end">
+                {i === 0 ? (
+                  <div className="relative">
+                    <motion.div 
+                      className="w-6 h-6 rounded flex items-center justify-center bg-muted relative" 
+                      animate={{ backgroundColor: showActionMenu ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))" }}
+                    >
+                      {focusOnAction && !showActionMenu && (
+                        <motion.div
+                          className="absolute inset-0 rounded ring-2 ring-primary/60"
+                          animate={{ scale: [1, 1.1, 1], opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                        />
+                      )}
+                      <MoreHorizontal className="h-3 w-3" />
+                    </motion.div>
+                    <AnimatePresence>
+                      {showActionMenu && !showNoteDialog && (
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute right-0 top-7 w-36 bg-popover border border-border rounded-lg shadow-lg z-20 py-1">
+                          {[{ label: "View Job", icon: Eye }, { label: "Write Note", icon: MessageSquare, highlight: true }, { label: "Duplicate", icon: Copy }].map((item) => (
+                            <div key={item.label} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${item.highlight ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}><item.icon className="h-3 w-3" /><span>{item.label}</span></div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded flex items-center justify-center bg-muted opacity-50">
+                    <MoreHorizontal className="h-3 w-3" />
+                  </div>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
       </div>
+      
+      {/* Note Dialog */}
       <AnimatePresence>
         {showNoteDialog && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 flex items-center justify-center z-30 p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-background rounded-xl border border-border shadow-xl w-full max-w-sm">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border"><div className="flex items-center gap-2"><MessageSquare className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Write Note</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
-              <div className="p-4 space-y-3">
-                <div className="text-sm text-muted-foreground">JOB-001 • Smith Family</div>
-                <div className="min-h-[80px] p-3 bg-muted/50 rounded-lg border border-border text-sm">{noteText}{inPhase(phase, 0.55, 0.8) && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="inline-block w-0.5 h-5 bg-primary ml-0.5" />}</div>
-                {noteText.includes("@Jane") && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200"><UserPlus className="h-4 w-4 text-blue-500" /><span className="text-sm text-blue-600">Mentioning: Jane (Team)</span></motion.div>}
-                <motion.button className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-base font-medium flex items-center justify-center gap-2" animate={{ backgroundColor: showSuccess ? "hsl(142.1 76.2% 36.3%)" : "hsl(var(--primary))" }}>{showSuccess ? <><Check className="h-5 w-5" />Saved!</> : "Save Note"}</motion.button>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-background rounded-xl border border-border shadow-xl w-full max-w-xs">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border"><div className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /><span className="text-sm font-semibold">Write Note</span></div><X className="h-4 w-4 text-muted-foreground" /></div>
+              <div className="p-3 space-y-2">
+                <div className="text-xs text-muted-foreground">JOB-001 • Smith Family</div>
+                <div className="min-h-[60px] p-2 bg-muted/50 rounded-lg border border-border text-xs">{noteText}{inPhase(phase, 0.55, 0.8) && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="inline-block w-0.5 h-4 bg-primary ml-0.5" />}</div>
+                {noteText.includes("@Marcus") && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200"><UserPlus className="h-3 w-3 text-blue-500" /><span className="text-xs text-blue-600">Mentioning: Marcus (Team)</span></motion.div>}
+                <motion.button className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center gap-2" animate={{ backgroundColor: showSuccess ? "hsl(142.1 76.2% 36.3%)" : "hsl(var(--primary))" }}>{showSuccess ? <><Check className="h-4 w-4" />Saved!</> : "Save Note"}</motion.button>
               </div>
             </motion.div>
           </motion.div>
