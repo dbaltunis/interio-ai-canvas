@@ -1,6 +1,8 @@
 /**
  * WelcomeVideoSteps - 6-Scene Cinematic Product Showcase
  * Scenes: Logo Intro, Dashboard, Theme Toggle, Jobs & Notes, Project Deep-Dive, Closing
+ * 
+ * Updated for high-fidelity matching actual app UI
  */
 
 import React from "react";
@@ -9,7 +11,8 @@ import {
   Moon, Sun, Plus, ChevronRight, ChevronDown, Check, Edit, Trash2,
   Share2, FileText, Users, Home, Bed, ChefHat, Bath, MoreHorizontal,
   Clock, MessageSquare, Building2, Receipt, Layers, Eye, Tag, X,
-  ShoppingBag, TrendingUp, Package, UserPlus, Copy, Link as LinkIcon, ExternalLink
+  ShoppingBag, TrendingUp, Package, UserPlus, Copy, Link as LinkIcon, ExternalLink,
+  DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Image
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -114,7 +117,7 @@ export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
 
 // ===========================================
 // SCENE 2: DASHBOARD OVERVIEW
-// Duration: 8 seconds
+// Duration: 8 seconds - Matches actual app UI
 // ===========================================
 
 export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
@@ -135,65 +138,136 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
     <motion.div 
       className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative"
       animate={{
-        scale: zoomIn ? 1.3 : 1,
-        x: zoomIn ? "15%" : "0%",
-        y: zoomIn ? "10%" : "0%",
+        scale: zoomIn ? 1.12 : 1,
+        x: zoomIn ? "10%" : "0%",
+        y: zoomIn ? "15%" : "0%",
       }}
       transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
     >
-      {/* Mini Header */}
-      <div className="h-10 border-b border-border bg-card flex items-center justify-between px-3">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-primary">IA</span>
+      {/* Header - matches actual app */}
+      <div className="h-11 border-b border-border bg-card flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+            alt="IA" 
+            className="h-5 w-auto"
+          />
+          <div className="flex items-center gap-4">
+            {["Home", "Clients", "Jobs", "Messages", "Calendar", "Library"].map((nav, i) => (
+              <span 
+                key={nav} 
+                className={`text-[10px] ${i === 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}
+              >
+                {nav}
+              </span>
+            ))}
           </div>
-          <span className="text-xs font-medium">Dashboard</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
+          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
             <Users className="h-3 w-3 text-muted-foreground" />
           </div>
-          <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
+          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+            <Lightbulb className="h-3 w-3 text-amber-500" />
+          </div>
+          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
             <Sun className="h-3 w-3 text-muted-foreground" />
+          </div>
+          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+            <Settings className="h-3 w-3 text-muted-foreground" />
           </div>
         </div>
       </div>
 
+      {/* Welcome Header - matches actual app */}
+      <div className="px-3 py-2 border-b border-border bg-card/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <motion.h2 
+              className="text-sm font-semibold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: inPhase(phase, 0.05, 1) ? 1 : 0 }}
+            >
+              Good afternoon, Darius B.
+            </motion.h2>
+            <motion.p 
+              className="text-[9px] text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: inPhase(phase, 0.08, 1) ? 1 : 0 }}
+            >
+              219 pending quotes • 458 clients
+            </motion.p>
+          </div>
+          <motion.div 
+            className="text-[9px] text-muted-foreground px-2 py-1 bg-muted rounded"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: inPhase(phase, 0.1, 1) ? 1 : 0 }}
+          >
+            Last 90 days
+          </motion.div>
+        </div>
+      </div>
+
       {/* Dashboard Content */}
-      <div className="p-3 space-y-3">
-        {/* Top Stats Row */}
-        <div className="grid grid-cols-4 gap-2">
+      <div className="p-2 space-y-2">
+        {/* Top Stats Row - matches actual app with icons */}
+        <div className="grid grid-cols-4 gap-1.5">
           {[
-            { label: "Active Jobs", value: "12", icon: FileText, color: "text-blue-500" },
-            { label: "This Month", value: "£14,890", icon: TrendingUp, color: "text-green-500" },
-            { label: "Pending", value: "8", icon: Clock, color: "text-amber-500" },
-            { label: "Clients", value: "156", icon: Users, color: "text-purple-500" },
-          ].map((stat) => (
+            { label: "Revenue", value: "£59,872", icon: DollarSign, color: "text-primary", bg: "bg-primary/5" },
+            { label: "Active Projects", value: "138", icon: Calendar, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20" },
+            { label: "Pending Quotes", value: "177", icon: Receipt, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
+            { label: "Clients", value: "19", icon: Users, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-900/20" },
+          ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: inPhase(phase, 0.1, 1) ? 1 : 0, y: 0 }}
-              className="p-2 bg-card rounded-lg border border-border"
+              animate={{ opacity: inPhase(phase, 0.1 + i * 0.02, 1) ? 1 : 0, y: 0 }}
+              className={`p-2 ${stat.bg} rounded-lg border border-border`}
             >
-              <stat.icon className={`h-3 w-3 ${stat.color} mb-1`} />
-              <div className="text-xs font-bold">{stat.value}</div>
-              <div className="text-[9px] text-muted-foreground truncate">{stat.label}</div>
+              <div className="flex items-center gap-1 mb-1">
+                <stat.icon className={`h-3 w-3 ${stat.color}`} />
+              </div>
+              <div className="text-sm font-bold">{stat.value}</div>
+              <div className="text-[8px] text-muted-foreground truncate">{stat.label}</div>
             </motion.div>
           ))}
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Charts Row - matches actual app layout */}
+        <div className="grid grid-cols-2 gap-1.5">
           {/* Revenue Trend Chart */}
           <motion.div 
             className="p-2 bg-card rounded-lg border border-border"
             initial={{ opacity: 0 }}
             animate={{ opacity: inPhase(phase, 0.1, 1) ? 1 : 0 }}
           >
-            <div className="text-[9px] font-medium mb-2">Revenue Trend</div>
-            <svg className="w-full h-16" viewBox="0 0 100 40">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-medium">Revenue Trend</span>
+              <span className="text-[8px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600">
+                -54.9%
+              </span>
+            </div>
+            <svg className="w-full h-12" viewBox="0 0 100 32">
+              {/* Y-axis labels */}
+              <text x="0" y="6" className="fill-muted-foreground" style={{ fontSize: '4px' }}>26k</text>
+              <text x="0" y="16" className="fill-muted-foreground" style={{ fontSize: '4px' }}>13k</text>
+              <text x="0" y="28" className="fill-muted-foreground" style={{ fontSize: '4px' }}>0k</text>
+              
+              {/* Previous period line (gray) */}
               <motion.path
-                d="M 0 35 Q 15 30, 25 25 T 50 20 T 75 15 T 100 8"
+                d="M 12 20 Q 25 18, 40 22 T 65 16 T 88 10 T 100 8"
+                fill="none"
+                stroke="hsl(var(--muted-foreground)/0.3)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeDasharray="3 2"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: chartProgress * 0.8 }}
+              />
+              
+              {/* Current period line (primary) */}
+              <motion.path
+                d="M 12 8 Q 25 12, 40 18 T 65 22 T 88 25 T 100 28"
                 fill="none"
                 stroke="hsl(var(--primary))"
                 strokeWidth="2"
@@ -202,57 +276,96 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
                 animate={{ pathLength: chartProgress }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               />
-              <motion.path
-                d="M 0 35 Q 15 30, 25 25 T 50 20 T 75 15 T 100 8 V 40 H 0 Z"
-                fill="hsl(var(--primary)/0.1)"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: chartProgress > 0.5 ? 0.5 : 0 }}
-              />
             </svg>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-0.5 bg-primary rounded" />
+                <span className="text-[7px] text-muted-foreground">Current</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-0.5 bg-muted-foreground/30 rounded" />
+                <span className="text-[7px] text-muted-foreground">Previous</span>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Jobs by Status Donut */}
+          {/* Jobs by Status Donut - matches actual app */}
           <motion.div 
             className="p-2 bg-card rounded-lg border border-border"
             initial={{ opacity: 0 }}
             animate={{ opacity: inPhase(phase, 0.15, 1) ? 1 : 0 }}
           >
-            <div className="text-[9px] font-medium mb-2">Jobs by Status</div>
+            <div className="text-[9px] font-medium mb-1">Jobs by Status</div>
             <div className="flex items-center gap-2">
-              <svg className="w-12 h-12" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" />
-                <motion.circle
-                  cx="18" cy="18" r="15"
-                  fill="none"
-                  stroke="hsl(142.1 76.2% 36.3%)"
-                  strokeWidth="4"
-                  strokeDasharray="94.2"
-                  strokeDashoffset={94.2 - (donutProgress * 35)}
-                  transform="rotate(-90 18 18)"
-                />
-                <motion.circle
-                  cx="18" cy="18" r="15"
-                  fill="none"
-                  stroke="hsl(221.2 83.2% 53.3%)"
-                  strokeWidth="4"
-                  strokeDasharray="94.2"
-                  strokeDashoffset={94.2 - (donutProgress * 25)}
-                  transform="rotate(40 18 18)"
-                />
-              </svg>
-              <div className="text-[8px] space-y-0.5">
+              <div className="relative">
+                <svg className="w-14 h-14" viewBox="0 0 36 36">
+                  {/* Background circle */}
+                  <circle cx="18" cy="18" r="12" fill="none" stroke="hsl(var(--muted)/0.3)" strokeWidth="3" />
+                  
+                  {/* Draft segment (gray) - largest */}
+                  <motion.circle
+                    cx="18" cy="18" r="12"
+                    fill="none"
+                    stroke="#9CA3AF"
+                    strokeWidth="3"
+                    strokeDasharray={`${donutProgress * 45} 100`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 18 18)"
+                  />
+                  {/* Order Confirmed (orange) */}
+                  <motion.circle
+                    cx="18" cy="18" r="12"
+                    fill="none"
+                    stroke="#F59E0B"
+                    strokeWidth="3"
+                    strokeDasharray={`${donutProgress * 12} 100`}
+                    strokeLinecap="round"
+                    transform="rotate(70 18 18)"
+                  />
+                  {/* Quote Sent (blue) */}
+                  <motion.circle
+                    cx="18" cy="18" r="12"
+                    fill="none"
+                    stroke="#3B82F6"
+                    strokeWidth="3"
+                    strokeDasharray={`${donutProgress * 5} 100`}
+                    strokeLinecap="round"
+                    transform="rotate(115 18 18)"
+                  />
+                  {/* Approved (green) */}
+                  <motion.circle
+                    cx="18" cy="18" r="12"
+                    fill="none"
+                    stroke="#22C55E"
+                    strokeWidth="3"
+                    strokeDasharray={`${donutProgress * 3} 100`}
+                    strokeLinecap="round"
+                    transform="rotate(135 18 18)"
+                  />
+                </svg>
+                {/* Center number */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold">147</span>
+                </div>
+              </div>
+              <div className="text-[7px] space-y-0.5">
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                  <span>Completed</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#9CA3AF]" />
+                  <span>Draft (97)</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>In Progress</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  <span>Order Conf. (23)</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                  <span>Draft</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+                  <span>Quote Sent (8)</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                  <span>Approved (5)</span>
+                </div>
+                <span className="text-muted-foreground">+7 more</span>
               </div>
             </div>
           </motion.div>
@@ -260,46 +373,71 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
 
         {/* Shopify Performance Section - zoomed area */}
         <motion.div 
-          className="p-3 bg-gradient-to-r from-green-500/5 to-green-500/10 rounded-lg border border-green-500/20"
+          className="grid grid-cols-3 gap-1.5"
           initial={{ opacity: 0 }}
           animate={{ opacity: inPhase(phase, 0.3, 1) ? 1 : 0 }}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <ShoppingBag className="h-3.5 w-3.5 text-green-600" />
-            <span className="text-[10px] font-semibold">Shopify Performance</span>
-            <span className="text-[8px] text-muted-foreground ml-auto">Last 7 days</span>
+          {/* Shopify Store Analytics */}
+          <div className="p-2 bg-card rounded-lg border border-border">
+            <div className="flex items-center gap-1 mb-2">
+              <ShoppingBag className="h-3 w-3 text-green-600" />
+              <span className="text-[8px] font-medium">Store Analytics</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[8px]">
+                <span className="text-muted-foreground">Sessions</span>
+                <span className="font-medium">1,234</span>
+              </div>
+              <div className="flex justify-between text-[8px]">
+                <span className="text-muted-foreground">Conv. Rate</span>
+                <span className="font-medium text-green-600">3.2%</span>
+              </div>
+            </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-3">
-            {/* Revenue */}
+          {/* Shopify Performance - main widget */}
+          <div className="p-2 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-1 mb-2">
+              <ShoppingBag className="h-3 w-3 text-green-600" />
+              <span className="text-[8px] font-semibold text-green-700 dark:text-green-400">Performance</span>
+              <span className="ml-auto text-[7px] px-1 py-0.5 bg-green-500 text-white rounded animate-pulse">Live</span>
+            </div>
             <div className="text-center">
               <motion.div 
-                className="text-lg font-bold text-green-600"
+                className="text-base font-bold text-green-600"
                 key={revenueValue}
               >
                 £{revenueValue.toLocaleString()}
               </motion.div>
-              <div className="text-[9px] text-muted-foreground">Revenue</div>
+              <div className="text-[7px] text-green-600/70">Revenue (7 days)</div>
             </div>
-            {/* Orders */}
-            <div className="text-center">
-              <motion.div 
-                className="text-lg font-bold text-foreground"
-                key={ordersValue}
-              >
-                {ordersValue}
-              </motion.div>
-              <div className="text-[9px] text-muted-foreground">Orders</div>
+            <div className="flex justify-around mt-2 pt-2 border-t border-green-200 dark:border-green-700">
+              <div className="text-center">
+                <motion.div className="text-[10px] font-bold">{ordersValue}</motion.div>
+                <div className="text-[6px] text-muted-foreground">Orders</div>
+              </div>
+              <div className="text-center">
+                <motion.div className="text-[10px] font-bold">{customersValue}</motion.div>
+                <div className="text-[6px] text-muted-foreground">Customers</div>
+              </div>
             </div>
-            {/* Customers */}
-            <div className="text-center">
-              <motion.div 
-                className="text-lg font-bold text-foreground"
-                key={customersValue}
-              >
-                {customersValue}
-              </motion.div>
-              <div className="text-[9px] text-muted-foreground">Customers</div>
+          </div>
+          
+          {/* Product Sync */}
+          <div className="p-2 bg-card rounded-lg border border-border">
+            <div className="flex items-center gap-1 mb-2">
+              <Package className="h-3 w-3 text-blue-500" />
+              <span className="text-[8px] font-medium">Product Sync</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[8px]">
+                <span className="text-muted-foreground">Synced</span>
+                <span className="font-medium text-green-600">✓ 42</span>
+              </div>
+              <div className="flex justify-between text-[8px]">
+                <span className="text-muted-foreground">Pending</span>
+                <span className="font-medium text-amber-500">3</span>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -310,7 +448,7 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
 
 // ===========================================
 // SCENE 3: THEME TOGGLE (Dark/Light)
-// Duration: 6 seconds
+// Duration: 6 seconds - Subtle zoom
 // ===========================================
 
 export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
@@ -318,9 +456,9 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
   const isDarkMode = inPhase(phase, 0.4, 0.7);
   const cursorVisible = inPhase(phase, 0.2, 0.8);
   
-  // Cursor position animation
-  const cursorX = zoomedToHeader ? 280 : 150;
-  const cursorY = zoomedToHeader ? 80 : 50;
+  // Cursor position animation - more subtle
+  const cursorX = zoomedToHeader ? 320 : 200;
+  const cursorY = zoomedToHeader ? 55 : 40;
   const isClicking = inPhase(phase, 0.38, 0.42) || inPhase(phase, 0.68, 0.72);
   
   return (
@@ -343,33 +481,45 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
         )}
       </AnimatePresence>
 
-      {/* Header with icons */}
+      {/* Full App Header - matches actual app */}
       <motion.div 
-        className="h-12 border-b flex items-center justify-between px-4"
+        className="h-11 border-b flex items-center justify-between px-3"
         animate={{
           borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)",
           backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(0 0% 100%)",
         }}
         transition={{ duration: 0.4 }}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-primary">IA</span>
+        {/* Left side - logo + nav */}
+        <div className="flex items-center gap-4">
+          <img 
+            src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+            alt="IA" 
+            className="h-5 w-auto"
+          />
+          <div className="flex items-center gap-3">
+            {["Home", "Clients", "Jobs", "Messages", "Calendar", "Library"].map((nav, i) => (
+              <motion.span 
+                key={nav}
+                className={`text-[10px] ${i === 0 ? "font-semibold" : ""}`}
+                animate={{ 
+                  color: i === 0 
+                    ? "hsl(var(--primary))" 
+                    : isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)"
+                }}
+              >
+                {nav}
+              </motion.span>
+            ))}
           </div>
-          <motion.span 
-            className="text-sm font-medium"
-            animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}
-          >
-            InterioApp
-          </motion.span>
         </div>
         
-        {/* Header icons - zoomed target area */}
+        {/* Right side - Header icons (zoomed target area) */}
         <motion.div 
-          className="flex items-center gap-2"
+          className="flex items-center gap-1.5"
           animate={{
-            scale: zoomedToHeader ? 1.8 : 1,
-            x: zoomedToHeader ? -40 : 0,
+            scale: zoomedToHeader ? 1.3 : 1,
+            x: zoomedToHeader ? -20 : 0,
           }}
           transition={{ duration: 0.5 }}
         >
@@ -383,7 +533,7 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
             className="w-7 h-7 rounded-lg flex items-center justify-center"
             animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)" }}
           >
-            <Tag className="h-3.5 w-3.5 text-amber-500" />
+            <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
           </motion.div>
           
           {/* Theme toggle button - animated target */}
@@ -430,21 +580,47 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
               />
             )}
           </motion.div>
+          
+          <motion.div 
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)" }}
+          >
+            <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+          </motion.div>
         </motion.div>
       </motion.div>
 
       {/* Content area - theme preview */}
       <motion.div 
-        className="p-4"
+        className="p-3"
         animate={{ 
           backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" 
         }}
       >
-        <div className="grid grid-cols-2 gap-3">
+        {/* Welcome header preview */}
+        <motion.div 
+          className="mb-3 p-2 rounded-lg"
+          animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)" }}
+        >
+          <motion.div 
+            className="text-sm font-semibold mb-0.5"
+            animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}
+          >
+            Good afternoon, Darius B.
+          </motion.div>
+          <motion.div 
+            className="text-[9px]"
+            animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}
+          >
+            219 pending quotes • 458 clients
+          </motion.div>
+        </motion.div>
+        
+        <div className="grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map((i) => (
             <motion.div
               key={i}
-              className="h-16 rounded-lg"
+              className="h-14 rounded-lg"
               animate={{
                 backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)",
                 borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)",
@@ -486,30 +662,26 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   let isClicking = false;
   
   if (inPhase(phase, 0.15, 0.35)) {
-    // Move to action button
-    cursorX = 340;
-    cursorY = 90;
+    cursorX = 360;
+    cursorY = 95;
     isClicking = inPhase(phase, 0.3, 0.35);
   } else if (inPhase(phase, 0.35, 0.5)) {
-    // Click Write Note
-    cursorX = 320;
-    cursorY = 140;
+    cursorX = 330;
+    cursorY = 145;
     isClicking = inPhase(phase, 0.45, 0.5);
   } else if (inPhase(phase, 0.5, 0.85)) {
-    // In note dialog - typing
     cursorX = 200;
     cursorY = 200;
   } else if (inPhase(phase, 0.85, 0.9)) {
-    // Click save
     cursorX = 280;
     cursorY = 280;
     isClicking = inPhase(phase, 0.86, 0.88);
   }
   
   const jobs = [
-    { id: "JOB-065", client: "Sarah Johnson", status: "In Progress", amount: "£4,666", color: "bg-blue-500" },
-    { id: "JOB-064", client: "Mike Peters", status: "Quote Sent", amount: "£2,890", color: "bg-amber-500" },
-    { id: "JOB-063", client: "Emma Wilson", status: "Completed", amount: "£3,450", color: "bg-green-500" },
+    { id: "JOB-065", client: "Sarah Johnson", status: "In Progress", amount: "£4,666", color: "bg-blue-500", date: "Jan 20" },
+    { id: "JOB-064", client: "Mike Peters", status: "Quote Sent", amount: "£2,890", color: "bg-amber-500", date: "Jan 19" },
+    { id: "JOB-063", client: "Emma Wilson", status: "Completed", amount: "£3,450", color: "bg-green-500", date: "Jan 18" },
   ];
   
   return (
@@ -519,22 +691,57 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
         <DemoCursor x={cursorX} y={cursorY} isClicking={isClicking} visible={true} />
       )}
 
-      {/* Header */}
-      <div className="h-10 border-b border-border bg-card flex items-center px-3 gap-2">
-        <FileText className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold">Jobs</span>
-        <span className="ml-auto text-xs text-muted-foreground">3 active</span>
+      {/* Header - matches actual app */}
+      <div className="h-11 border-b border-border bg-card flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+            alt="IA" 
+            className="h-5 w-auto"
+          />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-muted-foreground">Home</span>
+            <span className="text-[10px] text-muted-foreground">Clients</span>
+            <span className="text-[10px] font-semibold text-primary">Jobs</span>
+            <span className="text-[10px] text-muted-foreground">Messages</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[9px] font-medium">
+            <Plus className="h-3 w-3" />
+            New Job
+          </button>
+        </div>
+      </div>
+
+      {/* Page header */}
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Jobs
+          </h2>
+          <p className="text-[9px] text-muted-foreground">3 active jobs</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input 
+            type="text" 
+            placeholder="Search jobs..." 
+            className="w-28 px-2 py-1 text-[9px] border border-border rounded bg-muted/50"
+          />
+        </div>
       </div>
 
       {/* Jobs Table */}
       <div className="p-2">
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden bg-card">
           {/* Table header */}
-          <div className="grid grid-cols-5 gap-2 px-3 py-2 bg-muted/50 text-[9px] font-medium text-muted-foreground">
+          <div className="grid grid-cols-6 gap-2 px-3 py-2 bg-muted/50 text-[8px] font-medium text-muted-foreground uppercase tracking-wider">
             <span>Job #</span>
             <span>Client</span>
             <span>Status</span>
             <span>Amount</span>
+            <span>Date</span>
             <span></span>
           </div>
           
@@ -545,21 +752,22 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: showJobsList ? 1 : 0, x: 0 }}
               transition={{ delay: i * 0.1 }}
-              className={`grid grid-cols-5 gap-2 px-3 py-2.5 border-t border-border items-center relative ${i === 0 ? "bg-primary/5" : ""}`}
+              className={`grid grid-cols-6 gap-2 px-3 py-2.5 border-t border-border items-center relative ${i === 0 ? "bg-primary/5" : "hover:bg-muted/30"}`}
             >
-              <span className="text-[10px] font-medium">{job.id}</span>
-              <span className="text-[10px]">{job.client}</span>
+              <span className="text-[10px] font-medium text-primary">{job.id}</span>
+              <span className="text-[10px] truncate">{job.client}</span>
               <div className="flex items-center gap-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${job.color}`} />
                 <span className="text-[9px]">{job.status}</span>
               </div>
               <span className="text-[10px] font-semibold">{job.amount}</span>
+              <span className="text-[9px] text-muted-foreground">{job.date}</span>
               
               {/* Action button for first row */}
               {i === 0 && (
-                <div className="relative">
+                <div className="relative justify-self-end">
                   <motion.div 
-                    className="w-6 h-6 rounded flex items-center justify-center bg-muted hover:bg-muted/80"
+                    className="w-6 h-6 rounded flex items-center justify-center bg-muted cursor-pointer"
                     animate={{ 
                       backgroundColor: showActionMenu ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))"
                     }}
@@ -574,7 +782,7 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
                         initial={{ opacity: 0, y: -5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                        className="absolute right-0 top-7 w-32 bg-popover border border-border rounded-lg shadow-lg z-20 py-1"
+                        className="absolute right-0 top-7 w-36 bg-popover border border-border rounded-lg shadow-lg z-20 py-1"
                       >
                         {[
                           { label: "View Job", icon: Eye },
@@ -584,9 +792,9 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
                         ].map((item) => (
                           <div
                             key={item.label}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-[10px] ${
+                            className={`flex items-center gap-2 px-3 py-1.5 text-[10px] cursor-pointer ${
                               item.highlight ? "bg-primary/10 text-primary font-medium" : 
-                              item.danger ? "text-destructive" : "hover:bg-muted"
+                              item.danger ? "text-destructive hover:bg-destructive/10" : "hover:bg-muted"
                             }`}
                           >
                             <item.icon className="h-3 w-3" />
@@ -623,14 +831,14 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
                   <MessageSquare className="h-4 w-4 text-primary" />
                   <span className="text-sm font-semibold">Write Note</span>
                 </div>
-                <X className="h-4 w-4 text-muted-foreground" />
+                <X className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
               </div>
               
               <div className="p-4 space-y-3">
                 <div className="text-[10px] text-muted-foreground">JOB-065 • Sarah Johnson</div>
                 
                 {/* Note textarea */}
-                <div className="min-h-[60px] p-2 bg-muted/50 rounded-lg text-[11px] leading-relaxed">
+                <div className="min-h-[60px] p-2 bg-muted/50 rounded-lg border border-border text-[11px] leading-relaxed">
                   {noteText}
                   {inPhase(phase, 0.55, 0.8) && (
                     <motion.span
@@ -643,10 +851,14 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
                 
                 {/* @mention highlight */}
                 {noteText.includes("@John") && (
-                  <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+                  >
                     <UserPlus className="h-3 w-3 text-blue-500" />
-                    <span className="text-[9px] text-blue-600">Mentioning: John (Team Member)</span>
-                  </div>
+                    <span className="text-[9px] text-blue-600 dark:text-blue-400">Mentioning: John (Team Member)</span>
+                  </motion.div>
                 )}
                 
                 {/* Save Button */}
@@ -677,7 +889,7 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
 
 // ===========================================
 // SCENE 5: PROJECT DEEP DIVE
-// Duration: 12 seconds
+// Duration: 12 seconds - Professional documents
 // ===========================================
 
 export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
@@ -692,22 +904,21 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   
   const cursorVisible = inPhase(phase, 0.15, 0.95);
   let cursorX = 150;
-  let cursorY = 60;
+  let cursorY = 55;
   let isClicking = false;
   
   // Cursor follows tabs
   if (inPhase(phase, 0.2, 0.25)) {
-    cursorX = 130; cursorY = 52;
+    cursorX = 135; cursorY = 55;
     isClicking = inPhase(phase, 0.23, 0.25);
   } else if (inPhase(phase, 0.45, 0.5)) {
-    cursorX = 190; cursorY = 52;
+    cursorX = 200; cursorY = 55;
     isClicking = inPhase(phase, 0.48, 0.5);
   } else if (inPhase(phase, 0.65, 0.7)) {
-    cursorX = 260; cursorY = 52;
+    cursorX = 270; cursorY = 55;
     isClicking = inPhase(phase, 0.68, 0.7);
   } else if (inPhase(phase, 0.8, 0.85)) {
-    // Move to share button
-    cursorX = 320; cursorY = 140;
+    cursorX = 340; cursorY = 110;
     isClicking = inPhase(phase, 0.83, 0.85);
   }
   
@@ -725,27 +936,29 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
         <DemoCursor x={cursorX} y={cursorY} isClicking={isClicking} visible={true} />
       )}
 
-      {/* Header with job info */}
+      {/* Header with job info - matches actual app */}
       <div className="h-10 border-b border-border bg-card flex items-center px-3 gap-2">
+        <span className="text-[10px] text-muted-foreground">Jobs</span>
         <ChevronRight className="h-3 w-3 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Jobs</span>
-        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-        <span className="text-sm font-semibold">JOB-065</span>
-        <div className="ml-auto flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
-          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-          <span className="text-[9px] font-medium text-blue-700 dark:text-blue-300">In Progress</span>
+        <span className="text-xs font-semibold">JOB-065</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[9px] text-muted-foreground">Jan 20, 2026</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span className="text-[9px] font-medium text-blue-700 dark:text-blue-300">In Progress</span>
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-border bg-muted/30">
+      {/* Tabs - matches actual app */}
+      <div className="flex border-b border-border bg-muted/20">
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-[10px] font-medium border-b-2 transition-colors ${
               activeTab === tab.id 
                 ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
             animate={{
               backgroundColor: activeTab === tab.id ? "hsl(var(--primary)/0.05)" : "transparent"
@@ -758,7 +971,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
       </div>
 
       {/* Tab Content */}
-      <div className="p-3 relative">
+      <div className="p-2 relative overflow-y-auto" style={{ height: 'calc(100% - 82px)' }}>
         <AnimatePresence mode="wait">
           {/* Client Tab */}
           {showClientTab && (
@@ -767,28 +980,40 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="space-y-3"
+              className="space-y-2"
             >
               <div className="p-3 bg-card rounded-lg border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-sm font-bold text-primary">SJ</span>
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <div className="text-sm font-semibold">Sarah Johnson</div>
-                    <div className="text-[10px] text-muted-foreground">sarah@email.com</div>
+                    <div className="text-[10px] text-muted-foreground">sarah@email.com • +44 7700 900123</div>
                   </div>
+                  <button className="px-2 py-1 text-[9px] bg-primary/10 text-primary rounded font-medium">
+                    View Profile
+                  </button>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 bg-muted/50 rounded-lg text-center">
-                  <div className="text-lg font-bold">4</div>
+                <div className="p-3 bg-card rounded-lg border border-border text-center">
+                  <div className="text-xl font-bold">4</div>
                   <div className="text-[9px] text-muted-foreground">Rooms</div>
                 </div>
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-center border border-green-200 dark:border-green-800">
-                  <div className="text-lg font-bold text-green-600">£4,666.18</div>
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 text-center">
+                  <div className="text-xl font-bold text-green-600">£4,666.18</div>
                   <div className="text-[9px] text-green-600">Quote Total</div>
+                </div>
+              </div>
+              
+              <div className="p-2 bg-muted/30 rounded-lg">
+                <div className="text-[9px] font-medium mb-1">Timeline</div>
+                <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
+                  <span>Created: Jan 15</span>
+                  <span>•</span>
+                  <span>Last updated: Today</span>
                 </div>
               </div>
             </motion.div>
@@ -804,89 +1029,204 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
               className="space-y-2"
             >
               {[
-                { room: "Bedroom", amount: "£2,200.90", icon: Bed },
-                { room: "Room 2", amount: "£879.53", icon: Home },
-                { room: "Room 3", amount: "£412.00", icon: ChefHat },
-                { room: "Room 4", amount: "£1,173.75", icon: Bath },
+                { room: "Bedroom", amount: "£2,200.90", icon: Bed, expanded: true, windows: 1 },
+                { room: "Room 2", amount: "£879.53", icon: Home, windows: 2 },
+                { room: "Room 3", amount: "£412.00", icon: ChefHat, windows: 1 },
+                { room: "Room 4", amount: "£1,173.75", icon: Bath, windows: 1 },
               ].map((item, i) => (
                 <motion.div
                   key={item.room}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-center justify-between p-2.5 bg-card rounded-lg border border-border"
+                  transition={{ delay: i * 0.08 }}
+                  className="bg-card rounded-lg border border-border overflow-hidden"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded bg-muted flex items-center justify-center">
-                      <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <div className="flex items-center justify-between p-2.5">
+                    <div className="flex items-center gap-2">
+                      <motion.div 
+                        className="w-5 h-5 rounded flex items-center justify-center"
+                        animate={{ rotate: item.expanded ? 90 : 0 }}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      </motion.div>
+                      <div className="w-7 h-7 rounded bg-muted flex items-center justify-center">
+                        <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-medium">{item.room}</span>
+                        <div className="text-[8px] text-muted-foreground">{item.windows} window{item.windows > 1 ? 's' : ''}</div>
+                      </div>
                     </div>
-                    <span className="text-[11px] font-medium">{item.room}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-primary">{item.amount}</span>
+                      <Edit className="h-3 w-3 text-muted-foreground" />
+                    </div>
                   </div>
-                  <span className="text-[11px] font-bold text-primary">{item.amount}</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  
+                  {/* Expanded content for first room */}
+                  {item.expanded && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      className="border-t border-border p-2 bg-muted/20"
+                    >
+                      <div className="flex items-start gap-2 p-2 bg-background rounded-lg border border-border">
+                        {/* Fabric thumbnail */}
+                        <div className="w-12 h-12 rounded bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center border border-blue-200 dark:border-blue-800">
+                          <Image className="h-5 w-5 text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[10px] font-medium">Curtain testing</div>
+                          <div className="text-[8px] text-muted-foreground">Velvet Midnight Blue</div>
+                          <div className="flex items-center gap-2 mt-1 text-[8px]">
+                            <span className="text-muted-foreground">W: 1000mm</span>
+                            <span className="text-muted-foreground">×</span>
+                            <span className="text-muted-foreground">H: 1000mm</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-bold">£273.54</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
               ))}
             </motion.div>
           )}
 
-          {/* Quote Tab */}
+          {/* Quote Tab - Professional Document */}
           {showQuoteTab && (
             <motion.div
               key="quote"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="space-y-2"
+              className="h-full"
             >
-              <div className="bg-card rounded-lg border border-border overflow-hidden">
-                <div className="grid grid-cols-4 gap-2 px-3 py-2 bg-muted/50 text-[8px] font-medium text-muted-foreground">
-                  <span>Item</span>
-                  <span>Qty</span>
-                  <span>Unit</span>
-                  <span className="text-right">Total</span>
-                </div>
-                {[
-                  { item: "Curtain Fabric", qty: "8.5m", unit: "£45.00/m", total: "£382.50" },
-                  { item: "Lining", qty: "8.5m", unit: "£12.00/m", total: "£102.00" },
-                  { item: "Manufacturing", qty: "1", unit: "£150.00", total: "£150.00" },
-                  { item: "Tracks & Hardware", qty: "2", unit: "£89.00", total: "£178.00" },
-                ].map((row, i) => (
-                  <div key={i} className="grid grid-cols-4 gap-2 px-3 py-2 border-t border-border text-[9px]">
-                    <span className="font-medium">{row.item}</span>
-                    <span className="text-muted-foreground">{row.qty}</span>
-                    <span className="text-muted-foreground">{row.unit}</span>
-                    <span className="text-right font-semibold">{row.total}</span>
+              {/* Professional Quote Document */}
+              <div className="bg-white dark:bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                {/* Document Header */}
+                <div className="p-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <img 
+                        src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+                        alt="InterioApp" 
+                        className="h-6 w-auto mb-2"
+                      />
+                      <div className="text-[8px] text-muted-foreground">
+                        123 Design Street, London
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-primary">QUOTATION</div>
+                      <div className="text-[9px] text-muted-foreground">#QT-2024-065</div>
+                      <div className="text-[8px] text-muted-foreground">Jan 20, 2026</div>
+                    </div>
                   </div>
-                ))}
-                <div className="grid grid-cols-4 gap-2 px-3 py-2 bg-primary/5 border-t border-primary/20 text-[10px]">
-                  <span className="col-span-3 font-bold">Subtotal</span>
-                  <span className="text-right font-bold text-primary">£812.50</span>
+                </div>
+                
+                {/* Client Info */}
+                <div className="p-2 border-b border-border bg-muted/30">
+                  <div className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Bill To</div>
+                  <div className="text-[10px] font-medium">Sarah Johnson</div>
+                  <div className="text-[8px] text-muted-foreground">123 High Street, London</div>
+                </div>
+                
+                {/* Line Items with Images */}
+                <div className="divide-y divide-border">
+                  {/* Item 1 - with fabric image */}
+                  <div className="p-2 flex items-start gap-2">
+                    <div className="w-10 h-10 rounded bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/20 flex items-center justify-center flex-shrink-0 border border-indigo-200 dark:border-indigo-800">
+                      <Scissors className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-medium">Bedroom Curtains</div>
+                      <div className="text-[8px] text-muted-foreground">Velvet Midnight Blue • 2400mm × 1800mm</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[10px] font-semibold">£1,245.00</div>
+                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
+                    </div>
+                  </div>
+                  
+                  {/* Item 2 - with track image */}
+                  <div className="p-2 flex items-start gap-2">
+                    <div className="w-10 h-10 rounded bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-600">
+                      <Ruler className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-medium">Ceiling Track System</div>
+                      <div className="text-[8px] text-muted-foreground">White Powder Coat • 3000mm</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[10px] font-semibold">£189.00</div>
+                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
+                    </div>
+                  </div>
+                  
+                  {/* Item 3 */}
+                  <div className="p-2 flex items-start gap-2">
+                    <div className="w-10 h-10 rounded bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/20 flex items-center justify-center flex-shrink-0 border border-amber-200 dark:border-amber-800">
+                      <Package className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-medium">Installation & Fitting</div>
+                      <div className="text-[8px] text-muted-foreground">Professional installation included</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[10px] font-semibold">£286.80</div>
+                      <div className="text-[7px] text-muted-foreground">Qty: 1</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Totals */}
+                <div className="p-2 bg-muted/30 border-t border-border space-y-1">
+                  <div className="flex justify-between text-[9px]">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">£1,434.00</span>
+                  </div>
+                  <div className="flex justify-between text-[9px]">
+                    <span className="text-muted-foreground">VAT (20%)</span>
+                    <span className="font-medium">£286.80</span>
+                  </div>
+                  <div className="h-px bg-border my-1" />
+                  <div className="flex justify-between text-sm">
+                    <span className="font-bold">Total</span>
+                    <span className="font-bold text-primary">£1,720.80</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Workroom Tab */}
+          {/* Workroom Tab - Professional Work Order */}
           {showWorkroomTab && (
             <motion.div
               key="workroom"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="space-y-3"
+              className="h-full"
             >
-              {/* Work Order Preview */}
-              <div className="p-3 bg-card rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-2">
+              {/* Work Order Document */}
+              <div className="bg-white dark:bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                {/* Document Header with Share Button */}
+                <div className="p-2 border-b border-border flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span className="text-[11px] font-semibold">Work Order</span>
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="text-[11px] font-semibold">Work Order</div>
+                      <div className="text-[8px] text-muted-foreground">WO-2024-065 • Bedroom Curtains</div>
+                    </div>
                   </div>
                   
                   {/* Share Button */}
                   <motion.div 
                     className="relative"
-                    animate={{ scale: showSharePopover ? 1.05 : 1 }}
+                    animate={{ scale: showSharePopover ? 1.08 : 1 }}
                   >
                     <motion.button
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-medium"
@@ -916,12 +1256,12 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                                 <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />
                               </div>
                               <div className="flex gap-1">
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[7px] rounded">Work Order</span>
-                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[7px] rounded">Full Details</span>
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[7px] rounded font-medium">Work Order</span>
+                                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[7px] rounded font-medium">Full Details</span>
                               </div>
                             </div>
                             
-                            <button className="w-full flex items-center justify-center gap-1 py-1.5 border border-dashed border-border rounded-lg text-[9px] text-muted-foreground hover:bg-muted/50">
+                            <button className="w-full flex items-center justify-center gap-1 py-1.5 border border-dashed border-border rounded-lg text-[9px] text-muted-foreground hover:bg-muted/50 transition-colors">
                               <Plus className="h-2.5 w-2.5" />
                               New Link
                             </button>
@@ -932,12 +1272,75 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                   </motion.div>
                 </div>
                 
-                {/* Mini work order preview */}
-                <div className="h-24 bg-muted/30 rounded border border-border p-2">
-                  <div className="h-2 w-20 bg-muted rounded mb-2" />
-                  <div className="h-1.5 w-full bg-muted/50 rounded mb-1" />
-                  <div className="h-1.5 w-3/4 bg-muted/50 rounded mb-1" />
-                  <div className="h-1.5 w-5/6 bg-muted/50 rounded" />
+                {/* Window Diagram Section */}
+                <div className="p-2 border-b border-border">
+                  <div className="flex items-start gap-3">
+                    {/* Window Diagram */}
+                    <div className="w-24 h-20 bg-muted/30 rounded-lg border-2 border-dashed border-muted flex items-center justify-center relative">
+                      <div className="w-14 h-12 border-2 border-primary/50 rounded bg-primary/5 flex items-center justify-center">
+                        <span className="text-[8px] text-primary font-medium">Window 1</span>
+                      </div>
+                      {/* Stack indicator */}
+                      <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-primary/30 rounded" />
+                    </div>
+                    
+                    {/* Measurements */}
+                    <div className="flex-1 space-y-1">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Width:</span>
+                          <span className="font-medium">2400mm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Drop:</span>
+                          <span className="font-medium">1800mm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Stack:</span>
+                          <span className="font-medium">Left</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Heading:</span>
+                          <span className="font-medium">Wave</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Materials Section */}
+                <div className="p-2 border-b border-border">
+                  <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Materials</div>
+                  <div className="space-y-1.5">
+                    {[
+                      { name: "Velvet Midnight Blue", qty: "8.5m", color: "bg-indigo-500" },
+                      { name: "Blackout Lining", qty: "8.5m", color: "bg-gray-500" },
+                      { name: "Wave Tape", qty: "3m", color: "bg-amber-500" },
+                    ].map((material) => (
+                      <div key={material.name} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${material.color}`} />
+                        <span className="text-[9px] flex-1">{material.name}</span>
+                        <span className="text-[9px] font-medium">{material.qty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Instructions Section */}
+                <div className="p-2">
+                  <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Instructions</div>
+                  <div className="space-y-1">
+                    {[
+                      "Double pinch pleat heading",
+                      "Weighted corners",
+                      "Contrast leading edge",
+                    ].map((instruction, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[9px]">
+                        <Check className="h-3 w-3 text-green-500" />
+                        <span>{instruction}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
