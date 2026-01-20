@@ -328,6 +328,8 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
     { id: "JOB-001", client: "Smith Family", status: "In Progress", amount: "£2,450", color: "bg-blue-500", team: { name: "John", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John" } },
     { id: "JOB-002", client: "Riverside Hotel", status: "Quote Sent", amount: "£8,900", color: "bg-amber-500", team: { name: "Lee", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lee" } },
     { id: "JOB-003", client: "Jane Cooper", status: "Completed", amount: "£1,850", color: "bg-green-500", team: { name: "Rachel", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rachel" } },
+    { id: "JOB-004", client: "Morrison Estate", status: "In Progress", amount: "£4,200", color: "bg-blue-500", team: { name: "John", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John" } },
+    { id: "JOB-005", client: "The Grand Hotel", status: "Quote Sent", amount: "£12,500", color: "bg-amber-500", team: { name: "Lee", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lee" } },
   ];
   
   return (
