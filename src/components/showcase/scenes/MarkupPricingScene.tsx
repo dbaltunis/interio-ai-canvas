@@ -1,147 +1,65 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { phaseProgress } from "@/lib/demoAnimations";
-import { TrendingUp, DollarSign, Percent, Calculator } from "lucide-react";
+import { DollarSign, Percent, Calculator, TrendingUp, Check, Wrench, Truck, Package, Layers, Users } from "lucide-react";
 
-interface SceneProps {
-  progress: number;
-}
+interface SceneProps { progress: number; }
 
 const pricingRules = [
-  { label: "Material Markup", value: 40, color: "bg-blue-500" },
-  { label: "Labor Rate", value: 55, color: "bg-emerald-500" },
-  { label: "Installation", value: 25, color: "bg-amber-500" },
-  { label: "Overhead", value: 15, color: "bg-purple-500" },
+  { category: "Materials", icon: Package, color: "bg-blue-500", markup: 65, cost: 1200 },
+  { category: "Labor", icon: Wrench, color: "bg-purple-500", markup: 45, cost: 800 },
+  { category: "Installation", icon: Truck, color: "bg-emerald-500", markup: 30, cost: 350 },
+  { category: "Overhead", icon: Layers, color: "bg-amber-500", markup: 15, cost: 200 },
 ];
 
-export const MarkupPricingScene = ({ progress }: SceneProps) => {
-  const cardsIn = phaseProgress(progress, 0, 0.4);
-  const barsAnimate = phaseProgress(progress, 0.2, 0.7);
-  const totalCalc = phaseProgress(progress, 0.6, 1);
+const calculatePrice = (cost: number, markup: number) => cost * (1 + markup / 100);
 
-  const totalValue = Math.round(totalCalc * 2450);
+export const MarkupPricingScene = ({ progress }: SceneProps) => {
+  const headerIn = phaseProgress(progress, 0, 0.15);
+  const rulesIn = phaseProgress(progress, 0.1, 0.45);
+  const editingIn = phaseProgress(progress, 0.4, 0.6);
+  const calculatorIn = phaseProgress(progress, 0.55, 0.8);
+  const dealerIn = phaseProgress(progress, 0.75, 0.95);
+  const materialMarkup = editingIn > 0.3 ? 70 : 65;
+  const isEditing = editingIn > 0.2 && editingIn < 0.8;
+  const totalCost = pricingRules.reduce((s, r) => s + r.cost, 0);
+  const totalWithMarkup = pricingRules.reduce((s, r, i) => s + calculatePrice(r.cost, i === 0 ? materialMarkup : r.markup), 0);
+  const margin = ((totalWithMarkup - totalCost) / totalWithMarkup * 100).toFixed(1);
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-background to-muted/20 overflow-hidden p-3">
-      {/* Header */}
-      <motion.div
-        className="flex items-center justify-between mb-3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: cardsIn }}
-      >
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">Pricing Rules</h2>
-          <p className="text-[10px] text-muted-foreground">Smart margin calculations</p>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <TrendingUp className="w-4 h-4 text-primary" />
-        </div>
+    <div className="relative w-full h-full bg-background overflow-hidden flex flex-col">
+      <motion.div className="p-2 border-b border-border bg-card/50" initial={{ opacity: 0, y: -10 }} animate={{ opacity: headerIn, y: 0 }}>
+        <div className="flex items-center gap-2"><div className="p-1.5 bg-primary/10 rounded-lg"><Percent className="w-4 h-4 text-primary" /></div><div><h3 className="text-[11px] font-semibold">Pricing & Markups</h3><p className="text-[8px] text-muted-foreground">Configure margins</p></div></div>
       </motion.div>
-
-      {/* Pricing rule cards */}
-      <div className="space-y-2 mb-3">
-        {pricingRules.map((rule, index) => {
-          const delay = index * 0.1;
-          const cardProgress = phaseProgress(cardsIn, delay, delay + 0.4);
-          const barProgress = phaseProgress(barsAnimate, delay, delay + 0.5);
-          
-          return (
-            <motion.div
-              key={rule.label}
-              className="bg-card rounded-xl border border-border/50 p-2"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ 
-                opacity: cardProgress,
-                x: -20 + cardProgress * 20
-              }}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] text-foreground">{rule.label}</span>
-                <div className="flex items-center gap-1">
-                  <Percent className="w-2.5 h-2.5 text-muted-foreground" />
-                  <motion.span 
-                    className="text-[10px] font-semibold text-foreground"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: barProgress }}
-                  >
-                    {Math.round(barProgress * rule.value)}%
-                  </motion.span>
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 p-2 space-y-1.5 overflow-auto">
+          {pricingRules.map((rule, i) => {
+            const ruleProgress = phaseProgress(rulesIn, i * 0.08, i * 0.08 + 0.25);
+            const Icon = rule.icon;
+            const markup = i === 0 ? materialMarkup : rule.markup;
+            const price = calculatePrice(rule.cost, markup);
+            const isRuleEditing = i === 0 && isEditing;
+            return (
+              <motion.div key={rule.category} className={`bg-card border rounded-lg p-2 ${isRuleEditing ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: ruleProgress, x: 0, scale: isRuleEditing ? 1.02 : 1 }}>
+                <div className="flex items-center gap-2 mb-1.5"><div className={`w-6 h-6 rounded-md ${rule.color} flex items-center justify-center`}><Icon className="w-3 h-3 text-white" /></div><p className="text-[9px] font-semibold">{rule.category}</p></div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1"><span className="text-[7px] text-muted-foreground block">Cost</span><span className="text-[9px] font-medium">${rule.cost}</span></div>
+                  <div className="flex-1"><span className="text-[7px] text-muted-foreground block">Markup</span><motion.div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-[9px] font-medium ${isRuleEditing ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}`} animate={isRuleEditing ? { scale: [1, 1.05, 1] } : {}}><span>{markup}</span><Percent className="w-2.5 h-2.5 text-muted-foreground" /></motion.div></div>
+                  <div className="flex-1 text-right"><span className="text-[7px] text-muted-foreground block">Sell</span><span className="text-[9px] font-semibold text-primary">${price.toFixed(0)}</span></div>
                 </div>
-              </div>
-              
-              {/* Progress bar */}
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full ${rule.color} rounded-full`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${barProgress * rule.value}%` }}
-                  transition={{ ease: "easeOut" }}
-                />
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Total calculator */}
-      <motion.div
-        className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-3"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ 
-          opacity: totalCalc,
-          scale: 0.95 + totalCalc * 0.05
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Calculator className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <span className="text-[9px] text-muted-foreground block">Quote Total</span>
-              <span className="text-[10px] font-medium text-foreground">All markups applied</span>
-            </div>
-          </div>
-          
-          <motion.div
-            className="text-right"
-            initial={{ scale: 1 }}
-            animate={{ scale: totalCalc > 0.9 ? [1, 1.1, 1] : 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex items-center gap-0.5">
-              <DollarSign className="w-4 h-4 text-primary" />
-              <motion.span 
-                className="text-lg font-bold text-primary"
-                key={totalValue}
-              >
-                {totalValue.toLocaleString()}
-              </motion.span>
-            </div>
-            <span className="text-[8px] text-muted-foreground">inc. margins</span>
-          </motion.div>
+                <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden"><motion.div className={`h-full ${rule.color}`} initial={{ width: 0 }} animate={{ width: `${Math.min(markup, 100)}%` }} /></div>
+              </motion.div>
+            );
+          })}
         </div>
-      </motion.div>
-
-      {/* Floating particles */}
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 rounded-full bg-primary/30"
-          style={{
-            left: `${20 + i * 15}%`,
-            top: `${30 + (i % 3) * 20}%`,
-          }}
-          animate={{
-            y: [-5, 5, -5],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2 + i * 0.3,
-            repeat: Infinity,
-            delay: i * 0.2,
-          }}
-        />
-      ))}
+        <motion.div className="w-[105px] p-2 space-y-2 bg-card/30 border-l border-border" initial={{ opacity: 0, x: 10 }} animate={{ opacity: calculatorIn, x: 0 }}>
+          <div className="flex items-center gap-1"><Calculator className="w-3 h-3 text-primary" /><span className="text-[9px] font-semibold">Summary</span></div>
+          <div className="bg-card border border-border rounded-md p-1.5"><span className="text-[7px] text-muted-foreground block">Cost</span><span className="text-[10px] font-medium">${totalCost}</span></div>
+          <div className="bg-card border border-border rounded-md p-1.5"><span className="text-[7px] text-muted-foreground block">Sell</span><span className="text-[10px] font-bold text-primary">${totalWithMarkup.toFixed(0)}</span></div>
+          <div className="bg-primary/10 border border-primary/20 rounded-md p-1.5"><span className="text-[7px] text-muted-foreground block">Margin</span><div className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-emerald-500" /><span className="text-[11px] font-bold text-emerald-500">{margin}%</span></div></div>
+          <AnimatePresence>{dealerIn > 0 && (<motion.div className="bg-card border border-border rounded-md p-1.5" initial={{ opacity: 0, y: 5 }} animate={{ opacity: dealerIn, y: 0 }}><div className="flex items-center justify-between"><div className="flex items-center gap-1"><Users className="w-3 h-3 text-muted-foreground" /><span className="text-[8px]">Dealer</span></div><div className="w-6 h-3.5 rounded-full bg-primary relative"><div className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm" /></div></div></motion.div>)}</AnimatePresence>
+        </motion.div>
+      </div>
+      <motion.div className="p-2 border-t border-border bg-card/50" initial={{ opacity: 0 }} animate={{ opacity: dealerIn }}><button className="w-full flex items-center justify-center gap-1.5 py-2 bg-primary text-primary-foreground rounded-lg text-[10px] font-medium"><Check className="w-3 h-3" />Save Pricing</button></motion.div>
     </div>
   );
 };

@@ -1,165 +1,56 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { phaseProgress } from "@/lib/demoAnimations";
-import { ShoppingBag, Mail, Database, Zap, Workflow } from "lucide-react";
+import { Zap, Check, X, RefreshCw, ExternalLink, Settings, Mail, Calendar, ShoppingBag, MessageCircle, Database, Cloud, CheckCircle, AlertCircle } from "lucide-react";
 
-interface SceneProps {
-  progress: number;
-}
+interface SceneProps { progress: number; }
 
 const integrations = [
-  { icon: ShoppingBag, name: "Shopify", color: "bg-green-500", position: { x: 15, y: 30 } },
-  { icon: Mail, name: "Email", color: "bg-blue-500", position: { x: 75, y: 25 } },
-  { icon: Database, name: "ERP", color: "bg-purple-500", position: { x: 20, y: 70 } },
-  { icon: Workflow, name: "Zapier", color: "bg-orange-500", position: { x: 70, y: 65 } },
+  { name: "Google Calendar", icon: Calendar, color: "bg-blue-500", status: "connected", lastSync: "2 min ago" },
+  { name: "Gmail", icon: Mail, color: "bg-red-500", status: "connected", lastSync: "5 min ago" },
+  { name: "Shopify", icon: ShoppingBag, color: "bg-emerald-500", status: "disconnected", lastSync: null },
+  { name: "WhatsApp", icon: MessageCircle, color: "bg-green-500", status: "connected", lastSync: "Just now" },
+  { name: "Xero", icon: Database, color: "bg-cyan-500", status: "pending", lastSync: null },
+  { name: "Cloud Backup", icon: Cloud, color: "bg-purple-500", status: "connected", lastSync: "1 hour ago" },
 ];
 
 export const IntegrationsScene = ({ progress }: SceneProps) => {
-  const hubIn = phaseProgress(progress, 0, 0.3);
-  const logosIn = phaseProgress(progress, 0.2, 0.6);
-  const linesIn = phaseProgress(progress, 0.4, 0.8);
-  const pulseEffect = phaseProgress(progress, 0.7, 1);
+  const headerIn = phaseProgress(progress, 0, 0.12);
+  const gridIn = phaseProgress(progress, 0.08, 0.45);
+  const connectingIn = phaseProgress(progress, 0.4, 0.65);
+  const successIn = phaseProgress(progress, 0.8, 1);
+  const shopifyConnecting = connectingIn > 0.3 && connectingIn < 0.8;
+  const shopifyConnected = connectingIn >= 0.8;
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-background via-background to-primary/5 overflow-hidden">
-      {/* Central hub */}
-      <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ 
-          opacity: hubIn,
-          scale: 0.5 + hubIn * 0.5
-        }}
-      >
-        {/* Glow effect */}
-        <motion.div
-          className="absolute inset-0 w-16 h-16 -m-2 rounded-full bg-primary/20 blur-xl"
-          animate={{
-            scale: pulseEffect > 0 ? [1, 1.3, 1] : 1,
-            opacity: pulseEffect > 0 ? [0.3, 0.6, 0.3] : 0.3,
-          }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        
-        <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl">
-          <Zap className="w-6 h-6 text-primary-foreground" />
-        </div>
-        
-        <motion.span
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-medium text-foreground whitespace-nowrap"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: hubIn }}
-        >
-          InterioApp Hub
-        </motion.span>
+    <div className="relative w-full h-full bg-background overflow-hidden flex flex-col">
+      <motion.div className="p-2 border-b border-border bg-card/50" initial={{ opacity: 0, y: -10 }} animate={{ opacity: headerIn, y: 0 }}>
+        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className="p-1.5 bg-primary/10 rounded-lg"><Zap className="w-4 h-4 text-primary" /></div><div><h3 className="text-[11px] font-semibold">Integrations</h3><p className="text-[8px] text-muted-foreground">Connect tools</p></div></div><div className="flex items-center gap-1 text-[9px]"><CheckCircle className="w-3 h-3 text-emerald-500" /><span className="text-muted-foreground">4 connected</span></div></div>
       </motion.div>
-
-      {/* Connection lines */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
-        {integrations.map((integration, index) => {
-          const lineProgress = phaseProgress(linesIn, index * 0.1, index * 0.1 + 0.4);
-          
+      <div className="flex-1 p-2 overflow-auto">
+        <div className="grid grid-cols-2 gap-1.5">{integrations.map((int, i) => {
+          const itemProgress = phaseProgress(gridIn, i * 0.05, i * 0.05 + 0.2);
+          const Icon = int.icon;
+          const isShopify = int.name === "Shopify";
+          const status = isShopify ? (shopifyConnected ? "connected" : shopifyConnecting ? "connecting" : "disconnected") : int.status;
           return (
-            <motion.line
-              key={`line-${index}`}
-              x1="50%"
-              y1="50%"
-              x2={`${integration.position.x}%`}
-              y2={`${integration.position.y}%`}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ 
-                pathLength: lineProgress,
-                opacity: lineProgress * 0.5
-              }}
-            />
+            <motion.div key={int.name} className={`bg-card border rounded-lg p-2 ${status === "connected" ? 'border-emerald-500/30' : status === "connecting" ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: itemProgress, scale: 1 }}>
+              <div className="flex items-start gap-2 mb-1.5"><div className={`w-8 h-8 rounded-lg ${int.color} flex items-center justify-center shrink-0`}><Icon className="w-4 h-4 text-white" /></div><div className="flex-1 min-w-0"><p className="text-[9px] font-semibold truncate">{int.name}</p></div></div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  {status === "connected" && <><CheckCircle className="w-3 h-3 text-emerald-500" /><span className="text-[7px] text-emerald-600">Connected</span></>}
+                  {status === "connecting" && <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw className="w-3 h-3 text-primary" /></motion.div><span className="text-[7px] text-primary">Connecting...</span></>}
+                  {status === "disconnected" && <><X className="w-3 h-3 text-muted-foreground" /><span className="text-[7px] text-muted-foreground">Not connected</span></>}
+                  {status === "pending" && <><AlertCircle className="w-3 h-3 text-amber-500" /><span className="text-[7px] text-amber-600">Setup required</span></>}
+                </div>
+                {status === "connected" ? <Settings className="w-3 h-3 text-muted-foreground" /> : status !== "connecting" && <motion.button className="px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-[7px] font-medium" animate={isShopify && !shopifyConnecting && !shopifyConnected ? { scale: [1, 1.05, 1] } : {}} transition={{ repeat: Infinity, duration: 1.5 }}>Connect</motion.button>}
+              </div>
+              {(status === "connected" || shopifyConnected) && <motion.div className="mt-1.5 pt-1.5 border-t border-border flex items-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><RefreshCw className="w-2.5 h-2.5 text-muted-foreground" /><span className="text-[7px] text-muted-foreground">{isShopify ? "Just now" : int.lastSync}</span></motion.div>}
+            </motion.div>
           );
-        })}
-      </svg>
-
-      {/* Integration logos */}
-      {integrations.map((integration, index) => {
-        const delay = index * 0.12;
-        const logoProgress = phaseProgress(logosIn, delay, delay + 0.4);
-        const Icon = integration.icon;
-        const isPulsing = pulseEffect > 0.5 && index === Math.floor(pulseEffect * 4) % 4;
-        
-        // Calculate flying animation
-        const startX = index % 2 === 0 ? -50 : 150;
-        const startY = index < 2 ? -50 : 150;
-        
-        return (
-          <motion.div
-            key={integration.name}
-            className="absolute"
-            style={{
-              left: `${integration.position.x}%`,
-              top: `${integration.position.y}%`,
-            }}
-            initial={{ 
-              x: startX - integration.position.x,
-              y: startY - integration.position.y,
-              opacity: 0,
-              scale: 0.5
-            }}
-            animate={{ 
-              x: 0,
-              y: 0,
-              opacity: logoProgress,
-              scale: isPulsing ? 1.15 : 0.5 + logoProgress * 0.5
-            }}
-          >
-            <div className={`w-10 h-10 rounded-xl ${integration.color} flex items-center justify-center shadow-lg -translate-x-1/2 -translate-y-1/2`}>
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-            <motion.span
-              className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-medium text-muted-foreground whitespace-nowrap"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: logoProgress }}
-            >
-              {integration.name}
-            </motion.span>
-            
-            {/* Connection pulse */}
-            {isPulsing && (
-              <motion.div
-                className="absolute inset-0 w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-xl border-2 border-primary"
-                initial={{ scale: 1, opacity: 1 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              />
-            )}
-          </motion.div>
-        );
-      })}
-
-      {/* Data flow particles */}
-      {linesIn > 0.5 && (
-        <>
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1.5 h-1.5 rounded-full bg-primary"
-              style={{
-                left: "50%",
-                top: "50%",
-              }}
-              animate={{
-                x: [(Math.random() - 0.5) * 100, (Math.random() - 0.5) * 200],
-                y: [(Math.random() - 0.5) * 80, (Math.random() - 0.5) * 160],
-                opacity: [0, 0.8, 0],
-                scale: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5 + Math.random(),
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
-            />
-          ))}
-        </>
-      )}
+        })}</div>
+      </div>
+      <AnimatePresence>{successIn > 0.3 && (<motion.div className="absolute bottom-14 left-2 right-2" initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10 }}><div className="flex items-center gap-2 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg"><motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></motion.div><span className="text-[9px] text-emerald-600">Shopify connected!</span></div></motion.div>)}</AnimatePresence>
+      <motion.div className="p-2 border-t border-border bg-card/50" initial={{ opacity: 0 }} animate={{ opacity: headerIn }}><div className="flex items-center justify-between text-[8px] text-muted-foreground"><span>All integrations sync in real-time</span><button className="flex items-center gap-1 text-primary">View all <ExternalLink className="w-2.5 h-2.5" /></button></div></motion.div>
     </div>
   );
 };
