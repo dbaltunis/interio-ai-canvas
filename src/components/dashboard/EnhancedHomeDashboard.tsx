@@ -176,9 +176,6 @@ const DashboardContent = () => {
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
-      {/* Product Showcase Widget for first-time users */}
-      <ProductShowcaseWidget />
-
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
