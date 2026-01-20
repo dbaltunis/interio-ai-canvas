@@ -112,13 +112,6 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {[Users, Lightbulb, Sun, Settings].map((Icon, i) => (
-            <div key={i} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-              <Icon className={`h-4 w-4 ${i === 1 ? "text-amber-500" : "text-muted-foreground"}`} />
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Scrollable Content Area */}
@@ -133,10 +126,19 @@ export const Scene2Dashboard = ({ phase = 0 }: StepProps) => {
           transition={{ duration: 0.8, ease: "easeInOut" }}
           style={{ transformOrigin: "bottom center" }}
         >
-          {/* Welcome */}
-          <div className="px-1 py-2 border-b border-border bg-card/50 rounded-lg">
-            <h2 className="text-base font-semibold">Good afternoon, John</h2>
-            <p className="text-sm text-muted-foreground">24 pending quotes • 156 clients</p>
+          {/* Welcome with icons on the right */}
+          <div className="px-2 py-2 border-b border-border bg-card/50 rounded-lg flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold">Good afternoon, John</h2>
+              <p className="text-sm text-muted-foreground">24 pending quotes • 156 clients</p>
+            </div>
+            <div className="flex items-center gap-1">
+              {[Users, Lightbulb, Sun, Settings].map((Icon, i) => (
+                <div key={i} className="w-4 h-4 rounded flex items-center justify-center">
+                  <Icon className={`h-2.5 w-2.5 ${i === 1 ? "text-amber-500" : "text-muted-foreground"}`} />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Stats */}
@@ -223,24 +225,26 @@ export const Scene3ThemeToggle = ({ phase = 0 }: StepProps) => {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <motion.div className="w-8 h-8 rounded-lg flex items-center justify-center" animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)" }}><Users className="h-4 w-4 text-muted-foreground" /></motion.div>
-            <motion.div className="w-8 h-8 rounded-lg flex items-center justify-center" animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)" }}><Lightbulb className="h-4 w-4 text-amber-500" /></motion.div>
-            <motion.div className="w-8 h-8 rounded-lg flex items-center justify-center relative" animate={{ backgroundColor: isClicking ? "hsl(var(--primary)/0.2)" : isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)", scale: isClicking ? 0.9 : 1 }}>
-              <FocusRing active={focusOnToggle} />
-              <AnimatePresence mode="wait">
-                {isDarkMode ? <motion.div key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="h-4 w-4 text-blue-400" /></motion.div> : <motion.div key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="h-4 w-4 text-amber-500" /></motion.div>}
-              </AnimatePresence>
-            </motion.div>
-            <motion.div className="w-8 h-8 rounded-lg flex items-center justify-center" animate={{ backgroundColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(210 40% 96.1%)" }}><Settings className="h-4 w-4 text-muted-foreground" /></motion.div>
-          </div>
         </motion.div>
 
         {/* Dashboard Content - REAL content like Scene 2 */}
         <motion.div className="p-4" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 84% 4.9%)" : "hsl(0 0% 100%)" }}>
-          <motion.div className="mb-4 p-3 rounded-lg border" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)", borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)" }}>
-            <motion.div className="text-base font-semibold mb-1" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>Good afternoon, John</motion.div>
-            <motion.div className="text-sm" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>24 pending quotes • 156 clients</motion.div>
+          <motion.div className="mb-4 p-3 rounded-lg border flex items-center justify-between" animate={{ backgroundColor: isDarkMode ? "hsl(222.2 47.4% 11.2%)" : "hsl(210 40% 98%)", borderColor: isDarkMode ? "hsl(217.2 32.6% 17.5%)" : "hsl(214.3 31.8% 91.4%)" }}>
+            <div>
+              <motion.div className="text-base font-semibold mb-1" animate={{ color: isDarkMode ? "hsl(210 40% 98%)" : "hsl(222.2 84% 4.9%)" }}>Good afternoon, John</motion.div>
+              <motion.div className="text-sm" animate={{ color: isDarkMode ? "hsl(215 20.2% 65.1%)" : "hsl(215.4 16.3% 46.9%)" }}>24 pending quotes • 156 clients</motion.div>
+            </div>
+            <div className="flex items-center gap-1">
+              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Users className="h-2.5 w-2.5 text-muted-foreground" /></motion.div>
+              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Lightbulb className="h-2.5 w-2.5 text-amber-500" /></motion.div>
+              <motion.div className="w-4 h-4 rounded flex items-center justify-center relative" animate={{ scale: isClicking ? 0.9 : 1 }}>
+                <FocusRing active={focusOnToggle} />
+                <AnimatePresence mode="wait">
+                  {isDarkMode ? <motion.div key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="h-2.5 w-2.5 text-blue-400" /></motion.div> : <motion.div key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="h-2.5 w-2.5 text-amber-500" /></motion.div>}
+                </AnimatePresence>
+              </motion.div>
+              <motion.div className="w-4 h-4 rounded flex items-center justify-center"><Settings className="h-2.5 w-2.5 text-muted-foreground" /></motion.div>
+            </div>
           </motion.div>
           <div className="grid grid-cols-4 gap-2">
             {[{ label: "Revenue", value: "£59,872" }, { label: "Projects", value: "138" }, { label: "Quotes", value: "177" }, { label: "Clients", value: "19" }].map((stat) => (
