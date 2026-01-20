@@ -5,69 +5,81 @@ import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/constants/version";
 import { WelcomeVideoPlayer, VideoStep, VideoChapter } from "@/components/showcase/WelcomeVideoPlayer";
 import {
-  WelcomeStep1, WelcomeStep2, WelcomeStep3, WelcomeStep4,
-  WelcomeStep5, WelcomeStep6, WelcomeStep7, WelcomeStep8,
-  WelcomeStep9, WelcomeStep10, WelcomeStep11, WelcomeStep12,
-  WelcomeStep13, WelcomeStep14, WelcomeStep15, WelcomeStep16,
-  WelcomeStep17, WelcomeStep18, WelcomeStep19, WelcomeStep20,
-  WelcomeStep21, WelcomeStep22, WelcomeStep23, WelcomeStep24,
+  Scene1IntroLogo,
+  Scene2Dashboard,
+  Scene3ThemeToggle,
+  Scene4JobsNotes,
+  Scene5ProjectDeepDive,
+  Scene6Closing,
 } from "@/components/help/tutorial-steps/WelcomeVideoSteps";
 
 const STORAGE_KEY = "showcase_last_seen_version";
 
-// 8 Chapters matching real InterioApp workflow
+// 6 Cinematic chapters for the product showcase
 const welcomeChapters: VideoChapter[] = [
-  { id: "welcome", label: "Welcome", shortLabel: "Welcome" },
-  { id: "setup", label: "Setup", shortLabel: "Setup" },
-  { id: "pricing", label: "Pricing", shortLabel: "Pricing" },
-  { id: "team", label: "Team", shortLabel: "Team" },
-  { id: "shopify", label: "Shopify", shortLabel: "Shopify" },
-  { id: "projects", label: "Projects", shortLabel: "Projects" },
-  { id: "crm", label: "Clients", shortLabel: "CRM" },
-  { id: "campaigns", label: "Campaigns", shortLabel: "Campaigns" },
+  { id: "intro", label: "Welcome", shortLabel: "Intro" },
+  { id: "dashboard", label: "Dashboard", shortLabel: "Dashboard" },
+  { id: "theme", label: "Customize", shortLabel: "Theme" },
+  { id: "jobs", label: "Jobs & Notes", shortLabel: "Jobs" },
+  { id: "project", label: "Project Details", shortLabel: "Project" },
+  { id: "closing", label: "Get Started", shortLabel: "Ready" },
 ];
 
-// 24 Story-driven steps following real InterioApp workflow
+// 6 Story-driven scenes following the real InterioApp workflow
 const welcomeSteps: VideoStep[] = [
-  // Chapter 1: Welcome (1 step)
-  { title: "Welcome to InterioApp", description: "Your complete platform for made-to-measure blinds & curtains", Visual: WelcomeStep1, duration: 5000, chapter: "welcome" },
+  // Scene 1: Opening branding with logo and tagline
+  { 
+    title: "InterioApp", 
+    description: "Sell blinds and curtains online and in-store", 
+    Visual: Scene1IntroLogo, 
+    duration: 5000, 
+    chapter: "intro" 
+  },
   
-  // Chapter 2: Setup Your App (3 steps)
-  { title: "Choose Your Theme", description: "Switch between dark and light modes anytime", Visual: WelcomeStep2, duration: 5000, chapter: "setup" },
-  { title: "Business Profile", description: "Add your company name, logo, and contact details", Visual: WelcomeStep3, duration: 5000, chapter: "setup" },
-  { title: "Getting Started", description: "Complete these steps to set up your workspace", Visual: WelcomeStep4, duration: 5000, chapter: "setup" },
+  // Scene 2: Dashboard overview with animated stats
+  { 
+    title: "Your Dashboard", 
+    description: "Revenue trends, job status, and Shopify performance at a glance", 
+    Visual: Scene2Dashboard, 
+    duration: 8000, 
+    chapter: "dashboard" 
+  },
   
-  // Chapter 3: Pricing & Markups (3 steps)
-  { title: "Global Markups", description: "Set your material and labor profit margins", Visual: WelcomeStep5, duration: 5000, chapter: "pricing" },
-  { title: "Category Pricing", description: "Different margins for Premium, Standard, and Budget fabrics", Visual: WelcomeStep6, duration: 5000, chapter: "pricing" },
-  { title: "Price Preview", description: "See how markups affect your final quotes", Visual: WelcomeStep7, duration: 5000, chapter: "pricing" },
+  // Scene 3: Theme toggle demonstration
+  { 
+    title: "Customize Your View", 
+    description: "Switch between dark and light modes with a single click", 
+    Visual: Scene3ThemeToggle, 
+    duration: 6000, 
+    chapter: "theme" 
+  },
   
-  // Chapter 4: Team & Permissions (3 steps)
-  { title: "Invite Team Members", description: "Add staff by email with role assignment", Visual: WelcomeStep8, duration: 5000, chapter: "team" },
-  { title: "Team Messaging", description: "In-app chat between team members", Visual: WelcomeStep9, duration: 5000, chapter: "team" },
-  { title: "Permission Controls", description: "Granular access for Jobs, Quotes, and Clients", Visual: WelcomeStep10, duration: 5000, chapter: "team" },
+  // Scene 4: Jobs list and team collaboration
+  { 
+    title: "Team Collaboration", 
+    description: "Write notes and @mention team members on any job", 
+    Visual: Scene4JobsNotes, 
+    duration: 8000, 
+    chapter: "jobs" 
+  },
   
-  // Chapter 5: Shopify Integration (4 steps)
-  { title: "Connect Shopify", description: "Link your existing Shopify store", Visual: WelcomeStep11, duration: 5000, chapter: "shopify" },
-  { title: "Import Fabrics", description: "Pull products from your Shopify catalog", Visual: WelcomeStep12, duration: 5000, chapter: "shopify" },
-  { title: "Sync Products", description: "Two-way sync between platforms", Visual: WelcomeStep13, duration: 5000, chapter: "shopify" },
-  { title: "Inventory & QR Codes", description: "Track stock levels with QR scanning", Visual: WelcomeStep14, duration: 5000, chapter: "shopify" },
+  // Scene 5: Project deep dive with tabs
+  { 
+    title: "Project Details", 
+    description: "Navigate through Client, Project, Quote, and Workroom tabs", 
+    Visual: Scene5ProjectDeepDive, 
+    duration: 12000, 
+    chapter: "project" 
+  },
   
-  // Chapter 6: Create Projects (5 steps)
-  { title: "Create New Project", description: "Start a new job with client details", Visual: WelcomeStep15, duration: 5000, chapter: "projects" },
-  { title: "Add Rooms", description: "Use templates like Living Room, Bedroom, Kitchen", Visual: WelcomeStep16, duration: 5000, chapter: "projects" },
-  { title: "Window Treatments", description: "Select Blinds, Curtains, or Shutters", Visual: WelcomeStep17, duration: 5000, chapter: "projects" },
-  { title: "Visual Measurements", description: "Diagram-based measurement entry", Visual: WelcomeStep18, duration: 5000, chapter: "projects" },
-  { title: "Generate Quote", description: "Auto-calculate pricing with your margins", Visual: WelcomeStep19, duration: 5000, chapter: "projects" },
-  
-  // Chapter 7: Client CRM (3 steps)
-  { title: "Client List", description: "View all clients with funnel stages", Visual: WelcomeStep20, duration: 5000, chapter: "crm" },
-  { title: "Client Profile", description: "Full history with projects, notes, and communications", Visual: WelcomeStep21, duration: 5000, chapter: "crm" },
-  { title: "Sales Pipeline", description: "Kanban board for tracking deals", Visual: WelcomeStep22, duration: 5000, chapter: "crm" },
-  
-  // Chapter 8: Marketing Campaigns (2 steps)
-  { title: "Email Campaigns", description: "Create and schedule campaigns to leads and clients", Visual: WelcomeStep23, duration: 5000, chapter: "campaigns" },
-  { title: "You're All Set!", description: "Start creating projects and growing your business", Visual: WelcomeStep24, duration: 6000, chapter: "campaigns" },
+  // Scene 6: Closing branding
+  { 
+    title: "Get Started", 
+    description: "Your complete platform for made-to-measure window treatments", 
+    Visual: Scene6Closing, 
+    duration: 5000, 
+    chapter: "closing" 
+  },
 ];
 
 export const ShowcaseLightbulb = () => {
