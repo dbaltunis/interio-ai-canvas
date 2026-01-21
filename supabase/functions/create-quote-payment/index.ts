@@ -82,14 +82,21 @@ serve(async (req) => {
     const project = quote.projects;
     const client = project?.clients;
     const clientEmail = client?.email || user.email;
-    const paymentAmount = quote.payment_amount || quote.total || 0;
     const paymentType = quote.payment_type || 'full';
+    
+    // CRITICAL FIX: Apply discount to the payment amount
+    const discountAmount = quote.discount_amount || 0;
+    const baseAmount = quote.payment_amount || quote.total || 0;
+    const paymentAmount = Math.max(0, baseAmount - discountAmount);
 
     logStep("Preparing payment", { 
       paymentAmount, 
       paymentType, 
       currency,
-      clientEmail 
+      clientEmail,
+      discountAmount,
+      baseAmount,
+      finalAmount: paymentAmount
     });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
