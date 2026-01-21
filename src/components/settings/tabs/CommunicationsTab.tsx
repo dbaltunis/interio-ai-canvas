@@ -29,7 +29,7 @@ export const CommunicationsTab = () => {
     twilioIntegration?.api_credentials?.auth_token &&
     twilioIntegration?.api_credentials?.auth_token !== '-';
 
-  // Check WhatsApp BYOA status
+  // Check WhatsApp BYOA status - use account owner for sub-user support
   const {
     data: whatsappSettings
   } = useQuery({
@@ -41,13 +41,26 @@ export const CommunicationsTab = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) return null;
+      
+      // Get account owner ID for sub-user support
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+      
       const {
         data
-      } = await supabase.from('whatsapp_user_settings').select('use_own_account, verified').eq('user_id', user.id).maybeSingle();
+      } = await supabase
+        .from('whatsapp_user_settings')
+        .select('use_own_account, verified, whatsapp_number')
+        .eq('user_id', accountOwnerId || user.id)
+        .maybeSingle();
       return data;
     }
   });
-  const hasOwnWhatsApp = whatsappSettings?.use_own_account && whatsappSettings?.verified;
+  
+  // Align with WhatsAppBYOASetup logic: configured = has credentials, active = configured + verified
+  const isWhatsAppConfigured = whatsappSettings?.use_own_account && whatsappSettings?.whatsapp_number;
+  const hasOwnWhatsApp = isWhatsAppConfigured && whatsappSettings?.verified;
   return <div className="space-y-6">
       {/* Header with Help */}
       <div className="flex items-center justify-between">
