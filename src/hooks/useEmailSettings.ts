@@ -11,6 +11,8 @@ export interface EmailSettings {
   reply_to_email?: string;
   signature?: string;
   active: boolean;
+  use_auto_signature?: boolean;
+  show_footer?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +104,8 @@ export const useUpdateEmailSettings = () => {
             reply_to_email: settings.reply_to_email || null,
             signature: settings.signature || null,
             active: settings.active ?? true,
+            use_auto_signature: settings.use_auto_signature ?? true,
+            show_footer: settings.show_footer ?? true,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id)
@@ -122,7 +126,9 @@ export const useUpdateEmailSettings = () => {
             from_name: settings.from_name,
             reply_to_email: settings.reply_to_email || null,
             signature: settings.signature || null,
-            active: settings.active ?? true
+            active: settings.active ?? true,
+            use_auto_signature: settings.use_auto_signature ?? true,
+            show_footer: settings.show_footer ?? true,
           })
           .select()
           .single();

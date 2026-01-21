@@ -3049,8 +3049,10 @@ export type Database = {
           from_name: string
           id: string
           reply_to_email: string | null
+          show_footer: boolean | null
           signature: string | null
           updated_at: string
+          use_auto_signature: boolean | null
           user_id: string
         }
         Insert: {
@@ -3061,8 +3063,10 @@ export type Database = {
           from_name: string
           id?: string
           reply_to_email?: string | null
+          show_footer?: boolean | null
           signature?: string | null
           updated_at?: string
+          use_auto_signature?: boolean | null
           user_id: string
         }
         Update: {
@@ -3073,8 +3077,10 @@ export type Database = {
           from_name?: string
           id?: string
           reply_to_email?: string | null
+          show_footer?: boolean | null
           signature?: string | null
           updated_at?: string
+          use_auto_signature?: boolean | null
           user_id?: string
         }
         Relationships: []

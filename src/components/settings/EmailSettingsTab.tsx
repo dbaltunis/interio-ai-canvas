@@ -36,8 +36,8 @@ export const EmailSettingsTab = () => {
     signature: emailSettings?.signature || "",
   });
 
-  const [useAutoSignature, setUseAutoSignature] = useState(!emailSettings?.signature);
-  const [showFooter, setShowFooter] = useState(true);
+  const [useAutoSignature, setUseAutoSignature] = useState(emailSettings?.use_auto_signature ?? true);
+  const [showFooter, setShowFooter] = useState(emailSettings?.show_footer ?? true);
 
   // Generate auto signature from business settings
   const generateAutoSignature = () => {
@@ -59,7 +59,9 @@ export const EmailSettingsTab = () => {
         reply_to_email: emailSettings.reply_to_email || "",
         signature: emailSettings.signature || "",
       });
-      setUseAutoSignature(!emailSettings.signature);
+      // Use database values for toggles, with sensible defaults
+      setUseAutoSignature(emailSettings.use_auto_signature ?? !emailSettings.signature);
+      setShowFooter(emailSettings.show_footer ?? true);
     }
   }, [emailSettings]);
 
@@ -93,6 +95,8 @@ export const EmailSettingsTab = () => {
         from_email: hasSendGridIntegration ? formData.from_email : "noreply@interioapp.com",
         // If using auto signature, save empty string to trigger auto-generation
         signature: useAutoSignature ? "" : formData.signature,
+        use_auto_signature: useAutoSignature,
+        show_footer: showFooter,
       });
     } catch (error) {
       console.error("Failed to update email settings:", error);
