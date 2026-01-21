@@ -45,7 +45,25 @@ export async function resyncWindowTotalSelling(
 
   const oldTotalSelling = summary.total_selling || 0;
   const treatmentCat = summary.treatment_category || summary.treatment_type || 'curtains';
-  const makingCategory = `${treatmentCat.replace(/_/g, '').replace('s', '')}_making`;
+  
+  // Map treatment categories to proper making categories
+  // e.g., roller_blinds -> blind_making, roman_blinds -> roman_making, curtains -> curtain_making
+  const getMakingCategory = (category: string): string => {
+    const normalizedCat = category.toLowerCase().replace(/[\s-]/g, '_');
+    
+    // Handle blind variants
+    if (normalizedCat.includes('roman')) return 'roman_making';
+    if (normalizedCat.includes('blind') || normalizedCat.includes('roller') || 
+        normalizedCat.includes('venetian') || normalizedCat.includes('vertical') ||
+        normalizedCat.includes('cellular') || normalizedCat.includes('zebra')) return 'blind_making';
+    if (normalizedCat.includes('shutter') || normalizedCat.includes('plantation')) return 'shutter_making';
+    if (normalizedCat.includes('curtain') || normalizedCat.includes('drape')) return 'curtain_making';
+    
+    // Fallback: try to construct from category name
+    return `${normalizedCat.replace(/_/g, '').replace(/s$/, '')}_making`;
+  };
+  
+  const makingCategory = getMakingCategory(treatmentCat);
 
   // Get fabric details to check for product markup
   const fabricDetails = summary.fabric_details as any;
