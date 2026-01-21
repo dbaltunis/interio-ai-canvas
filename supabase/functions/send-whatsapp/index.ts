@@ -50,12 +50,22 @@ serve(async (req) => {
 
     console.log(`User ${user.id} requesting WhatsApp send`);
 
-    // Check for user-specific BYOA settings - REQUIRED for WhatsApp
-    // Don't require verified=true, just check if credentials exist
+    // Get account owner ID for settings lookup (supports sub-users)
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('parent_account_id')
+      .eq('user_id', user.id)
+      .single();
+
+    const accountOwnerId = userProfile?.parent_account_id || user.id;
+    console.log(`Using account owner ID: ${accountOwnerId} (user: ${user.id}, parent: ${userProfile?.parent_account_id || 'none'})`);
+
+    // Check for account-level BYOA settings - REQUIRED for WhatsApp
+    // Query using account owner ID so sub-users can use the shared credentials
     const { data: userSettings, error: settingsError } = await supabase
       .from('whatsapp_user_settings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', accountOwnerId)
       .eq('use_own_account', true)
       .single();
 

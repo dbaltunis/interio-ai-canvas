@@ -55,17 +55,22 @@ export const WhatsAppBYOASetup = () => {
     }
   });
 
-  // Fetch existing settings
+  // Fetch existing settings - use account owner for sub-user support
   const { data: settings, isLoading } = useQuery({
     queryKey: ['whatsapp-user-settings'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Get account owner ID for sub-user support
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+
       const { data, error } = await supabase
         .from('whatsapp_user_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', accountOwnerId || user.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
