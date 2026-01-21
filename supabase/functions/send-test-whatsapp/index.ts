@@ -27,7 +27,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Clean phone number
-    const cleanPhone = phoneNumber.replace(/[\s\-()]/g, '');
+    let cleanPhone = phoneNumber.replace(/[\s\-()]/g, '');
+    // Ensure it has country code
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+' + cleanPhone;
+    }
 
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
@@ -83,6 +87,22 @@ const handler = async (req: Request): Promise<Response> => {
     if (!userSettings.account_sid || !userSettings.auth_token || !userSettings.whatsapp_number) {
       return new Response(
         JSON.stringify({ success: false, error: 'Incomplete WhatsApp configuration. Please provide Account SID, Auth Token, and WhatsApp number.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    // Check if To and From are the same (Twilio doesn't allow this)
+    const configuredNumber = userSettings.whatsapp_number.replace(/[\s\-()whatsapp:]/gi, '');
+    const recipientNumber = cleanPhone.replace(/[\s\-()whatsapp:]/gi, '');
+    
+    if (configuredNumber === recipientNumber || 
+        configuredNumber.endsWith(recipientNumber) || 
+        recipientNumber.endsWith(configuredNumber)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Cannot send to your own WhatsApp number. Please enter a different phone number to test.' 
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
