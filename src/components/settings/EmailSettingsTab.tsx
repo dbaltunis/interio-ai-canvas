@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Mail, Save, Loader2, Info, ExternalLink, Sparkles } from "lucide-react";
+import { Mail, Save, Loader2, Info, ExternalLink, Sparkles, Check, RotateCcw } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { EmailTemplatesList } from "@/components/email-templates/EmailTemplatesList";
 import { EmailPreview } from "@/components/email/EmailPreview";
 import { useNavigate } from "react-router-dom";
+import { useFormDirtyState } from "@/hooks/useFormDirtyState";
 import {
   Tooltip,
   TooltipContent,
@@ -30,15 +31,45 @@ export const EmailSettingsTab = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    from_email: emailSettings?.from_email || "",
-    from_name: emailSettings?.from_name || "",
-    reply_to_email: emailSettings?.reply_to_email || "",
-    signature: emailSettings?.signature || "",
+    from_email: "",
+    from_name: "",
+    reply_to_email: "",
+    signature: "",
   });
 
-  const [useAutoSignature, setUseAutoSignature] = useState(emailSettings?.use_auto_signature ?? true);
-  const [showFooter, setShowFooter] = useState(emailSettings?.show_footer ?? true);
+  const [useAutoSignature, setUseAutoSignature] = useState(true);
+  const [showFooter, setShowFooter] = useState(true);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Track original values from database for dirty state comparison
+  const originalValues = useMemo(() => {
+    if (!emailSettings) return null;
+    return {
+      from_email: emailSettings.from_email || "",
+      from_name: emailSettings.from_name || "",
+      reply_to_email: emailSettings.reply_to_email || "",
+      signature: emailSettings.signature || "",
+      use_auto_signature: emailSettings.use_auto_signature ?? true,
+      show_footer: emailSettings.show_footer ?? true,
+    };
+  }, [emailSettings]);
+
+  // Current values for comparison
+  const currentValues = useMemo(() => ({
+    from_email: formData.from_email,
+    from_name: formData.from_name,
+    reply_to_email: formData.reply_to_email,
+    signature: formData.signature,
+    use_auto_signature: useAutoSignature,
+    show_footer: showFooter,
+  }), [formData, useAutoSignature, showFooter]);
+
+  // Use dirty state hook
+  const { hasChanges, markAsSaved, resetDirtyState } = useFormDirtyState(
+    currentValues,
+    originalValues,
+    isLoading
+  );
 
   // Generate auto signature from business settings
   const generateAutoSignature = () => {
@@ -74,14 +105,7 @@ export const EmailSettingsTab = () => {
     }
   }, [useAutoSignature]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.from_email && !hasSendGridIntegration) {
-      // Use default for shared service
-      formData.from_email = "noreply@interioapp.com";
-    }
-    
+  const handleSave = async () => {
     if (!formData.from_name) {
       toast({
         title: "Validation Error",
@@ -95,14 +119,33 @@ export const EmailSettingsTab = () => {
       await updateEmailSettings.mutateAsync({
         ...formData,
         from_email: hasSendGridIntegration ? formData.from_email : "noreply@interioapp.com",
-        // If using auto signature, save empty string to trigger auto-generation
         signature: useAutoSignature ? "" : formData.signature,
         use_auto_signature: useAutoSignature,
         show_footer: showFooter,
       });
+      markAsSaved();
     } catch (error) {
       console.error("Failed to update email settings:", error);
     }
+  };
+
+  const handleDiscard = () => {
+    if (emailSettings) {
+      setFormData({
+        from_email: emailSettings.from_email || "",
+        from_name: emailSettings.from_name || "",
+        reply_to_email: emailSettings.reply_to_email || "",
+        signature: emailSettings.signature || "",
+      });
+      setUseAutoSignature(emailSettings.use_auto_signature ?? true);
+      setShowFooter(emailSettings.show_footer ?? true);
+      resetDirtyState();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSave();
   };
 
   // Get the effective signature for preview
@@ -256,19 +299,37 @@ export const EmailSettingsTab = () => {
                 </div>
 
                 <div className="flex gap-2">
+                  {hasChanges && (
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleDiscard}
+                      disabled={updateEmailSettings.isPending}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Discard
+                    </Button>
+                  )}
                   <Button 
                     type="submit" 
-                    disabled={updateEmailSettings.isPending}
+                    disabled={!hasChanges || updateEmailSettings.isPending}
+                    variant={hasChanges ? "default" : "secondary"}
+                    className={!hasChanges ? "opacity-60" : ""}
                   >
                     {updateEmailSettings.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Saving...
                       </>
-                    ) : (
+                    ) : hasChanges ? (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Save Settings
+                        Save Changes
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Saved
                       </>
                     )}
                   </Button>
