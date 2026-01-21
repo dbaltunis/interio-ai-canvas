@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,13 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AccountWithDetails, SubscriptionType } from "@/types/subscriptions";
 import { useUpdateSubscriptionType, useUpdateTrialDuration } from "@/hooks/useAdminAccounts";
 import { useAdminAccountInvoices } from "@/hooks/useAdminAccountInvoices";
+import { useAdminAccountFeatures, useUpdateAccountFeature, useUpdateSeatLimit, isFeatureEnabled } from "@/hooks/useAdminAccountFeatures";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Calendar, DollarSign, CreditCard, Users, FileText, ExternalLink, Download, Loader2 } from "lucide-react";
+import { Calendar, DollarSign, CreditCard, Users, FileText, ExternalLink, Download, Loader2, Settings2, Infinity } from "lucide-react";
 
 interface SubscriptionPanelProps {
   account: AccountWithDetails;
@@ -25,9 +28,22 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
       ? format(new Date(account.subscription.trial_ends_at), "yyyy-MM-dd")
       : ""
   );
+  const [seatLimit, setSeatLimit] = useState<number>(account.team_members_count || 1);
 
   const updateSubscriptionType = useUpdateSubscriptionType();
   const updateTrialDuration = useUpdateTrialDuration();
+  const updateAccountFeature = useUpdateAccountFeature();
+  const updateSeatLimit = useUpdateSeatLimit();
+
+  // Fetch account feature flags
+  const { data: accountFeatures, isLoading: featuresLoading } = useAdminAccountFeatures(account.user_id);
+  const hasUnlimitedSeats = isFeatureEnabled(accountFeatures, "unlimited_seats");
+  const hasDealerPortal = isFeatureEnabled(accountFeatures, "dealer_portal");
+
+  // Update local state when account changes
+  useEffect(() => {
+    setSeatLimit(account.team_members_count || 1);
+  }, [account.team_members_count]);
 
   // Fetch invoices for this account
   const { data: invoices, isLoading: invoicesLoading } = useAdminAccountInvoices(
@@ -48,6 +64,32 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
       return data || [];
     },
   });
+
+  const handleToggleUnlimitedSeats = (enabled: boolean) => {
+    updateAccountFeature.mutate({
+      userId: account.user_id,
+      featureKey: "unlimited_seats",
+      enabled,
+      config: { reason: enabled ? "Admin enabled unlimited seats" : undefined },
+    });
+  };
+
+  const handleToggleDealerPortal = (enabled: boolean) => {
+    updateAccountFeature.mutate({
+      userId: account.user_id,
+      featureKey: "dealer_portal",
+      enabled,
+      config: { dealer_seat_price: 99 },
+    });
+  };
+
+  const handleUpdateSeatLimit = () => {
+    if (!account.subscription) return;
+    updateSeatLimit.mutate({
+      subscriptionId: account.subscription.id,
+      totalUsers: seatLimit,
+    });
+  };
 
   const handleSubscriptionTypeChange = (newType: SubscriptionType) => {
     if (!account.subscription) return;
@@ -175,6 +217,106 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
                 </p>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Account Features Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Account Features & Limits
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {featuresLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading features...
+            </div>
+          ) : (
+            <>
+              {/* Unlimited Seats Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Infinity className="h-4 w-4" />
+                    Unlimited Seats
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow this account to add unlimited team members without extra charges
+                  </p>
+                </div>
+                <Switch
+                  checked={hasUnlimitedSeats}
+                  onCheckedChange={handleToggleUnlimitedSeats}
+                  disabled={updateAccountFeature.isPending}
+                />
+              </div>
+
+              {/* Seat Limit (if not unlimited) */}
+              {!hasUnlimitedSeats && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Seat Limit</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={seatLimit}
+                      onChange={(e) => setSeatLimit(Number(e.target.value))}
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">users</span>
+                    <Button 
+                      size="sm" 
+                      onClick={handleUpdateSeatLimit}
+                      disabled={updateSeatLimit.isPending}
+                    >
+                      {updateSeatLimit.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Current team members: {account.team_members_count || 0}
+                  </p>
+                </div>
+              )}
+
+              {/* Dealer Portal Toggle */}
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Dealer Portal</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable dealer management features for this account
+                  </p>
+                </div>
+                <Switch
+                  checked={hasDealerPortal}
+                  onCheckedChange={handleToggleDealerPortal}
+                  disabled={updateAccountFeature.isPending}
+                />
+              </div>
+
+              {/* Feature Flags Summary */}
+              {accountFeatures && accountFeatures.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="text-xs font-medium mb-2">Active Feature Flags:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {accountFeatures
+                      .filter((f) => f.enabled)
+                      .map((feature) => (
+                        <Badge key={feature.id} variant="secondary" className="text-xs">
+                          {feature.feature_key}
+                        </Badge>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
