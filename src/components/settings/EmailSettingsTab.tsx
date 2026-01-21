@@ -42,24 +42,26 @@ export const EmailSettingsTab = () => {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Track original values from database for dirty state comparison
+  // Normalize signature: if auto-signature is on, treat signature as empty for comparison
   const originalValues = useMemo(() => {
     if (!emailSettings) return null;
+    const autoSig = emailSettings.use_auto_signature ?? true;
     return {
       from_email: emailSettings.from_email || "",
       from_name: emailSettings.from_name || "",
       reply_to_email: emailSettings.reply_to_email || "",
-      signature: emailSettings.signature || "",
-      use_auto_signature: emailSettings.use_auto_signature ?? true,
+      signature: autoSig ? "" : (emailSettings.signature || ""),
+      use_auto_signature: autoSig,
       show_footer: emailSettings.show_footer ?? true,
     };
   }, [emailSettings]);
 
-  // Current values for comparison
+  // Current values for comparison - normalize signature based on auto-sig toggle
   const currentValues = useMemo(() => ({
     from_email: formData.from_email,
     from_name: formData.from_name,
     reply_to_email: formData.reply_to_email,
-    signature: formData.signature,
+    signature: useAutoSignature ? "" : formData.signature,
     use_auto_signature: useAutoSignature,
     show_footer: showFooter,
   }), [formData, useAutoSignature, showFooter]);
@@ -98,12 +100,14 @@ export const EmailSettingsTab = () => {
     }
   }, [emailSettings, initialLoadDone]);
 
-  // When auto signature is toggled, update the signature field
-  useEffect(() => {
-    if (useAutoSignature) {
+  // Handler for auto-signature toggle - only clear signature when user actively enables
+  const handleAutoSignatureToggle = (checked: boolean) => {
+    setUseAutoSignature(checked);
+    // Clear signature only when user manually enables auto-generate
+    if (checked) {
       setFormData(prev => ({ ...prev, signature: "" }));
     }
-  }, [useAutoSignature]);
+  };
 
   const handleSave = async () => {
     if (!formData.from_name) {
@@ -261,7 +265,7 @@ export const EmailSettingsTab = () => {
                       <Switch 
                         id="auto-signature"
                         checked={useAutoSignature} 
-                        onCheckedChange={setUseAutoSignature}
+                        onCheckedChange={handleAutoSignatureToggle}
                       />
                       <Label htmlFor="auto-signature" className="text-sm font-normal cursor-pointer">
                         Auto-generate
