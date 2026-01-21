@@ -1593,7 +1593,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
           // CRITICAL FIX: Calculate total_selling with PER-ITEM MARKUPS
           // This ensures Room Cards, Rooms Tab, and Quotes all show the same price
-          const calculateTotalSelling = () => {
+          // ✅ FIX: Calculate total_selling with PER-ITEM MARKUPS
+          // This ensures Room Cards, Rooms Tab, and Quotes all show the same price
+          // Also track the overall markup percentage applied for display
+          const calculateTotalSellingWithMarkup = () => {
             // Determine the treatment category for markup resolution
             const treatmentCat = treatmentCategory || 'curtains';
             const makingCategory = `${treatmentCat.replace(/_/g, '').replace('s', '')}_making`; // curtain_making, blind_making, etc.
@@ -1613,25 +1616,42 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             });
             const fabricSelling = applyMarkup(fabricCost, fabricMarkupResult.percentage);
             
-            const liningSelling = applyMarkup(finalLiningCost, resolveMarkup({
+            const liningMarkupResult = resolveMarkup({
               category: 'lining',
               markupSettings: markupSettings || undefined
-            }).percentage);
+            });
+            const liningSelling = applyMarkup(finalLiningCost, liningMarkupResult.percentage);
             
-            const headingSelling = applyMarkup(finalHeadingCost, resolveMarkup({
+            const headingMarkupResult = resolveMarkup({
               category: 'heading',
               markupSettings: markupSettings || undefined
-            }).percentage);
+            });
+            const headingSelling = applyMarkup(finalHeadingCost, headingMarkupResult.percentage);
             
-            const manufacturingSelling = applyMarkup(manufacturingCost, resolveMarkup({
+            const manufacturingMarkupResult = resolveMarkup({
               category: makingCategory,
               markupSettings: markupSettings || undefined
-            }).percentage);
+            });
+            const manufacturingSelling = applyMarkup(manufacturingCost, manufacturingMarkupResult.percentage);
             
-            const optionsSelling = applyMarkup(curtainOptionsCost, resolveMarkup({
+            const optionsMarkupResult = resolveMarkup({
               category: 'options',
               markupSettings: markupSettings || undefined
-            }).percentage);
+            });
+            const optionsSelling = applyMarkup(curtainOptionsCost, optionsMarkupResult.percentage);
+            
+            const totalSelling = fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
+            
+            // ✅ Calculate overall effective markup percentage: (selling - cost) / cost * 100
+            const totalCostForMarkup = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost + curtainOptionsCost;
+            const effectiveMarkupPercent = totalCostForMarkup > 0 
+              ? ((totalSelling - totalCostForMarkup) / totalCostForMarkup) * 100 
+              : 0;
+            
+            // ✅ Calculate profit margin: (selling - cost) / selling * 100
+            const profitMarginPercent = totalSelling > 0
+              ? ((totalSelling - totalCostForMarkup) / totalSelling) * 100
+              : 0;
             
             console.log('💰 [PER-ITEM MARKUP] Calculating total_selling:', {
               fabricCost, fabricSelling,
@@ -1642,13 +1662,24 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               headingCost: finalHeadingCost, headingSelling,
               manufacturingCost, manufacturingSelling,
               optionsCost: curtainOptionsCost, optionsSelling,
-              makingCategory
+              makingCategory,
+              effectiveMarkupPercent: effectiveMarkupPercent.toFixed(2),
+              profitMarginPercent: profitMarginPercent.toFixed(2)
             });
             
-            return fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
+            return {
+              totalSelling,
+              effectiveMarkupPercent,
+              profitMarginPercent,
+              primaryMarkupSource: fabricMarkupResult.source,
+              primaryMarkupPercent: fabricMarkupResult.percentage
+            };
           };
           
-          const finalTotalSelling = calculateTotalSelling();
+          const sellingResult = calculateTotalSellingWithMarkup();
+          const finalTotalSelling = sellingResult.totalSelling;
+          const markupApplied = sellingResult.effectiveMarkupPercent;
+          const profitMargin = sellingResult.profitMarginPercent;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
           console.log('💾 DynamicWorksheet treatment data for save:', {

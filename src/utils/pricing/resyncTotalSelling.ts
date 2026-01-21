@@ -1,21 +1,31 @@
 /**
- * Utility to recalculate total_selling for windows with incorrect markup values
- * This can be triggered manually when markup settings are updated
+ * Utility to recalculate total_selling, markup_applied, and profit_margin 
+ * for windows with incorrect markup values.
+ * This can be triggered manually when markup settings are updated.
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { resolveMarkup, applyMarkup } from './markupResolver';
+import { resolveMarkup, applyMarkup, calculateGrossMargin } from './markupResolver';
 import { MarkupSettings } from '@/hooks/useMarkupSettings';
 
 export interface ResyncResult {
   windowId: string;
   oldTotalSelling: number;
   newTotalSelling: number;
+  markupApplied: number;
+  profitMargin: number;
   updated: boolean;
 }
 
+export interface BatchResyncResult {
+  total: number;
+  updated: number;
+  failed: number;
+  results: ResyncResult[];
+}
+
 /**
- * Recalculates total_selling for a single window based on current markup settings
+ * Recalculates total_selling, markup_applied, and profit_margin for a single window
  */
 export async function resyncWindowTotalSelling(
   windowId: string,
@@ -48,6 +58,7 @@ export async function resyncWindowTotalSelling(
   const headingCost = summary.heading_cost || 0;
   const manufacturingCost = summary.manufacturing_cost || 0;
   const optionsCost = summary.options_cost || 0;
+  const totalCost = fabricCost + liningCost + headingCost + manufacturingCost + optionsCost;
 
   const fabricSelling = applyMarkup(fabricCost, resolveMarkup({
     productMarkup,
@@ -78,21 +89,80 @@ export async function resyncWindowTotalSelling(
 
   const newTotalSelling = fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
 
-  // Only update if different
-  if (Math.abs(newTotalSelling - oldTotalSelling) > 0.01) {
+  // Calculate markup and margin percentages
+  const markupApplied = totalCost > 0 
+    ? ((newTotalSelling - totalCost) / totalCost) * 100 
+    : 0;
+  const profitMargin = calculateGrossMargin(totalCost, newTotalSelling);
+
+  // Check if update is needed (selling price changed OR markup/margin not set)
+  const oldMarkup = summary.markup_applied || 0;
+  const needsUpdate = Math.abs(newTotalSelling - oldTotalSelling) > 0.01 || oldMarkup === 0;
+
+  if (needsUpdate) {
     const { error: updateError } = await supabase
       .from('windows_summary')
-      .update({ total_selling: newTotalSelling })
+      .update({ 
+        total_selling: newTotalSelling,
+        markup_applied: markupApplied,
+        profit_margin: profitMargin
+      })
       .eq('window_id', windowId);
 
     if (updateError) {
-      console.error('Failed to update total_selling:', updateError);
-      return { windowId, oldTotalSelling, newTotalSelling, updated: false };
+      console.error('Failed to update window:', updateError);
+      return { windowId, oldTotalSelling, newTotalSelling, markupApplied, profitMargin, updated: false };
     }
 
-    console.log(`✅ Resynced window ${windowId}: $${oldTotalSelling.toFixed(2)} → $${newTotalSelling.toFixed(2)}`);
-    return { windowId, oldTotalSelling, newTotalSelling, updated: true };
+    console.log(`✅ Resynced window ${windowId}: $${oldTotalSelling.toFixed(2)} → $${newTotalSelling.toFixed(2)} (${markupApplied.toFixed(1)}% markup)`);
+    return { windowId, oldTotalSelling, newTotalSelling, markupApplied, profitMargin, updated: true };
   }
 
-  return { windowId, oldTotalSelling, newTotalSelling, updated: false };
+  return { windowId, oldTotalSelling, newTotalSelling, markupApplied, profitMargin, updated: false };
+}
+
+/**
+ * Batch resync all windows that have markup_applied = 0 or not set
+ * This is account-agnostic - it fixes all windows the current user can access
+ */
+export async function resyncAllWindows(
+  markupSettings: MarkupSettings
+): Promise<BatchResyncResult> {
+  // Fetch all windows that may need resync (markup_applied = 0 or not set)
+  const { data: windows, error } = await supabase
+    .from('windows_summary')
+    .select('window_id, total_cost, total_selling, markup_applied')
+    .or('markup_applied.eq.0,markup_applied.is.null');
+
+  if (error || !windows) {
+    console.error('Failed to fetch windows for resync:', error);
+    return { total: 0, updated: 0, failed: 0, results: [] };
+  }
+
+  console.log(`🔄 Found ${windows.length} windows that may need resync`);
+
+  const results: ResyncResult[] = [];
+  let updated = 0;
+  let failed = 0;
+
+  for (const window of windows) {
+    const result = await resyncWindowTotalSelling(window.window_id, markupSettings);
+    if (result) {
+      results.push(result);
+      if (result.updated) {
+        updated++;
+      }
+    } else {
+      failed++;
+    }
+  }
+
+  console.log(`✅ Resync complete: ${updated} updated, ${failed} failed, ${windows.length - updated - failed} unchanged`);
+
+  return {
+    total: windows.length,
+    updated,
+    failed,
+    results
+  };
 }
