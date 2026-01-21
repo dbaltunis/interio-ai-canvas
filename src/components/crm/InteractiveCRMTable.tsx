@@ -23,22 +23,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useClients } from "@/hooks/useClients";
 import { useUpdateClient } from "@/hooks/useClients";
+import { useClientStages } from "@/hooks/useClientStages";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { FUNNEL_STAGES } from "@/constants/clientConstants";
 
-const stageColors: Record<string, string> = {
-  lead: "bg-blue-100 text-blue-700 border-blue-300",
-  contacted: "bg-purple-100 text-purple-700 border-purple-300",
-  measuring_scheduled: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  quoted: "bg-orange-100 text-orange-700 border-orange-300",
-  approved: "bg-green-100 text-green-700 border-green-300",
-  lost: "bg-gray-100 text-gray-700 border-gray-300",
+const getColorClasses = (color: string) => {
+  const colorMap: Record<string, string> = {
+    gray: "bg-gray-100 text-gray-700 border-gray-300",
+    blue: "bg-blue-100 text-blue-700 border-blue-300",
+    green: "bg-green-100 text-green-700 border-green-300",
+    yellow: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    orange: "bg-orange-100 text-orange-700 border-orange-300",
+    red: "bg-red-100 text-red-700 border-red-300",
+    purple: "bg-purple-100 text-purple-700 border-purple-300",
+    primary: "bg-primary/10 text-primary border-primary/30",
+  };
+  return colorMap[color] || colorMap.gray;
 };
 
 export const InteractiveCRMTable = () => {
   const { data: clients = [], isLoading } = useClients();
   const updateClient = useUpdateClient();
+  const { data: dynamicStages = [] } = useClientStages();
   const [editingCell, setEditingCell] = useState<{row: string, col: string} | null>(null);
+
+  // Use dynamic stages if available, otherwise fall back to hardcoded
+  const stages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ value: s.name, label: s.label, color: getColorClasses(s.color) }))
+    : FUNNEL_STAGES.map(s => ({ ...s, color: s.color }));
 
   const handleCellEdit = async (clientId: string, field: string, value: any) => {
     await updateClient.mutateAsync({
@@ -89,6 +102,7 @@ export const InteractiveCRMTable = () => {
             {clients.map((client, index) => {
               const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
               const initials = (displayName || 'U').substring(0, 2).toUpperCase();
+              const currentStage = stages.find(s => s.value === client.funnel_stage) || stages[0];
               
               return (
                 <tr key={client.id} className="group hover:bg-muted/30 transition-colors">
@@ -110,34 +124,27 @@ export const InteractiveCRMTable = () => {
                     </div>
                   </td>
                   
-                  {/* Stage - Editable */}
+                  {/* Stage - Editable with dynamic stages */}
                   <td className="px-4 py-3">
                     <Select
                       value={client.funnel_stage || 'lead'}
                       onValueChange={(value) => handleStageChange(client.id, value)}
                     >
                       <SelectTrigger className="w-[140px] h-8 border-0 hover:bg-muted">
-                        <SelectValue />
+                        <SelectValue>
+                          <Badge variant="outline" className={currentStage?.color}>
+                            {currentStage?.label?.toUpperCase() || client.funnel_stage?.toUpperCase()}
+                          </Badge>
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="lead">
-                          <Badge variant="outline" className={stageColors.lead}>LEAD</Badge>
-                        </SelectItem>
-                        <SelectItem value="contacted">
-                          <Badge variant="outline" className={stageColors.contacted}>CONTACTED</Badge>
-                        </SelectItem>
-                        <SelectItem value="measuring_scheduled">
-                          <Badge variant="outline" className={stageColors.measuring_scheduled}>MEASURING</Badge>
-                        </SelectItem>
-                        <SelectItem value="quoted">
-                          <Badge variant="outline" className={stageColors.quoted}>QUOTED</Badge>
-                        </SelectItem>
-                        <SelectItem value="approved">
-                          <Badge variant="outline" className={stageColors.approved}>APPROVED</Badge>
-                        </SelectItem>
-                        <SelectItem value="lost">
-                          <Badge variant="outline" className={stageColors.lost}>LOST</Badge>
-                        </SelectItem>
+                        {stages.map((stage) => (
+                          <SelectItem key={stage.value} value={stage.value}>
+                            <Badge variant="outline" className={stage.color}>
+                              {stage.label.toUpperCase()}
+                            </Badge>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </td>
