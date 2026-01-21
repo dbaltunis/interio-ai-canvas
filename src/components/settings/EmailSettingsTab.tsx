@@ -37,6 +37,7 @@ export const EmailSettingsTab = () => {
   });
 
   const [useAutoSignature, setUseAutoSignature] = useState(!emailSettings?.signature);
+  const [showFooter, setShowFooter] = useState(true);
 
   // Generate auto signature from business settings
   const generateAutoSignature = () => {
@@ -101,8 +102,8 @@ export const EmailSettingsTab = () => {
   // Get the effective signature for preview
   const effectiveSignature = useAutoSignature ? generateAutoSignature() : formData.signature;
 
-  // Footer data from business settings
-  const footerData = {
+  // Footer data from business settings (only show if footer is enabled)
+  const footerData = showFooter ? {
     companyName: businessSettings?.company_name,
     phone: businessSettings?.business_phone,
     email: businessSettings?.business_email,
@@ -111,7 +112,7 @@ export const EmailSettingsTab = () => {
     city: businessSettings?.city,
     state: businessSettings?.state,
     country: businessSettings?.country,
-  };
+  } : {};
 
   if (isLoading) {
     return (
@@ -213,13 +214,8 @@ export const EmailSettingsTab = () => {
                         checked={useAutoSignature} 
                         onCheckedChange={setUseAutoSignature}
                       />
-                      <Label htmlFor="auto-signature" className="text-sm font-normal cursor-pointer flex items-center gap-1">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        Auto from Business Info
-                      </Label>
-                      <Label htmlFor="auto-signature" className="text-sm font-normal cursor-pointer flex items-center gap-1">
-                        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                        Auto from Business Info
+                      <Label htmlFor="auto-signature" className="text-sm font-normal cursor-pointer">
+                        Auto-generate
                       </Label>
                     </div>
                   </div>
@@ -279,71 +275,87 @@ export const EmailSettingsTab = () => {
           {/* Email Footer Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Email Footer
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">The footer appears at the bottom of all emails with your business details.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </CardTitle>
-              <CardDescription>
-                Automatically generated from your Business Settings
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    Email Footer
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">The footer appears at the bottom of all emails with your business details.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
+                  <CardDescription>
+                    {showFooter ? "Auto-generated from Business Settings" : "Footer is currently disabled"}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch 
+                    id="show-footer"
+                    checked={showFooter} 
+                    onCheckedChange={setShowFooter}
+                  />
+                  <Label htmlFor="show-footer" className="text-sm font-normal cursor-pointer">
+                    {showFooter ? "Enabled" : "Disabled"}
+                  </Label>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              {businessSettings?.company_name ? (
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg border border-dashed">
-                    <div className="text-center space-y-1">
-                      {businessSettings.company_name && (
-                        <p className="font-medium text-sm">{businessSettings.company_name}</p>
-                      )}
-                      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        {businessSettings.business_phone && (
-                          <span>📞 {businessSettings.business_phone}</span>
+            {showFooter && (
+              <CardContent>
+                {businessSettings?.company_name ? (
+                  <div className="space-y-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-dashed">
+                      <div className="text-center space-y-1">
+                        {businessSettings.company_name && (
+                          <p className="font-medium text-sm">{businessSettings.company_name}</p>
                         )}
-                        {businessSettings.business_email && (
-                          <span>✉️ {businessSettings.business_email}</span>
-                        )}
-                        {businessSettings.website && (
-                          <span>🌐 {businessSettings.website}</span>
+                        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          {businessSettings.business_phone && (
+                            <span>📞 {businessSettings.business_phone}</span>
+                          )}
+                          {businessSettings.business_email && (
+                            <span>✉️ {businessSettings.business_email}</span>
+                          )}
+                          {businessSettings.website && (
+                            <span>🌐 {businessSettings.website}</span>
+                          )}
+                        </div>
+                        {businessSettings.address && (
+                          <p className="text-xs text-muted-foreground">
+                            📍 {[businessSettings.address, businessSettings.city, businessSettings.state, businessSettings.country].filter(Boolean).join(', ')}
+                          </p>
                         )}
                       </div>
-                      {businessSettings.address && (
-                        <p className="text-xs text-muted-foreground">
-                          📍 {[businessSettings.address, businessSettings.city, businessSettings.state, businessSettings.country].filter(Boolean).join(', ')}
-                        </p>
-                      )}
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate('/settings?tab=business')}
+                    >
+                      Edit in Business Settings <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                    </Button>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate('/settings?tab=business')}
-                  >
-                    Edit in Business Settings <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground text-sm mb-3">
-                    No business information configured yet.
-                  </p>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/settings?tab=business')}
-                  >
-                    Set up Business Settings <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground text-sm mb-3">
+                      No business information configured yet.
+                    </p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/settings?tab=business')}
+                    >
+                      Set up Business Settings <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            )}
           </Card>
         </div>
 
