@@ -12,9 +12,9 @@ import {
   Phone,
   ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
+  Send
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,6 +37,8 @@ export const WhatsAppBYOASetup = () => {
   const [accountSid, setAccountSid] = useState("");
   const [authToken, setAuthToken] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
   // Fetch business settings for company name
   const { data: businessSettings } = useQuery({
@@ -90,6 +92,34 @@ export const WhatsAppBYOASetup = () => {
     }
   });
 
+  // Send test WhatsApp message
+  const handleSendTestWhatsApp = async () => {
+    if (!testPhoneNumber) {
+      toast.error("Please enter a phone number to send a test message");
+      return;
+    }
+
+    setIsSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-test-whatsapp', {
+        body: { phoneNumber: testPhoneNumber }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success("Test WhatsApp message sent! Check your phone.");
+      } else {
+        throw new Error(data?.error || "Failed to send test message");
+      }
+    } catch (error: any) {
+      console.error('Error sending test WhatsApp:', error);
+      toast.error(error.message || "Failed to send test WhatsApp message");
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   // Save settings mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -134,7 +164,6 @@ export const WhatsAppBYOASetup = () => {
   }
 
   const businessName = businessSettings?.company_name || 'Your Business';
-  const hasOwnNumber = settings?.use_own_account && settings.whatsapp_number && settings.verified;
   const isConfigured = settings?.use_own_account && settings.whatsapp_number;
 
   const handleToggle = (checked: boolean) => {
@@ -211,7 +240,7 @@ export const WhatsAppBYOASetup = () => {
                     <Label htmlFor="accountSid" className="text-sm">Account SID</Label>
                     <Input
                       id="accountSid"
-                      placeholder="ACxxxxxxxx..."
+                      placeholder="Enter your Twilio Account SID (starts with AC)"
                       value={accountSid}
                       onChange={(e) => setAccountSid(e.target.value)}
                     />
@@ -221,7 +250,7 @@ export const WhatsAppBYOASetup = () => {
                     <Input
                       id="authToken"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder="Enter your Twilio Auth Token"
                       value={authToken}
                       onChange={(e) => setAuthToken(e.target.value)}
                     />
@@ -230,12 +259,12 @@ export const WhatsAppBYOASetup = () => {
                     <Label htmlFor="whatsappNumber" className="text-sm">WhatsApp Number</Label>
                     <Input
                       id="whatsappNumber"
-                      placeholder="+1234567890"
+                      placeholder="Enter your WhatsApp number (e.g., +14155551234)"
                       value={whatsappNumber}
                       onChange={(e) => setWhatsappNumber(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Your Twilio WhatsApp-enabled phone number
+                      Your Twilio WhatsApp-enabled phone number in international format
                     </p>
                   </div>
                 </div>
@@ -266,12 +295,12 @@ export const WhatsAppBYOASetup = () => {
   return (
     <div className="space-y-4">
       {/* Connected Status */}
-      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+      <Card className="border-primary/20 bg-primary/5">
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
-                <MessageSquare className="h-5 w-5 text-green-600" />
+              <div className="p-2 rounded-full bg-primary/10">
+                <MessageSquare className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="font-medium">{businessName}</p>
@@ -280,11 +309,54 @@ export const WhatsAppBYOASetup = () => {
             </div>
             <Badge 
               variant="outline" 
-              className="bg-green-100 text-green-700 border-green-200"
+              className="bg-primary/10 text-primary border-primary/20"
             >
               <Check className="h-3 w-3 mr-1" />
               Connected
             </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Test WhatsApp */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Send className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Send Test Message</p>
+                <p className="text-sm text-muted-foreground">Verify your WhatsApp integration is working</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter phone number (e.g., +14155551234)"
+                value={testPhoneNumber}
+                onChange={(e) => setTestPhoneNumber(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSendTestWhatsApp}
+                disabled={isSendingTest || !testPhoneNumber}
+                variant="outline"
+              >
+                {isSendingTest ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Test
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Note: The recipient must have messaged your WhatsApp number first (Twilio sandbox requirement)
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -317,7 +389,7 @@ export const WhatsAppBYOASetup = () => {
                   <Label htmlFor="accountSid" className="text-sm">Account SID</Label>
                   <Input
                     id="accountSid"
-                    placeholder="ACxxxxxxxx..."
+                    placeholder="Enter your Twilio Account SID"
                     value={accountSid}
                     onChange={(e) => setAccountSid(e.target.value)}
                   />
@@ -327,7 +399,7 @@ export const WhatsAppBYOASetup = () => {
                   <Input
                     id="authToken"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Enter your Twilio Auth Token"
                     value={authToken}
                     onChange={(e) => setAuthToken(e.target.value)}
                   />
@@ -336,7 +408,7 @@ export const WhatsAppBYOASetup = () => {
                   <Label htmlFor="whatsappNumber" className="text-sm">WhatsApp Number</Label>
                   <Input
                     id="whatsappNumber"
-                    placeholder="+1234567890"
+                    placeholder="Enter your WhatsApp number (e.g., +14155551234)"
                     value={whatsappNumber}
                     onChange={(e) => setWhatsappNumber(e.target.value)}
                   />
@@ -344,7 +416,7 @@ export const WhatsAppBYOASetup = () => {
               </div>
 
               {settings?.verified && (
-                <p className="text-sm text-green-600 flex items-center gap-1">
+                <p className="text-sm text-primary flex items-center gap-1">
                   <Check className="h-3 w-3" />
                   Verified
                 </p>
