@@ -2,23 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export interface ClientStage {
-  id: string;
-  user_id: string;
-  name: string;
-  label: string;
-  color: string;
-  description?: string;
-  slot_number: number;
-  is_active: boolean;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export type ClientStageInsert = Omit<ClientStage, "id" | "user_id" | "created_at" | "updated_at">;
-export type ClientStageUpdate = Partial<Omit<ClientStage, "id" | "user_id" | "created_at" | "updated_at">>;
+// Use database types directly for type safety
+export type ClientStage = Tables<"client_stages">;
+export type ClientStageInsert = Omit<TablesInsert<"client_stages">, "user_id">;
+export type ClientStageUpdate = TablesUpdate<"client_stages">;
 
 export const useClientStages = () => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
@@ -37,11 +26,11 @@ export const useClientStages = () => {
 
       if (error) throw error;
       
-      return (data || []) as ClientStage[];
+      return data || [];
     },
     enabled: !!effectiveOwnerId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds for fresher data
+    gcTime: 5 * 60 * 1000,
   });
 };
 
@@ -61,11 +50,11 @@ export const useAllClientStages = () => {
 
       if (error) throw error;
       
-      return (data || []) as ClientStage[];
+      return data || [];
     },
     enabled: !!effectiveOwnerId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
 
@@ -88,7 +77,7 @@ export const useCreateClientStage = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientStage;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_stages"] });
@@ -122,7 +111,7 @@ export const useUpdateClientStage = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientStage;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_stages"] });
@@ -156,7 +145,7 @@ export const useDeleteClientStage = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientStage;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_stages"] });

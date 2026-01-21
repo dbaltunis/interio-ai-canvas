@@ -37,7 +37,7 @@ export const SeedClientStages = () => {
   const createStage = useCreateClientStage();
   const [isSeeding, setIsSeeding] = useState(false);
 
-  const activeCount = stages.filter(s => s.is_active).length;
+  const activeCount = stages.filter(s => s.is_active !== false).length;
 
   const handleSeedStages = async () => {
     setIsSeeding(true);
