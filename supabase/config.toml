@@ -159,3 +159,6 @@ verify_jwt = true
 
 [functions.update-workshop-notes]
 verify_jwt = false
+
+[functions.send-test-whatsapp]
+verify_jwt = true

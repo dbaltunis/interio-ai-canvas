@@ -13,6 +13,9 @@ export const EmailSetupStatusCard = () => {
   const contentAnalysis = analyzeEmailContent('', '');
   const deliverabilityScore = calculateDeliverabilityScore(deliverabilityData, contentAnalysis, []);
 
+  // Override usingSharedService when custom SendGrid is connected
+  const effectiveUsingSharedService = hasSendGridIntegration ? false : deliverabilityScore.usingSharedService;
+
   return (
     <Card className="border-green-200 bg-green-50">
       <CardContent className="p-6">
@@ -43,10 +46,10 @@ export const EmailSetupStatusCard = () => {
                 <DeliverabilityScoreCard
                   percentage={deliverabilityScore.percentage}
                   breakdown={deliverabilityScore.breakdown}
-                  recommendations={deliverabilityScore.recommendations}
+                  recommendations={hasSendGridIntegration ? deliverabilityScore.recommendations.filter(r => !r.toLowerCase().includes('shared') && !r.toLowerCase().includes('sendgrid')) : deliverabilityScore.recommendations}
                   showDetails={true}
-                  usingSharedService={deliverabilityScore.usingSharedService}
-                  serviceInfo={deliverabilityScore.serviceInfo}
+                  usingSharedService={effectiveUsingSharedService}
+                  serviceInfo={hasSendGridIntegration ? { provider: 'SendGrid', domain: 'custom', status: 'fully_authenticated' } : deliverabilityScore.serviceInfo}
                 />
               </div>
             )}
