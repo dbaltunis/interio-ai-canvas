@@ -1598,11 +1598,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             const treatmentCat = treatmentCategory || 'curtains';
             const makingCategory = `${treatmentCat.replace(/_/g, '').replace('s', '')}_making`; // curtain_making, blind_making, etc.
             
+            // ✅ FIX: Get product-level markup from inventory item OR pricing grid
+            // Hierarchy: Product markup > Grid markup > Category markup > Global
+            const fabricItem = enrichedFabric || selectedItems.fabric || selectedItems.material;
+            const productMarkup = fabricItem?.markup_percentage || undefined;
+            const gridMarkup = fabricItem?.pricing_grid_markup || undefined;
+            
             // Calculate selling prices for each component with their specific category markup
-            const fabricSelling = applyMarkup(fabricCost, resolveMarkup({
+            const fabricMarkupResult = resolveMarkup({
+              productMarkup, // ✅ Pass product-level markup from inventory item
+              gridMarkup,    // ✅ Pass grid-level markup from pricing grid
               category: treatmentCat,
               markupSettings: markupSettings || undefined
-            }).percentage);
+            });
+            const fabricSelling = applyMarkup(fabricCost, fabricMarkupResult.percentage);
             
             const liningSelling = applyMarkup(finalLiningCost, resolveMarkup({
               category: 'lining',
@@ -1626,6 +1635,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             
             console.log('💰 [PER-ITEM MARKUP] Calculating total_selling:', {
               fabricCost, fabricSelling,
+              fabricMarkupSource: fabricMarkupResult.source,
+              fabricMarkupPercent: fabricMarkupResult.percentage,
+              productMarkup, gridMarkup,
               liningCost: finalLiningCost, liningSelling,
               headingCost: finalHeadingCost, headingSelling,
               manufacturingCost, manufacturingSelling,
