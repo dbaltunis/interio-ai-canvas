@@ -4,7 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClients } from "@/hooks/useClients";
 import { Building2, User, DollarSign } from "lucide-react";
+import { useClientStages } from "@/hooks/useClientStages";
 import { FUNNEL_STAGES } from "@/constants/clientConstants";
+
+const getColorClasses = (color: string) => {
+  const colorMap: Record<string, string> = {
+    gray: "bg-gray-100 text-gray-700",
+    blue: "bg-blue-100 text-blue-700",
+    green: "bg-green-100 text-green-700",
+    yellow: "bg-yellow-100 text-yellow-700",
+    orange: "bg-orange-100 text-orange-700",
+    red: "bg-red-100 text-red-700",
+    purple: "bg-purple-100 text-purple-700",
+    primary: "bg-primary/10 text-primary",
+  };
+  return colorMap[color] || colorMap.gray;
+};
 
 interface CRMPipelineViewProps {
   onClientClick?: (clientId: string) => void;
@@ -12,6 +27,12 @@ interface CRMPipelineViewProps {
 
 export const CRMPipelineView = ({ onClientClick }: CRMPipelineViewProps) => {
   const { data: allClients } = useClients();
+  const { data: dynamicStages = [] } = useClientStages();
+
+  // Use dynamic stages if available, otherwise fall back to hardcoded
+  const stages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ value: s.name, label: s.label, color: getColorClasses(s.color) }))
+    : FUNNEL_STAGES;
 
   const getStageClients = (stage: string) => {
     return allClients?.filter(c => c.funnel_stage === stage) || [];
@@ -22,8 +43,8 @@ export const CRMPipelineView = ({ onClientClick }: CRMPipelineViewProps) => {
     return clients.reduce((sum, c) => sum + (c.deal_value || 0), 0);
   };
 
-  // Filter out 'lost' from pipeline view - lost clients shown separately
-  const pipelineStages = FUNNEL_STAGES.filter(s => s.value !== 'lost');
+  // Filter out 'lost' and 'churned' from pipeline view - shown separately
+  const pipelineStages = stages.filter(s => !['lost', 'churned'].includes(s.value));
 
   return (
     <Card>
@@ -31,7 +52,7 @@ export const CRMPipelineView = ({ onClientClick }: CRMPipelineViewProps) => {
         <CardTitle className="text-base">Sales Pipeline</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 gap-3">
+        <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${Math.min(pipelineStages.length, 7)}, minmax(0, 1fr))` }}>
           {pipelineStages.map((stage) => {
             const clients = getStageClients(stage.value);
             const stageValue = getStageValue(stage.value);

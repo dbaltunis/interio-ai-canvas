@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
 import { useCreateClient } from "@/hooks/useClients";
+import { useClientStages, getDefaultStage } from "@/hooks/useClientStages";
 import { FUNNEL_STAGES } from "@/constants/clientConstants";
+
+const getColorClasses = (color: string) => {
+  const colorMap: Record<string, string> = {
+    gray: "bg-gray-100 text-gray-700",
+    blue: "bg-blue-100 text-blue-700",
+    green: "bg-green-100 text-green-700",
+    yellow: "bg-yellow-100 text-yellow-700",
+    orange: "bg-orange-100 text-orange-700",
+    red: "bg-red-100 text-red-700",
+    purple: "bg-purple-100 text-purple-700",
+    primary: "bg-primary/10 text-primary",
+  };
+  return colorMap[color] || colorMap.gray;
+};
 
 interface ClientCreateFormProps {
   onBack: () => void;
@@ -31,6 +45,22 @@ export const ClientCreateForm = ({ onBack }: ClientCreateFormProps) => {
   });
 
   const createClient = useCreateClient();
+  const { data: dynamicStages = [] } = useClientStages();
+
+  // Use dynamic stages if available, otherwise fall back to hardcoded
+  const stages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ value: s.name, label: s.label, color: getColorClasses(s.color) }))
+    : FUNNEL_STAGES;
+
+  // Set default stage when dynamic stages load
+  useEffect(() => {
+    if (dynamicStages.length > 0) {
+      const defaultStage = getDefaultStage(dynamicStages);
+      if (defaultStage) {
+        setFunnelStage(defaultStage.name);
+      }
+    }
+  }, [dynamicStages]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -84,7 +114,7 @@ export const ClientCreateForm = ({ onBack }: ClientCreateFormProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FUNNEL_STAGES.map((stage) => (
+                  {stages.map((stage) => (
                     <SelectItem key={stage.value} value={stage.value}>
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
