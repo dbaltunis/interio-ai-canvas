@@ -1783,6 +1783,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             
             total_cost: finalTotalCost,
             total_selling: finalTotalSelling, // ✅ PER-ITEM MARKUP SELLING PRICE
+            markup_applied: markupApplied, // ✅ Store effective markup percentage
+            profit_margin: profitMargin, // ✅ Store profit margin percentage
             // CRITICAL: Save structured cost_breakdown for accurate room/project totals
             cost_breakdown: (() => {
               // Calculate pieces to charge (accounting for leftover usage)

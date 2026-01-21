@@ -18,6 +18,7 @@ import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { Shield } from "lucide-react";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { toast } from "sonner";
+import { resyncAllWindows } from "@/utils/pricing/resyncTotalSelling";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -121,6 +122,13 @@ export const PricingRulesTab = () => {
       labor: formData.labor_markup_percentage || 0
     });
     toast.success("Global settings saved");
+    
+    // Auto-resync existing windows with new markup settings
+    resyncAllWindows(formData).then((result) => {
+      if (result.updated > 0) {
+        toast.info(`Updated pricing on ${result.updated} existing windows`);
+      }
+    });
   };
 
   const handleSaveCategorySettings = async () => {
@@ -142,6 +150,13 @@ export const PricingRulesTab = () => {
     // Update original values after successful save
     setOriginalCategoryMarkups({ ...formData.category_markups });
     toast.success("Category markup saved");
+    
+    // Auto-resync existing windows with new category markups
+    resyncAllWindows(formData).then((result) => {
+      if (result.updated > 0) {
+        toast.info(`Updated pricing on ${result.updated} existing windows`);
+      }
+    });
   };
 
   const handleSaveTaxSettings = async () => {
