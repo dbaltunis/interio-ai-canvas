@@ -38,6 +38,7 @@ export const EmailSettingsTab = () => {
 
   const [useAutoSignature, setUseAutoSignature] = useState(emailSettings?.use_auto_signature ?? true);
   const [showFooter, setShowFooter] = useState(emailSettings?.show_footer ?? true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Generate auto signature from business settings
   const generateAutoSignature = () => {
@@ -50,9 +51,9 @@ export const EmailSettingsTab = () => {
     return signature;
   };
 
-  // Update form data when emailSettings loads
+  // Update form data when emailSettings loads - ONLY on initial load
   useEffect(() => {
-    if (emailSettings) {
+    if (emailSettings && !initialLoadDone) {
       setFormData({
         from_email: emailSettings.from_email || "",
         from_name: emailSettings.from_name || "",
@@ -62,8 +63,9 @@ export const EmailSettingsTab = () => {
       // Use database values for toggles, with sensible defaults
       setUseAutoSignature(emailSettings.use_auto_signature ?? !emailSettings.signature);
       setShowFooter(emailSettings.show_footer ?? true);
+      setInitialLoadDone(true);
     }
-  }, [emailSettings]);
+  }, [emailSettings, initialLoadDone]);
 
   // When auto signature is toggled, update the signature field
   useEffect(() => {
