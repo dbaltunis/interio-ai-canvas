@@ -28,7 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ClientFilesManager } from "./ClientFilesManager";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { FUNNEL_STAGES, getStageByValue } from "@/constants/clientConstants";
+import { FUNNEL_STAGES } from "@/constants/clientConstants";
+import { useClientStages } from "@/hooks/useClientStages";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -46,6 +47,31 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
   const { formatCurrency } = useFormattedCurrency();
+  const { data: dynamicStages = [] } = useClientStages();
+  
+  // Color mapping for dynamic stages
+  const getColorClasses = (color: string) => {
+    const colorMap: Record<string, string> = {
+      gray: "bg-gray-100 text-gray-700",
+      blue: "bg-blue-100 text-blue-700",
+      green: "bg-green-100 text-green-700",
+      yellow: "bg-yellow-100 text-yellow-700",
+      orange: "bg-orange-100 text-orange-700",
+      red: "bg-red-100 text-red-700",
+      purple: "bg-purple-100 text-purple-700",
+      primary: "bg-primary/10 text-primary",
+    };
+    return colorMap[color] || colorMap.gray;
+  };
+
+  // Use dynamic stages if available, otherwise fallback to hardcoded
+  const stages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ 
+        value: s.name, 
+        label: s.label, 
+        color: getColorClasses(s.color || 'gray') 
+      }))
+    : FUNNEL_STAGES;
   const { canEditClient, canEditAllClients, isLoading: editPermissionLoading } = useCanEditClient(client);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -109,9 +135,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     setIsEditing(false);
   };
 
-  const getStageColor = (stage: string) => {
-    const stageData = getStageByValue(stage);
+  const getStageColor = (stageValue: string) => {
+    const stageData = stages.find(s => s.value === stageValue);
     return stageData?.color || 'bg-muted text-muted-foreground';
+  };
+  
+  const getStageLabel = (stageValue: string) => {
+    const stageData = stages.find(s => s.value === stageValue);
+    return stageData?.label || stageValue;
   };
 
   const currentClient = isEditing ? editedClient : client;
@@ -153,11 +184,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               >
                 <SelectTrigger className="w-auto h-6 px-2 border-0 bg-transparent hover:bg-muted/50 p-0">
                   <Badge className={`${getStageColor(currentClient.funnel_stage || 'lead')} text-xs`}>
-                    {getStageByValue(currentClient.funnel_stage || 'lead')?.label || 'Lead'}
+                    {getStageLabel(currentClient.funnel_stage || 'lead')}
                   </Badge>
                 </SelectTrigger>
                 <SelectContent>
-                  {FUNNEL_STAGES.map((stage) => (
+                  {stages.map((stage) => (
                     <SelectItem key={stage.value} value={stage.value}>
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
