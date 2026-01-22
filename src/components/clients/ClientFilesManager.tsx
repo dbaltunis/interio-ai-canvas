@@ -26,6 +26,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const [currentFile, setCurrentFile] = useState<{ url: string; name: string; type: string } | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // Immediate loading state for better UX
 
   const { data: files, isLoading } = useClientFiles(clientId, userId);
   const { data: projects } = useClientJobs(clientId);
@@ -37,10 +38,15 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
     setSelectedFiles(event.target.files);
   };
 
+  // Combined loading state for immediate visual feedback
+  const isCurrentlyUploading = isUploading || uploadingFiles.length > 0 || uploadFile.isPending;
+
   // Direct upload for compact mode - uses files directly instead of state
   const handleDirectUpload = async (fileList: FileList) => {
     if (!fileList || fileList.length === 0) return;
 
+    // Set immediate loading state FIRST for instant feedback
+    setIsUploading(true);
     const fileNames = Array.from(fileList).map(f => f.name);
     setUploadingFiles(fileNames);
 
@@ -64,6 +70,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
       console.error('Upload error:', error);
       toast.error("Failed to upload some files");
     } finally {
+      setIsUploading(false);
       setUploadingFiles([]);
     }
   };
@@ -183,9 +190,19 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                   variant="outline" 
                   className="h-6 text-[10px] px-2"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isCurrentlyUploading}
                 >
-                  <Upload className="h-2.5 w-2.5 mr-1" />
-                  Add File
+                  {isCurrentlyUploading ? (
+                    <>
+                      <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-2.5 w-2.5 mr-1" />
+                      Add File
+                    </>
+                  )}
                 </Button>
               </div>
             )}
@@ -249,10 +266,19 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                   variant="outline" 
                   className="w-full h-6 text-[10px] mt-1"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadFile.isPending || uploadingFiles.length > 0}
+                  disabled={isCurrentlyUploading}
                 >
-                  <Upload className="h-2.5 w-2.5 mr-1" />
-                  {uploadingFiles.length > 0 ? 'Uploading...' : 'Add File'}
+                  {isCurrentlyUploading ? (
+                    <>
+                      <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-2.5 w-2.5 mr-1" />
+                      Add File
+                    </>
+                  )}
                 </Button>
               </>
             )}

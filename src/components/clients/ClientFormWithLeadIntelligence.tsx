@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { FUNNEL_STAGES, COUNTRIES } from "@/constants/clientConstants";
+import { useClientStages } from "@/hooks/useClientStages";
 
 interface ClientFormWithLeadIntelligenceProps {
   onCancel: () => void;
@@ -48,6 +49,32 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
 
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
+  const { data: dynamicStages = [] } = useClientStages();
+
+  // Color mapping for dynamic stages
+  const getColorClasses = (color: string) => {
+    const colorMap: Record<string, string> = {
+      gray: "bg-gray-100 text-gray-700",
+      blue: "bg-blue-100 text-blue-700",
+      green: "bg-green-100 text-green-700",
+      yellow: "bg-yellow-100 text-yellow-700",
+      orange: "bg-orange-100 text-orange-700",
+      red: "bg-red-100 text-red-700",
+      purple: "bg-purple-100 text-purple-700",
+      primary: "bg-primary/10 text-primary",
+    };
+    return colorMap[color] || colorMap.gray;
+  };
+
+  // Use dynamic stages if available, fallback to hardcoded
+  const stages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ 
+        value: s.name, 
+        label: s.label, 
+        color: getColorClasses(s.color || 'gray'),
+        description: s.description || s.label
+      }))
+    : FUNNEL_STAGES;
 
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -125,12 +152,14 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="z-[9999] bg-background border border-border shadow-lg max-h-[300px]" position="popper" sideOffset={4}>
-                  {FUNNEL_STAGES.map((stage) => (
+                  {stages.map((stage) => (
                     <SelectItem key={stage.value} value={stage.value}>
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
                         <span>{stage.label}</span>
-                        <span className="text-xs text-muted-foreground">- {stage.description}</span>
+                        {stage.description && (
+                          <span className="text-xs text-muted-foreground">- {stage.description}</span>
+                        )}
                       </div>
                     </SelectItem>
                   ))}

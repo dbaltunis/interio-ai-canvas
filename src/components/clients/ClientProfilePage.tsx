@@ -10,8 +10,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
-  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle, Globe, Link, Tag
+  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle, Globe, Link, Tag, CalendarDays, Users
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient, useUpdateClientStage } from "@/hooks/useClients";
@@ -268,6 +269,29 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 <CardContent className="pt-0 pb-3 px-3 space-y-2">
                   {isEditing ? (
                     <div className="space-y-2">
+                      {/* B2B-specific fields */}
+                      {currentClient.client_type === 'B2B' && (
+                        <>
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">Company Name</Label>
+                            <Input
+                              value={editedClient.company_name || ''}
+                              onChange={(e) => setEditedClient({ ...editedClient, company_name: e.target.value })}
+                              className="h-7 text-xs"
+                              placeholder="Company name"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">Contact Person</Label>
+                            <Input
+                              value={editedClient.contact_person || ''}
+                              onChange={(e) => setEditedClient({ ...editedClient, contact_person: e.target.value })}
+                              className="h-7 text-xs"
+                              placeholder="Primary contact at company"
+                            />
+                          </div>
+                        </>
+                      )}
                       <div className="space-y-1">
                         <Label className="text-[10px]">Name</Label>
                         <Input
@@ -305,6 +329,26 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                           placeholder="Address"
                         />
                       </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">City</Label>
+                          <Input
+                            value={editedClient.city || ''}
+                            onChange={(e) => setEditedClient({ ...editedClient, city: e.target.value })}
+                            className="h-7 text-xs"
+                            placeholder="City"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">Country</Label>
+                          <Input
+                            value={editedClient.country || ''}
+                            onChange={(e) => setEditedClient({ ...editedClient, country: e.target.value })}
+                            className="h-7 text-xs"
+                            placeholder="Country"
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-1">
                         <Label className="text-[10px]">Priority</Label>
                         <Select 
@@ -318,6 +362,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                             <SelectItem value="low">Low</SelectItem>
                             <SelectItem value="medium">Medium</SelectItem>
                             <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -329,6 +374,15 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                         />
                       </div>
                       <div className="space-y-1">
+                        <Label className="text-[10px]">Referral Source</Label>
+                        <Input
+                          value={editedClient.referral_source || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, referral_source: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="Who referred this client?"
+                        />
+                      </div>
+                      <div className="space-y-1">
                         <Label className="text-[10px]">Deal Value</Label>
                         <Input
                           type="number"
@@ -336,6 +390,33 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                           onChange={(e) => setEditedClient({ ...editedClient, deal_value: e.target.value ? parseFloat(e.target.value) : null })}
                           className="h-7 text-xs"
                           placeholder="Expected deal value"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Follow-up Date</Label>
+                        <Input
+                          type="date"
+                          value={editedClient.follow_up_date ? new Date(editedClient.follow_up_date).toISOString().split('T')[0] : ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, follow_up_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Tags (comma separated)</Label>
+                        <Input
+                          value={editedClient.tags?.join(', ') || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, tags: e.target.value ? e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean) : null })}
+                          className="h-7 text-xs"
+                          placeholder="VIP, Corporate, etc."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Notes</Label>
+                        <Textarea
+                          value={editedClient.notes || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, notes: e.target.value })}
+                          className="text-xs min-h-[60px]"
+                          placeholder="Additional notes..."
                         />
                       </div>
                       <div className="flex gap-2 pt-1">
@@ -389,13 +470,46 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       )}
                       <div className="flex items-center gap-2 pt-0.5">
                         <Badge variant="secondary" className={`text-xs px-2 py-0.5 ${
-                          currentClient.priority_level === 'high' ? 'bg-red-100 text-red-700' :
+                          currentClient.priority_level === 'high' || currentClient.priority_level === 'urgent' ? 'bg-red-100 text-red-700' :
                           currentClient.priority_level === 'low' ? 'bg-gray-100 text-gray-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {(currentClient.priority_level || 'medium').toUpperCase()}
                         </Badge>
                       </div>
+                      
+                      {/* Tags Display */}
+                      {currentClient.tags && currentClient.tags.length > 0 && (
+                        <div className="flex items-start gap-2 pt-1">
+                          <Tag className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                          <div className="flex flex-wrap gap-1">
+                            {currentClient.tags.map((tag: string) => (
+                              <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Follow-up Date Display */}
+                      {currentClient.follow_up_date && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs">
+                            Follow-up: {new Date(currentClient.follow_up_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Referral Source Display */}
+                      {currentClient.referral_source && (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">Referred by: {currentClient.referral_source}</span>
+                        </div>
+                      )}
+                      
                       {currentClient.notes && (
                         <div className="mt-2 pt-2 border-t border-border/50">
                           <div className="flex items-start gap-2">
