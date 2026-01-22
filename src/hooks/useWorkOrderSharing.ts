@@ -349,6 +349,7 @@ export async function fetchWorkshopDataForProject(
       const measurements = item.measurements as Record<string, any> | null;
       
       // Build workshop item matching the WorkshopRoomItem interface
+      // CRITICAL: Measurements stored in MM, convert to cm for display
       const workshopItem: WorkshopRoomItem = {
         id: item.id,
         name: item.surface_name || 'Window',
@@ -356,6 +357,7 @@ export async function fetchWorkshopDataForProject(
         location: item.surface_name || 'Window',
         quantity: 1,
         measurements: {
+          // Database stores in MM - convert to cm for display (industry standard)
           width: measurements?.rail_width ? Math.round(measurements.rail_width / 10) : undefined,
           height: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
           drop: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,

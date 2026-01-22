@@ -34,6 +34,7 @@ import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { syncWindowToWorkshopItem } from "@/hooks/useWorkshopItemSync";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -2449,6 +2450,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // Show immediate success feedback
           toast.success("Window summary saved");
 
+          // CRITICAL: Sync to workshop_items for shared work orders
+          // This ensures shared links always show current data
+          if (surfaceId && summaryData) {
+            console.log('🔄 Syncing to workshop_items for share link consistency...');
+            syncWindowToWorkshopItem(surfaceId, summaryData, surfaceData?.room?.name);
+          }
+
           // Invalidate cache to refresh UI
           await queryClient.invalidateQueries({
             queryKey: ["window-summary", surfaceId]
@@ -2461,6 +2469,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           });
           await queryClient.invalidateQueries({
             queryKey: ["project-materials"]
+          });
+          await queryClient.invalidateQueries({
+            queryKey: ["workshop-items"]
           });
       } catch (error) {
         console.error("❌ Auto-save failed:", error);
