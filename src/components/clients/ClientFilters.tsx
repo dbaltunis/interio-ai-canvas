@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Filter, X } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
+import { useClientTags } from "@/hooks/useClientTags";
+import { useClientStages } from "@/hooks/useClientStages";
 
 interface ClientFiltersProps {
   searchTerm: string;
@@ -55,6 +57,8 @@ export const ClientFilters = ({
 }: ClientFiltersProps) => {
   const [filterOpen, setFilterOpen] = useState(false);
   const { data: projects } = useProjects();
+  const { data: dynamicTags = [] } = useClientTags();
+  const { data: dynamicStages = [] } = useClientStages();
 
   const projectStatuses = [
     { value: 'planning', label: 'Planning' },
@@ -66,16 +70,24 @@ export const ClientFilters = ({
     { value: 'cancelled', label: 'Cancelled' }
   ];
 
-  const funnelStages = [
-    { value: 'lead', label: 'Lead' },
-    { value: 'contacted', label: 'Contacted' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'proposal', label: 'Proposal' },
-    { value: 'negotiation', label: 'Negotiation' },
-    { value: 'customer', label: 'Customer' },
-    { value: 'churned', label: 'Churned' },
-    { value: 'closed', label: 'Closed' }
-  ];
+  // Use dynamic stages if available, otherwise fallback to hardcoded
+  const funnelStages = dynamicStages.length > 0
+    ? dynamicStages.map(s => ({ value: s.name, label: s.label }))
+    : [
+        { value: 'lead', label: 'Lead' },
+        { value: 'contacted', label: 'Contacted' },
+        { value: 'qualified', label: 'Qualified' },
+        { value: 'proposal', label: 'Proposal' },
+        { value: 'negotiation', label: 'Negotiation' },
+        { value: 'customer', label: 'Customer' },
+        { value: 'churned', label: 'Churned' },
+        { value: 'closed', label: 'Closed' }
+      ];
+
+  // Use dynamic tags from clients, with fallback samples if none exist yet
+  const availableTags = dynamicTags.length > 0 
+    ? dynamicTags 
+    : ['VIP', 'Corporate', 'Referral', 'New Client', 'High Value', 'Repeat Customer'];
 
   const handleStatusToggle = (status: string) => {
     if (selectedStatuses.includes(status)) {
@@ -98,9 +110,6 @@ export const ClientFilters = ({
     (leadSourceFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0) +
     (funnelStageFilter !== 'all' ? 1 : 0);
   const hasActiveFilters = searchTerm || activeFiltersCount > 0;
-
-  // Sample tags - in real app these would come from clients data
-  const availableTags = ['VIP', 'Corporate', 'Referral', 'New Client', 'High Value', 'Repeat Customer'];
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
