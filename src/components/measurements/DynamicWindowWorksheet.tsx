@@ -1603,14 +1603,34 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             const makingCategory = `${treatmentCat.replace(/_/g, '').replace('s', '')}_making`; // curtain_making, blind_making, etc.
             
             // ✅ FIX: Get product-level markup from inventory item OR pricing grid
-            // Hierarchy: Product markup > Grid markup > Category markup > Global
+            // Hierarchy: Product markup > Implied markup (from library pricing) > Grid markup > Category markup > Global
             const fabricItem = enrichedFabric || selectedItems.fabric || selectedItems.material;
             const productMarkup = fabricItem?.markup_percentage || undefined;
             const gridMarkup = fabricItem?.pricing_grid_markup || undefined;
             
+            // ✅ CRITICAL FIX: Calculate implied markup from library pricing
+            // If fabric has both cost_price and selling_price defined, the difference IS the markup
+            // This prevents double-markup (applying 40% on top of already-marked-up selling_price)
+            const costPrice = fabricItem?.cost_price || 0;
+            const sellingPrice = fabricItem?.selling_price || 0;
+            const hasPreDefinedPricing = costPrice > 0 && sellingPrice > costPrice;
+            const impliedMarkup = hasPreDefinedPricing 
+              ? ((sellingPrice - costPrice) / costPrice) * 100 
+              : undefined;
+            
+            if (impliedMarkup && impliedMarkup > 0) {
+              console.log('💰 [LIBRARY PRICING] Fabric has pre-defined markup:', {
+                costPrice,
+                sellingPrice,
+                impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
+                note: 'Using cost_price as base, implied markup prevents double-markup'
+              });
+            }
+            
             // Calculate selling prices for each component with their specific category markup
             const fabricMarkupResult = resolveMarkup({
-              productMarkup, // ✅ Pass product-level markup from inventory item
+              productMarkup, // ✅ Pass explicit product-level markup from inventory item
+              impliedMarkup, // ✅ Pass implied markup from cost vs selling difference
               gridMarkup,    // ✅ Pass grid-level markup from pricing grid
               category: treatmentCat,
               markupSettings: markupSettings || undefined

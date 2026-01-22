@@ -52,9 +52,13 @@ export const transformWorksheetData = (
       name: selectedItems.fabric.name || "Selected Fabric",
       // No hardcoded default - use actual value from fabric item
       fabric_width: selectedItems.fabric.fabric_width,
-      price_per_meter: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || selectedItems.fabric.price_per_meter || 0,
+      // ✅ CRITICAL FIX: Use cost_price as base for calculations when available
+      // The markup system will apply the implied markup from selling_price difference
+      // This prevents double-markup (applying category markup on already-marked-up selling price)
+      price_per_meter: selectedItems.fabric.cost_price || selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || selectedItems.fabric.price_per_meter || 0,
       unit_price: selectedItems.fabric.unit_price,
-      selling_price: selectedItems.fabric.selling_price
+      selling_price: selectedItems.fabric.selling_price,
+      cost_price: selectedItems.fabric.cost_price // ✅ Pass through for markup calculation
     } : undefined,
 
     lining: selectedLining && selectedLining !== 'none' ? {

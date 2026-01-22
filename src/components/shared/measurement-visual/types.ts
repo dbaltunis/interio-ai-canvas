@@ -38,6 +38,7 @@ export interface TreatmentData {
     price_per_meter: number;
     unit_price?: number;
     selling_price?: number;
+    cost_price?: number; // ✅ Added: Base cost price for markup calculations
   };
   lining?: {
     type: string;
