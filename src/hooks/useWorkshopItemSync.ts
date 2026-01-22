@@ -181,8 +181,8 @@ export async function syncWindowToWorkshopItem(
       return_left: templateDetails.return_left || 0,
       return_right: templateDetails.return_right || 0,
       
-      // Fabric orientation
-      fabric_rotated: summaryData.fabric_rotated || false,
+      // Fabric orientation - CRITICAL: read from measurementsDetails, NOT summaryData root
+      fabric_rotated: measurementsDetails.fabric_rotated || false,
       
       // Hand finished flag
       hand_finished: templateDetails.manufacturing_type === 'hand',

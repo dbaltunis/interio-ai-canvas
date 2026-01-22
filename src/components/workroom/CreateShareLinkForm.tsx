@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, FileText, LayoutGrid } from 'lucide-react';
 import { ShareItemPicker } from './ShareItemPicker';
 import type { CreateShareLinkInput } from '@/hooks/useShareLinks';
 
@@ -28,6 +28,7 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [documentType, setDocumentType] = useState<'work_order' | 'installation' | 'fitting'>('work_order');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [includeAllItems, setIncludeAllItems] = useState(true);
 
@@ -42,6 +43,7 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
     await onSubmit({
       name: name || undefined,
       document_type: documentType,
+      orientation: orientation,
       item_filter: includeAllItems ? [] : selectedItemIds,
     });
   };
@@ -76,6 +78,29 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
             <SelectItem value="work_order">Work Order</SelectItem>
             <SelectItem value="installation">Installation Sheet</SelectItem>
             <SelectItem value="fitting">Fitting Sheet</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Page Orientation</Label>
+        <Select value={orientation} onValueChange={(v) => setOrientation(v as 'portrait' | 'landscape')}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="landscape">
+              <span className="flex items-center gap-2">
+                <LayoutGrid className="h-3 w-3" />
+                Landscape (Wide)
+              </span>
+            </SelectItem>
+            <SelectItem value="portrait">
+              <span className="flex items-center gap-2">
+                <FileText className="h-3 w-3" />
+                Portrait (Tall)
+              </span>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
