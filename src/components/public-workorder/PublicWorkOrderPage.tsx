@@ -27,6 +27,7 @@ interface ShareLinkInfo {
   document_type: 'work_order' | 'installation' | 'fitting';
   content_filter: 'all' | 'field_ready' | 'specs_only';
   treatment_filter: string[];
+  orientation?: 'portrait' | 'landscape';
 }
 
 interface PublicWorkOrderPageProps {
@@ -35,6 +36,7 @@ interface PublicWorkOrderPageProps {
     name: string;
     job_number?: string;
     order_number?: string;
+    orientation?: 'portrait' | 'landscape';
     due_date?: string;
     work_order_document_type?: string;
     work_order_content_filter?: { type?: string } | null;
@@ -75,6 +77,8 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
   // Use shareLink settings if provided, otherwise fallback to project settings
   const documentType = (shareLink?.document_type || project.work_order_document_type || 'work_order') as DocumentType;
   const contentFilter = shareLink?.content_filter || (project.work_order_content_filter as any)?.type || 'all';
+  // Get orientation from share link, defaulting to landscape (matches in-app default)
+  const orientation = shareLink?.orientation || 'landscape';
 
   // Track status changes in state for real-time UI updates
   const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>({});
@@ -242,6 +246,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
               <WorkshopInformation
                 data={filteredWorkshopData}
                 projectId={project.id}
+                orientation={orientation}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
                 sessionToken={sessionToken}
@@ -251,6 +256,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
               <InstallationInstructions
                 data={filteredWorkshopData}
                 projectId={project.id}
+                orientation={orientation}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
                 sessionToken={sessionToken}
@@ -260,6 +266,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
               <FittingInstructions
                 data={filteredWorkshopData}
                 projectId={project.id}
+                orientation={orientation}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
                 sessionToken={sessionToken}

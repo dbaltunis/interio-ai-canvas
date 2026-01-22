@@ -231,7 +231,7 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 ml-auto md:ml-0">
-          <ShareWorkOrderButton projectId={projectId} />
+          <ShareWorkOrderButton projectId={projectId} orientation={orientation} />
           
           <Button 
             variant="default" 

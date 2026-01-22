@@ -10119,6 +10119,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string | null
+          orientation: string | null
           pin: string | null
           project_id: string
           token: string
@@ -10134,6 +10135,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string | null
+          orientation?: string | null
           pin?: string | null
           project_id: string
           token?: string
@@ -10149,6 +10151,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string | null
+          orientation?: string | null
           pin?: string | null
           project_id?: string
           token?: string

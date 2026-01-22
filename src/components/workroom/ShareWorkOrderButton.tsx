@@ -16,9 +16,10 @@ import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
+  orientation?: 'portrait' | 'landscape';
 }
 
-export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
+export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId, orientation = 'landscape' }) => {
   const {
     shareLinks,
     isLoading,
@@ -41,7 +42,11 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   }, [projectId]);
 
   const handleCreateLink = async (input: Parameters<typeof createShareLink>[0]) => {
-    const result = await createShareLink(input);
+    // Include current orientation when creating link
+    const result = await createShareLink({
+      ...input,
+      orientation: input.orientation || orientation,
+    });
     if (result) {
       setShowCreateForm(false);
     }
