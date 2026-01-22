@@ -81,15 +81,24 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
       return;
     }
 
+    // Set immediate loading state for instant visual feedback
+    setIsUploading(true);
+    const fileNames = Array.from(selectedFiles).map(f => f.name);
+    setUploadingFiles(fileNames);
+
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
+        const currentFile = selectedFiles[i];
         await uploadFile.mutateAsync({
-          file: selectedFiles[i],
+          file: currentFile,
           clientId,
           userId,
           projectId: selectedProjectId === "none" ? undefined : selectedProjectId,
         });
+        // Remove uploaded file from progress list
+        setUploadingFiles(prev => prev.filter(name => name !== currentFile.name));
       }
+      toast.success(`${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} uploaded successfully`);
       setSelectedFiles(null);
       setSelectedProjectId("none");
       if (fileInputRef.current) {
@@ -97,6 +106,10 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
       }
     } catch (error) {
       console.error('Upload error:', error);
+      toast.error("Failed to upload some files");
+    } finally {
+      setIsUploading(false);
+      setUploadingFiles([]);
     }
   };
 
@@ -433,13 +446,37 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
             <div className="ml-8">
               <Button
                 onClick={handleUpload}
-                disabled={!canEditClient || !selectedFiles || uploadFile.isPending}
+                disabled={!canEditClient || !selectedFiles || isCurrentlyUploading}
                 size="lg"
                 className="w-full sm:w-auto px-8"
               >
-                <Upload className="mr-2 h-4 w-4" />
-                {uploadFile.isPending ? 'Uploading...' : 'Upload Files'}
+                {isCurrentlyUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Files
+                  </>
+                )}
               </Button>
+              
+              {/* Upload Progress Indicator */}
+              {uploadingFiles.length > 0 && (
+                <div className="flex items-center gap-3 p-3 mt-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-primary">
+                      Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
+                    </span>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {uploadingFiles.join(', ')}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
