@@ -184,3 +184,48 @@ export async function resyncAllWindows(
     results
   };
 }
+
+/**
+ * Force resync ALL windows regardless of current markup status
+ * Use this when markup settings are changed to recalculate all existing quotes
+ */
+export async function forceResyncAllWindows(
+  markupSettings: MarkupSettings
+): Promise<BatchResyncResult> {
+  // Fetch ALL windows regardless of current markup status
+  const { data: windows, error } = await supabase
+    .from('windows_summary')
+    .select('window_id, total_cost, total_selling, markup_applied');
+
+  if (error || !windows) {
+    console.error('Failed to fetch windows for force resync:', error);
+    return { total: 0, updated: 0, failed: 0, results: [] };
+  }
+
+  console.log(`🔄 Force resyncing ALL ${windows.length} windows with new markup settings`);
+
+  const results: ResyncResult[] = [];
+  let updated = 0;
+  let failed = 0;
+
+  for (const window of windows) {
+    const result = await resyncWindowTotalSelling(window.window_id, markupSettings);
+    if (result) {
+      results.push(result);
+      if (result.updated) {
+        updated++;
+      }
+    } else {
+      failed++;
+    }
+  }
+
+  console.log(`✅ Force resync complete: ${updated} updated, ${failed} failed, ${windows.length - updated - failed} unchanged`);
+
+  return {
+    total: windows.length,
+    updated,
+    failed,
+    results
+  };
+}

@@ -18,7 +18,8 @@ import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { Shield } from "lucide-react";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { toast } from "sonner";
-import { resyncAllWindows } from "@/utils/pricing/resyncTotalSelling";
+import { resyncAllWindows, forceResyncAllWindows } from "@/utils/pricing/resyncTotalSelling";
+import { RefreshCw } from "lucide-react";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -37,6 +38,7 @@ export const PricingRulesTab = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [wizardProductType, setWizardProductType] = useState<string | undefined>();
   const [wizardPriceGroup, setWizardPriceGroup] = useState<string | undefined>();
+  const [isResyncing, setIsResyncing] = useState(false);
   
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
   const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
@@ -496,16 +498,45 @@ export const PricingRulesTab = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={handleSaveGlobalSettings}
-                disabled={!hasGlobalChanges || updateMarkupSettings.isPending}
-                variant={hasGlobalChanges ? "default" : "secondary"}
-                className={hasGlobalChanges ? "bg-primary hover:bg-primary/90" : ""}
-              >
-                {updateMarkupSettings.isPending ? "Saving..." : hasGlobalChanges ? "Save Global Settings" : (
-                  <><Check className="h-4 w-4 mr-1" /> Saved</>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSaveGlobalSettings}
+                  disabled={!hasGlobalChanges || updateMarkupSettings.isPending}
+                  variant={hasGlobalChanges ? "default" : "secondary"}
+                  className={hasGlobalChanges ? "bg-primary hover:bg-primary/90" : ""}
+                >
+                  {updateMarkupSettings.isPending ? "Saving..." : hasGlobalChanges ? "Save Global Settings" : (
+                    <><Check className="h-4 w-4 mr-1" /> Saved</>
+                  )}
+                </Button>
+                
+                {/* Force Recalculate All Windows Button */}
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (!formData) return;
+                    setIsResyncing(true);
+                    toast.info("Recalculating all windows with current markup settings...");
+                    try {
+                      const result = await forceResyncAllWindows(formData);
+                      if (result.updated > 0) {
+                        toast.success(`Successfully updated ${result.updated} of ${result.total} windows`);
+                      } else {
+                        toast.info(`All ${result.total} windows already have correct markups`);
+                      }
+                    } catch (error) {
+                      console.error('Force resync failed:', error);
+                      toast.error("Failed to recalculate windows");
+                    } finally {
+                      setIsResyncing(false);
+                    }
+                  }}
+                  disabled={isResyncing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isResyncing ? 'animate-spin' : ''}`} />
+                  {isResyncing ? "Recalculating..." : "Recalculate All Windows"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
