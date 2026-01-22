@@ -9,6 +9,8 @@ import { MaterialsTable } from "../sections/MaterialsTable";
 import { RoomSection } from "../sections/RoomSection";
 import { WorkshopInformationLandscape } from "./WorkshopInformationLandscape";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 interface WorkshopInformationProps {
   data: WorkshopData;
@@ -20,16 +22,18 @@ interface WorkshopInformationProps {
 }
 
 export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false, isReadOnly = false, sessionToken }) => {
+  // All hooks must be called before any conditional returns
+  const [editing, setEditing] = useState(false);
+  const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
+  const { units } = useMeasurementUnits();
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
   // Use landscape layout for landscape orientation
   if (orientation === 'landscape') {
     return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} sessionToken={sessionToken} />;
   }
 
   console.log('🔍 [WorkshopInformation] projectId:', projectId, 'sessionToken:', !!sessionToken);
-
-  const [editing, setEditing] = useState(false);
-  const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Integrate workshop notes hook with session token for public page saves
   const {
@@ -172,6 +176,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
             <EditableField label="Due Date:" field="dueDate" />
             <EditableField label="Created:" field="createdDate" />
             <EditableField label="Maker:" field="assignedMaker" />
+            <EditableField label="Shipping:" field="shippingAddress" multiline />
           </div>
         </CardContent>
       </Card>
@@ -243,10 +248,10 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                           <div className="mb-2">
                             <div className="font-medium text-blue-700 mb-1">{item.fabricDetails.name}</div>
                             <div className="text-[10px] space-y-0.5">
-                              <div>Width: {item.fabricDetails.fabricWidth}cm</div>
+                              <div>Width: {formatFromCM(item.fabricDetails.fabricWidth, units.length)}</div>
                               <div>Roll: {item.fabricDetails.rollDirection}</div>
                               {item.fabricDetails.patternRepeat && (
-                                <div>Repeat: {item.fabricDetails.patternRepeat}cm</div>
+                                <div>Repeat: {formatFromCM(item.fabricDetails.patternRepeat, units.length)}</div>
                               )}
                             </div>
                           </div>
@@ -268,8 +273,8 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                         
                         {item.hems && (
                           <div className="mt-2 text-[10px]">
-                            <div className="font-semibold mb-0.5">Hems (cm):</div>
-                            <div>H:{item.hems.header} | B:{item.hems.bottom} | S:{item.hems.side}</div>
+                            <div className="font-semibold mb-0.5">Hems:</div>
+                            <div>H:{formatFromCM(item.hems.header, units.length)} | B:{formatFromCM(item.hems.bottom, units.length)} | S:{formatFromCM(item.hems.side, units.length)}</div>
                           </div>
                         )}
                       </td>
@@ -310,12 +315,9 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                           <div className="mb-2">
                             <div className="font-semibold text-[10px] mb-0.5">Options:</div>
                             <div className="text-[10px] space-y-0.5">
-                              {item.options.slice(0, 3).map((opt, idx) => (
+                              {item.options.map((opt, idx) => (
                                 <div key={idx}>• {opt.name}</div>
                               ))}
-                              {item.options.length > 3 && (
-                                <div className="text-muted-foreground">+{item.options.length - 3} more</div>
-                              )}
                             </div>
                           </div>
                         )}

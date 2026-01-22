@@ -7,6 +7,7 @@ import { WorkshopData } from "@/hooks/useWorkshopData";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { MaterialsTable } from "../sections/MaterialsTable";
 
 export interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
@@ -160,6 +161,9 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
           <EditableField label="Shipping Address" field="shippingAddress" multiline />
         </div>
       </div>
+
+      {/* Materials Summary - matches portrait */}
+      <MaterialsTable data={data} />
 
       {/* Items Table */}
       {data.rooms.map((room, roomIdx) => (
