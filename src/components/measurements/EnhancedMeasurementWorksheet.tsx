@@ -827,7 +827,50 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       });
     }
 
-    // Centralized pricing
+    // Centralized pricing - pass grid data from enriched fabric or template
+    // Note: fabricItem may be enriched with pricing_grid_data from useTreatmentSpecificFabrics
+    const enrichedFabric = fabricItem as any;
+    let pricingGridData = enrichedFabric?.pricing_grid_data || selectedCovering?.pricing_grid_data;
+    
+    // If template uses pricing_grid but no grid data exists, resolve it now
+    if (selectedCovering?.pricing_type === 'pricing_grid' && !pricingGridData && enrichedFabric?.price_group) {
+      console.log('⚙️ Resolving pricing grid for calculation...', {
+        productType: selectedCovering.treatment_category,
+        priceGroup: enrichedFabric.price_group,
+        fabricVendorId: enrichedFabric.vendor_id
+      });
+      
+      try {
+        const { resolveGridForProduct } = await import('@/utils/pricing/gridResolver');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const gridResult = await resolveGridForProduct({
+            productType: selectedCovering.treatment_category,
+            fabricPriceGroup: enrichedFabric.price_group,
+            fabricSupplierId: enrichedFabric.vendor_id,
+            userId: user.id
+          });
+          
+          if (gridResult.gridId) {
+            pricingGridData = gridResult.gridData;
+            console.log('✅ Resolved pricing grid:', gridResult.gridName, 'includesFabric:', gridResult.includesFabricPrice);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to resolve pricing grid:', error);
+      }
+    }
+    
+    console.log('🔍 Grid data check before calculation:', {
+      hasFabricGridData: !!enrichedFabric?.pricing_grid_data,
+      hasTemplateGridData: !!selectedCovering?.pricing_grid_data,
+      resolvedGridData: !!pricingGridData,
+      pricingType: selectedCovering?.pricing_type,
+      fabricPriceGroup: enrichedFabric?.price_group,
+      resolvedGridName: enrichedFabric?.resolved_grid_name
+    });
+    
     const {
       linearMeters,
       widthsRequired,
@@ -849,6 +892,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       unitsCurrency: units.currency,
       selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
       inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
+      pricingGridData, // CRITICAL: Pass grid data for pricing_grid type templates
     });
     
     console.log('🔍 calculateTreatmentPricing returned (WHAT GETS SAVED):', {
