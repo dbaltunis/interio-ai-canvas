@@ -136,7 +136,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
 
         {showCreateForm ? (
           <CreateShareLinkForm
-            availableTreatments={availableTreatments}
+            projectId={projectId}
             isCreating={isCreating}
             onSubmit={handleCreateLink}
             onCancel={() => setShowCreateForm(false)}

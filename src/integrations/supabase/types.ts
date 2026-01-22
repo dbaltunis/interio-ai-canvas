@@ -10118,6 +10118,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          item_filter: string[] | null
           name: string | null
           orientation: string | null
           pin: string | null
@@ -10134,6 +10135,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          item_filter?: string[] | null
           name?: string | null
           orientation?: string | null
           pin?: string | null
@@ -10150,6 +10152,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          item_filter?: string[] | null
           name?: string | null
           orientation?: string | null
           pin?: string | null

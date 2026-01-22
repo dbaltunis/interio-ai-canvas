@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -11,52 +10,31 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
+import { ShareItemPicker } from './ShareItemPicker';
 import type { CreateShareLinkInput } from '@/hooks/useShareLinks';
 
 interface CreateShareLinkFormProps {
-  availableTreatments: string[];
+  projectId: string;
   isCreating: boolean;
   onSubmit: (input: CreateShareLinkInput) => Promise<void>;
   onCancel: () => void;
 }
 
-const TREATMENT_LABELS: Record<string, string> = {
-  curtains: 'Curtains',
-  roman_blinds: 'Roman Blinds',
-  roller_blinds: 'Roller Blinds',
-  venetian_blinds: 'Venetian Blinds',
-  vertical_blinds: 'Vertical Blinds',
-  shutters: 'Shutters',
-  honeycomb_blinds: 'Honeycomb Blinds',
-  panel_blinds: 'Panel Blinds',
-};
-
 export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
-  availableTreatments,
+  projectId,
   isCreating,
   onSubmit,
   onCancel,
 }) => {
   const [name, setName] = useState('');
   const [documentType, setDocumentType] = useState<'work_order' | 'installation' | 'fitting'>('work_order');
-  const [contentFilter, setContentFilter] = useState<'all' | 'field_ready' | 'specs_only'>('all');
-  const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
-  const [includeAllTreatments, setIncludeAllTreatments] = useState(true);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [includeAllItems, setIncludeAllItems] = useState(true);
 
-  const handleTreatmentToggle = (treatment: string) => {
-    setSelectedTreatments(prev =>
-      prev.includes(treatment)
-        ? prev.filter(t => t !== treatment)
-        : [...prev, treatment]
-    );
-    setIncludeAllTreatments(false);
-  };
-
-  const handleAllTreatmentsChange = (checked: boolean) => {
-    setIncludeAllTreatments(checked);
-    if (checked) {
-      setSelectedTreatments([]);
-    }
+  // Track if user explicitly unchecked "All Items"
+  const handleSelectionChange = (itemIds: string[]) => {
+    setSelectedItemIds(itemIds);
+    setIncludeAllItems(itemIds.length === 0 && selectedItemIds.length === 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,13 +42,15 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
     await onSubmit({
       name: name || undefined,
       document_type: documentType,
-      content_filter: contentFilter,
-      treatment_filter: includeAllTreatments ? [] : selectedTreatments,
+      item_filter: includeAllItems ? [] : selectedItemIds,
     });
   };
 
-  const formatTreatmentLabel = (value: string): string => {
-    return TREATMENT_LABELS[value] || value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  // Calculate button text
+  const getButtonText = () => {
+    if (isCreating) return 'Creating...';
+    if (includeAllItems || selectedItemIds.length === 0) return 'Create Link';
+    return `Create Link (${selectedItemIds.length} items)`;
   };
 
   return (
@@ -100,52 +80,16 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-xs">Content Detail</Label>
-        <Select value={contentFilter} onValueChange={(v) => setContentFilter(v as typeof contentFilter)}>
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Full Details</SelectItem>
-            <SelectItem value="field_ready">Field-Ready (No Pricing)</SelectItem>
-            <SelectItem value="specs_only">Specs Only</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {availableTreatments.length > 1 && (
-        <div className="space-y-2">
-          <Label className="text-xs">Treatments to Include</Label>
-          <div className="space-y-1.5 p-2 bg-muted/50 rounded-md max-h-32 overflow-y-auto">
-            <label className="flex items-center gap-2 text-xs cursor-pointer hover:bg-background p-1 rounded">
-              <Checkbox
-                checked={includeAllTreatments}
-                onCheckedChange={handleAllTreatmentsChange}
-                className="h-3.5 w-3.5"
-              />
-              <span className="font-medium">All Treatments</span>
-            </label>
-            
-            {availableTreatments.map(treatment => (
-              <label 
-                key={treatment}
-                className={`flex items-center gap-2 text-xs cursor-pointer hover:bg-background p-1 rounded ${
-                  includeAllTreatments ? 'opacity-50' : ''
-                }`}
-              >
-                <Checkbox
-                  checked={includeAllTreatments || selectedTreatments.includes(treatment)}
-                  onCheckedChange={() => handleTreatmentToggle(treatment)}
-                  disabled={includeAllTreatments}
-                  className="h-3.5 w-3.5"
-                />
-                {formatTreatmentLabel(treatment)}
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Item Picker - replaces the old treatment filter */}
+      <ShareItemPicker
+        projectId={projectId}
+        selectedItems={selectedItemIds}
+        onSelectionChange={(ids) => {
+          setSelectedItemIds(ids);
+          // If user selects nothing after having something, they want all
+          setIncludeAllItems(ids.length === 0);
+        }}
+      />
 
       <div className="flex gap-2 pt-2">
         <Button
@@ -160,7 +104,7 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
         <Button
           type="submit"
           size="sm"
-          disabled={isCreating}
+          disabled={isCreating || (!includeAllItems && selectedItemIds.length === 0)}
           className="flex-1"
         >
           {isCreating ? (
@@ -171,7 +115,7 @@ export const CreateShareLinkForm: React.FC<CreateShareLinkFormProps> = ({
           ) : (
             <>
               <Plus className="h-4 w-4 mr-1" />
-              Create Link
+              {getButtonText()}
             </>
           )}
         </Button>

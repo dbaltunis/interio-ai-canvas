@@ -17,6 +17,7 @@ export interface ShareLink {
   document_type: 'work_order' | 'installation' | 'fitting';
   content_filter: 'all' | 'field_ready' | 'specs_only';
   treatment_filter: string[];
+  item_filter: string[];
   orientation: 'portrait' | 'landscape';
   pin: string | null;
   created_at: string;
@@ -32,6 +33,7 @@ export interface CreateShareLinkInput {
   document_type?: 'work_order' | 'installation' | 'fitting';
   content_filter?: 'all' | 'field_ready' | 'specs_only';
   treatment_filter?: string[];
+  item_filter?: string[];
   orientation?: 'portrait' | 'landscape';
   pin?: string;
 }
@@ -85,6 +87,9 @@ export function useShareLinks(projectId: string | undefined) {
             treatment_filter: Array.isArray(link.treatment_filter) 
               ? (link.treatment_filter as unknown as string[]) 
               : [],
+            item_filter: Array.isArray(link.item_filter) 
+              ? (link.item_filter as unknown as string[]) 
+              : [],
             orientation: (link.orientation || 'landscape') as 'portrait' | 'landscape',
             pin: link.pin,
             created_at: link.created_at,
@@ -130,6 +135,7 @@ export function useShareLinks(projectId: string | undefined) {
           document_type: input.document_type || 'work_order',
           content_filter: input.content_filter || 'all',
           treatment_filter: input.treatment_filter || [],
+          item_filter: input.item_filter || [],
           orientation: input.orientation || 'landscape',
           pin: input.pin || null,
           created_by: user.id,
@@ -148,6 +154,9 @@ export function useShareLinks(projectId: string | undefined) {
         content_filter: (data.content_filter || 'all') as 'all' | 'field_ready' | 'specs_only',
         treatment_filter: Array.isArray(data.treatment_filter) 
           ? (data.treatment_filter as unknown as string[]) 
+          : [],
+        item_filter: Array.isArray(data.item_filter) 
+          ? (data.item_filter as unknown as string[]) 
           : [],
         orientation: (data.orientation || 'landscape') as 'portrait' | 'landscape',
         pin: data.pin,
@@ -303,6 +312,9 @@ export async function fetchShareLinkByToken(token: string): Promise<ShareLink | 
       content_filter: (data.content_filter || 'all') as 'all' | 'field_ready' | 'specs_only',
       treatment_filter: Array.isArray(data.treatment_filter) 
         ? (data.treatment_filter as unknown as string[]) 
+        : [],
+      item_filter: Array.isArray(data.item_filter) 
+        ? (data.item_filter as unknown as string[]) 
         : [],
       orientation: (data.orientation || 'landscape') as 'portrait' | 'landscape',
       pin: data.pin,
