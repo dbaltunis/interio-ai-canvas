@@ -62,9 +62,13 @@ export const GoogleCalendarSetup = () => {
           <div className="space-y-4">
             {displayIntegration?.calendar_id && (
               <div className="rounded-lg border p-4 space-y-2">
-                <p className="text-sm font-medium">Calendar ID:</p>
-                <p className="text-sm text-muted-foreground font-mono break-all">
-                  {displayIntegration.calendar_id}
+                <p className="text-sm font-medium">Calendar:</p>
+                <p className="text-sm text-muted-foreground">
+                  {isAccountOwnerConnection 
+                    ? "Connected Calendar" 
+                    : displayIntegration.calendar_id === 'primary' 
+                      ? 'Primary Calendar' 
+                      : displayIntegration.calendar_id}
                 </p>
                 {isAccountOwnerConnection && (
                   <Badge variant="secondary" className="mt-2">Account Owner's Calendar</Badge>
@@ -153,6 +157,13 @@ export const GoogleCalendarSetup = () => {
             <p className="text-sm text-muted-foreground">
               Connect your Google Calendar to automatically sync appointments and keep everything in one place. Events sync in both directions automatically.
             </p>
+            
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+              <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+                <p className="font-medium mb-1">First-time connection notice:</p>
+                <p>You may see a Google security screen during connection. This is normal for apps in testing mode. Click "Advanced" → "Go to InterioApp" to proceed safely.</p>
+              </AlertDescription>
+            </Alert>
             
             <Button 
               onClick={() => connect({})} 

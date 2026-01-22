@@ -294,10 +294,15 @@ export const useGoogleCalendarIntegration = () => {
       });
     },
     onError: (error: Error) => {
+      const errorMessage = error.message || "Failed to connect Google Calendar";
+      const isUserCancelled = errorMessage.includes('cancelled') || errorMessage.includes('canceled');
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to connect Google Calendar",
-        variant: "destructive",
+        title: isUserCancelled ? "Connection Cancelled" : "Connection Failed",
+        description: isUserCancelled 
+          ? "You can try connecting again anytime."
+          : "Please try again. If you see a security warning, click 'Advanced' → 'Go to InterioApp' to proceed.",
+        variant: isUserCancelled ? "default" : "destructive",
       });
     },
   });
