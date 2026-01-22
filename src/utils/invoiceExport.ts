@@ -38,6 +38,12 @@ export interface InvoiceExportData {
   tax_amount: number;
   total: number;
   
+  // Discount information
+  discount_amount: number;
+  discount_type?: 'percentage' | 'fixed';
+  discount_value?: number;
+  discount_description?: string;
+  
   // Payment info
   payment_status: string;
   amount_paid: number;
@@ -46,6 +52,7 @@ export interface InvoiceExportData {
   // Currency
   currency: string;
   notes?: string;
+  terms?: string;
 }
 
 /**
@@ -138,6 +145,7 @@ function generateGenericCSVFormat(data: InvoiceExportData): string {
     'Unit Price',
     'Line Total',
     'Subtotal',
+    'Discount',
     'Tax Rate (%)',
     'Tax Amount',
     'Total',
@@ -162,6 +170,7 @@ function generateGenericCSVFormat(data: InvoiceExportData): string {
       item.unit_price.toFixed(2),
       item.total.toFixed(2),
       index === 0 ? data.subtotal.toFixed(2) : '',
+      index === 0 && data.discount_amount > 0 ? (-data.discount_amount).toFixed(2) : '',
       index === 0 ? data.tax_rate.toString() : '',
       index === 0 ? data.tax_amount.toFixed(2) : '',
       index === 0 ? data.total.toFixed(2) : '',
@@ -182,21 +191,25 @@ function generateGenericCSVFormat(data: InvoiceExportData): string {
 export function generateXeroCSVFormat(data: InvoiceExportData): string {
   const lines: string[] = [];
   
-  // Xero required headers - asterisk (*) denotes mandatory fields
+  // Enhanced Xero headers with additional fields
   lines.push([
     '*ContactName',
     'EmailAddress',
     'POAddressLine1',
     '*InvoiceNumber',
     'Reference',
+    'PONumber',
     '*InvoiceDate',
     '*DueDate',
     '*Description',
     '*Quantity',
     '*UnitAmount',
+    'Discount',
     '*AccountCode',
     'TaxType',
-    'Currency'
+    'Currency',
+    'TrackingName1',
+    'TrackingOption1'
   ].map(escapeCSV).join(','));
   
   // Data rows - one per line item
@@ -207,32 +220,62 @@ export function generateXeroCSVFormat(data: InvoiceExportData): string {
       data.customer_address || '',
       data.invoice_number,
       data.reference,
+      data.po_number || '',
       formatDateForXero(data.invoice_date),
       formatDateForXero(data.due_date || data.invoice_date),
       item.description,
       item.quantity.toString(),
       item.unit_price.toFixed(2),
+      '', // Per-line discount (empty, using summary discount)
       item.account_code,
       item.tax_rate > 0 ? 'OUTPUT' : 'NONE',
-      data.currency
+      data.currency,
+      '', // TrackingName1
+      ''  // TrackingOption1
     ].map(escapeCSV).join(','));
   });
+  
+  // Add discount line item if discount exists (Xero supports negative amounts)
+  if (data.discount_amount > 0) {
+    lines.push([
+      data.customer_name,
+      data.customer_email || '',
+      '',
+      data.invoice_number,
+      data.reference,
+      data.po_number || '',
+      formatDateForXero(data.invoice_date),
+      formatDateForXero(data.due_date || data.invoice_date),
+      data.discount_description || 'Discount',
+      '1',
+      (-data.discount_amount).toFixed(2), // Negative amount for discount
+      '',
+      '200', // Same account code
+      'NONE', // No tax on discount
+      data.currency,
+      '',
+      ''
+    ].map(escapeCSV).join(','));
+  }
   
   return lines.join('\n');
 }
 
 /**
  * QuickBooks-compatible CSV format
+ * QuickBooks doesn't support negative line items, so we distribute discount proportionally
  */
 export function generateQuickBooksCSVFormat(data: InvoiceExportData): string {
   const lines: string[] = [];
   
-  // QuickBooks headers
+  // Enhanced QuickBooks headers
   lines.push([
     'InvoiceNo',
     'Customer',
     'InvoiceDate',
     'DueDate',
+    'PONumber',
+    'Terms',
     'ItemDescription',
     'ItemQuantity',
     'ItemRate',
@@ -243,21 +286,39 @@ export function generateQuickBooksCSVFormat(data: InvoiceExportData): string {
     'Memo'
   ].map(escapeCSV).join(','));
   
-  // Data rows
+  // Calculate discount ratio for proportional distribution
+  // QuickBooks doesn't support negative line items, so we adjust prices
+  const originalSubtotal = data.line_items.reduce((sum, item) => sum + item.total, 0);
+  const discountRatio = originalSubtotal > 0 && data.discount_amount > 0
+    ? (originalSubtotal - data.discount_amount) / originalSubtotal 
+    : 1;
+  
+  // Build memo with discount info
+  const memoWithDiscount = data.discount_amount > 0
+    ? `${data.notes || ''} [Includes ${data.discount_description || 'Discount'}: -${data.discount_amount.toFixed(2)}]`.trim()
+    : data.notes || '';
+  
+  // Data rows with proportionally adjusted prices
   data.line_items.forEach((item, index) => {
+    // Apply proportional discount to each line
+    const adjustedRate = item.unit_price * discountRatio;
+    const adjustedAmount = item.total * discountRatio;
+    
     lines.push([
       data.invoice_number,
       data.customer_name,
       formatDateForQuickBooks(data.invoice_date),
       formatDateForQuickBooks(data.due_date || data.invoice_date),
+      data.po_number || '',
+      data.terms || '',
       item.description,
       item.quantity.toString(),
-      item.unit_price.toFixed(2),
-      item.total.toFixed(2),
+      adjustedRate.toFixed(2), // Discounted rate
+      adjustedAmount.toFixed(2), // Discounted amount
       item.tax_rate > 0 ? 'TAX' : 'NON',
       index === 0 ? data.tax_amount.toFixed(2) : '',
       index === 0 ? data.total.toFixed(2) : '',
-      data.notes || ''
+      index === 0 ? memoWithDiscount : ''
     ].map(escapeCSV).join(','));
   });
   
@@ -366,6 +427,7 @@ function buildCustomerAddress(client: any): string | null {
 /**
  * Prepare invoice data from project/quote for export
  * Extracts real data from quotation items including treatment names, rooms, and materials
+ * Now includes proper discount handling for ERP systems
  */
 export function prepareInvoiceExportData(
   quote: any,
@@ -378,14 +440,26 @@ export function prepareInvoiceExportData(
   const currency = extractCurrency(businessSettings);
   const defaultAccountCode = '200'; // Standard sales account code
   
+  // Get discount info from quote
+  const discountAmount = quote?.discount_amount || 0;
+  const discountType = quote?.discount_type as 'percentage' | 'fixed' | undefined;
+  const discountValue = quote?.discount_value;
+  
   // Calculate totals from items (items already have selling prices with markup)
-  const subtotal = items.reduce((sum, item) => {
+  const itemsSubtotal = items.reduce((sum, item) => {
     return sum + (item.unit_price || item.total || 0);
   }, 0);
   
-  const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount;
+  // Apply discount to get actual subtotal
+  const subtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
+  const taxAmount = subtotalAfterDiscount * (taxRate / 100);
+  const total = subtotalAfterDiscount + taxAmount;
   const amountPaid = quote?.amount_paid || 0;
+  
+  // Build discount description
+  const discountDescription = discountAmount > 0 
+    ? `Discount${discountType === 'percentage' && discountValue ? ` (${discountValue}%)` : ''}`
+    : undefined;
   
   // Build line items with proper descriptions
   const lineItems = items.map(item => ({
@@ -437,7 +511,10 @@ export function prepareInvoiceExportData(
     'resolved_reference': reference,
     customerName: client?.name,
     itemCount: lineItems.length,
-    subtotal,
+    itemsSubtotal,
+    discountAmount,
+    subtotalAfterDiscount,
+    taxAmount,
     total,
     currency
   });
@@ -453,14 +530,19 @@ export function prepareInvoiceExportData(
     customer_address: buildCustomerAddress(client),
     po_number: quote?.po_number || null,
     line_items: lineItems,
-    subtotal,
+    subtotal: subtotalAfterDiscount, // Use discounted subtotal
     tax_rate: taxRate,
     tax_amount: taxAmount,
     total,
+    discount_amount: discountAmount,
+    discount_type: discountType,
+    discount_value: discountValue,
+    discount_description: discountDescription,
     payment_status: quote?.payment_status || 'unpaid',
     amount_paid: amountPaid,
     balance_due: Math.max(0, total - amountPaid),
     currency,
-    notes: quote?.notes || ''
+    notes: quote?.notes || '',
+    terms: quote?.payment_terms || ''
   };
 }

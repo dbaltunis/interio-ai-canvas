@@ -1013,6 +1013,7 @@ export const QuotationTab = ({
         <InlinePaymentConfig
           quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''}
           total={total}
+          discountAmount={currentQuote?.discount_amount || 0}
           currency={projectData.currency}
           currentPayment={currentQuote ? {
             type: currentQuote.payment_type as 'full' | 'deposit' || 'full',

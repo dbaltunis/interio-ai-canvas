@@ -54,16 +54,20 @@ export const useQuotePayment = () => {
       quoteId, 
       paymentType, 
       paymentPercentage,
-      total 
+      total,
+      discountAmount = 0
     }: {
       quoteId: string;
       paymentType: 'full' | 'deposit';
       paymentPercentage?: number;
       total: number;
+      discountAmount?: number;
     }) => {
+      // Calculate payment on DISCOUNTED total
+      const discountedTotal = Math.max(0, total - discountAmount);
       const paymentAmount = paymentType === 'full' 
-        ? total 
-        : (total * (paymentPercentage || 50)) / 100;
+        ? discountedTotal 
+        : (discountedTotal * (paymentPercentage || 50)) / 100;
 
       const { data, error } = await supabase
         .from("quotes")

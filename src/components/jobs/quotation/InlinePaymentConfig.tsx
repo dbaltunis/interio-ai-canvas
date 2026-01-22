@@ -12,6 +12,7 @@ import { CreditCard, CheckCircle2, Clock, DollarSign, Percent } from "lucide-rea
 interface InlinePaymentConfigProps {
   quoteId: string;
   total: number;
+  discountAmount?: number;
   currency?: string;
   currentPayment?: {
     type: 'full' | 'deposit';
@@ -24,20 +25,10 @@ interface InlinePaymentConfigProps {
 export const InlinePaymentConfig = ({
   quoteId,
   total,
+  discountAmount = 0,
   currency = 'USD',
   currentPayment,
 }: InlinePaymentConfigProps) => {
-  // Validate quoteId
-  if (!quoteId) {
-    return (
-      <Card className="p-6 bg-muted/30 border-dashed">
-        <p className="text-center text-muted-foreground">
-          Save the quote first to configure payment options
-        </p>
-      </Card>
-    );
-  }
-
   const { createPayment, verifyPayment, updatePaymentConfig } = useQuotePayment();
   
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
@@ -45,6 +36,9 @@ export const InlinePaymentConfig = ({
   const [useFixedAmount, setUseFixedAmount] = useState(false);
   const [fixedAmount, setFixedAmount] = useState<number>(0);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Calculate discounted total
+  const discountedTotal = Math.max(0, total - discountAmount);
 
   // Load current payment config
   useEffect(() => {
@@ -71,10 +65,21 @@ export const InlinePaymentConfig = ({
   }, [paymentType, depositPercentage, currentPayment]);
 
   const calculatePaymentAmount = () => {
-    if (paymentType === 'full') return total;
+    if (paymentType === 'full') return discountedTotal;
     if (useFixedAmount) return fixedAmount;
-    return (total * depositPercentage) / 100;
+    return (discountedTotal * depositPercentage) / 100;
   };
+
+  // Validate quoteId - after hooks
+  if (!quoteId) {
+    return (
+      <Card className="p-6 bg-muted/30 border-dashed">
+        <p className="text-center text-muted-foreground">
+          Save the quote first to configure payment options
+        </p>
+      </Card>
+    );
+  }
 
   const paymentAmount = calculatePaymentAmount();
   const isPaid = currentPayment?.status === 'paid' || currentPayment?.status === 'deposit_paid';
@@ -85,6 +90,7 @@ export const InlinePaymentConfig = ({
       paymentType,
       paymentPercentage: paymentType === 'deposit' ? depositPercentage : undefined,
       total,
+      discountAmount,
     });
     setHasChanges(false);
   };
@@ -217,7 +223,7 @@ export const InlinePaymentConfig = ({
                     <Input
                       type="number"
                       min="0"
-                      max={total}
+                      max={discountedTotal}
                       step="0.01"
                       value={fixedAmount}
                       onChange={(e) => setFixedAmount(parseFloat(e.target.value) || 0)}
@@ -239,6 +245,18 @@ export const InlinePaymentConfig = ({
           <span className="text-muted-foreground">Quote Total:</span>
           <span className="font-medium">{formatCurrency(total, currency)}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-green-600">
+            <span>Discount Applied:</span>
+            <span>-{formatCurrency(discountAmount, currency)}</span>
+          </div>
+        )}
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm font-medium">
+            <span className="text-muted-foreground">After Discount:</span>
+            <span>{formatCurrency(discountedTotal, currency)}</span>
+          </div>
+        )}
         <div className="flex justify-between font-semibold text-xl border-t-2 pt-3 mt-2">
           <span>Payment Required:</span>
           <span className="text-primary">{formatCurrency(paymentAmount, currency)}</span>
@@ -247,7 +265,7 @@ export const InlinePaymentConfig = ({
           <div className="text-sm pt-2 border-t">
             <div className="flex justify-between text-muted-foreground">
               <span>Remaining balance:</span>
-              <span>{formatCurrency(total - paymentAmount, currency)}</span>
+              <span>{formatCurrency(discountedTotal - paymentAmount, currency)}</span>
             </div>
           </div>
         )}
