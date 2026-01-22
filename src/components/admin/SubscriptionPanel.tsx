@@ -28,7 +28,7 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
       ? format(new Date(account.subscription.trial_ends_at), "yyyy-MM-dd")
       : ""
   );
-  const [seatLimit, setSeatLimit] = useState<number>(account.team_members_count || 1);
+  const [seatLimit, setSeatLimit] = useState<number>(account.subscription?.total_users || 1);
 
   const updateSubscriptionType = useUpdateSubscriptionType();
   const updateTrialDuration = useUpdateTrialDuration();
@@ -42,8 +42,8 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
 
   // Update local state when account changes
   useEffect(() => {
-    setSeatLimit(account.team_members_count || 1);
-  }, [account.team_members_count]);
+    setSeatLimit(account.subscription?.total_users || 1);
+  }, [account.subscription?.total_users]);
 
   // Fetch invoices for this account
   const { data: invoices, isLoading: invoicesLoading } = useAdminAccountInvoices(
