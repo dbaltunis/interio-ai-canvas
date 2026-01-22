@@ -85,23 +85,30 @@ export async function syncWindowToWorkshopItem(
       return { success: false, error: 'No authenticated user' };
     }
 
-    // Fetch user's measurement unit preference for storing with the work order
-    let userLengthUnit = 'cm'; // default
-    try {
-      const { data: accountSettings } = await supabase
-        .from('account_settings')
-        .select('measurement_units')
-        .eq('account_owner_id', user.id)
-        .maybeSingle();
-      
-      if (accountSettings?.measurement_units) {
-        const units = typeof accountSettings.measurement_units === 'string' 
-          ? JSON.parse(accountSettings.measurement_units)
-          : accountSettings.measurement_units;
-        userLengthUnit = units?.length || 'cm';
+    // Get user's measurement unit preference
+    // CRITICAL FIX: First check measurements_details.unit (user's worksheet preference)
+    // Only fall back to account_settings if not found
+    const measurementsDetails = summaryData.measurements_details || {};
+    let userLengthUnit = measurementsDetails.unit || 'cm';
+    
+    // If unit not in measurements_details, try account settings as fallback
+    if (!measurementsDetails.unit) {
+      try {
+        const { data: accountSettings } = await supabase
+          .from('account_settings')
+          .select('measurement_units')
+          .eq('account_owner_id', user.id)
+          .maybeSingle();
+        
+        if (accountSettings?.measurement_units) {
+          const units = typeof accountSettings.measurement_units === 'string' 
+            ? JSON.parse(accountSettings.measurement_units)
+            : accountSettings.measurement_units;
+          userLengthUnit = units?.length || 'cm';
+        }
+      } catch (e) {
+        console.warn('⚠️ WorkshopItemSync: Could not fetch user unit preference, using cm');
       }
-    } catch (e) {
-      console.warn('⚠️ WorkshopItemSync: Could not fetch user unit preference, using cm');
     }
 
     // Get project_id from windows_summary if not provided
@@ -133,8 +140,7 @@ export async function syncWindowToWorkshopItem(
     }
 
     // CRITICAL FIX: Read from measurements_details (user-entered) first, then template_details (defaults)
-    // measurements_details contains the actual user-entered values from the worksheet
-    const measurementsDetails = summaryData.measurements_details || {};
+    // measurements_details was already extracted above for unit preference
     const templateDetails = summaryData.template_details || {};
     
     // Extract fullness ratio - priority: measurements_details > heading_details > template_details
@@ -193,17 +199,20 @@ export async function syncWindowToWorkshopItem(
         Math.round((summaryData.drop + headerHem + bottomHem) / 10) : undefined,
     };
 
-    // Build measurements object - ALWAYS in MM (database standard)
-    // Include user's preferred display unit so shared view can respect it
+    // Build measurements object
+    // CRITICAL FIX: Read from top-level first, then measurements_details as fallback
+    // Store values as-is (in their original unit) with the display_unit for conversion
     const measurements = {
-      rail_width: summaryData.rail_width,
-      drop: summaryData.drop,
+      // Top-level rail_width/drop take priority (these are the calculated values)
+      // Fall back to measurements_details if top-level is null
+      rail_width: summaryData.rail_width ?? measurementsDetails.rail_width,
+      drop: summaryData.drop ?? measurementsDetails.drop,
       window_width: measurementsDetails.window_width,
       window_height: measurementsDetails.window_height,
       pooling: measurementsDetails.pooling_amount || measurementsDetails.pooling,
       stackback_left: measurementsDetails.stackback_left,
       stackback_right: measurementsDetails.stackback_right,
-      // Store the user's preferred unit for shared view display
+      // CRITICAL: Store the user's preferred unit from the worksheet
       display_unit: userLengthUnit,
     };
 
