@@ -27,15 +27,8 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const { units } = useMeasurementUnits();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Use landscape layout for landscape orientation
-  if (orientation === 'landscape') {
-    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} sessionToken={sessionToken} />;
-  }
-
-  console.log('🔍 [WorkshopInformation] projectId:', projectId, 'sessionToken:', !!sessionToken);
   
-  // Integrate workshop notes hook with session token for public page saves
+  // MUST be called before conditional return to satisfy React's Rules of Hooks
   const {
     productionNotes,
     itemNotes,
@@ -45,6 +38,13 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
     isLoading: notesLoading,
     isSaving
   } = useWorkshopNotes(projectId, { sessionToken });
+
+  // Use landscape layout for landscape orientation
+  if (orientation === 'landscape') {
+    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} sessionToken={sessionToken} />;
+  }
+
+  console.log('🔍 [WorkshopInformation] projectId:', projectId, 'sessionToken:', !!sessionToken);
   
   console.log('🔍 [WorkshopInformation] Notes state:', { 
     hasProjectId: !!projectId,
