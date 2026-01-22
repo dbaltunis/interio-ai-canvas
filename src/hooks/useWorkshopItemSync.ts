@@ -85,6 +85,25 @@ export async function syncWindowToWorkshopItem(
       return { success: false, error: 'No authenticated user' };
     }
 
+    // Fetch user's measurement unit preference for storing with the work order
+    let userLengthUnit = 'cm'; // default
+    try {
+      const { data: accountSettings } = await supabase
+        .from('account_settings')
+        .select('measurement_units')
+        .eq('account_owner_id', user.id)
+        .maybeSingle();
+      
+      if (accountSettings?.measurement_units) {
+        const units = typeof accountSettings.measurement_units === 'string' 
+          ? JSON.parse(accountSettings.measurement_units)
+          : accountSettings.measurement_units;
+        userLengthUnit = units?.length || 'cm';
+      }
+    } catch (e) {
+      console.warn('⚠️ WorkshopItemSync: Could not fetch user unit preference, using cm');
+    }
+
     // Get project_id from windows_summary if not provided
     let projectId = summaryData.project_id;
     if (!projectId) {
@@ -113,69 +132,87 @@ export async function syncWindowToWorkshopItem(
       return { success: false, error: 'Could not determine project_id' };
     }
 
-    // Extract fullness ratio from heading_details or template_details
+    // CRITICAL FIX: Read from measurements_details (user-entered) first, then template_details (defaults)
+    // measurements_details contains the actual user-entered values from the worksheet
+    const measurementsDetails = summaryData.measurements_details || {};
+    const templateDetails = summaryData.template_details || {};
+    
+    // Extract fullness ratio - priority: measurements_details > heading_details > template_details
     const fullnessRatio = 
+      measurementsDetails.fullness_ratio ||
       summaryData.heading_details?.fullness_ratio || 
-      summaryData.template_details?.fullness_ratio || 
+      templateDetails.fullness_ratio || 
       1.0;
+
+    // Extract hems from the correct source (user-entered values in measurements_details)
+    const headerHem = measurementsDetails.header_hem ?? templateDetails.header_allowance ?? 0;
+    const bottomHem = measurementsDetails.bottom_hem ?? templateDetails.bottom_hem ?? 0;
+    const sideHems = measurementsDetails.side_hems ?? templateDetails.side_hems ?? 0;
+    const seamHems = measurementsDetails.seam_hems ?? templateDetails.seam_hems ?? 0;
 
     // Build comprehensive manufacturing_details with ALL required fields
     const manufacturingDetails = {
-      type: summaryData.manufacturing_type || summaryData.template_details?.manufacturing_type || 'machine',
+      type: summaryData.manufacturing_type || templateDetails.manufacturing_type || 'machine',
       cost: summaryData.manufacturing_cost,
       
       // Heading and fullness - CRITICAL for production
-      heading_type: summaryData.heading_details?.heading_name || 
-                    summaryData.selected_heading_id || 
-                    'Standard',
+      // Use heading_name (human readable), NOT UUID
+      heading_type: summaryData.heading_details?.heading_name || 'Standard',
       fullness_ratio: fullnessRatio,
       
       // Lining
       lining_type: summaryData.lining_type || 'none',
       lining_name: summaryData.lining_name,
       
-      // Hems - stored in nested object for clarity
+      // Hems - FIXED: read from measurements_details (user-entered values)
       hems: {
-        header: summaryData.template_details?.header_allowance || 0,
-        bottom: summaryData.template_details?.bottom_hem || 0,
-        side: summaryData.template_details?.side_hems || 0,
-        seam: summaryData.template_details?.seam_hems || 0,
+        header: headerHem,
+        bottom: bottomHem,
+        side: sideHems,
+        seam: seamHems,
       },
       
       // Returns
-      return_left: summaryData.template_details?.return_left || 0,
-      return_right: summaryData.template_details?.return_right || 0,
+      return_left: templateDetails.return_left || 0,
+      return_right: templateDetails.return_right || 0,
       
       // Fabric orientation
       fabric_rotated: summaryData.fabric_rotated || false,
       
       // Hand finished flag
-      hand_finished: summaryData.template_details?.manufacturing_type === 'hand',
+      hand_finished: templateDetails.manufacturing_type === 'hand',
       
-      // Selected options for production notes
-      selected_options: summaryData.selected_options || [],
+      // Selected options for production notes - check measurements_details as backup
+      selected_options: summaryData.selected_options || measurementsDetails.selected_options || [],
       
       // Hardware reference
       hardware_details: summaryData.hardware_details,
       
-      // Cut dimensions (calculated from drop + hems)
+      // Cut dimensions (calculated from drop + hems) - all values in MM, convert to cm
       total_drop_cm: summaryData.drop ? 
-        Math.round((summaryData.drop + 
-          (summaryData.template_details?.header_allowance || 0) + 
-          (summaryData.template_details?.bottom_hem || 0)) / 10) : undefined,
+        Math.round((summaryData.drop + headerHem + bottomHem) / 10) : undefined,
     };
 
     // Build measurements object - ALWAYS in MM (database standard)
+    // Include user's preferred display unit so shared view can respect it
     const measurements = {
       rail_width: summaryData.rail_width,
       drop: summaryData.drop,
-      window_width: summaryData.measurements_details?.window_width,
-      window_height: summaryData.measurements_details?.window_height,
-      pooling: summaryData.measurements_details?.pooling_amount || 
-               summaryData.measurements_details?.pooling,
-      stackback_left: summaryData.measurements_details?.stackback_left,
-      stackback_right: summaryData.measurements_details?.stackback_right,
+      window_width: measurementsDetails.window_width,
+      window_height: measurementsDetails.window_height,
+      pooling: measurementsDetails.pooling_amount || measurementsDetails.pooling,
+      stackback_left: measurementsDetails.stackback_left,
+      stackback_right: measurementsDetails.stackback_right,
+      // Store the user's preferred unit for shared view display
+      display_unit: userLengthUnit,
     };
+
+    // Build fabric details with color from correct source
+    const fabricDetailsWithColor = summaryData.fabric_details ? {
+      ...summaryData.fabric_details,
+      // Ensure color is synced from fabric_details or measurements_details
+      color: summaryData.fabric_details.color || measurementsDetails.selected_color,
+    } : undefined;
 
     // Build the workshop item data
     const workshopItemData = {
@@ -184,16 +221,18 @@ export async function syncWindowToWorkshopItem(
       room_name: roomName || summaryData.surface_name || 'Unassigned Room',
       surface_name: summaryData.surface_name || 'Window',
       treatment_type: summaryData.treatment_type || 
-                      summaryData.template_details?.treatment_category || 
+                      templateDetails.treatment_category || 
                       summaryData.template_name || 
                       'curtains',
-      fabric_details: summaryData.fabric_details,
+      fabric_details: fabricDetailsWithColor,
       measurements,
       manufacturing_details: manufacturingDetails,
       linear_meters: summaryData.linear_meters,
       widths_required: summaryData.widths_required,
       total_cost: summaryData.total_cost,
       user_id: user.id,
+      // Clear hardcoded notes - let UI handle notes display
+      notes: measurementsDetails.production_notes || measurementsDetails.notes || null,
       updated_at: new Date().toISOString(),
     };
 

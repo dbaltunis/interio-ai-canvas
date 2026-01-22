@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/clipboard';
+import { convertFromMM } from '@/utils/measurementFormatters';
 import type { WorkshopData, WorkshopRoomSection, WorkshopRoomItem } from '@/hooks/useWorkshopData';
 
 interface ShareResult {
@@ -349,7 +350,15 @@ export async function fetchWorkshopDataForProject(
       const measurements = item.measurements as Record<string, any> | null;
       
       // Build workshop item matching the WorkshopRoomItem interface
-      // CRITICAL: Measurements stored in MM, convert to cm for display
+      // CRITICAL: Use stored display_unit preference, fallback to 'cm'
+      const displayUnit = measurements?.display_unit || 'cm';
+      
+      // Convert MM to the stored display unit (respects user preference)
+      const convertMeasurement = (valueMM: number | undefined) => {
+        if (!valueMM) return undefined;
+        return Math.round(convertFromMM(valueMM, displayUnit) * 100) / 100;
+      };
+      
       const workshopItem: WorkshopRoomItem = {
         id: item.id,
         name: item.surface_name || 'Window',
@@ -357,17 +366,17 @@ export async function fetchWorkshopDataForProject(
         location: item.surface_name || 'Window',
         quantity: 1,
         measurements: {
-          // Database stores in MM - convert to cm for display (industry standard)
-          width: measurements?.rail_width ? Math.round(measurements.rail_width / 10) : undefined,
-          height: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
-          drop: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
-          pooling: measurements?.pooling_amount || measurements?.pooling,
-          unit: 'cm',
+          // Convert from MM (database) to user's preferred display unit
+          width: convertMeasurement(measurements?.rail_width),
+          height: convertMeasurement(measurements?.drop),
+          drop: convertMeasurement(measurements?.drop),
+          pooling: measurements?.pooling,
+          unit: displayUnit, // Use stored preference, not hardcoded 'cm'
         },
         treatmentType: formatTreatmentType(item.treatment_type || 'Treatment'),
         notes: item.notes || undefined,
         
-        // Fabric details
+        // Fabric details - ensure color is included
         fabricDetails: fabricDetails ? {
           name: fabricDetails.name || 'Unknown Fabric',
           fabricWidth: fabricDetails.fabric_width || 0,
@@ -375,7 +384,7 @@ export async function fetchWorkshopDataForProject(
           pricePerUnit: fabricDetails.selling_price,
           rollDirection: manufacturingDetails?.fabric_rotated ? 'Horizontal' : 'Vertical',
           patternRepeat: fabricDetails.pattern_repeat,
-          color: fabricDetails.color,
+          color: fabricDetails.color, // CRITICAL: Include color
         } : undefined,
         
         // Fabric usage from calculated fields
