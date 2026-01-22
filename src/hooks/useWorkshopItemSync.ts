@@ -86,29 +86,28 @@ export async function syncWindowToWorkshopItem(
     }
 
     // Get user's measurement unit preference
-    // CRITICAL FIX: First check measurements_details.unit (user's worksheet preference)
-    // Only fall back to account_settings if not found
+    // CRITICAL FIX: ALWAYS read from business_settings, NOT measurements_details.unit
+    // measurements_details.unit contains "mm" (storage format), NOT user's display preference!
     const measurementsDetails = summaryData.measurements_details || {};
-    let userLengthUnit = measurementsDetails.unit || 'cm';
     
-    // If unit not in measurements_details, try account settings as fallback
-    if (!measurementsDetails.unit) {
-      try {
-        const { data: accountSettings } = await supabase
-          .from('account_settings')
-          .select('measurement_units')
-          .eq('account_owner_id', user.id)
-          .maybeSingle();
-        
-        if (accountSettings?.measurement_units) {
-          const units = typeof accountSettings.measurement_units === 'string' 
-            ? JSON.parse(accountSettings.measurement_units)
-            : accountSettings.measurement_units;
-          userLengthUnit = units?.length || 'cm';
-        }
-      } catch (e) {
-        console.warn('⚠️ WorkshopItemSync: Could not fetch user unit preference, using cm');
+    // ALWAYS fetch user's DISPLAY preference from business_settings
+    let userLengthUnit = 'cm'; // safe default
+    try {
+      const { data: businessSettings } = await supabase
+        .from('business_settings')
+        .select('measurement_units')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (businessSettings?.measurement_units) {
+        const units = typeof businessSettings.measurement_units === 'string' 
+          ? JSON.parse(businessSettings.measurement_units)
+          : businessSettings.measurement_units;
+        userLengthUnit = units?.length || 'cm';
+        console.log('📏 WorkshopItemSync: User display unit preference:', userLengthUnit);
       }
+    } catch (e) {
+      console.warn('⚠️ WorkshopItemSync: Could not fetch user unit preference, using cm');
     }
 
     // Get project_id from windows_summary if not provided
