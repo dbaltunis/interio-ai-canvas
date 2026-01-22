@@ -128,10 +128,22 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
   }
   
   // 5. Check material vs labor markup (including manufacturing/sewing)
+  // CRITICAL FIX: Explicitly categorize fabric/curtain/blind as "material" categories
   if (context.category) {
-    const isLabor = ['installation', 'service', 'fitting', 'labor', 'labour', 'manufacturing', 'sewing', 'stitching', 'making'].some(
-      t => context.category!.toLowerCase().includes(t)
+    const catLower = context.category.toLowerCase();
+    
+    // Labor categories: installation, manufacturing, sewing
+    const isLabor = ['installation', 'service', 'fitting', 'labor', 'labour', 
+                     'manufacturing', 'sewing', 'stitching', 'making'].some(
+      t => catLower.includes(t)
     );
+    
+    // Material categories: fabrics, curtains, blinds, hardware, drapes, etc.
+    const isMaterial = ['fabric', 'curtain', 'blind', 'drape', 'roman', 'roller', 
+                        'venetian', 'vertical', 'shutter', 'hardware', 'lining', 
+                        'heading', 'track', 'rod', 'pole', 'sheer', 'cellular',
+                        'honeycomb', 'awning', 'material'].some(t => catLower.includes(t));
+    
     if (isLabor && settings.labor_markup_percentage > 0) {
       return {
         percentage: settings.labor_markup_percentage,
@@ -139,6 +151,16 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
         sourceName: 'Labor'
       };
     }
+    // CRITICAL: Use isMaterial explicitly rather than just !isLabor
+    // This ensures fabric/curtain/blind categories get material markup
+    if (isMaterial && settings.material_markup_percentage > 0) {
+      return {
+        percentage: settings.material_markup_percentage,
+        source: 'category',
+        sourceName: 'Material'
+      };
+    }
+    // If neither, but we have material markup, default to material (most things are materials)
     if (!isLabor && settings.material_markup_percentage > 0) {
       return {
         percentage: settings.material_markup_percentage,

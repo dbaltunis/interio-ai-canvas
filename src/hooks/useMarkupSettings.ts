@@ -27,12 +27,14 @@ export interface MarkupSettings {
   show_markup_to_staff: boolean;
 }
 
+// SENSIBLE DEFAULTS: Previously all 0%, which caused markups to not apply
+// Now: Default 50%, Material 40%, Labor 30% as fallbacks when categories are 0%
 export const defaultMarkupSettings: MarkupSettings = {
-  default_markup_percentage: 0,
-  labor_markup_percentage: 0,
-  material_markup_percentage: 0,
+  default_markup_percentage: 50,  // Ultimate fallback
+  labor_markup_percentage: 30,    // For installation, manufacturing, sewing
+  material_markup_percentage: 40, // For fabric, hardware, materials
   category_markups: {
-    fabric: 0,
+    fabric: 0,     // Keep 0 so Material fallback (40%) applies
     hardware: 0,
     installation: 0,
     curtains: 0,
