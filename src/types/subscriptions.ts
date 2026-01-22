@@ -38,6 +38,7 @@ export interface UserSubscription {
   updated_at: string;
   subscription_type?: SubscriptionType;
   admin_notes?: string | null;
+  total_users?: number | null;  // Seat limit for the account
   subscription_plans?: {
     id: string;
     name: string;

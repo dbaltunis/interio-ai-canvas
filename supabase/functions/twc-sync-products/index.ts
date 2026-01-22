@@ -285,10 +285,55 @@ const handler = async (req: Request): Promise<Response> => {
       return { category: 'material', subcategory: 'roller_fabric' };
     };
 
-    // PHASE 2: Improved mapping using PARENT product description for material subcategory
-    const mapCategoryForMaterial = (materialName: string | undefined | null, parentProductDescription: string | undefined | null): { category: string, subcategory: string } => {
+    // ✅ FIX: SKU PREFIX TO CATEGORY MAPPING - Most reliable for TWC products
+    // TWC uses consistent SKU prefixes for product categories
+    const SKU_TO_CATEGORY: Record<string, { category: string; subcategory: string }> = {
+      // Awning/Outdoor products (700-899 range)
+      '700': { category: 'fabric', subcategory: 'awning_fabric' },  // Auto awnings
+      '710': { category: 'fabric', subcategory: 'awning_fabric' },  // Fixed Guide
+      '720': { category: 'fabric', subcategory: 'awning_fabric' },  // Straight Drop
+      '730': { category: 'fabric', subcategory: 'awning_fabric' },  // Folding Arm
+      '735': { category: 'fabric', subcategory: 'awning_fabric' },  // Conservatory
+      '740': { category: 'fabric', subcategory: 'awning_fabric' },  // Retractable
+      '750': { category: 'fabric', subcategory: 'awning_fabric' },  // Markilux
+      '770': { category: 'fabric', subcategory: 'awning_fabric' },  // Patio
+      '800': { category: 'fabric', subcategory: 'awning_fabric' },  // Zip Screen
+      '805': { category: 'fabric', subcategory: 'awning_fabric' },  // Zip Screen Straight
+      '810': { category: 'fabric', subcategory: 'awning_fabric' },  // Outdoor Roller
+      '820': { category: 'fabric', subcategory: 'awning_fabric' },  // Extreme Zip Screen
+    };
+
+    const getCategoryFromSku = (sku: string | null | undefined): { category: string; subcategory: string } | null => {
+      if (!sku) return null;
+      // Check first 3 characters of SKU (e.g., "700" from "700-123")
+      const prefix = sku.substring(0, 3);
+      return SKU_TO_CATEGORY[prefix] || null;
+    };
+
+    // PHASE 2: Improved mapping using PARENT product description AND SKU for material subcategory
+    const mapCategoryForMaterial = (materialName: string | undefined | null, parentProductDescription: string | undefined | null, parentSku?: string | undefined | null): { category: string, subcategory: string } => {
+      
+      // PRIORITY 1: Check SKU prefix (most reliable for TWC)
+      const skuCategory = getCategoryFromSku(parentSku);
+      if (skuCategory) {
+        console.log(`📦 SKU-based categorization: ${parentSku} → ${skuCategory.category}/${skuCategory.subcategory}`);
+        return skuCategory;
+      }
+      
       // Use parent product description (e.g., "Roller Blinds") for proper subcategory
       const parentDesc = (parentProductDescription || '').toLowerCase();
+      
+      // PRIORITY 2: Detect awning/outdoor products from description
+      if (parentDesc.includes('awning') || 
+          parentDesc.includes('auto') ||          // Auto = outdoor awning
+          parentDesc.includes('zip screen') ||    // Zip screens are outdoor
+          parentDesc.includes('straight drop') || // Outdoor straight drop
+          parentDesc.includes('folding arm') ||   // Folding arm awnings
+          parentDesc.includes('conservatory') ||  // Conservatory blinds
+          parentDesc.includes('outdoor') ||
+          parentDesc.includes('patio')) {
+        return { category: 'fabric', subcategory: 'awning_fabric' };
+      }
       
       // Roller blind materials - use MATERIAL category (manufactured, not sewn)
       if (parentDesc.includes('roller')) {

@@ -25,6 +25,7 @@ export interface TreatmentPricingInput {
   unitsCurrency?: string; // e.g., 'GBP'
   selectedOptions?: Array<{ name: string; price: number; description?: string; image_url?: string; pricing_method?: string; extra_data?: any }>; // CRITICAL: Add selected options with pricing method
   inventoryItems?: any[]; // CRITICAL: Add inventory items to look up heading prices
+  pricingGridData?: any; // CRITICAL: Pricing grid data for grid-based pricing
 }
 
 export interface TreatmentPricingResult {
@@ -54,7 +55,7 @@ export interface TreatmentPricingResult {
 }
 
 export const calculateTreatmentPricing = (input: TreatmentPricingInput): TreatmentPricingResult => {
-  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [] } = input;
+  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [], pricingGridData } = input;
 
   console.log('🎯 calculateTreatmentPricing called with:', {
     template: template ? { 
@@ -175,7 +176,59 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // For blinds, default to per_sqm if no pricing type specified
   const effectivePricingType = isBlindTreatment && !pricingType ? 'per_sqm' : pricingType;
   
-  if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
+  // CRITICAL: Handle pricing_grid type - use grid lookup for total product price
+  if (effectivePricingType === 'pricing_grid') {
+    // Import getPriceFromGrid dynamically to avoid circular dependency
+    const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
+    
+    // Check for grid data from multiple sources: input, fabric item, or template
+    const gridData = pricingGridData || fabricItem?.pricing_grid_data || template?.pricing_grid_data;
+    
+    if (gridData) {
+      // Grid expects CM, we already have CM
+      const gridPrice = getPriceFromGrid(gridData, widthCm, heightCm);
+      
+      if (gridPrice > 0) {
+        // For pricing_grid with includes_fabric_price, grid contains TOTAL price (fabric + manufacturing)
+        // Check if template indicates all-inclusive pricing
+        const includesFabricPrice = template?.includes_fabric_price === true;
+        
+        if (includesFabricPrice) {
+          // Grid is all-inclusive - entire price is "fabric cost" (really product cost)
+          fabricCost = gridPrice;
+          console.log(`💰 Fabric cost (pricing_grid ALL-INCLUSIVE): Grid price ${gridPrice.toFixed(2)} contains fabric + manufacturing`);
+        } else {
+          // Grid is just for fabric, manufacturing calculated separately
+          fabricCost = gridPrice;
+          console.log(`💰 Fabric cost (pricing_grid): ${gridPrice.toFixed(2)} from grid lookup [${widthCm}cm × ${heightCm}cm]`);
+        }
+      } else {
+        console.warn(`⚠️ pricing_grid returned 0 - falling back to per_sqm calculation`);
+        // Fallback to per_sqm for blinds
+        if (isBlindTreatment) {
+          const squareMetersRaw = (widthCm * heightCm) / 10000;
+          const squareMeters = squareMetersRaw * wasteMultiplier;
+          fabricCost = squareMeters * pricePerMeter;
+          console.log(`💰 Fabric cost (fallback per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)}`);
+        } else {
+          fabricCost = linearMeters * pricePerMeter;
+          console.log(`💰 Fabric cost (fallback per_metre): ${pricePerMeter}/m × ${linearMeters.toFixed(2)}m = ${fabricCost.toFixed(2)}`);
+        }
+      }
+    } else {
+      console.warn(`⚠️ pricing_grid type but NO grid data found - check template/fabric configuration`);
+      // Fallback calculation
+      if (isBlindTreatment) {
+        const squareMetersRaw = (widthCm * heightCm) / 10000;
+        const squareMeters = squareMetersRaw * wasteMultiplier;
+        fabricCost = squareMeters * pricePerMeter;
+        console.log(`💰 Fabric cost (fallback per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)}`);
+      } else {
+        fabricCost = linearMeters * pricePerMeter;
+        console.log(`💰 Fabric cost (fallback per_metre): ${pricePerMeter}/m × ${linearMeters.toFixed(2)}m = ${fabricCost.toFixed(2)}`);
+      }
+    }
+  } else if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
     // Calculate square meters: For blinds, use actual measurements without hems (hems are internal)
     const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
@@ -199,11 +252,18 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   }
 
   // Manufacturing - CRITICAL: Respect pricing method (use same isBlindTreatment detection)
+  // CRITICAL: Skip manufacturing calculation when pricing_grid with includes_fabric_price=true
+  // (manufacturing is already included in the grid price)
   let manufacturingCost = 0;
+  const includesFabricPrice = template?.includes_fabric_price === true;
   
   console.log(`🏭 Manufacturing lookup: machine_price_per_metre=${template?.machine_price_per_metre}, machine_price_per_drop=${template?.machine_price_per_drop}, machine_price_per_panel=${template?.machine_price_per_panel}`);
   
-  if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
+  if (effectivePricingType === 'pricing_grid' && includesFabricPrice) {
+    // All-inclusive grid pricing - manufacturing is included in the grid price
+    manufacturingCost = 0;
+    console.log(`💰 Manufacturing cost (pricing_grid ALL-INCLUSIVE): £0 - already included in grid price`);
+  } else if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
     // Manufacturing priced per square meter - use same calculation as fabric
     const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
