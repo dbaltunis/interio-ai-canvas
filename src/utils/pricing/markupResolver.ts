@@ -7,8 +7,11 @@
 import { MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
 
 export interface MarkupContext {
-  // Product-level
+  // Product-level (from inventory item's markup_percentage)
   productMarkup?: number;
+  // Implied markup (calculated from cost_price vs selling_price in library)
+  // When fabric has both prices defined, implied = (selling - cost) / cost * 100
+  impliedMarkup?: number;
   // Grid-level (from pricing_grids.markup_percentage)
   gridMarkup?: number;
   // Category/Subcategory
@@ -31,7 +34,7 @@ export interface ResolvedMarkup {
 export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
   const settings = context.markupSettings || defaultMarkupSettings;
   
-  // 1. Check product-level markup
+  // 1. Check product-level markup (explicit markup_percentage on inventory item)
   if (context.productMarkup && context.productMarkup > 0) {
     return {
       percentage: context.productMarkup,
@@ -40,7 +43,17 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     };
   }
   
-  // 2. Check grid-level markup
+  // 2. Check implied markup (calculated from cost_price vs selling_price in library)
+  // This prevents double-markup when fabric library has pre-defined retail pricing
+  if (context.impliedMarkup && context.impliedMarkup > 0) {
+    return {
+      percentage: context.impliedMarkup,
+      source: 'product',
+      sourceName: 'Library Pricing (implied from cost vs selling)'
+    };
+  }
+  
+  // 3. Check grid-level markup
   if (context.gridMarkup && context.gridMarkup > 0) {
     return {
       percentage: context.gridMarkup,

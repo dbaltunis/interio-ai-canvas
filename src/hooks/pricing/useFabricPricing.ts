@@ -92,9 +92,11 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
         }
       }
       
-      // Use price per unit for fabric (grid is for manufacturing, not fabric material)
-      // Price is stored as price per meter/yard based on user's configured unit system
-      const pricePerUnit = selectedFabricItem.price_per_meter || 
+      // ✅ CRITICAL FIX: Use cost_price as base when available to prevent double-markup
+      // The markup system will calculate implied markup from cost vs selling difference
+      // Priority: cost_price > price_per_meter > unit_price > selling_price
+      const pricePerUnit = selectedFabricItem.cost_price ||
+                          selectedFabricItem.price_per_meter || 
                           selectedFabricItem.unit_price || 
                           selectedFabricItem.selling_price || 
                           0;
@@ -102,6 +104,13 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       // Use price as-is since it's already in user's configured unit (meter or yard)
       // No hardcoded conversion - user enters price in their preferred unit
       fabricCostPerUnit = pricePerUnit;
+      
+      console.log('💰 Fabric price resolution:', {
+        costPrice: selectedFabricItem.cost_price,
+        sellingPrice: selectedFabricItem.selling_price,
+        basePriceUsed: pricePerUnit,
+        hasImpliedMarkup: selectedFabricItem.cost_price > 0 && selectedFabricItem.selling_price > selectedFabricItem.cost_price
+      });
       
       if (!usePricingGrid) {
         console.log('ℹ️ Using pricing method for fabric:', {

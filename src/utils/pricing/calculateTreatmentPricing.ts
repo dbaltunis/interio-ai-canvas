@@ -149,9 +149,13 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const wasteMultiplier = 1 + ((template?.waste_percent || 0) / 100);
 
   const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
-  const pricePerMeter = fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
   
-  console.log(`💵 Price lookup: price_per_meter=${fabricItem?.price_per_meter}, unit_price=${fabricItem?.unit_price}, selling_price=${fabricItem?.selling_price} → final: ${pricePerMeter}`);
+  // ✅ CRITICAL FIX: Use cost_price as base when available to prevent double-markup
+  // The markup system will calculate implied markup from cost vs selling difference
+  // Priority: cost_price > price_per_meter > unit_price > selling_price
+  const pricePerMeter = fabricItem?.cost_price || fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
+  
+  console.log(`💵 Price lookup: cost_price=${fabricItem?.cost_price}, price_per_meter=${fabricItem?.price_per_meter}, unit_price=${fabricItem?.unit_price}, selling_price=${fabricItem?.selling_price} → base: ${pricePerMeter}`);
   
   // Calculate fabric cost based on pricing method
   let fabricCost = 0;
