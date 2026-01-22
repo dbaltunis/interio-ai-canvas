@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Pencil, RotateCcw, Save } from "lucide-react";
+import { Pencil, RotateCcw, Save, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -20,7 +21,9 @@ export interface WorkshopInformationLandscapeProps {
 export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false, isReadOnly = false, sessionToken }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   const { units } = useMeasurementUnits();
+  const { toast } = useToast();
   
   // Use workshop notes hook for database persistence
   const {
@@ -29,11 +32,37 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
     setProductionNotes,
     setItemNote,
     saveNotes,
+    saveItemNotePublic,
     isLoading,
     isSaving
   } = useWorkshopNotes(projectId, { sessionToken });
   
   const hasOverrides = Object.keys(overrides).length > 0;
+  
+  // Track note changes
+  const handleNoteChange = (itemId: string, note: string) => {
+    setItemNote(itemId, note);
+    setHasUnsavedNotes(true);
+  };
+  
+  const handleProductionNoteChange = (note: string) => {
+    setProductionNotes(note);
+    setHasUnsavedNotes(true);
+  };
+  
+  // Direct save notes function
+  const handleSaveNotes = async () => {
+    try {
+      await saveNotes();
+      setHasUnsavedNotes(false);
+      toast({
+        title: "Notes saved",
+        description: "Your notes have been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to save notes:", error);
+    }
+  };
   
   const getFieldValue = (field: keyof typeof data.header) => {
     return overrides[field] ?? data.header[field] ?? "";
@@ -109,6 +138,14 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
           </div>
           {!isPrintMode && (
             <div className="flex items-center gap-2 no-print">
+              {/* Unsaved changes indicator */}
+              {hasUnsavedNotes && (
+                <span className="flex items-center gap-1 text-xs text-orange-600 font-medium">
+                  <AlertCircle className="h-3 w-3" />
+                  Unsaved
+                </span>
+              )}
+              
               {hasOverrides && (
                 <Button
                   variant="ghost"
@@ -121,25 +158,33 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   Reset
                 </Button>
               )}
-              <Button
-                variant={editing ? "default" : "outline"}
-                size="sm"
-                onClick={editing ? handleSaveAndClose : () => setEditing(true)}
-                disabled={isSaving || isReadOnly}
-                className="h-7 text-xs"
-              >
-                {editing ? (
-                  <>
-                    <Save className="h-3 w-3 mr-1" />
-                    {isSaving ? "Saving..." : "Save & Done"}
-                  </>
-                ) : (
-                  <>
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Edit
-                  </>
-                )}
-              </Button>
+              
+              {/* Edit Headers button */}
+              {!isReadOnly && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditing(!editing)}
+                  className="h-7 text-xs"
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  {editing ? "Done Editing" : "Edit Headers"}
+                </Button>
+              )}
+              
+              {/* Save Notes button - always visible when can edit */}
+              {!isReadOnly && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleSaveNotes}
+                  disabled={isSaving}
+                  className="h-7 text-xs"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  {isSaving ? "Saving..." : "Save Notes"}
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -431,20 +476,19 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                             </div>
                           )}
                           
-                          {/* Notes - show for all treatments */}
+                          {/* Notes - show for all treatments - always editable when not read-only */}
                           <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
                             <div className="font-medium text-gray-700 mb-1">Notes:</div>
-                            {isPrintMode || !editing || isReadOnly ? (
+                            {isPrintMode || isReadOnly ? (
                               <div className="text-gray-600 italic min-h-[20px]">
                                 {getItemNote(item.id, item.notes) || "No notes"}
                               </div>
                             ) : (
                               <Textarea
                                 value={getItemNote(item.id, item.notes)}
-                                onChange={(e) => setItemNote(item.id, e.target.value)}
+                                onChange={(e) => handleNoteChange(item.id, e.target.value)}
                                 className="text-[9px] min-h-[40px] w-full"
                                 placeholder="Add manufacturing notes for this item..."
-                                disabled={isReadOnly}
                               />
                             )}
                           </div>
@@ -459,10 +503,10 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
         </div>
       ))}
 
-      {/* Production Notes Section */}
+      {/* Production Notes Section - always editable when not read-only */}
       <div className="border-t pt-3 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wide mb-2">Production Notes</h3>
-        {isPrintMode || !editing || isReadOnly ? (
+        {isPrintMode || isReadOnly ? (
           <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
             {productionNotes ? (
               <p className="whitespace-pre-wrap">{productionNotes}</p>
@@ -473,10 +517,9 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
         ) : (
           <Textarea
             value={productionNotes}
-            onChange={(e) => setProductionNotes(e.target.value)}
+            onChange={(e) => handleProductionNoteChange(e.target.value)}
             className="text-xs min-h-[80px] w-full"
             placeholder="Add general manufacturing instructions, special handling notes, or additional details..."
-            disabled={isReadOnly}
           />
         )}
       </div>
