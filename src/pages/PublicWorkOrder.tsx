@@ -76,8 +76,8 @@ const PublicWorkOrder: React.FC = () => {
             email: viewer.recipient_email || undefined,
             sessionToken
           });
-          // Set permission level from session data
-          setPermissionLevel((viewer.permission_level as PermissionLevel) || 'edit');
+          // Set permission level from session data - default to 'view' (read-only)
+          setPermissionLevel((viewer.permission_level as PermissionLevel) || 'view');
           setViewerIdentified(true);
         }
       });
