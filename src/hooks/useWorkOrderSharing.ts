@@ -571,7 +571,7 @@ export async function createViewerSession(
       project_id: projectId,
       recipient_name: name,
       recipient_email: email || null,
-      permission_level: 'edit', // Default to edit so viewers can save notes
+      permission_level: 'view', // Read-only - shared documents are locked, no changes allowed
       session_token: sessionToken,
       created_by_viewer: true,
       last_accessed_at: new Date().toISOString(),
