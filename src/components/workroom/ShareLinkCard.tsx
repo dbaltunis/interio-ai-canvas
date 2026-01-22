@@ -48,6 +48,7 @@ export const ShareLinkCard: React.FC<ShareLinkCardProps> = ({
   };
 
   const displayName = link.name || DOCUMENT_TYPE_LABELS[link.document_type] || 'Share Link';
+  const itemCount = link.item_filter?.length || 0;
   const treatmentCount = link.treatment_filter?.length || 0;
 
   return (
@@ -67,9 +68,19 @@ export const ShareLinkCard: React.FC<ShareLinkCardProps> = ({
           <Badge variant="outline" className="text-[10px] h-5">
             {CONTENT_FILTER_LABELS[link.content_filter]}
           </Badge>
-          {treatmentCount > 0 && (
+          {itemCount > 0 && (
+            <Badge variant="secondary" className="text-[10px] h-5">
+              {itemCount} item{itemCount !== 1 ? 's' : ''}
+            </Badge>
+          )}
+          {itemCount === 0 && treatmentCount > 0 && (
             <Badge variant="secondary" className="text-[10px] h-5">
               {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
+            </Badge>
+          )}
+          {itemCount === 0 && treatmentCount === 0 && (
+            <Badge variant="outline" className="text-[10px] h-5 text-muted-foreground">
+              All items
             </Badge>
           )}
         </div>

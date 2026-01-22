@@ -285,7 +285,7 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
   }
 }
 
-// Fetch workshop data for a project with optional treatment type filtering
+// Fetch workshop data for a project with optional treatment type or item ID filtering
 export async function fetchWorkshopDataForProject(
   projectId: string, 
   projectMeta?: {
@@ -298,6 +298,7 @@ export async function fetchWorkshopDataForProject(
   },
   options?: {
     treatmentTypes?: string[];
+    itemIds?: string[];
   }
 ): Promise<WorkshopData | null> {
   try {
@@ -321,6 +322,11 @@ export async function fetchWorkshopDataForProject(
     // Apply treatment type filter if specified
     if (options?.treatmentTypes && options.treatmentTypes.length > 0) {
       query = query.in('treatment_type', options.treatmentTypes);
+    }
+
+    // Apply item ID filter if specified (takes precedence over treatment filter)
+    if (options?.itemIds && options.itemIds.length > 0) {
+      query = query.in('id', options.itemIds);
     }
 
     const { data, error } = await query;

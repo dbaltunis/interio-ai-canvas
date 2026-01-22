@@ -33,11 +33,20 @@ const PublicWorkOrder: React.FC = () => {
   const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit');
 
   const loadWorkshopData = useCallback(async (projectData: any, link: ShareLink) => {
-    // Use treatment filter from the share link
-    const treatmentFilter = link.treatment_filter;
-    const treatmentTypes = Array.isArray(treatmentFilter) && treatmentFilter.length > 0 
-      ? treatmentFilter.filter((t: string) => t !== 'all')
-      : undefined;
+    // Build filter options from share link
+    const options: { treatmentTypes?: string[]; itemIds?: string[] } = {};
+    
+    // Use item filter if specified (takes precedence)
+    if (Array.isArray(link.item_filter) && link.item_filter.length > 0) {
+      options.itemIds = link.item_filter;
+    } 
+    // Fall back to treatment filter for backward compatibility
+    else if (Array.isArray(link.treatment_filter) && link.treatment_filter.length > 0) {
+      const treatmentTypes = link.treatment_filter.filter((t: string) => t !== 'all');
+      if (treatmentTypes.length > 0) {
+        options.treatmentTypes = treatmentTypes;
+      }
+    }
     
     const data = await fetchWorkshopDataForProject(
       projectData.id, 
@@ -49,7 +58,7 @@ const PublicWorkOrder: React.FC = () => {
         created_at: projectData.created_at,
         clients: projectData.clients,
       },
-      treatmentTypes && treatmentTypes.length > 0 ? { treatmentTypes } : undefined
+      Object.keys(options).length > 0 ? options : undefined
     );
     setWorkshopData(data);
   }, []);
