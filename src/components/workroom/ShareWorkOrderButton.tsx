@@ -5,12 +5,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Share2, Plus, Link2 } from 'lucide-react';
+import { Share2, Plus, Link2, RefreshCw } from 'lucide-react';
 import { useShareLinks, type ShareLink } from '@/hooks/useShareLinks';
 import { getAvailableTreatments } from '@/hooks/useWorkOrderSharing';
 import { ShareLinkCard } from './ShareLinkCard';
 import { CreateShareLinkForm } from './CreateShareLinkForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { resyncAllWorkshopItemsForProject } from '@/hooks/useWorkshopItemSync';
+import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -29,6 +31,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [availableTreatments, setAvailableTreatments] = useState<string[]>([]);
+  const [isResyncing, setIsResyncing] = useState(false);
 
   // Load available treatments
   useEffect(() => {
@@ -41,6 +44,28 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     const result = await createShareLink(input);
     if (result) {
       setShowCreateForm(false);
+    }
+  };
+
+  const handleResyncData = async () => {
+    if (!projectId) return;
+    
+    setIsResyncing(true);
+    try {
+      const result = await resyncAllWorkshopItemsForProject(projectId);
+      if (result.success) {
+        showSuccessToast(
+          'Data refreshed', 
+          `Synced ${result.count} items with latest values`,
+          'normal'
+        );
+      } else {
+        showErrorToast('Failed to refresh data', result.error);
+      }
+    } catch (error) {
+      showErrorToast('Failed to refresh data');
+    } finally {
+      setIsResyncing(false);
     }
   };
 
@@ -76,17 +101,31 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
                 {totalViewers > 0 && ` · ${totalViewers} viewer${totalViewers !== 1 ? 's' : ''}`}
               </p>
             </div>
-            {!showCreateForm && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowCreateForm(true)}
-                className="h-8"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Link
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {shareLinks.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleResyncData}
+                  disabled={isResyncing}
+                  className="h-8 px-2"
+                  title="Refresh shared data"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isResyncing ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+              {!showCreateForm && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowCreateForm(true)}
+                  className="h-8"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New Link
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

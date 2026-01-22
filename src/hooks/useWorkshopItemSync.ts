@@ -274,6 +274,75 @@ export async function syncWindowToWorkshopItem(
 }
 
 /**
+ * Force re-sync ALL workshop items for a project from windows_summary
+ * Useful when shared data appears stale or incorrect
+ */
+export async function resyncAllWorkshopItemsForProject(projectId: string): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, count: 0, error: 'No authenticated user' };
+    }
+
+    console.log('🔄 Resync: Finding all window IDs for project:', projectId);
+
+    // Get all window_ids for this project by querying workshop_items (which has project_id)
+    const { data: workshopItems, error: wsError } = await supabase
+      .from('workshop_items')
+      .select('window_id, room_name')
+      .eq('project_id', projectId);
+
+    if (wsError) {
+      console.error('❌ Resync: Failed to fetch workshop_items', wsError);
+      return { success: false, count: 0, error: wsError.message };
+    }
+
+    if (!workshopItems || workshopItems.length === 0) {
+      console.log('⚠️ Resync: No workshop items found for project');
+      return { success: true, count: 0 };
+    }
+
+    console.log(`🔄 Resync: Found ${workshopItems.length} items to sync`);
+
+    // Sync each window by fetching fresh windows_summary data
+    let successCount = 0;
+    for (const item of workshopItems) {
+      if (!item.window_id) continue;
+
+      // Fetch fresh windows_summary for this window
+      const { data: summary, error: summaryError } = await supabase
+        .from('windows_summary')
+        .select('window_id, treatment_type, template_details, heading_details, fabric_details, lining_type, lining_details, manufacturing_type, manufacturing_cost, measurements_details, widths_required, linear_meters')
+        .eq('window_id', item.window_id)
+        .maybeSingle();
+
+      if (summaryError || !summary) {
+        console.warn(`⚠️ Resync: Could not fetch summary for window ${item.window_id}`);
+        continue;
+      }
+
+      // Cast to the expected type
+      const summaryData = {
+        ...summary,
+        project_id: projectId,
+      } as WindowSummaryData;
+
+      const result = await syncWindowToWorkshopItem(item.window_id, summaryData, item.room_name || 'Unassigned');
+      if (result.success) {
+        successCount++;
+      }
+    }
+
+    console.log(`✅ Resync: Successfully synced ${successCount}/${workshopItems.length} items`);
+    return { success: true, count: successCount };
+
+  } catch (error) {
+    console.error('❌ Resync: Exception', error);
+    return { success: false, count: 0, error: String(error) };
+  }
+}
+
+/**
  * Hook for syncing workshop items
  */
 export function useWorkshopItemSync() {
@@ -294,8 +363,13 @@ export function useWorkshopItemSync() {
     return results;
   }, []);
 
+  const resyncProject = useCallback(async (projectId: string) => {
+    return resyncAllWorkshopItemsForProject(projectId);
+  }, []);
+
   return {
     syncWindow,
     syncMultipleWindows,
+    resyncProject,
   };
 }

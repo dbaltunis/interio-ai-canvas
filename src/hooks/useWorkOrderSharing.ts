@@ -328,10 +328,13 @@ export async function fetchWorkshopDataForProject(
     if (error) throw error;
     if (!data || data.length === 0) return null;
     
+    // DEBUG: Log fetched data to trace unit issues
+    console.log('🔍 fetchWorkshopDataForProject: Fetched', data.length, 'items for project', projectId);
+    
     // Group items by room
     const roomsMap = new Map<string, WorkshopRoomSection>();
     
-    data.forEach(item => {
+    data.forEach((item, index) => {
       const roomName = item.room_name || 'Unassigned';
       
       if (!roomsMap.has(roomName)) {
@@ -353,10 +356,20 @@ export async function fetchWorkshopDataForProject(
       // CRITICAL: Use stored display_unit preference, fallback to 'cm'
       const displayUnit = measurements?.display_unit || 'cm';
       
+      // DEBUG: Log first few items to verify display_unit is correct
+      if (index < 3) {
+        console.log(`📏 Item ${index + 1}: display_unit="${displayUnit}", rail_width=${measurements?.rail_width}mm, drop=${measurements?.drop}mm`);
+      }
+      
       // Convert MM to the stored display unit (respects user preference)
       const convertMeasurement = (valueMM: number | undefined) => {
         if (!valueMM) return undefined;
-        return Math.round(convertFromMM(valueMM, displayUnit) * 100) / 100;
+        const converted = Math.round(convertFromMM(valueMM, displayUnit) * 100) / 100;
+        // DEBUG: Log first conversion to verify it works
+        if (index === 0 && valueMM) {
+          console.log(`📐 Converting ${valueMM}mm to ${displayUnit}: result = ${converted}`);
+        }
+        return converted;
       };
       
       const workshopItem: WorkshopRoomItem = {
