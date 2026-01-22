@@ -40,6 +40,18 @@ export const useClientFiles = (clientId: string, userId: string) => {
   });
 };
 
+// Sanitize filename for Supabase Storage (remove special chars, spaces, etc.)
+const sanitizeFileName = (name: string): string => {
+  return name
+    .normalize('NFD') // Normalize unicode characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/[–—]/g, '-') // Replace en-dash and em-dash with hyphen
+    .replace(/[^\w\s.-]/g, '') // Remove special characters except dots, hyphens, underscores
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/_+/g, '_') // Collapse multiple underscores
+    .replace(/^_|_$/g, ''); // Trim leading/trailing underscores
+};
+
 export const useUploadClientFile = () => {
   const queryClient = useQueryClient();
   
@@ -57,8 +69,9 @@ export const useUploadClientFile = () => {
       projectId?: string;
       description?: string;
     }) => {
-      // Upload to storage
-      const fileName = `${userId}/${clientId}/${Date.now()}-${file.name}`;
+      // Sanitize filename for Supabase Storage
+      const sanitizedName = sanitizeFileName(file.name);
+      const fileName = `${userId}/${clientId}/${Date.now()}-${sanitizedName}`;
       
       const { data: storageData, error: storageError } = await supabase.storage
         .from('client-files')
