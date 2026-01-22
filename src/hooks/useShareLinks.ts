@@ -17,6 +17,7 @@ export interface ShareLink {
   document_type: 'work_order' | 'installation' | 'fitting';
   content_filter: 'all' | 'field_ready' | 'specs_only';
   treatment_filter: string[];
+  orientation: 'portrait' | 'landscape';
   pin: string | null;
   created_at: string;
   updated_at: string;
@@ -31,6 +32,7 @@ export interface CreateShareLinkInput {
   document_type?: 'work_order' | 'installation' | 'fitting';
   content_filter?: 'all' | 'field_ready' | 'specs_only';
   treatment_filter?: string[];
+  orientation?: 'portrait' | 'landscape';
   pin?: string;
 }
 
@@ -83,6 +85,7 @@ export function useShareLinks(projectId: string | undefined) {
             treatment_filter: Array.isArray(link.treatment_filter) 
               ? (link.treatment_filter as unknown as string[]) 
               : [],
+            orientation: (link.orientation || 'landscape') as 'portrait' | 'landscape',
             pin: link.pin,
             created_at: link.created_at,
             updated_at: link.updated_at,
@@ -127,6 +130,7 @@ export function useShareLinks(projectId: string | undefined) {
           document_type: input.document_type || 'work_order',
           content_filter: input.content_filter || 'all',
           treatment_filter: input.treatment_filter || [],
+          orientation: input.orientation || 'landscape',
           pin: input.pin || null,
           created_by: user.id,
         })
@@ -145,6 +149,7 @@ export function useShareLinks(projectId: string | undefined) {
         treatment_filter: Array.isArray(data.treatment_filter) 
           ? (data.treatment_filter as unknown as string[]) 
           : [],
+        orientation: (data.orientation || 'landscape') as 'portrait' | 'landscape',
         pin: data.pin,
         created_at: data.created_at,
         updated_at: data.updated_at,
@@ -299,6 +304,7 @@ export async function fetchShareLinkByToken(token: string): Promise<ShareLink | 
       treatment_filter: Array.isArray(data.treatment_filter) 
         ? (data.treatment_filter as unknown as string[]) 
         : [],
+      orientation: (data.orientation || 'landscape') as 'portrait' | 'landscape',
       pin: data.pin,
       created_at: data.created_at,
       updated_at: data.updated_at,
