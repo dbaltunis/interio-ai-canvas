@@ -84,10 +84,13 @@ serve(async (req) => {
     const clientEmail = client?.email || user.email;
     const paymentType = quote.payment_type || 'full';
     
-    // CRITICAL FIX: Apply discount to the payment amount
+    // Use pre-calculated payment_amount which already includes discount
+    // payment_amount is set by the frontend with discount already applied
+    // Fallback: if no payment_amount, calculate from discounted total
     const discountAmount = quote.discount_amount || 0;
-    const baseAmount = quote.payment_amount || quote.total || 0;
-    const paymentAmount = Math.max(0, baseAmount - discountAmount);
+    const quoteTotal = quote.total || 0;
+    const discountedTotal = Math.max(0, quoteTotal - discountAmount);
+    const paymentAmount = quote.payment_amount || discountedTotal;
 
     logStep("Preparing payment", { 
       paymentAmount, 
@@ -95,8 +98,9 @@ serve(async (req) => {
       currency,
       clientEmail,
       discountAmount,
-      baseAmount,
-      finalAmount: paymentAmount
+      quoteTotal,
+      discountedTotal,
+      storedPaymentAmount: quote.payment_amount
     });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
