@@ -141,29 +141,144 @@ export const useGoogleCalendarIntegration = () => {
           return new Promise(() => {}); // Never resolves as page redirects
         }
 
-        // Listen for messages from the popup
+        // Listen for messages from the popup with multiple fallback methods
         return new Promise((resolve, reject) => {
+          let resolved = false;
+          let checkClosedInterval: ReturnType<typeof setInterval>;
+          let pollDatabaseInterval: ReturnType<typeof setInterval>;
+          let closeGracePeriodTimeout: ReturnType<typeof setTimeout>;
+          
+          const cleanup = () => {
+            window.removeEventListener('message', messageHandler);
+            window.removeEventListener('storage', storageHandler);
+            if (checkClosedInterval) clearInterval(checkClosedInterval);
+            if (pollDatabaseInterval) clearInterval(pollDatabaseInterval);
+            if (closeGracePeriodTimeout) clearTimeout(closeGracePeriodTimeout);
+          };
+          
+          const handleSuccess = (source: string) => {
+            if (resolved) return;
+            resolved = true;
+            console.log(`Google Calendar auth success detected via ${source}`);
+            cleanup();
+            resolve({ type: 'GOOGLE_AUTH_SUCCESS', source });
+          };
+          
+          const handleError = (error: string) => {
+            if (resolved) return;
+            resolved = true;
+            cleanup();
+            reject(new Error(error));
+          };
+          
+          // Method 1: Listen for postMessage from popup
           const messageHandler = (event: MessageEvent) => {
-            if (event.origin !== 'https://ldgrcodffsalkevafbkb.supabase.co') return;
+            // Accept messages from Supabase origins (relaxed check for cross-origin popups)
+            const isValidOrigin = event.origin.includes('supabase.co') || 
+                                  event.origin.includes('supabase.in') ||
+                                  event.origin === window.location.origin;
+            
+            if (!isValidOrigin) {
+              console.log('Ignoring message from origin:', event.origin);
+              return;
+            }
 
-            if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-              window.removeEventListener('message', messageHandler);
-              resolve(event.data);
-            } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-              window.removeEventListener('message', messageHandler);
-              reject(new Error(event.data.error || 'Authentication failed'));
+            if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+              handleSuccess('postMessage');
+            } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+              handleError(event.data.error || 'Authentication failed');
+            }
+          };
+
+          // Method 2: Listen for localStorage changes (fallback for same-origin)
+          const storageHandler = (event: StorageEvent) => {
+            if (event.key === 'google_calendar_auth_success' && event.newValue) {
+              try {
+                const data = JSON.parse(event.newValue);
+                if (data.success) {
+                  handleSuccess('localStorage');
+                  // Clean up the storage key
+                  try { localStorage.removeItem('google_calendar_auth_success'); } catch(e) {}
+                }
+              } catch(e) {
+                console.log('Failed to parse storage event:', e);
+              }
+            }
+          };
+          
+          // Method 3: Poll database for connection status (ultimate fallback)
+          const checkDatabaseForConnection = async () => {
+            if (resolved) return;
+            try {
+              const { data } = await supabase
+                .from('integration_settings')
+                .select('active, updated_at')
+                .eq('user_id', user.id)
+                .eq('integration_type', 'google_calendar')
+                .single();
+              
+              if (data?.active) {
+                // Check if this is a recent update (within last 30 seconds)
+                const updatedAt = new Date(data.updated_at).getTime();
+                const now = Date.now();
+                if (now - updatedAt < 30000) {
+                  handleSuccess('database_poll');
+                }
+              }
+            } catch(e) {
+              // Ignore polling errors
             }
           };
 
           window.addEventListener('message', messageHandler);
+          window.addEventListener('storage', storageHandler);
+          
+          // Start polling database every 2 seconds
+          pollDatabaseInterval = setInterval(checkDatabaseForConnection, 2000);
 
-          const checkClosed = setInterval(() => {
+          // Check if popup is closed
+          checkClosedInterval = setInterval(() => {
             if (popup.closed) {
-              clearInterval(checkClosed);
-              window.removeEventListener('message', messageHandler);
-              reject(new Error('Authentication cancelled'));
+              clearInterval(checkClosedInterval);
+              
+              // Give a grace period for other detection methods to work
+              // The popup might have closed after successful auth
+              closeGracePeriodTimeout = setTimeout(async () => {
+                if (resolved) return;
+                
+                // One final database check before giving up
+                try {
+                  const { data } = await supabase
+                    .from('integration_settings')
+                    .select('active, updated_at')
+                    .eq('user_id', user.id)
+                    .eq('integration_type', 'google_calendar')
+                    .single();
+                  
+                  if (data?.active) {
+                    const updatedAt = new Date(data.updated_at).getTime();
+                    const now = Date.now();
+                    // If updated in last 60 seconds, consider it a success
+                    if (now - updatedAt < 60000) {
+                      handleSuccess('final_database_check');
+                      return;
+                    }
+                  }
+                } catch(e) {
+                  // Ignore
+                }
+                
+                handleError('Authentication cancelled');
+              }, 3000); // 3 second grace period
             }
-          }, 1000);
+          }, 500);
+          
+          // Overall timeout after 5 minutes
+          setTimeout(() => {
+            if (!resolved) {
+              handleError('Authentication timed out');
+            }
+          }, 300000);
         });
       } else {
         // Direct redirect mode

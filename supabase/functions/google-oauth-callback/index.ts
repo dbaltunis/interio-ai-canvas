@@ -149,18 +149,145 @@ serve(async (req) => {
 
     console.log('Integration saved successfully');
 
-    // Return success page that closes the popup
+    // Return success page with multiple fallback methods to notify parent window
     return new Response(
-      `<html>
-        <body>
-          <script>
-            console.log('Sending success message to parent window');
-            if (window.opener) {
-              window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, '*');
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <title>Google Calendar Connected</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              text-align: center;
+              padding: 40px 20px;
+              background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+              min-height: 100vh;
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
             }
-            setTimeout(() => window.close(), 1000);
+            .success-icon {
+              width: 80px;
+              height: 80px;
+              background: #10b981;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 24px;
+            }
+            .success-icon svg {
+              width: 40px;
+              height: 40px;
+              color: white;
+            }
+            h2 {
+              color: #1f2937;
+              margin: 0 0 12px;
+              font-size: 24px;
+            }
+            p {
+              color: #6b7280;
+              margin: 0 0 24px;
+              font-size: 16px;
+            }
+            .close-btn {
+              background: #3b82f6;
+              color: white;
+              border: none;
+              padding: 12px 32px;
+              border-radius: 8px;
+              font-size: 16px;
+              cursor: pointer;
+              transition: background 0.2s;
+            }
+            .close-btn:hover {
+              background: #2563eb;
+            }
+            .status {
+              margin-top: 16px;
+              font-size: 12px;
+              color: #9ca3af;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="success-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2>Calendar Connected!</h2>
+          <p>Your Google Calendar is now connected successfully.</p>
+          <button class="close-btn" onclick="closeWindow()">Close Window</button>
+          <div class="status" id="status">Notifying app...</div>
+          
+          <script>
+            let notified = false;
+            
+            function updateStatus(msg) {
+              document.getElementById('status').textContent = msg;
+            }
+            
+            function closeWindow() {
+              try { window.close(); } catch(e) {}
+              // If close fails, show message
+              setTimeout(() => {
+                updateStatus('You can close this tab manually.');
+              }, 500);
+            }
+            
+            // Method 1: postMessage to parent window
+            try {
+              if (window.opener && !window.opener.closed) {
+                console.log('Sending postMessage to opener');
+                window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', timestamp: Date.now() }, '*');
+                notified = true;
+                updateStatus('App notified via postMessage');
+              }
+            } catch(e) {
+              console.log('postMessage failed:', e);
+            }
+            
+            // Method 2: localStorage event (works across same-origin tabs)
+            try {
+              const successKey = 'google_calendar_auth_success';
+              const successData = JSON.stringify({ 
+                success: true, 
+                timestamp: Date.now(),
+                userId: '${userId}'
+              });
+              localStorage.setItem(successKey, successData);
+              console.log('Set localStorage success flag');
+              updateStatus('App notified via storage event');
+              notified = true;
+              
+              // Clean up after a short delay
+              setTimeout(() => {
+                try { localStorage.removeItem(successKey); } catch(e) {}
+              }, 5000);
+            } catch(e) {
+              console.log('localStorage failed:', e);
+            }
+            
+            // Method 3: Try to focus opener and close popup after delay
+            setTimeout(() => {
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.opener.focus();
+                }
+              } catch(e) {}
+              
+              updateStatus('Connection complete! You can close this window.');
+              
+              // Auto-close after 3 seconds
+              setTimeout(() => {
+                closeWindow();
+              }, 2000);
+            }, 1500);
           </script>
-          <p>Authorization successful! This window will close automatically.</p>
         </body>
       </html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
