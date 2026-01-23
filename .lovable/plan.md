@@ -1,264 +1,161 @@
-# Bug Fix Plan: Heading Fullness and Status Updates
 
-## Summary of Issues Found
+# Critical Issues Inventory - Organized Fix Plan
 
-### Issue 1: Hardcoded "Standard Pleat" with 1x Fullness (NEW - Not Reported Yet)
-**Location**: `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` (lines 606-614)  
-**Problem**: When user selects "Standard / No Heading" (value="none"):
-1. The UI shows hardcoded "1x fullness" badge
-2. The `handleHeadingChange` function doesn't set any fullness because `headingOptions.find(h => h.id === 'none')` returns `undefined`
-3. Template's `fullness_ratio` is ignored completely
+## Issue Summary
 
-**Current behavior**:
-```typescript
-<SelectItem key="no-heading" value="none">
-  <span className="text-muted-foreground">Standard / No Heading</span>
-  <Badge variant="outline" className="text-xs">
-    1x fullness  // <-- HARDCODED!
-  </Badge>
-</SelectItem>
-```
-
-**Root cause**: The template already has a `fullness_ratio` column that should be used when no specific heading is selected, but the code ignores it.
-
-### Issue 2: HeadingStep.tsx Has Completely Hardcoded Options
-**Location**: `src/components/measurement-wizard/steps/HeadingStep.tsx`  
-**Problem**: Uses static array of 4 heading options instead of fetching from database:
-```typescript
-const headingOptions = [
-  { value: 'pinch_pleat', label: 'Pinch Pleat' },
-  { value: 'pencil_pleat', label: 'Pencil Pleat' },
-  { value: 'eyelet', label: 'Eyelet' },
-  { value: 'tab_top', label: 'Tab Top' }
-];
-```
-
-### Issue 3: Bug Status Updates Needed
-The following bugs have been fixed but not marked as resolved:
-- `5d491d42` - Window Types not visible (FIXED via TemplateStep.tsx + migration)
-- `154c7fb5` - JOB DUPLIKATE (FIXED via JobsTableView.tsx)
+Based on your client feedback and screenshots, I've identified **6 distinct issues** across different parts of the app. Let me organize them by priority and complexity.
 
 ---
 
-## Phase 1: Fix Heading Fullness When "No Heading" Selected
+## ISSUE 1: Fabric Pricing Calculation Bug (CRITICAL - Client Sadath)
 
-### File: `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
+**Problem**: The math is wrong. Client entered:
+- Fabric Cost: ₹440/m, Selling: ₹924/m (110% markup)
+- Fabric Required: 24.08m
+- Expected: Cost = ₹10,560, Selling = ₹22,176
+- Actual (from screenshot): Cost = ₹24,009.92, Sell = ₹49,012.83 (WRONG!)
 
-**Change 1**: Update the "Standard / No Heading" option display to show template's default fullness:
+**Root Cause Found**: The Quote Summary shows `₹31,149.89` for fabric when it should be `₹22,249.92` (24.08m × ₹924). The discrepancy suggests an ADDITIONAL markup is being applied on top of the already-marked-up selling price.
 
-```typescript
-// Around line 606-614, replace hardcoded "1x fullness" with dynamic value
-<SelectItem key="no-heading" value="none">
-  <div className="flex items-center justify-between w-full gap-4">
-    <span className="text-muted-foreground">Standard / No Heading</span>
-    <Badge variant="outline" className="text-xs">
-      {template?.fullness_ratio ? `${template.fullness_ratio}x fullness` : '1x fullness'}
-    </Badge>
-  </div>
-</SelectItem>
-```
+**The Fix Needed**:
+- When fabric has BOTH `cost_price` AND `selling_price` defined, the system should:
+  1. Use `cost_price` (₹440) as the base for COST calculations
+  2. Use `selling_price` (₹924) directly for QUOTE/SELLING calculations - NO additional markup
+  3. The implied markup (110%) is already "baked in" to the library price
 
-**Change 2**: Update `handleHeadingChange` to handle "none" case properly (around line 215-280):
-
-```typescript
-const handleHeadingChange = (headingId: string) => {
-  console.log('DROPDOWN FIRED: handleHeadingChange', { headingId });
-  
-  // Handle "Standard / No Heading" case explicitly
-  if (headingId === 'none') {
-    onChange('selected_heading', 'none');
-    if (onHeadingChange) {
-      onHeadingChange('none');
-    }
-    
-    // Use template's default fullness ratio when no heading selected
-    const templateFullness = template?.fullness_ratio;
-    if (typeof templateFullness === 'number' && templateFullness > 0) {
-      console.log('Setting heading_fullness from template:', templateFullness);
-      onChange('heading_fullness', templateFullness);
-      onChange('fullness_ratio', templateFullness);
-    } else {
-      // Fallback to 1 only if template has no default
-      console.log('No template fullness, using 1x');
-      onChange('heading_fullness', 1);
-      onChange('fullness_ratio', 1);
-    }
-    
-    // Clear heading price
-    if (onOptionPriceChange) {
-      onOptionPriceChange('heading', 0, 'Standard / No Heading', 'fixed');
-    }
-    return;
-  }
-  
-  // ... existing logic for actual heading selections
-};
-```
+**Files to Modify**:
+- `src/utils/pricing/calculateTreatmentPricing.ts` - Line 156 incorrectly uses cost_price for quote calculations
+- `src/components/measurements/DynamicWindowWorksheet.tsx` - Markup resolver is applying additional markup
 
 ---
 
-## Phase 2: Fix HeadingStep.tsx to Use Database Headings
+## ISSUE 2: Signup Rate Limit Error (Security Error)
 
-### File: `src/components/measurement-wizard/steps/HeadingStep.tsx`
+**Problem**: Screenshot shows "For security purposes, you can only request this after 18 seconds" when creating account.
 
-Replace hardcoded options with database-fetched headings:
+**Root Cause**: This is Supabase's built-in rate limiting on the `signUp` endpoint. It triggers when:
+- User clicks "Create Account" multiple times
+- Previous signup attempt is still processing
+- Network latency causes duplicate submissions
 
-```typescript
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Badge } from '@/components/ui/badge';
-import { useMeasurementWizardStore } from '@/stores/measurementWizardStore';
-import { useHeadingInventory } from '@/hooks/useHeadingInventory';
-import { Skeleton } from '@/components/ui/skeleton';
+**The Fix Needed**:
+- Add debounce/throttle to signup button
+- Disable button immediately on click
+- Show clearer loading state
+- Add friendly error message explaining the 60-second cooldown
 
-export const HeadingStep: React.FC = () => {
-  const { selectedHeading, selectedFinish, setHeading, setFinish } = useMeasurementWizardStore();
-  const { data: headingOptions = [], isLoading } = useHeadingInventory();
-
-  const finishOptions = [
-    { value: 'standard', label: 'Standard Finish' },
-    { value: 'hand_finished', label: 'Hand Finished' },
-    { value: 'contrast_trim', label: 'Contrast Trim' }
-  ];
-
-  // Auto-select first heading if none selected and options loaded
-  useEffect(() => {
-    if (!selectedHeading && headingOptions.length > 0) {
-      setHeading(headingOptions[0].id);
-    }
-    if (!selectedFinish && finishOptions.length > 0) {
-      setFinish(finishOptions[0].value);
-    }
-  }, [selectedHeading, selectedFinish, headingOptions, setHeading, setFinish]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader><CardTitle>Heading Type</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-8 w-full" />
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Heading Type</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={selectedHeading} onValueChange={setHeading}>
-            {/* Standard / No Heading option */}
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="none" id="none" />
-              <Label htmlFor="none" className="flex items-center gap-2">
-                Standard / No Heading
-                <Badge variant="outline" className="text-xs">1x</Badge>
-              </Label>
-            </div>
-            
-            {/* Database headings */}
-            {headingOptions.map((heading) => (
-              <div key={heading.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={heading.id} id={heading.id} />
-                <Label htmlFor={heading.id} className="flex items-center gap-2">
-                  {heading.name}
-                  {heading.fullness_ratio && (
-                    <Badge variant="outline" className="text-xs">
-                      {heading.fullness_ratio}x
-                    </Badge>
-                  )}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Finish Options</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={selectedFinish} onValueChange={setFinish}>
-            {finishOptions.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={option.value} />
-                <Label htmlFor={option.value}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-```
+**Files to Modify**:
+- `src/components/auth/AuthPage.tsx` - Add rate limit handling and user-friendly messaging
 
 ---
 
-## Phase 3: Update Bug Statuses in Database
+## ISSUE 3: Vertical Blinds Pricing Inconsistency (Australasia Team)
 
-Execute SQL to mark fixed bugs as resolved:
+**Problem**: "Qube (Budget) fabric works, but not others" - some vertical blind fabrics price correctly, others don't.
 
-```sql
-UPDATE bug_reports 
-SET status = 'resolved', updated_at = now()
-WHERE id IN (
-  '5d491d42-0bf9-4478-8d87-dd6eba97c877',  -- Window Types not visible (FIXED)
-  '154c7fb5-2f2c-4c0c-ac45-e4ac0f12e61f'   -- JOB DUPLIKATE (FIXED)
-);
-```
+**Root Cause**: The subcategory confusion between "Vertical Slats" and "Vertical Fabrics" means some materials aren't being recognized correctly by the pricing engine.
 
----
+**The Fix Needed**:
+- Normalize subcategory handling for vertical blinds
+- Ensure both "Vertical Slats" and "Vertical Fabrics" map to the same pricing logic
+- Fix the disappearing material issue when subcategory is changed
 
-## Phase 4: Create New Bug Report for Heading Issue
-
-Since this is a newly discovered issue, create a bug report entry:
-
-```sql
-INSERT INTO bug_reports (
-  id, title, description, status, created_at
-) VALUES (
-  gen_random_uuid(),
-  'Heading Type shows hardcoded 1x fullness instead of template default',
-  'When selecting "Standard / No Heading" in the curtain options:
-1. The UI shows hardcoded "1x fullness" instead of template default
-2. The template fullness_ratio column is ignored
-3. HeadingStep.tsx uses hardcoded heading options instead of database
-
-Files affected:
-- src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx
-- src/components/measurement-wizard/steps/HeadingStep.tsx',
-  'resolved',  -- Mark as resolved since we are fixing it
-  now()
-);
-```
+**Files to Investigate**:
+- Inventory subcategory mapping logic
+- Vertical blinds template pricing lookup
 
 ---
 
-## Summary of Changes
+## ISSUE 4: Material Vendor Not Updating
 
-| File | Change |
-|------|--------|
-| `DynamicCurtainOptions.tsx` | Handle "none" heading to use template's `fullness_ratio` |
-| `DynamicCurtainOptions.tsx` | Display template's fullness in "No Heading" badge |
-| `HeadingStep.tsx` | Replace hardcoded headings with `useHeadingInventory()` hook |
-| Database | Update bug statuses for fixed issues |
+**Problem**: Setting Vendor to "Norman" and clicking Update leaves Supplier showing "-"
+
+**Root Cause**: The UI saves `vendor_id` (relationship) but displays `supplier` (legacy text field). These are not synced.
+
+**The Fix Needed**:
+- When `vendor_id` is set, also update the legacy `supplier` field with vendor name
+- OR update display logic to prioritize `vendor.name` over `supplier`
+
+**Files to Modify**:
+- Inventory update mutation to sync both fields
 
 ---
 
-## Critical Files for Implementation
+## ISSUE 5: Product Rules Dropdown Shows ALL Options
 
-- `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` - Main curtain options component with heading selection logic
-- `src/components/measurement-wizard/steps/HeadingStep.tsx` - Wizard step with hardcoded heading options to replace
-- `src/hooks/useHeadingInventory.ts` - Existing hook to fetch heading items from database
-- Database `bug_reports` table - Update status of fixed bugs
+**Problem**: When setting up a rule to hide roller blind control length when motor is selected, ALL product control lengths are listed instead of just the ones for that specific template.
+
+**Root Cause**: The rules editor fetches ALL treatment options from the database without filtering by template.
+
+**The Fix Needed**:
+- Filter the options dropdown in rules editor to only show options that are enabled/linked to the current template
+- Use `template_option_settings` to filter the list
+
+**Files to Modify**:
+- `src/components/settings/tabs/products/TemplateOptionsManager.tsx` - Rules dropdown needs template-specific filtering
+
+---
+
+## ISSUE 6: Shared Work Order Doesn't Work When Logged In
+
+**Problem**: "Link does not work when opened in a window where I have an active InterioApp session, but does work in incognito window"
+
+**Root Cause**: When logged in, the RLS policies check the authenticated user's permissions instead of allowing anonymous access via the share token. The public route is conflicting with authenticated session.
+
+**The Fix Needed**:
+- PublicWorkOrder page should explicitly query as anonymous/bypass auth context
+- OR use a service role edge function to fetch shared data
+- Clear auth context when accessing public share URLs
+
+**Files to Modify**:
+- `src/pages/PublicWorkOrder.tsx` - Handle auth session conflict
+- `src/hooks/useWorkOrderSharing.ts` - Fetch functions need to work with or without auth
+
+---
+
+## Recommended Priority Order
+
+| Priority | Issue | Severity | Client Impact |
+|----------|-------|----------|---------------|
+| 1 | Fabric Pricing Math | CRITICAL | Quotes are wrong by 40%+ |
+| 2 | Shared Work Order Auth | HIGH | Feature unusable for logged-in users |
+| 3 | Signup Rate Limit | MEDIUM | Poor UX for new signups |
+| 4 | Vertical Blinds Pricing | MEDIUM | Some products won't price |
+| 5 | Product Rules Dropdown | LOW | Setup inconvenience |
+| 6 | Vendor Display | LOW | Cosmetic data sync issue |
+
+---
+
+## Technical Notes
+
+### Issue 1 Math Trace (for verification)
+
+Client's fabric library:
+- Cost Price: ₹440/meter
+- Selling Price: ₹924/meter
+- Implied Markup: (924-440)/440 = **110%**
+
+Expected for 24.08m:
+- Cost: 24.08 × 440 = **₹10,595.20**
+- Selling: 24.08 × 924 = **₹22,249.92**
+
+Screenshot shows:
+- Cost: ₹24,009.92 (includes manufacturing ₹2,288)
+- Selling: ₹49,012.83
+
+The fabric portion alone shows ₹31,149.89 selling - this is approximately 24.08 × 924 × 1.40 = ₹31,149.89
+
+**Confirmed**: An extra 40% material markup is being applied on top of the already-marked-up selling price!
+
+---
+
+## Next Steps
+
+I recommend we tackle **Issue 1 (Fabric Pricing)** first as it's causing incorrect quotes for clients. Once approved, I will:
+
+1. Fix the pricing logic to use `selling_price` directly when it exists (no additional markup)
+2. Ensure `cost_price` is used for cost calculations only
+3. Add validation to prevent double-markup scenarios
+4. Test with the exact values from Sadath's example to verify correct output
+
+Should I proceed with Issue 1 first?
