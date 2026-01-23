@@ -1,180 +1,194 @@
 
-# Update "What's New" Popup and Documentation
+# Fix: Email Footer and Signature Ignore Disabled Settings
 
-## Overview
-The "What's New" popup is stuck at v2.3.1 (December 2025) while the app is now at v2.3.16. This plan updates both the version tracking system and adds missing documentation for new features.
+## Problem Summary
+When you disable both "Email Footer" and "Auto-generate signature" in Settings, emails still include both. The settings are saved correctly to the database, but the email sending logic ignores them.
 
-## Part 1: Fix Version Badge
+## Root Causes Found
 
-### Issue
-The `VersionBadge.tsx` has a hardcoded version string "v2.3.1" instead of using the centralized version constant.
+| Issue | Location | Problem |
+|-------|----------|---------|
+| 1 | Edge function (`send-email`) | Doesn't fetch `use_auto_signature` or `show_footer` from database |
+| 2 | Edge function | Always adds signature if any signature text exists |
+| 3 | Edge function | Has no footer logic at all |
+| 4 | Hook (`useEnhancedEmailSettings`) | Ignores `use_auto_signature` flag and auto-generates anyway |
 
-### Solution
-Update `VersionBadge.tsx` to import and use `APP_VERSION` from `src/constants/version.ts`:
+## Solution
 
-| File | Change |
-|------|--------|
-| `src/components/version/VersionBadge.tsx` | Import `APP_VERSION` and use `v${APP_VERSION}` instead of hardcoded string |
+### Fix 1: Update Edge Function Query
 
----
+Add missing columns to the email settings query:
 
-## Part 2: Update Database Version Record
+```sql
+-- Before (line 383)
+.select("from_email, from_name, reply_to_email, signature, active")
 
-### Issue
-The `app_versions` table has outdated content for v2.3.1 and needs a new v2.3.16 record.
-
-### Solution
-Create a database migration to insert the new version with comprehensive release notes:
-
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/[timestamp]_add_version_2_3_16.sql` | Insert new version record |
-
-### New Version Content (v2.3.16)
-
-**Highlights:**
-- Secure Work Order Sharing with public links
-- Item-level selection for share links
-- Improved user authentication experience
-- Enhanced security with RLS policy fixes
-
-**New Features:**
-
-| Feature | Description |
-|---------|-------------|
-| Secure Work Order Sharing | Share work orders with workrooms via secure public links. Control exactly which items are visible and track who views your documents. |
-| Item-Level Share Selection | Choose specific rooms and windows to include in shared links instead of sharing everything. Perfect for sending partial orders to different suppliers. |
-| Orientation Selection | Choose between Portrait or Landscape layout when creating share links to match your preferred viewing format. |
-| Real-Time Status Updates | Shared work order viewers see live status changes as items move through production (Pending → Ready → Installed). |
-| Friendly Rate Limit Messages | Instead of cryptic errors, signup/login now shows a helpful countdown timer when rate limited. |
-
-**Improvements:**
-
-| Improvement | Description |
-|-------------|-------------|
-| Fabric Pricing Accuracy | Cost prices with implied markup now calculate correctly throughout the entire pricing chain. |
-| Authenticated Share Access | Logged-in users can now view shared work orders without authentication conflicts. |
-| Session Persistence | Removed 30-minute session timeout - users stay logged in via automatic token refresh. |
-| Multi-Account Isolation | Enhanced cache keys ensure data never leaks between accounts on shared devices. |
-
-**Security:**
-
-- Fixed infinite recursion in RLS policies using SECURITY DEFINER functions
-- Enhanced work order share link policies for both anonymous and authenticated access
-- Comprehensive data isolation between tenant accounts
-
----
-
-## Part 3: Update Documentation Page
-
-### Issue
-The Documentation page (`src/pages/Documentation.tsx`) is missing sections for:
-- Work Order Sharing feature
-- Real-time collaboration updates
-- Share link management
-
-### Solution
-Add new subsections to the "Jobs & Projects" section covering work order sharing:
-
-| Section | New Subsection | Content |
-|---------|----------------|---------|
-| Jobs & Projects | "Sharing Work Orders" | Complete guide to creating, managing, and using share links |
-
-### New Documentation Content
-
-**"Sharing Work Orders" Subsection:**
-
-```text
-Share work orders securely with your workroom, installers, or suppliers via unique 
-public links.
-
-Creating a Share Link:
-1. Open any project and navigate to the Workshop tab
-2. Click the 'Share' button in the header
-3. Configure your share link:
-   - Name (optional): Label like "For Curtain Maker"
-   - Document Type: Work Order, Installation Sheet, or Fitting Sheet
-   - Orientation: Portrait (tall) or Landscape (wide)
-   - Items: Select specific rooms/windows or share all
-
-4. Click 'Create Link' to generate the secure URL
-5. Copy and send to your workroom via email or message
-
-Item-Level Selection:
-• Expand room groups to see individual windows
-• Check/uncheck specific items to include
-• Perfect for sending partial orders to different suppliers
-
-Sharing Features:
-• Secure token-based URLs (no login required for viewers)
-• Real-time status updates visible to viewers
-• Portrait or Landscape page layouts
-• Optional PIN protection (coming soon)
-• Track viewer activity
-
-Managing Share Links:
-• View all active links in the Share panel
-• Deactivate links when no longer needed
-• Expired links automatically stop working
-• Re-sync data before sharing to ensure accuracy
-
-Best Practices:
-• Use descriptive names for each link
-• Re-sync project data before creating links
-• Deactivate links once the job is complete
-• Use item filters to send only relevant information
+-- After  
+.select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
 ```
 
----
+### Fix 2: Respect `use_auto_signature` in Edge Function
+
+Only add signature when `use_auto_signature` is false AND a custom signature exists:
+
+```typescript
+// Before (lines 488-502)
+if (emailSettings?.signature) {
+  // Always adds signature
+}
+
+// After
+const shouldAddSignature = emailSettings && 
+  emailSettings.use_auto_signature === false && 
+  emailSettings.signature;
+
+if (shouldAddSignature) {
+  // Only add custom signature when explicitly configured
+}
+```
+
+### Fix 3: Update `useEnhancedEmailSettings` Hook
+
+Check the `use_auto_signature` setting before returning a signature:
+
+```typescript
+// Before
+const getEmailSignature = () => {
+  if (emailSettings?.signature) {
+    return emailSettings.signature;
+  }
+  // Auto-generates from business settings...
+};
+
+// After
+const getEmailSignature = () => {
+  // If auto-signature is disabled AND user has a custom signature, use it
+  if (emailSettings?.use_auto_signature === false) {
+    return emailSettings.signature || '';
+  }
+  
+  // If auto-signature is enabled (or default), generate from business settings
+  if (businessSettings) {
+    // Generate auto signature...
+  }
+  
+  return '\n\nBest regards,\nYour Company';
+};
+```
+
+### Fix 4: Add `shouldShowFooter` Helper
+
+Add a function to check footer visibility:
+
+```typescript
+const shouldShowFooter = () => {
+  // Default to true if not set, otherwise respect the setting
+  return emailSettings?.show_footer !== false;
+};
+```
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/version/VersionBadge.tsx` | Import and use `APP_VERSION` constant |
-| `supabase/migrations/[timestamp]_add_version_2_3_16.sql` | Insert new version record with release notes |
-| `src/pages/Documentation.tsx` | Add "Sharing Work Orders" subsection to Jobs section |
-
----
+| `supabase/functions/send-email/index.ts` | Fetch and respect `use_auto_signature` and `show_footer` settings |
+| `src/hooks/useEnhancedEmailSettings.ts` | Check `use_auto_signature` flag before generating signature; add `shouldShowFooter` helper |
+| `src/components/email/EmailTemplateWithBusiness.tsx` | Use `shouldShowFooter()` to conditionally render footer |
 
 ## Technical Details
 
-### Version Badge Fix
+### Edge Function Changes (send-email/index.ts)
+
+**Line 383** - Update SELECT query:
 ```typescript
-// Before
-const version = "v2.3.1";
-
-// After  
-import { APP_VERSION } from "@/constants/version";
-const version = `v${APP_VERSION}`;
+.select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
 ```
 
-### Database Migration Structure
-```sql
--- Set current version to false
-UPDATE app_versions SET is_current = false WHERE is_current = true;
+**Lines 488-502** - Add conditional check:
+```typescript
+// Only add signature if:
+// 1. use_auto_signature is false (user wants custom)
+// 2. AND a signature is provided
+let contentWithSignature = finalContent;
+const shouldAddCustomSignature = emailSettings && 
+  emailSettings.use_auto_signature === false && 
+  emailSettings.signature;
 
--- Insert new version
-INSERT INTO app_versions (
-  version, version_type, release_date, is_current, is_published, release_notes
-) VALUES (
-  'v2.3.16', 'minor', now(), true, true,
-  '{
-    "summary": "Major update with secure work order sharing...",
-    "highlights": [...],
-    "features": [...],
-    "improvements": [...],
-    "security": [...]
-  }'::jsonb
-);
+if (shouldAddCustomSignature) {
+  const formattedSignature = `
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; font-family: Arial, sans-serif;">
+      ${emailSettings.signature.replace(/\n/g, '<br>')}
+    </div>
+  `;
+  // ... append signature
+}
 ```
 
----
+### Hook Changes (useEnhancedEmailSettings.ts)
 
-## Expected Results
+```typescript
+const getEmailSignature = () => {
+  // If auto-signature is explicitly disabled, return empty or custom signature
+  if (emailSettings?.use_auto_signature === false) {
+    return emailSettings.signature || '';
+  }
 
-After implementation:
-1. Version badge shows **v2.3.16** (synced with constants)
-2. "What's New" popup displays all recent features with January 2026 date
-3. Documentation page includes complete Work Order Sharing guide
-4. Users can discover new features through the improved changelog
+  // Auto-signature is enabled (default) - generate from business settings
+  if (businessSettings) {
+    let signature = `\n\nBest regards,\n`;
+    if (businessSettings.company_name) {
+      signature += `${businessSettings.company_name}\n`;
+    }
+    // ... rest of auto-generation
+    return signature;
+  }
+
+  return '\n\nBest regards,\nYour Company';
+};
+
+const shouldShowFooter = () => {
+  return emailSettings?.show_footer !== false;
+};
+
+return {
+  // ... existing returns
+  shouldShowFooter,
+};
+```
+
+### Component Changes (EmailTemplateWithBusiness.tsx)
+
+```typescript
+const { getEmailSignature, getFromName, shouldShowFooter } = useEnhancedEmailSettings();
+
+// In render:
+{/* Email Signature - only show if there's content */}
+{signature && (
+  <div className="mt-6 pt-4 border-t">
+    <SafeHTML ... />
+  </div>
+)}
+
+{/* Business Footer - respect the setting */}
+{shouldShowFooter() && businessSettings && (
+  <div className="border-t p-4 ...">
+    ...
+  </div>
+)}
+```
+
+## Expected Result
+
+After this fix:
+- **Footer disabled** → No footer in sent emails
+- **Auto-signature disabled** → No signature in sent emails
+- **Both enabled** (default) → Footer and auto-generated signature appear
+- **Custom signature** → Only custom signature appears, no auto-generation
+
+## Testing Steps
+
+1. Go to Settings → Email tab
+2. Turn OFF both "Auto-generate signature" and "Email Footer" toggles
+3. Save changes
+4. Send a test email
+5. Verify: No footer and no signature in the received email
