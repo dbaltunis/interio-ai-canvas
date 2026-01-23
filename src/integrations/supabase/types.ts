@@ -10505,6 +10505,10 @@ export type Database = {
       }
       cleanup_duplicate_invitations: { Args: never; Returns: undefined }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
+      client_has_active_share_link: {
+        Args: { client_uuid: string }
+        Returns: boolean
+      }
       copy_job_statuses_to_team_member: {
         Args: { owner_id: string; team_member_id: string }
         Returns: Json
@@ -10675,6 +10679,10 @@ export type Database = {
         Args: { category_input: string }
         Returns: string
       }
+      project_has_active_share_link: {
+        Args: { project_uuid: string }
+        Returns: boolean
+      }
       refresh_client_stats: { Args: never; Returns: undefined }
       repair_broken_invitation_account: {
         Args: {
@@ -10774,6 +10782,10 @@ export type Database = {
           new_role: string
           target_user_id: string
         }
+        Returns: boolean
+      }
+      workshop_item_has_active_share_link: {
+        Args: { p_project_id: string }
         Returns: boolean
       }
     }
