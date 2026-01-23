@@ -105,8 +105,8 @@ export const FabricSelectionSection = ({
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
             {isLoading ? (
-              <SelectItem value="loading" disabled>
-                Loading fabrics...
+              <SelectItem value="loading" disabled className="animate-pulse">
+                <div className="h-4 w-24 bg-muted rounded animate-shimmer" />
               </SelectItem>
             ) : fabricItems.length > 0 ? (
               fabricItems.map((fabric) => (

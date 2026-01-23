@@ -200,8 +200,8 @@ export const HeadingOptionsSection = ({
           </SelectTrigger>
           <SelectContent className="container-level-1 border-2 border-border z-50">
             {isLoading ? (
-              <SelectItem value="loading" disabled className="text-card-foreground">
-                Loading heading options...
+              <SelectItem value="loading" disabled className="text-card-foreground animate-pulse">
+                <div className="h-4 w-32 bg-muted rounded animate-shimmer" />
               </SelectItem>
             ) : (
               <>

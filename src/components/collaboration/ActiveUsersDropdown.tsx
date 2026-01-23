@@ -161,8 +161,16 @@ export const ActiveUsersDropdown = () => {
         )}
 
         {isLoading && (
-          <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-            Loading team members...
+          <div className="px-2 py-1 space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center gap-2 p-2">
+                <div className="h-8 w-8 rounded-full bg-muted animate-shimmer" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-4 w-24 bg-muted animate-shimmer rounded" />
+                  <div className="h-3 w-16 bg-muted animate-shimmer rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </DropdownMenuContent>

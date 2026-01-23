@@ -501,7 +501,16 @@ export function WindowSummaryCard({
       </CardHeader>
 
       <CardContent>
-        {isLoading && <div>Loading summary...</div>}
+        {isLoading && (
+          <div className="space-y-3 animate-fade-in">
+            <div className="h-24 w-full bg-muted rounded-lg animate-shimmer" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-12 bg-muted rounded animate-shimmer" />
+              <div className="h-12 bg-muted rounded animate-shimmer" />
+            </div>
+            <div className="h-8 w-32 bg-muted rounded animate-shimmer" />
+          </div>
+        )}
         
         {error && (
           <div className="text-destructive text-sm">

@@ -175,11 +175,20 @@ export const ShopifyStatusManagementTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {(isLoading || isInitializing) && (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center gap-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                <span className="font-medium">Loading statuses...</span>
-              </div>
+            <div className="space-y-4 animate-fade-in">
+              {[...Array(2)].map((_, i) => (
+                <Card key={i} className="border-2">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-muted animate-shimmer" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-32 bg-muted animate-shimmer rounded" />
+                        <div className="h-4 w-48 bg-muted animate-shimmer rounded" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
           
