@@ -1,19 +1,17 @@
-Build timestamp: 2025-12-10T12:00:00Z
-Version: 2.3.7
+Build timestamp: 2026-01-23T15:45:00Z
+Version: 2.3.16
 Changes:
-- CRITICAL FIX: Removed 30-minute session timeout - users stay logged in via Supabase auto-refresh
-- CRITICAL FIX: Added userId to ALL inventory cache keys for multi-account isolation
-- CRITICAL FIX: Clear ALL cached data on logout to prevent cross-account data leakage
-- CRITICAL FIX: Invalidate all queries on sign-in to force fresh data fetch
-- Previous: Heading options now available for all fabric treatments (curtains, sheers, romans)
-- Previous: Fullness dropdown now correctly updates calculations
-- Previous: User's fullness selection saved instead of template default
+- CRITICAL FIX: Fixed infinite recursion in RLS policies using SECURITY DEFINER functions
+- FIX: Fabric pricing now correctly uses cost_price with impliedMarkup flag
+- FIX: Shared work order links now work for authenticated users (updated RLS policies)
+- FIX: Signup rate limit errors now show user-friendly countdown timer
+- Previous: Removed 30-minute session timeout - users stay logged in via Supabase auto-refresh
+- Previous: Added userId to ALL inventory cache keys for multi-account isolation
+- Previous: Clear ALL cached data on logout to prevent cross-account data leakage
+- Previous: Invalidate all queries on sign-in to force fresh data fetch
+- Previous: Heading options now available for all fabric treatments
 - Custom document template creation with drag-and-drop blocks
 - Hardware category for inventory management
 - Products & Services can be added to projects and quotes
-- CSV import improvements with flexible column ordering
-- Invoice toggle buttons fixed for all template types
-- Number sequences automatically created for new accounts
-- Multi-account isolation for SaaS deployment
 - RLS security hardening with 60+ policy fixes
 - Performance and stability improvements
