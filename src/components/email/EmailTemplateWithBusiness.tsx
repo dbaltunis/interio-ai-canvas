@@ -25,7 +25,7 @@ export const EmailTemplateWithBusiness = ({
   quoteData,
 }: EmailTemplateWithBusinessProps) => {
   const { data: businessSettings } = useBusinessSettings();
-  const { getEmailSignature, getFromName } = useEnhancedEmailSettings();
+  const { getEmailSignature, getFromName, shouldShowFooter } = useEnhancedEmailSettings();
 
   const processTemplate = (text: string) => {
     if (!text) return '';
@@ -64,6 +64,7 @@ export const EmailTemplateWithBusiness = ({
   const processedSubject = processTemplate(subject);
   const processedContent = processTemplate(content);
   const signature = getEmailSignature();
+  const showFooter = shouldShowFooter();
 
   return (
     <div className="email-template bg-card border rounded-lg shadow-sm">
@@ -96,17 +97,19 @@ export const EmailTemplateWithBusiness = ({
           html={processedContent.replace(/\n/g, '<br/>')}
         />
         
-        {/* Email Signature */}
-        <div className="mt-6 pt-4 border-t">
-          <SafeHTML 
-            className="text-muted-foreground whitespace-pre-line"
-            html={signature.replace(/\n/g, '<br/>')}
-          />
-        </div>
+        {/* Email Signature - only show if there's content */}
+        {signature && (
+          <div className="mt-6 pt-4 border-t">
+            <SafeHTML 
+              className="text-muted-foreground whitespace-pre-line"
+              html={signature.replace(/\n/g, '<br/>')}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Business Footer */}
-      {businessSettings && (
+      {/* Business Footer - respect the show_footer setting */}
+      {showFooter && businessSettings && (
         <div className="border-t p-4 bg-muted/30 text-center text-sm text-muted-foreground">
           {businessSettings.company_name && (
             <p className="font-medium">{businessSettings.company_name}</p>

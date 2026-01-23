@@ -380,7 +380,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (user_id) {
       const { data: settings } = await supabase
         .from("email_settings")
-        .select("from_email, from_name, reply_to_email, signature, active")
+        .select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
         .eq("user_id", user_id)
         .eq("active", true)
         .single();
@@ -485,9 +485,15 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Attachment details:", attachments.map(a => ({ filename: a.filename, type: a.type, size: a.content.length })));
     }
 
-    // Add signature to content if available
+    // Add signature to content only if:
+    // 1. use_auto_signature is explicitly false (user wants custom signature)
+    // 2. AND a custom signature is provided
     let contentWithSignature = finalContent;
-    if (emailSettings?.signature) {
+    const shouldAddCustomSignature = emailSettings && 
+      emailSettings.use_auto_signature === false && 
+      emailSettings.signature;
+
+    if (shouldAddCustomSignature) {
       const formattedSignature = `
         <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; font-family: Arial, sans-serif;">
           ${emailSettings.signature.replace(/\n/g, '<br>')}
@@ -499,6 +505,9 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         contentWithSignature += formattedSignature;
       }
+      console.log("Added custom signature to email");
+    } else {
+      console.log("Signature skipped - use_auto_signature:", emailSettings?.use_auto_signature, "has signature:", !!emailSettings?.signature);
     }
 
     // Create attachment metadata for storage
