@@ -1,194 +1,248 @@
 
-# Fix: Email Footer and Signature Ignore Disabled Settings
 
-## Problem Summary
-When you disable both "Email Footer" and "Auto-generate signature" in Settings, emails still include both. The settings are saved correctly to the database, but the email sending logic ignores them.
+# Smooth Loading Experience Overhaul
 
-## Root Causes Found
+## The Problem
 
-| Issue | Location | Problem |
-|-------|----------|---------|
-| 1 | Edge function (`send-email`) | Doesn't fetch `use_auto_signature` or `show_footer` from database |
-| 2 | Edge function | Always adds signature if any signature text exists |
-| 3 | Edge function | Has no footer logic at all |
-| 4 | Hook (`useEnhancedEmailSettings`) | Ignores `use_auto_signature` flag and auto-generates anyway |
+Your app currently has what UX designers call "layout thrashing" and "loading state cascade" - the visual bouncing, freezing, and popping that makes the app feel unpolished. Here's what's happening:
 
-## Solution
-
-### Fix 1: Update Edge Function Query
-
-Add missing columns to the email settings query:
-
-```sql
--- Before (line 383)
-.select("from_email, from_name, reply_to_email, signature, active")
-
--- After  
-.select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
+```text
+User clicks Calendar tab:
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Skeleton appears (48px rows)                                │
+│  2. Component loads → shows SPINNER (different layout)          │
+│  3. Permission check completes → calendar renders (32px rows)   │
+│  4. Page jumps due to size mismatch                             │
+│  5. Scroll animation to 7 AM starts (visible movement)          │
+│  6. Events "pop in" one by one as data arrives                  │
+│  7. Success toast appears                                        │
+└─────────────────────────────────────────────────────────────────┘
+Total: 4-6 visual state changes the user sees
 ```
 
-### Fix 2: Respect `use_auto_signature` in Edge Function
+Modern SaaS apps show **one** smooth transition because they:
+1. Match skeleton dimensions exactly to final content
+2. Never show multiple loading indicators sequentially  
+3. Pre-position content (scroll before render)
+4. Fade in data gracefully instead of "popping"
 
-Only add signature when `use_auto_signature` is false AND a custom signature exists:
+---
+
+## Solution Overview
+
+We'll implement 5 key improvements:
+
+| Fix | Impact | Description |
+|-----|--------|-------------|
+| **1. Unified Loading States** | High | Remove duplicate spinners - skeleton OR component loading, never both |
+| **2. Dimension-Matched Skeletons** | High | Fix 48px → 32px mismatch in CalendarSkeleton |
+| **3. Instant Scroll Positioning** | Medium | Pre-scroll to 7 AM without visible animation |
+| **4. Optimistic Rendering** | High | Show UI shell immediately, populate data gracefully |
+| **5. Coordinated Data Fetching** | Medium | Batch related queries to reduce sequential loading |
+
+---
+
+## Part 1: Fix CalendarSkeleton Dimensions
+
+### Problem
+`CalendarSkeleton` uses 48px row heights, but `WeeklyCalendarView` uses 32px - causing a jarring "shrink" when real content appears.
+
+### Solution
+Update skeleton to match the actual calendar dimensions.
+
+**File: `src/components/calendar/skeleton/CalendarSkeleton.tsx`**
+
+| Line | Before | After |
+|------|--------|-------|
+| 58 | `className="h-[48px]..."` | `className="h-[32px]..."` |
+| 72 | `top: ${index * 48}px` | `top: ${index * 32}px` |
+| 78 | `min-h-[1152px]` (48×24) | `min-h-[768px]` (32×24) |
+
+---
+
+## Part 2: Remove Double Loading States
+
+### Problem
+The calendar shows both a `Suspense` skeleton AND an internal permission-check spinner - user sees loading twice.
+
+### Solution
+Trust the skeleton fallback and don't show a second spinner inside components.
+
+**File: `src/components/calendar/CalendarView.tsx`**
+
+Replace the permission loading spinner (lines 193-202):
 
 ```typescript
-// Before (lines 488-502)
-if (emailSettings?.signature) {
-  // Always adds signature
+// Before: Shows fullscreen spinner while checking permissions
+if (canViewCalendar === undefined) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        <div className="h-5 w-5 animate-spin..." />
+        <div>Loading calendar...</div>
+      </div>
+    </div>
+  );
 }
 
-// After
-const shouldAddSignature = emailSettings && 
-  emailSettings.use_auto_signature === false && 
-  emailSettings.signature;
-
-if (shouldAddSignature) {
-  // Only add custom signature when explicitly configured
+// After: Return null to let Suspense skeleton continue showing
+if (canViewCalendar === undefined) {
+  return null; // Suspense fallback (CalendarSkeleton) handles this
 }
 ```
 
-### Fix 3: Update `useEnhancedEmailSettings` Hook
+Apply similar pattern to other components with internal loading states.
 
-Check the `use_auto_signature` setting before returning a signature:
+---
 
-```typescript
-// Before
-const getEmailSignature = () => {
-  if (emailSettings?.signature) {
-    return emailSettings.signature;
-  }
-  // Auto-generates from business settings...
-};
+## Part 3: Instant Scroll Positioning
 
-// After
-const getEmailSignature = () => {
-  // If auto-signature is disabled AND user has a custom signature, use it
-  if (emailSettings?.use_auto_signature === false) {
-    return emailSettings.signature || '';
-  }
-  
-  // If auto-signature is enabled (or default), generate from business settings
-  if (businessSettings) {
-    // Generate auto signature...
-  }
-  
-  return '\n\nBest regards,\nYour Company';
-};
-```
+### Problem
+Calendar scrolls to 7 AM with `behavior: 'smooth'` AFTER rendering - user sees content start at midnight then slide down.
 
-### Fix 4: Add `shouldShowFooter` Helper
+### Solution
+Use instant scroll before paint, or set initial scroll position via CSS.
 
-Add a function to check footer visibility:
+**File: `src/components/calendar/WeeklyCalendarView.tsx`**
 
 ```typescript
-const shouldShowFooter = () => {
-  // Default to true if not set, otherwise respect the setting
-  return emailSettings?.show_footer !== false;
-};
+// Before (line 76-79):
+scrollContainerRef.current.scrollTo({
+  top: scrollPosition,
+  behavior: 'smooth'  // Visible animation
+});
+
+// After:
+scrollContainerRef.current.scrollTo({
+  top: scrollPosition,
+  behavior: 'instant'  // No visible movement
+});
 ```
+
+Better approach - use `useLayoutEffect` instead of `useEffect`:
+```typescript
+// Replace useEffect with useLayoutEffect for synchronous scroll
+useLayoutEffect(() => {
+  if (scrollContainerRef.current) {
+    const slotHeight = 32;
+    const sevenAMSlotIndex = 14;
+    scrollContainerRef.current.scrollTop = sevenAMSlotIndex * slotHeight;
+  }
+}, []);
+```
+
+---
+
+## Part 4: Graceful Data Population
+
+### Problem
+Events "pop in" one by one as different hooks finish loading (appointments, bookings, scheduler slots, tasks).
+
+### Solution
+Add `animate-fade-in` to event items and coordinate loading states.
+
+**File: `src/components/calendar/WeeklyCalendarView.tsx`**
+
+Add a unified loading check and graceful rendering:
+
+```typescript
+// Check if core data is still loading
+const isDataLoading = !appointments || bookingsLoading;
+
+// In the render, add fade-in animation to events
+<div 
+  className={cn(
+    "event-item",
+    !isDataLoading && "animate-fade-in"
+  )}
+  style={{ animationDelay: `${index * 50}ms` }}
+>
+  {/* event content */}
+</div>
+```
+
+---
+
+## Part 5: Optimize Permission Checks
+
+### Problem
+Multiple components independently check permissions, causing sequential blocking renders.
+
+### Solution
+Pre-fetch permissions at the app level and pass them down.
+
+**File: `src/pages/Index.tsx`**
+
+Add permission pre-fetching to the existing permission queries:
+
+```typescript
+// Already exists - just ensure it's fetched early
+const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+
+// Don't render tab content until permissions are ready
+if (permissionsLoading) {
+  return <AppLoadingSkeleton />; // Show one consistent skeleton
+}
+```
+
+---
+
+## Part 6: Apply Pattern Across All Pages
+
+Apply the same fixes to other pages experiencing the same issues:
+
+| Page | File | Fixes Needed |
+|------|------|--------------|
+| Jobs | `JobsPage.tsx` | Remove internal loading spinners, trust Suspense |
+| Clients | `ClientManagement.tsx` | Same pattern |
+| Library | `LibraryPage.tsx` | Same pattern |
+| Emails | `EmailManagement.tsx` | Same pattern |
+
+---
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/send-email/index.ts` | Fetch and respect `use_auto_signature` and `show_footer` settings |
-| `src/hooks/useEnhancedEmailSettings.ts` | Check `use_auto_signature` flag before generating signature; add `shouldShowFooter` helper |
-| `src/components/email/EmailTemplateWithBusiness.tsx` | Use `shouldShowFooter()` to conditionally render footer |
+| `src/components/calendar/skeleton/CalendarSkeleton.tsx` | Fix row heights from 48px → 32px |
+| `src/components/calendar/CalendarView.tsx` | Remove internal permission spinner |
+| `src/components/calendar/WeeklyCalendarView.tsx` | Use `useLayoutEffect` + instant scroll + fade-in animations |
+| `src/pages/Index.tsx` | Add unified permission loading state |
+| `src/components/jobs/JobsPage.tsx` | Remove internal loading spinners |
+| `src/components/common/PermissionGuard.tsx` | Return skeleton instead of null |
 
-## Technical Details
+---
 
-### Edge Function Changes (send-email/index.ts)
+## Expected Results
 
-**Line 383** - Update SELECT query:
-```typescript
-.select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
+After implementation:
+
+```text
+User clicks Calendar tab:
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Skeleton appears (32px rows, matching final layout)         │
+│  2. Calendar renders in place (no size change)                  │
+│  3. Already scrolled to 7 AM (no visible movement)              │
+│  4. Events fade in smoothly together                            │
+└─────────────────────────────────────────────────────────────────┘
+Total: 2 graceful visual states
 ```
 
-**Lines 488-502** - Add conditional check:
-```typescript
-// Only add signature if:
-// 1. use_auto_signature is false (user wants custom)
-// 2. AND a signature is provided
-let contentWithSignature = finalContent;
-const shouldAddCustomSignature = emailSettings && 
-  emailSettings.use_auto_signature === false && 
-  emailSettings.signature;
+Benefits:
+- No "bouncing" or layout shifts
+- No sequential loading indicators
+- Smooth, professional feel matching modern SaaS apps
+- Faster perceived performance (same actual speed, better UX)
 
-if (shouldAddCustomSignature) {
-  const formattedSignature = `
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; font-family: Arial, sans-serif;">
-      ${emailSettings.signature.replace(/\n/g, '<br>')}
-    </div>
-  `;
-  // ... append signature
-}
-```
+---
 
-### Hook Changes (useEnhancedEmailSettings.ts)
+## Technical Notes
 
-```typescript
-const getEmailSignature = () => {
-  // If auto-signature is explicitly disabled, return empty or custom signature
-  if (emailSettings?.use_auto_signature === false) {
-    return emailSettings.signature || '';
-  }
+The key principles being applied:
 
-  // Auto-signature is enabled (default) - generate from business settings
-  if (businessSettings) {
-    let signature = `\n\nBest regards,\n`;
-    if (businessSettings.company_name) {
-      signature += `${businessSettings.company_name}\n`;
-    }
-    // ... rest of auto-generation
-    return signature;
-  }
+1. **Skeleton Fidelity**: Skeletons must match final layout exactly (same heights, widths, positions)
+2. **Single Loading State**: Choose skeleton OR spinner, never both sequentially
+3. **Layout Stability**: Use `useLayoutEffect` for DOM measurements before paint
+4. **Graceful Reveal**: Use staggered `animate-fade-in` for data population
+5. **Early Permission Resolution**: Resolve permissions once at app level, not per-component
 
-  return '\n\nBest regards,\nYour Company';
-};
-
-const shouldShowFooter = () => {
-  return emailSettings?.show_footer !== false;
-};
-
-return {
-  // ... existing returns
-  shouldShowFooter,
-};
-```
-
-### Component Changes (EmailTemplateWithBusiness.tsx)
-
-```typescript
-const { getEmailSignature, getFromName, shouldShowFooter } = useEnhancedEmailSettings();
-
-// In render:
-{/* Email Signature - only show if there's content */}
-{signature && (
-  <div className="mt-6 pt-4 border-t">
-    <SafeHTML ... />
-  </div>
-)}
-
-{/* Business Footer - respect the setting */}
-{shouldShowFooter() && businessSettings && (
-  <div className="border-t p-4 ...">
-    ...
-  </div>
-)}
-```
-
-## Expected Result
-
-After this fix:
-- **Footer disabled** → No footer in sent emails
-- **Auto-signature disabled** → No signature in sent emails
-- **Both enabled** (default) → Footer and auto-generated signature appear
-- **Custom signature** → Only custom signature appears, no auto-generation
-
-## Testing Steps
-
-1. Go to Settings → Email tab
-2. Turn OFF both "Auto-generate signature" and "Email Footer" toggles
-3. Save changes
-4. Send a test email
-5. Verify: No footer and no signature in the received email
