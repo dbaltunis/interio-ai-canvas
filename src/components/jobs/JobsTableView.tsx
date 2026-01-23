@@ -1033,7 +1033,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedGroups.map((group) => {
+            {paginatedGroups.map((group, index) => {
               const project = group.project;
               const quotes = group.quotes;
               const clientName = getClientName({ projects: project, client_id: project.client_id });
@@ -1042,7 +1042,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
               return (
                 <TableRow 
                   key={project.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer hover:bg-muted/50 animate-fade-in"
+                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                   onClick={() => onJobSelect({ id: project.id, projects: project })}
                 >
                   {displayColumns.map((column) => (

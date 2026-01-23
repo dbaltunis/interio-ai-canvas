@@ -55,7 +55,7 @@ export const CalendarSkeleton = () => {
                   {Array.from({ length: 24 }).map((_, index) => (
                     <div 
                       key={index} 
-                      className="h-[48px] px-1.5 text-xs flex items-start justify-end pt-0.5 border-b border-border/20"
+                      className="h-[32px] px-1.5 text-xs flex items-start justify-end pt-0.5 border-b border-border/20"
                     >
                       <Skeleton className="h-2 w-6" />
                     </div>
@@ -69,13 +69,13 @@ export const CalendarSkeleton = () => {
                     <div
                       key={index}
                       className="absolute left-0 right-0 border-t border-border/20 pointer-events-none"
-                      style={{ top: `${index * 48}px` }}
+                      style={{ top: `${index * 32}px` }}
                     />
                   ))}
                   
                   <div className="grid grid-cols-7">
                     {Array.from({ length: 7 }).map((_, dayIndex) => (
-                      <div key={dayIndex} className="relative border-r border-border/30 min-h-[1152px]">
+                      <div key={dayIndex} className="relative border-r border-border/30 min-h-[768px]">
                         {/* Sample event skeletons - Compact */}
                         {dayIndex % 2 === 0 && (
                           <Skeleton 

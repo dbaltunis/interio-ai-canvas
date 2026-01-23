@@ -190,15 +190,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   // newEvent state removed - using UnifiedAppointmentDialog now
 
   // Check permissions BEFORE returning any view
+  // Return null to let Suspense skeleton persist (single loading state)
   if (canViewCalendar === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="text-lg text-muted-foreground">Loading calendar...</div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (!canViewCalendar) {

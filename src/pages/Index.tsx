@@ -83,6 +83,7 @@ import { CalendarSkeleton } from "@/components/calendar/skeleton/CalendarSkeleto
 import { EmailManagementSkeleton } from "@/components/jobs/email/skeleton/EmailManagementSkeleton";
 import { InventorySkeleton } from "@/components/inventory/skeleton/InventorySkeleton";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -286,7 +287,7 @@ const Index = () => {
         );
       case "online-store":
         return (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <ComponentWrapper>
               <OnlineStorePage />
             </ComponentWrapper>
@@ -380,7 +381,7 @@ const Index = () => {
         );
       case 'settings':
         return (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <ComponentWrapper>
               <MobileSettings />
             </ComponentWrapper>
@@ -388,7 +389,7 @@ const Index = () => {
         );
       case 'measurement':
         return (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <ComponentWrapper>
               <MeasurementWizardDemo />
             </ComponentWrapper>
@@ -396,7 +397,7 @@ const Index = () => {
         );
       case 'bug-reports':
         return (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <ComponentWrapper>
               <BugReportsPage />
             </ComponentWrapper>
