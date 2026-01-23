@@ -408,7 +408,25 @@ export const CostCalculationSummary = ({
     // =========================================================
     
     // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS FOR BLINDS
+    // Calculate implied markup from library pricing if both cost_price and selling_price exist
+    const fabricCostPrice = fabricToUse?.cost_price || 0;
+    const fabricSellingPrice = fabricToUse?.selling_price || 0;
+    const hasLibraryPricing = fabricCostPrice > 0 && fabricSellingPrice > fabricCostPrice;
+    const impliedMarkup = hasLibraryPricing 
+      ? ((fabricSellingPrice - fabricCostPrice) / fabricCostPrice) * 100 
+      : undefined;
+    
+    if (impliedMarkup && impliedMarkup > 0) {
+      console.log('💰 [BLIND LIBRARY PRICING] Using implied markup:', {
+        cost_price: fabricCostPrice,
+        selling_price: fabricSellingPrice,
+        impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
+        note: 'Prevents double-markup on library fabrics'
+      });
+    }
+    
     const fabricMarkupResult = resolveMarkup({
+      impliedMarkup, // ✅ Pass implied markup to prevent double-markup
       category: 'blinds',
       markupSettings
     });
