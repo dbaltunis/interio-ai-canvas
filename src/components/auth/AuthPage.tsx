@@ -29,6 +29,8 @@ export const AuthPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('dark');
+  const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -130,6 +132,34 @@ export const AuthPage = () => {
       setPasswordStrength(null);
     }
   }, [password, isSignUp]);
+
+  // Rate limit cooldown timer
+  useEffect(() => {
+    if (rateLimitCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRateLimitCooldown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (rateLimitCooldown === 0 && isRateLimited) {
+      setIsRateLimited(false);
+    }
+  }, [rateLimitCooldown, isRateLimited]);
+
+  // Detect rate limit errors and extract cooldown seconds
+  const isRateLimitError = (error: any): number | null => {
+    const message = error?.message?.toLowerCase() || '';
+    
+    // Match patterns like "after 18 seconds" or "after 60 seconds"
+    const match = message.match(/after (\d+) seconds?/);
+    if (match) return parseInt(match[1], 10);
+    
+    // Generic rate limit detection
+    if (message.includes('rate limit') || message.includes('security purposes')) {
+      return 60; // Default 60 second cooldown
+    }
+    
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,11 +412,21 @@ export const AuthPage = () => {
           const { error } = await signUp(email, password);
           
           if (error) {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive"
-            });
+            const cooldownSeconds = isRateLimitError(error);
+            if (cooldownSeconds) {
+              setIsRateLimited(true);
+              setRateLimitCooldown(cooldownSeconds);
+              toast({
+                title: "Please wait",
+                description: `Too many attempts. Please wait ${cooldownSeconds} seconds before trying again.`,
+              });
+            } else {
+              toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive"
+              });
+            }
           } else {
             toast({
               title: "Success!",
@@ -403,11 +443,21 @@ export const AuthPage = () => {
           const { error } = await signIn(email, password);
           
           if (error) {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive"
-            });
+            const cooldownSeconds = isRateLimitError(error);
+            if (cooldownSeconds) {
+              setIsRateLimited(true);
+              setRateLimitCooldown(cooldownSeconds);
+              toast({
+                title: "Please wait",
+                description: `Too many attempts. Please wait ${cooldownSeconds} seconds before trying again.`,
+              });
+            } else {
+              toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive"
+              });
+            }
           }
         }
       }
@@ -434,11 +484,21 @@ export const AuthPage = () => {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
+        const cooldownSeconds = isRateLimitError(error);
+        if (cooldownSeconds) {
+          setIsRateLimited(true);
+          setRateLimitCooldown(cooldownSeconds);
+          toast({
+            title: "Please wait",
+            description: `Too many attempts. Please wait ${cooldownSeconds} seconds.`,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
       } else {
         toast({
           title: "Success",
@@ -572,9 +632,9 @@ export const AuthPage = () => {
                     <Button
                       type="submit"
                       className="w-full h-9 bg-foreground text-background hover:bg-foreground/90 font-medium"
-                      disabled={resetLoading}
+                      disabled={resetLoading || isRateLimited}
                     >
-                      {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                      {resetLoading ? 'Sending...' : isRateLimited ? `Try again in ${rateLimitCooldown}s` : 'Send Reset Link'}
                     </Button>
                     
                     <Button
@@ -717,10 +777,12 @@ export const AuthPage = () => {
                     <Button
                       type="submit"
                       className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 font-medium"
-                      disabled={loading}
+                      disabled={loading || isRateLimited}
                     >
                       {loading ? (
                         'Please wait...'
+                      ) : isRateLimited ? (
+                        `Try again in ${rateLimitCooldown}s`
                       ) : invitation ? (
                         'Accept Invitation & Join'
                       ) : isSignUp ? (
