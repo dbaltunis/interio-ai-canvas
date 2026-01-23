@@ -103,38 +103,59 @@ export const calculateBlindCosts = (
     });
   } else {
     // No grid - use per-unit pricing for fabric only (already uses total squareMeters which includes multiplier)
-    // CRITICAL: Check ALL price fields - users may enter price in different fields depending on UI
-    fabricPricePerSqm = fabricItem?.selling_price || 
-                        fabricItem?.price_per_sqm ||      // For sqm-based pricing
-                        fabricItem?.price ||              // Base inventory_items field
-                        fabricItem?.price_per_meter || 
-                        fabricItem?.unit_price || 
-                        0;
+    // ✅ CRITICAL FIX: Use cost_price as BASE when available to prevent double-markup
+    // The markup system will apply the correct markup (implied from cost vs selling difference)
+    // Priority: cost_price > price_per_sqm > price > price_per_meter > unit_price > selling_price
+    const hasCostPrice = fabricItem?.cost_price && fabricItem?.cost_price > 0;
+    const hasSellingPrice = fabricItem?.selling_price && fabricItem?.selling_price > 0;
+    
+    // Use cost_price as base when available (markup will be applied later)
+    fabricPricePerSqm = hasCostPrice 
+      ? fabricItem.cost_price
+      : (fabricItem?.price_per_sqm ||      // For sqm-based pricing
+         fabricItem?.price ||              // Base inventory_items field
+         fabricItem?.price_per_meter || 
+         fabricItem?.unit_price || 
+         fabricItem?.selling_price ||
+         0);
     
     // If price is still 0, log error for debugging
     if (fabricPricePerSqm === 0) {
       console.error('⚠️ PRICE IS ZERO! No valid price found on material:', {
         materialName: fabricItem?.name,
         materialId: fabricItem?.id,
+        cost_price: fabricItem?.cost_price,
         selling_price: fabricItem?.selling_price,
         price: fabricItem?.price,
         price_per_sqm: fabricItem?.price_per_sqm,
         price_per_meter: fabricItem?.price_per_meter,
         unit_price: fabricItem?.unit_price,
-        hint: 'Please set selling_price on this inventory item in Inventory settings'
+        hint: 'Please set cost_price and selling_price on this inventory item'
       });
     }
     
     fabricCost = squareMeters * fabricPricePerSqm;
     
+    // ✅ Log when using cost_price as base (markup will be applied in CostCalculationSummary)
+    if (hasCostPrice && hasSellingPrice) {
+      const impliedMarkup = ((fabricItem.selling_price - fabricItem.cost_price) / fabricItem.cost_price) * 100;
+      console.log('💰 [LIBRARY PRICING] Using cost_price as base:', {
+        cost_price: fabricItem.cost_price,
+        selling_price: fabricItem.selling_price,
+        impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
+        note: 'Markup will be applied in display layer'
+      });
+    }
+    
     console.log('ℹ️ Per-unit fabric pricing (no grid):', {
       blindType: template?.treatment_category || 'unknown',
       fabricPricePerSqm,
-      priceSource: fabricItem?.selling_price ? 'selling_price' : 
+      priceSource: hasCostPrice ? 'cost_price' :
                    fabricItem?.price_per_sqm ? 'price_per_sqm' :
                    fabricItem?.price ? 'price' :
                    fabricItem?.price_per_meter ? 'price_per_meter' :
-                   fabricItem?.unit_price ? 'unit_price' : 'none',
+                   fabricItem?.unit_price ? 'unit_price' : 
+                   fabricItem?.selling_price ? 'selling_price' : 'none',
       squareMeters: squareMeters.toFixed(2),
       blindMultiplier,
       fabricCost: fabricCost.toFixed(2)
