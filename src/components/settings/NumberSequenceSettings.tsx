@@ -117,7 +117,26 @@ export const NumberSequenceSettings = () => {
   const availableEntityTypes = ENTITY_TYPES.filter(t => !usedEntityTypes.includes(t.value));
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-6 w-40 bg-muted animate-shimmer rounded" />
+              <div className="h-4 w-64 bg-muted animate-shimmer rounded" />
+            </div>
+            <div className="h-9 w-28 bg-muted animate-shimmer rounded" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-muted animate-shimmer rounded" style={{ animationDelay: `${i * 100}ms` }} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

@@ -2,7 +2,7 @@ import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,7 +64,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, []);
 
   // Auto-scroll to 7 AM on mount for better UX
-  useEffect(() => {
+  // useLayoutEffect runs BEFORE browser paints - no visible scroll animation
+  useLayoutEffect(() => {
     if (scrollContainerRef.current) {
       // Each time slot is 32px high, and slots are every 30 minutes
       // 7 AM = 7 hours from midnight = 14 slots (00:00, 00:30, 01:00... 07:00)
@@ -72,11 +73,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       const sevenAMSlotIndex = 14; // 7:00 AM is the 14th slot (0-indexed: slot 14)
       const scrollPosition = sevenAMSlotIndex * slotHeight;
       
-      // Smooth scroll to 7 AM
-      scrollContainerRef.current.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
+      // Instant scroll - no animation, positioned before paint
+      scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, []); // Empty dependency array = only run on mount
   

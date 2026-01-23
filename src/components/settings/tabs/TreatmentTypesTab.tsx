@@ -78,7 +78,21 @@ export const TreatmentTypesTab = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-6 w-40 bg-muted animate-shimmer rounded" />
+            <div className="h-4 w-64 bg-muted animate-shimmer rounded" />
+          </div>
+        </div>
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-muted animate-shimmer rounded-lg border" style={{ animationDelay: `${i * 100}ms` }} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -395,18 +395,9 @@ const canViewJobsExplicit =
 
   // Check permissions - block access if user doesn't have view permissions
   // Wait for permissions and role to load (include dealer loading state)
+  // Return null to let Suspense skeleton persist (single loading state)
   if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md">
-          <CardContent className="text-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Permissions</h2>
-            <p className="text-muted-foreground">Checking access permissions...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
   
   // Dealers always have view permission for their own jobs - bypass the check
