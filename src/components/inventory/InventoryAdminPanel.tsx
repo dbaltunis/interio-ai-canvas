@@ -205,16 +205,9 @@ export const InventoryAdminPanel = () => {
 
   const handlePrint = () => window.print();
 
-  // Show loading state while permissions are being checked
+  // Let parent Suspense handle loading state
   if (permissionsLoading || roleLoading || explicitPermissions === undefined) {
-    return (
-      <div className="flex items-center justify-center p-8 md:p-12">
-        <div className="text-center space-y-4">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto animate-pulse" />
-          <p className="text-muted-foreground">Loading permissions...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Show access denied if user doesn't have permission

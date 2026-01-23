@@ -66,21 +66,9 @@ const Settings = () => {
   };
 
 
-  // Show loading while permissions are being checked
+  // Let parent Suspense handle loading state
   if (permissionsLoading || explicitPermissions === undefined || roleLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <h3 className="text-lg font-semibold text-foreground">Loading Settings...</h3>
-            </div>
-            <p className="text-muted-foreground">Please wait while we prepare your settings</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   if (canViewSettings === false) {

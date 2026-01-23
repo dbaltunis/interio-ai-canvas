@@ -176,7 +176,30 @@ export const StatusSlotManager = () => {
     return colorMap[color] || colorMap.gray;
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <Card className="animate-fade-in">
+        <CardHeader>
+          <div className="h-6 w-48 bg-muted animate-shimmer rounded" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="border-2">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-muted animate-shimmer" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 w-32 bg-muted animate-shimmer rounded" />
+                    <div className="h-4 w-48 bg-muted animate-shimmer rounded" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const slots = getSlotsArray();
   const hasNoStatuses = jobStatuses.length === 0;

@@ -58,15 +58,9 @@ export const EnhancedClientManagement = () => {
     return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
   }
 
+  // Let parent Suspense handle loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-gray-600">Loading clients...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

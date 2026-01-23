@@ -195,16 +195,9 @@ export const ModernInventoryDashboard = () => {
     );
   }
 
-  // During permission loading, show loading state
+  // Let parent Suspense handle loading state
   if (hasAnyInventoryAccess === undefined) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <div className="text-center space-y-4">
-          <Package className="h-16 w-16 text-muted-foreground mx-auto animate-pulse" />
-          <p className="text-muted-foreground">Loading inventory...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

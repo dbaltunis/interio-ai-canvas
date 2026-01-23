@@ -94,13 +94,9 @@ export const BusinessInventoryOverview = () => {
     .slice(0, 5) as [string, { count: number; value: number; profit: number }][];
 
 
-  if (isLoading || roleLoading) {
-    return <div className="text-muted-foreground">Loading business metrics...</div>;
-  }
-
-  // During permission check loading, show nothing to prevent data flash
-  if (canManageInventory === undefined || canViewInventory === undefined) {
-    return <div className="text-muted-foreground">Loading...</div>;
+  // Let parent handle loading state
+  if (isLoading || roleLoading || canManageInventory === undefined || canViewInventory === undefined) {
+    return null;
   }
 
   // If user doesn't have ANY inventory permission, show access denied

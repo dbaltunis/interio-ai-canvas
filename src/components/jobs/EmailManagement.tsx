@@ -38,19 +38,9 @@ export const EmailManagement = () => {
   // Selected template for composer
   const [selectedTemplate, setSelectedTemplate] = useState<{ subject: string; content: string } | null>(null);
 
+  // Let parent Suspense handle loading state
   if (canAccessEmails === undefined) {
-    return (
-      <div className="w-full animate-fade-in">
-        <div className="w-full px-6 py-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <div className="text-lg text-muted-foreground">Loading permissions...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (!canAccessEmails) {
@@ -75,19 +65,9 @@ export const EmailManagement = () => {
     setActiveTab("settings");
   };
 
+  // Let parent Suspense handle loading state
   if (integrationLoading) {
-    return (
-      <div className="w-full animate-fade-in">
-        <div className="w-full px-6 py-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <div className="text-lg text-muted-foreground">Loading messages...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const renderHeader = () => (
