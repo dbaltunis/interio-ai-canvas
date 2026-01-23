@@ -330,15 +330,8 @@ const Index = () => {
           </Suspense>
         );
       case "inventory":
-        // Check permission before rendering - redirect handled in useEffect above
-        // Works like jobs and clients - checks explicit permissions first
-        // If permissions are still loading, show loading state
-        // Let parent Suspense skeleton handle loading state
-        if (permissionsLoading || explicitPermissions === undefined) {
-          return <InventorySkeleton />;
-        }
-        // If permission is explicitly false, show access denied
-        if (canViewInventory === false) {
+        // Only show access denied when permissions are LOADED and denied
+        if (explicitPermissions !== undefined && !permissionsLoading && canViewInventory === false) {
           return (
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center space-y-3">
@@ -351,7 +344,7 @@ const Index = () => {
             </div>
           );
         }
-        // Only render if permission is true
+        // Single Suspense handles ALL loading - component returns null while loading permissions
         return (
           <Suspense fallback={<InventorySkeleton />}>
             <ComponentWrapper>
