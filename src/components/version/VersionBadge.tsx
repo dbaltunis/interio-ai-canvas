@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { WhatsNewDialog } from "./WhatsNewDialog";
+import { APP_VERSION } from "@/constants/version";
 
 interface VersionBadgeProps {
   className?: string;
@@ -9,7 +10,7 @@ interface VersionBadgeProps {
 
 export const VersionBadge = ({ className = "", size = "default" }: VersionBadgeProps) => {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const version = "v2.3.1";
+  const version = `v${APP_VERSION}`;
 
   return (
     <>
