@@ -30,10 +30,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
-import { Clock, Coffee, Briefcase, Lightbulb } from 'lucide-react';
+import { Clock, Coffee, Briefcase } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIsDealer } from '@/hooks/useIsDealer';
-import { TipsPanel } from '@/components/teaching/TipsPanel';
+
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'team' | 'messages' | 'tips'>('team');
+  const [activeTab, setActiveTab] = useState<'team' | 'messages'>('team');
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const updateUserProfile = useUpdateUserProfile();
@@ -494,9 +494,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden flex flex-col">
-                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages' | 'tips')} className="h-full flex flex-col">
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
                     <div className="px-4 pt-4 shrink-0">
-                      <TabsList className="w-full bg-muted rounded-xl p-1 grid grid-cols-3 h-11">
+                      <TabsList className="w-full bg-muted rounded-xl p-1 grid grid-cols-2 h-11">
                         <TabsTrigger 
                           value="team" 
                           className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
@@ -515,13 +515,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               {totalUnreadCount}
                             </Badge>
                           )}
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="tips" 
-                          className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
-                        >
-                          <Lightbulb className="h-4 w-4 shrink-0" />
-                          <span className="hidden sm:inline">Tips</span>
                         </TabsTrigger>
                       </TabsList>
                     </div>
