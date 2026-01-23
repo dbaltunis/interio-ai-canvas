@@ -1,161 +1,215 @@
 
-# Critical Issues Inventory - Organized Fix Plan
 
-## Issue Summary
+# Fix Plan: Issue 2 - Shared Work Order Doesn't Work When Logged In
 
-Based on your client feedback and screenshots, I've identified **6 distinct issues** across different parts of the app. Let me organize them by priority and complexity.
+## Problem Summary
 
----
+When a user is **logged in** to InterioApp and tries to open a public share link (e.g., `https://app.interio.app/work-order/abc123`), the page fails to load the data. However, it works perfectly in an **incognito window**.
 
-## ISSUE 1: Fabric Pricing Calculation Bug (CRITICAL - Client Sadath)
+## Root Cause Analysis
 
-**Problem**: The math is wrong. Client entered:
-- Fabric Cost: ₹440/m, Selling: ₹924/m (110% markup)
-- Fabric Required: 24.08m
-- Expected: Cost = ₹10,560, Selling = ₹22,176
-- Actual (from screenshot): Cost = ₹24,009.92, Sell = ₹49,012.83 (WRONG!)
+The issue is an **RLS policy role mismatch**:
 
-**Root Cause Found**: The Quote Summary shows `₹31,149.89` for fabric when it should be `₹22,249.92` (24.08m × ₹924). The discrepancy suggests an ADDITIONAL markup is being applied on top of the already-marked-up selling price.
+| Scenario | Supabase Role | RLS Policy Target | Result |
+|----------|---------------|-------------------|--------|
+| Incognito (not logged in) | `anon` | `TO anon` | Works |
+| Logged in user | `authenticated` | `TO anon` | Fails |
 
-**The Fix Needed**:
-- When fabric has BOTH `cost_price` AND `selling_price` defined, the system should:
-  1. Use `cost_price` (₹440) as the base for COST calculations
-  2. Use `selling_price` (₹924) directly for QUOTE/SELLING calculations - NO additional markup
-  3. The implied markup (110%) is already "baked in" to the library price
+The current RLS policies for public share link access are configured with `TO anon`:
 
-**Files to Modify**:
-- `src/utils/pricing/calculateTreatmentPricing.ts` - Line 156 incorrectly uses cost_price for quote calculations
-- `src/components/measurements/DynamicWindowWorksheet.tsx` - Markup resolver is applying additional markup
+```sql
+CREATE POLICY "Allow public read access via share link"
+ON projects FOR SELECT TO anon  -- Only applies to anonymous users!
+USING (...)
+```
 
----
+When a logged-in user visits the share link URL, the Supabase client automatically includes their JWT token. This makes Supabase use the `authenticated` role instead of `anon`, which means these policies don't apply.
 
-## ISSUE 2: Signup Rate Limit Error (Security Error)
+## Solution Options
 
-**Problem**: Screenshot shows "For security purposes, you can only request this after 18 seconds" when creating account.
+### Option A: Database Fix (Recommended)
 
-**Root Cause**: This is Supabase's built-in rate limiting on the `signUp` endpoint. It triggers when:
-- User clicks "Create Account" multiple times
-- Previous signup attempt is still processing
-- Network latency causes duplicate submissions
+Update RLS policies to include BOTH `anon` AND `authenticated` roles for share link access:
 
-**The Fix Needed**:
-- Add debounce/throttle to signup button
-- Disable button immediately on click
-- Show clearer loading state
-- Add friendly error message explaining the 60-second cooldown
+```sql
+-- Change from: TO anon
+-- Change to: TO anon, authenticated
+```
 
-**Files to Modify**:
-- `src/components/auth/AuthPage.tsx` - Add rate limit handling and user-friendly messaging
+**Pros:**
+- Single place to fix (database)
+- Works for all current and future code paths
+- No frontend code changes needed
 
----
+**Cons:**
+- Requires migration
 
-## ISSUE 3: Vertical Blinds Pricing Inconsistency (Australasia Team)
+### Option B: Frontend Fix
 
-**Problem**: "Qube (Budget) fabric works, but not others" - some vertical blind fabrics price correctly, others don't.
+Create a separate anonymous Supabase client for the PublicWorkOrder page:
 
-**Root Cause**: The subcategory confusion between "Vertical Slats" and "Vertical Fabrics" means some materials aren't being recognized correctly by the pricing engine.
+```typescript
+const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use anonClient for share link queries
+```
 
-**The Fix Needed**:
-- Normalize subcategory handling for vertical blinds
-- Ensure both "Vertical Slats" and "Vertical Fabrics" map to the same pricing logic
-- Fix the disappearing material issue when subcategory is changed
+**Pros:**
+- No database changes
 
-**Files to Investigate**:
-- Inventory subcategory mapping logic
-- Vertical blinds template pricing lookup
+**Cons:**
+- Adds complexity
+- Need to maintain two client patterns
+- Doesn't fix the root cause
 
----
+## Implementation Plan (Option A - Recommended)
 
-## ISSUE 4: Material Vendor Not Updating
+### Step 1: Create Database Migration
 
-**Problem**: Setting Vendor to "Norman" and clicking Update leaves Supplier showing "-"
+Create a new migration to update the RLS policies:
 
-**Root Cause**: The UI saves `vendor_id` (relationship) but displays `supplier` (legacy text field). These are not synced.
+```text
+File: supabase/migrations/[timestamp]_fix_share_link_rls_for_authenticated.sql
+```
 
-**The Fix Needed**:
-- When `vendor_id` is set, also update the legacy `supplier` field with vendor name
-- OR update display logic to prioritize `vendor.name` over `supplier`
+**Changes:**
 
-**Files to Modify**:
-- Inventory update mutation to sync both fields
+1. **work_order_share_links** - Update "Public can read share links by token":
+   - From: `TO anon`
+   - To: `TO anon, authenticated`
 
----
+2. **projects** - Update "Allow public read access via share link":
+   - From: `TO anon`
+   - To: `TO anon, authenticated`
 
-## ISSUE 5: Product Rules Dropdown Shows ALL Options
+3. **workshop_items** - Update "Allow public read access to workshop_items via share link":
+   - From: `TO anon`
+   - To: `TO anon, authenticated`
 
-**Problem**: When setting up a rule to hide roller blind control length when motor is selected, ALL product control lengths are listed instead of just the ones for that specific template.
+4. **clients** - Update "Allow public read access to clients via share link":
+   - From: `TO anon`
+   - To: `TO anon, authenticated`
 
-**Root Cause**: The rules editor fetches ALL treatment options from the database without filtering by template.
+5. **work_order_shares** - Update viewer session policies:
+   - "Allow anonymous viewers to create their own session"
+   - "Allow anonymous viewers to read their own session"
+   - "Allow anonymous viewers to update their own session"
+   - From: `TO anon`
+   - To: `TO anon, authenticated`
 
-**The Fix Needed**:
-- Filter the options dropdown in rules editor to only show options that are enabled/linked to the current template
-- Use `template_option_settings` to filter the list
+### Step 2: Migration SQL
 
-**Files to Modify**:
-- `src/components/settings/tabs/products/TemplateOptionsManager.tsx` - Rules dropdown needs template-specific filtering
+```sql
+-- =============================================
+-- Fix share link RLS to work for logged-in users
+-- =============================================
 
----
+-- 1. work_order_share_links
+DROP POLICY IF EXISTS "Public can read share links by token" ON work_order_share_links;
+CREATE POLICY "Public can read share links by token"
+ON work_order_share_links FOR SELECT TO anon, authenticated
+USING (
+  is_active = true 
+  AND (expires_at IS NULL OR expires_at > now())
+);
 
-## ISSUE 6: Shared Work Order Doesn't Work When Logged In
+-- 2. projects
+DROP POLICY IF EXISTS "Allow public read access via share link" ON projects;
+CREATE POLICY "Allow public read access via share link"
+ON projects FOR SELECT TO anon, authenticated
+USING (
+  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+  OR
+  id IN (
+    SELECT project_id FROM work_order_share_links 
+    WHERE is_active = true 
+    AND (expires_at IS NULL OR expires_at > now())
+  )
+);
 
-**Problem**: "Link does not work when opened in a window where I have an active InterioApp session, but does work in incognito window"
+-- 3. workshop_items
+DROP POLICY IF EXISTS "Allow public read access to workshop_items via share link" ON workshop_items;
+CREATE POLICY "Allow public read access to workshop_items via share link"
+ON workshop_items FOR SELECT TO anon, authenticated
+USING (
+  project_id IN (
+    SELECT id FROM projects
+    WHERE (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+  )
+  OR
+  project_id IN (
+    SELECT project_id FROM work_order_share_links 
+    WHERE is_active = true 
+    AND (expires_at IS NULL OR expires_at > now())
+  )
+);
 
-**Root Cause**: When logged in, the RLS policies check the authenticated user's permissions instead of allowing anonymous access via the share token. The public route is conflicting with authenticated session.
+-- 4. clients
+DROP POLICY IF EXISTS "Allow public read access to clients via share link" ON clients;
+CREATE POLICY "Allow public read access to clients via share link"
+ON clients FOR SELECT TO anon, authenticated
+USING (
+  id IN (
+    SELECT client_id FROM projects
+    WHERE (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+  )
+  OR
+  id IN (
+    SELECT p.client_id FROM projects p
+    WHERE p.id IN (
+      SELECT project_id FROM work_order_share_links 
+      WHERE is_active = true 
+      AND (expires_at IS NULL OR expires_at > now())
+    )
+  )
+);
 
-**The Fix Needed**:
-- PublicWorkOrder page should explicitly query as anonymous/bypass auth context
-- OR use a service role edge function to fetch shared data
-- Clear auth context when accessing public share URLs
+-- 5. work_order_shares - viewer session policies
+DROP POLICY IF EXISTS "Allow anonymous viewers to create their own session" ON work_order_shares;
+CREATE POLICY "Allow viewers to create their own session"
+ON work_order_shares FOR INSERT TO anon, authenticated
+WITH CHECK (
+  created_by_viewer = true 
+  AND shared_by IS NULL
+);
 
-**Files to Modify**:
-- `src/pages/PublicWorkOrder.tsx` - Handle auth session conflict
-- `src/hooks/useWorkOrderSharing.ts` - Fetch functions need to work with or without auth
+DROP POLICY IF EXISTS "Allow anonymous viewers to read their own session" ON work_order_shares;
+CREATE POLICY "Allow viewers to read their own session"
+ON work_order_shares FOR SELECT TO anon, authenticated
+USING (session_token IS NOT NULL);
 
----
+DROP POLICY IF EXISTS "Allow anonymous viewers to update their own session" ON work_order_shares;
+CREATE POLICY "Allow viewers to update their own session"
+ON work_order_shares FOR UPDATE TO anon, authenticated
+USING (session_token IS NOT NULL AND created_by_viewer = true);
+```
 
-## Recommended Priority Order
+## Files to Create/Modify
 
-| Priority | Issue | Severity | Client Impact |
-|----------|-------|----------|---------------|
-| 1 | Fabric Pricing Math | CRITICAL | Quotes are wrong by 40%+ |
-| 2 | Shared Work Order Auth | HIGH | Feature unusable for logged-in users |
-| 3 | Signup Rate Limit | MEDIUM | Poor UX for new signups |
-| 4 | Vertical Blinds Pricing | MEDIUM | Some products won't price |
-| 5 | Product Rules Dropdown | LOW | Setup inconvenience |
-| 6 | Vendor Display | LOW | Cosmetic data sync issue |
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/migrations/[timestamp]_fix_share_link_rls_for_authenticated.sql` | CREATE | Add RLS policies for authenticated role |
 
----
+## Security Considerations
 
-## Technical Notes
+This change is **safe** because:
 
-### Issue 1 Math Trace (for verification)
+1. **Token-based access is preserved**: Users still need a valid share link token to access data
+2. **Expiration checks remain**: Expired links are still blocked
+3. **Active flag check remains**: Deactivated links are still blocked
+4. **Read-only access**: These policies only grant SELECT permission, not INSERT/UPDATE/DELETE
+5. **Additive approach**: We're adding permissions, not removing existing security
 
-Client's fabric library:
-- Cost Price: ₹440/meter
-- Selling Price: ₹924/meter
-- Implied Markup: (924-440)/440 = **110%**
+## Testing Plan
 
-Expected for 24.08m:
-- Cost: 24.08 × 440 = **₹10,595.20**
-- Selling: 24.08 × 924 = **₹22,249.92**
+1. **Before deployment**: Share link works in incognito, fails when logged in
+2. **After deployment**:
+   - Share link works in incognito (unchanged)
+   - Share link works when logged in (fixed)
+   - User can still see their own projects normally
+   - Expired share links still blocked
+   - Deactivated share links still blocked
 
-Screenshot shows:
-- Cost: ₹24,009.92 (includes manufacturing ₹2,288)
-- Selling: ₹49,012.83
+## Summary
 
-The fabric portion alone shows ₹31,149.89 selling - this is approximately 24.08 × 924 × 1.40 = ₹31,149.89
+This is a database-level fix that updates 5 RLS policies to include both `anon` AND `authenticated` roles. No frontend code changes required. The fix ensures logged-in users can view shared work orders without being blocked by their authentication session.
 
-**Confirmed**: An extra 40% material markup is being applied on top of the already-marked-up selling price!
-
----
-
-## Next Steps
-
-I recommend we tackle **Issue 1 (Fabric Pricing)** first as it's causing incorrect quotes for clients. Once approved, I will:
-
-1. Fix the pricing logic to use `selling_price` directly when it exists (no additional markup)
-2. Ensure `cost_price` is used for cost calculations only
-3. Add validation to prevent double-markup scenarios
-4. Test with the exact values from Sadath's example to verify correct output
-
-Should I proceed with Issue 1 first?
