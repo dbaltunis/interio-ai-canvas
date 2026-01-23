@@ -8,11 +8,12 @@ export const useEnhancedEmailSettings = () => {
   const { data: profile } = useCurrentUserProfile();
 
   const getEmailSignature = () => {
-    if (emailSettings?.signature) {
-      return emailSettings.signature;
+    // If auto-signature is explicitly disabled, return custom signature or empty string
+    if (emailSettings?.use_auto_signature === false) {
+      return emailSettings.signature || '';
     }
 
-    // Generate default signature from business settings
+    // Auto-signature is enabled (default) - generate from business settings
     if (businessSettings) {
       let signature = `\n\nBest regards,\n`;
       
@@ -50,6 +51,11 @@ export const useEnhancedEmailSettings = () => {
     return emailSettings?.reply_to_email || businessSettings?.business_email || getFromEmail();
   };
 
+  const shouldShowFooter = () => {
+    // Default to true if not set, otherwise respect the setting
+    return emailSettings?.show_footer !== false;
+  };
+
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
   const isInheritingSettings = isTeamMember && !!emailSettings && emailSettings.user_id !== profile?.user_id;
 
@@ -61,6 +67,7 @@ export const useEnhancedEmailSettings = () => {
     getFromEmail,
     getFromName,
     getReplyToEmail,
+    shouldShowFooter,
     isTeamMember,
     isInheritingSettings,
   };
