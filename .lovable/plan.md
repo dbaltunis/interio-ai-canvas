@@ -1,60 +1,59 @@
 
-# URGENT FIX: Infinite Recursion in Projects RLS Policy
 
-## Problem
-The app shows NO DATA because the RLS policy we created for Issue 2 causes infinite recursion when authenticated users query the `projects` table.
+# Update Version Tracking Files
 
-## Root Cause
-The "Allow public read access via share link" policy on `projects` queries `work_order_share_links`, but `work_order_share_links` has policies that query back to `projects`, creating a circular dependency.
+## Overview
+Update the `cache-bust.txt` and `version.ts` files to document the three fixes we just implemented, ensuring proper version tracking and deployment cache invalidation.
 
-## Solution
-Create a SECURITY DEFINER function to check share link access WITHOUT triggering RLS on related tables. This breaks the recursion chain.
+## Changes to Make
 
-## Implementation
+### File 1: `public/cache-bust.txt`
 
-### Step 1: Create Security Definer Function
-Create a function that bypasses RLS to check if a project has an active share link:
+Update with current timestamp and the three fixes:
 
-```sql
-CREATE OR REPLACE FUNCTION public.project_has_active_share_link(project_uuid UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM work_order_share_links
-    WHERE project_id = project_uuid
-    AND is_active = true
-    AND (expires_at IS NULL OR expires_at > now())
-  )
-$$;
+```text
+Build timestamp: 2026-01-23T15:45:00Z
+Version: 2.3.16
+Changes:
+- CRITICAL FIX: Fixed infinite recursion in RLS policies using SECURITY DEFINER functions
+- FIX: Fabric pricing now correctly uses cost_price with impliedMarkup flag
+- FIX: Shared work order links now work for authenticated users (updated RLS policies)
+- FIX: Signup rate limit errors now show user-friendly countdown timer
+- Previous: Removed 30-minute session timeout - users stay logged in via Supabase auto-refresh
+- Previous: Added userId to ALL inventory cache keys for multi-account isolation
+- Previous: Clear ALL cached data on logout to prevent cross-account data leakage
+- Previous: Invalidate all queries on sign-in to force fresh data fetch
+- Previous: Heading options now available for all fabric treatments
+- Custom document template creation with drag-and-drop blocks
+- Hardware category for inventory management
+- Products & Services can be added to projects and quotes
+- RLS security hardening with 60+ policy fixes
+- Performance and stability improvements
 ```
 
-### Step 2: Update Projects Policy
-Replace the problematic subquery with the function call:
+### File 2: `src/constants/version.ts`
 
-```sql
-DROP POLICY IF EXISTS "Allow public read access via share link" ON projects;
-CREATE POLICY "Allow public read access via share link"
-ON projects FOR SELECT TO anon, authenticated
-USING (
-  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
-  OR
-  public.project_has_active_share_link(id)
-);
+Update version number and build date:
+
+```typescript
+export const APP_VERSION = "2.3.16";
+export const APP_BUILD_DATE = "2026-01-23";
+export const APP_BUILD_TIMESTAMP = "2026-01-23T15:45:00Z";
 ```
 
-### Step 3: Apply Same Fix to Other Tables
-Update `workshop_items` and `clients` policies similarly to use security definer functions.
+## Summary of Documented Fixes
 
-## Files to Create
+| Fix | Description |
+|-----|-------------|
+| Issue 1 | Fabric pricing correctly uses `cost_price` with `impliedMarkup` flag |
+| Issue 2 | Shared work order links work for authenticated users via updated RLS |
+| Issue 3 | Signup rate limit shows friendly countdown instead of cryptic error |
+| Hotfix | Fixed infinite recursion in RLS policies using SECURITY DEFINER functions |
+
+## Files to Modify
+
 | File | Purpose |
 |------|---------|
-| `supabase/migrations/[timestamp]_fix_rls_recursion.sql` | Fix the infinite recursion |
+| `public/cache-bust.txt` | Document changes for cache invalidation |
+| `src/constants/version.ts` | Bump version number to 2.3.16 |
 
-## Expected Result
-- App data will load again immediately
-- Share links will still work for both logged-in and anonymous users
-- No more infinite recursion errors
