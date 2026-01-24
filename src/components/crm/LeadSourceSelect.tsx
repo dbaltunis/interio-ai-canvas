@@ -1,5 +1,6 @@
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -40,9 +41,11 @@ export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select s
           </SelectTrigger>
           <SelectContent className="bg-popover border-border z-50">
             {isLoading ? (
-              <SelectItem value="loading" disabled>
-                Loading...
-              </SelectItem>
+              <div className="p-2 space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-3/4" />
+              </div>
             ) : (
               <>
                 {sources?.map((source) => (

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject, useProjects } from "@/hooks/useProjects";
@@ -6,6 +5,7 @@ import { useCreateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,15 +75,27 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     setTotalPrice(updatedRooms.reduce((total, room) => total + room.price, 0));
   };
 
-  // Show minimal loading state
+  // Show skeleton loading state
   if (isCheckingAuth || isCreating || !currentProject) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">
-            {isCheckingAuth ? "Authenticating..." : isCreating ? "Creating project..." : "Loading..."}
-          </p>
+      <div className="min-h-screen bg-background">
+        <div className="border-b bg-card px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-6 w-px" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        </div>
+        <div className="container max-w-4xl mx-auto py-8 space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
         </div>
       </div>
     );

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tag, Package } from 'lucide-react';
 import { useInventoryPriceGroups } from '@/hooks/useInventoryPriceGroups';
 import { cn } from '@/lib/utils';
@@ -87,7 +88,11 @@ export const PriceGroupAutocomplete = ({
           className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
         >
           {isLoading ? (
-            <div className="p-3 text-sm text-muted-foreground">Loading...</div>
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-3/4" />
+            </div>
           ) : filteredGroups.length === 0 ? (
             <div className="p-3">
               <p className="text-sm text-muted-foreground">

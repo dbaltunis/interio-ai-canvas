@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Phone, Mail, Calendar, Flame } from "lucide-react";
 import { useHotLeads } from "@/hooks/useLeadIntelligence";
 import { LeadScoreCard } from "./LeadScoreCard";
@@ -21,8 +22,19 @@ export const HotLeadsList = () => {
             Hot Leads
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground">Loading...</div>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

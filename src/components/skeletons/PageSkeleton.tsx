@@ -60,13 +60,6 @@ export const PageSkeleton = () => {
         </div>
       </div>
 
-      {/* Loading indicator */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
-        <div className="flex items-center gap-2 bg-card/90 backdrop-blur-sm border rounded-full px-4 py-2 shadow-lg">
-          <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span className="text-sm text-muted-foreground">Loading...</span>
-        </div>
-      </div>
     </div>
   );
 };

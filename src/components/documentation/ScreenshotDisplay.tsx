@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ScreenshotDisplayProps {
   sectionId: string;
@@ -61,8 +62,8 @@ export const ScreenshotDisplay = ({ sectionId, subsectionId, adminMode = false, 
 
   if (loading) {
     return (
-      <div className="mt-6 p-12 bg-white/[0.08] border border-white/30 rounded-lg flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-primary/60 animate-spin" />
+      <div className="mt-6 rounded-lg overflow-hidden border border-white/20">
+        <Skeleton className="w-full aspect-video" />
       </div>
     );
   }

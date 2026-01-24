@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Package, Wrench, Layers, ArrowLeft, Plus, Minus, ShoppingCart, PenLine, Upload, X } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -405,7 +406,19 @@ export const ProductServiceDialog = ({
             {/* Items Grid */}
             <ScrollArea className="flex-1 -mx-6 px-6">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                <div className="grid grid-cols-1 gap-2 pb-4">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                      <Skeleton className="h-4 w-4 rounded" />
+                      <Skeleton className="w-12 h-12 rounded" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  ))}
+                </div>
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No items found in this category.

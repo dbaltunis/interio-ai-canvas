@@ -4,6 +4,7 @@ import { AuthPage } from './AuthPage';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SystemOwnerRouteProps {
   children: ReactNode;
@@ -17,8 +18,11 @@ export const SystemOwnerRoute = ({ children }: SystemOwnerRouteProps) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Skeleton className="h-12 w-12 rounded-lg mx-auto" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
       </div>
     );
   }
