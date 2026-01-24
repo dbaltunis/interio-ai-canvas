@@ -8,8 +8,9 @@ export const useUserRole = () => {
   return useQuery({
     queryKey: ["user-role", user?.id],
     enabled: !authLoading && !!user,
+    retry: 2,
+    retryDelay: 500,
     queryFn: async () => {
-      if (!user) return null;
       if (!user) return null;
 
       // Get role from secure user_roles table using SECURITY DEFINER function

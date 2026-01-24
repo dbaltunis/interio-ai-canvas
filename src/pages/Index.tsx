@@ -108,17 +108,24 @@ const Index = () => {
     queryKey: ['explicit-user-permissions', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[Index] Error fetching explicit permissions:', error);
+      try {
+        const { data, error } = await supabase
+          .from('user_permissions')
+          .select('permission_name')
+          .eq('user_id', user.id);
+        if (error) {
+          console.error('[Index] Error fetching explicit permissions:', error);
+          return [];
+        }
+        return data || [];
+      } catch (e) {
+        console.error('[Index] Exception fetching permissions:', e);
         return [];
       }
-      return data || [];
     },
     enabled: !!user && !permissionsLoading,
+    retry: 2,
+    retryDelay: 500,
   });
   
   // Check if user has ANY explicit permissions in the table
