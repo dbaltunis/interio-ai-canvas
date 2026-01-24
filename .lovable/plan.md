@@ -1,146 +1,157 @@
 
-# Fix: "Something went wrong" Error on First Login Attempt
 
-## Problem Analysis
+# Phase 8: Login Error Fix + Permission/Access Control Issues
 
-The screenshot shows the **global ErrorBoundary** catching an unhandled error during the first login. This is NOT a toast message - it's the full-page error fallback with "Try Again" and "Refresh Page" buttons.
+## Overview
 
-### Root Cause: Race Condition
-
-When a user logs in:
-1. `AuthProvider` sets `user` state and fires `SIGNED_IN` event
-2. `ProtectedRoute` sees `user` exists, renders `Index` page
-3. `Index` page immediately fires multiple queries that depend on `user_profiles`:
-   - `useUserRole()` - queries `user_profiles` 
-   - `useUserPermissions()` - queries `user_profiles`
-   - `useAccountStatus()` - queries `user_profiles` with `.single()`
-4. **Problem**: The `user_profiles` row may not exist yet (created by database trigger) or the query fails transiently
-5. The `.single()` call in `useAccountStatus` throws an error if no row exists
-6. This error propagates up and crashes the ErrorBoundary
-
-### Evidence
-- `useAccountStatus` (line 73) uses `.single()` which throws on 0 rows
-- `useUserRole` has a duplicate `if (!user) return null;` check (line 12-13) suggesting past issues
-- The error happens consistently on first attempt but succeeds on retry (data is ready by then)
+This phase addresses the critical login error (Issue #1) plus all permission/access control issues from the client's CSV file. The login error occurs **every time** a user logs in, not just the first time, indicating the previous fix was insufficient.
 
 ---
 
-## Solution
+## Issue #1: "Something went wrong" on Every Login
 
-### Fix 1: Use `.maybeSingle()` instead of `.single()` in `useAccountStatus`
+### Root Cause Analysis
 
-**File**: `src/hooks/useBlockAccount.ts` (line 73)
+The ErrorBoundary in `src/components/performance/ErrorBoundary.tsx` catches unhandled errors. The issue persists because:
 
-The `.single()` method throws an error if zero or multiple rows are returned. For first-time users, the profile might not exist immediately.
+1. **Race condition**: `queryClient.invalidateQueries()` in `AuthProvider.tsx:74` triggers immediate refetches
+2. **Queries fire before profile exists**: The `user_profiles` row may not exist yet when queries fire
+3. **Single point of failure**: Any single query throwing propagates to ErrorBoundary
 
-```typescript
-// Before (line 73)
-.single();
+### Solution: Add Query-Level Error Boundaries + Graceful Fallbacks
 
-// After
-.maybeSingle();
-```
+| File | Change |
+|------|--------|
+| `src/hooks/useUserRole.ts:31` | Change `.single()` to `.maybeSingle()` for profile query |
+| `src/hooks/usePermissions.ts:25-35` | Add retry logic and graceful fallback on profile fetch failure |
+| `src/pages/Index.tsx:107-130` | Wrap permission queries in defensive error handling |
+| `src/components/auth/AuthProvider.tsx:74` | Add small delay before invalidating queries to allow profile creation |
 
-### Fix 2: Add defensive checks in `AccountStatusGuard`
-
-**File**: `src/components/auth/AccountStatusGuard.tsx`
-
-Handle the case where account status query fails gracefully:
-
-```typescript
-export function AccountStatusGuard({ children }: AccountStatusGuardProps) {
-  const { user } = useAuth();
-  const { data: accountStatus, isLoading, isError } = useAccountStatus(user?.id);
-
-  // Don't block while loading, on error, or if no user
-  if (isLoading || isError || !user) {
-    return <>{children}</>;
-  }
-
-  // Rest of the logic...
-}
-```
-
-### Fix 3: Add error handling in Index page queries
-
-**File**: `src/pages/Index.tsx` (lines 107-122)
-
-Ensure explicit permissions query doesn't throw:
+### Key Fix in AuthProvider.tsx
 
 ```typescript
-const { data: explicitPermissions } = useQuery({
-  queryKey: ['explicit-user-permissions', user?.id],
-  queryFn: async () => {
-    if (!user) return [];
-    try {
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[Index] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    } catch (e) {
-      console.error('[Index] Exception fetching permissions:', e);
-      return [];
-    }
-  },
-  enabled: !!user && !permissionsLoading,
-  retry: 2, // Retry twice on failure
-});
+// Line 74 - Add delay before invalidating
+if (event === 'SIGNED_IN') {
+  // Wait 500ms for database triggers to create user_profiles
+  setTimeout(() => {
+    queryClient.invalidateQueries();
+  }, 500);
 ```
 
-### Fix 4: Add retry configuration to critical auth queries
-
-**File**: `src/hooks/useUserRole.ts`
-
-Add retry logic to handle transient failures:
+### Key Fix in useUserRole.ts
 
 ```typescript
-return useQuery({
-  queryKey: ["user-role", user?.id],
-  enabled: !authLoading && !!user,
-  retry: 2,
-  retryDelay: 500,
-  queryFn: async () => {
-    // existing logic
-  },
-});
+// Line 27-31 - Use maybeSingle for profile
+const { data: profile } = await supabase
+  .from("user_profiles")
+  .select("parent_account_id")
+  .eq("user_id", user.id)
+  .maybeSingle(); // Was .single() - throws on 0 rows
 ```
+
+---
+
+## Permission/Access Control Issues (From CSV)
+
+### Issue #8: Dealers Can See Supplier Names
+
+**Current State**: `InventoryManagement.tsx:269` shows "Supplier" column to everyone
+**Fix**: Hide supplier column for dealers
+
+```typescript
+// Line 269 - Add dealer check
+{canViewVendorCosts && !isDealer && <TableHead>Supplier</TableHead>}
+```
+
+**Files to modify**:
+- `src/components/inventory/InventoryManagement.tsx`
+- `src/components/ordering/BatchOrdersList.tsx`
+- Any other component showing `vendors.name`
+
+### Issue #9: Dealers Can See Costs in Various Views
+
+**Components already checking `canViewVendorCosts`**:
+- InventoryManagement.tsx ✓
+- MaterialQueueTable.tsx ✓
+- BatchOrdersList.tsx ✓
+
+**Components needing audit for dealer access**:
+- Quote PDFs and exports
+- Job detail views
+- Window summary displays
+
+### Issue #11: Staff Should Only See Assigned Jobs/Clients
+
+**Current State**: Staff with `view_assigned_jobs` permission can see all jobs due to RLS policy gap
+**Fix**: RLS policies need to check `assigned_to` or `user_id` field
+
+This is a **database-level fix** requiring migration to update RLS policies on:
+- `projects` table
+- `clients` table
 
 ---
 
 ## Files to Modify
 
-| File | Change | Priority |
-|------|--------|----------|
-| `src/hooks/useBlockAccount.ts` | Change `.single()` to `.maybeSingle()` | **Critical** |
-| `src/components/auth/AccountStatusGuard.tsx` | Handle `isError` state gracefully | **Critical** |
-| `src/pages/Index.tsx` | Add try/catch and retry to permission queries | Medium |
-| `src/hooks/useUserRole.ts` | Add retry configuration | Medium |
+### Priority 1: Login Error (Critical)
+
+| File | Changes |
+|------|---------|
+| `src/components/auth/AuthProvider.tsx` | Add 500ms delay before query invalidation on SIGNED_IN |
+| `src/hooks/useUserRole.ts` | Change `.single()` to `.maybeSingle()` on line 31 |
+| `src/hooks/usePermissions.ts` | Add defensive error handling, extend retry logic |
+
+### Priority 2: Dealer Permission Fixes
+
+| File | Changes |
+|------|---------|
+| `src/components/inventory/InventoryManagement.tsx` | Hide supplier column for dealers |
+| `src/components/ordering/BatchOrdersList.tsx` | Hide supplier info for dealers |
+| `src/components/ordering/MaterialQueueTable.tsx` | Verify dealer restrictions |
+| `src/hooks/useUserRole.ts` | Already handles `isDealer` - verify propagation |
+
+### Priority 3: Staff Assignment Visibility (Database)
+
+| Change | Type |
+|--------|------|
+| Update `projects` RLS policy | SQL Migration |
+| Update `clients` RLS policy | SQL Migration |
+| Add `assigned_to` column if missing | SQL Migration |
+
+---
+
+## Implementation Order
+
+1. **Login error fix** - AuthProvider delay + maybeSingle changes
+2. **Dealer supplier visibility** - Hide supplier columns/names
+3. **Dealer cost visibility audit** - Verify all cost displays are hidden
+4. **Staff assignment visibility** - Database migration for RLS
 
 ---
 
 ## Expected Results
 
-| Metric | Before | After |
-|--------|--------|-------|
-| First login success rate | ~50% (requires retry) | 100% |
-| Error boundary triggers on login | Yes | No |
-| User experience | Frustrating "Try Again" flow | Seamless first-time login |
+| Issue | Before | After |
+|-------|--------|-------|
+| Login error | Happens every login | 0% failure rate |
+| Dealers see suppliers | Visible | Hidden |
+| Dealers see costs | Some visible | All hidden |
+| Staff see all jobs | All visible | Only assigned visible |
 
 ---
 
 ## Technical Notes
 
-### Why `.maybeSingle()` vs `.single()`?
+### Why 500ms Delay Works
 
-- `.single()` throws `PGRST116` error if 0 or >1 rows returned
-- `.maybeSingle()` returns `null` if 0 rows, still errors on >1 rows
-- For new users, the profile might not exist for a few hundred milliseconds after signup
+The database trigger that creates `user_profiles` runs asynchronously after `auth.users` insert. The 500ms delay gives the trigger time to complete before React Query fires profile-dependent queries.
 
-### Query Retry Strategy
+### Dealer Permission Chain
 
-React Query's retry mechanism will automatically retry failed queries, giving the database trigger time to create the user_profiles row before the query succeeds.
+```
+useUserRole() → isDealer: true → canViewVendorCosts: false
+                              → canViewMarkup: false
+```
+
+Components must check BOTH `canViewVendorCosts` AND `isDealer` for supplier names since supplier names are not strictly "costs" but are still sensitive.
+
