@@ -282,7 +282,7 @@ export const BookingManagement = () => {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {formattedDates[booking.id] || 'Loading...'}
+                        {formattedDates[booking.id] || <Skeleton className="h-4 w-32 inline-block" />}
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />

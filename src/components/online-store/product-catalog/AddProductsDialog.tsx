@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -195,7 +196,19 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
           {/* Items list */}
           <div className="border rounded-lg max-h-96 overflow-y-auto">
             {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">Loading...</div>
+              <div className="p-4 space-y-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="flex items-center gap-4 p-3 border-b">
+                    <Skeleton className="h-5 w-5 rounded" />
+                    <Skeleton className="h-12 w-12 rounded" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
             ) : filteredItems.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 {availableItems.length === 0

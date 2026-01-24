@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,8 +157,18 @@ export const InventorySyncDialog = ({
 
             <ScrollArea className="h-80 border rounded-lg">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                <div className="p-2 space-y-2">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
+                      <Skeleton className="h-5 w-5 rounded" />
+                      <Skeleton className="h-10 w-10 rounded" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  ))}
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">

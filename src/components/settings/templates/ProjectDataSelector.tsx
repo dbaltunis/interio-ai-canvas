@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -74,7 +75,17 @@ export const ProjectDataSelector: React.FC<ProjectDataSelectorProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {isLoading ? (
-                  <SelectItem value="loading" disabled>Loading projects...</SelectItem>
+                  <div className="p-2 space-y-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="flex items-center gap-2 p-2">
+                        <Skeleton className="h-4 w-4" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : projects && projects.length > 0 ? (
                   projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>

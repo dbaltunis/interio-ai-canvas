@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -227,7 +228,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                     <TableCell className="text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span className="text-sm">{formattedDates[`created_${quote.id}`] || 'Loading...'}</span>
+                        <span className="text-sm">{formattedDates[`created_${quote.id}`] || <Skeleton className="h-4 w-24 inline-block" />}</span>
                       </div>
                     </TableCell>
                     
@@ -235,7 +236,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                       {quote.valid_until ? (
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5" />
-                          <span className="text-sm">{formattedDates[`valid_${quote.id}`] || 'Loading...'}</span>
+                          <span className="text-sm">{formattedDates[`valid_${quote.id}`] || <Skeleton className="h-4 w-24 inline-block" />}</span>
                         </div>
                       ) : (
                         <span className="text-muted-foreground/60 text-sm">No expiry</span>

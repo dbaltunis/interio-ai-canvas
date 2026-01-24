@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Package, AlertTriangle } from 'lucide-react';
@@ -24,12 +25,7 @@ export const InventoryStockBadge = ({ itemId }: InventoryStockBadgeProps) => {
   });
 
   if (isLoading) {
-    return (
-      <Badge variant="outline" className="flex items-center gap-1">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        Loading...
-      </Badge>
-    );
+    return <Skeleton className="h-5 w-16 rounded-full" />;
   }
 
   // Don't show badge if item doesn't exist or quantity is null/undefined (not tracking)

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -112,7 +113,19 @@ export const ReceiveBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }
 
           {/* Items Table */}
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading items...</div>
+            <div className="border rounded-lg">
+              <div className="p-4 space-y-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <div className="border rounded-lg">
               <Table>

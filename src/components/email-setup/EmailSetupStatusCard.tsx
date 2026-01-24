@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
@@ -37,9 +38,9 @@ export const EmailSetupStatusCard = () => {
             
             {/* Deliverability Score */}
             {isLoading ? (
-              <div className="flex items-center gap-2 text-green-700 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Checking deliverability...
+              <div className="mt-4 space-y-3">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-20 w-full rounded-lg" />
               </div>
             ) : (
               <div className="mt-4">

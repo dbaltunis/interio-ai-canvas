@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -244,9 +245,16 @@ export const CategoryManagement = () => {
 
       <div className="space-y-2">
         {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span className="text-muted-foreground">Loading categories...</span>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="p-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-5 w-5 ml-auto rounded" />
+                </div>
+              </Card>
+            ))}
           </div>
         ) : hierarchicalCategories.length === 0 ? (
           <Card className="p-8 text-center">
