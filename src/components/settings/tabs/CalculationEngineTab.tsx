@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -257,7 +258,20 @@ export const CalculationEngineTab = () => {
 
       {/* Formula Categories */}
       {isLoading ? (
-        <div className="text-center py-4">Loading formulas...</div>
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : Object.keys(formulasByCategory).length > 0 ? (
         Object.entries(formulasByCategory).map(([categoryName, categoryFormulas]) => {
           const getIconForCategory = (category: string) => {

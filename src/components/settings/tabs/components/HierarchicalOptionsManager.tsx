@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -304,7 +305,20 @@ export const HierarchicalOptionsManager = () => {
 
         {/* Hierarchical Options Display */}
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading options...</div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <div className="pl-6 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : categories.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No hierarchical options yet. Click "Add Category" to create your first hardware configuration.

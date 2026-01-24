@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +77,7 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
 
   const getEmailStatusBadge = () => {
     if (emailStatusLoading) {
-      return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" /> Loading...</Badge>;
+      return <Skeleton className="h-5 w-20 rounded-full" />;
     }
 
     if (!emailStatus || emailStatus.status === 'none') {
