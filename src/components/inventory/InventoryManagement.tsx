@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag, Shield } from "lucide-react";
 import { useEnhancedInventory, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { InventoryImportDialog } from "./InventoryImportDialog";
 import { ShopifySyncManager } from "./ShopifySyncManager";
 import { ShopifyQuickSetupBanner } from "./ShopifyQuickSetupBanner";
@@ -26,6 +27,7 @@ export const InventoryManagement = () => {
   const canViewInventory = useHasPermission('view_inventory');
   const canManageInventory = useHasPermission('manage_inventory');
   const canViewVendorCosts = useHasPermission('view_inventory'); // Sensitive data tied to inventory permission
+  const { data: isDealer } = useIsDealer(); // Check if user is a dealer - they should NOT see supplier names
 
   const { data: inventory, isLoading } = useEnhancedInventory();
   const { integration } = useShopifyIntegrationReal();
@@ -265,8 +267,8 @@ export const InventoryManagement = () => {
                   <TableHead>Item</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Stock</TableHead>
-                  {canViewVendorCosts && <TableHead>Cost/Unit</TableHead>}
-                  <TableHead>Supplier</TableHead>
+                  {canViewVendorCosts && !isDealer && <TableHead>Cost/Unit</TableHead>}
+                  {!isDealer && <TableHead>Supplier</TableHead>}
                   <TableHead>Status</TableHead>
                   {canManageInventory && <TableHead>Actions</TableHead>}
                 </TableRow>
@@ -301,14 +303,14 @@ export const InventoryManagement = () => {
                       <TableCell className="font-medium">
                         {item.quantity} units
                       </TableCell>
-                      {canViewVendorCosts && (
+                      {canViewVendorCosts && !isDealer && (
                         <TableCell>
                           {(item.selling_price || item.price_per_unit || item.cost_price) 
                             ? formatCurrency(item.selling_price || item.price_per_unit || item.cost_price || 0) 
                             : "N/A"}
                         </TableCell>
                       )}
-                      <TableCell>{item.supplier || "N/A"}</TableCell>
+                      {!isDealer && <TableCell>{item.supplier || "N/A"}</TableCell>}
                       <TableCell>
                         {isLowStock ? (
                           <Badge variant="outline" className="bg-company-warning/10 text-company-warning border-company-warning/20">

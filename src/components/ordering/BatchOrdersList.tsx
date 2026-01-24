@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Send, Truck, MoreHorizontal, PackageCheck, Trash2, Package, Lock } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { data: items } = useBatchOrderItems(order.id);
   const { data: userRole } = useUserRole();
+  const { data: isDealer } = useIsDealer();
   const canViewCosts = userRole?.canViewVendorCosts ?? false;
   const canManageOrders = userRole?.isAdmin || userRole?.isOwner || false;
 
@@ -130,14 +132,16 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
                 {statusLabels[order.status as keyof typeof statusLabels] || order.status}
               </Badge>
             </div>
-            <CardDescription className="mt-1 text-xs">
-              {order.supplier_id ? (order.vendors?.name || 'Unknown Supplier') : (
-                <span className="flex items-center gap-1">
-                  <Package className="h-3 w-3" />
-                  Stock / No Supplier
-                </span>
-              )}
-            </CardDescription>
+            {!isDealer && (
+              <CardDescription className="mt-1 text-xs">
+                {order.supplier_id ? (order.vendors?.name || 'Unknown Supplier') : (
+                  <span className="flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    Stock / No Supplier
+                  </span>
+                )}
+              </CardDescription>
+            )}
             
             {/* Jobs and Clients */}
             {(jobsAndClients.jobs.length > 0 || jobsAndClients.clients.length > 0) && (

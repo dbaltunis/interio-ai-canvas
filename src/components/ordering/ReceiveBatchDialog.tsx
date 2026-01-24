@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useUpdateBatchOrder } from "@/hooks/useBatchOrders";
 import { useAddTrackingUpdate } from "@/hooks/useOrderTracking";
 import { useBatchOrderItems } from "@/hooks/useBatchOrders";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { toast } from "sonner";
 import { CheckCircle, AlertCircle } from "lucide-react";
 
@@ -26,6 +27,7 @@ export const ReceiveBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }
   const updateBatch = useUpdateBatchOrder();
   const addTracking = useAddTrackingUpdate();
   const { data: batchItems, isLoading } = useBatchOrderItems(batchOrder?.id);
+  const { data: isDealer } = useIsDealer();
 
   const handleQuantityChange = (itemId: string, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -98,7 +100,7 @@ export const ReceiveBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }
         <DialogHeader>
           <DialogTitle>Receive Batch Order</DialogTitle>
           <DialogDescription>
-            Record received items for batch #{batchOrder.batch_number} from {batchOrder.vendors?.name}
+            Record received items for batch #{batchOrder.batch_number}{!isDealer && ` from ${batchOrder.vendors?.name}`}
           </DialogDescription>
         </DialogHeader>
 

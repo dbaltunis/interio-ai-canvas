@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2, Package, Briefcase } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { useDeleteMaterialQueueItem } from "@/hooks/useMaterialQueue";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -47,6 +48,7 @@ const statusLabels = {
 export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectionChange }: MaterialQueueTableProps) => {
   const deleteMaterial = useDeleteMaterialQueueItem();
   const { data: userRole } = useUserRole();
+  const { data: isDealer } = useIsDealer();
   const canViewCosts = userRole?.canViewVendorCosts ?? false;
 
   // Group items by job/project
@@ -263,10 +265,12 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                               </>
                             )}
                             
-                            <div className="flex items-baseline gap-1 min-w-0">
-                              <span className="text-muted-foreground whitespace-nowrap">Supplier:</span>
-                              <span className="text-foreground truncate">{item.vendors?.name || 'Unassigned'}</span>
-                            </div>
+                            {!isDealer && (
+                              <div className="flex items-baseline gap-1 min-w-0">
+                                <span className="text-muted-foreground whitespace-nowrap">Supplier:</span>
+                                <span className="text-foreground truncate">{item.vendors?.name || 'Unassigned'}</span>
+                              </div>
+                            )}
                             
                             {item.metadata?.current_stock > 0 && (
                               <div className="flex items-center gap-1 bg-green-50 dark:bg-green-950 px-2 py-0.5 rounded whitespace-nowrap">
