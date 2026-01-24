@@ -70,7 +70,7 @@ export const useAccountStatus = (userId: string | undefined) => {
         .from('user_profiles')
         .select('account_status, blocked_reason, blocked_at')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching account status:', error);
@@ -81,5 +81,7 @@ export const useAccountStatus = (userId: string | undefined) => {
     },
     enabled: !!userId,
     staleTime: 30000, // Cache for 30 seconds
+    retry: 2,
+    retryDelay: 500,
   });
 };

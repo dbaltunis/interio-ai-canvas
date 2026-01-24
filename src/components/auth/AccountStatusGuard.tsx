@@ -9,10 +9,12 @@ interface AccountStatusGuardProps {
 
 export function AccountStatusGuard({ children }: AccountStatusGuardProps) {
   const { user } = useAuth();
-  const { data: accountStatus, isLoading } = useAccountStatus(user?.id);
+  const { data: accountStatus, isLoading, isError } = useAccountStatus(user?.id);
 
-  // Don't block while loading or if no user
-  if (isLoading || !user) {
+  // Don't block while loading, on error, or if no user
+  // This prevents the error boundary from triggering on first login
+  // when the user_profiles row might not exist yet
+  if (isLoading || isError || !user) {
     return <>{children}</>;
   }
 
