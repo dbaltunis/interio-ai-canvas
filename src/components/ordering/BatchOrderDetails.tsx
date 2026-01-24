@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useBatchOrderItems } from "@/hooks/useBatchOrders";
 import { useOrderTrackingHistory } from "@/hooks/useOrderTracking";
 import { format } from "date-fns";
@@ -102,7 +103,18 @@ export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
         </CardHeader>
         <CardContent>
           {itemsLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading items...</div>
+            <div className="space-y-3 py-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4 p-3 border rounded-lg">
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
           ) : items && items.length > 0 ? (
             <div className="border rounded-lg">
               <Table>

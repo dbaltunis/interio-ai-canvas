@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -724,9 +725,13 @@ export const QuotationTab = ({
     });
   };
   if (!project) {
-    return <div className="flex items-center justify-center py-12">
-      <div className="text-muted-foreground">Loading project...</div>
-    </div>;
+    return (
+      <div className="space-y-4 py-4">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
+        ))}
+      </div>
+    );
   }
   if (templatesLoading || quotesLoading) {
     return <QuotationSkeleton />;

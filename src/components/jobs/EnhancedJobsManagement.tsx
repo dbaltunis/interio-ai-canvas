@@ -61,11 +61,7 @@ export const EnhancedJobsManagement = () => {
   };
 
   if (projectsLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading projects...</div>
-      </div>
-    );
+    return null; // Parent Suspense handles skeleton
   }
 
   // Show NewJobPage when creating a new job

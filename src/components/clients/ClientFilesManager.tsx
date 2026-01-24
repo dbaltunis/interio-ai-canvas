@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Upload, File, Image, FileText, Trash2, Eye, FolderOpen, Loader2, AlertTriangle } from "lucide-react";
 import { useClientFiles, useUploadClientFile, useDeleteClientFile, useGetClientFileUrl } from "@/hooks/useClientFiles";
 import { useClientJobs } from "@/hooks/useClientJobs";
@@ -181,7 +182,9 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
     return (
       <div className="space-y-1.5">
         {isLoading ? (
-          <div className="text-center py-2 text-[10px] text-muted-foreground">Loading...</div>
+          <div className="space-y-1.5 py-2">
+            {[1, 2].map(i => <Skeleton key={i} className="h-6 w-full" />)}
+          </div>
         ) : !files || files.length === 0 ? (
           <div className="text-center py-3">
             <p className="text-[10px] text-muted-foreground mb-2">No files yet</p>

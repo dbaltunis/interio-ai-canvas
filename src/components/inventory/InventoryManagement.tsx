@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag, Shield } from "lucide-react";
 import { useEnhancedInventory, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -47,16 +48,9 @@ export const InventoryManagement = () => {
     (item.quantity || 0) <= item.reorder_point
   ) || [];
 
-  // Handle permission loading with proper loading check
+  // Handle permission loading - let parent Suspense skeleton persist
   if (canViewInventory === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="text-lg text-muted-foreground">Loading inventory...</div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // If user doesn't have permission to view inventory, show access denied
@@ -79,7 +73,16 @@ export const InventoryManagement = () => {
   }
 
   if (isLoading) {
-    return <div>Loading inventory...</div>;
+    return (
+      <div className="space-y-6 p-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-28 w-full rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </div>
+    );
   }
 
   const totalValue = inventory?.reduce((sum, item) => {

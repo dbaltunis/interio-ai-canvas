@@ -422,19 +422,9 @@ const canViewJobsExplicit =
 
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
-    // Still validating - show loading
+    // Still validating - let parent Suspense skeleton persist
     if (validatingJob) {
-      return (
-        <div className="min-h-screen flex items-center justify-center animate-fade-in">
-          <Card className="max-w-md">
-            <CardContent className="text-center p-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Loading Project</h2>
-              <p className="text-muted-foreground">Validating project access...</p>
-            </CardContent>
-          </Card>
-        </div>
-      );
+      return null;
     }
     
     // Job doesn't exist - show error and allow clearing URL

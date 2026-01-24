@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
 import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
@@ -181,7 +182,13 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   };
 
   if (isLoading) {
-    return <div className="text-center py-4 text-xs text-muted-foreground">Loading projects...</div>;
+    return (
+      <div className="space-y-2 py-2">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-10 w-full rounded" />
+        ))}
+      </div>
+    );
   }
 
   // Compact mode for sidebar

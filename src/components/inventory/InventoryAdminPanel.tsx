@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Package, AlertTriangle, Settings2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -229,10 +230,18 @@ export const InventoryAdminPanel = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="text-center space-y-4">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto animate-pulse" />
-          <p className="text-muted-foreground">Loading inventory data...</p>
+      <div className="space-y-6 p-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-56" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          ))}
         </div>
       </div>
     );
