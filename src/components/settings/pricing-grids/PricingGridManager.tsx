@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Upload, Trash2, Grid3x3, Building2, Layers, FolderOpen, Pencil, Check, X, HelpCircle, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -539,7 +540,11 @@ export const PricingGridManager = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className="h-12 w-full rounded" />
+              ))}
+            </div>
           ) : !grids || grids.length === 0 ? (
             <p className="text-sm text-muted-foreground">No pricing grids yet. Create one above.</p>
           ) : (

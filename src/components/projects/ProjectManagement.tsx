@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText, Edit } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
@@ -34,14 +35,9 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   const { units } = useMeasurementUnits();
   const currency = units.currency || 'USD';
 
-  // Handle permission loading state
+  // Handle permission loading state - let parent handle skeleton
   if (canViewProjects === undefined) {
-    return (
-      <div className="animate-fade-in flex items-center justify-center p-8">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="ml-2 text-muted-foreground">Loading projects...</span>
-      </div>
-    );
+    return null;
   }
 
   if (canViewProjects === false) {
@@ -92,7 +88,19 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   };
 
   if (isLoading) {
-    return <div>Loading projects...</div>;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

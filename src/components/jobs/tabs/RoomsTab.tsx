@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
 import { useProjects } from "@/hooks/useProjects";
@@ -179,9 +180,13 @@ export const RoomsTab = ({
   // Use selling total (with markup) + room products for display
   const displayTotal = sellingTotal + roomProductsTotal;
   if (!project) {
-    return <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Loading project...</div>
-      </div>;
+    return (
+      <div className="space-y-4 py-4">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
+        ))}
+      </div>
+    );
   }
   console.log('RoomsTab: Project ID:', projectId);
   console.log('RoomsTab: Rooms count:', roomCount);
