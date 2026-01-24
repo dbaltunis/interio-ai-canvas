@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBatchOrders } from "@/hooks/useBatchOrders";
 import { useOrderTrackingHistory } from "@/hooks/useOrderTracking";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { OrderPizzaTracker } from "./OrderPizzaTracker";
 import { LeadTimePrediction } from "./LeadTimePrediction";
 import { format } from "date-fns";
@@ -22,6 +23,7 @@ export const OrderTrackingView = () => {
   const { data: batchOrders, isLoading } = useBatchOrders({
     status: undefined // Get all orders
   });
+  const { data: isDealer } = useIsDealer();
 
   const { data: trackingHistory } = useOrderTrackingHistory(selectedOrder?.id);
 
@@ -59,9 +61,11 @@ export const OrderTrackingView = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg">{order.batch_number}</CardTitle>
-                    <CardDescription>
-                      {order.vendors?.name}
-                    </CardDescription>
+                    {!isDealer && (
+                      <CardDescription>
+                        {order.vendors?.name}
+                      </CardDescription>
+                    )}
                   </div>
                   <Badge variant={statusColors[order.status as keyof typeof statusColors] || "secondary"}>
                     {order.status.replace('_', ' ')}

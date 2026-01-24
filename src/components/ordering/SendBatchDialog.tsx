@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useUpdateBatchOrder } from "@/hooks/useBatchOrders";
 import { useAddTrackingUpdate } from "@/hooks/useOrderTracking";
 import { useOrderScheduleSettings } from "@/hooks/useOrderSchedule";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { toast } from "sonner";
 import { Mail, FileText, Loader2 } from "lucide-react";
 
@@ -27,6 +28,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
   const updateBatch = useUpdateBatchOrder();
   const addTracking = useAddTrackingUpdate();
   const { data: scheduleSettings } = useOrderScheduleSettings();
+  const { data: isDealer } = useIsDealer();
   
   // Check global setting - default to false (don't show prices) for security
   const showPricesToSuppliers = scheduleSettings?.show_prices_to_suppliers ?? false;
@@ -89,7 +91,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         <DialogHeader>
           <DialogTitle>Send Batch Order</DialogTitle>
           <DialogDescription>
-            Send batch order #{batchOrder.batch_number} to {batchOrder.vendors?.name || 'Unknown Supplier'}
+            Send batch order #{batchOrder.batch_number}{!isDealer && ` to ${batchOrder.vendors?.name || 'Unknown Supplier'}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -97,10 +99,12 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
           {/* Order Summary */}
           <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
             <div className="text-sm font-medium mb-2">Order Summary</div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Supplier:</span>
-              <span className="font-medium">{batchOrder.vendors?.name}</span>
-            </div>
+            {!isDealer && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Supplier:</span>
+                <span className="font-medium">{batchOrder.vendors?.name}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Items:</span>
               <span className="font-medium">{batchOrder.total_items || 0}</span>

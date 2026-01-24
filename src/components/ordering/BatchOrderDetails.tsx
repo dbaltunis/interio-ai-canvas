@@ -4,8 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBatchOrderItems } from "@/hooks/useBatchOrders";
 import { useOrderTrackingHistory } from "@/hooks/useOrderTracking";
+import { useIsDealer } from "@/hooks/useIsDealer";
+import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
-import { Package, TruckIcon, Calendar, DollarSign } from "lucide-react";
+import { Package, TruckIcon, Calendar, DollarSign, Lock } from "lucide-react";
 
 interface BatchOrderDetailsProps {
   batchOrder: any;
@@ -24,6 +26,9 @@ const statusConfig = {
 export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
   const { data: items, isLoading: itemsLoading } = useBatchOrderItems(batchOrder?.id);
   const { data: trackingHistory, isLoading: trackingLoading } = useOrderTrackingHistory(batchOrder?.id);
+  const { data: isDealer } = useIsDealer();
+  const { data: userRole } = useUserRole();
+  const canViewCosts = userRole?.canViewVendorCosts ?? false;
 
   if (!batchOrder) return null;
 
@@ -37,9 +42,11 @@ export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
           <div className="flex items-start justify-between">
             <div>
               <CardTitle>Batch Order #{batchOrder.batch_number}</CardTitle>
-              <CardDescription>
-                {batchOrder.vendors?.name}
-              </CardDescription>
+              {!isDealer && (
+                <CardDescription>
+                  {batchOrder.vendors?.name}
+                </CardDescription>
+              )}
             </div>
             <Badge className={`${config.color} text-white`}>
               {config.label}
@@ -56,13 +63,23 @@ export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <div className="text-sm text-muted-foreground">Total Amount</div>
-                <div className="text-lg font-semibold">${Number(batchOrder.total_amount || 0).toFixed(2)}</div>
+            {canViewCosts && !isDealer ? (
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Amount</div>
+                  <div className="text-lg font-semibold">${Number(batchOrder.total_amount || 0).toFixed(2)}</div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Lock className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Amount</div>
+                  <div className="text-lg text-muted-foreground">Hidden</div>
+                </div>
+              </div>
+            )}
 
             {batchOrder.sent_date && (
               <div className="flex items-center gap-3">

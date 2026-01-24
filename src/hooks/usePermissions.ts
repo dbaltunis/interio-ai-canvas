@@ -16,26 +16,38 @@ export const useUserPermissions = () => {
       // Fetch user profile to get role with retry logic for race conditions
       let profile = null;
       let profileError = null;
-      const maxRetries = 3;
+      const maxRetries = 5; // Increased retries for login race condition
       
       for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const result = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-        
-        profile = result.data;
-        profileError = result.error;
-        
-        // If profile found or error is not 406/not found, break
-        if (profile || (profileError && profileError.code !== 'PGRST116' && profileError.code !== '406')) {
-          break;
-        }
-        
-        // If 406/not found and not last attempt, wait and retry
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        try {
+          const result = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('user_id', user.id)
+            .maybeSingle(); // Use maybeSingle to avoid throwing on 0 rows
+          
+          profile = result.data;
+          profileError = result.error;
+          
+          // If profile found, break immediately
+          if (profile) {
+            break;
+          }
+          
+          // If error is not a "not found" type, break
+          if (profileError && profileError.code !== 'PGRST116' && profileError.code !== '406') {
+            break;
+          }
+          
+          // If not found and not last attempt, wait and retry with exponential backoff
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+          }
+        } catch (e) {
+          console.warn(`[useUserPermissions] Profile fetch attempt ${attempt + 1} failed:`, e);
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+          }
         }
       }
 

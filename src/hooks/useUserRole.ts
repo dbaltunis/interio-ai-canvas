@@ -23,12 +23,12 @@ export const useUserRole = () => {
 
       const role = roleData || 'User';
 
-      // Get user profile for parent_account_id
+      // Get user profile for parent_account_id - use maybeSingle to avoid errors on new users
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("parent_account_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       // Use secure server-side function to check admin status
       const { data: isAdminData } = await supabase

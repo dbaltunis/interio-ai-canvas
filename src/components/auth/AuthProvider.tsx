@@ -69,9 +69,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         if (event === 'SIGNED_IN') {
-          // ✅ v2.3.7: Invalidate all queries on sign-in to force fresh fetch
-          console.log('🔑 [v2.3.7] User signed in - invalidating all queries for fresh data');
-          queryClient.invalidateQueries();
+          // ✅ v2.3.8: Add delay before invalidating to allow database triggers to create user_profiles
+          console.log('🔑 [v2.3.8] User signed in - waiting for profile creation before invalidating queries');
+          setTimeout(() => {
+            queryClient.invalidateQueries();
+          }, 500);
           
           // Set Sentry user context for error tracking
           if (session?.user) {
