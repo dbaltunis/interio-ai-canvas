@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Mail, Phone, MapPin, Users, Building2, User } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useFormattedDates } from "@/hooks/useFormattedDate";
@@ -241,7 +242,7 @@ export const ClientManagement = () => {
                     )}
                     {!isTablet && (
                       <TableCell>
-                        {formattedDates[client.id] || 'Loading...'}
+                        {formattedDates[client.id] || <Skeleton className="h-4 w-20 inline-block" />}
                       </TableCell>
                     )}
                     <TableCell>

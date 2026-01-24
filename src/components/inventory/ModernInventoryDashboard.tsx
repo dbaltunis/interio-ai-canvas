@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw } from "lucide-react";
 import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -223,7 +224,7 @@ export const ModernInventoryDashboard = () => {
           <SectionHelpButton sectionId="library" size="sm" />
           <Badge variant="secondary" className="text-xs">
             {inventoryLoading ? (
-              <span className="animate-pulse">Loading...</span>
+              <Skeleton className="h-3 w-10 inline-block" />
             ) : (
               `${inventory?.length || 0} items`
             )}

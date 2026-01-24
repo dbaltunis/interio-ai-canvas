@@ -6,6 +6,7 @@ import { VendorOrderingView } from "@/components/inventory/VendorOrderingView";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Purchasing = () => {
   const canViewPurchasing = useHasPermission('view_purchasing');
@@ -15,8 +16,15 @@ export const Purchasing = () => {
 
   if (isLoading || canViewPurchasing === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-80" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid gap-4">
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-64 w-full rounded-lg" />
+        </div>
       </div>
     );
   }

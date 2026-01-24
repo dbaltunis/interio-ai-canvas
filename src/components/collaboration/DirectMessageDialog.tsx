@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
@@ -341,11 +342,15 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
               {/* Messages Area */}
               <ScrollArea className="flex-1 bg-muted/20">
                 {messagesLoading ? (
-                  <div className="flex items-center justify-center h-full py-12">
-                    <div className="text-center">
-                      <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
-                      <p className="text-muted-foreground text-xs">Loading...</p>
-                    </div>
+                  <div className="flex flex-col gap-3 p-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                        <div className="flex gap-2 max-w-[70%]">
+                          <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                          <Skeleton className={`h-12 ${i % 2 === 0 ? 'w-32' : 'w-48'} rounded-lg`} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6">

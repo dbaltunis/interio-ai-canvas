@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { SubscriptionCard } from "@/components/billing/SubscriptionCard";
 import { InvoicesTable } from "@/components/billing/InvoicesTable";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Billing = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
@@ -17,8 +18,16 @@ export const Billing = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="container mx-auto p-6 space-y-6 max-w-5xl">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+        </div>
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
   }
