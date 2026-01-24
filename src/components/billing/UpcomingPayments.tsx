@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarClock, AlertCircle } from "lucide-react";
 import { useUpcomingPayments, CustomInvoice } from "@/hooks/useCustomInvoices";
 import { format, isPast, isWithinInterval, addDays } from "date-fns";
@@ -64,10 +65,21 @@ export const UpcomingPayments = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Upcoming Payments</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CalendarClock className="h-5 w-5" />
+            Upcoming Payments
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="border rounded-lg p-4 space-y-3">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     );

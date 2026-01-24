@@ -431,11 +431,10 @@ export const WindowManagementDialog = ({
       return data;
     },
     enabled: !!surface?.id && isOpen,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    gcTime: 0, // Don't cache at all
-    refetchInterval: 100 // Poll every 100ms for instant updates
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 30000, // 30 seconds - rely on mutation invalidation for updates
+    gcTime: 60000,    // 1 minute cache
   });
   
   // Track the template ID to detect when it changes
