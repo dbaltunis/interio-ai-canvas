@@ -7,6 +7,7 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load the new templates with automatic retry
 const InstallationInstructions = lazyWithRetry(() => import("./templates/InstallationInstructions").then(m => ({ default: m.InstallationInstructions })), "InstallationInstructions");
@@ -147,13 +148,13 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
       return <CombinedWorkshopInfo data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
     case "installation":
       return (
-        <Suspense fallback={<div className="p-6">Loading installation template...</div>}>
+        <Suspense fallback={<div className="p-6 space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>}>
           <InstallationInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />
         </Suspense>
       );
     case "fitting":
       return (
-        <Suspense fallback={<div className="p-6">Loading fitting template...</div>}>
+        <Suspense fallback={<div className="p-6 space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>}>
           <FittingInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />
         </Suspense>
       );

@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Edit, Trash2, GripVertical } from "lucide-react";
 import { useAllLeadSources, useCreateLeadSource, useUpdateLeadSource, useDeleteLeadSource } from "@/hooks/useLeadSources";
 import dynamicIconImports from 'lucide-react/dynamicIconImports';
@@ -115,7 +116,22 @@ export const LeadSourceManager = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
