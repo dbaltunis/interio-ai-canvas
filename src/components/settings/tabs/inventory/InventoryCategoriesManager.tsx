@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Edit, Trash2, FolderTree, Folder, Tag } from 'lucide-react';
 import { useInventoryCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type InventoryCategory } from '@/hooks/useInventoryCategories';
 import { Textarea } from '@/components/ui/textarea';
@@ -164,7 +165,20 @@ export const InventoryCategoriesManager = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading categories...</div>;
+    return (
+      <div className="space-y-3 py-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-8 w-8" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Users, UserPlus, Mail, Edit, Clock, Send, X } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import { Input } from "@/components/ui/input";
@@ -249,8 +250,17 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
           {/* User List */}
           <div className="space-y-2">
             {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="text-sm text-muted-foreground">Loading users...</div>
+              <div className="space-y-2 p-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-8 text-center">

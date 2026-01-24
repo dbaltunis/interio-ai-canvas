@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarIcon, Clock, MapPin, Users, UserPlus, Briefcase, Palette } from "lucide-react";
 import { format } from "date-fns";
 import { formatUserDate, formatUserTime } from "@/utils/dateFormatUtils";
@@ -327,11 +328,11 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <CalendarIcon className="h-3 w-3" />
-                <span>{formattedDate || 'Loading...'}</span>
+                {formattedDate ? <span>{formattedDate}</span> : <Skeleton className="h-3 w-20 inline-block" />}
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                <span>{formattedStartTime || '...'} - {formattedEndTime || '...'}</span>
+                {formattedStartTime ? <span>{formattedStartTime} - {formattedEndTime}</span> : <Skeleton className="h-3 w-24 inline-block" />}
               </div>
             </div>
 

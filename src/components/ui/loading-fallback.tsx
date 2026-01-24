@@ -5,13 +5,10 @@ interface LoadingFallbackProps {
   rows?: number;
 }
 
-export const LoadingFallback = ({ title = "Loading...", rows = 3 }: LoadingFallbackProps) => {
+export const LoadingFallback = ({ title, rows = 3 }: LoadingFallbackProps) => {
   return (
     <div className="space-y-4 p-4">
-      <div className="space-y-2">
-        <Skeleton className="h-6 w-32" />
-        <p className="text-sm text-muted-foreground">{title}</p>
-      </div>
+      <Skeleton className="h-6 w-32" />
       <div className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="space-y-2">

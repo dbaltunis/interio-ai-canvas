@@ -1,6 +1,7 @@
-import { Package, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Package, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useMaterialMatchCount } from '@/hooks/useInventoryPriceGroups';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +43,7 @@ export const MaterialMatchPreview = ({
     >
       <div className="flex items-start gap-3">
         {isLoading || isFetching ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mt-0.5" />
+          <Skeleton className="h-4 w-4 rounded-full mt-0.5" />
         ) : hasMatches ? (
           <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
         ) : (
@@ -51,7 +52,10 @@ export const MaterialMatchPreview = ({
         
         <AlertDescription className="flex-1">
           {isLoading ? (
-            <span className="text-muted-foreground">Checking inventory materials...</span>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-3 w-32" />
+            </div>
           ) : hasMatches ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
