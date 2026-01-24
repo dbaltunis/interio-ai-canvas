@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban, MessageSquare } from "lucide-react";
@@ -232,11 +233,17 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading clients...</p>
-        </div>
+      <div className="space-y-3 py-4">
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        ))}
       </div>
     );
   }

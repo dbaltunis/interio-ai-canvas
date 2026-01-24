@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -147,13 +148,23 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId, canManageT
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center text-muted-foreground">
-            <p>Loading templates...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <Card key={i}>
+            <CardContent className="py-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-12 w-12 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
 

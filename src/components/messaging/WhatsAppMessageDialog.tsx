@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MessageSquare, Send, Loader2, AlertCircle, X, Settings } from 'lucide-react';
 import { useSendWhatsApp } from '@/hooks/useSendWhatsApp';
 import { useQuery } from '@tanstack/react-query';
@@ -287,7 +288,11 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
                 <ScrollArea className="w-full">
                   <div className="flex gap-2 pb-1">
                     {loadingTemplates ? (
-                      <div className="text-xs text-muted-foreground px-2">Loading templates...</div>
+                      <div className="flex gap-2 px-2">
+                        {[1, 2, 3].map(i => (
+                          <Skeleton key={i} className="h-7 w-20 rounded-full" />
+                        ))}
+                      </div>
                     ) : (
                       templates.map((t) => (
                         <button

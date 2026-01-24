@@ -1,5 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type WindowCoveringOption, type HierarchicalOption } from "@/hooks/useWindowCoveringOptions";
 import { OptionTypeSection } from "./options/OptionTypeSection";
 import { HierarchicalOptionsSection } from "./options/HierarchicalOptionsSection";
@@ -54,7 +54,18 @@ export const OptionsSelector = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {isLoading ? (
-          <div className="text-center py-4">Loading options...</div>
+          <div className="space-y-4 py-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                <Skeleton className="h-5 w-5 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             {/* Traditional Options */}

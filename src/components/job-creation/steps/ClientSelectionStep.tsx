@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, User } from "lucide-react";
 import { useClients, useCreateClient } from "@/hooks/useClients";
 
@@ -46,7 +46,13 @@ export const ClientSelectionStep = ({ formData, updateFormData }: ClientSelectio
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading clients...</div>;
+    return (
+      <div className="space-y-4 py-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
+      </div>
+    );
   }
 
   return (
