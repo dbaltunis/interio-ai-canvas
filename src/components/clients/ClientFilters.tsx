@@ -127,18 +127,18 @@ export const ClientFilters = ({
     <div className="space-y-4">
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search clients by name or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
 
         <Select value={clientType} onValueChange={setClientType}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Client Type" />
           </SelectTrigger>
           <SelectContent>
@@ -149,7 +149,7 @@ export const ClientFilters = ({
         </Select>
 
         <Select value={activityFilter} onValueChange={setActivityFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Activity Level" />
           </SelectTrigger>
           <SelectContent>
@@ -162,7 +162,7 @@ export const ClientFilters = ({
         </Select>
 
         <Select value={leadSourceFilter} onValueChange={setLeadSourceFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Lead Source" />
           </SelectTrigger>
           <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
@@ -179,7 +179,7 @@ export const ClientFilters = ({
         </Select>
 
         <Select value={funnelStageFilter} onValueChange={setFunnelStageFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Funnel Stage" />
           </SelectTrigger>
           <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
@@ -193,7 +193,7 @@ export const ClientFilters = ({
         </Select>
 
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent className="z-[9999] bg-background border border-border shadow-lg">

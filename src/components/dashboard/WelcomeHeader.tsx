@@ -49,34 +49,36 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 md:p-5 bg-card border border-border/40 rounded-xl shadow-card transition-shadow hover:shadow-card-hover">
-      <Avatar className="h-11 w-11 border-2 border-primary/20 shrink-0 shadow-sm">
+    <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 md:p-5 bg-card border border-border/40 rounded-xl shadow-card transition-shadow hover:shadow-card-hover">
+      <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 border-primary/20 shrink-0 shadow-sm">
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={displayName} />
         ) : null}
-        <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+        <AvatarFallback className="text-xs sm:text-sm font-semibold bg-primary/10 text-primary">
           {initials}
         </AvatarFallback>
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <h1 className="text-base md:text-lg font-semibold text-foreground truncate tracking-tight">
+        <h1 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate tracking-tight">
           {getGreeting()}, {displayName}
         </h1>
-        <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{stats?.pendingQuotes || 0}</span> pending quotes
+        <div className="flex items-center gap-2 sm:gap-2.5 mt-0.5 flex-wrap">
+          <p className="text-[11px] sm:text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{stats?.pendingQuotes || 0}</span> pending
           </p>
-          <span className="text-border">•</span>
-          <p className="text-xs text-muted-foreground">
+          <span className="text-border hidden sm:inline">•</span>
+          <p className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">
             <span className="font-semibold text-foreground">{stats?.totalClients || 0}</span> clients
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Shopify-style Date Filter */}
-        <DashboardDateFilter />
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Date Filter - hidden on smallest mobile */}
+        <div className="hidden sm:block">
+          <DashboardDateFilter />
+        </div>
 
         <Button
           variant="ghost"
@@ -93,7 +95,7 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </Badge>
               ) : (
-                <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse block" />
+                <span className="h-2 w-2 bg-success rounded-full animate-pulse block" />
               )}
             </span>
           )}
@@ -102,11 +104,12 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
         {/* Product Tour Lightbulb */}
         <ShowcaseLightbulb />
 
+        {/* Theme toggle - hidden on mobile */}
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="h-8 w-8 rounded-lg hover:bg-muted"
+          className="h-8 w-8 rounded-lg hover:bg-muted hidden sm:flex"
           title="Toggle theme"
         >
           {theme === "dark" ? (
@@ -115,12 +118,14 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
             <Moon className="h-4 w-4" />
           )}
         </Button>
+        
+        {/* Customize - hidden on mobile */}
         {onCustomizeClick && (
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={onCustomizeClick}
-            className="h-8 w-8 rounded-lg hover:bg-muted"
+            className="h-8 w-8 rounded-lg hover:bg-muted hidden sm:flex"
             title="Customize dashboard"
           >
             <Settings2 className="h-4 w-4" />
