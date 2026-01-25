@@ -1,187 +1,161 @@
 
-# Fix Dealer Chat Visibility - Dealers Should Only See Admins/Owners
+
+# Fix Dealer Chat Visibility - Complete the Missing Components
 
 ## Problem
-Dealers can currently see and chat with ALL team members including other dealers. This is a privacy and security concern - dealers are external resellers and should NOT see each other.
 
-**Expected behavior:**
-- Dealers can ONLY see and chat with: **Owners**, **Admins**, and **System Owners**
-- Dealers should NOT see: other **Dealers** or **Staff**
-- Owners/Admins/Staff see everyone as normal
+The initial fix updated some components but **3 components were missed** and still bypass the dealer filtering by using raw `useTeamPresence()` directly instead of the filtered version.
+
+**Components still broken:**
+
+| Component | Location | Issue |
+|-----------|----------|-------|
+| `TeamMembersWidget.tsx` | Dashboard | Uses `useTeamPresence()` directly on line 33 |
+| `TeamPresenceCard.tsx` | Sidebar | Uses `useTeamPresence()` directly on line 8 |
+| `ModernUserPresence.tsx` | Floating button | Should already work via PresenceContext, but needs verification |
 
 ---
 
-## Solution Overview
+## Solution
 
-Filter the visible team members at the frontend level based on the current user's role. When the current user is a Dealer, hide other Dealers and Staff from all chat-related components.
+Update all remaining components to use `useFilteredTeamPresence` instead of `useTeamPresence`.
 
 ---
 
 ## Technical Changes
 
-### 1. Create a New Hook: `useFilteredTeamPresence`
+### 1. TeamMembersWidget.tsx
 
-**File:** `src/hooks/useFilteredTeamPresence.ts` (new file)
+**File:** `src/components/dashboard/TeamMembersWidget.tsx`
 
-A wrapper hook that:
-1. Uses existing `useTeamPresence()` to get all team members
-2. Uses `useIsDealer()` to check if current user is a dealer
-3. Filters out dealers and staff when the current user is a dealer
-
+**Change import (line 10):**
 ```typescript
-// If current user is a dealer, only show Owners/Admins/System Owners
-// Otherwise, show everyone
-const visibleUsers = isDealer 
-  ? teamPresence.filter(u => ['Owner', 'Admin', 'System Owner'].includes(u.role))
-  : teamPresence;
+// FROM:
+import { useTeamPresence } from "@/hooks/useTeamPresence";
+
+// TO:
+import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
 ```
 
----
-
-### 2. Update Chat Components to Use Filtered Data
-
-**Files to modify:**
-
-| File | Change |
-|------|--------|
-| `src/hooks/useDirectMessages.ts` | Use filtered presence instead of raw `useTeamPresence` |
-| `src/contexts/PresenceContext.tsx` | Filter `activeUsers` for dealers |
-| `src/components/collaboration/TeamCollaborationCenter.tsx` | Filter `otherUsers` for dealers |
-| `src/components/collaboration/ActiveUsersDropdown.tsx` | Filter visible users for dealers |
-
----
-
-### 3. Implementation Details
-
-#### A. `useFilteredTeamPresence.ts` (new hook)
-
+**Change usage (line 33):**
 ```typescript
-import { useTeamPresence, TeamMemberPresence } from './useTeamPresence';
-import { useIsDealer } from './useIsDealer';
+// FROM:
+const { data: presenceData = [] } = useTeamPresence();
 
+// TO:
+const { data: presenceData = [] } = useFilteredTeamPresence();
+```
+
+**Also add dealer filtering to `otherTeamMembers` (around line 183):**
+```typescript
+import { useIsDealer } from "@/hooks/useIsDealer";
+
+// Inside component:
+const { data: isDealer } = useIsDealer();
 const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
 
-export const useFilteredTeamPresence = (search?: string) => {
-  const teamPresenceQuery = useTeamPresence(search);
-  const { data: isDealer } = useIsDealer();
-
-  const filteredData = useMemo(() => {
-    if (!teamPresenceQuery.data) return [];
-    
-    // Dealers can only see Owners/Admins/System Owners
-    if (isDealer) {
-      return teamPresenceQuery.data.filter(
-        user => DEALER_VISIBLE_ROLES.includes(user.role)
-      );
-    }
-    
-    // Non-dealers see everyone
-    return teamPresenceQuery.data;
-  }, [teamPresenceQuery.data, isDealer]);
-
-  return { ...teamPresenceQuery, data: filteredData };
-};
-```
-
-#### B. `useDirectMessages.ts` (line 51)
-
-Change from:
-```typescript
-const { data: teamPresence = [] } = useTeamPresence();
-```
-
-To:
-```typescript
-const { data: teamPresence = [] } = useFilteredTeamPresence();
-```
-
-#### C. `PresenceContext.tsx` (line 37)
-
-Change from:
-```typescript
-const { data: teamPresence = [], isLoading, error } = useTeamPresence();
-```
-
-To:
-```typescript
-const { data: teamPresence = [], isLoading, error } = useFilteredTeamPresence();
-```
-
-#### D. `TeamCollaborationCenter.tsx` (around lines 167-172)
-
-Add dealer filtering:
-```typescript
-// Filter team visibility for dealers
-const otherUsers = useMemo(() => {
-  const filtered = activeUsers.filter(u => u.user_id !== user?.id);
+// Update filtering logic:
+const otherTeamMembers = teamMembers.filter(member => {
+  if (member.id === user?.id) return false; // Exclude current user
   
   // Dealers can only see Owners/Admins/System Owners
   if (isDealer) {
-    return filtered.filter(u => 
-      ['Owner', 'Admin', 'System Owner'].includes(u.user_profile?.role || '')
-    );
+    return DEALER_VISIBLE_ROLES.includes(member.role || '');
   }
   
-  return filtered;
-}, [activeUsers, user?.id, isDealer]);
+  return true;
+});
 ```
 
-#### E. `ActiveUsersDropdown.tsx` (around lines 24-26)
+---
 
-Add dealer filtering:
+### 2. TeamPresenceCard.tsx
+
+**File:** `src/components/team/TeamPresenceCard.tsx`
+
+**Change import (line 4):**
 ```typescript
-const { data: isDealer } = useIsDealer();
+// FROM:
+import { useTeamPresence } from "@/hooks/useTeamPresence";
 
-// Filter for dealer visibility
-const otherUsers = useMemo(() => {
-  const filtered = activeUsers.filter(u => u.user_id !== user?.id);
+// TO:
+import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
+```
+
+**Change usage (line 8):**
+```typescript
+// FROM:
+const { data, isLoading } = useTeamPresence();
+
+// TO:
+const { data, isLoading } = useFilteredTeamPresence();
+```
+
+---
+
+### 3. ModernUserPresence.tsx (Verification)
+
+**File:** `src/components/collaboration/ModernUserPresence.tsx`
+
+This component uses `useUserPresence()` which gets data from `PresenceContext`. Since `PresenceContext` now uses `useFilteredTeamPresence()`, this **should already be working**.
+
+However, as a safety measure, add explicit dealer filtering:
+
+**Add imports:**
+```typescript
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useIsDealer } from '@/hooks/useIsDealer';
+import { useMemo } from 'react';
+```
+
+**Add filtering:**
+```typescript
+const { user } = useAuth();
+const { data: isDealer } = useIsDealer();
+const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
+
+// Filter activeUsers
+const filteredUsers = useMemo(() => {
+  const others = activeUsers.filter(u => u.user_id !== user?.id);
   
   if (isDealer) {
-    return filtered.filter(u => 
-      ['Owner', 'Admin', 'System Owner'].includes(u.user_profile?.role || '')
+    return others.filter(u => 
+      DEALER_VISIBLE_ROLES.includes(u.user_profile?.role || '')
     );
   }
   
-  return filtered;
+  return others;
 }, [activeUsers, user?.id, isDealer]);
+
+// Then use filteredUsers instead of activeUsers throughout the component
 ```
+
+---
+
+## Files to Modify
+
+| File | Type | Change |
+|------|------|--------|
+| `src/components/dashboard/TeamMembersWidget.tsx` | Edit | Switch to `useFilteredTeamPresence`, add dealer filtering for `teamMembers` |
+| `src/components/team/TeamPresenceCard.tsx` | Edit | Switch to `useFilteredTeamPresence` |
+| `src/components/collaboration/ModernUserPresence.tsx` | Edit | Add explicit dealer filtering as safety measure |
 
 ---
 
 ## What This Fixes
 
-| Scenario | Before | After |
+| Location | Before | After |
 |----------|--------|-------|
-| Dealer opens Team Pulse | Sees all users including other dealers | Only sees Owners/Admins |
-| Dealer opens Chat | Can message any user | Can only message Owners/Admins |
-| Dealer sees conversations list | Shows all team members | Only shows Owners/Admins |
-| Owner/Admin opens chat | Sees everyone | No change - sees everyone |
+| Dashboard "Team" widget | Dealers see ALL team members | Dealers only see Owners/Admins |
+| Team Presence Card | Dealers see ALL team members | Dealers only see Owners/Admins |
+| Floating Team Pulse | Dealers see ALL team members | Dealers only see Owners/Admins |
+| Team Hub Chat | Already fixed | Already fixed |
+| Direct Messages list | Already fixed | Already fixed |
+| Active Users Dropdown | Already fixed | Already fixed |
 
 ---
 
-## Files Modified
+## Summary
 
-| File | Type | Description |
-|------|------|-------------|
-| `src/hooks/useFilteredTeamPresence.ts` | **New** | Wrapper hook for filtered team presence |
-| `src/hooks/useDirectMessages.ts` | Edit | Use filtered hook |
-| `src/contexts/PresenceContext.tsx` | Edit | Use filtered hook |
-| `src/components/collaboration/TeamCollaborationCenter.tsx` | Edit | Filter visible users |
-| `src/components/collaboration/ActiveUsersDropdown.tsx` | Edit | Filter visible users |
+The initial fix was incomplete - it updated the core hooks and some components, but missed 3 components that directly use the raw `useTeamPresence` hook. This plan completes the fix by updating all remaining components.
 
----
-
-## Why Frontend Filtering (Not Database)
-
-1. **Faster implementation** - No database migration needed
-2. **Flexible** - Easy to adjust rules without schema changes
-3. **Consistent pattern** - Follows existing `isDealer` checks throughout the app
-4. **Safe** - Dealers can still receive messages from others (RLS allows this), they just can't see/initiate to unauthorized users
-
----
-
-## Edge Cases Handled
-
-1. **Existing conversations**: If a dealer had a conversation with another dealer before this fix, they won't see that conversation anymore (filtered out)
-2. **Incoming messages**: Dealers can still RECEIVE messages from anyone (the sender just won't appear in their list to initiate new conversations)
-3. **Loading states**: The filter respects the `isDealer` loading state to prevent flicker
