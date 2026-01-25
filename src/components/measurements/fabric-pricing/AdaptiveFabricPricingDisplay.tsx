@@ -948,9 +948,12 @@ export const AdaptiveFabricPricingDisplay = ({
                     calculationText = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × 1 piece (using leftover) = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
                     calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                   } else {
-                    const totalInUserUnit = metersToFabricUnit(totalLinearMeters);
-                    calculationText = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${horizontalPiecesNeeded} pieces = ${totalInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
-                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${perPieceInUserUnit.toFixed(2)}${unitSuffix} per piece × ${horizontalPiecesNeeded} = ${totalInUserUnit.toFixed(2)}${unitSuffix} total × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalLinearMeters * pricePerUnit)}`;
+                    // ✅ FIX: Use totalLinearMetersToOrder (calculated from perPiece × pieces) for formula text
+                    // This ensures "A × B = C" where C actually equals A × B mathematically
+                    const totalForFormula = metersToFabricUnit(totalLinearMetersToOrder);
+                    const formulaCost = totalLinearMetersToOrder * pricePerUnit;
+                    calculationText = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${horizontalPiecesNeeded} pieces = ${totalForFormula.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${perPieceInUserUnit.toFixed(2)}${unitSuffix} per piece × ${horizontalPiecesNeeded} = ${totalForFormula.toFixed(2)}${unitSuffix} total × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(formulaCost)}`;
                   }
                 } else {
                   calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
@@ -1004,9 +1007,13 @@ export const AdaptiveFabricPricingDisplay = ({
                   fabricCalculation
                 });
 
-                // Build transparent breakdown showing ALL components
-                // quantityInUserUnit already declared above for calculationText
-                const breakdownQuantity = metersToFabricUnit(quantity);
+                // ✅ FIX: Calculate formula result directly from displayed components
+                // This ensures "A × B + C = D" where D actually equals A×B+C mathematically
+                const calculatedTotalCm = (widthsRequired * dropWithAllowances) + totalSeamAllowance;
+                const calculatedTotalMeters = calculatedTotalCm / 100;
+                const breakdownQuantityForFormula = metersToFabricUnit(calculatedTotalMeters);
+                const formulaCost = calculatedTotalMeters * pricePerUnit;
+                
                 if (totalAllowances > 0 || totalSeamAllowance > 0) {
                   let breakdownParts = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm`;
                   if (totalAllowances > 0) {
@@ -1015,10 +1022,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   if (totalSeamAllowance > 0) {
                     breakdownParts += ` + ${totalSeamAllowance.toFixed(0)}cm seams`;
                   }
-                  calculationBreakdown = `${breakdownParts} = ${breakdownQuantity.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
+                  calculationBreakdown = `${breakdownParts} = ${breakdownQuantityForFormula.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(formulaCost)}`;
                 } else {
                   // Fallback for simple cases
-                  calculationBreakdown = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm = ${breakdownQuantity.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
+                  calculationBreakdown = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm = ${breakdownQuantityForFormula.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(formulaCost)}`;
                 }
               }
             }
