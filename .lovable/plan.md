@@ -1,157 +1,359 @@
 
-# Fix: Permission-Based Dashboard Widget Visibility
+# Plan: Fix Critical Fabric Calculation Bugs and Display Synchronization Issues
 
-## Problem Summary
+## Executive Summary
 
-The dashboard currently does NOT properly filter widgets based on user permissions. The role name (Dealer, Admin, Staff) is irrelevant - what matters is the **actual permissions** assigned when inviting someone to the app.
+After thorough investigation, I've identified **5 critical bugs** causing incorrect calculations and display issues when changing inputs like rotation, width, and drop. These bugs are causing significant financial risk to users by either under-quoting or displaying incorrect values.
 
-Currently:
-- Revenue Chart: Shows to everyone (no permission check)
-- Jobs Status Chart: Shows to everyone (no permission check)  
-- KPI Row (Revenue, Projects, Quotes, Clients): Shows all 4 to everyone (no permission check)
-- Only some dynamic widgets check permissions
+---
 
-## The Correct Approach (Industry Standard)
+## Critical Bugs Found
 
-Every SaaS like Notion, Figma, Linear uses this pattern:
-1. Role names (Admin, Staff, Dealer) are just **permission presets**
-2. When you invite someone, you can customize their exact permissions
-3. The UI shows/hides elements based on the **actual permissions granted**, not the role name
-4. Same premium visual quality for everyone - just different data visibility
+### Bug #1: Missing `horizontalPiecesNeeded` in Return Object (HIGHEST IMPACT)
+**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`  
+**Lines**: 142-148, 177-206
 
-## Solution
+**Problem**: The hook calculates `horizontalPiecesNeeded` inside the `if (isRailroaded)` block but **never returns it**. The display component then defaults to `1`, causing the formula text to show wrong calculations.
 
-Add permission checks to ALL sensitive dashboard elements:
+**Current Code (line 145)**:
+```typescript
+const horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
+linearMeters = (totalWidthWithAllowances / 100) * horizontalPiecesNeeded * wasteMultiplier;
+// ... but horizontalPiecesNeeded is NEVER returned!
+```
 
-### 1. KPI Row - Filter Metrics by Permission
+**Return Object (lines 177-206)** - Missing `horizontalPiecesNeeded`:
+```typescript
+return {
+  linearMeters,
+  orderedLinearMeters,
+  // ... many fields
+  // ❌ horizontalPiecesNeeded NOT INCLUDED
+};
+```
 
-Add permission props to `CompactKPIRow` and filter which metrics display:
+**Impact**: Display shows "16.33m × 1 piece = 16.33m" when it should show "16.33m × 2 pieces = 32.66m"
 
-| Metric | Required Permission |
-|--------|---------------------|
-| Revenue | `view_revenue_kpis` or `view_analytics` |
-| Active Projects | `view_all_jobs` or `view_assigned_jobs` |
-| Pending Quotes | `view_all_jobs` or `view_assigned_jobs` |
-| Clients | `view_all_clients` or `view_assigned_clients` |
+---
 
-**If user has NO jobs permission**: Hide Projects and Quotes KPI cards
-**If user has NO client permission**: Hide Clients KPI card
-**If user has NO revenue permission**: Hide Revenue KPI card
+### Bug #2: Double Multiplication in Display Logic
+**File**: `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx`  
+**Lines**: 908-915
 
-### 2. Charts Row - Add Permission Gates
+**Problem**: The `linearMeters` from `useFabricCalculator` **already includes** the multiplication by `horizontalPiecesNeeded` (see line 146 above). But the display logic multiplies again:
 
-| Chart | Required Permission |
-|-------|---------------------|
-| Revenue Trend | `view_revenue_kpis` or `view_analytics` |
-| Jobs Status | `view_all_jobs` or `view_assigned_jobs` |
+```typescript
+const linearMeters = fabricCalculation.linearMeters || 0;  // Already includes pieces!
+const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
+const totalLinearMetersToOrder = linearMeters * piecesToCharge;  // ❌ DOUBLE MULTIPLICATION
+```
 
-**If user lacks permission**: Don't render the chart at all
+**Impact**: Your test showed 32.66m displayed when actual requirement is 16.33m × 2 = 32.66m, but the text says "16.33m × 2 pieces = 32.66m × £100" with cost of £1633 (not £3266), indicating the actual cost IS correct but display text is wrong.
 
-### 3. Data Hooks Already Filter Correctly
+---
 
-The existing hooks like `useRevenueHistory`, `useBatchedDashboardQueries` already filter by `effectiveOwnerId` - users only see their own data. The issue is the UI elements always render regardless of permissions.
+### Bug #3: Backwards Formula in "Quick Add" Flow
+**File**: `src/components/projects/AddCurtainToProject.tsx`  
+**Lines**: 121-131
+
+**Problem**: The "Standard" (non-railroaded) calculation is **missing multiplication by widths required**:
+
+```typescript
+// ❌ CURRENT BROKEN CODE (lines 127-131):
+const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / selectedFabricWidth) - 1);
+const seamAllowance = seamsNeeded * template.seam_hems * 2;
+totalFabricRequired = (totalDrop + seamAllowance) / 100;  // Missing × widthsRequired!
+```
+
+**Correct Formula**:
+```typescript
+const widthsRequired = Math.ceil(totalFabricWidth / selectedFabricWidth);
+const seamsNeeded = Math.max(0, widthsRequired - 1);
+const seamAllowance = seamsNeeded * template.seam_hems * 2;
+totalFabricRequired = ((totalDrop + seamAllowance) * widthsRequired) / 100;  // ✅ Multiply!
+```
+
+**Impact**: For your 250cm × 400cm example with 140cm fabric (x2 fullness):
+- **Broken code**: ~2.5m fabric
+- **Correct formula**: 6 drops × 2.73m = 16.38m fabric
+
+---
+
+### Bug #4: Missing `fabricRotated` and `fabricOrientation` in Return Object
+**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`  
+**Lines**: 177-206
+
+**Problem**: The display component checks `fabricCalculation.fabricRotated` and `fabricCalculation.fabricOrientation` but these are **never returned**:
+
+```typescript
+// AdaptiveFabricPricingDisplay.tsx line 801:
+const isHorizontal = fabricCalculation.fabricRotated === true || 
+                     fabricCalculation.fabricOrientation === 'horizontal';
+// Both are ALWAYS undefined because useFabricCalculator doesn't return them!
+```
+
+**Impact**: The display may not switch to horizontal mode even when fabric is rotated.
+
+---
+
+### Bug #5: Stale Calculation During Save
+**File**: `src/components/measurements/DynamicWindowWorksheet.tsx`  
+**Lines**: 1366-1381
+
+**Problem**: During save, the code manually recalculates width allowances instead of using the already-calculated `fabricCalculation` object:
+
+```typescript
+// ❌ MANUAL RECALCULATION (lines 1366-1381):
+const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10;
+const widthWithAllowancesCm = (railWidthCm * fullness) + (sideHemCm * 2) + returnsCm;
+// This may differ from fabricCalculation.totalWidthWithAllowances!
+```
+
+**Impact**: Saved values may differ from displayed values, causing quote/invoice mismatches.
+
+---
+
+## Solution Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SINGLE SOURCE OF TRUTH                               │
+│                                                                             │
+│  calculationFormulas.ts  ──────────────►  orientationCalculator.ts          │
+│  (CURTAIN_VERTICAL_FORMULA)               (calculates fabricCalculation)    │
+│  (CURTAIN_HORIZONTAL_FORMULA)                                               │
+└───────────────────────────────────────────┬─────────────────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────┐
+                    │  useFabricCalculator.ts (REFACTORED)      │
+                    │  - Imports from calculationFormulas.ts    │
+                    │  - Returns horizontalPiecesNeeded         │
+                    │  - Returns fabricRotated, fabricOrientation│
+                    │  - linearMeters = per-piece value          │
+                    └───────────────────────┬───────────────────┘
+                                            │
+              ┌─────────────────────────────┼─────────────────────────────┐
+              ▼                             ▼                             ▼
+    AddCurtainToProject.tsx    AdaptiveFabricPricingDisplay.tsx    DynamicWindowWorksheet.tsx
+    (IMPORT FROM FORMULAS)     (USE PRE-CALCULATED VALUES)         (USE fabricCalculation)
+```
+
+---
+
+## Technical Implementation Details
+
+### Fix 1: Update `useFabricCalculator.ts` Return Object
+**Add missing fields to return statement (lines 177-206)**:
+
+```typescript
+return {
+  linearMeters,
+  orderedLinearMeters,
+  remnantMeters,
+  totalCost,
+  fabricCost,
+  pricePerMeter: fabric.price_per_meter,
+  widthsRequired,
+  seamsCount,
+  seamLaborHours,
+  railWidth: width,
+  fullnessRatio,
+  drop: height,
+  headerHem,
+  bottomHem,
+  pooling,
+  totalDrop,
+  returns: returnLeft + returnRight,
+  wastePercent,
+  sideHems,
+  seamHems,
+  totalSeamAllowance,
+  totalSideHems,
+  returnLeft,
+  returnRight,
+  curtainCount,
+  curtainType: template.panel_configuration || 'pair',
+  totalWidthWithAllowances,
+  dropPerWidthMeters,
+  // ✅ NEW: Add missing fields for display
+  horizontalPiecesNeeded: isRailroaded ? horizontalPiecesNeeded : 1,
+  fabricRotated: isRailroaded,
+  fabricOrientation: isRailroaded ? 'horizontal' : 'vertical',
+  // ✅ NEW: Add per-piece meters for accurate display
+  linearMetersPerPiece: isRailroaded ? (totalWidthWithAllowances / 100) * wasteMultiplier : undefined
+};
+```
+
+**Also move `horizontalPiecesNeeded` declaration outside the if block (around line 138)**:
+```typescript
+let linearMeters: number;
+let orderedLinearMeters: number;
+let dropPerWidthMeters: number;
+let horizontalPiecesNeeded = 1;  // ✅ Declare with default value
+
+if (isRailroaded) {
+  horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);  // ✅ Assign
+  // ...
+}
+```
+
+### Fix 2: Update Display Logic in `AdaptiveFabricPricingDisplay.tsx`
+**Lines 908-915** - Use per-piece value instead of total:
+
+```typescript
+if (isHorizontal) {
+  // ✅ FIX: linearMeters from hook ALREADY includes piece multiplication
+  // Use linearMetersPerPiece if available, otherwise divide by pieces
+  const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
+  const linearMetersPerPiece = fabricCalculation.linearMetersPerPiece || 
+    (fabricCalculation.linearMeters / horizontalPiecesNeeded);
+  
+  const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+  
+  // ✅ CORRECT: Multiply per-piece value by pieces to charge
+  const totalLinearMetersToOrder = linearMetersPerPiece * piecesToCharge;
+  
+  // Display text now shows accurate breakdown
+  calculationText = `${linearMetersPerPiece.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m × ${formatPricePerFabricUnit(pricePerUnit)}`;
+}
+```
+
+### Fix 3: Fix `AddCurtainToProject.tsx` Standard Calculation
+**Lines 125-136** - Add missing multiplication by widths:
+
+```typescript
+} else if (selectedFabricWidth) {
+  // ✅ FIX: Calculate widths required first
+  const widthsRequired = Math.ceil(totalFabricWidth / selectedFabricWidth);
+  const seamsNeeded = Math.max(0, widthsRequired - 1);
+  const seamAllowance = seamsNeeded * template.seam_hems * 2;
+
+  // ✅ FIX: Multiply by widthsRequired!
+  totalFabricRequired = ((totalDrop + seamAllowance) * widthsRequired) / 100;
+} else {
+```
+
+### Fix 4: Update Types Definition
+**File**: `src/components/shared/measurement-visual/types.ts`
+
+Add the new fields to `FabricCalculation` interface:
+```typescript
+export interface FabricCalculation {
+  // ... existing fields
+  horizontalPiecesNeeded?: number;
+  leftoverFromLastPiece?: number;
+  // ✅ NEW fields
+  fabricRotated?: boolean;
+  fabricOrientation?: 'horizontal' | 'vertical';
+  linearMetersPerPiece?: number;
+}
+```
+
+### Fix 5: Refactor Save Logic in `DynamicWindowWorksheet.tsx`
+**Lines 1366-1381** - Use fabricCalculation instead of recalculating:
+
+```typescript
+// ✅ FIX: Use pre-calculated values from fabricCalculation
+const finalWidthM = fabricCalculation?.totalWidthWithAllowances 
+  ? (fabricCalculation.totalWidthWithAllowances * (1 + (fabricCalculation.wastePercent || 0) / 100)) / 100
+  : 0;
+```
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Filter `compactMetrics` array based on permissions, wrap charts in permission checks |
-| `src/components/dashboard/CompactKPIRow.tsx` | Add `requiredPermission` to metric type (optional) |
+| File | Lines | Change Type | Priority |
+|------|-------|-------------|----------|
+| `useFabricCalculator.ts` | 138, 145, 177-206 | Add missing return fields | Critical |
+| `AdaptiveFabricPricingDisplay.tsx` | 908-945 | Fix double multiplication | Critical |
+| `AddCurtainToProject.tsx` | 125-136 | Add missing × widthsRequired | Critical |
+| `types.ts` | 91-122 | Add new interface fields | Required |
+| `DynamicWindowWorksheet.tsx` | 1366-1381 | Use fabricCalculation values | Medium |
 
 ---
 
-## Technical Implementation
+## Unit Tests to Add
 
-### EnhancedHomeDashboard.tsx Changes
-
-1. Add permission checks for charts and KPIs
-2. Filter metrics array based on user permissions
-3. Conditionally render charts only if user has permission
+Create `src/utils/__tests__/fabricCalculation.test.ts`:
 
 ```typescript
-// New permission checks needed
-const canViewRevenue = useHasAnyPermission(['view_revenue_kpis', 'view_analytics', 'view_primary_kpis']);
-const canViewJobs = useHasAnyPermission(['view_all_jobs', 'view_assigned_jobs']);
-const canViewClients = useHasAnyPermission(['view_all_clients', 'view_assigned_clients']);
+import { describe, it, expect } from 'vitest';
 
-// Filter KPI metrics based on permissions
-const compactMetrics = useMemo(() => {
-  const metrics = [];
-  
-  // Only show revenue if user has permission
-  if (canViewRevenue !== false) {
-    metrics.push({ id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true });
-  }
-  
-  // Only show projects/quotes if user can view jobs
-  if (canViewJobs !== false) {
-    metrics.push({ id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText });
-    metrics.push({ id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText });
-  }
-  
-  // Only show clients if user can view clients
-  if (canViewClients !== false) {
-    metrics.push({ id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users });
-  }
-  
-  return metrics;
-}, [stats, canViewRevenue, canViewJobs, canViewClients]);
+describe('Fabric Calculation Formulas', () => {
+  describe('Vertical/Standard Orientation', () => {
+    it('should calculate 15m for 250cm×400cm with 140cm fabric at x2 fullness', () => {
+      // Your Scenario 1
+      const result = calculateVertical({
+        railWidthCm: 400,
+        dropCm: 250,
+        fullness: 2,
+        fabricWidthCm: 140,
+        // No hems for simplicity
+      });
+      expect(result.widthsRequired).toBe(6);  // ceil(800/140)
+      expect(result.linearMeters).toBe(15);    // 6 × 250cm = 1500cm = 15m
+    });
+  });
 
-// Charts section with permission gates
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  {canViewRevenue !== false && (
-    <Suspense fallback={<WidgetSkeleton />}>
-      <RevenueTrendChart />
-    </Suspense>
-  )}
-  {canViewJobs !== false && (
-    <Suspense fallback={<WidgetSkeleton />}>
-      <JobsStatusChart />
-    </Suspense>
-  )}
-</div>
+  describe('Horizontal/Railroaded Orientation', () => {
+    it('should calculate 10.5m for 350cm×400cm with 300cm fabric at x2 fullness (rotated wide fabric)', () => {
+      // Your Scenario: Wide fabric used with vertical seams
+      const result = calculateHorizontal({
+        railWidthCm: 400,
+        dropCm: 350,
+        fullness: 2,
+        fabricWidthCm: 300,
+      });
+      expect(result.horizontalPiecesNeeded).toBe(2);  // ceil(350/300)
+      expect(result.linearMeters).toBe(16);           // 2 × 800cm = 16m
+    });
+  });
+});
 ```
 
 ---
 
-## Expected Result After Fix
+## Verification Steps
 
-### User with ALL permissions (Owner/Admin)
-- Sees all 4 KPI cards
-- Sees both Revenue and Jobs charts
-- Sees all widgets they've enabled
+After implementing these fixes:
 
-### User with LIMITED permissions (Staff with only assigned jobs)
-- Sees only Projects, Quotes KPI cards (if view_assigned_jobs)
-- Sees Jobs Status Chart only (no Revenue chart)
-- Dynamic widgets filtered by their permissions
+1. **Test Vertical Calculation**: 250cm H × 400cm W, 140cm fabric, x2 fullness
+   - Expected: 6 widths × 2.73m = 16.38m (with hems)
+   - Display should show: "6 width(s) × 273cm = 16.38m × £100.00/m = £1638.00"
 
-### Dealer with minimal permissions
-- Sees only the KPIs for data they can access (Projects, Quotes)
-- No Revenue chart (no view_analytics permission)
-- Jobs chart shows only their assigned jobs data
-- Dynamic widgets filtered by their permissions
+2. **Test Horizontal Calculation**: 250cm H × 800cm W, 140cm fabric, rotated
+   - Expected: 2 pieces × 8.15m = 16.30m
+   - Display should show: "8.15m × 2 pieces = 16.30m × £100.00/m = £1630.00"
 
----
+3. **Test Input Changes**: Change width from 400cm → 500cm
+   - Numbers should update immediately
+   - Cost should recalculate
 
-## Why This Is The Correct SaaS Pattern
-
-1. **Permission-Driven, Not Role-Driven**: The UI responds to actual permissions, not role names
-2. **Custom Permissions Work**: If you grant a Dealer `view_analytics`, they'll see the Revenue chart
-3. **Graceful Degradation**: Users see a beautiful dashboard with just fewer items
-4. **Same Premium UI**: No "poor quality" simplified views - same glassmorphism, animations for everyone
-5. **Maintainable**: One dashboard component, one set of widgets, permission checks at render time
+4. **Test Rotation Toggle**: Toggle fabric rotation
+   - Formula and numbers should switch between vertical/horizontal modes
+   - All displayed values should update
 
 ---
 
-## Testing Checklist
+## Risk Assessment
+
+| Risk | Mitigation |
+|------|------------|
+| Existing saved quotes affected | Changes only affect calculation logic, not stored data |
+| Regression in other components | Unit tests will catch formula regressions |
+| Display/cost mismatch | Single source of truth architecture prevents divergence |
+
+---
+
+## Expected Outcome
 
 After implementation:
-- [ ] Owner sees all 4 KPIs and both charts
-- [ ] Staff with `view_assigned_jobs` only sees Projects/Quotes KPIs and Jobs chart
-- [ ] Dealer sees only KPIs they have permission for
-- [ ] Removing `view_analytics` from any user hides Revenue chart
-- [ ] Custom permission overrides work correctly
-- [ ] No visual quality degradation for limited users
+- ✅ Numbers update immediately when inputs change
+- ✅ Rotation toggle switches calculation mode correctly
+- ✅ Display formula matches actual cost
+- ✅ "Quick Add" flow uses correct fabric requirements
+- ✅ Saved values match displayed values
+- ✅ No more under-quoting or over-quoting fabric
+
