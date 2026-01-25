@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -164,9 +164,24 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
     };
   }, [isOpen]);
 
-  // Separate current user and others
+  // Roles that dealers are allowed to see
+  const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
+  
+  // Separate current user and others, applying dealer visibility filter
   const currentUser = activeUsers.find(u => u.user_id === user?.id);
-  const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
+  const otherUsers = useMemo(() => {
+    const filtered = activeUsers.filter(u => u.user_id !== user?.id);
+    
+    // Dealers can only see Owners/Admins/System Owners
+    if (isDealer) {
+      return filtered.filter(u => 
+        DEALER_VISIBLE_ROLES.includes(u.user_profile?.role || '')
+      );
+    }
+    
+    return filtered;
+  }, [activeUsers, user?.id, isDealer]);
+  
   const onlineUsers = otherUsers.filter(u => u.status === 'online');
   const offlineUsers = otherUsers.filter(u => u.status !== 'online');
   const totalUsers = otherUsers.length; // Don't include current user in count
