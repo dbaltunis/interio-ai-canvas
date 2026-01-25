@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lightbulb } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/constants/version";
 import { WelcomeVideoPlayer, VideoStep, VideoChapter } from "@/components/showcase/WelcomeVideoPlayer";
@@ -122,8 +122,8 @@ export const ShowcaseLightbulb = ({ size = "md" }: ShowcaseLightbulbProps) => {
         }`}
         title="Platform Overview"
       >
-        {/* Lightbulb icon */}
-        <Lightbulb 
+        {/* Help icon */}
+        <HelpCircle 
           className={`${sizeClasses.icon} transition-colors ${
             hasNewContent 
               ? "text-amber-500 fill-amber-500/30" 
