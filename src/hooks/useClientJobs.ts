@@ -37,11 +37,6 @@ export const useClientStats = () => {
       const clientStats = clients?.map(client => {
         const projectCount = client.projects?.length || 0;
         
-        // Filter closed/completed projects (matching ClientProfilePage logic)
-        const closedProjects = (client.projects || []).filter(p => 
-          ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
-        );
-        
         // Get all quotes from all projects for this client
         const allQuotes = client.projects?.flatMap(project => project.quotes || []) || [];
         
@@ -52,13 +47,16 @@ export const useClientStats = () => {
           total: allQuotes.length
         };
         
-        // Calculate portfolio value from closed/completed projects only (matching ClientProfilePage)
-        const totalValue = closedProjects.reduce((sum, project) => {
+        // Calculate lifetime value from ALL projects (sum of all quote totals)
+        const allProjects = client.projects || [];
+        const totalValue = allProjects.reduce((sum, project) => {
           const projectQuotes = project.quotes || [];
           if (projectQuotes.length > 0) {
-            // Use the first quote's total_amount (quotes are not sorted here, so take first)
-            const latestQuote = projectQuotes[0];
-            return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
+            // Sum all quotes for each project
+            const projectTotal = projectQuotes.reduce((qSum, quote) => 
+              qSum + parseFloat(quote.total_amount?.toString() || '0'), 0
+            );
+            return sum + projectTotal;
           }
           return sum;
         }, 0);

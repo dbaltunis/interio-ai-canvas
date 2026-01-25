@@ -275,7 +275,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                   <TableHead className="font-normal">Client</TableHead>
                   <TableHead className="font-normal">Stage</TableHead>
                   {!isTablet && <TableHead className="font-normal">Projects</TableHead>}
-                  {!isTablet && <TableHead className="font-normal">Deal Value</TableHead>}
+                  {!isTablet && <TableHead className="font-normal">Lifetime Value</TableHead>}
                   {!isTablet && <TableHead className="font-normal">Communications</TableHead>}
                   {!isTablet && <TableHead className="font-normal">Documents</TableHead>}
                   <TableHead className="font-normal w-[70px]">Actions</TableHead>
@@ -361,18 +361,16 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        {(client.deal_value && client.deal_value > 0) ? (
-                          <div className="font-semibold text-foreground">
-                            {formatCurrency(client.deal_value)}
-                          </div>
-                        ) : (client.totalValue && client.totalValue > 0) ? (
-                          <div className="text-muted-foreground text-sm">
-                            {formatCurrency(client.totalValue)}
-                            <span className="text-xs block text-muted-foreground/70">(from projects)</span>
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground/60 text-sm">—</div>
-                        )}
+                        {(() => {
+                          const lifetimeValue = (client.totalValue || 0) + (client.deal_value || 0);
+                          return lifetimeValue > 0 ? (
+                            <div className="font-semibold text-foreground">
+                              {formatCurrency(lifetimeValue)}
+                            </div>
+                          ) : (
+                            <div className="text-muted-foreground/60 text-sm">—</div>
+                          );
+                        })()}
                       </TableCell>
                     )}
                     
