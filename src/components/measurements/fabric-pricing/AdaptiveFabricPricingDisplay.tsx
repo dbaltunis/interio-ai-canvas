@@ -961,24 +961,10 @@ export const AdaptiveFabricPricingDisplay = ({
                 }
               } else {
                 // Vertical/Standard: Show ORDERED fabric (full widths)
-                // Use engine result if available, otherwise fall back to fabricCalculation
-                const orderedMeters = isCurtainEngineActive && displayLinearMeters != null 
-                  ? displayLinearMeters 
-                  : (fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0);
-                const usedMeters = fabricCalculation.linearMeters || 0;
-                const remnantMeters = fabricCalculation.remnantMeters || 0;
-                quantity = orderedMeters;
-                totalCost = isCurtainEngineActive && displayFabricCost != null 
-                  ? displayFabricCost 
-                  : quantity * pricePerUnit;
-                unitLabel = getFabricUnitFullLabel();
-                unitSuffix = getFabricUnitSuffix();
-                const quantityInUserUnit = metersToFabricUnit(quantity);
-                calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
-
-                // ✅ TRANSPARENT CALCULATION BREAKDOWN
-                // CRITICAL: measurements.drop is in MM (database standard), convert to CM for display
-                // fabricCalculation.drop is already in CM if available
+                // ✅ ROOT CAUSE FIX: Calculate from displayed components FIRST, then use for actual pricing
+                // This ensures formula math and actual pricing are IDENTICAL for ALL users
+                
+                // Get all values needed for calculation (same as before)
                 const rawDropMm = parseFloat(measurements.drop) || 0;
                 const rawDrop = fabricCalculation.drop || (rawDropMm / 10); // MM → CM
                 const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
@@ -988,10 +974,29 @@ export const AdaptiveFabricPricingDisplay = ({
                 const patternRepeat = fabricCalculation.details?.patternRepeat || 0;
                 const totalSeamAllowance = fabricCalculation.details?.totalSeamAllowance || 0;
                 const widthsRequired = fabricCalculation.widthsRequired || 0;
-
-                // Calculate ACTUAL drop per width used in calculation (all values now in CM)
+                
+                // Calculate drop with all allowances
                 const dropWithAllowances = rawDrop + headerHem + bottomHem + pooling + patternRepeat;
                 const totalAllowances = headerHem + bottomHem + pooling + patternRepeat;
+                
+                // ✅ CRITICAL: Calculate quantity from displayed components
+                // This is the SINGLE SOURCE OF TRUTH for both display AND pricing
+                const calculatedTotalCm = (widthsRequired * dropWithAllowances) + totalSeamAllowance;
+                const calculatedTotalMeters = calculatedTotalCm / 100;
+                
+                // ✅ USE CALCULATED VALUE FOR ACTUAL PRICING (not engine value)
+                quantity = calculatedTotalMeters;
+                totalCost = quantity * pricePerUnit;
+                
+                // For reference/debugging only
+                const usedMeters = fabricCalculation.linearMeters || 0;
+                const remnantMeters = fabricCalculation.remnantMeters || 0;
+                
+                unitLabel = getFabricUnitFullLabel();
+                unitSuffix = getFabricUnitSuffix();
+                const quantityInUserUnit = metersToFabricUnit(quantity);
+                calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+
                 console.log('🔍 FABRIC CALCULATION BREAKDOWN DEBUG:', {
                   widthsRequired,
                   rawDrop: `${rawDrop.toFixed(0)}cm`,
@@ -1003,16 +1008,13 @@ export const AdaptiveFabricPricingDisplay = ({
                   dropWithAllowances: `${dropWithAllowances.toFixed(0)}cm`,
                   totalSeamAllowance: `${totalSeamAllowance.toFixed(0)}cm`,
                   finalQuantity: `${quantity.toFixed(2)}m`,
-                  calculation: `${widthsRequired} × ${dropWithAllowances.toFixed(0)}cm + ${totalSeamAllowance.toFixed(0)}cm seams = ${((widthsRequired * dropWithAllowances + totalSeamAllowance) / 100).toFixed(2)}m`,
+                  calculation: `${widthsRequired} × ${dropWithAllowances.toFixed(0)}cm + ${totalSeamAllowance.toFixed(0)}cm seams = ${calculatedTotalMeters.toFixed(2)}m`,
                   fabricCalculation
                 });
 
-                // ✅ FIX: Calculate formula result directly from displayed components
-                // This ensures "A × B + C = D" where D actually equals A×B+C mathematically
-                const calculatedTotalCm = (widthsRequired * dropWithAllowances) + totalSeamAllowance;
-                const calculatedTotalMeters = calculatedTotalCm / 100;
+                // Build breakdown using SAME calculated values (math will always match)
                 const breakdownQuantityForFormula = metersToFabricUnit(calculatedTotalMeters);
-                const formulaCost = calculatedTotalMeters * pricePerUnit;
+                const formulaCost = totalCost; // Same as quantity * pricePerUnit
                 
                 if (totalAllowances > 0 || totalSeamAllowance > 0) {
                   let breakdownParts = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm`;
