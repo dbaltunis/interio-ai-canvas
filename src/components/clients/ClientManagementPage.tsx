@@ -147,8 +147,8 @@ export const ClientManagementPage = ({
     explicitPermissions: explicitPermissions?.map(p => p.permission_name)
   });
 
-  // Check if create_clients is explicitly in user_permissions table (enabled)
-  const hasCreateClientsPermission = explicitPermissions?.some(
+  // Check if create_clients is in the MERGED permissions (role-based + custom)
+  const hasCreateClientsPermission = userPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'create_clients'
   ) ?? false;
 
