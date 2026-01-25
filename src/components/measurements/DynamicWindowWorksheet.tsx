@@ -3058,10 +3058,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         fabricCost = totalMeters * pricePerMeter;
                       }
                     } else {
-                      // LEGACY PATH: fabricCalculation returns per-width meters
-                      perPieceMeters = fabricCalcMeters;
-                      const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-                      totalMeters = perPieceMeters * piecesToCharge;
+                      // LEGACY PATH: fabricCalculation.linearMeters is TOTAL (includes all pieces)
+                      // fabricCalculation.linearMetersPerPiece is per-piece for horizontal fabric
+                      
+                      if (isRailroaded && horizontalPiecesNeeded > 1) {
+                        // For railroaded: get per-piece value from hook, or calculate from total
+                        perPieceMeters = fabricCalculation?.linearMetersPerPiece || (fabricCalcMeters / horizontalPiecesNeeded);
+                        const piecesToCharge = usesLeftover ? 1 : horizontalPiecesNeeded;
+                        totalMeters = perPieceMeters * piecesToCharge;
+                      } else {
+                        // For vertical: linearMeters is already correct total
+                        perPieceMeters = fabricCalcMeters;
+                        totalMeters = fabricCalcMeters;
+                      }
                       fabricCost = totalMeters * pricePerMeter;
                     }
                     
@@ -3327,7 +3336,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         inventory={[]} 
                         fabricCalculation={fabricCalculation}
                         selectedOptions={allDisplayOptions}
-                        calculatedFabricCost={fabricCost}
+                        calculatedFabricCost={(() => {
+                          // ✅ CRITICAL: Ensure fabric cost matches display data for consistency
+                          const displayFabricCost = totalMeters * pricePerMeter;
+                          if (Math.abs(displayFabricCost - fabricCost) > 0.01 && !curtainUsesPricingGrid) {
+                            console.warn('⚠️ Fabric cost mismatch - using display-calculated value', { fabricCost, displayFabricCost, totalMeters, pricePerMeter });
+                            return displayFabricCost;
+                          }
+                          return fabricCost;
+                        })()}
                         calculatedLiningCost={liningCost}
                         calculatedManufacturingCost={manufacturingCost}
                         calculatedHeadingCost={headingCost}

@@ -769,7 +769,9 @@ export const CostCalculationSummary = ({
       } else {
         const meters = fabricDisplayData.totalMeters;
         const pricePerUnit = fabricDisplayData.pricePerMeter;
-        fabricDetails = `${formatFabricLength(meters)} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(fabricCost)}`;
+        // ✅ FIX: Use consistent cost - either calculatedFabricCost prop or display-calculated value
+        const consistentFabricCost = calculatedFabricCost ?? (meters * pricePerUnit);
+        fabricDetails = `${formatFabricLength(meters)} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(consistentFabricCost)}`;
       }
     } else if (linearMeters > 0) {
       fabricDetails = `${linearMeters.toFixed(2)}m`;
