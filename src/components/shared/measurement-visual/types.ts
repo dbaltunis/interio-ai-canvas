@@ -119,6 +119,10 @@ export interface FabricCalculation {
   totalWidthWithAllowances: number;
   horizontalPiecesNeeded?: number;
   leftoverFromLastPiece?: number;
+  // ✅ NEW FIELDS for display synchronization
+  fabricRotated?: boolean;
+  fabricOrientation?: 'horizontal' | 'vertical';
+  linearMetersPerPiece?: number; // Per-piece meters for accurate horizontal display
 }
 
 export interface MeasurementVisualProps {

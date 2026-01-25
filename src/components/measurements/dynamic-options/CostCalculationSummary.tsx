@@ -570,13 +570,14 @@ export const CostCalculationSummary = ({
     });
   }
   
-  // Fabric cost: GRID PRICE > prop > engine > 0
-  // CRITICAL: For pricing_grid, use the calculated grid price
+  // Fabric cost: GRID PRICE > prop > fabricCalculation.totalCost > engine > 0
+  // ✅ CRITICAL FIX: Prioritize fabricCalculation.totalCost for consistent pricing
+  // fabricCalculation.totalCost is calculated in useFabricCalculator with correct pieces multiplication
   const fabricCost = hasCurtainPricingGrid && gridPriceForCurtain > 0
     ? gridPriceForCurtain
     : (calculatedFabricCost != null && calculatedFabricCost > 0)
       ? calculatedFabricCost
-      : (useEngine ? engineResult.fabric_cost : 0);
+      : (fabricCalculation?.totalCost ?? fabricCalculation?.fabricCost ?? (useEngine ? engineResult.fabric_cost : 0));
   
   // Linear meters: fabricDisplayData.totalMeters > engine > fabricCalculation > 0
   // ✅ CRITICAL: Use totalMeters from fabricDisplayData (parent passes the correct source)
