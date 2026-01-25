@@ -154,6 +154,34 @@ export const useCreateClient = () => {
         throw new Error("Unable to determine account owner");
       }
 
+      // Check for duplicate email (case-insensitive)
+      if (client.email && client.email.trim()) {
+        const { data: existingByEmail } = await supabase
+          .from("clients")
+          .select("id, name")
+          .eq("user_id", effectiveOwnerId)
+          .ilike("email", client.email.trim())
+          .maybeSingle();
+        
+        if (existingByEmail) {
+          throw new Error(`A client with this email already exists: ${existingByEmail.name}`);
+        }
+      }
+
+      // Check for duplicate phone
+      if (client.phone && client.phone.trim()) {
+        const { data: existingByPhone } = await supabase
+          .from("clients")
+          .select("id, name")
+          .eq("user_id", effectiveOwnerId)
+          .eq("phone", client.phone.trim())
+          .maybeSingle();
+        
+        if (existingByPhone) {
+          throw new Error(`A client with this phone number already exists: ${existingByPhone.name}`);
+        }
+      }
+
       // If assigned_to is not explicitly provided and current user is a team member,
       // assign the client to the current user so they can see it
       const assignedTo = client.assigned_to !== undefined 
