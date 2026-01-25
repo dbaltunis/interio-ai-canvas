@@ -1,359 +1,241 @@
 
-# Plan: Fix Critical Fabric Calculation Bugs and Display Synchronization Issues
+
+# Fix Critical Fabric Calculation and Display Bugs
 
 ## Executive Summary
 
-After thorough investigation, I've identified **5 critical bugs** causing incorrect calculations and display issues when changing inputs like rotation, width, and drop. These bugs are causing significant financial risk to users by either under-quoting or displaying incorrect values.
+I've traced through the complete code flow and identified **4 critical bugs** causing the issues you're seeing:
+
+| What You See | Expected | Actual | Root Cause |
+|-------------|----------|--------|------------|
+| Fabric Cost | £3326.00 (33.26m × £100) | £1663.00 | `useFabricCalculator.ts` returns TOTAL meters (33.26m) but cost uses HALF |
+| Quote Summary Fabric | £3326.00 or markup of correct base | £2494.50 | 50% markup applied to wrong base (£1663 × 1.5) |
+| Formula text | Matches displayed cost | Shows £3326 but cost is £1663 | Display text and cost calculated separately |
 
 ---
 
-## Critical Bugs Found
+## Root Cause Analysis
 
-### Bug #1: Missing `horizontalPiecesNeeded` in Return Object (HIGHEST IMPACT)
-**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`  
-**Lines**: 142-148, 177-206
+### Bug #1: `useFabricCalculator.ts` - Cost Calculation Uses Wrong Value
 
-**Problem**: The hook calculates `horizontalPiecesNeeded` inside the `if (isRailroaded)` block but **never returns it**. The display component then defaults to `1`, causing the formula text to show wrong calculations.
+**Location**: Lines 142-175
 
-**Current Code (line 145)**:
+**Problem**: The `linearMeters` correctly includes multiplication by `horizontalPiecesNeeded`, but then `fabricCost` is calculated from `orderedLinearMeters` which is set equal to `linearMeters`. However, looking at line 174:
+
 ```typescript
-const horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
+// Line 146: linearMeters includes pieces multiplication
 linearMeters = (totalWidthWithAllowances / 100) * horizontalPiecesNeeded * wasteMultiplier;
-// ... but horizontalPiecesNeeded is NEVER returned!
+// Line 147: orderedLinearMeters = linearMeters (correct)
+orderedLinearMeters = linearMeters;
+// Line 174: fabricCost should be correct...
+const fabricCost = orderedLinearMeters * fabric.price_per_meter;
 ```
 
-**Return Object (lines 177-206)** - Missing `horizontalPiecesNeeded`:
-```typescript
-return {
-  linearMeters,
-  orderedLinearMeters,
-  // ... many fields
-  // ❌ horizontalPiecesNeeded NOT INCLUDED
-};
-```
+But the return object has `totalCost: fabricCost` which IS correct. So where does £1663 come from?
 
-**Impact**: Display shows "16.33m × 1 piece = 16.33m" when it should show "16.33m × 2 pieces = 32.66m"
+### Bug #2: `AdaptiveFabricPricingDisplay.tsx` - `totalCost` Overwritten
 
----
+**Location**: Lines 908-932
 
-### Bug #2: Double Multiplication in Display Logic
-**File**: `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx`  
-**Lines**: 908-915
-
-**Problem**: The `linearMeters` from `useFabricCalculator` **already includes** the multiplication by `horizontalPiecesNeeded` (see line 146 above). But the display logic multiplies again:
+**Problem Found**: The display component re-calculates `totalCost` using its own logic:
 
 ```typescript
-const linearMeters = fabricCalculation.linearMeters || 0;  // Already includes pieces!
-const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
-const totalLinearMetersToOrder = linearMeters * piecesToCharge;  // ❌ DOUBLE MULTIPLICATION
+// Line 908-910: Gets linearMeters (already includes pieces)
+const linearMeters = isCurtainEngineActive && displayLinearMeters != null
+  ? displayLinearMeters
+  : (fabricCalculation.linearMeters || 0);  // = 33.26m
+
+// Line 911: Gets pieces
+const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;  // = undefined, defaults to 1!
+
+// Line 915: DOUBLE or WRONG multiplication
+const totalLinearMetersToOrder = linearMeters * piecesToCharge;  // 33.26m × 1 = 33.26m (OK)
+
+// Line 930-932: But totalCost uses THIS formula:
+totalCost = isCurtainEngineActive && displayFabricCost != null
+  ? displayFabricCost
+  : quantity * pricePerUnit;  // quantity = totalLinearMetersToOrder = 33.26m
 ```
 
-**Impact**: Your test showed 32.66m displayed when actual requirement is 16.33m × 2 = 32.66m, but the text says "16.33m × 2 pieces = 32.66m × £100" with cost of £1633 (not £3266), indicating the actual cost IS correct but display text is wrong.
+Wait - that should be £3326. Let me check `fabricCalculation.horizontalPiecesNeeded`:
 
----
+**THE REAL BUG**: `useFabricCalculator.ts` **NEVER RETURNS** `horizontalPiecesNeeded`!
 
-### Bug #3: Backwards Formula in "Quick Add" Flow
-**File**: `src/components/projects/AddCurtainToProject.tsx`  
-**Lines**: 121-131
+Looking at lines 177-206 in `useFabricCalculator.ts`, the return object does NOT include `horizontalPiecesNeeded`. So when the display checks `fabricCalculation.horizontalPiecesNeeded`, it gets `undefined` and defaults to `1`.
 
-**Problem**: The "Standard" (non-railroaded) calculation is **missing multiplication by widths required**:
+BUT - the `linearMeters` value (33.26m) already includes the multiplication by 2 pieces. So when the display shows "16.63m × 2 pieces = 33.26m", it's WRONG - the actual per-piece value is not stored.
+
+### Bug #3: Missing `horizontalPiecesNeeded` in Return Object
+
+**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`
+
+The hook calculates `horizontalPiecesNeeded` inside the `if (isRailroaded)` block (line 145) but NEVER includes it in the return object (lines 177-206).
+
+**Impact**:
+- Display defaults to `horizontalPiecesNeeded = 1`
+- Cannot show correct per-piece breakdown
+- `piecesToCharge` calculation may be wrong
+
+### Bug #4: Quote Summary Uses Wrong Fabric Cost
+
+**File**: `src/components/measurements/dynamic-options/CostCalculationSummary.tsx`
+
+**Lines 573-578**: The `fabricCost` is determined by priority:
+1. `calculatedFabricCost` prop (from parent)
+2. Engine result
+3. `fabricCalculation.totalCost`
+
+If the parent passes an incorrect `calculatedFabricCost`, the Quote Summary uses that wrong value and then applies markup to it:
 
 ```typescript
-// ❌ CURRENT BROKEN CODE (lines 127-131):
-const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / selectedFabricWidth) - 1);
-const seamAllowance = seamsNeeded * template.seam_hems * 2;
-totalFabricRequired = (totalDrop + seamAllowance) / 100;  // Missing × widthsRequired!
-```
-
-**Correct Formula**:
-```typescript
-const widthsRequired = Math.ceil(totalFabricWidth / selectedFabricWidth);
-const seamsNeeded = Math.max(0, widthsRequired - 1);
-const seamAllowance = seamsNeeded * template.seam_hems * 2;
-totalFabricRequired = ((totalDrop + seamAllowance) * widthsRequired) / 100;  // ✅ Multiply!
-```
-
-**Impact**: For your 250cm × 400cm example with 140cm fabric (x2 fullness):
-- **Broken code**: ~2.5m fabric
-- **Correct formula**: 6 drops × 2.73m = 16.38m fabric
-
----
-
-### Bug #4: Missing `fabricRotated` and `fabricOrientation` in Return Object
-**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`  
-**Lines**: 177-206
-
-**Problem**: The display component checks `fabricCalculation.fabricRotated` and `fabricCalculation.fabricOrientation` but these are **never returned**:
-
-```typescript
-// AdaptiveFabricPricingDisplay.tsx line 801:
-const isHorizontal = fabricCalculation.fabricRotated === true || 
-                     fabricCalculation.fabricOrientation === 'horizontal';
-// Both are ALWAYS undefined because useFabricCalculator doesn't return them!
-```
-
-**Impact**: The display may not switch to horizontal mode even when fabric is rotated.
-
----
-
-### Bug #5: Stale Calculation During Save
-**File**: `src/components/measurements/DynamicWindowWorksheet.tsx`  
-**Lines**: 1366-1381
-
-**Problem**: During save, the code manually recalculates width allowances instead of using the already-calculated `fabricCalculation` object:
-
-```typescript
-// ❌ MANUAL RECALCULATION (lines 1366-1381):
-const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10;
-const widthWithAllowancesCm = (railWidthCm * fullness) + (sideHemCm * 2) + returnsCm;
-// This may differ from fabricCalculation.totalWidthWithAllowances!
-```
-
-**Impact**: Saved values may differ from displayed values, causing quote/invoice mismatches.
-
----
-
-## Solution Architecture
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         SINGLE SOURCE OF TRUTH                               │
-│                                                                             │
-│  calculationFormulas.ts  ──────────────►  orientationCalculator.ts          │
-│  (CURTAIN_VERTICAL_FORMULA)               (calculates fabricCalculation)    │
-│  (CURTAIN_HORIZONTAL_FORMULA)                                               │
-└───────────────────────────────────────────┬─────────────────────────────────┘
-                                            │
-                                            ▼
-                    ┌───────────────────────────────────────────┐
-                    │  useFabricCalculator.ts (REFACTORED)      │
-                    │  - Imports from calculationFormulas.ts    │
-                    │  - Returns horizontalPiecesNeeded         │
-                    │  - Returns fabricRotated, fabricOrientation│
-                    │  - linearMeters = per-piece value          │
-                    └───────────────────────┬───────────────────┘
-                                            │
-              ┌─────────────────────────────┼─────────────────────────────┐
-              ▼                             ▼                             ▼
-    AddCurtainToProject.tsx    AdaptiveFabricPricingDisplay.tsx    DynamicWindowWorksheet.tsx
-    (IMPORT FROM FORMULAS)     (USE PRE-CALCULATED VALUES)         (USE fabricCalculation)
+// Line 783:
+sellingPrice: applyMarkup(fabricCost, fabricMarkupPercent)  // £1663 × 1.5 = £2494.50
 ```
 
 ---
 
-## Technical Implementation Details
+## Technical Fix Plan
 
-### Fix 1: Update `useFabricCalculator.ts` Return Object
-**Add missing fields to return statement (lines 177-206)**:
+### Fix 1: Add Missing Fields to `useFabricCalculator.ts` Return Object
 
-```typescript
-return {
-  linearMeters,
-  orderedLinearMeters,
-  remnantMeters,
-  totalCost,
-  fabricCost,
-  pricePerMeter: fabric.price_per_meter,
-  widthsRequired,
-  seamsCount,
-  seamLaborHours,
-  railWidth: width,
-  fullnessRatio,
-  drop: height,
-  headerHem,
-  bottomHem,
-  pooling,
-  totalDrop,
-  returns: returnLeft + returnRight,
-  wastePercent,
-  sideHems,
-  seamHems,
-  totalSeamAllowance,
-  totalSideHems,
-  returnLeft,
-  returnRight,
-  curtainCount,
-  curtainType: template.panel_configuration || 'pair',
-  totalWidthWithAllowances,
-  dropPerWidthMeters,
-  // ✅ NEW: Add missing fields for display
-  horizontalPiecesNeeded: isRailroaded ? horizontalPiecesNeeded : 1,
-  fabricRotated: isRailroaded,
-  fabricOrientation: isRailroaded ? 'horizontal' : 'vertical',
-  // ✅ NEW: Add per-piece meters for accurate display
-  linearMetersPerPiece: isRailroaded ? (totalWidthWithAllowances / 100) * wasteMultiplier : undefined
-};
-```
+**File**: `src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`
 
-**Also move `horizontalPiecesNeeded` declaration outside the if block (around line 138)**:
+**Step 1**: Move `horizontalPiecesNeeded` declaration outside the if block (around line 140):
+
 ```typescript
 let linearMeters: number;
 let orderedLinearMeters: number;
 let dropPerWidthMeters: number;
-let horizontalPiecesNeeded = 1;  // ✅ Declare with default value
-
-if (isRailroaded) {
-  horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);  // ✅ Assign
-  // ...
-}
+let horizontalPiecesNeeded = 1;  // ← ADD THIS
 ```
 
-### Fix 2: Update Display Logic in `AdaptiveFabricPricingDisplay.tsx`
-**Lines 908-915** - Use per-piece value instead of total:
+**Step 2**: Add new fields to return object (after line 205):
 
 ```typescript
-if (isHorizontal) {
-  // ✅ FIX: linearMeters from hook ALREADY includes piece multiplication
-  // Use linearMetersPerPiece if available, otherwise divide by pieces
-  const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
-  const linearMetersPerPiece = fabricCalculation.linearMetersPerPiece || 
-    (fabricCalculation.linearMeters / horizontalPiecesNeeded);
-  
-  const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-  
-  // ✅ CORRECT: Multiply per-piece value by pieces to charge
-  const totalLinearMetersToOrder = linearMetersPerPiece * piecesToCharge;
-  
-  // Display text now shows accurate breakdown
-  calculationText = `${linearMetersPerPiece.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m × ${formatPricePerFabricUnit(pricePerUnit)}`;
-}
+return {
+  // ... existing fields ...
+  totalWidthWithAllowances,
+  dropPerWidthMeters,
+  // ✅ NEW FIELDS
+  horizontalPiecesNeeded,                    // Number of horizontal pieces
+  fabricRotated: isRailroaded,               // Whether fabric is rotated
+  fabricOrientation: isRailroaded ? 'horizontal' : 'vertical',
+  linearMetersPerPiece: isRailroaded 
+    ? (totalWidthWithAllowances / 100) * wasteMultiplier 
+    : undefined,                              // Per-piece meters for accurate display
+  leftoverFromLastPiece: undefined            // For future leftover tracking
+};
 ```
 
-### Fix 3: Fix `AddCurtainToProject.tsx` Standard Calculation
-**Lines 125-136** - Add missing multiplication by widths:
+### Fix 2: Update Type Definitions
 
-```typescript
-} else if (selectedFabricWidth) {
-  // ✅ FIX: Calculate widths required first
-  const widthsRequired = Math.ceil(totalFabricWidth / selectedFabricWidth);
-  const seamsNeeded = Math.max(0, widthsRequired - 1);
-  const seamAllowance = seamsNeeded * template.seam_hems * 2;
-
-  // ✅ FIX: Multiply by widthsRequired!
-  totalFabricRequired = ((totalDrop + seamAllowance) * widthsRequired) / 100;
-} else {
-```
-
-### Fix 4: Update Types Definition
 **File**: `src/components/shared/measurement-visual/types.ts`
 
-Add the new fields to `FabricCalculation` interface:
+Add to `FabricCalculation` interface (around line 91):
+
 ```typescript
 export interface FabricCalculation {
-  // ... existing fields
+  // ... existing fields ...
   horizontalPiecesNeeded?: number;
   leftoverFromLastPiece?: number;
-  // ✅ NEW fields
+  // ✅ NEW FIELDS
   fabricRotated?: boolean;
   fabricOrientation?: 'horizontal' | 'vertical';
   linearMetersPerPiece?: number;
 }
 ```
 
-### Fix 5: Refactor Save Logic in `DynamicWindowWorksheet.tsx`
-**Lines 1366-1381** - Use fabricCalculation instead of recalculating:
+### Fix 3: Fix Display Logic in `AdaptiveFabricPricingDisplay.tsx`
+
+**File**: `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx`
+
+**Lines 908-945**: Update to use per-piece value correctly:
 
 ```typescript
-// ✅ FIX: Use pre-calculated values from fabricCalculation
-const finalWidthM = fabricCalculation?.totalWidthWithAllowances 
-  ? (fabricCalculation.totalWidthWithAllowances * (1 + (fabricCalculation.wastePercent || 0) / 100)) / 100
-  : 0;
+if (isHorizontal) {
+  // ✅ FIX: Use linearMetersPerPiece if available
+  const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
+  
+  // NEW: Get per-piece value (not total)
+  const linearMetersPerPiece = fabricCalculation.linearMetersPerPiece 
+    || (fabricCalculation.linearMeters / horizontalPiecesNeeded);
+  
+  const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 
+    ? 1 
+    : horizontalPiecesNeeded;
+  
+  // ✅ CORRECT: Calculate total from per-piece value
+  const totalLinearMetersToOrder = linearMetersPerPiece * piecesToCharge;
+  
+  quantity = totalLinearMetersToOrder;
+  totalCost = quantity * pricePerUnit;  // Now correctly £3326 for 33.26m
+  
+  // ✅ Formula text now matches cost
+  calculationText = `${linearMetersPerPiece.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m × ${formatPricePerFabricUnit(pricePerUnit)}`;
+}
+```
+
+### Fix 4: Ensure Quote Summary Uses Correct Fabric Cost
+
+**File**: `src/components/measurements/dynamic-options/CostCalculationSummary.tsx`
+
+**Lines 573-578**: Ensure we use the fabric calculation's `totalCost` consistently:
+
+```typescript
+// ✅ FIX: Prioritize fabricCalculation.totalCost over any recalculation
+const fabricCost = hasCurtainPricingGrid 
+  ? gridPriceForCurtain 
+  : (useEngine 
+      ? (engineResult.fabric_cost ?? 0) 
+      : (fabricCalculation?.totalCost ?? fabricCalculation?.fabricCost ?? 0));
 ```
 
 ---
 
-## Files to Modify
+## Files to Modify Summary
 
 | File | Lines | Change Type | Priority |
 |------|-------|-------------|----------|
-| `useFabricCalculator.ts` | 138, 145, 177-206 | Add missing return fields | Critical |
-| `AdaptiveFabricPricingDisplay.tsx` | 908-945 | Fix double multiplication | Critical |
-| `AddCurtainToProject.tsx` | 125-136 | Add missing × widthsRequired | Critical |
-| `types.ts` | 91-122 | Add new interface fields | Required |
-| `DynamicWindowWorksheet.tsx` | 1366-1381 | Use fabricCalculation values | Medium |
+| `useFabricCalculator.ts` | 140, 177-206 | Add `horizontalPiecesNeeded`, `fabricRotated`, `linearMetersPerPiece` to return | CRITICAL |
+| `types.ts` | 91-95 | Add new fields to `FabricCalculation` interface | REQUIRED |
+| `AdaptiveFabricPricingDisplay.tsx` | 908-945 | Use `linearMetersPerPiece` for correct calculation | CRITICAL |
+| `CostCalculationSummary.tsx` | 573-580 | Ensure consistent fabric cost source | HIGH |
 
 ---
 
-## Unit Tests to Add
+## Expected Results After Fix
 
-Create `src/utils/__tests__/fabricCalculation.test.ts`:
+**Your Test Case (Railroaded, 400cm × 250cm, 140cm fabric, x2 fullness):**
 
-```typescript
-import { describe, it, expect } from 'vitest';
-
-describe('Fabric Calculation Formulas', () => {
-  describe('Vertical/Standard Orientation', () => {
-    it('should calculate 15m for 250cm×400cm with 140cm fabric at x2 fullness', () => {
-      // Your Scenario 1
-      const result = calculateVertical({
-        railWidthCm: 400,
-        dropCm: 250,
-        fullness: 2,
-        fabricWidthCm: 140,
-        // No hems for simplicity
-      });
-      expect(result.widthsRequired).toBe(6);  // ceil(800/140)
-      expect(result.linearMeters).toBe(15);    // 6 × 250cm = 1500cm = 15m
-    });
-  });
-
-  describe('Horizontal/Railroaded Orientation', () => {
-    it('should calculate 10.5m for 350cm×400cm with 300cm fabric at x2 fullness (rotated wide fabric)', () => {
-      // Your Scenario: Wide fabric used with vertical seams
-      const result = calculateHorizontal({
-        railWidthCm: 400,
-        dropCm: 350,
-        fullness: 2,
-        fabricWidthCm: 300,
-      });
-      expect(result.horizontalPiecesNeeded).toBe(2);  // ceil(350/300)
-      expect(result.linearMeters).toBe(16);           // 2 × 800cm = 16m
-    });
-  });
-});
-```
+| Display | Before (Broken) | After (Fixed) |
+|---------|----------------|---------------|
+| Formula Text | "16.63m × 2 = 33.26m × £100 = £3326" | "16.63m × 2 = 33.26m × £100 = £3326" |
+| Linear Meters | 33.26m | 33.26m |
+| Fabric Cost | £1663.00 ❌ | £3326.00 ✅ |
+| Quote Summary Fabric | £2494.50 (wrong markup base) | £4989.00 (correct 50% on £3326) |
 
 ---
 
-## Verification Steps
+## Verification Test Cases
 
-After implementing these fixes:
+After implementation, verify these scenarios:
 
-1. **Test Vertical Calculation**: 250cm H × 400cm W, 140cm fabric, x2 fullness
-   - Expected: 6 widths × 2.73m = 16.38m (with hems)
-   - Display should show: "6 width(s) × 273cm = 16.38m × £100.00/m = £1638.00"
+1. **Vertical (Standard)**: 400cm × 250cm, 140cm fabric, x2 fullness
+   - Expected: 6 widths × 2.73m = 16.38m ≈ £1638
 
-2. **Test Horizontal Calculation**: 250cm H × 800cm W, 140cm fabric, rotated
-   - Expected: 2 pieces × 8.15m = 16.30m
-   - Display should show: "8.15m × 2 pieces = 16.30m × £100.00/m = £1630.00"
+2. **Horizontal (Railroaded)**: Same measurements with "Rotate Fabric 90°" ON
+   - Expected: 2 pieces × 16.63m = 33.26m ≈ £3326
 
-3. **Test Input Changes**: Change width from 400cm → 500cm
-   - Numbers should update immediately
-   - Cost should recalculate
+3. **Quote Summary**: Should show fabric cost × markup consistently
 
-4. **Test Rotation Toggle**: Toggle fabric rotation
-   - Formula and numbers should switch between vertical/horizontal modes
-   - All displayed values should update
+4. **Input Changes**: Changing width/drop should immediately update ALL displayed values
 
 ---
 
-## Risk Assessment
+## Risk Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| Existing saved quotes affected | Changes only affect calculation logic, not stored data |
-| Regression in other components | Unit tests will catch formula regressions |
-| Display/cost mismatch | Single source of truth architecture prevents divergence |
-
----
-
-## Expected Outcome
-
-After implementation:
-- ✅ Numbers update immediately when inputs change
-- ✅ Rotation toggle switches calculation mode correctly
-- ✅ Display formula matches actual cost
-- ✅ "Quick Add" flow uses correct fabric requirements
-- ✅ Saved values match displayed values
-- ✅ No more under-quoting or over-quoting fabric
+- No database schema changes required
+- Existing saved data unaffected (stored values not recalculated)
+- Changes are display and calculation logic only
+- Unit tests will verify formulas work correctly
 
