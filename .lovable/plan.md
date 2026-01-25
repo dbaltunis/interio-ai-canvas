@@ -1,157 +1,124 @@
 
+# Fix: React Hooks Violation in DashboardContent
 
-# Phase 8: Login Error Fix + Permission/Access Control Issues
+## The REAL Root Cause Found
 
-## Overview
+The console error message is clear:
+```
+Error: Rendered fewer hooks than expected. 
+This may be caused by an accidental early return statement.
+```
 
-This phase addresses the critical login error (Issue #1) plus all permission/access control issues from the client's CSV file. The login error occurs **every time** a user logs in, not just the first time, indicating the previous fix was insufficient.
+**Location**: `DashboardContent@EnhancedHomeDashboard.tsx:208:71`
+
+### What's Happening
+
+In `src/components/dashboard/EnhancedHomeDashboard.tsx`, the hooks are called in an inconsistent order:
+
+```text
+Line 69:  useIsDealer()           ✓ Called first
+Line 70:  useState()              ✓ Called
+...
+Line 82-86: useHasPermission() x5 ✓ Called
+Line 96:  useMemo()               ✓ Called
+Line 110: useHasPermission()      ✓ Called  <-- TWO MORE HOOKS HERE
+Line 111: useHasPermission()      ✓ Called
+
+Line 113: if (isDealer) return    ⚠️ EARLY RETURN HERE
+
+Line 118: useMemo()               ❌ SKIPPED when isDealer=true!
+```
+
+### The Bug Flow
+
+1. **First render (loading)**: `isDealerLoading = true` → early return skipped → ALL hooks called including `useMemo` on line 118
+2. **Second render (loaded)**: `isDealerLoading = false`, `isDealer = true` → early return triggers → `useMemo` on line 118 is NEVER called
+3. **React panics**: "I called 15 hooks last time, but only 13 this time!"
+
+This is a fundamental React rule: **Hooks must always be called in the same order, every render.**
 
 ---
 
-## Issue #1: "Something went wrong" on Every Login
+## Solution
 
-### Root Cause Analysis
+Move the early return AFTER all hooks are called, OR move all hooks BEFORE the early return.
 
-The ErrorBoundary in `src/components/performance/ErrorBoundary.tsx` catches unhandled errors. The issue persists because:
+### Fix: Move useMemo Before the Early Return
 
-1. **Race condition**: `queryClient.invalidateQueries()` in `AuthProvider.tsx:74` triggers immediate refetches
-2. **Queries fire before profile exists**: The `user_profiles` row may not exist yet when queries fire
-3. **Single point of failure**: Any single query throwing propagates to ErrorBoundary
+**File**: `src/components/dashboard/EnhancedHomeDashboard.tsx`
 
-### Solution: Add Query-Level Error Boundaries + Graceful Fallbacks
-
-| File | Change |
-|------|--------|
-| `src/hooks/useUserRole.ts:31` | Change `.single()` to `.maybeSingle()` for profile query |
-| `src/hooks/usePermissions.ts:25-35` | Add retry logic and graceful fallback on profile fetch failure |
-| `src/pages/Index.tsx:107-130` | Wrap permission queries in defensive error handling |
-| `src/components/auth/AuthProvider.tsx:74` | Add small delay before invalidating queries to allow profile creation |
-
-### Key Fix in AuthProvider.tsx
-
+Current structure (broken):
 ```typescript
-// Line 74 - Add delay before invalidating
-if (event === 'SIGNED_IN') {
-  // Wait 500ms for database triggers to create user_profiles
-  setTimeout(() => {
-    queryClient.invalidateQueries();
-  }, 500);
+const canViewTeamMembers = useHasPermission('view_team_members');  // Line 110
+const canViewEmailKPIs = useHasPermission('view_email_kpis');      // Line 111
+
+if (!isDealerLoading && isDealer) {                                // Line 113
+  return <DealerDashboard />;                                      // Line 114
+}
+
+const enabledWidgets = useMemo(() => { ... });                     // Line 118 - SKIPPED!
 ```
 
-### Key Fix in useUserRole.ts
-
+Fixed structure:
 ```typescript
-// Line 27-31 - Use maybeSingle for profile
-const { data: profile } = await supabase
-  .from("user_profiles")
-  .select("parent_account_id")
-  .eq("user_id", user.id)
-  .maybeSingle(); // Was .single() - throws on 0 rows
+const canViewTeamMembers = useHasPermission('view_team_members');
+const canViewEmailKPIs = useHasPermission('view_email_kpis');
+
+// MOVE useMemo BEFORE the early return
+const enabledWidgets = useMemo(() => { 
+  // Same logic as before
+  if (hasOnlineStore.isLoading) return [];
+  // ... rest of filtering
+}, [/* same deps */]);
+
+// Compact metrics also uses hooks indirectly, define before return
+const compactMetrics = useMemo(() => [
+  { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
+  // ... rest
+], [stats]);
+
+// NOW it's safe to early return - all hooks have been called
+if (!isDealerLoading && isDealer) {
+  return <DealerDashboard />;
+}
 ```
 
 ---
 
-## Permission/Access Control Issues (From CSV)
+## Changes Required
 
-### Issue #8: Dealers Can See Supplier Names
-
-**Current State**: `InventoryManagement.tsx:269` shows "Supplier" column to everyone
-**Fix**: Hide supplier column for dealers
-
-```typescript
-// Line 269 - Add dealer check
-{canViewVendorCosts && !isDealer && <TableHead>Supplier</TableHead>}
-```
-
-**Files to modify**:
-- `src/components/inventory/InventoryManagement.tsx`
-- `src/components/ordering/BatchOrdersList.tsx`
-- Any other component showing `vendors.name`
-
-### Issue #9: Dealers Can See Costs in Various Views
-
-**Components already checking `canViewVendorCosts`**:
-- InventoryManagement.tsx ✓
-- MaterialQueueTable.tsx ✓
-- BatchOrdersList.tsx ✓
-
-**Components needing audit for dealer access**:
-- Quote PDFs and exports
-- Job detail views
-- Window summary displays
-
-### Issue #11: Staff Should Only See Assigned Jobs/Clients
-
-**Current State**: Staff with `view_assigned_jobs` permission can see all jobs due to RLS policy gap
-**Fix**: RLS policies need to check `assigned_to` or `user_id` field
-
-This is a **database-level fix** requiring migration to update RLS policies on:
-- `projects` table
-- `clients` table
+| File | Change | Lines |
+|------|--------|-------|
+| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Move `useMemo` for `enabledWidgets` (line 118) before the dealer early return (line 113) | 110-118 |
+| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Wrap `compactMetrics` in useMemo and move before early return | 167-172 |
 
 ---
 
-## Files to Modify
+## Why This Wasn't the Race Condition
 
-### Priority 1: Login Error (Critical)
+The previous fixes (500ms delay, `.maybeSingle()`, retries) addressed a **different potential issue**. Those fixes are still valuable for edge cases, but they weren't the cause of **this specific error**.
 
-| File | Changes |
-|------|---------|
-| `src/components/auth/AuthProvider.tsx` | Add 500ms delay before query invalidation on SIGNED_IN |
-| `src/hooks/useUserRole.ts` | Change `.single()` to `.maybeSingle()` on line 31 |
-| `src/hooks/usePermissions.ts` | Add defensive error handling, extend retry logic |
-
-### Priority 2: Dealer Permission Fixes
-
-| File | Changes |
-|------|---------|
-| `src/components/inventory/InventoryManagement.tsx` | Hide supplier column for dealers |
-| `src/components/ordering/BatchOrdersList.tsx` | Hide supplier info for dealers |
-| `src/components/ordering/MaterialQueueTable.tsx` | Verify dealer restrictions |
-| `src/hooks/useUserRole.ts` | Already handles `isDealer` - verify propagation |
-
-### Priority 3: Staff Assignment Visibility (Database)
-
-| Change | Type |
-|--------|------|
-| Update `projects` RLS policy | SQL Migration |
-| Update `clients` RLS policy | SQL Migration |
-| Add `assigned_to` column if missing | SQL Migration |
+This error happens because:
+- The user logging in **is a Dealer** (from the logs: `isTeamMember: true`)
+- When `isDealer` becomes `true`, the early return triggers
+- React sees fewer hooks and crashes
 
 ---
 
-## Implementation Order
+## Verification
 
-1. **Login error fix** - AuthProvider delay + maybeSingle changes
-2. **Dealer supplier visibility** - Hide supplier columns/names
-3. **Dealer cost visibility audit** - Verify all cost displays are hidden
-4. **Staff assignment visibility** - Database migration for RLS
-
----
-
-## Expected Results
-
-| Issue | Before | After |
-|-------|--------|-------|
-| Login error | Happens every login | 0% failure rate |
-| Dealers see suppliers | Visible | Hidden |
-| Dealers see costs | Some visible | All hidden |
-| Staff see all jobs | All visible | Only assigned visible |
+After fix, the login flow will be:
+1. User logs in
+2. `isDealerLoading = true` → all hooks called, loading state shown
+3. `isDealerLoading = false`, `isDealer = true` → all hooks still called, then `<DealerDashboard />` returned
+4. No crash!
 
 ---
 
-## Technical Notes
+## Answer to Your Question
 
-### Why 500ms Delay Works
+**"Are other companies experiencing this error?"**
 
-The database trigger that creates `user_profiles` runs asynchronously after `auth.users` insert. The 500ms delay gives the trigger time to complete before React Query fires profile-dependent queries.
+No - this is a **code-specific bug** in your application's `EnhancedHomeDashboard.tsx` component. It's not a Lovable platform issue or Supabase issue. It's a React Rules of Hooks violation that was introduced when the dealer dashboard feature was added.
 
-### Dealer Permission Chain
-
-```
-useUserRole() → isDealer: true → canViewVendorCosts: false
-                              → canViewMarkup: false
-```
-
-Components must check BOTH `canViewVendorCosts` AND `isDealer` for supplier names since supplier names are not strictly "costs" but are still sensitive.
-
+The fix is straightforward: ensure all hooks are called before any conditional returns.
