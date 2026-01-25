@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useIsDealer } from "@/hooks/useIsDealer";
+import { useMemo } from "react";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -70,6 +71,21 @@ export const CreateActionDialog = ({
   
   // Combined calendar permission
   const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
+  
+  // Check if user has ANY main page permission (for smart menu visibility)
+  const hasAnyMainPagePermission = useMemo(() => {
+    // Always true for owners/admins without explicit restrictions
+    if (userRoleData?.isSystemOwner) return true;
+    if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
+    // Otherwise check if they can access at least one main area
+    return canViewCalendar !== false || 
+           canViewOwnCalendar !== false || 
+           canViewInventory !== false || 
+           canViewPurchasing !== false;
+  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewCalendar, canViewOwnCalendar, canViewInventory, canViewPurchasing]);
+  
+  // Determine if we should show inventory/purchasing separator
+  const showInventorySeparator = canViewInventory !== false || (canViewPurchasing !== false && !isDealer);
   
   const canViewSettings = userRoleData?.isSystemOwner
     ? true
@@ -140,19 +156,22 @@ export const CreateActionDialog = ({
         </DialogHeader>
         
         <div className="grid gap-3 py-4">
-          <Button
-            onClick={() => handleAction("client")}
-            variant="outline"
-            className="h-16 justify-start gap-4 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold">New Client</div>
-              <div className="text-sm text-muted-foreground">Add a client to your CRM</div>
-            </div>
-          </Button>
+          {/* New Client - always visible if user has any main page permission */}
+          {hasAnyMainPagePermission && (
+            <Button
+              onClick={() => handleAction("client")}
+              variant="outline"
+              className="h-16 justify-start gap-4 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold">New Client</div>
+                <div className="text-sm text-muted-foreground">Add a client to your CRM</div>
+              </div>
+            </Button>
+          )}
           
           {hasCreateJobsPermission && (
             <Button
@@ -206,10 +225,7 @@ export const CreateActionDialog = ({
           
           {/* Material Purchasing - only if can view purchasing AND not a dealer */}
           {canViewPurchasing !== false && !isDealer && (
-            <>
-              <Separator className="my-2" />
-              
-              <Button
+            <Button
                 onClick={() => handleAction("purchasing")}
                 variant="outline"
                 className="h-16 justify-start gap-4 text-left"
@@ -230,10 +246,10 @@ export const CreateActionDialog = ({
                   <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
                 </div>
               </Button>
-            </>
           )}
           
-          <Separator className="my-2" />
+          {/* Separator - only show if there's content above (inventory/purchasing section) */}
+          {showInventorySeparator && <Separator className="my-2" />}
           
           <Button
             onClick={() => handleAction("team")}

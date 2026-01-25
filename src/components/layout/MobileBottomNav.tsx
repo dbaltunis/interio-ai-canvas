@@ -14,6 +14,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { CreateActionDialog } from "./CreateActionDialog";
 import { UserProfile } from "./UserProfile";
 import { useUserPresence } from "@/hooks/useUserPresence";
@@ -169,31 +170,38 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             const isActive = activeTab === item.id;
             
             return (
-              <Button
+              <motion.div
                 key={item.id}
-                variant="ghost"
-                className={cn(
-                  "h-full rounded-none flex flex-col items-center justify-center gap-0.5 transition-all duration-200 relative",
-                  isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => onTabChange(item.id)}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="h-full"
               >
-                <Icon className={cn(
-                  "transition-all duration-200",
-                  isActive ? "h-5 w-5" : "h-5 w-5"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-medium transition-all duration-200",
-                  isActive ? "opacity-100 font-semibold" : "opacity-70"
-                )}>
-                  {item.label}
-                </span>
-                {isActive && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full" />
-                )}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "h-full w-full rounded-none flex flex-col items-center justify-center gap-0.5 transition-all duration-200 relative",
+                    "active:bg-primary/10",
+                    isActive 
+                      ? "text-primary bg-primary/5" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => onTabChange(item.id)}
+                >
+                  <Icon className={cn(
+                    "transition-all duration-200",
+                    isActive ? "h-5 w-5" : "h-5 w-5"
+                  )} />
+                  <span className={cn(
+                    "text-[10px] font-medium transition-all duration-200",
+                    isActive ? "opacity-100 font-semibold" : "opacity-70"
+                  )}>
+                    {item.label}
+                  </span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </motion.div>
             );
           })}
           
@@ -213,31 +221,38 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             const isActive = activeTab === item.id;
             
             return (
-              <Button
+              <motion.div
                 key={item.id}
-                variant="ghost"
-                className={cn(
-                  "h-full rounded-none flex flex-col items-center justify-center gap-0.5 transition-all duration-200 relative",
-                  isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => onTabChange(item.id)}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="h-full"
               >
-                <Icon className={cn(
-                  "transition-all duration-200",
-                  isActive ? "h-5 w-5" : "h-5 w-5"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-medium transition-all duration-200",
-                  isActive ? "opacity-100 font-semibold" : "opacity-70"
-                )}>
-                  {item.label}
-                </span>
-                {isActive && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full" />
-                )}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "h-full w-full rounded-none flex flex-col items-center justify-center gap-0.5 transition-all duration-200 relative",
+                    "active:bg-primary/10",
+                    isActive 
+                      ? "text-primary bg-primary/5" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => onTabChange(item.id)}
+                >
+                  <Icon className={cn(
+                    "transition-all duration-200",
+                    isActive ? "h-5 w-5" : "h-5 w-5"
+                  )} />
+                  <span className={cn(
+                    "text-[10px] font-medium transition-all duration-200",
+                    isActive ? "opacity-100 font-semibold" : "opacity-70"
+                  )}>
+                    {item.label}
+                  </span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </motion.div>
             );
           })}
         </div>

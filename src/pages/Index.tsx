@@ -19,6 +19,7 @@ import { lazyWithRetry } from "@/utils/lazyWithRetry";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobilePageTransition } from "@/components/mobile/MobilePageTransition";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { InstallAppPrompt } from "@/components/mobile/InstallAppPrompt";
 
 // Lazy load heavy components with automatic retry
 const Dashboard = lazyWithRetry(
@@ -103,6 +104,13 @@ const Index = () => {
   });
   const [navigationDirection, setNavigationDirection] = useState(0);
   const [previousTab, setPreviousTab] = useState<string | null>(null);
+  // Navigation history stack for proper back navigation (iOS-style)
+  const [navigationHistory, setNavigationHistory] = useState<string[]>(() => {
+    const savedTab = sessionStorage.getItem('active_tab');
+    const urlTab = searchParams.get('tab');
+    const initialTab = savedTab || urlTab || "dashboard";
+    return [initialTab];
+  });
   const { signOut, user } = useAuth();
   const isMobile = useIsMobile();
   
@@ -283,36 +291,39 @@ const Index = () => {
     return toIndex > fromIndex ? 1 : -1;
   }, []);
 
-  const handleTabChange = useCallback((tabId: string) => {
-    console.warn('[NAV] Index: handleTabChange called with:', tabId);
+  const handleTabChange = useCallback((tabId: string, isBackNavigation = false) => {
+    console.warn('[NAV] Index: handleTabChange called with:', tabId, 'isBack:', isBackNavigation);
     
-    // Calculate direction for animation
-    const direction = calculateDirection(activeTab, tabId);
-    setNavigationDirection(direction);
+    if (isBackNavigation) {
+      // Going back - slide from left
+      setNavigationDirection(-1);
+    } else {
+      // Going forward - slide from right (always forward for normal navigation)
+      setNavigationDirection(1);
+      // Add to history stack (only for forward navigation)
+      setNavigationHistory(prev => [...prev.slice(-9), tabId]); // Keep last 10 items
+    }
+    
     setPreviousTab(activeTab);
-    
     setSearchParams({ tab: tabId }, { replace: true });
     sessionStorage.setItem('active_tab', tabId);
-  }, [activeTab, calculateDirection, setSearchParams]);
+  }, [activeTab, setSearchParams]);
 
-  // Swipe navigation for mobile
-  const handleSwipeLeft = useCallback(() => {
-    const currentIndex = TAB_ORDER.indexOf(activeTab);
-    if (currentIndex < TAB_ORDER.length - 1) {
-      handleTabChange(TAB_ORDER[currentIndex + 1]);
+  // Swipe RIGHT = go back to previous screen (iOS-style back gesture)
+  const handleSwipeBack = useCallback(() => {
+    if (navigationHistory.length > 1) {
+      // Pop current from history and go to previous
+      const newHistory = navigationHistory.slice(0, -1);
+      const previousTab = newHistory[newHistory.length - 1];
+      setNavigationHistory(newHistory);
+      handleTabChange(previousTab, true); // true = is back navigation
     }
-  }, [activeTab, handleTabChange]);
+  }, [navigationHistory, handleTabChange]);
 
-  const handleSwipeRight = useCallback(() => {
-    const currentIndex = TAB_ORDER.indexOf(activeTab);
-    if (currentIndex > 0) {
-      handleTabChange(TAB_ORDER[currentIndex - 1]);
-    }
-  }, [activeTab, handleTabChange]);
-
+  // Only swipe RIGHT for back navigation (no forward swipe)
   useSwipeNavigation({
-    onSwipeLeft: handleSwipeLeft,
-    onSwipeRight: handleSwipeRight,
+    onSwipeRight: handleSwipeBack,
+    // NO onSwipeLeft - forward navigation only via taps
     enabled: isMobile,
     edgeWidth: 40,
     threshold: 60,
@@ -465,6 +476,7 @@ const Index = () => {
         </main>
         
         <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+        {isMobile && <InstallAppPrompt />}
         <VersionFooter />
       </div>
     </AIBackground>
