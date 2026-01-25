@@ -115,7 +115,7 @@ const Sidebar = () => {
     },
     {
       path: "/crm",
-      label: "CRM",
+      label: "Clients",
       icon: Users,
       show: canViewClients !== false
     },
