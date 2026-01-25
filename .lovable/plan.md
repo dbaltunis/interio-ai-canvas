@@ -1,105 +1,64 @@
 
-# Fix: Dealer Dashboard - Same Premium UI, Permission-Based Visibility
+# Fix: Permission-Based Dashboard Widget Visibility
 
-## The Mistake I Made
+## Problem Summary
 
-I created a completely separate "DealerDashboard" with different components and a simplified design. This is **wrong**. The correct approach is:
+The dashboard currently does NOT properly filter widgets based on user permissions. The role name (Dealer, Admin, Staff) is irrelevant - what matters is the **actual permissions** assigned when inviting someone to the app.
 
-- **ONE dashboard** for all users
-- **Permission system** hides widgets dealers can't see
-- **Data hooks** filter to show dealer's own data
-- **Visual quality** is identical for everyone
+Currently:
+- Revenue Chart: Shows to everyone (no permission check)
+- Jobs Status Chart: Shows to everyone (no permission check)  
+- KPI Row (Revenue, Projects, Quotes, Clients): Shows all 4 to everyone (no permission check)
+- Only some dynamic widgets check permissions
 
-## What Dealers See Now (Wrong)
+## The Correct Approach (Industry Standard)
 
-```text
-┌──────────────────────────────────────────────────────┐
-│ DealerWelcomeHeader (simplified - no Team Hub)       │
-├──────────────────────────────────────────────────────┤
-│ CompactKPIRow (3 cards only)                         │
-├──────────────────────────────────────────────────────┤
-│ DealerRecentJobsWidget (different styling)           │
-│ - Different Card variant                             │
-│ - No ScrollArea                                      │
-│ - Missing pixel art empty state                      │
-└──────────────────────────────────────────────────────┘
-```
+Every SaaS like Notion, Figma, Linear uses this pattern:
+1. Role names (Admin, Staff, Dealer) are just **permission presets**
+2. When you invite someone, you can customize their exact permissions
+3. The UI shows/hides elements based on the **actual permissions granted**, not the role name
+4. Same premium visual quality for everyone - just different data visibility
 
-## What Dealers Should See (Correct)
+## Solution
 
-```text
-┌──────────────────────────────────────────────────────┐
-│ WelcomeHeader (same as admin, minus customize btn)   │
-├──────────────────────────────────────────────────────┤
-│ CompactKPIRow (4 cards - same as admin)              │
-├──────────────────────────────────────────────────────┤
-│ Charts Row (RevenueTrendChart + JobsStatusChart)     │
-│ - Shows dealer's own data only                       │
-├──────────────────────────────────────────────────────┤
-│ Dynamic Widgets Grid                                 │
-│ - Same widgets as admin                              │
-│ - Permission system hides unauthorized widgets       │
-│ - Data filtered to dealer's own records              │
-└──────────────────────────────────────────────────────┘
-```
+Add permission checks to ALL sensitive dashboard elements:
 
----
+### 1. KPI Row - Filter Metrics by Permission
 
-## Implementation Plan
+Add permission props to `CompactKPIRow` and filter which metrics display:
 
-### Step 1: Remove Separate Dealer Dashboard
+| Metric | Required Permission |
+|--------|---------------------|
+| Revenue | `view_revenue_kpis` or `view_analytics` |
+| Active Projects | `view_all_jobs` or `view_assigned_jobs` |
+| Pending Quotes | `view_all_jobs` or `view_assigned_jobs` |
+| Clients | `view_all_clients` or `view_assigned_clients` |
 
-Delete the separate `DealerDashboard` component and related files:
-- Delete `DealerWelcomeHeader.tsx` 
-- Delete `DealerRecentJobsWidget.tsx`
-- Remove `DealerDashboard` function from `EnhancedHomeDashboard.tsx`
+**If user has NO jobs permission**: Hide Projects and Quotes KPI cards
+**If user has NO client permission**: Hide Clients KPI card
+**If user has NO revenue permission**: Hide Revenue KPI card
 
-### Step 2: Use Single Dashboard for All Users
+### 2. Charts Row - Add Permission Gates
 
-Modify `DashboardContent` to:
-- Show the **same layout** for dealers and admins
-- Use `isDealer` flag to conditionally hide the "Customize" button in WelcomeHeader
-- Let the existing permission system filter widgets
+| Chart | Required Permission |
+|-------|---------------------|
+| Revenue Trend | `view_revenue_kpis` or `view_analytics` |
+| Jobs Status | `view_all_jobs` or `view_assigned_jobs` |
 
-### Step 3: Update WelcomeHeader
+**If user lacks permission**: Don't render the chart at all
 
-Add a prop to hide the customize button for dealers:
-```typescript
-interface WelcomeHeaderProps {
-  onCustomizeClick?: () => void;
-  hideCustomize?: boolean; // New prop for dealers
-}
-```
+### 3. Data Hooks Already Filter Correctly
 
-### Step 4: Data Hooks Already Filter by User
-
-The existing hooks like `useProjects`, `useDashboardStats` already filter data by `user_id`, so dealers will naturally see only their own data in charts and widgets.
-
-### Step 5: Permission System Handles Widget Visibility
-
-The existing `enabledWidgets` logic already filters by permissions:
-```typescript
-if (widget.requiredPermission === 'view_team_performance') 
-  return canViewTeamPerformance !== false;
-```
-
-Dealers with limited permissions will automatically have unauthorized widgets hidden.
+The existing hooks like `useRevenueHistory`, `useBatchedDashboardQueries` already filter by `effectiveOwnerId` - users only see their own data. The issue is the UI elements always render regardless of permissions.
 
 ---
-
-## Files to Delete
-
-| File | Reason |
-|------|--------|
-| `src/components/dashboard/DealerWelcomeHeader.tsx` | Duplicate of WelcomeHeader |
-| `src/components/dashboard/DealerRecentJobsWidget.tsx` | Duplicate of RecentlyCreatedJobsWidget |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Remove DealerDashboard, remove early return for dealers, show same dashboard to all |
-| `src/components/dashboard/WelcomeHeader.tsx` | Add `hideCustomize` prop to optionally hide customize button |
+| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Filter `compactMetrics` array based on permissions, wrap charts in permission checks |
+| `src/components/dashboard/CompactKPIRow.tsx` | Add `requiredPermission` to metric type (optional) |
 
 ---
 
@@ -107,59 +66,92 @@ Dealers with limited permissions will automatically have unauthorized widgets hi
 
 ### EnhancedHomeDashboard.tsx Changes
 
-**Remove:**
-- Import of `DealerWelcomeHeader`
-- Import of `DealerRecentJobsWidget`
-- The entire `DealerDashboard` component
-- The early return for dealers
+1. Add permission checks for charts and KPIs
+2. Filter metrics array based on user permissions
+3. Conditionally render charts only if user has permission
 
-**Modify:**
-Pass `isDealer` flag to WelcomeHeader:
 ```typescript
-<WelcomeHeader 
-  onCustomizeClick={!isDealer ? () => setShowWidgetCustomizer(true) : undefined} 
-/>
+// New permission checks needed
+const canViewRevenue = useHasAnyPermission(['view_revenue_kpis', 'view_analytics', 'view_primary_kpis']);
+const canViewJobs = useHasAnyPermission(['view_all_jobs', 'view_assigned_jobs']);
+const canViewClients = useHasAnyPermission(['view_all_clients', 'view_assigned_clients']);
+
+// Filter KPI metrics based on permissions
+const compactMetrics = useMemo(() => {
+  const metrics = [];
+  
+  // Only show revenue if user has permission
+  if (canViewRevenue !== false) {
+    metrics.push({ id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true });
+  }
+  
+  // Only show projects/quotes if user can view jobs
+  if (canViewJobs !== false) {
+    metrics.push({ id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText });
+    metrics.push({ id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText });
+  }
+  
+  // Only show clients if user can view clients
+  if (canViewClients !== false) {
+    metrics.push({ id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users });
+  }
+  
+  return metrics;
+}, [stats, canViewRevenue, canViewJobs, canViewClients]);
+
+// Charts section with permission gates
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  {canViewRevenue !== false && (
+    <Suspense fallback={<WidgetSkeleton />}>
+      <RevenueTrendChart />
+    </Suspense>
+  )}
+  {canViewJobs !== false && (
+    <Suspense fallback={<WidgetSkeleton />}>
+      <JobsStatusChart />
+    </Suspense>
+  )}
+</div>
 ```
-
-This way:
-- Dealers see the same header but without customize button
-- Same charts, same widgets grid
-- Permission system does the filtering
-
-### WelcomeHeader.tsx Changes
-
-The `onCustomizeClick` being undefined will already hide the button (line 118-128 checks for it).
-
-No changes needed - it already conditionally renders.
-
----
-
-## Why This Is The Correct Approach
-
-1. **Single Source of Truth**: One dashboard component = consistent quality
-2. **Permission-Based Access**: The permission system already exists and works
-3. **Data Filtering**: Hooks already filter by `user_id` 
-4. **Maintenance**: Future improvements apply to everyone
-5. **Brand Consistency**: Dealers experience the same premium InterioApp quality
 
 ---
 
 ## Expected Result After Fix
 
-Dealers will see:
-- ✅ Same premium WelcomeHeader (just no customize button)
-- ✅ Same 4 KPI cards with glassmorphism
-- ✅ Same Revenue and Jobs charts (showing their own data)
-- ✅ Same widgets grid (filtered by their permissions)
-- ✅ Same animations, hover effects, and visual polish
+### User with ALL permissions (Owner/Admin)
+- Sees all 4 KPI cards
+- Sees both Revenue and Jobs charts
+- Sees all widgets they've enabled
+
+### User with LIMITED permissions (Staff with only assigned jobs)
+- Sees only Projects, Quotes KPI cards (if view_assigned_jobs)
+- Sees Jobs Status Chart only (no Revenue chart)
+- Dynamic widgets filtered by their permissions
+
+### Dealer with minimal permissions
+- Sees only the KPIs for data they can access (Projects, Quotes)
+- No Revenue chart (no view_analytics permission)
+- Jobs chart shows only their assigned jobs data
+- Dynamic widgets filtered by their permissions
+
+---
+
+## Why This Is The Correct SaaS Pattern
+
+1. **Permission-Driven, Not Role-Driven**: The UI responds to actual permissions, not role names
+2. **Custom Permissions Work**: If you grant a Dealer `view_analytics`, they'll see the Revenue chart
+3. **Graceful Degradation**: Users see a beautiful dashboard with just fewer items
+4. **Same Premium UI**: No "poor quality" simplified views - same glassmorphism, animations for everyone
+5. **Maintainable**: One dashboard component, one set of widgets, permission checks at render time
 
 ---
 
 ## Testing Checklist
 
-- [ ] Dealer login shows same dashboard layout as admin
-- [ ] Customize button is hidden for dealers
-- [ ] Charts show dealer's own data only
-- [ ] Widgets grid respects dealer's permissions
-- [ ] Visual quality is identical to admin view
-- [ ] No "poor quality" or simplified components
+After implementation:
+- [ ] Owner sees all 4 KPIs and both charts
+- [ ] Staff with `view_assigned_jobs` only sees Projects/Quotes KPIs and Jobs chart
+- [ ] Dealer sees only KPIs they have permission for
+- [ ] Removing `view_analytics` from any user hides Revenue chart
+- [ ] Custom permission overrides work correctly
+- [ ] No visual quality degradation for limited users
