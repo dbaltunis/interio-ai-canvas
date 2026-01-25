@@ -17,9 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobilePageTransition } from "@/components/mobile/MobilePageTransition";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
-import { InstallAppPrompt } from "@/components/mobile/InstallAppPrompt";
 
 // Lazy load heavy components with automatic retry
 const Dashboard = lazyWithRetry(
@@ -102,8 +100,6 @@ const Index = () => {
     console.log('Index: Initial tab =', tab, 'savedTab =', savedTab, 'urlTab =', urlTab);
     return tab;
   });
-  const [navigationDirection, setNavigationDirection] = useState(0);
-  const [previousTab, setPreviousTab] = useState<string | null>(null);
   // Navigation history stack for proper back navigation (iOS-style)
   const [navigationHistory, setNavigationHistory] = useState<string[]>(() => {
     const savedTab = sessionStorage.getItem('active_tab');
@@ -283,31 +279,18 @@ const Index = () => {
     }
   }, [searchParams, activeTab, canViewInventory, setSearchParams, permissionsLoading, explicitPermissions]);
 
-  // Calculate navigation direction for animations
-  const calculateDirection = useCallback((fromTab: string, toTab: string): number => {
-    const fromIndex = TAB_ORDER.indexOf(fromTab);
-    const toIndex = TAB_ORDER.indexOf(toTab);
-    if (fromIndex === -1 || toIndex === -1) return 1;
-    return toIndex > fromIndex ? 1 : -1;
-  }, []);
 
   const handleTabChange = useCallback((tabId: string, isBackNavigation = false) => {
     console.warn('[NAV] Index: handleTabChange called with:', tabId, 'isBack:', isBackNavigation);
     
-    if (isBackNavigation) {
-      // Going back - slide from left
-      setNavigationDirection(-1);
-    } else {
-      // Going forward - slide from right (always forward for normal navigation)
-      setNavigationDirection(1);
+    if (!isBackNavigation) {
       // Add to history stack (only for forward navigation)
       setNavigationHistory(prev => [...prev.slice(-9), tabId]); // Keep last 10 items
     }
     
-    setPreviousTab(activeTab);
     setSearchParams({ tab: tabId }, { replace: true });
     sessionStorage.setItem('active_tab', tabId);
-  }, [activeTab, setSearchParams]);
+  }, [setSearchParams]);
 
   // Swipe RIGHT = go back to previous screen (iOS-style back gesture)
   const handleSwipeBack = useCallback(() => {
@@ -470,13 +453,10 @@ const Index = () => {
         <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
         <main className="w-full overflow-hidden">
-          <MobilePageTransition activeKey={activeTab} direction={navigationDirection}>
-            {renderActiveComponent()}
-          </MobilePageTransition>
+          {renderActiveComponent()}
         </main>
         
         <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-        {isMobile && <InstallAppPrompt />}
         <VersionFooter />
       </div>
     </AIBackground>
