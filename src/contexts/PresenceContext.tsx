@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useTeamPresence } from '@/hooks/useTeamPresence';
+import { useFilteredTeamPresence } from '@/hooks/useFilteredTeamPresence';
 
 export interface UserPresence {
   user_id: string;
@@ -33,8 +33,8 @@ export const PresenceProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Use cached team presence data with error resilience
-  const { data: teamPresence = [], isLoading, error } = useTeamPresence();
+  // Use filtered team presence data - dealers only see Owners/Admins/System Owners
+  const { data: teamPresence = [], isLoading, error } = useFilteredTeamPresence();
   
   // Log presence errors but don't crash the app
   if (error) {

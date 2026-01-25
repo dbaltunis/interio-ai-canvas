@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useTeamPresence } from './useTeamPresence';
+import { useFilteredTeamPresence } from './useFilteredTeamPresence';
 
 export interface MessageAttachment {
   id: string;
@@ -47,8 +47,8 @@ export const useDirectMessages = () => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Use cached team presence data instead of making separate RPC calls
-  const { data: teamPresence = [] } = useTeamPresence();
+  // Use filtered team presence data - dealers only see Owners/Admins/System Owners
+  const { data: teamPresence = [] } = useFilteredTeamPresence();
 
   // Calculate status based on last_seen timestamp
   const calculateStatus = (lastSeen: string | null, userId: string): string => {

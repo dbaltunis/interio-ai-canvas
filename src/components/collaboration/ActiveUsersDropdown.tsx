@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,16 +13,32 @@ import {
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useIsDealer } from '@/hooks/useIsDealer';
 import { Users, MessageCircle, Circle } from 'lucide-react';
 import { formatDisplayName, getInitials } from '@/utils/userDisplay';
+
+const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
 
 export const ActiveUsersDropdown = () => {
   const { user } = useAuth();
   const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation, totalUnreadCount = 0 } = useDirectMessages();
+  const { data: isDealer } = useIsDealer();
 
-  // Filter out current user
-  const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
+  // Filter out current user and apply dealer visibility rules
+  const otherUsers = useMemo(() => {
+    const filtered = activeUsers.filter(u => u.user_id !== user?.id);
+    
+    // Dealers can only see Owners/Admins/System Owners
+    if (isDealer) {
+      return filtered.filter(u => 
+        DEALER_VISIBLE_ROLES.includes(u.user_profile?.role || '')
+      );
+    }
+    
+    return filtered;
+  }, [activeUsers, user?.id, isDealer]);
+  
   const onlineUsers = otherUsers.filter(u => u.status === 'online');
   const awayUsers = otherUsers.filter(u => u.status === 'away' || u.status === 'busy');
 
