@@ -1,124 +1,215 @@
 
-# Fix: React Hooks Violation in DashboardContent
+# Phase 9: Dealer Dashboard Enhancements + Library Supplier Visibility Fixes
 
-## The REAL Root Cause Found
+## Overview
 
-The console error message is clear:
-```
-Error: Rendered fewer hooks than expected. 
-This may be caused by an accidental early return statement.
-```
+This phase addresses two categories of issues from the CSV:
 
-**Location**: `DashboardContent@EnhancedHomeDashboard.tsx:208:71`
+1. **Dealer Dashboard Enhancement (Issue #4)** - Add summary widgets (Active Projects, Pending Quotes, Clients count) to the DealerDashboard
+2. **Library Supplier Visibility (Issues #46, #47, #50, #52)** - Hide supplier names/filters and cost prices from dealers in the Library/Inventory views
 
-### What's Happening
+---
 
-In `src/components/dashboard/EnhancedHomeDashboard.tsx`, the hooks are called in an inconsistent order:
+## Issues Being Addressed
 
+| Issue # | Location | Problem | Solution |
+|---------|----------|---------|----------|
+| #4 | DealerDashboard | Only shows "Your Recent Jobs" | Add summary widgets: Active Projects, Pending Quotes, Clients count |
+| #46 | Library | Supplier name visible | Hide supplier columns for dealers |
+| #47 | Library | Cost price & supplier shown in $ | Hide cost price and supplier for dealers |
+| #50 | Library | Supplier names visible | Hide Supplier filter and columns for dealers |
+| #52 | Library | Supplier column visible to dealer | Hide supplier column for dealers |
+
+---
+
+## Part 1: Dealer Dashboard Enhancements
+
+### Current State
+The `DealerDashboard` component (`src/components/dashboard/EnhancedHomeDashboard.tsx:54-64`) only renders:
+- `DealerWelcomeHeader` 
+- `DealerRecentJobsWidget`
+
+### Proposed Changes
+
+Add summary stat cards showing dealer-specific metrics:
+- Active Projects (their own)
+- Pending Quotes (their own)
+- Total Clients (assigned to them)
+
+### Implementation
+
+**New Component**: `src/components/dashboard/DealerStatsCards.tsx`
 ```text
-Line 69:  useIsDealer()           ✓ Called first
-Line 70:  useState()              ✓ Called
-...
-Line 82-86: useHasPermission() x5 ✓ Called
-Line 96:  useMemo()               ✓ Called
-Line 110: useHasPermission()      ✓ Called  <-- TWO MORE HOOKS HERE
-Line 111: useHasPermission()      ✓ Called
-
-Line 113: if (isDealer) return    ⚠️ EARLY RETURN HERE
-
-Line 118: useMemo()               ❌ SKIPPED when isDealer=true!
++--------------------+--------------------+--------------------+
+|  Active Projects   |   Pending Quotes   |      Clients       |
+|        12          |         5          |        28          |
++--------------------+--------------------+--------------------+
 ```
 
-### The Bug Flow
+**Modified File**: `src/components/dashboard/EnhancedHomeDashboard.tsx`
+- Add `<DealerStatsCards />` between header and recent jobs widget
 
-1. **First render (loading)**: `isDealerLoading = true` → early return skipped → ALL hooks called including `useMemo` on line 118
-2. **Second render (loaded)**: `isDealerLoading = false`, `isDealer = true` → early return triggers → `useMemo` on line 118 is NEVER called
-3. **React panics**: "I called 15 hooks last time, but only 13 this time!"
-
-This is a fundamental React rule: **Hooks must always be called in the same order, every render.**
+### Data Source
+- Use existing `useDealerOwnProjects()` hook for projects count
+- Create a new `useDealerStats()` hook to fetch:
+  - Active projects count (status != completed/cancelled)
+  - Pending quotes count (quotes without confirmed status)
+  - Assigned clients count
 
 ---
 
-## Solution
+## Part 2: Library Supplier Visibility Fixes
 
-Move the early return AFTER all hooks are called, OR move all hooks BEFORE the early return.
+### Current State
+The `FabricInventoryView.tsx` (and similar views) show:
+- Supplier filter dropdown (line 228-233)
+- Supplier name in grid cards (lines 373-377)
+- Supplier column in list view (lines 505, 543)
+- TWC badge based on vendor name (lines 363-367)
 
-### Fix: Move useMemo Before the Early Return
+### Files Requiring Changes
 
-**File**: `src/components/dashboard/EnhancedHomeDashboard.tsx`
+| File | Changes |
+|------|---------|
+| `src/components/inventory/FabricInventoryView.tsx` | Hide supplier filter, supplier column/cell, TWC badge for dealers |
+| `src/components/inventory/MaterialInventoryView.tsx` | Same changes |
+| `src/components/inventory/HardwareInventoryView.tsx` | Same changes |
+| `src/components/inventory/WallcoveringInventoryView.tsx` | Same changes |
+| `src/components/inventory/InventorySupplierFilter.tsx` | Return null if `isDealer` |
 
-Current structure (broken):
+### Implementation Pattern
+
+Each view will:
+1. Import `useIsDealer` hook
+2. Conditionally render supplier-related UI:
+   - `{!isDealer && <InventorySupplierFilter ... />}`
+   - Grid cards: `{!isDealer && (item.vendor?.name || item.supplier) && ...}`
+   - List header: `{!isDealer && <TableHead>Supplier</TableHead>}`
+   - List cell: `{!isDealer && <TableCell>...</TableCell>}`
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/dashboard/DealerStatsCards.tsx` | Summary stat cards for dealer dashboard |
+| `src/hooks/useDealerStats.ts` | Hook to fetch dealer-specific statistics |
+
+---
+
+## Files to Modify
+
+| File | Change Summary |
+|------|----------------|
+| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Import and render DealerStatsCards in DealerDashboard |
+| `src/components/inventory/FabricInventoryView.tsx` | Add isDealer checks around supplier UI |
+| `src/components/inventory/MaterialInventoryView.tsx` | Add isDealer checks around supplier UI |
+| `src/components/inventory/HardwareInventoryView.tsx` | Add isDealer checks around supplier UI |
+| `src/components/inventory/WallcoveringInventoryView.tsx` | Add isDealer checks around supplier UI |
+| `src/components/inventory/InventorySupplierFilter.tsx` | Early return null if isDealer |
+
+---
+
+## Implementation Order
+
+1. **Create DealerStatsCards component** - New component for dealer stats
+2. **Create useDealerStats hook** - Fetch dealer-specific metrics
+3. **Update EnhancedHomeDashboard** - Add DealerStatsCards to DealerDashboard
+4. **Fix InventorySupplierFilter** - Hide entire filter for dealers
+5. **Fix FabricInventoryView** - Hide supplier in grid and list views
+6. **Fix MaterialInventoryView** - Same pattern
+7. **Fix HardwareInventoryView** - Same pattern
+8. **Fix WallcoveringInventoryView** - Same pattern
+
+---
+
+## Technical Details
+
+### DealerStatsCards Component Structure
+
 ```typescript
-const canViewTeamMembers = useHasPermission('view_team_members');  // Line 110
-const canViewEmailKPIs = useHasPermission('view_email_kpis');      // Line 111
-
-if (!isDealerLoading && isDealer) {                                // Line 113
-  return <DealerDashboard />;                                      // Line 114
-}
-
-const enabledWidgets = useMemo(() => { ... });                     // Line 118 - SKIPPED!
+export const DealerStatsCards = () => {
+  const { data: stats, isLoading } = useDealerStats();
+  
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <StatCard 
+        label="Active Projects" 
+        value={stats?.activeProjects || 0} 
+        icon={FolderOpen} 
+      />
+      <StatCard 
+        label="Pending Quotes" 
+        value={stats?.pendingQuotes || 0} 
+        icon={FileText} 
+      />
+      <StatCard 
+        label="Clients" 
+        value={stats?.totalClients || 0} 
+        icon={Users} 
+      />
+    </div>
+  );
+};
 ```
 
-Fixed structure:
+### useDealerStats Hook Logic
+
 ```typescript
-const canViewTeamMembers = useHasPermission('view_team_members');
-const canViewEmailKPIs = useHasPermission('view_email_kpis');
+// Fetches counts for:
+// 1. Projects where user_id = current user AND status != completed/cancelled
+// 2. Quotes where user_id = current user AND status = pending
+// 3. Clients assigned to current user
+```
 
-// MOVE useMemo BEFORE the early return
-const enabledWidgets = useMemo(() => { 
-  // Same logic as before
-  if (hasOnlineStore.isLoading) return [];
-  // ... rest of filtering
-}, [/* same deps */]);
+### Supplier Visibility Pattern
 
-// Compact metrics also uses hooks indirectly, define before return
-const compactMetrics = useMemo(() => [
-  { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
-  // ... rest
-], [stats]);
+```typescript
+// In FabricInventoryView.tsx
+const { isDealer } = useIsDealer();
 
-// NOW it's safe to early return - all hooks have been called
-if (!isDealerLoading && isDealer) {
-  return <DealerDashboard />;
-}
+// Filter - hide completely
+{!isDealer && (
+  <InventorySupplierFilter 
+    value={selectedVendor} 
+    onChange={setLocalSelectedVendor} 
+    ... 
+  />
+)}
+
+// Grid card - hide supplier row
+{!isDealer && (item.vendor?.name || item.supplier) && (
+  <div className="flex justify-between text-sm">
+    <span className="text-muted-foreground">Supplier:</span>
+    <span className="font-medium">{item.vendor?.name || item.supplier}</span>
+  </div>
+)}
+
+// List table header
+{!isDealer && <TableHead className="hidden md:table-cell">Supplier</TableHead>}
+
+// List table cell
+{!isDealer && <TableCell className="hidden md:table-cell">{...}</TableCell>}
 ```
 
 ---
 
-## Changes Required
+## Expected Results
 
-| File | Change | Lines |
-|------|--------|-------|
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Move `useMemo` for `enabledWidgets` (line 118) before the dealer early return (line 113) | 110-118 |
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Wrap `compactMetrics` in useMemo and move before early return | 167-172 |
-
----
-
-## Why This Wasn't the Race Condition
-
-The previous fixes (500ms delay, `.maybeSingle()`, retries) addressed a **different potential issue**. Those fixes are still valuable for edge cases, but they weren't the cause of **this specific error**.
-
-This error happens because:
-- The user logging in **is a Dealer** (from the logs: `isTeamMember: true`)
-- When `isDealer` becomes `true`, the early return triggers
-- React sees fewer hooks and crashes
+| Issue | Before | After |
+|-------|--------|-------|
+| #4 Dealer Dashboard | Only "Recent Jobs" | Stats + Recent Jobs |
+| #46-52 Library Suppliers | Visible to dealers | Hidden from dealers |
 
 ---
 
-## Verification
+## Testing Checklist
 
-After fix, the login flow will be:
-1. User logs in
-2. `isDealerLoading = true` → all hooks called, loading state shown
-3. `isDealerLoading = false`, `isDealer = true` → all hooks still called, then `<DealerDashboard />` returned
-4. No crash!
-
----
-
-## Answer to Your Question
-
-**"Are other companies experiencing this error?"**
-
-No - this is a **code-specific bug** in your application's `EnhancedHomeDashboard.tsx` component. It's not a Lovable platform issue or Supabase issue. It's a React Rules of Hooks violation that was introduced when the dealer dashboard feature was added.
-
-The fix is straightforward: ensure all hooks are called before any conditional returns.
+After implementation:
+- [ ] Dealer dashboard shows Active Projects, Pending Quotes, Clients counts
+- [ ] Library shows no "Supplier" filter for dealers
+- [ ] Library grid view shows no supplier info for dealers
+- [ ] Library list view shows no supplier column for dealers
+- [ ] TWC badge still visible (it's a category indicator, not supplier name)
+- [ ] Non-dealers still see all supplier information
