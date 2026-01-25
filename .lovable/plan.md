@@ -1,113 +1,95 @@
 
+# Fix: "New Client" Button Missing for Dealers and Other Users
 
-# Rename "Deal Value" to "Lifetime Value" & Calculate Sum of All Projects
+## Problem Identified
+The "New Client" button is not showing for Dealers and other users who should have `create_clients` permission based on their role. The screenshot confirms the button is missing.
 
-## Overview
-This plan implements your request to:
-1. **Keep the "Stage" column as-is** - it displays the client's CRM relationship stage from your customizable settings
-2. **Rename "Deal Value" to "Lifetime Value"** - clearer terminology for client relationship tracking
-3. **Sum ALL project totals** for the lifetime value - not just closed projects
-
----
-
-## Changes Summary
-
-| File | Change |
-|------|--------|
-| `src/components/clients/ClientListView.tsx` | Rename column header from "Deal Value" to "Lifetime Value", update display logic |
-| `src/hooks/useClientJobs.ts` | Change calculation to sum ALL projects instead of only closed/completed |
-
----
-
-## Detailed Changes
-
-### 1. Update Column Header (ClientListView.tsx)
-
-**Line 278:** Change header text
-```tsx
-// Before
-<TableHead className="font-normal">Deal Value</TableHead>
-
-// After
-<TableHead className="font-normal">Lifetime Value</TableHead>
-```
-
-### 2. Update Display Logic (ClientListView.tsx)
-
-**Lines 362-377:** Simplify to prioritize lifetime value from projects
-
-```tsx
-// Before: Shows deal_value first, then totalValue as fallback
-{(client.deal_value && client.deal_value > 0) ? (
-  <div className="font-semibold text-foreground">
-    {formatCurrency(client.deal_value)}
-  </div>
-) : (client.totalValue && client.totalValue > 0) ? (
-  <div className="text-muted-foreground text-sm">
-    {formatCurrency(client.totalValue)}
-    <span className="text-xs block text-muted-foreground/70">(from projects)</span>
-  </div>
-) : (
-  <div className="text-muted-foreground/60 text-sm">—</div>
-)}
-
-// After: Calculate combined lifetime value (projects + deal_value)
-{(() => {
-  const lifetimeValue = (client.totalValue || 0) + (client.deal_value || 0);
-  return lifetimeValue > 0 ? (
-    <div className="font-semibold text-foreground">
-      {formatCurrency(lifetimeValue)}
-    </div>
-  ) : (
-    <div className="text-muted-foreground/60 text-sm">—</div>
-  );
-})()}
-```
-
-### 3. Update Calculation Logic (useClientJobs.ts)
-
-**Lines 40-64:** Remove the closed/completed filter to include ALL projects
+## Root Cause
+In `ClientManagementPage.tsx` (lines 150-159), the permission check uses **only** the raw `user_permissions` table:
 
 ```typescript
-// Before: Only sums closed/completed projects
-const closedProjects = (client.projects || []).filter(p => 
-  ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
-);
-const totalValue = closedProjects.reduce((sum, project) => { ... });
+// Current buggy logic (line 151-153)
+const hasCreateClientsPermission = explicitPermissions?.some(
+  (p: { permission_name: string }) => p.permission_name === 'create_clients'
+) ?? false;
 
-// After: Sum ALL projects for true lifetime value
-const allProjects = client.projects || [];
-const totalValue = allProjects.reduce((sum, project) => {
-  const projectQuotes = project.quotes || [];
-  if (projectQuotes.length > 0) {
-    // Sum all quotes for the project (or take the highest/most recent)
-    const projectTotal = projectQuotes.reduce((qSum, quote) => 
-      qSum + parseFloat(quote.total_amount?.toString() || '0'), 0
-    );
-    return sum + projectTotal;
-  }
-  return sum;
-}, 0);
+// Only grants access to System Owner, Owner, or users with EXPLICIT DB entry
+const canCreateClientsExplicit =
+  userRoleData?.isSystemOwner || isOwner
+    ? true
+    : hasCreateClientsPermission;  // ← MISSES ROLE-BASED PERMISSIONS!
 ```
+
+**What's missing:**
+- **Dealer** role has `create_clients` in `ROLE_PERMISSIONS.Dealer`
+- **Staff** role has `create_clients` in `ROLE_PERMISSIONS.Staff`
+- **Manager** role has `create_clients` in `ROLE_PERMISSIONS.Manager`
+- **Admin** role has `create_clients` in `ROLE_PERMISSIONS.Admin`
+
+But the code only checks:
+1. System Owner → always true
+2. Owner → always true  
+3. `user_permissions` table entry → misses role-based permissions!
+
+The `useUserPermissions()` hook **correctly merges** role-based + custom permissions, but this code bypasses it.
 
 ---
 
-## Result
+## Solution
+Use the **merged permissions** from `useUserPermissions()` hook (already fetched as `userPermissions`) instead of only checking `explicitPermissions`.
 
-After implementation:
+### File to Modify
+`src/components/clients/ClientManagementPage.tsx`
 
-| Scenario | Before | After |
-|----------|--------|-------|
-| Client with 2 projects (£5k + £10k) | Shows only if both closed | Shows £15,000 as Lifetime Value |
-| Client with 1 closed, 1 active project | Shows only closed project value | Shows combined value of all projects |
-| Column header | "Deal Value" | "Lifetime Value" |
-| Client with £15k lost quote | Hidden (not closed) | Included in Lifetime Value |
+### Changes
+
+**Lines 150-159:** Update the `canCreateClientsExplicit` logic to check merged permissions:
+
+```typescript
+// Before (buggy):
+const hasCreateClientsPermission = explicitPermissions?.some(
+  (p: { permission_name: string }) => p.permission_name === 'create_clients'
+) ?? false;
+
+const canCreateClientsExplicit =
+  userRoleData?.isSystemOwner || isOwner
+    ? true
+    : hasCreateClientsPermission;
+
+// After (fixed):
+// Check if create_clients is in the MERGED permissions (role-based + custom)
+const hasCreateClientsPermission = userPermissions?.some(
+  (p: { permission_name: string }) => p.permission_name === 'create_clients'
+) ?? false;
+
+// System Owner/Owner always have full access
+// Everyone else: check merged permissions (includes role-based)
+const canCreateClientsExplicit =
+  userRoleData?.isSystemOwner || isOwner
+    ? true
+    : hasCreateClientsPermission;
+```
+
+The key change is using `userPermissions` (from `useUserPermissions()` on line 65) instead of `explicitPermissions` (raw DB query on line 66-82).
+
+---
+
+## Result After Fix
+
+| Role | Has `create_clients` in Role | Before | After |
+|------|------------------------------|--------|-------|
+| System Owner | Yes | ✅ Button visible | ✅ Button visible |
+| Owner | Yes | ✅ Button visible | ✅ Button visible |
+| Admin | Yes | ❌ Button hidden | ✅ Button visible |
+| Manager | Yes | ❌ Button hidden | ✅ Button visible |
+| Staff | Yes | ❌ Button hidden | ✅ Button visible |
+| Dealer | Yes | ❌ Button hidden | ✅ Button visible |
+| User | No | ❌ Button hidden | ❌ Button hidden |
 
 ---
 
 ## Technical Notes
 
-- The `deal_value` field on the client record will be **added to** the project totals, giving a true lifetime value that includes both tracked projects AND any manually entered expected values
-- This matches your CEO scenario: you'll see the total relationship value across ALL interactions, not just closed deals
-- The "Stage" column remains tied to `client.funnel_stage` from your dynamic settings, representing the current CRM relationship status
-
+- The `userPermissions` variable (line 65) already contains the correctly merged permissions from `useUserPermissions()` hook
+- The hook in `src/hooks/usePermissions.ts` (lines 61-88) properly merges role-based permissions as baseline and adds custom permissions on top
+- This fix aligns with the memory note about "permission overrides role-based merging not replacement"
