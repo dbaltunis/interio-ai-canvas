@@ -339,7 +339,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                     </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="hidden lg:table-cell">SKU</TableHead>
-                    <TableHead className="hidden md:table-cell">Supplier</TableHead>
+                    {!isDealer && <TableHead className="hidden md:table-cell">Supplier</TableHead>}
                     <TableHead>Price Group</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="hidden xl:table-cell">Tags</TableHead>
@@ -426,7 +426,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 }
                               />
                               <span className="text-sm font-medium">{item.name}</span>
-                              {item.supplier?.toUpperCase() === 'TWC' && (
+                              {!isDealer && item.supplier?.toUpperCase() === 'TWC' && (
                                 <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1 py-0">
                                   TWC
                                 </Badge>
@@ -434,7 +434,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                             </div>
                           </TableCell>
                           <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{item.sku || '-'}</TableCell>
-                          <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{item.supplier || '-'}</TableCell>
+                          {!isDealer && <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{item.supplier || '-'}</TableCell>}
                           <TableCell>
                             {item.price_group ? (
                               <Badge variant="outline" className="text-[10px]">

@@ -4,6 +4,7 @@ import { Building2 } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMemo } from "react";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface InventorySupplierFilterProps {
   value?: string;
@@ -41,8 +42,10 @@ export const InventorySupplierFilter = ({
 }: InventorySupplierFilterProps) => {
   const { data: vendors = [] } = useVendors();
   const { data: inventory = [] } = useEnhancedInventory();
+  const { data: isDealer } = useIsDealer();
 
   // Calculate counts per vendor (considering both vendor_id AND supplier field)
+  // MUST be called before any conditional returns (React Rules of Hooks)
   const vendorCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     
@@ -61,6 +64,11 @@ export const InventorySupplierFilter = ({
     
     return counts;
   }, [inventory, vendors, category]);
+
+  // Dealers should not see the supplier filter at all
+  if (isDealer) {
+    return null;
+  }
 
   const handleChange = (newValue: string) => {
     onChange(newValue === "all" ? undefined : newValue);
