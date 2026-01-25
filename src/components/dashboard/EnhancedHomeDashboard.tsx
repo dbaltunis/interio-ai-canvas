@@ -7,14 +7,14 @@ import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useBatchedDashboardQueries } from "@/hooks/useBatchedDashboardQueries";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, FileText, DollarSign } from "lucide-react";
+import { Users, FileText, DollarSign, FolderOpen } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
 import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
-import { DealerStatsCards } from "./DealerStatsCards";
+import { useDealerStats } from "@/hooks/useDealerStats";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
 
@@ -53,13 +53,21 @@ const WidgetSkeleton = () => (
  * - Only their own recent jobs
  */
 const DealerDashboard = () => {
+  const { data: stats, isLoading } = useDealerStats();
+  
+  const dealerMetrics = useMemo(() => [
+    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FolderOpen },
+    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
+    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
+  ], [stats]);
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Simplified Dealer Welcome Header - no stats, no customize button */}
       <DealerWelcomeHeader />
 
-      {/* Dealer-specific stat cards */}
-      <DealerStatsCards />
+      {/* Dealer stats using same polished CompactKPIRow as main dashboard */}
+      <CompactKPIRow metrics={dealerMetrics} loading={isLoading} />
 
       {/* Only their own recent jobs - no charts, no revenue */}
       <DealerRecentJobsWidget />
