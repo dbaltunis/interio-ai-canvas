@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -16,6 +16,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobilePageTransition } from "@/components/mobile/MobilePageTransition";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 // Lazy load heavy components with automatic retry
 const Dashboard = lazyWithRetry(
@@ -85,6 +88,9 @@ import { InventorySkeleton } from "@/components/inventory/skeleton/InventorySkel
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
+// Tab order for swipe navigation
+const TAB_ORDER = ["dashboard", "projects", "clients", "calendar"];
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
@@ -95,7 +101,10 @@ const Index = () => {
     console.log('Index: Initial tab =', tab, 'savedTab =', savedTab, 'urlTab =', urlTab);
     return tab;
   });
+  const [navigationDirection, setNavigationDirection] = useState(0);
+  const [previousTab, setPreviousTab] = useState<string | null>(null);
   const { signOut, user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Permission checks for tab access control - works like jobs and clients
   // Check explicit permissions first, then fall back to role-based
@@ -266,11 +275,49 @@ const Index = () => {
     }
   }, [searchParams, activeTab, canViewInventory, setSearchParams, permissionsLoading, explicitPermissions]);
 
-  const handleTabChange = (tabId: string) => {
+  // Calculate navigation direction for animations
+  const calculateDirection = useCallback((fromTab: string, toTab: string): number => {
+    const fromIndex = TAB_ORDER.indexOf(fromTab);
+    const toIndex = TAB_ORDER.indexOf(toTab);
+    if (fromIndex === -1 || toIndex === -1) return 1;
+    return toIndex > fromIndex ? 1 : -1;
+  }, []);
+
+  const handleTabChange = useCallback((tabId: string) => {
     console.warn('[NAV] Index: handleTabChange called with:', tabId);
+    
+    // Calculate direction for animation
+    const direction = calculateDirection(activeTab, tabId);
+    setNavigationDirection(direction);
+    setPreviousTab(activeTab);
+    
     setSearchParams({ tab: tabId }, { replace: true });
     sessionStorage.setItem('active_tab', tabId);
-  };
+  }, [activeTab, calculateDirection, setSearchParams]);
+
+  // Swipe navigation for mobile
+  const handleSwipeLeft = useCallback(() => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex < TAB_ORDER.length - 1) {
+      handleTabChange(TAB_ORDER[currentIndex + 1]);
+    }
+  }, [activeTab, handleTabChange]);
+
+  const handleSwipeRight = useCallback(() => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex > 0) {
+      handleTabChange(TAB_ORDER[currentIndex - 1]);
+    }
+  }, [activeTab, handleTabChange]);
+
+  useSwipeNavigation({
+    onSwipeLeft: handleSwipeLeft,
+    onSwipeRight: handleSwipeRight,
+    enabled: isMobile,
+    edgeWidth: 40,
+    threshold: 60,
+    velocityThreshold: 0.3,
+  });
 
   const renderActiveComponent = () => {
     const ComponentWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -411,8 +458,10 @@ const Index = () => {
       <div className="relative min-h-screen pb-20 lg:pb-0 pt-safe lg:pt-0">
         <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-        <main className="w-full">
-          {renderActiveComponent()}
+        <main className="w-full overflow-hidden">
+          <MobilePageTransition activeKey={activeTab} direction={navigationDirection}>
+            {renderActiveComponent()}
+          </MobilePageTransition>
         </main>
         
         <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />

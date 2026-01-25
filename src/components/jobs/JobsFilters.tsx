@@ -74,23 +74,23 @@ export const JobsFilters = ({
     <div className="space-y-4">
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search for client's name"
             value={searchClient}
             onChange={(e) => setSearchClient(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
 
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search by Job Number"
             value={searchJobNumber}
             onChange={(e) => setSearchJobNumber(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
 

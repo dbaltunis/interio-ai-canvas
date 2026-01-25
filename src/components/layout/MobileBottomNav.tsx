@@ -249,18 +249,18 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         onOpenChange={setShowCreateDialog}
         onTabChange={onTabChange}
         queueCount={queueCount}
-        onOpenSettings={() => {
-          if (canViewSettings === false) {
-            toast({
-              title: "Permission Denied",
-              description: "You don't have permission to view settings.",
-              variant: "destructive",
-            });
-            return;
-          }
-          // Navigate to settings - could open a settings route
-          window.location.href = '/settings';
-        }}
+          onOpenSettings={() => {
+            if (canViewSettings === false) {
+              toast({
+                title: "Permission Denied",
+                description: "You don't have permission to view settings.",
+                variant: "destructive",
+              });
+              return;
+            }
+            // Navigate to settings using SPA navigation instead of hard reload
+            onTabChange('settings');
+          }}
         onOpenTeamHub={() => setPresencePanelOpen(true)}
       />
       

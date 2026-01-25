@@ -479,13 +479,13 @@ const canViewJobsExplicit =
           
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Always-visible Search Input */}
-            <div className="relative w-full sm:w-48 lg:w-64 order-last sm:order-first">
+            <div className="relative w-full sm:w-48 lg:w-64 min-w-0 order-last sm:order-first">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9"
+                className="pl-9 h-9 w-full"
               />
             </div>
             
