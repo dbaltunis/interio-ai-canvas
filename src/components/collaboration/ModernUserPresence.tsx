@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useIsDealer } from '@/hooks/useIsDealer';
 import { Users, MessageCircle, Zap, Circle } from 'lucide-react';
 
 interface ModernUserPresenceProps {
@@ -12,12 +14,27 @@ interface ModernUserPresenceProps {
   onToggle: () => void;
 }
 
+const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
+
 export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps) => {
+  const { user } = useAuth();
   const { activeUsers = [] } = useUserPresence();
   const { openConversation } = useDirectMessages();
+  const { data: isDealer } = useIsDealer();
 
-  const onlineUsers = activeUsers.filter(u => u.status === 'online');
-  const totalUsers = activeUsers.length;
+  // Filter activeUsers for dealer visibility
+  const filteredUsers = useMemo(() => {
+    const others = activeUsers.filter(u => u.user_id !== user?.id);
+    if (isDealer) {
+      return others.filter(u => 
+        DEALER_VISIBLE_ROLES.includes(u.user_profile?.role || '')
+      );
+    }
+    return others;
+  }, [activeUsers, user?.id, isDealer]);
+
+  const onlineUsers = filteredUsers.filter(u => u.status === 'online');
+  const totalUsers = filteredUsers.length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -187,7 +204,7 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
                   ))}
 
                   {/* Away/Offline Users */}
-                  {activeUsers.filter(u => u.status !== 'online').length > 0 && (
+                  {filteredUsers.filter(u => u.status !== 'online').length > 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -196,7 +213,7 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
                       <div className="pt-4 border-t border-white/10">
                         <p className="text-white/50 text-sm mb-3 font-medium">Away</p>
                         <div className="space-y-2">
-                          {activeUsers.filter(u => u.status !== 'online').map((user) => (
+                          {filteredUsers.filter(u => u.status !== 'online').map((user) => (
                             <div key={user.user_id} 
                                  className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
                                  onClick={() => openConversation(user.user_id)}>

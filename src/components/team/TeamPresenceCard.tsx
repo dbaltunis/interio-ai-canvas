@@ -1,11 +1,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTeamPresence } from "@/hooks/useTeamPresence";
+import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
 import { Users } from "lucide-react";
 
 export const TeamPresenceCard: React.FC = () => {
-  const { data, isLoading } = useTeamPresence();
+  const { data, isLoading } = useFilteredTeamPresence();
 
   return (
     <Card>
