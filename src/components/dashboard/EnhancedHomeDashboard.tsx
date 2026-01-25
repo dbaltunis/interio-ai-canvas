@@ -14,6 +14,7 @@ import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDat
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
 import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
+import { DealerStatsCards } from "./DealerStatsCards";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
 
@@ -56,6 +57,9 @@ const DealerDashboard = () => {
     <div className="space-y-4 animate-fade-in">
       {/* Simplified Dealer Welcome Header - no stats, no customize button */}
       <DealerWelcomeHeader />
+
+      {/* Dealer-specific stat cards */}
+      <DealerStatsCards />
 
       {/* Only their own recent jobs - no charts, no revenue */}
       <DealerRecentJobsWidget />

@@ -292,7 +292,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-1">
-                        {item.supplier && (
+                        {!isDealer && item.supplier && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Supplier:</span>
                             <span className="font-medium">{item.supplier}</span>
@@ -394,7 +394,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                         <TableHead className="text-xs">Image</TableHead>
                         <TableHead className="text-xs">Name</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">SKU</TableHead>
-                        <TableHead className="text-xs hidden md:table-cell">Supplier</TableHead>
+                        {!isDealer && <TableHead className="text-xs hidden md:table-cell">Supplier</TableHead>}
                         <TableHead className="text-xs hidden lg:table-cell">Material</TableHead>
                         <TableHead className="text-xs">Price</TableHead>
                         <TableHead className="text-xs">Stock</TableHead>
@@ -431,7 +431,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                             </TableCell>
                             <TableCell className="px-2 py-1 text-xs font-medium">{item.name}</TableCell>
                             <TableCell className="px-2 py-1 text-xs text-muted-foreground hidden lg:table-cell">{item.sku || '-'}</TableCell>
-                            <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>
+                            {!isDealer && <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>}
                             <TableCell className="px-2 py-1 text-xs hidden lg:table-cell">{(item as any).material || '-'}</TableCell>
                             <TableCell className="px-2 py-1 text-xs font-medium">
                               {formatPrice(item.selling_price || 0)}

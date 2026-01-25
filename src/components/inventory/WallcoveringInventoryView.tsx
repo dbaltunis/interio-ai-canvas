@@ -270,7 +270,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                             </Badge>
                           </div>
                         )}
-                        {item.supplier && (
+                        {!isDealer && item.supplier && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Supplier:</span>
                             <span className="font-medium">{item.supplier}</span>
@@ -384,7 +384,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                         <TableHead className="text-xs">Image</TableHead>
                         <TableHead className="text-xs">Name</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">SKU</TableHead>
-                        <TableHead className="text-xs hidden md:table-cell">Supplier</TableHead>
+                        {!isDealer && <TableHead className="text-xs hidden md:table-cell">Supplier</TableHead>}
                         <TableHead className="text-xs hidden md:table-cell">Sold By</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">Roll Size</TableHead>
                         <TableHead className="text-xs hidden xl:table-cell">Pattern Repeat</TableHead>
@@ -423,7 +423,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                             </TableCell>
                             <TableCell className="px-2 py-1 text-xs font-medium">{item.name}</TableCell>
                             <TableCell className="px-2 py-1 text-xs text-muted-foreground hidden lg:table-cell">{item.sku || '-'}</TableCell>
-                            <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>
+                            {!isDealer && <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>}
                             <TableCell className="px-2 py-1 hidden md:table-cell">
                               {(item as any).wallpaper_sold_by ? (
                                 <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs py-0 h-5">
