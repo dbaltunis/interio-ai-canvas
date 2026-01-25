@@ -1,259 +1,172 @@
 
-# Native Mobile App Experience Overhaul
 
-## Problem Summary
+# Feature Visibility Comparison: Desktop vs Mobile/Tablet
 
-Based on detailed investigation of the codebase and screenshots, the mobile experience has several critical issues:
+## Investigation Summary
 
-| Issue | Severity | Location |
-|-------|----------|----------|
-| **No native-like page transitions** | High | Tab switches have no sliding animations |
-| **Icons not centered in header** | Medium | Dashboard welcome header on mobile |
-| **Broken search inputs** | Medium | Jobs, Clients pages - inputs overflow/misalign |
-| **Non-native back navigation** | High | No swipe-to-go-back gesture |
-| **Permission leakage during loading** | Medium | Restricted tabs briefly visible |
-| **Hard page reload for Settings** | High | `window.location.href` kills SPA experience |
-| **Dashboard header cluttered** | Medium | Too many icons in row on mobile |
+I analyzed all navigation and action components across the codebase. Here's what I found:
 
----
+## Current Feature Visibility Matrix
 
-## Solution Architecture
+### Desktop Navigation Components
 
-Transform the current mobile experience into a **native-feeling iOS/Android app** with:
+| Component | Features Shown | Permission Checks | Issues Found |
+|-----------|---------------|-------------------|--------------|
+| **Sidebar.tsx** (Desktop left nav) | Dashboard, Jobs, CRM, Calendar, Inventory, Analytics, Documentation, Settings | Uses `useHasPermission` hooks | Dealers get hardcoded 4-item menu (Dashboard, Jobs, Library, Settings) - NO Purchasing |
+| **MainNav.tsx** (Secondary desktop nav) | Dashboard, Projects, Job Editor, Quote Builder, Messages, Work Orders, Product Library, **Ordering Hub**, Calendar, Clients, Calculator, Settings | Uses explicit permission checks | **Ordering Hub uses `view_inventory` permission - WRONG! Should use `view_purchasing`** |
+| **QuickActions.tsx** (Dashboard cards) | New Project, Add Client, Calculator, Calendar, Inventory | **NO permission checks at all** | Shows all 5 buttons to everyone including dealers |
 
-1. **Animated page transitions** - Framer Motion powered slide animations
-2. **Swipe navigation** - Swipe right from edge to go back
-3. **Improved layouts** - Better icon centering and responsive headers
-4. **Native-feeling components** - Proper touch targets, native-like buttons
+### Mobile/Tablet Navigation Components
+
+| Component | Features Shown | Permission Checks | Issues Found |
+|-----------|---------------|-------------------|--------------|
+| **MobileBottomNav.tsx** (Bottom tabs) | Home, Jobs, Clients, Calendar | Uses `useHasPermission`, hides Calendar for dealers | Correct behavior for tab bar |
+| **CreateActionDialog.tsx** (+ button menu) | New Client, New Job (conditional), New Event, Browse Library, **Material Purchasing**, Team & Messages, Settings | **Material Purchasing has NO permission check** | Everyone sees Purchasing including dealers and staff without `view_purchasing` |
 
 ---
 
-## Technical Implementation
+## Root Cause Analysis
 
-### Phase 1: Core Mobile Shell
+### Problem 1: Material Purchasing (Mobile + Desktop)
 
-#### 1.1 Create Mobile Page Transition Wrapper
+**Mobile - CreateActionDialog.tsx:**
+- Lines 192-212 show "Material Purchasing" button with **ZERO permission checks**
+- ANY user (including Dealers) can see and tap this button
+- Only gets blocked when they actually navigate to ordering-hub (but the button shouldn't show)
 
-**New File:** `src/components/mobile/MobilePageTransition.tsx`
+**Desktop - MainNav.tsx:**
+- Line 40 shows "Ordering Hub" with `permission: "view_inventory"`
+- This is **WRONG** - it should check `view_purchasing`
+- Users with view_inventory but NOT view_purchasing still see it
 
-A wrapper component that uses Framer Motion's AnimatePresence to slide pages left/right when navigating between tabs.
+### Problem 2: Other Menu Items (Mobile CreateActionDialog)
+
+| Menu Item | Current Check | Should Check |
+|-----------|--------------|--------------|
+| New Client | None | Always visible (OK) |
+| New Job | `hasCreateJobsPermission` | Correct |
+| New Event | None | `view_calendar` OR `view_own_calendar` |
+| Browse Library | None | `view_inventory` |
+| Material Purchasing | None | `view_purchasing` AND NOT isDealer |
+| Team & Messages | None | Always visible (OK) |
+| Settings | `canViewSettings` (disabled only) | Should HIDE, not disable |
+
+### Problem 3: QuickActions Dashboard Widget (Desktop)
+
+- Shows 5 action buttons to ALL users with NO permission checks
+- Dealers shouldn't see "New Project" without create_jobs
+- Users without `view_calendar` shouldn't see "Calendar" button
+
+---
+
+## Fix Plan
+
+### Phase 1: Fix CreateActionDialog.tsx (Mobile + Menu)
+
+Add permission hooks and conditional rendering:
 
 ```typescript
-// Wrap tab content with AnimatePresence
-// Detect navigation direction (forward/back)
-// Apply slide-in-from-right for forward, slide-in-from-left for back
-// Use spring animation for native feel
+// Add these permission checks
+const canViewCalendar = useHasPermission('view_calendar') || useHasPermission('view_own_calendar');
+const canViewInventory = useHasPermission('view_inventory');
+const canViewPurchasing = useHasPermission('view_purchasing');
+const { data: isDealer } = useIsDealer();
+
+// HIDE (not just disable) restricted items:
+{/* New Event - only if can view calendar */}
+{canViewCalendar !== false && (
+  <Button onClick={() => handleAction("event")}>New Event</Button>
+)}
+
+{/* Browse Library - only if can view inventory */}
+{canViewInventory !== false && (
+  <Button onClick={() => handleAction("library")}>Browse Library</Button>
+)}
+
+{/* Material Purchasing - only if can view purchasing AND not a dealer */}
+{canViewPurchasing !== false && !isDealer && (
+  <Button onClick={() => handleAction("purchasing")}>Material Purchasing</Button>
+)}
+
+{/* Settings - HIDE entirely if no permission */}
+{canViewSettings !== false && (
+  <Button onClick={() => handleAction("settings")}>Settings</Button>
+)}
 ```
 
-#### 1.2 Create Mobile Navigation Context
+### Phase 2: Fix MainNav.tsx (Desktop)
 
-**New File:** `src/contexts/MobileNavigationContext.tsx`
+Change Ordering Hub permission from `view_inventory` to `view_purchasing`:
 
-Track navigation history and direction to enable:
-- Proper back navigation via swipe
-- Direction-aware animations
-- Tab history stack
+```typescript
+// Line 40 - Change from:
+{ id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },
 
-#### 1.3 Integrate Swipe-to-Navigate
-
-**Edit:** `src/pages/Index.tsx`
-
-- Use existing `useSwipeNavigation` hook
-- Swipe right from left edge = go to previous tab
-- Maintain tab history for proper back navigation
-
----
-
-### Phase 2: Fix Layout Issues
-
-#### 2.1 Dashboard Header Mobile Optimization
-
-**Edit:** `src/components/dashboard/WelcomeHeader.tsx`
-
-Current issue: Too many icons crammed in header on mobile
-
-**Fix:**
-- Stack greeting text properly on mobile
-- Move secondary actions (customize, theme toggle) into overflow menu
-- Keep only essential icons visible (date filter, team hub)
-- Responsive icon sizes
-
-```tsx
-// Mobile: Hide customize button, theme toggle
-// Show only: Date filter, Team Hub with badge
-// Move others to overflow menu via dropdown
+// To:
+{ id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_purchasing" },
 ```
 
-#### 2.2 Jobs Page Header Fix
+Also add visibility check in the filter logic for `view_purchasing`.
 
-**Edit:** `src/components/jobs/JobsPage.tsx` (lines 467-490)
+### Phase 3: Fix QuickActions.tsx (Dashboard)
 
-Current issue: Header wraps awkwardly with icon misalignment
+Add permission-based filtering:
 
-**Fix:**
-- Use `items-center` consistently
-- Proper gap spacing for mobile
-- Hide column customization button on mobile (use desktop only)
+```typescript
+import { useHasPermission } from "@/hooks/usePermissions";
 
-#### 2.3 Mobile Search Inputs
+// Inside component:
+const canCreateJobs = useHasPermission('create_jobs');
+const canViewCalendar = useHasPermission('view_calendar');
+const canViewInventory = useHasPermission('view_inventory');
 
-**Edit Multiple Files:**
-- `src/components/jobs/JobsFilters.tsx`
-- `src/components/clients/ClientFilters.tsx`
-
-Current issue: Search inputs with absolute icons can overflow
-
-**Fix:**
-- Add `w-full` on mobile breakpoints
-- Use `min-w-0` to prevent overflow
-- Proper responsive width constraints
-
----
-
-### Phase 3: Native-Feeling Navigation
-
-#### 3.1 Remove Hard Page Reload
-
-**Edit:** `src/components/layout/MobileBottomNav.tsx` (line 262)
-
-Current: `window.location.href = '/settings'`
-
-**Fix:** Use React Router's `navigate('/settings')` for SPA navigation
-
-#### 3.2 Add Edge Swipe Gesture
-
-**Edit:** `src/hooks/useSwipeNavigation.ts`
-
-Enhance to support:
-- Edge-only detection (only trigger from left 40px of screen)
-- Velocity-based detection for natural feel
-- Visual feedback during swipe (page follows finger)
-
-#### 3.3 Create Native-Style Back Button
-
-**New Component:** `src/components/mobile/MobileBackButton.tsx`
-
-- Consistent back button styling across mobile pages
-- Uses ChevronLeft with proper touch target (44x44px minimum)
-- Animated chevron on press
-
----
-
-### Phase 4: Tab Content Animations
-
-#### 4.1 Update Index.tsx for Animated Tabs
-
-**Edit:** `src/pages/Index.tsx`
-
-Wrap `renderActiveComponent()` with AnimatePresence:
-
-```tsx
-<AnimatePresence mode="wait" initial={false}>
-  <motion.div
-    key={activeTab}
-    initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
-    animate={{ x: 0, opacity: 1 }}
-    exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0 }}
-    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-  >
-    {renderActiveComponent()}
-  </motion.div>
-</AnimatePresence>
-```
-
-#### 4.2 Track Navigation Direction
-
-Store previous tab index to calculate if navigation is forward or backward:
-- Home (0) → Jobs (1) = forward (slide from right)
-- Jobs (1) → Home (0) = backward (slide from left)
-
----
-
-### Phase 5: Permission-Safe Loading
-
-#### 5.1 Fix Tab Visibility During Loading
-
-**Edit:** `src/components/layout/MobileBottomNav.tsx`
-
-Current: Shows all tabs during permission loading
-
-**Fix:** Show skeleton until permissions are fully resolved
-
-```tsx
-const permissionsFullyLoaded = !permissionsLoading && 
-  canViewJobs !== undefined && 
-  canViewClients !== undefined && 
-  canViewCalendar !== undefined;
-
-// Only render actual tabs when fully loaded
+const actions = [
+  canCreateJobs !== false && { label: "New Project", icon: Plus, onClick: onNewJob, variant: "brand" },
+  { label: "Add Client", icon: Users, onClick: onNewClient, variant: "success" },
+  { label: "Calculator", icon: Calculator, onClick: onCalculator, variant: "default" },
+  canViewCalendar !== false && { label: "Calendar", icon: Calendar, onClick: onCalendar, variant: "warning" },
+  canViewInventory !== false && { label: "Inventory", icon: Package, onClick: onInventory, variant: "secondary" },
+].filter(Boolean);
 ```
 
 ---
 
-## File Changes Summary
+## Files to Modify
 
-### New Files (3)
-| File | Purpose |
-|------|---------|
-| `src/components/mobile/MobilePageTransition.tsx` | Animated page wrapper |
-| `src/contexts/MobileNavigationContext.tsx` | Navigation history & direction |
-| `src/components/mobile/MobileBackButton.tsx` | Native-style back button |
-
-### Edited Files (8)
-| File | Changes |
-|------|---------|
-| `src/pages/Index.tsx` | Add AnimatePresence, swipe navigation, track direction |
-| `src/components/layout/MobileBottomNav.tsx` | Remove `window.location.href`, improve permission loading |
-| `src/components/dashboard/WelcomeHeader.tsx` | Mobile-optimized layout, overflow menu for secondary actions |
-| `src/components/jobs/JobsPage.tsx` | Fix header alignment on mobile |
-| `src/components/jobs/JobsFilters.tsx` | Responsive search input |
-| `src/components/clients/ClientFilters.tsx` | Responsive search input |
-| `src/hooks/useSwipeNavigation.ts` | Edge detection, velocity-based triggering |
-| `src/components/clients/MobileClientView.tsx` | Use semantic colors (fix `text-white` usage) |
+| File | Change |
+|------|--------|
+| `src/components/layout/CreateActionDialog.tsx` | Add permission checks for Event, Library, Purchasing, Settings - HIDE disabled items |
+| `src/components/layout/MainNav.tsx` | Change Ordering Hub permission to `view_purchasing`, add filter logic |
+| `src/components/dashboard/QuickActions.tsx` | Add permission checks for New Project, Calendar, Inventory buttons |
 
 ---
 
-## Visual Result
+## Result After Fix
 
-### Before
-- Tab switches: instant, no animation
-- Back navigation: none
-- Icons: crowded and misaligned
-- Settings: full page reload
+### For Dealers (no `view_purchasing`, no `view_calendar`)
 
-### After
-- Tab switches: native iOS/Android slide animation
-- Back navigation: swipe from left edge
-- Icons: properly centered with overflow menu
-- Settings: smooth SPA transition
+| Feature | Desktop | Mobile (Create Menu) |
+|---------|---------|---------------------|
+| Material Purchasing | Hidden | Hidden |
+| New Event / Calendar | Hidden | Hidden |
+| Browse Library | Visible | Visible |
+| New Job | Visible (if create_jobs) | Visible (if create_jobs) |
 
----
+### For Staff without `view_purchasing`
 
-## Technical Considerations
-
-### Performance
-- Use `will-change: transform` for GPU-accelerated animations
-- Lazy load tab content (already in place)
-- Keep animation duration at 300ms for native feel
-
-### Accessibility
-- Maintain touch targets at 44x44px minimum
-- Preserve keyboard navigation
-- Animation respects `prefers-reduced-motion`
-
-### Edge Cases
-- Swipe detection ignores horizontal scrollable content
-- Animation skips on first mount (no initial flash)
-- History stack limited to 10 items to prevent memory issues
+| Feature | Desktop | Mobile |
+|---------|---------|--------|
+| Material Purchasing / Ordering Hub | Hidden | Hidden |
+| Other features | Based on their permissions | Based on their permissions |
 
 ---
 
-## Implementation Order
+## Summary
 
-1. **Phase 1** - Core mobile shell and context
-2. **Phase 2** - Fix existing layout issues
-3. **Phase 3** - Native navigation enhancements
-4. **Phase 4** - Tab content animations
-5. **Phase 5** - Permission-safe loading
+The main issue is that **Material Purchasing / Ordering Hub** has inconsistent or missing permission checks:
+1. Mobile CreateActionDialog: No check at all
+2. Desktop MainNav: Wrong permission (`view_inventory` instead of `view_purchasing`)
+3. QuickActions widget: No permission checks at all
 
-This approach ensures the app progressively improves while remaining functional throughout development.
+This plan adds proper `view_purchasing` checks and ensures features are **hidden** (not just disabled) when users lack permission.
+
