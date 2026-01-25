@@ -68,21 +68,26 @@ export const CreateActionDialog = ({
   const canViewOwnCalendar = useHasPermission('view_own_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   const canViewPurchasing = useHasPermission('view_purchasing');
+  const canViewClients = useHasPermission('view_clients');
+  const canViewJobs = useHasPermission('view_jobs');
   
   // Combined calendar permission
   const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
   
   // Check if user has ANY main page permission (for smart menu visibility)
+  // Include view_clients and view_jobs so "New Client" shows for users with those permissions
   const hasAnyMainPagePermission = useMemo(() => {
     // Always true for owners/admins without explicit restrictions
     if (userRoleData?.isSystemOwner) return true;
     if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
-    // Otherwise check if they can access at least one main area
-    return canViewCalendar !== false || 
+    // Otherwise check if they can access at least one main area (including clients and jobs)
+    return canViewClients !== false ||
+           canViewJobs !== false ||
+           canViewCalendar !== false || 
            canViewOwnCalendar !== false || 
            canViewInventory !== false || 
            canViewPurchasing !== false;
-  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewCalendar, canViewOwnCalendar, canViewInventory, canViewPurchasing]);
+  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory, canViewPurchasing]);
   
   // Determine if we should show inventory/purchasing separator
   const showInventorySeparator = canViewInventory !== false || (canViewPurchasing !== false && !isDealer);
