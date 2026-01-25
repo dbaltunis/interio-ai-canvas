@@ -1,148 +1,104 @@
 
 
-# Fix Mobile App Issues - Complete Cleanup
+# Fix Duplicate Client Prevention
 
-## Issues You Reported
+## Problem
+Clients with the same email and/or phone number are being saved as separate entries. The screenshot shows "Anumugam 0" appearing twice with the same email.
 
-| Issue | Problem |
-|-------|---------|
-| **1. Install App prompt** | Should be removed - you don't want the PWA install button |
-| **2. Clients button missing in menu** | "New Client" button not appearing for some users |
-| **3. Annoying side-to-side page animations** | When clicking on bottom nav tabs, pages slide left/right - you want this REMOVED |
-
----
-
-## Root Cause Analysis
-
-### Issue 1: Install App Prompt
-The `InstallAppPrompt` component was added in `Index.tsx` line 479:
-```tsx
-{isMobile && <InstallAppPrompt />}
-```
-**Fix:** Delete the component and remove this line.
-
-### Issue 2: Clients Button Not Showing
-In `CreateActionDialog.tsx`, the "New Client" button checks `hasAnyMainPagePermission` (line 76-85):
-```typescript
-const hasAnyMainPagePermission = useMemo(() => {
-  if (userRoleData?.isSystemOwner) return true;
-  if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
-  return canViewCalendar !== false || 
-         canViewOwnCalendar !== false || 
-         canViewInventory !== false || 
-         canViewPurchasing !== false;
-  // ❌ MISSING: canViewClients or canViewJobs check!
-}, [...]);
-```
-The logic doesn't check for `view_clients` or `view_jobs` permissions - so if a user can view clients/jobs but not calendar/inventory/purchasing, they won't see the "New Client" button.
-
-**Fix:** Add `view_clients` and `view_jobs` to the permission check.
-
-### Issue 3: Side-to-Side Page Animations
-The `MobilePageTransition` component (lines 473-475 in Index.tsx) applies slide animations:
-```tsx
-<MobilePageTransition activeKey={activeTab} direction={navigationDirection}>
-  {renderActiveComponent()}
-</MobilePageTransition>
-```
-
-**Fix:** Remove the `MobilePageTransition` wrapper entirely - just render children directly without any animation.
+## Root Cause
+1. **No database constraint** - The `clients` table allows duplicate email/phone values
+2. **No code validation** - Client creation logic doesn't check for existing records
 
 ---
 
-## Technical Solution
+## Solution: Two-Layer Protection
 
-### Step 1: Remove Install App Prompt
+### Layer 1: Database Unique Constraint (per user)
 
-**Files to modify:**
-- `src/pages/Index.tsx` - Remove the `<InstallAppPrompt />` component usage and import
-- `src/components/mobile/InstallAppPrompt.tsx` - Delete this file
-- `public/manifest.json` - Delete this file (PWA manifest)
-- `index.html` - Remove PWA meta tags
+Add a unique constraint on `(user_id, email)` and `(user_id, phone)` so each user cannot have duplicate clients with the same contact info.
 
-### Step 2: Fix Clients Button Visibility
+```sql
+-- Create partial unique indexes (only for non-null values)
+CREATE UNIQUE INDEX IF NOT EXISTS clients_user_email_unique 
+ON public.clients (user_id, LOWER(email)) 
+WHERE email IS NOT NULL AND email != '';
 
-**File:** `src/components/layout/CreateActionDialog.tsx`
+CREATE UNIQUE INDEX IF NOT EXISTS clients_user_phone_unique 
+ON public.clients (user_id, phone) 
+WHERE phone IS NOT NULL AND phone != '';
+```
 
-Change the `hasAnyMainPagePermission` logic to include clients and jobs permissions:
+### Layer 2: Application-Level Validation
+
+Update `useCreateClient` hook to check for existing clients BEFORE inserting:
 
 ```typescript
-// Add these permission hooks at the top with the others
-const canViewClients = useHasPermission('view_clients');
-const canViewJobs = useHasPermission('view_jobs');
+// src/hooks/useClients.ts - useCreateClient mutation
+mutationFn: async (client: Omit<ClientInsert, "user_id">) => {
+  // ... existing auth checks ...
 
-// Update the hasAnyMainPagePermission calculation
-const hasAnyMainPagePermission = useMemo(() => {
-  if (userRoleData?.isSystemOwner) return true;
-  if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
-  // Check ALL main page permissions - including clients and jobs
-  return canViewClients !== false ||
-         canViewJobs !== false ||
-         canViewCalendar !== false || 
-         canViewOwnCalendar !== false || 
-         canViewInventory !== false || 
-         canViewPurchasing !== false;
-}, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, 
-    canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, 
-    canViewInventory, canViewPurchasing]);
+  // NEW: Check for duplicate email
+  if (client.email) {
+    const { data: existingByEmail } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("user_id", effectiveOwnerId)
+      .ilike("email", client.email.trim())
+      .maybeSingle();
+    
+    if (existingByEmail) {
+      throw new Error(`A client with this email already exists: ${existingByEmail.name}`);
+    }
+  }
+
+  // NEW: Check for duplicate phone
+  if (client.phone) {
+    const { data: existingByPhone } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("user_id", effectiveOwnerId)
+      .eq("phone", client.phone.trim())
+      .maybeSingle();
+    
+    if (existingByPhone) {
+      throw new Error(`A client with this phone number already exists: ${existingByPhone.name}`);
+    }
+  }
+
+  // Proceed with insert if no duplicates...
+}
 ```
-
-### Step 3: Remove Page Slide Animations
-
-**File:** `src/pages/Index.tsx`
-
-Replace the animated wrapper with simple direct rendering:
-
-```tsx
-// BEFORE (lines 472-476):
-<main className="w-full overflow-hidden">
-  <MobilePageTransition activeKey={activeTab} direction={navigationDirection}>
-    {renderActiveComponent()}
-  </MobilePageTransition>
-</main>
-
-// AFTER - No animation, just render directly:
-<main className="w-full overflow-hidden">
-  {renderActiveComponent()}
-</main>
-```
-
-Also remove:
-- Import of `MobilePageTransition` (line 20)
-- `navigationDirection` state (line 105)
-- `previousTab` state (line 106)
-- `calculateDirection` function (lines 287-292)
-- All `setNavigationDirection` calls
-- The `MobilePageTransition.tsx` component file can be deleted
-
-**Keep the swipe-to-go-back feature** - this is the native iOS gesture you wanted. It will still work, but without the sliding animation.
 
 ---
-
-## Files to Delete
-
-| File | Reason |
-|------|--------|
-| `src/components/mobile/InstallAppPrompt.tsx` | Remove PWA install prompt |
-| `src/components/mobile/MobilePageTransition.tsx` | Remove page animations |
-| `public/manifest.json` | Remove PWA manifest |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/Index.tsx` | Remove InstallAppPrompt, MobilePageTransition, animation state |
-| `src/components/layout/CreateActionDialog.tsx` | Add view_clients and view_jobs to permission check |
-| `index.html` | Remove PWA meta tags |
+| **Database Migration** | Add unique indexes on `(user_id, email)` and `(user_id, phone)` |
+| `src/hooks/useClients.ts` | Add duplicate check before insert in `useCreateClient` |
 
 ---
 
-## Result After Fix
+## Behavior After Fix
 
-| Feature | Before | After |
-|---------|--------|-------|
-| Install App button | Floating button on mobile | Gone |
-| New Client button | Missing for some users | Visible if user can view clients OR jobs |
-| Page transitions | Annoying slide left/right | Instant page switch, no animation |
-| Swipe back gesture | Works with animation | Still works (goes to previous page), but no animation |
+| Action | Before | After |
+|--------|--------|-------|
+| Create client with existing email | Creates duplicate | Shows error: "A client with this email already exists: John Smith" |
+| Create client with existing phone | Creates duplicate | Shows error: "A client with this phone number already exists: John Smith" |
+| CSV Import with duplicates | Imports all as new | Skips duplicates, shows count of skipped |
+
+---
+
+## Technical Details
+
+### Why partial unique index?
+- Uses `WHERE email IS NOT NULL AND email != ''` so multiple clients can have empty/null email
+- Uses `LOWER(email)` to make email matching case-insensitive
+- Scoped to `user_id` so different users can have clients with same email
+
+### Why application-level check too?
+- Provides user-friendly error messages ("client already exists: Name")
+- Faster feedback than waiting for database constraint error
+- Can show specific duplicate client name to help user find it
 
