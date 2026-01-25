@@ -11,7 +11,8 @@ import {
   UserCircle,
   ShoppingCart,
   Store,
-  CheckCircle2
+  CheckCircle2,
+  Package
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -38,7 +39,7 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: Home },
   { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
-  { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
+  { id: "inventory", label: "Library", icon: Package, permission: "view_inventory" },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -55,6 +56,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
+  const canViewInventory = useHasPermission('view_inventory');
   
   // Check view_settings permission
   const { data: userRoleData } = useUserRole();
@@ -95,7 +97,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   // Only show skeleton when truly loading, not when permissions are determined
   const navPermissionsLoading = canViewJobs === undefined || 
                              canViewClients === undefined || 
-                             canViewCalendar === undefined;
+                             canViewCalendar === undefined ||
+                             canViewInventory === undefined;
   
   // Check if user actually has an online store (not just permission)
   const { data: hasOnlineStore } = useQuery({
@@ -126,7 +129,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
     
-    // Dealers: hide Calendar (they only see Home, Jobs, Clients)
+    // Dealers: hide Calendar (they only see Home, Jobs, Clients, Library)
     if (isDealer && item.id === 'calendar') return false;
     
     // Dashboard/Home should always be visible for authenticated users
@@ -135,6 +138,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
+    if (item.permission === 'view_inventory') return canViewInventory !== false;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
     
     return true; // Default to showing during loading
