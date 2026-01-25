@@ -12,9 +12,6 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 import { useIsDealer } from "@/hooks/useIsDealer";
-import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
-import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
-import { useDealerStats } from "@/hooks/useDealerStats";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
 
@@ -45,36 +42,6 @@ const WidgetSkeleton = () => (
     <Skeleton className="h-4 w-3/4" />
   </div>
 );
-
-/**
- * Simplified dealer dashboard component
- * - No revenue, active projects count, team info
- * - No charts showing all account data
- * - Only their own recent jobs
- */
-const DealerDashboard = () => {
-  const { data: stats, isLoading } = useDealerStats();
-  
-  const dealerMetrics = useMemo(() => [
-    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FolderOpen },
-    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
-    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
-  ], [stats]);
-
-  return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Simplified Dealer Welcome Header - no stats, no customize button */}
-      <DealerWelcomeHeader />
-
-      {/* Dealer stats using same polished CompactKPIRow as main dashboard */}
-      <CompactKPIRow metrics={dealerMetrics} loading={isLoading} />
-
-      {/* Only their own recent jobs - no charts, no revenue */}
-      <DealerRecentJobsWidget />
-    </div>
-  );
-};
-
 
 const DashboardContent = () => {
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
@@ -170,26 +137,21 @@ const DashboardContent = () => {
     { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
   ], [stats]);
 
-  // NOW it's safe to early return - all hooks have been called
-  // If user is a dealer, show simplified dashboard
-  if (!isDealerLoading && isDealer) {
-    return <DealerDashboard />;
-  }
-
-  // Debug logging for Shopify status (after early return to avoid noise for dealers)
+  // Debug logging for integration status
   console.log('[Dashboard] Integration Status:', {
     canViewShopify,
     isShopifyConnected,
     hasOnlineStore: hasOnlineStore.data,
     totalEnabledWidgets: getEnabledWidgets().length,
     displayedWidgets: enabledWidgets.length,
-    filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
+    filteredOutCount: getEnabledWidgets().length - enabledWidgets.length,
+    isDealer
   });
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header Section */}
-      <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
+      {/* Header Section - dealers don't see customize button */}
+      <WelcomeHeader onCustomizeClick={!isDealer ? () => setShowWidgetCustomizer(true) : undefined} />
 
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
