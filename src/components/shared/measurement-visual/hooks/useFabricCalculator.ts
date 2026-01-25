@@ -138,14 +138,17 @@ export const useFabricCalculator = ({
       let linearMeters: number;
       let orderedLinearMeters: number;
       let dropPerWidthMeters: number;
+      let horizontalPiecesNeeded = 1; // ✅ CRITICAL FIX: Declare outside if block with default
+      let linearMetersPerPiece: number | undefined; // ✅ NEW: Per-piece value for accurate display
       
       if (isRailroaded) {
         // HORIZONTAL/RAILROADED: Fabric width covers drop, buy length for curtain width
         // Linear meters = total curtain width (with fullness + allowances)
-        const horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
-        linearMeters = (totalWidthWithAllowances / 100) * horizontalPiecesNeeded * wasteMultiplier;
+        horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm); // ✅ FIX: Assign to outer variable
+        linearMetersPerPiece = (totalWidthWithAllowances / 100) * wasteMultiplier; // ✅ NEW: Per-piece value
+        linearMeters = linearMetersPerPiece * horizontalPiecesNeeded; // ✅ Total = per-piece × pieces
         orderedLinearMeters = linearMeters;
-        dropPerWidthMeters = (totalWidthWithAllowances / 100) * wasteMultiplier;
+        dropPerWidthMeters = linearMetersPerPiece;
         
         console.log('📐 RAILROADED calculation:', {
           totalWidthWithAllowances,
@@ -202,7 +205,13 @@ export const useFabricCalculator = ({
         curtainCount,
         curtainType: template.panel_configuration || 'pair',
         totalWidthWithAllowances,
-        dropPerWidthMeters
+        dropPerWidthMeters,
+        // ✅ CRITICAL FIX: Add missing fields for display synchronization
+        horizontalPiecesNeeded,                    // Number of horizontal pieces (now always returned)
+        fabricRotated: isRailroaded,               // Whether fabric is rotated/railroaded
+        fabricOrientation: isRailroaded ? 'horizontal' : 'vertical',
+        linearMetersPerPiece,                      // Per-piece meters for accurate horizontal display
+        leftoverFromLastPiece: undefined           // For future leftover tracking
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);

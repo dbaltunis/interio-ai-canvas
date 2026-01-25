@@ -903,50 +903,58 @@ export const AdaptiveFabricPricingDisplay = ({
               // For vertical, show total length needed
               pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
               if (isHorizontal) {
-                // ✅ USE engine result or fabricCalculation.linearMeters
-                // Use engine result if available, otherwise fall back to fabricCalculation
-                const linearMeters = isCurtainEngineActive && displayLinearMeters != null
+                // ✅ CRITICAL FIX: Use linearMetersPerPiece if available (per-piece value)
+                // fabricCalculation.linearMeters already includes multiplication by pieces
+                // We need per-piece value for accurate display text
+                const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
+                
+                // ✅ FIX: Get per-piece value - either from new field or calculate from total
+                const linearMetersPerPiece = fabricCalculation.linearMetersPerPiece 
+                  || (fabricCalculation.linearMeters / horizontalPiecesNeeded) 
+                  || 0;
+                
+                // Total linear meters (already calculated correctly in useFabricCalculator)
+                const totalLinearMeters = isCurtainEngineActive && displayLinearMeters != null
                   ? displayLinearMeters
                   : (fabricCalculation.linearMeters || 0);
-                const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
 
                 // ✅ CRITICAL FIX: When using leftover fabric, only charge for 1 piece
                 const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-                const totalLinearMetersToOrder = linearMeters * piecesToCharge;
+                const totalLinearMetersToOrder = linearMetersPerPiece * piecesToCharge;
 
                 // 🔍 DEBUG: Log horizontal calculation
                 console.log('🔧 HORIZONTAL DISPLAY CALCULATION:', {
-                  linearMeters: `${linearMeters.toFixed(2)}m per piece`,
+                  linearMetersPerPiece: `${linearMetersPerPiece.toFixed(2)}m per piece`,
+                  totalLinearMeters: `${totalLinearMeters.toFixed(2)}m (total)`,
                   horizontalPiecesNeeded,
                   piecesToCharge,
                   useLeftoverForHorizontal,
                   totalLinearMetersToOrder: `${totalLinearMetersToOrder.toFixed(2)}m`,
-                  calculation: `${linearMeters.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
+                  calculation: `${linearMetersPerPiece.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
                   pricePerUnit: formatPrice(pricePerUnit),
                   totalCost: formatPrice(totalLinearMetersToOrder * pricePerUnit),
                   usingEngine: isCurtainEngineActive
                 });
                 quantity = totalLinearMetersToOrder;
-                totalCost = isCurtainEngineActive && displayFabricCost != null
-                  ? displayFabricCost
-                  : quantity * pricePerUnit;
+                // ✅ FIX: Calculate cost from actual ordered quantity (not engine result which may use total)
+                totalCost = quantity * pricePerUnit;
                 unitLabel = getFabricUnitFullLabel();
                 unitSuffix = getFabricUnitSuffix();
-                const linearInUserUnit = metersToFabricUnit(linearMeters);
+                const perPieceInUserUnit = metersToFabricUnit(linearMetersPerPiece);
                 const quantityInUserUnit = metersToFabricUnit(quantity);
                 if (horizontalPiecesNeeded > 1) {
                   if (useLeftoverForHorizontal) {
                     // ✅ Using leftover - only charging for 1 piece
-                    calculationText = `${linearInUserUnit.toFixed(2)}${unitSuffix} × 1 piece (using leftover) = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
-                    calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${linearInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
+                    calculationText = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × 1 piece (using leftover) = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                    calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                   } else {
-                    const totalInUserUnit = metersToFabricUnit(linearMeters * horizontalPiecesNeeded);
-                    calculationText = `${linearInUserUnit.toFixed(2)}${unitSuffix} × ${horizontalPiecesNeeded} pieces = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
-                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearInUserUnit.toFixed(2)}${unitSuffix} per piece × ${horizontalPiecesNeeded} = ${totalInUserUnit.toFixed(2)}${unitSuffix} total × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(linearMeters * horizontalPiecesNeeded * pricePerUnit)}`;
+                    const totalInUserUnit = metersToFabricUnit(totalLinearMeters);
+                    calculationText = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${horizontalPiecesNeeded} pieces = ${totalInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${perPieceInUserUnit.toFixed(2)}${unitSuffix} per piece × ${horizontalPiecesNeeded} = ${totalInUserUnit.toFixed(2)}${unitSuffix} total × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalLinearMeters * pricePerUnit)}`;
                   }
                 } else {
                   calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
-                  calculationBreakdown = `${linearInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
+                  calculationBreakdown = `${perPieceInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                 }
               } else {
                 // Vertical/Standard: Show ORDERED fabric (full widths)
