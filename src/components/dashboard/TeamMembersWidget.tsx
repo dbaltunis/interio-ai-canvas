@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useTeamPresence } from "@/hooks/useTeamPresence";
+import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +31,8 @@ export const TeamMembersWidget = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: teamMembers = [], isLoading } = useTeamMembers();
-  const { data: presenceData = [] } = useTeamPresence();
+  const { data: presenceData = [] } = useFilteredTeamPresence();
+  const { data: isDealer } = useIsDealer();
   const { openConversation, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
@@ -179,8 +181,16 @@ export const TeamMembersWidget = () => {
     return null;
   }
 
-  // Filter out current user and sort team members
-  const otherTeamMembers = teamMembers.filter(member => member.id !== user?.id);
+  // Filter out current user and apply dealer visibility rules
+  const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
+  const otherTeamMembers = teamMembers.filter(member => {
+    if (member.id === user?.id) return false;
+    // Dealers can only see Owners/Admins/System Owners
+    if (isDealer) {
+      return DEALER_VISIBLE_ROLES.includes(member.role || '');
+    }
+    return true;
+  });
   const sortedTeamMembers = [...otherTeamMembers].sort((a, b) => {
     // Check for unread messages in conversations
     const aConversation = conversations.find(c => c.user_id === a.id);
