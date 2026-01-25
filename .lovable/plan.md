@@ -1,161 +1,259 @@
 
+# Native Mobile App Experience Overhaul
 
-# Fix Dealer Chat Visibility - Complete the Missing Components
+## Problem Summary
 
-## Problem
+Based on detailed investigation of the codebase and screenshots, the mobile experience has several critical issues:
 
-The initial fix updated some components but **3 components were missed** and still bypass the dealer filtering by using raw `useTeamPresence()` directly instead of the filtered version.
-
-**Components still broken:**
-
-| Component | Location | Issue |
-|-----------|----------|-------|
-| `TeamMembersWidget.tsx` | Dashboard | Uses `useTeamPresence()` directly on line 33 |
-| `TeamPresenceCard.tsx` | Sidebar | Uses `useTeamPresence()` directly on line 8 |
-| `ModernUserPresence.tsx` | Floating button | Should already work via PresenceContext, but needs verification |
-
----
-
-## Solution
-
-Update all remaining components to use `useFilteredTeamPresence` instead of `useTeamPresence`.
+| Issue | Severity | Location |
+|-------|----------|----------|
+| **No native-like page transitions** | High | Tab switches have no sliding animations |
+| **Icons not centered in header** | Medium | Dashboard welcome header on mobile |
+| **Broken search inputs** | Medium | Jobs, Clients pages - inputs overflow/misalign |
+| **Non-native back navigation** | High | No swipe-to-go-back gesture |
+| **Permission leakage during loading** | Medium | Restricted tabs briefly visible |
+| **Hard page reload for Settings** | High | `window.location.href` kills SPA experience |
+| **Dashboard header cluttered** | Medium | Too many icons in row on mobile |
 
 ---
 
-## Technical Changes
+## Solution Architecture
 
-### 1. TeamMembersWidget.tsx
+Transform the current mobile experience into a **native-feeling iOS/Android app** with:
 
-**File:** `src/components/dashboard/TeamMembersWidget.tsx`
+1. **Animated page transitions** - Framer Motion powered slide animations
+2. **Swipe navigation** - Swipe right from edge to go back
+3. **Improved layouts** - Better icon centering and responsive headers
+4. **Native-feeling components** - Proper touch targets, native-like buttons
 
-**Change import (line 10):**
+---
+
+## Technical Implementation
+
+### Phase 1: Core Mobile Shell
+
+#### 1.1 Create Mobile Page Transition Wrapper
+
+**New File:** `src/components/mobile/MobilePageTransition.tsx`
+
+A wrapper component that uses Framer Motion's AnimatePresence to slide pages left/right when navigating between tabs.
+
 ```typescript
-// FROM:
-import { useTeamPresence } from "@/hooks/useTeamPresence";
-
-// TO:
-import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
+// Wrap tab content with AnimatePresence
+// Detect navigation direction (forward/back)
+// Apply slide-in-from-right for forward, slide-in-from-left for back
+// Use spring animation for native feel
 ```
 
-**Change usage (line 33):**
-```typescript
-// FROM:
-const { data: presenceData = [] } = useTeamPresence();
+#### 1.2 Create Mobile Navigation Context
 
-// TO:
-const { data: presenceData = [] } = useFilteredTeamPresence();
+**New File:** `src/contexts/MobileNavigationContext.tsx`
+
+Track navigation history and direction to enable:
+- Proper back navigation via swipe
+- Direction-aware animations
+- Tab history stack
+
+#### 1.3 Integrate Swipe-to-Navigate
+
+**Edit:** `src/pages/Index.tsx`
+
+- Use existing `useSwipeNavigation` hook
+- Swipe right from left edge = go to previous tab
+- Maintain tab history for proper back navigation
+
+---
+
+### Phase 2: Fix Layout Issues
+
+#### 2.1 Dashboard Header Mobile Optimization
+
+**Edit:** `src/components/dashboard/WelcomeHeader.tsx`
+
+Current issue: Too many icons crammed in header on mobile
+
+**Fix:**
+- Stack greeting text properly on mobile
+- Move secondary actions (customize, theme toggle) into overflow menu
+- Keep only essential icons visible (date filter, team hub)
+- Responsive icon sizes
+
+```tsx
+// Mobile: Hide customize button, theme toggle
+// Show only: Date filter, Team Hub with badge
+// Move others to overflow menu via dropdown
 ```
 
-**Also add dealer filtering to `otherTeamMembers` (around line 183):**
-```typescript
-import { useIsDealer } from "@/hooks/useIsDealer";
+#### 2.2 Jobs Page Header Fix
 
-// Inside component:
-const { data: isDealer } = useIsDealer();
-const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
+**Edit:** `src/components/jobs/JobsPage.tsx` (lines 467-490)
 
-// Update filtering logic:
-const otherTeamMembers = teamMembers.filter(member => {
-  if (member.id === user?.id) return false; // Exclude current user
-  
-  // Dealers can only see Owners/Admins/System Owners
-  if (isDealer) {
-    return DEALER_VISIBLE_ROLES.includes(member.role || '');
-  }
-  
-  return true;
-});
+Current issue: Header wraps awkwardly with icon misalignment
+
+**Fix:**
+- Use `items-center` consistently
+- Proper gap spacing for mobile
+- Hide column customization button on mobile (use desktop only)
+
+#### 2.3 Mobile Search Inputs
+
+**Edit Multiple Files:**
+- `src/components/jobs/JobsFilters.tsx`
+- `src/components/clients/ClientFilters.tsx`
+
+Current issue: Search inputs with absolute icons can overflow
+
+**Fix:**
+- Add `w-full` on mobile breakpoints
+- Use `min-w-0` to prevent overflow
+- Proper responsive width constraints
+
+---
+
+### Phase 3: Native-Feeling Navigation
+
+#### 3.1 Remove Hard Page Reload
+
+**Edit:** `src/components/layout/MobileBottomNav.tsx` (line 262)
+
+Current: `window.location.href = '/settings'`
+
+**Fix:** Use React Router's `navigate('/settings')` for SPA navigation
+
+#### 3.2 Add Edge Swipe Gesture
+
+**Edit:** `src/hooks/useSwipeNavigation.ts`
+
+Enhance to support:
+- Edge-only detection (only trigger from left 40px of screen)
+- Velocity-based detection for natural feel
+- Visual feedback during swipe (page follows finger)
+
+#### 3.3 Create Native-Style Back Button
+
+**New Component:** `src/components/mobile/MobileBackButton.tsx`
+
+- Consistent back button styling across mobile pages
+- Uses ChevronLeft with proper touch target (44x44px minimum)
+- Animated chevron on press
+
+---
+
+### Phase 4: Tab Content Animations
+
+#### 4.1 Update Index.tsx for Animated Tabs
+
+**Edit:** `src/pages/Index.tsx`
+
+Wrap `renderActiveComponent()` with AnimatePresence:
+
+```tsx
+<AnimatePresence mode="wait" initial={false}>
+  <motion.div
+    key={activeTab}
+    initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0 }}
+    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+  >
+    {renderActiveComponent()}
+  </motion.div>
+</AnimatePresence>
+```
+
+#### 4.2 Track Navigation Direction
+
+Store previous tab index to calculate if navigation is forward or backward:
+- Home (0) → Jobs (1) = forward (slide from right)
+- Jobs (1) → Home (0) = backward (slide from left)
+
+---
+
+### Phase 5: Permission-Safe Loading
+
+#### 5.1 Fix Tab Visibility During Loading
+
+**Edit:** `src/components/layout/MobileBottomNav.tsx`
+
+Current: Shows all tabs during permission loading
+
+**Fix:** Show skeleton until permissions are fully resolved
+
+```tsx
+const permissionsFullyLoaded = !permissionsLoading && 
+  canViewJobs !== undefined && 
+  canViewClients !== undefined && 
+  canViewCalendar !== undefined;
+
+// Only render actual tabs when fully loaded
 ```
 
 ---
 
-### 2. TeamPresenceCard.tsx
+## File Changes Summary
 
-**File:** `src/components/team/TeamPresenceCard.tsx`
+### New Files (3)
+| File | Purpose |
+|------|---------|
+| `src/components/mobile/MobilePageTransition.tsx` | Animated page wrapper |
+| `src/contexts/MobileNavigationContext.tsx` | Navigation history & direction |
+| `src/components/mobile/MobileBackButton.tsx` | Native-style back button |
 
-**Change import (line 4):**
-```typescript
-// FROM:
-import { useTeamPresence } from "@/hooks/useTeamPresence";
-
-// TO:
-import { useFilteredTeamPresence } from "@/hooks/useFilteredTeamPresence";
-```
-
-**Change usage (line 8):**
-```typescript
-// FROM:
-const { data, isLoading } = useTeamPresence();
-
-// TO:
-const { data, isLoading } = useFilteredTeamPresence();
-```
-
----
-
-### 3. ModernUserPresence.tsx (Verification)
-
-**File:** `src/components/collaboration/ModernUserPresence.tsx`
-
-This component uses `useUserPresence()` which gets data from `PresenceContext`. Since `PresenceContext` now uses `useFilteredTeamPresence()`, this **should already be working**.
-
-However, as a safety measure, add explicit dealer filtering:
-
-**Add imports:**
-```typescript
-import { useAuth } from '@/components/auth/AuthProvider';
-import { useIsDealer } from '@/hooks/useIsDealer';
-import { useMemo } from 'react';
-```
-
-**Add filtering:**
-```typescript
-const { user } = useAuth();
-const { data: isDealer } = useIsDealer();
-const DEALER_VISIBLE_ROLES = ['Owner', 'Admin', 'System Owner'];
-
-// Filter activeUsers
-const filteredUsers = useMemo(() => {
-  const others = activeUsers.filter(u => u.user_id !== user?.id);
-  
-  if (isDealer) {
-    return others.filter(u => 
-      DEALER_VISIBLE_ROLES.includes(u.user_profile?.role || '')
-    );
-  }
-  
-  return others;
-}, [activeUsers, user?.id, isDealer]);
-
-// Then use filteredUsers instead of activeUsers throughout the component
-```
+### Edited Files (8)
+| File | Changes |
+|------|---------|
+| `src/pages/Index.tsx` | Add AnimatePresence, swipe navigation, track direction |
+| `src/components/layout/MobileBottomNav.tsx` | Remove `window.location.href`, improve permission loading |
+| `src/components/dashboard/WelcomeHeader.tsx` | Mobile-optimized layout, overflow menu for secondary actions |
+| `src/components/jobs/JobsPage.tsx` | Fix header alignment on mobile |
+| `src/components/jobs/JobsFilters.tsx` | Responsive search input |
+| `src/components/clients/ClientFilters.tsx` | Responsive search input |
+| `src/hooks/useSwipeNavigation.ts` | Edge detection, velocity-based triggering |
+| `src/components/clients/MobileClientView.tsx` | Use semantic colors (fix `text-white` usage) |
 
 ---
 
-## Files to Modify
+## Visual Result
 
-| File | Type | Change |
-|------|------|--------|
-| `src/components/dashboard/TeamMembersWidget.tsx` | Edit | Switch to `useFilteredTeamPresence`, add dealer filtering for `teamMembers` |
-| `src/components/team/TeamPresenceCard.tsx` | Edit | Switch to `useFilteredTeamPresence` |
-| `src/components/collaboration/ModernUserPresence.tsx` | Edit | Add explicit dealer filtering as safety measure |
+### Before
+- Tab switches: instant, no animation
+- Back navigation: none
+- Icons: crowded and misaligned
+- Settings: full page reload
 
----
-
-## What This Fixes
-
-| Location | Before | After |
-|----------|--------|-------|
-| Dashboard "Team" widget | Dealers see ALL team members | Dealers only see Owners/Admins |
-| Team Presence Card | Dealers see ALL team members | Dealers only see Owners/Admins |
-| Floating Team Pulse | Dealers see ALL team members | Dealers only see Owners/Admins |
-| Team Hub Chat | Already fixed | Already fixed |
-| Direct Messages list | Already fixed | Already fixed |
-| Active Users Dropdown | Already fixed | Already fixed |
+### After
+- Tab switches: native iOS/Android slide animation
+- Back navigation: swipe from left edge
+- Icons: properly centered with overflow menu
+- Settings: smooth SPA transition
 
 ---
 
-## Summary
+## Technical Considerations
 
-The initial fix was incomplete - it updated the core hooks and some components, but missed 3 components that directly use the raw `useTeamPresence` hook. This plan completes the fix by updating all remaining components.
+### Performance
+- Use `will-change: transform` for GPU-accelerated animations
+- Lazy load tab content (already in place)
+- Keep animation duration at 300ms for native feel
 
+### Accessibility
+- Maintain touch targets at 44x44px minimum
+- Preserve keyboard navigation
+- Animation respects `prefers-reduced-motion`
+
+### Edge Cases
+- Swipe detection ignores horizontal scrollable content
+- Animation skips on first mount (no initial flash)
+- History stack limited to 10 items to prevent memory issues
+
+---
+
+## Implementation Order
+
+1. **Phase 1** - Core mobile shell and context
+2. **Phase 2** - Fix existing layout issues
+3. **Phase 3** - Native navigation enhancements
+4. **Phase 4** - Tab content animations
+5. **Phase 5** - Permission-safe loading
+
+This approach ensures the app progressively improves while remaining functional throughout development.
