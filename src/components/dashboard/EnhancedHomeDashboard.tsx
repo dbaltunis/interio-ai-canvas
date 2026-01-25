@@ -109,11 +109,8 @@ const DashboardContent = () => {
   // Permission checks for widgets
   const canViewTeamMembers = useHasPermission('view_team_members');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
-  // If user is a dealer, show simplified dashboard (AFTER all hooks are called)
-  if (!isDealerLoading && isDealer) {
-    return <DealerDashboard />;
-  }
 
+  // ALL useMemo hooks MUST be called BEFORE any conditional returns (React Rules of Hooks)
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
     // Don't filter until we know the store status
@@ -151,9 +148,23 @@ const DashboardContent = () => {
     });
     
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
-  // Debug logging for Shopify status
+  // Compact metrics for top row - use real data from batched queries (must be called before early return)
+  const compactMetrics = useMemo(() => [
+    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
+    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText },
+    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
+    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
+  ], [stats]);
+
+  // NOW it's safe to early return - all hooks have been called
+  // If user is a dealer, show simplified dashboard
+  if (!isDealerLoading && isDealer) {
+    return <DealerDashboard />;
+  }
+
+  // Debug logging for Shopify status (after early return to avoid noise for dealers)
   console.log('[Dashboard] Integration Status:', {
     canViewShopify,
     isShopifyConnected,
@@ -162,14 +173,6 @@ const DashboardContent = () => {
     displayedWidgets: enabledWidgets.length,
     filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
   });
-
-  // Compact metrics for top row - use real data from batched queries
-  const compactMetrics = [
-    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
-    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText },
-    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
-    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
-  ];
 
   return (
     <div className="space-y-4 animate-fade-in">
