@@ -8,7 +8,7 @@ import { useBatchedDashboardQueries } from "@/hooks/useBatchedDashboardQueries";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, FileText, DollarSign, FolderOpen } from "lucide-react";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 import { useIsDealer } from "@/hooks/useIsDealer";
@@ -63,6 +63,11 @@ const DashboardContent = () => {
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
   const canViewTeamPerformance = useHasPermission('view_team_performance');
+  
+  // Permission checks for KPIs and charts (permission-driven, not role-driven)
+  const canViewRevenue = useHasAnyPermission(['view_revenue_kpis', 'view_analytics', 'view_primary_kpis']);
+  const canViewJobs = useHasAnyPermission(['view_all_jobs', 'view_assigned_jobs']);
+  const canViewClients = useHasAnyPermission(['view_all_clients', 'view_assigned_clients']);
 
   // One-time cleanup: disable Shopify widgets if Shopify isn't connected
   useEffect(() => {
@@ -129,13 +134,29 @@ const DashboardContent = () => {
     return filtered;
   }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
-  // Compact metrics for top row - use real data from batched queries (must be called before early return)
-  const compactMetrics = useMemo(() => [
-    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
-    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText },
-    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
-    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
-  ], [stats]);
+  // Compact metrics for top row - PERMISSION-FILTERED (not role-based)
+  // Users see only the KPIs they have permission to view
+  const compactMetrics = useMemo(() => {
+    const metrics = [];
+    
+    // Revenue KPI: requires view_revenue_kpis, view_analytics, or view_primary_kpis
+    if (canViewRevenue !== false) {
+      metrics.push({ id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true });
+    }
+    
+    // Projects & Quotes KPIs: requires view_all_jobs or view_assigned_jobs
+    if (canViewJobs !== false) {
+      metrics.push({ id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText });
+      metrics.push({ id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText });
+    }
+    
+    // Clients KPI: requires view_all_clients or view_assigned_clients
+    if (canViewClients !== false) {
+      metrics.push({ id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users });
+    }
+    
+    return metrics;
+  }, [stats, canViewRevenue, canViewJobs, canViewClients]);
 
   // Debug logging for integration status
   console.log('[Dashboard] Integration Status:', {
@@ -156,15 +177,21 @@ const DashboardContent = () => {
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
-      {/* Charts Row - Revenue trend and Jobs status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Suspense fallback={<WidgetSkeleton />}>
-          <RevenueTrendChart />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <JobsStatusChart />
-        </Suspense>
-      </div>
+      {/* Charts Row - PERMISSION-GATED (renders only if user has permission) */}
+      {(canViewRevenue !== false || canViewJobs !== false) && (
+        <div className={`grid grid-cols-1 ${canViewRevenue !== false && canViewJobs !== false ? 'lg:grid-cols-2' : ''} gap-4`}>
+          {canViewRevenue !== false && (
+            <Suspense fallback={<WidgetSkeleton />}>
+              <RevenueTrendChart />
+            </Suspense>
+          )}
+          {canViewJobs !== false && (
+            <Suspense fallback={<WidgetSkeleton />}>
+              <JobsStatusChart />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
