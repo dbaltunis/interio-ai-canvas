@@ -37,7 +37,7 @@ const navItems = [
   { id: "emails", label: "Messages", icon: BookOpen, permission: "view_emails" },
   { id: "workshop", label: "Work Orders", icon: Wrench, permission: "view_jobs" },
   { id: "inventory", label: "Product Library", icon: Package, permission: "view_inventory" },
-  { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },
+  { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_purchasing" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calculator", label: "Calculator", icon: Calculator },
@@ -55,6 +55,7 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewClients = useHasPermission('view_clients');
   const canViewSettings = useHasPermission('view_settings');
+  const canViewPurchasing = useHasPermission('view_purchasing');
   
   // For inventory and emails, check explicit permissions like jobs and clients
   const { data: userRoleData } = useUserRole();
@@ -111,6 +112,10 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
       // Wait for explicit permissions to load
       if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
       return canViewInventory;
+    }
+    if (item.permission === 'view_purchasing') {
+      // Hide Ordering Hub if no view_purchasing permission
+      return canViewPurchasing !== false;
     }
     // Keep emails tab visible but will be disabled
     if (item.permission === 'view_emails') return true;

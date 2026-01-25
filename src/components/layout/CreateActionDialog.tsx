@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export const CreateActionDialog = ({
   const { user } = useAuth();
   const { isLoading: permissionsLoading } = useUserPermissions();
   const { data: userRoleData } = useUserRole();
+  const { data: isDealer } = useIsDealer();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
   const { data: explicitPermissions } = useQuery({
@@ -59,6 +61,15 @@ export const CreateActionDialog = ({
   const hasViewSettingsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'view_settings'
   ) ?? false;
+  
+  // Permission checks for menu items
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewOwnCalendar = useHasPermission('view_own_calendar');
+  const canViewInventory = useHasPermission('view_inventory');
+  const canViewPurchasing = useHasPermission('view_purchasing');
+  
+  // Combined calendar permission
+  const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
   
   const canViewSettings = userRoleData?.isSystemOwner
     ? true
@@ -159,57 +170,68 @@ export const CreateActionDialog = ({
             </Button>
           )}
           
-          <Button
-            onClick={() => handleAction("event")}
-            variant="outline"
-            className="h-16 justify-start gap-4 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold">New Event</div>
-              <div className="text-sm text-muted-foreground">Schedule a calendar event</div>
-            </div>
-          </Button>
+          {/* New Event - only if can view calendar */}
+          {canAccessCalendar && (
+            <Button
+              onClick={() => handleAction("event")}
+              variant="outline"
+              className="h-16 justify-start gap-4 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold">New Event</div>
+                <div className="text-sm text-muted-foreground">Schedule a calendar event</div>
+              </div>
+            </Button>
+          )}
           
-          <Button
-            onClick={() => handleAction("library")}
-            variant="outline"
-            className="h-16 justify-start gap-4 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold">Browse Library</div>
-              <div className="text-sm text-muted-foreground">View materials & inventory</div>
-            </div>
-          </Button>
+          {/* Browse Library - only if can view inventory */}
+          {canViewInventory !== false && (
+            <Button
+              onClick={() => handleAction("library")}
+              variant="outline"
+              className="h-16 justify-start gap-4 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold">Browse Library</div>
+                <div className="text-sm text-muted-foreground">View materials & inventory</div>
+              </div>
+            </Button>
+          )}
           
-          <Separator className="my-2" />
-          
-          <Button
-            onClick={() => handleAction("purchasing")}
-            variant="outline"
-            className="h-16 justify-start gap-4 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
-              <ShoppingCart className="h-5 w-5 text-primary" />
-              {queueCount && queueCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
-                >
-                  {queueCount}
-                </Badge>
-              )}
-            </div>
-            <div>
-              <div className="font-semibold">Material Purchasing</div>
-              <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
-            </div>
-          </Button>
+          {/* Material Purchasing - only if can view purchasing AND not a dealer */}
+          {canViewPurchasing !== false && !isDealer && (
+            <>
+              <Separator className="my-2" />
+              
+              <Button
+                onClick={() => handleAction("purchasing")}
+                variant="outline"
+                className="h-16 justify-start gap-4 text-left"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
+                  <ShoppingCart className="h-5 w-5 text-primary" />
+                  {queueCount && queueCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
+                    >
+                      {queueCount}
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold">Material Purchasing</div>
+                  <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
+                </div>
+              </Button>
+            </>
+          )}
           
           <Separator className="my-2" />
           
@@ -227,20 +249,22 @@ export const CreateActionDialog = ({
             </div>
           </Button>
           
-          <Button
-            onClick={() => handleAction("settings")}
-            variant="outline"
-            className="h-14 justify-start gap-4 text-left"
-            disabled={canViewSettings === false}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="font-medium">Settings</div>
-              <div className="text-xs text-muted-foreground">Account & preferences</div>
-            </div>
-          </Button>
+          {/* Settings - HIDE entirely if no permission */}
+          {canViewSettings !== false && (
+            <Button
+              onClick={() => handleAction("settings")}
+              variant="outline"
+              className="h-14 justify-start gap-4 text-left"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <div className="font-medium">Settings</div>
+                <div className="text-xs text-muted-foreground">Account & preferences</div>
+              </div>
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
