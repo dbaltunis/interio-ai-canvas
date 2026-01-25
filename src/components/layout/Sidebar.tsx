@@ -127,7 +127,7 @@ const Sidebar = () => {
     },
     {
       path: "/inventory",
-      label: "Inventory",
+      label: "Library",
       icon: Package,
       show: canViewInventory !== false
     },
