@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,28 +11,69 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import twcLogo from "@/assets/twc-logo.png";
 
+const DEFAULT_FORM_DATA = {
+  api_url: "https://twc.qodo.au/twcpublic",
+  api_key: "780F580F3D0942DF87256F6A4563FFE1",
+  environment: "staging" as "staging" | "production",
+  auto_sync_options: false,
+  sync_fabrics: true,
+  sync_colors: true,
+  active: false,
+};
+
 export const TWCIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration, testConnection } = useIntegrations();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    api_url: "https://twc.qodo.au/twcpublic",
-    api_key: "780F580F3D0942DF87256F6A4563FFE1",
-    environment: "staging" as "staging" | "production",
-    auto_sync_options: false,
-    sync_fabrics: true,
-    sync_colors: true,
-    active: false,
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const [showApiKey, setShowApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const initialLoadDone = useRef(false);
 
   const twcIntegration = integrations.find(
     (integration) => integration.integration_type === "twc"
   ) as any;
 
+  // Get the saved values from the integration
+  const savedValues = useMemo(() => {
+    if (!twcIntegration) return null;
+    const apiCreds = twcIntegration.api_credentials || {};
+    const config = twcIntegration.configuration || {};
+    return {
+      api_url: apiCreds.api_url || "https://twc.qodo.au/twcpublic",
+      api_key: apiCreds.api_key || "",
+      environment: apiCreds.environment || "staging",
+      auto_sync_options: config.auto_sync_options || false,
+      sync_fabrics: config.sync_fabrics !== false,
+      sync_colors: config.sync_colors !== false,
+      active: twcIntegration.active || false,
+    };
+  }, [twcIntegration]);
+
+  // Check if form has unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!savedValues) {
+      // New integration - check if user modified anything from defaults
+      return formData.api_url !== DEFAULT_FORM_DATA.api_url ||
+             formData.api_key !== DEFAULT_FORM_DATA.api_key ||
+             formData.environment !== DEFAULT_FORM_DATA.environment ||
+             formData.auto_sync_options !== DEFAULT_FORM_DATA.auto_sync_options ||
+             formData.sync_fabrics !== DEFAULT_FORM_DATA.sync_fabrics ||
+             formData.sync_colors !== DEFAULT_FORM_DATA.sync_colors ||
+             formData.active !== DEFAULT_FORM_DATA.active;
+    }
+    return formData.api_url !== savedValues.api_url ||
+           formData.api_key !== savedValues.api_key ||
+           formData.environment !== savedValues.environment ||
+           formData.auto_sync_options !== savedValues.auto_sync_options ||
+           formData.sync_fabrics !== savedValues.sync_fabrics ||
+           formData.sync_colors !== savedValues.sync_colors ||
+           formData.active !== savedValues.active;
+  }, [formData, savedValues]);
+
   useEffect(() => {
-    if (twcIntegration) {
+    // Only set form data from saved values on initial load, not on background refetches
+    if (twcIntegration && !initialLoadDone.current) {
       const apiCreds = twcIntegration.api_credentials || {};
       const config = twcIntegration.configuration || {};
       setFormData({
@@ -44,6 +85,7 @@ export const TWCIntegrationTab = () => {
         sync_colors: config.sync_colors !== false,
         active: twcIntegration.active || false,
       });
+      initialLoadDone.current = true;
     }
   }, [twcIntegration]);
 
@@ -225,10 +267,11 @@ export const TWCIntegrationTab = () => {
           <div className="flex space-x-2 pt-4">
             <Button 
               onClick={handleSave} 
-              disabled={isLoading}
+              disabled={isLoading || !hasChanges}
+              variant={hasChanges ? "default" : "secondary"}
               className="flex-1"
             >
-              {isLoading ? "Saving..." : "Save Configuration"}
+              {isLoading ? "Saving..." : hasChanges ? "Save Configuration" : "Saved"}
             </Button>
             {twcIntegration && (
               <Button 
