@@ -25,6 +25,7 @@ export const useQuotes = (projectId?: string, options?: { enabled?: boolean }) =
         .from("quotes")
         .select(`
           *,
+          quote_items(*),
           clients (
             id,
             name,
