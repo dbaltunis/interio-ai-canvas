@@ -192,7 +192,7 @@ export const ModernInventoryDashboard = () => {
           <Lock className="h-16 w-16 text-muted-foreground mx-auto" />
           <h2 className="text-2xl font-semibold">Access Denied</h2>
           <p className="text-muted-foreground max-w-md">
-            You don't have permission to access the inventory library. Please contact your administrator for access.
+            You don't have permission to access the product library. Please contact your administrator for access.
           </p>
         </div>
       </div>
@@ -244,7 +244,7 @@ export const ModernInventoryDashboard = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={isMobile ? "Search..." : "Search inventory..."}
+              placeholder={isMobile ? "Search..." : "Search library..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn("pl-9", isMobile ? "h-9 text-sm" : "h-9")}
