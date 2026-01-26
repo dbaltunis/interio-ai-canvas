@@ -1,279 +1,314 @@
 
+# TWC Order Data Mapping - Complete Industry-Standard Implementation
 
-# Enhanced Supplier Ordering Dropdown - Always Visible with Test Mode Warnings
+## Clarifying Your Question
 
-## Overview
-This update modifies the Supplier Ordering dropdown to:
-1. Always show in the header when any supplier integrations exist
-2. Show test-mode integrations with a clear warning that they are not for production orders
-3. Only enable ordering for production-mode suppliers
-4. Match Daniel's mockup visual style (greyed out when disabled)
+**You asked about CSV/PDF formats** - here's the answer:
 
----
+**NO CSV or PDF is needed.** TWC uses a **JSON API** (`/api/TwcPublic/SubmitOrder`). This is exactly how BlindMatrix and other competitors work. TWC receives orders electronically via their API and has their own manufacturing system on their end. There's no need to generate files - we submit JSON directly and receive an order confirmation ID back.
 
-## Current vs. New Behavior
-
-| Scenario | Current Behavior | New Behavior |
-|----------|------------------|--------------|
-| No integrations | Hidden | Hidden (correct) |
-| Only test-mode integrations | Hidden | Visible but shows "Testing Mode" warning |
-| Production integrations, no products | Hidden | Visible, greyed out, shows "No products detected" |
-| Production integrations with products | Visible | Visible, active when status is Approved |
+The API approach is superior because:
+- Instant order confirmation with tracking ID
+- Real-time validation of product codes and options
+- Automatic status updates (submitted → confirmed → manufacturing → shipped)
+- No manual file handling or email attachments
 
 ---
 
-## Implementation Details
+## Current Problem Analysis
 
-### 1. Modify `useActiveSupplierIntegrations` Hook
+After auditing the codebase, I found **3 critical gaps** preventing successful TWC order submission:
 
-**File: `src/hooks/useActiveSupplierIntegrations.ts`**
+### Gap 1: Measurement Data Not Reaching Submit Dialog
 
-Update to return BOTH production and test-mode integrations, clearly labeled:
-
+**Current (Broken):**
 ```typescript
-export interface SupplierIntegration {
-  type: 'twc' | 'rfms' | 'tig_pim' | string;
-  name: string;
-  isProduction: boolean;  // true = production, false = testing
-  apiUrl?: string;
-}
-
-// New: Also export a hook that returns ALL active integrations (not just production)
-export const useAllSupplierIntegrations = () => {
-  // Returns both production AND staging integrations
-  // Each marked with isProduction: true/false
-};
+// TWCSubmitDialog.tsx:54-55
+width: item.width || 0,      // ❌ item.width doesn't exist
+drop: item.height || item.drop || 0,  // ❌ item.height doesn't exist
 ```
 
-Changes:
-- Add new function to fetch ALL active integrations (production + staging)
-- Mark each with `isProduction: true/false` 
-- Keep existing `useActiveSupplierIntegrations` for backward compatibility (returns only production)
-
-### 2. Modify `SupplierOrderingDropdown` Component
-
-**File: `src/components/jobs/SupplierOrderingDropdown.tsx`**
-
-Major changes:
-
-**a) Visibility Logic:**
+**Where data actually lives:**
 ```typescript
-// Show dropdown if ANY integrations exist (production or test)
-const { data: allIntegrations = [] } = useAllSupplierIntegrations();
-const { data: productionIntegrations = [] } = useActiveSupplierIntegrations();
-
-// Hide completely only if no integrations at all
-if (allIntegrations.length === 0) {
-  return null;
-}
+// In quote_items.breakdown or product_details
+item.breakdown[0].horizontal_pieces_needed  // dimensions
+item.product_details.measurements           // actual measurements
 ```
 
-**b) Test Mode Warning Banner:**
-When integrations exist but all are in test mode:
+### Gap 2: Material/Colour Codes Not Mapped
+
+**Current (Broken):**
 ```typescript
-{productionIntegrations.length === 0 && allIntegrations.length > 0 && (
-  <div className="px-2 py-1.5 text-xs text-amber-600 bg-amber-50 border-b">
-    <AlertTriangle className="h-3 w-3 inline mr-1" />
-    All suppliers in Testing Mode - orders won't be processed
-  </div>
-)}
+// TWCSubmitDialog.tsx:56-57
+material: item.product_name || item.name,  // ❌ Sends "Pure Wood (50mm)" 
+colour: item.metadata?.selected_colour || "Standard",  // ❌ May be empty
 ```
 
-**c) Individual Supplier Status Display:**
-Each supplier in dropdown shows:
-- Production: "Send Order" (clickable) or "Ordered ✓" (greyed)
-- Testing: "Testing Mode" badge (orange, non-clickable)
+**What TWC needs:**
+```typescript
+material: "",  // Empty or specific TWC material code from fabricsAndColours
+colour: "EBONY",  // Exact TWC colour code, not display name
+```
 
-**d) Enhanced Disabled States:**
-- Dropdown greyed out when: status is Draft/Pending OR no production integrations
-- Dropdown shows "Testing" badge when all integrations are test mode
-- Clear tooltip explaining why disabled
+### Gap 3: Manufacturing Questions Not Captured
 
-### 3. Button Visual States
+**TWC Products have required questions like:**
+- Control Type: "Cord operated" / "Motor"
+- Cont Side: "L" / "R" / "Centre Tilt"
+- Control Length: "STD" / "500" / "750" etc.
+- Fixing: "Face" / "Recess"
 
-Following Daniel's mockup:
-
-| State | Button Appearance | Dropdown Behavior |
-|-------|-------------------|-------------------|
-| Draft/Pending status | Grey, disabled | Shows "Available when approved" tooltip |
-| No products detected | Grey, disabled | Shows "No supplier products in quote" |
-| All test mode | Visible but with amber warning | Shows warning, suppliers marked as "Testing" |
-| Ready to order | Active, accent color | Lists suppliers with "Send Order" |
-| All ordered | Green with checkmark | Shows "Ordered ✓" for each supplier |
+**Currently:** These questions (`twc_questions`) are synced to inventory items but **never captured** when configuring the product in quotes, so `customFieldValues` is always empty.
 
 ---
 
-## Updated Component Structure
-
-```typescript
-export function SupplierOrderingDropdown({ ... }) {
-  // 1. Fetch ALL integrations (production + test)
-  const { data: allIntegrations = [] } = useAllSupplierIntegrations();
-  const { data: productionIntegrations = [] } = useActiveSupplierIntegrations();
-  
-  // 2. Detect suppliers from quote items
-  const { suppliers, hasTwcProducts, hasVendorProducts } = useProjectSuppliers(...);
-  
-  // 3. Determine visibility and state
-  const hasAnyIntegration = allIntegrations.length > 0;
-  const hasProductionIntegration = productionIntegrations.length > 0;
-  const allTestMode = hasAnyIntegration && !hasProductionIntegration;
-  const hasProducts = suppliers.length > 0;
-  
-  // 4. Hide only if no integrations at all
-  if (!hasAnyIntegration) return null;
-  
-  // 5. Determine disabled state
-  const isDisabled = !isApprovedStatus || allTestMode || !hasProducts;
-  
-  // 6. Get appropriate label
-  const getButtonLabel = () => {
-    if (allTestMode) return "Supplier Ordering (Test)";
-    if (!hasProducts) return "Supplier Ordering";
-    if (allOrdersSubmitted) return "Ordered";
-    return "Supplier Ordering";
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button disabled={isDisabled} ...>
-          {/* Button with appropriate styling */}
-        </Button>
-      </DropdownMenuTrigger>
-      
-      <DropdownMenuContent>
-        {/* Test mode warning banner if applicable */}
-        {allTestMode && <TestModeWarning />}
-        
-        {/* No products message if applicable */}
-        {!hasProducts && hasProductionIntegration && <NoProductsMessage />}
-        
-        {/* List of suppliers */}
-        {suppliers.map(supplier => (
-          <SupplierMenuItem 
-            supplier={supplier}
-            isTestMode={!productionIntegrations.some(p => p.type === supplier.type)}
-          />
-        ))}
-        
-        {/* If no detected products but integrations exist */}
-        {suppliers.length === 0 && (
-          <EmptyState message="No supplier products in this quote" />
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-```
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/hooks/useActiveSupplierIntegrations.ts` | Add `useAllSupplierIntegrations` hook that returns both production and test-mode integrations |
-| `src/components/jobs/SupplierOrderingDropdown.tsx` | Update visibility logic, add test mode warnings, show when no products with appropriate message |
-| `src/hooks/useProjectSuppliers.ts` | Minor: ensure it handles edge cases gracefully |
-
----
-
-## Dropdown States Visual Reference
+## Solution Architecture
 
 ```text
-┌─────────────────────────────────────────────────┐
-│  State 1: All Test Mode                         │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Supplier Ordering ▼   (amber border)   │    │
-│  └─────────────────────────────────────────┘    │
-│         │                                       │
-│         ▼                                       │
-│  ┌─────────────────────────────────────────┐    │
-│  │ ⚠️ Testing Mode - orders not processed │    │
-│  ├─────────────────────────────────────────┤    │
-│  │ TWC Online                              │    │
-│  │   ⚠️ Testing Mode                       │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        TWC ORDER DATA FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────┐
-│  State 2: Production Mode, No Products          │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Supplier Ordering ▼   (grey, disabled)  │    │
-│  └─────────────────────────────────────────┘    │
-│         │                                       │
-│         ▼                                       │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Suppliers in this job                   │    │
-│  ├─────────────────────────────────────────┤    │
-│  │ ℹ️ No supplier products detected        │    │
-│  │    Add TWC products to enable ordering  │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────┐
-│  State 3: Production Mode, Has Products         │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Supplier Ordering ▼   (active)         │    │
-│  └─────────────────────────────────────────┘    │
-│         │                                       │
-│         ▼                                       │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Suppliers in this job                   │    │
-│  ├─────────────────────────────────────────┤    │
-│  │ TWC Online                              │    │
-│  │   ▶ Send Order (green badge)            │    │
-│  │   3 items                               │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────┐
-│  State 4: Mixed Mode (some test, some prod)     │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Supplier Ordering ▼   (active)         │    │
-│  └─────────────────────────────────────────┘    │
-│         │                                       │
-│         ▼                                       │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Suppliers in this job                   │    │
-│  ├─────────────────────────────────────────┤    │
-│  │ TWC Online                              │    │
-│  │   ▶ Send Order                          │    │
-│  ├─────────────────────────────────────────┤    │
-│  │ RFMS Core                               │    │
-│  │   ⚠️ Testing Mode                       │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
+┌──────────────────┐   Sync   ┌─────────────────────────────────────────────┐
+│   TWC API        │ ────────►│  enhanced_inventory_items.metadata          │
+│   GetProducts    │          │  ├── twc_item_number: "245"                 │
+└──────────────────┘          │  ├── twc_questions: [{name, options}...]    │
+                              │  └── twc_fabrics_and_colours: [...]         │
+                              └─────────────────────────────────────────────┘
+                                                    │
+                                                    ▼ Quote Builder
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  NEW: TWC Questions Capture Component                                        │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │ Control Type:  [Cord operated ▼]                                        ││
+│  │ Cont Side:     [L ▼]                                                    ││
+│  │ Control Length:[STD ▼]                                                  ││
+│  │ Fixing:        [Face ▼]                                                 ││
+│  │ Colour:        [EBONY ▼]  (from twc_fabrics_and_colours)               ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                                    │
+                                                    ▼ Saved to quote_items
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  quote_items.product_details                                                 │
+│  ├── twc_item_number: "245"                                                 │
+│  ├── twc_selected_colour: "EBONY"                                           │
+│  ├── twc_custom_fields: [                                                   │
+│  │      {name: "Control Type", value: "Cord operated"},                     │
+│  │      {name: "Cont Side", value: "L"},                                    │
+│  │      {name: "Control Length", value: "STD"},                             │
+│  │      {name: "Fixing", value: "Face"}                                     │
+│  │   ]                                                                       │
+│  └── measurements: {rail_width: 1200, drop: 2400}                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                                    │
+                                                    ▼ Order Submission
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  TWC API Payload (Correct Format)                                            │
+│  {                                                                           │
+│    "itemNumber": "245",                                                      │
+│    "itemName": "Pure Wood (50mm)",                                           │
+│    "location": "Master Bedroom - Window 1",                                  │
+│    "quantity": 1,                                                            │
+│    "width": 1200,                                                            │
+│    "drop": 2400,                                                             │
+│    "material": "",                                                           │
+│    "colour": "EBONY",                                                        │
+│    "customFieldValues": [                                                    │
+│      {"name": "Control Type", "value": "Cord operated"},                     │
+│      {"name": "Cont Side", "value": "L"},                                    │
+│      {"name": "Control Length", "value": "STD"},                             │
+│      {"name": "Fixing", "value": "Face"}                                     │
+│    ]                                                                         │
+│  }                                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Technical Details
+## Implementation Plan
 
-### Data Flow for TWC Orders
+### Phase 1: TWC Manufacturing Questions Capture Component
 
-The existing TWC order submission follows industry-standard patterns:
+**New File: `src/components/measurements/TWCProductOptions.tsx`**
 
-1. **Quote items detection**: Scans `quote_items.product_details.twc_item_number` or `quote_items.metadata.twc_item_number`
-2. **Integration credentials**: Retrieved from `integration_settings` filtered by `environment = 'production'`
-3. **Order submission**: Edge function `twc-submit-order` formats data per TWC API spec and posts to their endpoint
-4. **Response tracking**: Stores `twc_order_id`, `twc_order_status`, `twc_submitted_at` on the quote record
-5. **Multi-supplier tracking**: New `supplier_orders` JSONB column supports tracking orders to multiple suppliers
+Creates a dynamic form that:
+1. Detects when selected template/product is a TWC product (has `twc_item_number` in metadata)
+2. Fetches the `twc_questions` from inventory item metadata
+3. Renders dropdowns for each required/optional question
+4. Handles dependent fields (e.g., "Remote" options depend on "Control Type = Motor")
+5. Captures selected colour from `twc_fabrics_and_colours`
+6. Stores all selections in the product configuration state
 
-This matches how competitors (Drape & Blind Software, Curtain Workroom Manager, etc.) integrate with TWC - the industry standard is:
-- Automatic product detection from catalog syncs
-- Status-gated ordering (must be approved first)
-- Order confirmation with tracking ID from supplier
-- Status updates (submitted → confirmed → manufacturing → shipped)
+```typescript
+interface TWCProductOptionsProps {
+  inventoryItem: EnhancedInventoryItem;  // The TWC product
+  measurements: Record<string, any>;      // Current measurements (width, drop)
+  onTWCFieldsChange: (fields: TWCCustomField[]) => void;
+  onColourChange: (colour: string) => void;
+}
+
+interface TWCCustomField {
+  name: string;   // e.g., "Control Type"
+  value: string;  // e.g., "Cord operated"
+}
+```
+
+### Phase 2: Integrate TWC Options into Quote Builder
+
+**Modify: `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`**
+**Modify: `src/components/measurements/dynamic-options/DynamicBlindOptions.tsx`**
+
+When a TWC product template is selected:
+1. Check if linked inventory item has `metadata.twc_item_number`
+2. Render `<TWCProductOptions />` component below standard options
+3. Pass captured TWC fields to parent state
+
+### Phase 3: Store TWC Data in Quote Items
+
+**Modify: `src/hooks/useQuoteItems.ts`**
+
+Update the `saveItems` mutation to properly store TWC-specific data:
+
+```typescript
+product_details: {
+  ...existingDetails,
+  // TWC-specific fields
+  twc_item_number: item.twc_item_number,
+  twc_selected_colour: item.twc_selected_colour,
+  twc_custom_fields: item.twc_custom_fields || [],
+  // Measurements (already captured)
+  measurements: {
+    rail_width: item.measurements?.rail_width,
+    drop: item.measurements?.drop,
+  }
+}
+```
+
+### Phase 4: Fix Order Submission Mapping
+
+**Modify: `src/components/integrations/TWCSubmitDialog.tsx`**
+
+Complete rewrite of the item mapping logic:
+
+```typescript
+const twcItems = quotationData.items
+  .filter((item: any) => {
+    // Check multiple locations for TWC identifier
+    const productDetails = item.product_details || {};
+    return productDetails.twc_item_number || 
+           item.metadata?.twc_item_number ||
+           productDetails.metadata?.twc_item_number;
+  })
+  .map((item: any) => {
+    const productDetails = item.product_details || {};
+    const measurements = productDetails.measurements || {};
+    const breakdown = item.breakdown?.[0] || {};
+    
+    // Get TWC item number from various locations
+    const twcItemNumber = productDetails.twc_item_number || 
+                          item.metadata?.twc_item_number ||
+                          productDetails.metadata?.twc_item_number;
+    
+    // Get measurements (stored in MM, convert if needed)
+    const widthMM = measurements.rail_width || breakdown.rail_width || 0;
+    const dropMM = measurements.drop || breakdown.drop || 0;
+    
+    // Get room/location info
+    const location = `${productDetails.room_name || 'Main'} - ${productDetails.surface_name || 'Window'}`;
+    
+    // Get colour from TWC-specific selection
+    const colour = productDetails.twc_selected_colour || 
+                   breakdown.color || 
+                   'TO CONFIRM';
+    
+    // Get custom field values (TWC manufacturing questions)
+    const customFieldValues = (productDetails.twc_custom_fields || [])
+      .map((field: any) => ({
+        name: field.name,
+        value: field.value
+      }));
+    
+    return {
+      itemNumber: twcItemNumber,
+      itemName: productDetails.treatment_type || item.name,
+      location,
+      quantity: item.quantity || 1,
+      width: widthMM,
+      drop: dropMM,
+      material: '',  // Usually empty for TWC
+      colour,
+      customFieldValues
+    };
+  });
+```
+
+### Phase 5: Order Validation Before Submission
+
+**Add to: `src/components/integrations/TWCSubmitDialog.tsx`**
+
+Add a validation step that checks:
+1. All required TWC questions are answered
+2. Width and drop are valid positive numbers
+3. Colour is selected (not "TO CONFIRM")
+
+Display clear error messages if validation fails, preventing incomplete orders.
+
+### Phase 6: Order Preview Section
+
+**Add to: `src/components/integrations/TWCSubmitDialog.tsx`**
+
+Add an expandable "Order Details" section showing:
+- Each item with all specifications
+- Manufacturing options selected
+- Measurements in both MM and inches
+- Any validation warnings
+
+This matches BlindMatrix's "Order Review" screen.
 
 ---
 
-## Testing Scenarios
+## Files to Create/Modify
 
-1. **Account with TWC in test mode only**: Dropdown visible with amber warning, "Testing Mode" badge
-2. **Account with TWC in production mode, no TWC products**: Dropdown visible but greyed out with "No products" message
-3. **Account with TWC in production, TWC products, Draft status**: Dropdown visible but greyed out, tooltip shows "Available when approved"
-4. **Account with TWC in production, TWC products, Approved status**: Dropdown active, can send orders
-5. **Account with multiple suppliers (TWC production, RFMS test)**: Shows both, TWC has "Send Order", RFMS has "Testing Mode"
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/measurements/TWCProductOptions.tsx` | **CREATE** | New component to capture TWC manufacturing questions |
+| `src/components/measurements/dynamic-options/DynamicBlindOptions.tsx` | **MODIFY** | Integrate TWCProductOptions for TWC blinds |
+| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | **MODIFY** | Integrate TWCProductOptions for TWC curtain tracks |
+| `src/hooks/useQuoteItems.ts` | **MODIFY** | Store TWC-specific data in product_details |
+| `src/components/integrations/TWCSubmitDialog.tsx` | **MODIFY** | Complete rewrite of item mapping with validation |
+| `supabase/functions/twc-submit-order/index.ts` | **MODIFY** | Add server-side validation and better error messages |
+
+---
+
+## Validation Checklist (Matching BlindMatrix Standard)
+
+After implementation, the system will:
+
+1. **Catalog Sync**: Import TWC products with all questions and colour options
+2. **Configuration**: Present TWC-specific questions when quoting TWC products
+3. **Data Storage**: Store all TWC selections in quote_items.product_details
+4. **Order Mapping**: Correctly extract and format data for TWC API
+5. **Validation**: Prevent submission of incomplete orders
+6. **Confirmation**: Display order ID from TWC and track status
+
+---
+
+## Technical Notes
+
+### Measurement Units
+- TWC expects measurements in **millimeters (MM)**
+- Our system stores in MM internally (per `useSafeMeasurements` hook)
+- No conversion needed, just correct data path
+
+### Dependent Fields
+TWC questions have dependencies (e.g., "Remote" options only show when "Control Type = Motor")
+- The `twc_questions[].dependantField` structure already contains this logic
+- Component will handle conditional rendering based on parent selections
+
+### Multi-Account (SaaS)
+All fixes work universally across 600+ accounts:
+- TWC questions are stored per inventory item (account-specific)
+- Quote items store account-specific selections
+- No cross-account data leakage
 
