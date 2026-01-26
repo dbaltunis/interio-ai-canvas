@@ -1,113 +1,64 @@
 
-# TWC Options Integration into Quote Builder - Implementation Plan
 
-## Summary
-Integrate the `TWCProductOptions` component into `DynamicCurtainOptions` and `DynamicRollerBlindFields` to capture TWC manufacturing questions during the quoting phase.
+# TWC Integration Fix - Remove Duplicate UI, Keep Your Rules Working
 
-## Current State
-- `TWCProductOptions.tsx` component is created and ready
-- `TWCSubmitDialog.tsx` has been updated to correctly map order data
-- `useQuoteItems.ts` stores TWC-specific data in `product_details`
-- **Missing**: The integration point - detecting TWC templates and rendering TWCProductOptions in the quote builder
+## Problem Summary
+When selecting a TWC-linked template (like Pure Wood 50mm), the quote builder shows:
+1. Your configured treatment options (with rules support) - at the top
+2. TWC Manufacturing Options blue card (without rules) - duplicate below
 
-## Data Flow Discovery
-1. **Templates** link to inventory via `inventory_item_id`
-2. **Inventory items** with `supplier='TWC'` have `metadata.twc_questions` and `metadata.twc_fabrics_and_colours`
-3. **Quote builder** needs to detect when a TWC-linked template is selected and render the TWCProductOptions component
+This causes confusion and breaks your rules workflow.
 
-## Implementation Steps
-
-### Step 1: Modify DynamicRollerBlindFields.tsx
-Add TWC detection and integration:
-
-```typescript
-// At top of component:
-const [linkedTWCData, setLinkedTWCData] = useState<{
-  twc_questions: any[];
-  twc_fabrics_and_colours: any;
-  twc_item_number: string;
-} | null>(null);
-
-// Fetch TWC data when templateId changes:
-useEffect(() => {
-  if (!templateId) return;
-  
-  const fetchTWCData = async () => {
-    // Get template to find inventory_item_id
-    const { data: template } = await supabase
-      .from('curtain_templates')
-      .select('inventory_item_id')
-      .eq('id', templateId)
-      .maybeSingle();
-    
-    if (!template?.inventory_item_id) return;
-    
-    // Get linked inventory item with TWC metadata
-    const { data: item } = await supabase
-      .from('enhanced_inventory_items')
-      .select('metadata')
-      .eq('id', template.inventory_item_id)
-      .maybeSingle();
-    
-    const metadata = item?.metadata as any;
-    if (metadata?.twc_item_number) {
-      setLinkedTWCData({
-        twc_questions: metadata.twc_questions || [],
-        twc_fabrics_and_colours: metadata.twc_fabrics_and_colours,
-        twc_item_number: metadata.twc_item_number
-      });
-    }
-  };
-  
-  fetchTWCData();
-}, [templateId]);
-
-// Render TWCProductOptions after standard options:
-{linkedTWCData && (
-  <TWCProductOptions
-    twcQuestions={linkedTWCData.twc_questions}
-    twcFabricsAndColours={linkedTWCData.twc_fabrics_and_colours}
-    selectedFields={/* from measurements */}
-    selectedColour={measurements.twc_selected_colour}
-    selectedMaterial={measurements.twc_selected_material}
-    onFieldsChange={(fields) => {
-      onChange('twc_custom_fields', JSON.stringify(fields));
-    }}
-    onColourChange={(colour) => onChange('twc_selected_colour', colour)}
-    onMaterialChange={(material) => onChange('twc_selected_material', material)}
-    readOnly={readOnly}
-  />
-)}
-```
-
-### Step 2: Modify DynamicCurtainOptions.tsx
-Same pattern - fetch TWC data via template's `inventory_item_id` and render `TWCProductOptions` when detected.
-
-### Step 3: Ensure Data Persistence
-Update the measurement change handlers to properly store:
-- `twc_item_number` (from linked inventory)
-- `twc_selected_colour`
-- `twc_selected_material`
-- `twc_custom_fields` (serialized array)
-
-These flow through to `useQuoteItems.ts` which already handles them.
+## Solution
+Hide the TWC Manufacturing Options card from the quote builder. Your existing options will continue working with rules, and we'll silently detect TWC products for supplier ordering.
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx` | Add TWC detection via inventory_item_id, render TWCProductOptions |
-| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Same TWC detection and integration |
+| File | Change |
+|------|--------|
+| `DynamicRollerBlindFields.tsx` | Remove TWCProductOptions rendering (keep twc_item_number detection) |
+| `DynamicCurtainOptions.tsx` | Same - remove card rendering, keep detection |
+| `useQuotationSync.ts` | Ensure twc_item_number flows to quote_items.product_details |
+| `TWCSubmitDialog.tsx` | Map your option selections to TWC API format |
 
-## Testing Verification
-1. Select a TWC-linked template (blind or curtain)
-2. Verify TWCProductOptions appears with correct questions
-3. Select material, colour, and answer required questions
-4. Save quote item
-5. Check `quote_items.product_details` contains all TWC data
-6. Open Supplier Ordering > TWC > verify Order Details shows correct specifications
+## Implementation Details
 
-## Technical Notes
-- TWC detection uses `inventory_item_id` → `enhanced_inventory_items.metadata.twc_item_number`
-- Questions support dependent fields (e.g., Remote options only when Control Type = Motor)
-- All data persists through standard measurements flow to quote_items
+### Step 1: Remove TWC Card from UI (Keep Detection)
+
+In `DynamicRollerBlindFields.tsx` (lines 832-847):
+- KEEP: The useEffect that detects TWC products and calls `onChange('twc_item_number', ...)`
+- REMOVE: The `{linkedTWCData && <TWCProductOptions ... />}` rendering
+
+Same for `DynamicCurtainOptions.tsx` (lines 1582-1612).
+
+### Step 2: Fix Data Flow to Quote Items
+
+In `useQuotationSync.ts`, extract TWC fields from `measurements_details` when building parent items:
+- Extract `twc_item_number` from summary.measurements_details
+- Add to parentItem object so it flows to `useQuoteItems.saveItems()`
+
+### Step 3: Map Your Options to TWC API
+
+In `TWCSubmitDialog.tsx`, add mapping layer:
+- Your `control_type` → TWC's "Control Type"
+- Your `fixing` → TWC's "Fixing"
+- Your `chain_side` → TWC's "Cont Side"
+
+This ensures your option selections are correctly formatted for TWC order submission.
+
+## What This Preserves
+
+- All pricing and markup calculations - unchanged
+- Rules engine - continues working with your options
+- Settings toggles - enable/disable options as before
+- Non-TWC clients - zero impact
+- Supplier detection - works via silent twc_item_number storage
+
+## Expected Outcome
+
+1. Select TWC template → only YOUR options appear (no blue card)
+2. Configure using your dropdowns with rules working
+3. Save quote → twc_item_number stored for supplier detection
+4. Supplier Ordering → TWC detected correctly
+5. Submit order → your selections mapped to TWC API format
+
