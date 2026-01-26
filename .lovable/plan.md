@@ -1,93 +1,113 @@
 
-# Fix TWC Submit Order Redirect Loop + Toast Visibility
+# Enhanced Error Display for TWC Order Submission
 
-## Two Issues Identified
+## Root Cause Found
 
-### Issue 1: Maximum Redirects Error (Root Cause Found)
+The TWC API returns **detailed validation errors** but they're not being shown to users:
 
-The logs show the URL being sent is:
 ```
-https://twc.qodo.au/twcpublic/api/TwcPublic/SubmitOrder
+TWC Response:
+{
+  "success": false,
+  "message": "Item #1 - Control Type is a required field. 
+              Item #1 - Cont Side is a required field. 
+              Item #1 - Control Length is a required field. 
+              Item #1 - Fascia is a required field. 
+              Item #1 - Fixing is a required field..."
+}
 ```
 
-**Problem:** The stored URL already contains `/twcpublic`, but the code appends `/api/TwcPublic/SubmitOrder` which creates a duplicate/incorrect path. The TWC server redirects this, creating an infinite loop.
-
-**Evidence:** The working `twc-get-order-options` function correctly handles this by removing `/twcpublic` from the base URL first (line 78):
+**Current code problem (line 312):**
 ```typescript
-const baseUrl = api_url.replace(/\/twcpublic\/?$/i, '');
+throw new Error(data?.error || 'Failed to submit order');
+// ❌ Ignores data.message which contains the actual details!
 ```
-
-But `twc-submit-order` does NOT do this normalization.
-
-| Stored URL | twc-submit-order (broken) | twc-get-order-options (works) |
-|------------|---------------------------|-------------------------------|
-| `https://twc.qodo.au/twcpublic` | `/twcpublic/api/TwcPublic/...` ❌ | `/api/TwcPublic/...` ✅ |
-
-### Issue 2: Toast Hidden Behind Dialog
-
-The dialog has `z-[9999]` but the ToastViewport only has `z-[100]`, so notifications appear **behind** the modal and are not visible.
 
 ## Solution
 
-### Fix 1: URL Normalization in twc-submit-order
+### Part 1: Fix Error Message Display in Dialog
 
-**File:** `supabase/functions/twc-submit-order/index.ts`
+**File:** `src/components/integrations/TWCSubmitDialog.tsx`
 
-Add the same URL normalization logic used in `twc-get-order-options`:
+Change lines 311-320 to properly extract and display the detailed message:
 
 ```typescript
-// Line 104-118 - Replace current normalization with:
-let normalizedUrl = api_url?.trim() || '';
-
-// Ensure HTTPS
-if (normalizedUrl.startsWith('http://')) {
-  normalizedUrl = normalizedUrl.replace('http://', 'https://');
+// Before:
+} else {
+  throw new Error(data?.error || 'Failed to submit order');
 }
-if (!normalizedUrl.startsWith('https://')) {
-  normalizedUrl = 'https://' + normalizedUrl;
+} catch (error: any) {
+  console.error('Error submitting to TWC:', error);
+  toast({
+    title: "Submission Failed",
+    description: error.message || "Failed to submit order to TWC. Please try again.",
+    variant: "destructive",
+  });
 }
 
-// CRITICAL: Remove trailing /twcpublic if present (as done in twc-get-order-options)
-normalizedUrl = normalizedUrl.replace(/\/twcpublic\/?$/i, '');
-
-// Remove trailing slashes
-normalizedUrl = normalizedUrl.replace(/\/+$/, '');
+// After:
+} else {
+  // TWC returns detailed validation in 'message' field
+  const errorDetails = data?.message || data?.error || 'Failed to submit order';
+  throw new Error(errorDetails);
+}
+} catch (error: any) {
+  console.error('Error submitting to TWC:', error);
+  
+  // Format multi-line errors for readability
+  const errorMessage = error.message || "Failed to submit order to TWC. Please try again.";
+  const formattedMessage = errorMessage.replace(/\s*\/n\s*/g, '\n'); // TWC uses "/n" as separator
+  
+  toast({
+    title: "Submission Failed",
+    description: formattedMessage,
+    variant: "destructive",
+    importance: 'important',
+    duration: 20000, // 20 seconds for long error messages
+  });
+}
 ```
 
-This ensures URLs like `https://twc.qodo.au/twcpublic` become `https://twc.qodo.au` before appending `/api/TwcPublic/SubmitOrder`.
+### Part 2: Enhance Toast for Long Error Messages
 
-### Fix 2: Toast Z-Index
+**File:** `src/components/ui/toast.tsx`
 
-**File:** `src/components/ui/toast.tsx` (Line 18)
+Add support for longer descriptions with scrollable content for detailed error messages (line 84):
 
-Change:
 ```typescript
-z-[100]
-```
-To:
-```typescript
-z-[10000]
+// Current:
+className={cn("text-sm opacity-95 font-medium", className)}
+
+// Updated - allow longer messages to scroll:
+className={cn("text-sm opacity-95 font-medium max-h-32 overflow-y-auto whitespace-pre-line", className)}
 ```
 
-This ensures toasts appear **above** dialogs (`z-[9999]`).
+### Part 3: Improve Error Toast Duration
 
-**File:** `src/components/ui/toaster.tsx` (Line 31)
+**File:** `src/hooks/use-toast.ts`
 
-Also update the viewport className:
-```typescript
-z-[100] → z-[10000]
-```
+Already has 15 second duration for errors, but we'll allow custom duration override via props.
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `supabase/functions/twc-submit-order/index.ts` | Add `/twcpublic` removal logic at line ~116 |
-| `src/components/ui/toast.tsx` | Line 18: Change `z-[100]` to `z-[10000]` |
-| `src/components/ui/toaster.tsx` | Line 31: Change `z-[100]` to `z-[10000]` |
+| File | Lines | Change |
+|------|-------|--------|
+| `src/components/integrations/TWCSubmitDialog.tsx` | 311-320 | Extract `data.message`, format for display |
+| `src/components/ui/toast.tsx` | 84 | Add `max-h-32 overflow-y-auto whitespace-pre-line` for scrollable long messages |
 
-## Expected Outcome
+## Expected Result
 
-1. TWC order submission will work correctly for all URL formats stored in the database
-2. Toast notifications will be visible above all dialogs
-3. Fix applies automatically to all 600+ clients
+Users will see detailed errors like:
+
+```
+Submission Failed
+───────────────────
+Item #1 - Control Type is a required field
+Item #1 - Cont Side is a required field  
+Item #1 - Control Length is a required field
+Item #1 - Fascia is a required field
+Item #1 - Fixing is a required field
+...
+```
+
+Instead of just "Failed to submit order" - giving them actionable information about what's missing.
