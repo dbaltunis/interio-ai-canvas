@@ -303,10 +303,12 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
             {viewMode === "grid" ? (
               <>
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                  {paginatedItems.map((item) => (
+                  {paginatedItems.map((item) => {
+                    const isSelected = selectedItems.includes(item.id);
+                    return (
                   <Card 
                     key={item.id} 
-                    className="group hover:shadow-lg transition-all overflow-hidden cursor-pointer"
+                    className={`group hover:shadow-lg transition-all overflow-hidden cursor-pointer ${isSelected ? 'ring-2 ring-primary' : ''}`}
                     onClick={() => {
                       setQuickViewItem(item);
                       setShowQuickView(true);
@@ -328,6 +330,19 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                         size={200}
                         rounded="none"
                       />
+                      {/* Selection checkbox */}
+                      {canManageInventory && (
+                        <div 
+                          className="absolute top-2 left-2 z-10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                            className="h-5 w-5 bg-background/80 backdrop-blur-sm"
+                          />
+                        </div>
+                      )}
                       {canManageInventory && (
                         <div className="absolute top-2 right-2 flex gap-1">
                           <EditInventoryDialog 
@@ -444,7 +459,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                       </div>
                     </CardContent>
                   </Card>
-                  ))}
+                    );
+                  })}
                 </div>
                 {totalPages > 1 && (
                   <JobsPagination

@@ -103,12 +103,14 @@ export const useTreatmentSpecificFabrics = (
       const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
       const offset = pageParam * PAGE_SIZE;
       
-      // Build base query with server-side search
+      // Build base query with server-side search (includes tags)
       const buildSearchQuery = (query: any) => {
         if (searchTerm && searchTerm.length >= 2) {
           const searchPattern = `%${searchTerm}%`;
+          // Search across name, SKU, supplier, description AND tags array
+          // Using contains operator (cs) for array search
           query = query.or(
-            `name.ilike.${searchPattern},sku.ilike.${searchPattern},supplier.ilike.${searchPattern},description.ilike.${searchPattern}`
+            `name.ilike.${searchPattern},sku.ilike.${searchPattern},supplier.ilike.${searchPattern},description.ilike.${searchPattern},tags.cs.{${searchTerm.toLowerCase().replace(/\s+/g, '_')}}`
           );
         }
         return query;
