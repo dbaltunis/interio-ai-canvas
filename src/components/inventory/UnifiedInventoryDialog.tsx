@@ -1610,7 +1610,7 @@ export const UnifiedInventoryDialog = ({
                 toast({ title: "Error", description: error.message, variant: "destructive" });
               }
             }}
-            disabled={!newCollectionName.trim() || !formData.vendor_id || createCollectionMutation.isPending}
+            disabled={!newCollectionName.trim() || createCollectionMutation.isPending}
           >
             {createCollectionMutation.isPending ? "Creating..." : "Create"}
           </Button>

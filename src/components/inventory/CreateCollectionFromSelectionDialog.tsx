@@ -47,21 +47,12 @@ export const CreateCollectionFromSelectionDialog = ({
       return;
     }
     
-    if (!vendorId) {
-      toast({
-        title: "Vendor Required",
-        description: "Please select a vendor for this collection",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     try {
       // Create the collection
       const newCollection = await createCollection.mutateAsync({
         name: name.trim(),
         description: description.trim() || null,
-        vendor_id: vendorId,
+        vendor_id: vendorId || null,
         season: season || null,
         year: year ? parseInt(year) : null,
       });
@@ -135,9 +126,9 @@ export const CreateCollectionFromSelectionDialog = ({
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Vendor *</Label>
+              <Label>Vendor (Optional)</Label>
               <Select value={vendorId} onValueChange={setVendorId}>
-                <SelectTrigger className={!vendorId ? "border-destructive/50" : ""}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent className="z-[10001]">
@@ -183,7 +174,7 @@ export const CreateCollectionFromSelectionDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={isLoading || !name.trim() || !vendorId}>
+          <Button onClick={handleCreate} disabled={isLoading || !name.trim()}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
