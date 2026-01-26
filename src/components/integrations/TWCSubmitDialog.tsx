@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,15 +31,32 @@ export function TWCSubmitDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     purchaseOrderNumber: `PO-${quoteId.slice(0, 8)}`,
-    contactName: clientData?.name || "",
-    email: clientData?.email || "",
-    phone: clientData?.phone || "",
-    address1: projectData?.address || clientData?.address || "",
+    contactName: "",
+    email: "",
+    phone: "",
+    address1: "",
     address2: "",
-    city: projectData?.city || clientData?.city || "",
-    state: projectData?.state || clientData?.state || "",
-    postcode: projectData?.postcode || clientData?.postcode || "",
+    city: "",
+    state: "",
+    postcode: "",
   });
+
+  // Re-sync form data when dialog opens or client/project data changes
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        purchaseOrderNumber: `PO-${quoteId.slice(0, 8)}`,
+        contactName: clientData?.name || "",
+        email: clientData?.email || "",
+        phone: clientData?.phone || "",
+        address1: projectData?.address || clientData?.address || "",
+        address2: "",
+        city: projectData?.city || clientData?.city || "",
+        state: projectData?.state || clientData?.state || "",
+        postcode: projectData?.postcode || clientData?.postcode || clientData?.zip_code || "",
+      });
+    }
+  }, [open, clientData, projectData, quoteId]);
 
   // Mapping from your option keys to TWC API field names
   const OPTION_TO_TWC_MAPPING: Record<string, string> = {
@@ -417,7 +434,7 @@ export function TWCSubmitDialog({
             <div className="text-sm text-muted-foreground space-y-1">
               <p>
                 <span className="font-medium">Items:</span>{" "}
-                {quotationData.items.filter((i: any) => i.metadata?.twc_item_number).length} TWC products
+                {twcItems.length} TWC products
               </p>
               <p>
                 <span className="font-medium">Quote Total:</span>{" "}
