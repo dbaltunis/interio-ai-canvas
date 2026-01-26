@@ -1590,24 +1590,27 @@ export const UnifiedInventoryDialog = ({
           </Button>
           <Button 
             onClick={async () => {
-              if (newCollectionName.trim()) {
-                try {
-                  const newCol = await createCollectionMutation.mutateAsync({
-                    name: newCollectionName.trim(),
-                    vendor_id: formData.vendor_id || null,
-                  });
-                  if (newCol) {
-                    setFormData(prev => ({ ...prev, collection_id: newCol.id }));
-                    toast({ title: "Collection created", description: `"${newCollectionName}" created successfully` });
-                  }
-                  setNewCollectionName("");
-                  setShowCreateCollection(false);
-                } catch (error: any) {
-                  toast({ title: "Error", description: error.message, variant: "destructive" });
+              if (!newCollectionName.trim()) return;
+              if (!formData.vendor_id) {
+                toast({ title: "Vendor Required", description: "Please select a vendor first before creating a collection", variant: "destructive" });
+                return;
+              }
+              try {
+                const newCol = await createCollectionMutation.mutateAsync({
+                  name: newCollectionName.trim(),
+                  vendor_id: formData.vendor_id,
+                });
+                if (newCol) {
+                  setFormData(prev => ({ ...prev, collection_id: newCol.id }));
+                  toast({ title: "Collection created", description: `"${newCollectionName}" created successfully` });
                 }
+                setNewCollectionName("");
+                setShowCreateCollection(false);
+              } catch (error: any) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
               }
             }}
-            disabled={!newCollectionName.trim() || createCollectionMutation.isPending}
+            disabled={!newCollectionName.trim() || !formData.vendor_id || createCollectionMutation.isPending}
           >
             {createCollectionMutation.isPending ? "Creating..." : "Create"}
           </Button>
