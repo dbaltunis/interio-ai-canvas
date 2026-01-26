@@ -4,6 +4,43 @@ All notable changes to InterioApp will be documented in this file.
 
 ---
 
+## Version 2.4.0 (January 2026)
+
+### 📚 **Complete Documentation Overhaul**
+
+#### Professional Documentation v2.4
+- **13 Documentation Sections**: Comprehensive coverage of all features
+- **New Sections Added**:
+  - API & Developer Access - Edge functions, webhooks, authentication
+  - Supplier Integrations - TWC and Shopify detailed guides
+  - Communication Channels - SendGrid, Twilio SMS/WhatsApp
+  - Analytics & Reporting - Dashboard KPIs and reports
+  - Calculation Algorithms - Fabric and pricing engine overview
+- **Updated Terminology**: "Inventory" renamed to "Product Library" throughout
+- **Dynamic Version Badge**: Automatically displays current app version
+- **Screenshot Integration**: Admin mode for uploading visual guides
+
+#### New Features Documented
+- Supplier Ordering System workflow
+- TWC API integration (product import, order submission)
+- Google Calendar OAuth setup with privacy features
+- Team permission inheritance patterns
+- Collection and tag-based organization
+
+### 🔧 **UX Improvements**
+
+#### Library Enhancements
+- **Tag Search Filter**: Searchable input with autocomplete replaces checkbox list
+- **Popular Tags**: Quick-select buttons for common tags (blockout, sheer, wide_width)
+- **Terminology Update**: "Inventory" → "Library" across all interfaces
+
+#### Search & Filtering
+- Improved tag filtering with search-as-you-type
+- Popular tags shown as quick-select buttons
+- Selected tags display as removable badges
+
+---
+
 ## Version 2.1.0 (December 2025)
 
 ### 🎉 TWC Integration Features
