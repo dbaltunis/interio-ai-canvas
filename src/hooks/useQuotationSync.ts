@@ -993,7 +993,15 @@ export const useQuotationSync = ({
             image_url: item.image_url,
             hasChildren: item.hasChildren || false,
             children: item.children || [],
-        },
+            // TWC-specific fields for supplier ordering detection
+            twc_item_number: item.twc_item_number,
+            twc_selected_colour: item.twc_selected_colour,
+            twc_selected_material: item.twc_selected_material,
+            twc_custom_fields: item.twc_custom_fields || [],
+            selected_options: item.selected_options || [],
+            // Measurements for order submission
+            measurements: item.measurements,
+          },
         breakdown: item.breakdown || {},
         currency: item.currency || (() => {
           if (!businessSettings?.measurement_units) return 'USD';
