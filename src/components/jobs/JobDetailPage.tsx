@@ -898,18 +898,24 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               )}
               
               {/* Supplier Ordering Dropdown */}
-              <SupplierOrderingDropdown
-                projectId={project.id}
-                projectStatusId={project.status_id}
-                projectStatusName={project.status}
-                quoteId={activeQuoteId || ""}
-                quoteItems={quotationData?.items || []}
-                quoteData={quotationData}
-                supplierOrders={(quotationData as any)?.supplier_orders}
-                clientData={client}
-                projectData={project}
-                quotationData={quotationData}
-              />
+              {(() => {
+                const activeQuote = currentQuotes?.[0]; // Get the first/active quote
+                if (!activeQuote) return null;
+                return (
+                  <SupplierOrderingDropdown
+                    projectId={project.id}
+                    projectStatusId={project.status_id}
+                    projectStatusName={project.status}
+                    quoteId={activeQuote.id}
+                    quoteItems={(activeQuote as any).quote_items || []}
+                    quoteData={activeQuote}
+                    supplierOrders={(activeQuote as any)?.supplier_orders}
+                    clientData={client}
+                    projectData={project}
+                    quotationData={{ items: (activeQuote as any).quote_items || [], ...activeQuote }}
+                  />
+                );
+              })()}
               
               <JobStatusDropdown
                 currentStatusId={project.status_id}
