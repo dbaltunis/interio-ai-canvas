@@ -41,6 +41,60 @@ export function TWCSubmitDialog({
     postcode: projectData?.postcode || clientData?.postcode || "",
   });
 
+  // Mapping from your option keys to TWC API field names
+  const OPTION_TO_TWC_MAPPING: Record<string, string> = {
+    'control_type': 'Control Type',
+    'chain_side': 'Cont Side',
+    'cont_side': 'Cont Side',
+    'control_length': 'Control Length',
+    'roller_chain_length': 'Control Length',
+    'roller_installation': 'Fixing',
+    'fixing': 'Fixing',
+    'installation': 'Fixing',
+    'hold_down': 'Hold Down Clips',
+    'hold_down_clips': 'Hold Down Clips',
+    'fascia': 'Fascia',
+    'bottom_bar': 'Bottom Bar',
+    'headrail': 'Headrail',
+    'slat_size': 'Slat Size',
+    'tilt_mechanism': 'Tilt Mechanism',
+    'cord_position': 'Cord Position',
+    'spring_assist': 'Spring Assist',
+    'motor_side': 'Motor Side',
+    'remote_type': 'Remote Type',
+    'valance': 'Valance',
+  };
+
+  // Map your option values to TWC expected values (where different)
+  const VALUE_MAPPINGS: Record<string, Record<string, string>> = {
+    'Control Type': {
+      'chain': 'Cord operated',
+      'Chain': 'Cord operated',
+      'cordless': 'Cordless',
+      'Cordless': 'Cordless',
+      'motorised': 'Motorised',
+      'Motorised': 'Motorised',
+      'spring': 'Spring Operated',
+      'Spring': 'Spring Operated',
+    },
+    'Cont Side': {
+      'left': 'L',
+      'Left': 'L',
+      'right': 'R',
+      'Right': 'R',
+    },
+    'Fixing': {
+      'face': 'Face',
+      'Face': 'Face',
+      'top': 'Top',
+      'Top': 'Top',
+      'inside': 'Inside',
+      'Inside': 'Inside',
+      'outside': 'Outside',
+      'Outside': 'Outside',
+    },
+  };
+
   // Extract TWC items from quote data with correct data mapping
   const twcItems = useMemo(() => {
     if (!quotationData?.items) return [];
@@ -80,18 +134,66 @@ export function TWCSubmitDialog({
         const surfaceName = productDetails.surface_name || 'Window';
         const location = `${roomName} - ${surfaceName}`;
         
-        // Get colour from TWC-specific selection
+        // Get colour - check material/fabric details as well
         const colour = productDetails.twc_selected_colour || 
                        metadata.selected_colour ||
+                       productDetails.selected_color ||
                        breakdown.color || 
                        'TO CONFIRM';
         
-        // Get custom field values (TWC manufacturing questions)
+        // MAP YOUR OPTIONS TO TWC FORMAT
+        // First, try to get custom fields from existing twc_custom_fields
+        let customFieldValues: Array<{name: string, value: string}> = [];
+        
         const twcFields = productDetails.twc_custom_fields || metadata.twc_custom_fields || [];
-        const customFieldValues = twcFields.map((field: any) => ({
-          name: field.name,
-          value: field.value
-        }));
+        if (Array.isArray(twcFields) && twcFields.length > 0) {
+          customFieldValues = twcFields.map((field: any) => ({
+            name: field.name,
+            value: field.value
+          }));
+        }
+        
+        // Then, map your selected_options to TWC format (fills in any missing fields)
+        const selectedOptions = productDetails.selected_options || [];
+        if (Array.isArray(selectedOptions)) {
+          selectedOptions.forEach((opt: any) => {
+            const optionKey = opt.optionKey || opt.key || '';
+            const optionValue = opt.value || opt.selectedValue || opt.label || '';
+            
+            // Check if this option maps to a TWC field
+            const twcFieldName = OPTION_TO_TWC_MAPPING[optionKey] || OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()];
+            
+            if (twcFieldName) {
+              // Check if we already have this field
+              const existingField = customFieldValues.find(f => f.name === twcFieldName);
+              if (!existingField) {
+                // Apply value mapping if needed
+                const valueMap = VALUE_MAPPINGS[twcFieldName];
+                const mappedValue = valueMap?.[optionValue] || optionValue;
+                
+                customFieldValues.push({
+                  name: twcFieldName,
+                  value: mappedValue
+                });
+              }
+            }
+          });
+        }
+        
+        // Also check breakdown for option values that might be stored there
+        if (breakdown && typeof breakdown === 'object') {
+          Object.entries(breakdown).forEach(([key, value]) => {
+            if (typeof value === 'string' && OPTION_TO_TWC_MAPPING[key]) {
+              const twcFieldName = OPTION_TO_TWC_MAPPING[key];
+              const existingField = customFieldValues.find(f => f.name === twcFieldName);
+              if (!existingField) {
+                const valueMap = VALUE_MAPPINGS[twcFieldName];
+                const mappedValue = valueMap?.[value] || value;
+                customFieldValues.push({ name: twcFieldName, value: mappedValue });
+              }
+            }
+          });
+        }
         
         return {
           itemNumber: twcItemNumber,

@@ -20,7 +20,7 @@ import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
 import { useEnabledTemplateOptions } from "@/hooks/useEnabledTemplateOptions";
 import { supabase } from "@/integrations/supabase/client";
-import { TWCProductOptions } from "@/components/measurements/TWCProductOptions";
+// TWCProductOptions removed - using your configured options with rules instead
 
 interface DynamicCurtainOptionsProps {
   measurements: Record<string, any>;
@@ -1579,37 +1579,8 @@ export const DynamicCurtainOptions = ({
         );
       })}
 
-      {/* TWC Manufacturing Options - shown when template links to TWC product */}
-      {linkedTWCData && (() => {
-        // Parse TWC custom fields from measurements
-        const parseTWCCustomFields = () => {
-          try {
-            const stored = measurements.twc_custom_fields;
-            if (typeof stored === 'string') {
-              return JSON.parse(stored);
-            }
-            return stored || [];
-          } catch {
-            return [];
-          }
-        };
-        
-        return (
-          <TWCProductOptions
-            twcQuestions={linkedTWCData.twc_questions}
-            twcFabricsAndColours={linkedTWCData.twc_fabrics_and_colours}
-            selectedFields={parseTWCCustomFields()}
-            selectedColour={measurements.twc_selected_colour || ''}
-            selectedMaterial={measurements.twc_selected_material || ''}
-            onFieldsChange={(fields) => {
-              onChange('twc_custom_fields', JSON.stringify(fields));
-            }}
-            onColourChange={(colour) => onChange('twc_selected_colour', colour)}
-            onMaterialChange={(material) => onChange('twc_selected_material', material)}
-            readOnly={readOnly}
-          />
-        );
-      })()}
+      {/* TWC Detection: twc_item_number is stored via useEffect in parent component */}
+      {/* Your configured treatment options work with rules - no duplicate TWC card needed */}
     </div>
   );
 };

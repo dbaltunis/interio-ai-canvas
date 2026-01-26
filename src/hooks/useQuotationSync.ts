@@ -285,6 +285,16 @@ export const useQuotationSync = ({
           
           const grossMargin = calculateGrossMargin(costPrice, sellingPrice);
           
+          // Extract TWC fields from measurements_details for supplier ordering
+          const measurementsDetails = summary.measurements_details || {};
+          const twcItemNumber = measurementsDetails.twc_item_number || summary.twc_item_number || null;
+          const twcSelectedColour = measurementsDetails.twc_selected_colour || summary.twc_selected_colour || null;
+          const twcSelectedMaterial = measurementsDetails.twc_selected_material || summary.twc_selected_material || null;
+          const twcCustomFields = measurementsDetails.twc_custom_fields || summary.twc_custom_fields || [];
+          
+          // Also extract selected_options for TWC API mapping
+          const selectedOptions = measurementsDetails.selected_options || summary.selected_options || [];
+          
           const parentItem = {
             id: window.window_id,
             name: productName,
@@ -306,7 +316,20 @@ export const useQuotationSync = ({
             treatment_type: summary.template_name,
             image_url: treatmentImageUrl,
             hasChildren: true,
-            children: [] as any[]
+            children: [] as any[],
+            // TWC-specific fields for supplier ordering detection & API submission
+            twc_item_number: twcItemNumber,
+            twc_selected_colour: twcSelectedColour,
+            twc_selected_material: twcSelectedMaterial,
+            twc_custom_fields: typeof twcCustomFields === 'string' 
+              ? JSON.parse(twcCustomFields) 
+              : twcCustomFields,
+            selected_options: selectedOptions,
+            // Measurements for TWC order submission (in MM)
+            measurements: {
+              rail_width: measurementsDetails.rail_width || summary.rail_width,
+              drop: measurementsDetails.drop || summary.drop,
+            },
           };
 
           // CRITICAL FIX: If cost_breakdown is structured, USE IT DIRECTLY
