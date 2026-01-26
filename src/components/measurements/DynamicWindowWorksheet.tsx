@@ -2736,11 +2736,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       {/* Sticky Progress indicator with clickable navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-2">
         <div className="flex items-center justify-center space-x-2">
-          {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
-          const stepNames = ["Select Type", "Treatment", "Inventory", "Measurements"];
+          {["window-type", "treatment", "library", "measurements"].map((step, index) => {
+          const stepNames = ["Select Type", "Treatment", "Library", "Measurements"];
           const stepIcons = [Ruler, Package, Package, Ruler];
           const StepIcon = stepIcons[index];
-          const allSteps = ["window-type", "treatment", "inventory", "measurements"];
+          const allSteps = ["window-type", "treatment", "library", "measurements"];
           
           const isCompleted = (() => {
             switch (step) {
@@ -2748,7 +2748,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 return selectedWindowType;
               case "treatment":
                 return selectedTemplate;
-              case "inventory":
+              case "library":
                 return Object.values(selectedItems).some(item => item);
               case "measurements":
                 return measurements.rail_width && measurements.drop;
@@ -2872,8 +2872,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       }
                     }
                     
-                    // Auto-navigate to inventory selection after selecting treatment with 1 second delay
-                    setTimeout(() => setActiveTab('inventory'), 1000);
+                    // Auto-navigate to library selection after selecting treatment with 1 second delay
+                    setTimeout(() => setActiveTab('library'), 1000);
                   }
                 }} 
                 disabled={readOnly}
@@ -2894,8 +2894,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           </Card>
         </TabsContent>
 
-        {/* Inventory Selection */}
-        <TabsContent value="inventory" className="h-full animate-fade-in">
+        {/* Library Selection */}
+        <TabsContent value="library" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full space-y-4">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} templateId={selectedTemplate?.id} parentProductId={selectedTemplate?.inventory_item_id} />

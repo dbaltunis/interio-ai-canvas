@@ -305,7 +305,7 @@ export const sectionHelpContent: Record<string, SectionHelpContent> = {
 
   library: {
     id: "library",
-    title: "Inventory Library",
+    title: "Product Library",
     icon: Package,
     briefDescription: "Manage your complete inventory of fabrics, materials, hardware, and vendor relationships.",
     keyPoints: [

@@ -783,8 +783,8 @@ export const InventorySelectionPanel = ({
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
           <Input 
-            placeholder="Search inventory: fabrics, hardware, materials..." 
-            value={searchTerm} 
+            placeholder="Search library: fabrics, hardware, materials..." 
+            value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)} 
             className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
           />
