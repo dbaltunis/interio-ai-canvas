@@ -438,7 +438,7 @@ export function TWCSubmitDialog({
               </p>
               <p>
                 <span className="font-medium">Quote Total:</span>{" "}
-                {quotationData.currency} {quotationData.total?.toFixed(2) || "0.00"}
+                {quotationData.currency} {(quotationData.total_amount ?? quotationData.total)?.toFixed(2) || "0.00"}
               </p>
             </div>
           </div>
