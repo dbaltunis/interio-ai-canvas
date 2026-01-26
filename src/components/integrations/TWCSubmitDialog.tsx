@@ -309,14 +309,22 @@ export function TWCSubmitDialog({
         });
         onOpenChange(false);
       } else {
-        throw new Error(data?.error || 'Failed to submit order');
+        // TWC returns detailed validation in 'message' field
+        const errorDetails = data?.message || data?.error || 'Failed to submit order';
+        throw new Error(errorDetails);
       }
     } catch (error: any) {
       console.error('Error submitting to TWC:', error);
+      
+      // Format multi-line errors for readability (TWC uses "/n" as separator)
+      const errorMessage = error.message || "Failed to submit order to TWC. Please try again.";
+      const formattedMessage = errorMessage.replace(/\s*\/n\s*/g, '\n');
+      
       toast({
         title: "Submission Failed",
-        description: error.message || "Failed to submit order to TWC. Please try again.",
+        description: formattedMessage,
         variant: "destructive",
+        importance: 'important',
       });
     } finally {
       setIsSubmitting(false);
