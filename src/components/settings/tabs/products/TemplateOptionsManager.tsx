@@ -498,6 +498,22 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
           
           optionId = newOption.id;
           
+          // Create matching option_type_category for Options Manager visibility
+          await supabase
+            .from('option_type_categories')
+            .upsert({
+              account_id: accountId,
+              type_key: optionKey,
+              type_label: question.name,
+              treatment_category: treatmentCategory,
+              sort_order: twcQuestions.indexOf(question),
+              active: true,
+              hidden_by_user: false,
+            }, {
+              onConflict: 'account_id,type_key,treatment_category',
+              ignoreDuplicates: true
+            });
+          
           const optionValues = question.options.map((opt, index) => ({
             account_id: accountId,
             option_id: optionId!,
