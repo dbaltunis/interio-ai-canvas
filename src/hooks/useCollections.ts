@@ -108,3 +108,48 @@ export const useDeleteCollection = () => {
     },
   });
 };
+
+// Hook to get collections with item counts for filter displays
+export const useCollectionsWithCounts = () => {
+  return useQuery({
+    queryKey: ["collections", "with-counts"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Get collections with their item counts
+      const { data: collections, error: collectionsError } = await supabase
+        .from("collections")
+        .select(`
+          *,
+          vendor:vendors(id, name)
+        `)
+        .eq("active", true)
+        .order("name");
+
+      if (collectionsError) throw collectionsError;
+
+      // Get item counts per collection
+      const { data: inventoryItems, error: itemsError } = await supabase
+        .from("enhanced_inventory_items")
+        .select("collection_id")
+        .not("collection_id", "is", null);
+
+      if (itemsError) throw itemsError;
+
+      // Count items per collection
+      const itemCountMap: Record<string, number> = {};
+      inventoryItems?.forEach(item => {
+        if (item.collection_id) {
+          itemCountMap[item.collection_id] = (itemCountMap[item.collection_id] || 0) + 1;
+        }
+      });
+
+      // Merge counts into collections
+      return (collections || []).map(collection => ({
+        ...collection,
+        itemCount: itemCountMap[collection.id] || 0,
+      }));
+    },
+  });
+};

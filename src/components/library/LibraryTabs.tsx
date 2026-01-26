@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FolderTree, List, LayoutGrid } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
-import { useCollections } from "@/hooks/useCollections";
+import { useCollectionsWithCounts } from "@/hooks/useCollections";
 import { useInventoryStats } from "@/hooks/useEnhancedInventory";
 
 interface LibraryTabsProps {
@@ -15,7 +15,7 @@ interface LibraryTabsProps {
 
 export const LibraryTabs = ({ activeTab, onTabChange, viewMode, onViewModeChange }: LibraryTabsProps) => {
   const { data: vendors } = useVendors();
-  const { data: collections } = useCollections();
+  const { data: collections = [] } = useCollectionsWithCounts();
   const { data: stats } = useInventoryStats();
 
   const vendorCount = vendors?.length || 0;

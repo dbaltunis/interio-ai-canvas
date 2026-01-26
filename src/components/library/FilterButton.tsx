@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, X, ChevronDown, ChevronUp, DollarSign, Palette, Building2 } from "lucide-react";
-import { useCollections, useCollectionsByVendor } from "@/hooks/useCollections";
+import { useCollectionsWithCounts, useCollectionsByVendor } from "@/hooks/useCollections";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useInventoryTags, useInventoryLocations, useInventoryColors } from "@/hooks/useInventoryTags";
@@ -48,7 +48,7 @@ export const FilterButton = ({
   
   // Use unified suppliers hook (combines vendor_id and supplier text fields)
   const { suppliers: unifiedSuppliers, isLoading: suppliersLoading } = useUnifiedSuppliers();
-  const { data: allCollections } = useCollections();
+  const { data: allCollections = [] } = useCollectionsWithCounts();
   const { data: vendorCollections } = useCollectionsByVendor(selectedVendor);
   
   const { data: availableTags = [] } = useInventoryTags();
@@ -84,8 +84,8 @@ export const FilterButton = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isExpanded]);
 
+  // Use allCollections (with counts) when no vendor selected, otherwise use vendorCollections
   const displayCollections = selectedVendor ? vendorCollections : allCollections;
-  
   const activeFilterCount = [
     selectedVendor, 
     selectedCollection,
@@ -220,7 +220,14 @@ export const FilterButton = ({
                   <SelectItem value="all">All Collections</SelectItem>
                   {displayCollections?.map((collection: any) => (
                     <SelectItem key={collection.id} value={collection.id}>
-                      {collection.name}
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="flex-1">{collection.name}</span>
+                        {collection.itemCount !== undefined && (
+                          <Badge variant="secondary" className="text-[10px] ml-1 shrink-0">
+                            {collection.itemCount}
+                          </Badge>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

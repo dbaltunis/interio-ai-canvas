@@ -9,8 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, FolderTree, Tag, Package } from "lucide-react";
+import { Plus, Edit, Trash2, FolderTree, Tag, Package, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCollections, useCreateCollection, useDeleteCollection, useUpdateCollection } from "@/hooks/useCollections";
+import { useVendors } from "@/hooks/useVendors";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Category {
   id: string;
@@ -30,6 +34,7 @@ interface Collection {
   season?: string;
   year?: number;
   tags: string[];
+  vendor?: { id: string; name: string };
 }
 
 export const CategoryManager = () => {
@@ -37,20 +42,22 @@ export const CategoryManager = () => {
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+  const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
 
-  // Mock data - replace with actual data fetching
+  // ✅ REAL DATABASE CONNECTIONS - No more mock data!
+  const { data: collections = [], isLoading: collectionsLoading } = useCollections();
+  const createCollection = useCreateCollection();
+  const updateCollection = useUpdateCollection();
+  const deleteCollection = useDeleteCollection();
+  const { data: vendors = [] } = useVendors();
+
+  // Mock categories for now - can be connected to DB later
   const categories: Category[] = [
     { id: "1", name: "Upholstery Fabrics", type: "fabric", description: "High-quality fabrics for furniture", color: "#3B82F6" },
     { id: "2", name: "Drapery Fabrics", type: "fabric", description: "Window treatment fabrics", color: "#10B981" },
     { id: "3", name: "Blackout Fabrics", type: "fabric", description: "Light-blocking fabrics", color: "#6366F1" },
     { id: "4", name: "Curtain Tracks", type: "hardware", description: "Track systems for curtains", color: "#F59E0B" },
     { id: "5", name: "Motorized Systems", type: "hardware", description: "Automated window covering systems", color: "#EF4444" },
-  ];
-
-  const collections: Collection[] = [
-    { id: "1", name: "Heritage Collection", description: "Traditional fabrics with timeless appeal", vendor_id: "1", season: "All Season", year: 2024, tags: ["Traditional", "Premium"] },
-    { id: "2", name: "Luxury Series", description: "High-end silk and premium materials", vendor_id: "2", season: "Spring", year: 2024, tags: ["Luxury", "Silk"] },
-    { id: "3", name: "Functional Fabrics", description: "Performance and utility focused", vendor_id: "1", season: "All Season", year: 2024, tags: ["Functional", "Durable"] },
   ];
 
   const handleCreateCategory = (data: Partial<Category>) => {
@@ -60,11 +67,39 @@ export const CategoryManager = () => {
     setEditingCategory(null);
   };
 
-  const handleCreateCollection = (data: Partial<Collection>) => {
-    console.log("Creating collection:", data);
-    toast.success("Collection created successfully");
-    setShowCollectionDialog(false);
-    setEditingCollection(null);
+  const handleCreateCollection = async (data: Partial<Collection>) => {
+    try {
+      if (editingCollection) {
+        // Update existing collection
+        await updateCollection.mutateAsync({
+          id: editingCollection.id,
+          name: data.name,
+          description: data.description,
+          vendor_id: data.vendor_id || null,
+          season: data.season,
+          year: data.year,
+          tags: data.tags || [],
+        });
+        toast.success("Collection updated successfully");
+      } else {
+        // Create new collection
+        await createCollection.mutateAsync({
+          name: data.name,
+          description: data.description,
+          vendor_id: data.vendor_id || null,
+          season: data.season,
+          year: data.year,
+          tags: data.tags || [],
+          active: true,
+        });
+        toast.success("Collection created successfully");
+      }
+      setShowCollectionDialog(false);
+      setEditingCollection(null);
+    } catch (error: any) {
+      console.error("Error saving collection:", error);
+      toast.error(error.message || "Failed to save collection");
+    }
   };
 
   const handleDeleteCategory = (id: string) => {
@@ -72,17 +107,37 @@ export const CategoryManager = () => {
     toast.success("Category deleted successfully");
   };
 
-  const handleDeleteCollection = (id: string) => {
-    console.log("Deleting collection:", id);
-    toast.success("Collection deleted successfully");
+  const handleDeleteCollection = async () => {
+    if (!deleteCollectionId) return;
+    
+    try {
+      await deleteCollection.mutateAsync(deleteCollectionId);
+      toast.success("Collection deleted successfully");
+      setDeleteCollectionId(null);
+    } catch (error: any) {
+      console.error("Error deleting collection:", error);
+      toast.error(error.message || "Failed to delete collection");
+    }
   };
+
+  // Map DB collections to component format
+  const mappedCollections: Collection[] = collections.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    vendor_id: c.vendor_id,
+    season: c.season || "All Season",
+    year: c.year || new Date().getFullYear(),
+    tags: c.tags || [],
+    vendor: c.vendor,
+  }));
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold">Category & Collection Management</h2>
-          <p className="text-gray-600">Organize your inventory with categories and collections</p>
+          <p className="text-muted-foreground">Organize your inventory with categories and collections</p>
         </div>
         <div className="flex space-x-2">
           <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
@@ -124,11 +179,13 @@ export const CategoryManager = () => {
               </DialogHeader>
               <CollectionForm
                 collection={editingCollection}
+                vendors={vendors}
                 onSubmit={handleCreateCollection}
                 onCancel={() => {
                   setShowCollectionDialog(false);
                   setEditingCollection(null);
                 }}
+                isLoading={createCollection.isPending || updateCollection.isPending}
               />
             </DialogContent>
           </Dialog>
@@ -143,7 +200,7 @@ export const CategoryManager = () => {
           </TabsTrigger>
           <TabsTrigger value="collections">
             <Package className="h-4 w-4 mr-2" />
-            Collections ({collections.length})
+            Collections ({collectionsLoading ? "..." : mappedCollections.length})
           </TabsTrigger>
         </TabsList>
 
@@ -166,7 +223,7 @@ export const CategoryManager = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     {category.description || "No description"}
                   </p>
                   <div className="flex justify-end space-x-2">
@@ -184,7 +241,7 @@ export const CategoryManager = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteCategory(category.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -196,54 +253,115 @@ export const CategoryManager = () => {
         </TabsContent>
 
         <TabsContent value="collections" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {collections.map((collection) => (
-              <Card key={collection.id} className="relative group hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{collection.name}</CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">{collection.season}</Badge>
-                    <Badge variant="secondary">{collection.year}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {collection.description || "No description"}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {collection.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        <Tag className="h-3 w-3 mr-1" />
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingCollection(collection);
-                        setShowCollectionDialog(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteCollection(collection.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {collectionsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="relative">
+                  <CardHeader className="pb-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <div className="flex gap-2 mt-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-12" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : mappedCollections.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Collections Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create collections to organize your inventory by vendor ranges, seasons, or styles.
+              </p>
+              <Button onClick={() => setShowCollectionDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Collection
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {mappedCollections.map((collection) => (
+                <Card key={collection.id} className="relative group hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{collection.name}</CardTitle>
+                    <div className="flex items-center space-x-2 flex-wrap gap-1">
+                      <Badge variant="outline">{collection.season}</Badge>
+                      <Badge variant="secondary">{collection.year}</Badge>
+                      {collection.vendor && (
+                        <Badge variant="outline" className="bg-primary/10">
+                          {collection.vendor.name}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {collection.description || "No description"}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {collection.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingCollection(collection);
+                          setShowCollectionDialog(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteCollectionId(collection.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteCollectionId} onOpenChange={() => setDeleteCollectionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Collection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this collection. Items linked to this collection will be unlinked but not deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCollection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCollection.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -333,19 +451,24 @@ const CategoryForm = ({
   );
 };
 
-// Collection Form Component
+// Collection Form Component - now connected to real database
 const CollectionForm = ({ 
   collection, 
+  vendors = [],
   onSubmit, 
-  onCancel 
+  onCancel,
+  isLoading = false
 }: {
   collection: Collection | null;
+  vendors: any[];
   onSubmit: (data: Partial<Collection>) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }) => {
   const [formData, setFormData] = useState({
     name: collection?.name || "",
     description: collection?.description || "",
+    vendor_id: collection?.vendor_id || "",
     season: collection?.season || "All Season",
     year: collection?.year || new Date().getFullYear(),
     tags: collection?.tags || []
@@ -355,7 +478,10 @@ const CollectionForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      vendor_id: formData.vendor_id || undefined,
+    });
   };
 
   const addTag = () => {
@@ -377,9 +503,29 @@ const CollectionForm = ({
           id="name"
           value={formData.name}
           onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          placeholder="Enter collection name"
+          placeholder="e.g., Heritage 2024, SKYE Range"
           required
         />
+      </div>
+
+      <div>
+        <Label htmlFor="vendor">Vendor (Optional)</Label>
+        <Select
+          value={formData.vendor_id}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, vendor_id: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a vendor..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">No Vendor</SelectItem>
+            {vendors.map((vendor: any) => (
+              <SelectItem key={vendor.id} value={vendor.id}>
+                {vendor.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
@@ -446,10 +592,11 @@ const CollectionForm = ({
       </div>
 
       <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
           {collection ? "Update" : "Create"}
         </Button>
       </div>

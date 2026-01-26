@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw } from "lucide-react";
+import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw, FolderOpen } from "lucide-react";
 import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { QRCodeScanner } from "./QRCodeScanner";
@@ -28,6 +28,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FilterButton } from "../library/FilterButton";
 import { InventoryAdminPanel } from "./InventoryAdminPanel";
+import { CollectionsView } from "../library/CollectionsView";
+import { useCollectionsWithCounts } from "@/hooks/useCollections";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +47,7 @@ export const ModernInventoryDashboard = () => {
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
   const { data: vendors } = useVendors();
+  const { data: collections = [] } = useCollectionsWithCounts();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
@@ -330,6 +333,16 @@ export const ModernInventoryDashboard = () => {
                 <PixelWallpaperIcon size={18} />
                 Wallcoverings
               </TabsTrigger>
+              {/* Collections Tab - Browse by vendor ranges */}
+              <TabsTrigger value="collections" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Collections
+                {collections.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs h-5 px-1.5">
+                    {collections.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
               {/* Hide Vendors and Admin tabs for dealers */}
               {!isDealer && (
                 <TabsTrigger value="vendors" className="flex items-center gap-2">
@@ -391,6 +404,17 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+          />
+        </TabsContent>
+
+        {/* Collections Tab - Browse by vendor ranges like Shopify */}
+        <TabsContent value="collections" className="space-y-6">
+          <CollectionsView 
+            onSelectCollection={(collectionId) => {
+              setSelectedCollection(collectionId);
+              setActiveTab("fabrics"); // Switch to fabrics and filter by collection
+            }}
+            selectedVendor={selectedVendor}
           />
         </TabsContent>
 
