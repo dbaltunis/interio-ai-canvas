@@ -71,6 +71,7 @@ export function TWCSubmitDialog({
     'hold_down': 'Hold Down Clips',
     'hold_down_clips': 'Hold Down Clips',
     'fascia': 'Fascia',
+    'fascia_type': 'Fascia',
     'bottom_bar': 'Bottom Bar',
     'headrail': 'Headrail',
     'slat_size': 'Slat Size',
@@ -80,6 +81,16 @@ export function TWCSubmitDialog({
     'motor_side': 'Motor Side',
     'remote_type': 'Remote Type',
     'valance': 'Valance',
+    'woven_tape': 'Woven Tape',
+    'acorn': 'Acorn',
+    'cut_out': 'Cut Out',
+    'ladder_tape': 'Ladder Tape',
+  };
+  
+  // Helper function to strip TWC item suffixes from option keys
+  // e.g., "control_type_ce115355" → "control_type"
+  const stripTwcSuffix = (key: string): string => {
+    return key.replace(/_[a-z]{2}\d+$/i, '');
   };
 
   // Map your option values to TWC expected values (where different)
@@ -177,8 +188,24 @@ export function TWCSubmitDialog({
             const optionKey = opt.optionKey || opt.key || '';
             const optionValue = opt.value || opt.selectedValue || opt.label || '';
             
-            // Check if this option maps to a TWC field
-            const twcFieldName = OPTION_TO_TWC_MAPPING[optionKey] || OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()];
+            // Skip N/A, empty, or null values - TWC doesn't want them
+            if (!optionValue || 
+                optionValue === 'N/A' || 
+                optionValue === 'n/a' || 
+                optionValue === 'NA' ||
+                optionValue === 'None' ||
+                optionValue === 'none') {
+              return;
+            }
+            
+            // Strip TWC item suffix (e.g., "control_type_ce115355" → "control_type")
+            const baseKey = stripTwcSuffix(optionKey);
+            
+            // Check if this option maps to a TWC field (try multiple key formats)
+            const twcFieldName = OPTION_TO_TWC_MAPPING[baseKey] || 
+                                 OPTION_TO_TWC_MAPPING[baseKey.toLowerCase()] ||
+                                 OPTION_TO_TWC_MAPPING[optionKey] ||
+                                 OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()];
             
             if (twcFieldName) {
               // Check if we already have this field
