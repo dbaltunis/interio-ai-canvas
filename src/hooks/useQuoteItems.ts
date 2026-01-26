@@ -68,6 +68,16 @@ export const useQuoteItems = (quoteId?: string) => {
           image_url: item.image_url,
           hasChildren: item.hasChildren || false,
           children: item.children || [],
+          // TWC-specific fields for order submission
+          twc_item_number: item.twc_item_number || item.product_details?.twc_item_number,
+          twc_selected_colour: item.twc_selected_colour || item.product_details?.twc_selected_colour,
+          twc_selected_material: item.twc_selected_material || item.product_details?.twc_selected_material,
+          twc_custom_fields: item.twc_custom_fields || item.product_details?.twc_custom_fields || [],
+          // Measurements (stored in MM)
+          measurements: item.measurements || item.product_details?.measurements || {
+            rail_width: item.rail_width,
+            drop: item.drop,
+          },
         },
         breakdown: item.breakdown || {},
         currency: item.currency || 'USD', // Fallback only - should come from item
