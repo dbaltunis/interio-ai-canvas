@@ -1,139 +1,107 @@
 
-# Fix Documentation: Markdown Rendering, API Keys, and Screenshots
 
-## Issues Identified
+# Fix: Display TWC Options in Settings Options Manager
 
-### Issue 1: Markdown Not Rendering
-The documentation content uses markdown syntax (`**bold**`, backticks for code) but the rendering code at line 444 uses a plain `CardDescription` component with `whitespace-pre-line` - this preserves line breaks but does NOT render markdown formatting.
+## Problem Confirmed
 
-**Current (broken):**
-```jsx
-<CardDescription className="text-white/80 whitespace-pre-line">
-  {subsection.content}  // Shows raw ** characters
-</CardDescription>
+When TWC products are synced, the options are created in `treatment_options` but **no matching `option_type_categories` records are created**. The Options Manager in Settings displays tabs based on `option_type_categories`, so TWC options are invisible.
+
+**Database Evidence:**
+- 466 TWC treatment_options exist
+- 0 matching option_type_categories exist
+
+## Solution
+
+### Part 1: Database Migration (Immediate Fix)
+
+Backfill missing `option_type_categories` for ALL existing TWC treatment_options:
+
+```sql
+INSERT INTO option_type_categories (
+  account_id, 
+  type_key, 
+  type_label, 
+  treatment_category, 
+  sort_order, 
+  active, 
+  hidden_by_user
+)
+SELECT DISTINCT
+  to2.account_id,
+  to2.key,
+  to2.label,
+  to2.treatment_category,
+  COALESCE(to2.order_index, 999),
+  true,
+  false
+FROM treatment_options to2
+WHERE to2.source = 'twc'
+  AND to2.account_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM option_type_categories otc
+    WHERE otc.account_id = to2.account_id
+      AND otc.type_key = to2.key
+      AND otc.treatment_category = to2.treatment_category
+  );
 ```
 
-**Solution:** Create a `MarkdownContent` component that parses and renders markdown as HTML.
+This will immediately make all existing TWC options visible in the Options Manager.
 
-### Issue 2: API Credentials Missing
-You're looking for the Supabase URL and Anon Key for integration. The documentation mentions the Base URL but **does NOT include the anon key**.
+### Part 2: Code Fix (Prevent Future Issues)
 
-**Missing information for developers:**
-- **Supabase URL:** `https://ldgrcodffsalkevafbkb.supabase.co`
-- **Anon Key:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (the publishable key)
+Update `src/components/settings/tabs/products/TemplateOptionsManager.tsx` to create `option_type_categories` during TWC sync.
 
-**Solution:** Add a complete "Developer Credentials" subsection with both values clearly displayed.
+**Location:** Lines 498-512 (after creating treatment_option)
 
-### Issue 3: Screenshots Not Uploaded
-The screenshot system works (ScreenshotUploader and ScreenshotDisplay are integrated), but no actual screenshots have been uploaded to the `documentation-screenshots` Supabase bucket.
-
-**Solution:** To upload screenshots, enable "Edit Mode" toggle in the Documentation page header and use the upload button for each section.
-
----
-
-## Implementation Plan
-
-### Step 1: Create MarkdownContent Component
-Create a new component that converts markdown to HTML:
-
-**File:** `src/components/documentation/MarkdownContent.tsx`
-
-Handles:
-- `**bold**` → `<strong>`
-- `*italic*` → `<em>`
-- `` `code` `` → `<code>`
-- Lists with `•` bullets
-- Newlines preserved
-
-### Step 2: Update Documentation.tsx Rendering
-Replace the plain text rendering with the new MarkdownContent component:
-
-**File:** `src/pages/Documentation.tsx`
-
-```text
-Line 444-446: Replace CardDescription usage with MarkdownContent
+**Add this code block after line 499:**
+```typescript
+// Create matching option_type_category for Options Manager visibility
+await supabase
+  .from('option_type_categories')
+  .upsert({
+    account_id: accountId,
+    type_key: optionKey,
+    type_label: question.name,
+    treatment_category: treatmentCategory,
+    sort_order: twcQuestions.indexOf(question),
+    active: true,
+    hidden_by_user: false,
+  }, {
+    onConflict: 'account_id,type_key,treatment_category',
+    ignoreDuplicates: true
+  });
 ```
 
-### Step 3: Add API Credentials Section
-Update the "API Overview" subsection to include complete credentials:
+## Files to Modify
 
-**File:** `src/pages/Documentation.tsx` (line 224-227)
+| File | Change |
+|------|--------|
+| New SQL Migration | Backfill missing option_type_categories for TWC options |
+| `src/components/settings/tabs/products/TemplateOptionsManager.tsx` | Add option_type_categories creation to TWC sync (after line 499) |
 
-Add clear credentials block:
-```text
-**InterioApp API Credentials:**
+## What This Enables
 
-Supabase URL: https://ldgrcodffsalkevafbkb.supabase.co
-Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3Jjb2RmZnNhbGtldmFmYmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTAyMDEsImV4cCI6MjA2NjI2NjIwMX0.d9jbWQB2byOUGPkBp7lLjqE1tKkR4KtDcgaTiU42r_I
+After this fix, Daniel (and all users) can:
 
-Base URL for Edge Functions:
-https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/
-```
+1. **See TWC options** in Settings → Products → Options under the correct treatment category
+2. **Add pricing** to individual option values
+3. **Create rules** that affect TWC options (e.g., "If Control Type = Motorized, hide Manual Chain")
+4. **Hide/show values** they don't want to offer
+5. **Reorder options** using drag-and-drop
+6. **Link to inventory** items for stock tracking
 
-### Step 4: Screenshots (Manual Step)
-After code changes, you can upload screenshots:
-1. Go to Documentation page
-2. Toggle "Edit Mode" in header
-3. Click upload icon next to each section title
-4. Select screenshot image
+## Order Submission Compatibility
 
----
+Making changes to TWC options in the Options Manager will NOT break TWC order submission because:
 
-## Files to Create/Modify
+- The order submission maps options by their `key` field (e.g., `control_type_35d8d72a`)
+- Editing labels, prices, or visibility doesn't change the key
+- The TWC API receives the original option code/value, not your customizations
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/documentation/MarkdownContent.tsx` | Create | Parse and render markdown as HTML |
-| `src/pages/Documentation.tsx` | Modify | Use MarkdownContent + add API credentials |
+## Technical Notes
 
----
+- The migration is safe to run multiple times (uses `NOT EXISTS` check)
+- Works for ALL accounts automatically - no manual action needed
+- Existing rules and pricing on non-TWC options are unaffected
+- The fix follows the same pattern used by `useTreatmentOptionsManagement.ts` (lines 50-57)
 
-## Technical Details
-
-### MarkdownContent Component Logic
-```text
-function MarkdownContent({ content }) {
-  // Convert markdown to HTML:
-  // 1. **text** → <strong>text</strong>
-  // 2. *text* → <em>text</em>
-  // 3. `code` → <code>code</code>
-  // 4. \n → <br /> (line breaks)
-  // 5. • lists preserved
-  
-  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-}
-```
-
-### API Overview Content Update
-The current content at line 226 will be expanded to include:
-
-```text
-**InterioApp API Credentials:**
-
-Use these credentials for API integration:
-
-• Supabase URL: https://ldgrcodffsalkevafbkb.supabase.co
-• Anon Key (publishable): [full key displayed]
-• Edge Functions Base: [URL]/functions/v1/
-
-Example request:
-fetch('[URL]/functions/v1/receive-external-lead', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': '[ANON_KEY]'
-  },
-  body: JSON.stringify({ ... })
-})
-```
-
----
-
-## Expected Outcome
-
-After implementation:
-- **Bold text** renders as bold (not `**text**`)
-- `Code` renders in monospace (not backticks)
-- API credentials clearly visible in documentation
-- Developers can copy URL and key for integration
-- Screenshots can be uploaded via Edit Mode
