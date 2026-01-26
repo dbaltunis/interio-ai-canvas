@@ -2301,7 +2301,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string | null
           user_id: string
-          vendor_id: string
+          vendor_id: string | null
           year: number | null
         }
         Insert: {
@@ -2315,7 +2315,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           user_id: string
-          vendor_id: string
+          vendor_id?: string | null
           year?: number | null
         }
         Update: {
@@ -2329,7 +2329,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string
-          vendor_id?: string
+          vendor_id?: string | null
           year?: number | null
         }
         Relationships: [
