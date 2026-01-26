@@ -101,6 +101,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Submitting order to TWC:', orderData.purchaseOrderNumber);
 
+    // Normalize the API URL - ensure HTTPS and remove trailing slashes
+    let normalizedUrl = api_url?.trim() || '';
+    
+    // Ensure HTTPS
+    if (normalizedUrl.startsWith('http://')) {
+      normalizedUrl = normalizedUrl.replace('http://', 'https://');
+    }
+    if (!normalizedUrl.startsWith('https://')) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+    
+    // Remove trailing slashes
+    normalizedUrl = normalizedUrl.replace(/\/+$/, '');
+    
+    console.log('Normalized API URL:', normalizedUrl);
+
     // Format order for TWC API
     const twcOrder = {
       id: 0,
@@ -119,16 +135,18 @@ const handler = async (req: Request): Promise<Response> => {
       items: orderData.items,
     };
 
-    const response = await fetch(
-      `${api_url}/api/TwcPublic/SubmitOrder?api_key=${api_key}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(twcOrder),
-      }
-    );
+    const fullUrl = `${normalizedUrl}/api/TwcPublic/SubmitOrder?api_key=${api_key}`;
+    console.log('Full request URL (key hidden):', fullUrl.replace(api_key, '***'));
+
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(twcOrder),
+      redirect: 'follow', // Explicit redirect handling
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
