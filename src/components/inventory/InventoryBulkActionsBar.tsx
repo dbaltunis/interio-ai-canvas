@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, X, QrCode, Tag } from "lucide-react";
+import { Trash2, X, QrCode, Tag, FolderPlus, FolderInput } from "lucide-react";
 import { QRCodeLabelGenerator } from "./QRCodeLabelGenerator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CreateCollectionFromSelectionDialog } from "./CreateCollectionFromSelectionDialog";
+import { AddToCollectionDialog } from "./AddToCollectionDialog";
+import { BulkTagEditor } from "./BulkTagEditor";
 
 interface InventoryBulkActionsBarProps {
   selectedCount: number;
@@ -28,8 +31,13 @@ export const InventoryBulkActionsBar = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLabelGenerator, setShowLabelGenerator] = useState(false);
   const [showPriceGroupDialog, setShowPriceGroupDialog] = useState(false);
+  const [showCreateCollection, setShowCreateCollection] = useState(false);
+  const [showAddToCollection, setShowAddToCollection] = useState(false);
+  const [showTagEditor, setShowTagEditor] = useState(false);
   const [priceGroup, setPriceGroup] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const selectedIds = selectedItems.map(item => item.id);
 
   const handleDelete = () => {
     onBulkDelete();
@@ -44,8 +52,6 @@ export const InventoryBulkActionsBar = ({
 
     setIsUpdating(true);
     try {
-      const selectedIds = selectedItems.map(item => item.id);
-      
       const { error } = await supabase
         .from('enhanced_inventory_items')
         .update({ price_group: priceGroup.trim() })
@@ -73,16 +79,45 @@ export const InventoryBulkActionsBar = ({
     }
   };
 
+  const handleBulkSuccess = () => {
+    onClearSelection();
+    onRefetch?.();
+  };
+
   return (
     <>
       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{selectedCount} selected</span>
             <span className="text-muted-foreground">•</span>
             <span className="text-sm text-muted-foreground">Bulk Actions</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCreateCollection(true)}
+            >
+              <FolderPlus className="h-4 w-4 mr-2" />
+              Create Collection
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddToCollection(true)}
+            >
+              <FolderInput className="h-4 w-4 mr-2" />
+              Add to Collection
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTagEditor(true)}
+            >
+              <Tag className="h-4 w-4 mr-2" />
+              Edit Tags
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -114,6 +149,35 @@ export const InventoryBulkActionsBar = ({
           </div>
         </div>
       </div>
+
+      {/* Create Collection Dialog */}
+      <CreateCollectionFromSelectionDialog
+        open={showCreateCollection}
+        onOpenChange={setShowCreateCollection}
+        selectedItemIds={selectedIds}
+        onSuccess={handleBulkSuccess}
+      />
+
+      {/* Add to Collection Dialog */}
+      <AddToCollectionDialog
+        open={showAddToCollection}
+        onOpenChange={setShowAddToCollection}
+        selectedItemIds={selectedIds}
+        onSuccess={handleBulkSuccess}
+        onCreateNew={() => {
+          setShowAddToCollection(false);
+          setShowCreateCollection(true);
+        }}
+      />
+
+      {/* Bulk Tag Editor */}
+      <BulkTagEditor
+        open={showTagEditor}
+        onOpenChange={setShowTagEditor}
+        selectedItemIds={selectedIds}
+        selectedItems={selectedItems}
+        onSuccess={handleBulkSuccess}
+      />
 
       {/* Price Group Dialog */}
       <Dialog open={showPriceGroupDialog} onOpenChange={setShowPriceGroupDialog}>

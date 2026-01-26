@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, DollarSign, Ruler, Package, Store, Trash2, ImageIcon, Upload, X, QrCode } from "lucide-react";
+import { Plus, DollarSign, Ruler, Package, Store, Trash2, ImageIcon, Upload, X, QrCode, FolderPlus } from "lucide-react";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryTrackingInfo } from "./InventoryTrackingInfo";
 import { useToast } from "@/hooks/use-toast";
@@ -22,11 +22,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBusinessSettings, defaultMeasurementUnits } from "@/hooks/useBusinessSettings";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
+import { useCollections, useCreateCollection } from "@/hooks/useCollections";
 import { ColorSelector } from "./ColorSelector";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { CompatibleTreatmentsSelector } from "./CompatibleTreatmentsSelector";
+import { TagInput } from "./TagInput";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -65,6 +67,10 @@ export const UnifiedInventoryDialog = ({
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
   const { data: pricingGrids = [] } = usePricingGrids();
+  const { data: collections = [] } = useCollections();
+  const createCollectionMutation = useCreateCollection();
+  const [showCreateCollection, setShowCreateCollection] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -484,6 +490,7 @@ export const UnifiedInventoryDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
@@ -592,13 +599,57 @@ export const UnifiedInventoryDialog = ({
                     </div>
                     
                     <div className="md:col-span-2">
-                      <Label htmlFor="tags">Tags</Label>
-                      <Input
-                        id="tags"
-                        value={formData.tags.join(', ')}
-                        onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) }))}
-                        placeholder="e.g., plain, linen, luxury"
+                      <Label>Tags</Label>
+                      <TagInput
+                        value={formData.tags.filter(tag => {
+                          // Exclude color tags - those are handled by ColorSelector
+                          const isPredefinedColor = COLOR_PALETTE.some(c => c.value === tag);
+                          const isCustomColor = customColors.some(c => c.value === tag);
+                          return !isPredefinedColor && !isCustomColor;
+                        })}
+                        onChange={(tags) => {
+                          // Preserve color tags and add new tags
+                          const allColorValues = [...COLOR_PALETTE.map(c => c.value), ...customColors.map(c => c.value)];
+                          const colorTags = formData.tags.filter(tag => allColorValues.includes(tag));
+                          setFormData(prev => ({ ...prev, tags: [...colorTags, ...tags] }));
+                        }}
+                        subcategory={formData.subcategory}
+                        placeholder="Add tags for filtering..."
                       />
+                    </div>
+
+                    {/* Collection Assignment */}
+                    <div className="md:col-span-2">
+                      <Label>Collection (Optional)</Label>
+                      <div className="flex gap-2">
+                        <Select
+                          value={formData.collection_id || "none"}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            collection_id: value === "none" ? null : value 
+                          }))}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select collection" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[10001]">
+                            <SelectItem value="none">No Collection</SelectItem>
+                            {collections.map(col => (
+                              <SelectItem key={col.id} value={col.id}>
+                                {col.name} {col.vendor?.name ? `(${col.vendor.name})` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setShowCreateCollection(true)}
+                        >
+                          <FolderPlus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     
                     <div className="md:col-span-2">
@@ -1516,5 +1567,53 @@ export const UnifiedInventoryDialog = ({
         </form>
       </DialogContent>
     </Dialog>
+    
+    {/* Quick Create Collection Dialog */}
+    <Dialog open={showCreateCollection} onOpenChange={setShowCreateCollection}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Create Collection</DialogTitle>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label>Collection Name</Label>
+            <Input
+              value={newCollectionName}
+              onChange={(e) => setNewCollectionName(e.target.value)}
+              placeholder="e.g., Spring 2024, Premium Range"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setShowCreateCollection(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={async () => {
+              if (newCollectionName.trim()) {
+                try {
+                  const newCol = await createCollectionMutation.mutateAsync({
+                    name: newCollectionName.trim(),
+                    vendor_id: formData.vendor_id || null,
+                  });
+                  if (newCol) {
+                    setFormData(prev => ({ ...prev, collection_id: newCol.id }));
+                    toast({ title: "Collection created", description: `"${newCollectionName}" created successfully` });
+                  }
+                  setNewCollectionName("");
+                  setShowCreateCollection(false);
+                } catch (error: any) {
+                  toast({ title: "Error", description: error.message, variant: "destructive" });
+                }
+              }
+            }}
+            disabled={!newCollectionName.trim() || createCollectionMutation.isPending}
+          >
+            {createCollectionMutation.isPending ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
