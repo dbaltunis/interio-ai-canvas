@@ -54,6 +54,7 @@ import { Shield } from "lucide-react";
 import { ContactClientDialog } from "@/components/messaging/ContactClientDialog";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { SupplierOrderingDropdown } from "./SupplierOrderingDropdown";
+import { useQuoteItems } from "@/hooks/useQuoteItems";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -174,6 +175,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const createProject = useCreateProject();
   const { data: duplicates } = useJobDuplicates(jobId);
   const { data: currentQuotes } = useQuotes(jobId);
+  
+  // Fetch quote items separately (not nested in quotes query due to no FK relationship)
+  const activeQuoteId = currentQuotes?.[0]?.id;
+  const { items: quoteItems } = useQuoteItems(activeQuoteId);
 
   // Use direct client fetch for display - no ownership filter since project already passed RLS
   // This handles cases where client might have ownership mismatch with project
@@ -907,12 +912,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     projectStatusId={project.status_id}
                     projectStatusName={project.status}
                     quoteId={activeQuote.id}
-                    quoteItems={(activeQuote as any).quote_items || []}
+                    quoteItems={quoteItems}
                     quoteData={activeQuote}
                     supplierOrders={(activeQuote as any)?.supplier_orders}
                     clientData={client}
                     projectData={project}
-                    quotationData={{ items: (activeQuote as any).quote_items || [], ...activeQuote }}
+                    quotationData={{ items: quoteItems, ...activeQuote }}
                   />
                 );
               })()}
