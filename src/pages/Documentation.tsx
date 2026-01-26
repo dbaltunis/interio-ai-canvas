@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScreenshotUploader } from "@/components/documentation/ScreenshotUploader";
 import { ScreenshotDisplay } from "@/components/documentation/ScreenshotDisplay";
+import { MarkdownContent } from "@/components/documentation/MarkdownContent";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { APP_VERSION } from "@/constants/version";
 import { 
@@ -222,8 +223,8 @@ export default function Documentation() {
       subsections: [
         { 
           id: "api-overview", 
-          title: "API Overview", 
-          content: "InterioApp provides API access for custom integrations and automation.\n\n**Architecture:**\n• RESTful API via Supabase Edge Functions\n• JWT-based authentication\n• HTTPS required for all requests\n• JSON request/response format\n\n**Authentication:**\nTwo methods available:\n\n1. **User JWT Token:**\n   • For authenticated user actions\n   • Passed via Authorization header\n   • Inherits user's permissions\n\n2. **API Key (Coming Soon):**\n   • For server-to-server integration\n   • Generate keys in Settings → Integrations\n   • Scoped permissions per key\n   • Usage logging and rate limiting\n\n**Base URL:**\nhttps://ldgrcodffsalkevafbkb.supabase.co/functions/v1/\n\n**Rate Limiting:**\n• Standard: 100 requests/minute\n• Burst: 10 requests/second\n• Headers indicate remaining quota" 
+          title: "API Overview & Credentials", 
+          content: "InterioApp provides API access for custom integrations and automation.\n\n**InterioApp API Credentials:**\n\nUse these credentials for API integration:\n\n• **Supabase URL:** https://ldgrcodffsalkevafbkb.supabase.co\n• **Anon Key (publishable):** eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3Jjb2RmZnNhbGtldmFmYmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTAyMDEsImV4cCI6MjA2NjI2NjIwMX0.d9jbWQB2byOUGPkBp7lLjqE1tKkR4KtDcgaTiU42r_I\n• **Edge Functions Base:** https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/\n\n**Example API Request:**\n```\nfetch('https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/receive-external-lead', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'\n  },\n  body: JSON.stringify({\n    name: 'John Doe',\n    email: 'john@example.com',\n    phone: '0412345678',\n    source: 'website'\n  })\n})\n```\n\n**Architecture:**\n• RESTful API via Supabase Edge Functions\n• JWT-based authentication\n• HTTPS required for all requests\n• JSON request/response format\n\n**Authentication Methods:**\n\n1. **Anonymous API Key:**\n   • Use the Anon Key above in `apikey` header\n   • For public endpoints like lead capture\n   • No user context required\n\n2. **User JWT Token:**\n   • For authenticated user actions\n   • Passed via `Authorization: Bearer <token>` header\n   • Inherits user's permissions\n   • Obtain from Supabase auth session\n\n**Rate Limiting:**\n• Standard: 100 requests/minute\n• Burst: 10 requests/second\n• Headers indicate remaining quota" 
         },
         { 
           id: "endpoints", 
@@ -441,9 +442,7 @@ export default function Documentation() {
                           )}
                         </div>
                         <div className="pl-14">
-                          <CardDescription className="text-white/80 whitespace-pre-line leading-relaxed text-base">
-                            {subsection.content}
-                          </CardDescription>
+                          <MarkdownContent content={subsection.content} />
                           
                           {/* Screenshot Display */}
                           <ScreenshotDisplay
