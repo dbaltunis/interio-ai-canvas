@@ -1,11 +1,12 @@
 # InterioApp Documentation
 
-Welcome to the comprehensive InterioApp documentation. This guide will help you make the most of your window treatment business management system.
+Welcome to the comprehensive InterioApp documentation. This guide covers all features of your window treatment business management platform.
 
 ## Quick Start
 
 - **New User?** Start with the [Getting Started Guide](./getting-started.md)
 - **Need Help?** Check our [Troubleshooting Guide](./troubleshooting.md)
+- **In-App Docs**: Access full documentation within the app under the Help menu
 
 ## Core Features
 
@@ -14,58 +15,59 @@ Welcome to the comprehensive InterioApp documentation. This guide will help you 
 - [Analytics & Reporting](./analytics.md) - Track performance metrics
 - [Business Settings](./business-settings.md) - Configure your account
 
-### 📦 **Inventory Management**
-- [Inventory Overview](./inventory.md) - Manage your product catalog
-- [Categories & Organization](./inventory.md#categories) - Structure your inventory
-- [Stock Management](./inventory.md#stock-management) - Track inventory levels
+### 📦 **Product Library**
+- [Library Overview](./library.md) - Manage your product catalog
+- [Fabrics & Materials](./fabrics.md) - Fabric inventory management
+- [Collections & Organization](./collections.md) - Organize with collections and tags
+- [Treatment Templates](./templates.md) - Configure treatment templates
+- [Vendor Management](./vendors.md) - Supplier relationships
 
-### 💰 **Quotes & Pricing**
+### 💰 **Jobs & Quotes**
 - [Creating Quotes](./quotes.md) - Build professional quotes
-- [Quote Templates](./quote-templates.md) - Customize quote layouts
-- [Pricing Strategies](./pricing.md) - Configure pricing rules
+- [Supplier Ordering](./supplier-ordering.md) - Submit orders to TWC and vendors
+- [Sharing Work Orders](./work-orders.md) - Share with workrooms and installers
+- [Pricing Configuration](./pricing.md) - Configure pricing rules
+- [Calculation Algorithms](./algorithms.md) - Fabric and pricing calculations
 
-### 📅 **Appointments & Calendar**
+### 📅 **Calendar & Scheduling**
 - [Calendar Management](./calendar.md) - Schedule appointments
-- [Client Management](./clients.md) - Track customer information
+- [Google Calendar Sync](./google-calendar.md) - Integrate with Google Calendar
 - [Reminders & Notifications](./notifications.md) - Stay organized
 
-### 🛒 **Online Store**
-- **[Online Store Complete Guide](./online-store.md)** - Full e-commerce documentation
-  - Store setup and templates
-  - Product filtering and management
-  - Page editor and customization
-  - SEO and analytics
-  - Customer inquiries
+### 👥 **Client Management**
+- [Client Profiles](./clients.md) - Track customer information
+- [Sales Funnel](./funnel.md) - Lead management and conversion
+- [Communication](./communication.md) - Email, SMS, and WhatsApp
 
-## Advanced Features
+## Integrations
 
-### 🎨 **Customization**
-- [Brand Customization](./branding.md) - Apply your brand identity
-- [Template Editor](./templates.md) - Customize document templates
-- [Custom Fields](./custom-fields.md) - Add custom data fields
+### 🔗 **Supplier Integrations**
+- [TWC Integration](./twc.md) - The Window Company API integration
+- [Shopify Integration](./shopify.md) - E-commerce and online store
 
-### 🔗 **Integrations**
-- [Email Integration](./email-integration.md) - Connect your email
-- [Calendar Sync](./calendar-sync.md) - Sync with external calendars
-- [Payment Processing](./payments.md) - Accept payments online
-- [Third-party Tools](./integrations.md) - Connect other services
+### 📧 **Communication Channels**
+- [SendGrid Email](./sendgrid.md) - Email delivery and tracking
+- [Twilio SMS/WhatsApp](./twilio.md) - Text and messaging
+
+### 📅 **Calendar**
+- [Google Calendar](./google-calendar.md) - Bidirectional sync
+
+### 💳 **Payments**
+- [Stripe Connect](./stripe.md) - Payment processing
+
+## API & Developer Access
+
+### 🔌 **API Reference**
+- [API Overview](./api/overview.md) - Authentication and usage
+- [Available Endpoints](./api/endpoints.md) - Edge function reference
+- [Webhooks](./api/webhooks.md) - Incoming webhook configuration
+
+## Team & Permissions
 
 ### 👥 **Team Collaboration**
-- [User Management](./users.md) - Add team members
-- [Roles & Permissions](./permissions.md) - Control access levels
-- [Workflow Automation](./automation.md) - Automate repetitive tasks
-
-## Reference
-
-### 📖 **API & Technical**
-- [API Documentation](./api.md) - Developer reference
-- [Database Schema](./schema.md) - Data structure
-- [Security Best Practices](./security.md) - Keep your data safe
-
-### 🎓 **Learning Resources**
-- [Video Tutorials](./tutorials.md) - Step-by-step guides
-- [Best Practices](./best-practices.md) - Industry tips
-- [FAQ](./faq.md) - Common questions answered
+- [User Roles](./roles.md) - Role-based access control
+- [Permissions](./permissions.md) - Granular permission management
+- [Team Management](./team.md) - Invite and manage members
 
 ## Support
 
@@ -85,14 +87,13 @@ Found a bug or have a feature request?
 ## Updates & Changelog
 
 Stay informed about new features and improvements:
-- [Changelog](./changelog.md) - Recent updates
+- [Changelog](./CHANGELOG.md) - Recent updates
 - [Roadmap](./roadmap.md) - Upcoming features
-- [Release Notes](./releases.md) - Detailed version history
 
 ---
 
-**Version**: 1.0  
-**Last Updated**: 2025-01-09  
+**Version**: 2.4.0  
+**Last Updated**: 2026-01-26  
 **License**: Proprietary
 
 For the most up-to-date documentation, visit [docs.interioapp.com](https://docs.interioapp.com)
