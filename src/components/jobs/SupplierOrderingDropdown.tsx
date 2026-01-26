@@ -200,12 +200,12 @@ export function SupplierOrderingDropdown({
               allOrdersSubmitted &&
                 hasProducts &&
                 !allTestMode &&
-                "border-primary/30 text-primary",
+                "border-emerald-300 text-emerald-700",
               !allOrdersSubmitted &&
                 !allTestMode &&
                 isApprovedStatus &&
                 hasProducts &&
-                "border-accent text-accent-foreground hover:bg-accent/10"
+                "border-teal-300 text-teal-700 hover:bg-teal-50"
             )}
             title={getTooltipText()}
           >

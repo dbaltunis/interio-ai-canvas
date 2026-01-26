@@ -156,6 +156,95 @@ const handler = async (req: Request): Promise<Response> => {
           twc_submitted_at: new Date().toISOString()
         })
         .eq('id', orderData.quoteId);
+
+      // Send confirmation email to user
+      try {
+        // Get user's email from auth
+        const userEmail = user.email;
+        
+        // Get user's business info
+        const { data: businessSettings } = await supabaseClient
+          .from('business_settings')
+          .select('company_name')
+          .eq('user_id', accountOwnerId)
+          .single();
+
+        if (userEmail) {
+          // Build order items summary
+          const itemsSummary = orderData.items.map((item: TWCOrderItem) => 
+            `• ${item.itemName} (${item.width}mm × ${item.drop}mm) - ${item.colour}`
+          ).join('<br/>');
+
+          const companyName = businessSettings?.company_name || 'Your Company';
+
+          // Send email via send-email function
+          await supabaseClient.functions.invoke('send-email', {
+            body: {
+              to: userEmail,
+              subject: `TWC Order Confirmed - ${orderData.purchaseOrderNumber}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #0d9488;">Order Submitted to TWC</h2>
+                  <p>Your order has been successfully submitted to TWC (The Wholesale Curtain).</p>
+                  
+                  <div style="background: #f0fdfa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                    <p style="margin: 4px 0;"><strong>TWC Order ID:</strong> ${result.orderId}</p>
+                    <p style="margin: 4px 0;"><strong>Purchase Order:</strong> ${orderData.purchaseOrderNumber}</p>
+                    <p style="margin: 4px 0;"><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+                  </div>
+                  
+                  <h3 style="color: #0f766e;">Items Ordered (${orderData.items.length})</h3>
+                  <div style="background: #f8fafc; padding: 12px; border-radius: 6px;">
+                    ${itemsSummary}
+                  </div>
+                  
+                  <h3 style="color: #0f766e;">Delivery Address</h3>
+                  <p>
+                    ${orderData.address1}<br/>
+                    ${orderData.address2 ? orderData.address2 + '<br/>' : ''}
+                    ${orderData.city}, ${orderData.state} ${orderData.postcode}
+                  </p>
+                  
+                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
+                  <p style="color: #64748b; font-size: 14px;">
+                    You will receive updates from TWC when your order is in production and shipped.
+                  </p>
+                  <p style="color: #64748b; font-size: 12px;">
+                    Sent from ${companyName}
+                  </p>
+                </div>
+              `,
+              user_id: user.id
+            }
+          });
+          console.log('Confirmation email sent to:', userEmail);
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the order if email fails
+      }
+
+      // Create in-app notification
+      try {
+        await supabaseClient.from('notifications').insert({
+          user_id: user.id,
+          type: 'supplier_order',
+          title: 'Order Submitted to TWC',
+          message: `Order ${result.orderId} submitted successfully - PO# ${orderData.purchaseOrderNumber}`,
+          metadata: {
+            supplier: 'twc',
+            order_id: result.orderId,
+            purchase_order: orderData.purchaseOrderNumber,
+            quote_id: orderData.quoteId,
+            items_count: orderData.items.length
+          },
+          read: false
+        });
+        console.log('In-app notification created');
+      } catch (notifError) {
+        console.error('Failed to create notification:', notifError);
+        // Don't fail the order if notification fails
+      }
     }
 
     return new Response(
