@@ -13,6 +13,7 @@ import { convertLength } from "@/hooks/useBusinessSettings";
 import { Loader2, Info, Sparkles, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { TWCProductOptions } from "@/components/measurements/TWCProductOptions";
 
 interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
@@ -41,6 +42,13 @@ export const DynamicRollerBlindFields = ({
   // Track which sub-category is selected for cascading dropdowns
   const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
   // Track if sub-category selections have been restored from saved data
+  
+  // TWC Product Data - fetched when template has linked TWC inventory item
+  const [linkedTWCData, setLinkedTWCData] = useState<{
+    twc_questions: any[];
+    twc_fabrics_and_colours: any;
+    twc_item_number: string;
+  } | null>(null);
   const [subCategoryRestored, setSubCategoryRestored] = useState(false);
 
   // Query by templateId (preferred) to get all linked options including TWC options
@@ -99,6 +107,63 @@ export const DynamicRollerBlindFields = ({
     
     filterByTemplateSettings();
   }, [templateId, allOptions]);
+
+  // Fetch TWC data when templateId changes - detect TWC products via inventory_item_id
+  useEffect(() => {
+    const fetchTWCData = async () => {
+      if (!templateId) {
+        setLinkedTWCData(null);
+        return;
+      }
+      
+      try {
+        // Get template to find inventory_item_id
+        const { data: template } = await supabase
+          .from('curtain_templates')
+          .select('inventory_item_id')
+          .eq('id', templateId)
+          .maybeSingle();
+        
+        if (!template?.inventory_item_id) {
+          setLinkedTWCData(null);
+          return;
+        }
+        
+        // Get linked inventory item with TWC metadata
+        const { data: item } = await supabase
+          .from('enhanced_inventory_items')
+          .select('metadata')
+          .eq('id', template.inventory_item_id)
+          .maybeSingle();
+        
+        const metadata = item?.metadata as any;
+        if (metadata?.twc_item_number) {
+          console.log('✅ TWC Product Detected:', {
+            templateId,
+            twcItemNumber: metadata.twc_item_number,
+            questionsCount: metadata.twc_questions?.length || 0,
+            hasFabrics: !!metadata.twc_fabrics_and_colours
+          });
+          
+          setLinkedTWCData({
+            twc_questions: metadata.twc_questions || [],
+            twc_fabrics_and_colours: metadata.twc_fabrics_and_colours,
+            twc_item_number: metadata.twc_item_number
+          });
+          
+          // Store the TWC item number in measurements for order submission
+          onChange('twc_item_number', metadata.twc_item_number);
+        } else {
+          setLinkedTWCData(null);
+        }
+      } catch (error) {
+        console.error('Error fetching TWC data:', error);
+        setLinkedTWCData(null);
+      }
+    };
+    
+    fetchTWCData();
+  }, [templateId]);
 
   // Use rules engine to determine visibility, required status, and defaults
   const {
@@ -747,9 +812,39 @@ export const DynamicRollerBlindFields = ({
     );
   };
 
+  // Parse TWC custom fields from measurements
+  const parseTWCCustomFields = () => {
+    try {
+      const stored = measurements.twc_custom_fields;
+      if (typeof stored === 'string') {
+        return JSON.parse(stored);
+      }
+      return stored || [];
+    } catch {
+      return [];
+    }
+  };
+
   return (
     <div className="space-y-4">
       {visibleOptions.map(option => renderOptionWithChildren(option, false))}
+      
+      {/* TWC Manufacturing Options - shown when template links to TWC product */}
+      {linkedTWCData && (
+        <TWCProductOptions
+          twcQuestions={linkedTWCData.twc_questions}
+          twcFabricsAndColours={linkedTWCData.twc_fabrics_and_colours}
+          selectedFields={parseTWCCustomFields()}
+          selectedColour={measurements.twc_selected_colour || ''}
+          selectedMaterial={measurements.twc_selected_material || ''}
+          onFieldsChange={(fields) => {
+            onChange('twc_custom_fields', JSON.stringify(fields));
+          }}
+          onColourChange={(colour) => onChange('twc_selected_colour', colour)}
+          onMaterialChange={(material) => onChange('twc_selected_material', material)}
+          readOnly={readOnly}
+        />
+      )}
     </div>
   );
 };

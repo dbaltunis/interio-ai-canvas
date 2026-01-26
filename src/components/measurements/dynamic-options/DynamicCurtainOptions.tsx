@@ -19,6 +19,8 @@ import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
 import { useEnabledTemplateOptions } from "@/hooks/useEnabledTemplateOptions";
+import { supabase } from "@/integrations/supabase/client";
+import { TWCProductOptions } from "@/components/measurements/TWCProductOptions";
 
 interface DynamicCurtainOptionsProps {
   measurements: Record<string, any>;
@@ -57,6 +59,13 @@ export const DynamicCurtainOptions = ({
   const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
   // Track if sub-category selections have been restored from saved data
   const [subCategoryRestored, setSubCategoryRestored] = useState(false);
+  
+  // TWC Product Data - fetched when template has linked TWC inventory item
+  const [linkedTWCData, setLinkedTWCData] = useState<{
+    twc_questions: any[];
+    twc_fabrics_and_colours: any;
+    twc_item_number: string;
+  } | null>(null);
   
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
@@ -279,6 +288,63 @@ export const DynamicCurtainOptions = ({
     }
     setSubCategoryRestored(true);
   }, [treatmentOptions.length, measurements, treatmentOptionSelections, subCategoryRestored]);
+
+  // Fetch TWC data when template changes - detect TWC products via inventory_item_id
+  useEffect(() => {
+    const fetchTWCData = async () => {
+      if (!template?.id) {
+        setLinkedTWCData(null);
+        return;
+      }
+      
+      try {
+        // Get template to find inventory_item_id
+        const { data: templateData } = await supabase
+          .from('curtain_templates')
+          .select('inventory_item_id')
+          .eq('id', template.id)
+          .maybeSingle();
+        
+        if (!templateData?.inventory_item_id) {
+          setLinkedTWCData(null);
+          return;
+        }
+        
+        // Get linked inventory item with TWC metadata
+        const { data: item } = await supabase
+          .from('enhanced_inventory_items')
+          .select('metadata')
+          .eq('id', templateData.inventory_item_id)
+          .maybeSingle();
+        
+        const metadata = item?.metadata as any;
+        if (metadata?.twc_item_number) {
+          console.log('✅ TWC Product Detected (Curtain):', {
+            templateId: template.id,
+            twcItemNumber: metadata.twc_item_number,
+            questionsCount: metadata.twc_questions?.length || 0,
+            hasFabrics: !!metadata.twc_fabrics_and_colours
+          });
+          
+          setLinkedTWCData({
+            twc_questions: metadata.twc_questions || [],
+            twc_fabrics_and_colours: metadata.twc_fabrics_and_colours,
+            twc_item_number: metadata.twc_item_number
+          });
+          
+          // Store the TWC item number in measurements for order submission
+          onChange('twc_item_number', metadata.twc_item_number);
+        } else {
+          setLinkedTWCData(null);
+        }
+      } catch (error) {
+        console.error('Error fetching TWC data:', error);
+        setLinkedTWCData(null);
+      }
+    };
+    
+    fetchTWCData();
+  }, [template?.id]);
   
   // Filter for heading items from inventory - EXACT match on 'heading' category
   const headingOptions = useMemo(() => {
@@ -1513,6 +1579,37 @@ export const DynamicCurtainOptions = ({
         );
       })}
 
+      {/* TWC Manufacturing Options - shown when template links to TWC product */}
+      {linkedTWCData && (() => {
+        // Parse TWC custom fields from measurements
+        const parseTWCCustomFields = () => {
+          try {
+            const stored = measurements.twc_custom_fields;
+            if (typeof stored === 'string') {
+              return JSON.parse(stored);
+            }
+            return stored || [];
+          } catch {
+            return [];
+          }
+        };
+        
+        return (
+          <TWCProductOptions
+            twcQuestions={linkedTWCData.twc_questions}
+            twcFabricsAndColours={linkedTWCData.twc_fabrics_and_colours}
+            selectedFields={parseTWCCustomFields()}
+            selectedColour={measurements.twc_selected_colour || ''}
+            selectedMaterial={measurements.twc_selected_material || ''}
+            onFieldsChange={(fields) => {
+              onChange('twc_custom_fields', JSON.stringify(fields));
+            }}
+            onColourChange={(colour) => onChange('twc_selected_colour', colour)}
+            onMaterialChange={(material) => onChange('twc_selected_material', material)}
+            readOnly={readOnly}
+          />
+        );
+      })()}
     </div>
   );
 };
