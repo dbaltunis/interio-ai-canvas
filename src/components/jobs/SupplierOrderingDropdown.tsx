@@ -292,7 +292,7 @@ export function SupplierOrderingDropdown({
                     ) : (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-accent/10 text-accent-foreground border-accent/30"
+                        className="text-xs bg-teal-50 text-teal-700 border-teal-300"
                       >
                         <Send className="h-3 w-3 mr-1" />
                         Send Order
