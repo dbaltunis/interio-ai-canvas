@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Submitting order to TWC:', orderData.purchaseOrderNumber);
 
-    // Normalize the API URL - ensure HTTPS and remove trailing slashes
+    // Normalize the API URL - ensure HTTPS, remove /twcpublic suffix, and trailing slashes
     let normalizedUrl = api_url?.trim() || '';
     
     // Ensure HTTPS
@@ -111,6 +111,9 @@ const handler = async (req: Request): Promise<Response> => {
     if (!normalizedUrl.startsWith('https://')) {
       normalizedUrl = 'https://' + normalizedUrl;
     }
+    
+    // CRITICAL: Remove trailing /twcpublic if present (matches twc-get-order-options pattern)
+    normalizedUrl = normalizedUrl.replace(/\/twcpublic\/?$/i, '');
     
     // Remove trailing slashes
     normalizedUrl = normalizedUrl.replace(/\/+$/, '');
