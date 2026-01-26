@@ -405,6 +405,81 @@ const handler = async (req: Request): Promise<Response> => {
       return [...new Set(colors)].slice(0, 30);
     };
 
+    // ✅ NEW: Extract collection/range name from TWC product description
+    // Patterns: "Straight Drop - SKYE LIGHT FILTER" → "SKYE"
+    //           "Roller Blinds - SANCTUARY BLOCKOUT" → "SANCTUARY"
+    //           "Panel Glide - SERENGETTI" → "SERENGETTI"
+    const extractCollectionName = (productName: string | undefined | null): string | null => {
+      if (!productName || typeof productName !== 'string') return null;
+      
+      // Pattern 1: "Product Type - COLLECTION NAME VARIANT" 
+      // e.g., "Straight Drop - SKYE LIGHT FILTER" → "SKYE"
+      const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9]+)/i);
+      if (dashPattern && dashPattern[1]) {
+        return dashPattern[1].toUpperCase();
+      }
+      
+      // Pattern 2: Product has parenthetical collection
+      // e.g., "Roller Blinds (SANCTUARY)" → "SANCTUARY"
+      const parenPattern = productName.match(/\(([A-Z][A-Z0-9]+)\)/i);
+      if (parenPattern && parenPattern[1]) {
+        return parenPattern[1].toUpperCase();
+      }
+      
+      return null;
+    };
+
+    // ✅ NEW: Build collection cache for upsert operations
+    const collectionCache: Record<string, string> = {}; // collectionName -> collectionId
+    
+    const getOrCreateCollection = async (collectionName: string): Promise<string | null> => {
+      if (!collectionName) return null;
+      
+      // Check cache first
+      if (collectionCache[collectionName]) {
+        return collectionCache[collectionName];
+      }
+      
+      // Check if collection already exists for this user and TWC vendor
+      const { data: existingCollection } = await supabaseClient
+        .from('collections')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', collectionName)
+        .maybeSingle();
+      
+      if (existingCollection) {
+        collectionCache[collectionName] = existingCollection.id;
+        console.log(`Found existing collection "${collectionName}": ${existingCollection.id}`);
+        return existingCollection.id;
+      }
+      
+      // Create new collection
+      const { data: newCollection, error: collectionError } = await supabaseClient
+        .from('collections')
+        .insert({
+          user_id: user.id,
+          name: collectionName,
+          vendor_id: twcVendorId,
+          description: `TWC Collection: ${collectionName}`,
+          season: 'All Season',
+          year: new Date().getFullYear(),
+          tags: ['TWC', 'Auto-imported'],
+          active: true,
+        })
+        .select('id')
+        .single();
+      
+      if (collectionError) {
+        console.error(`Error creating collection "${collectionName}":`, collectionError);
+        return null;
+      }
+      
+      collectionCache[collectionName] = newCollection.id;
+      console.log(`Created new collection "${collectionName}": ${newCollection.id}`);
+      return newCollection.id;
+    };
+
     // ✅ FIX: Determine price_group using SIMPLE NUMERIC VALUES that match existing grids
     // Grids use: 1, 2, 3, 4, 5, 6, A, BUDGET, MIDRANGE, PREMIUM
     // DO NOT use prefixed names like ALUMINIUM_25MM, BLOCKOUT - they won't match!
@@ -432,6 +507,25 @@ const handler = async (req: Request): Promise<Response> => {
       return '1';
     };
 
+    // ✅ NEW: Pre-process collections for all products
+    console.log('📦 Extracting collections from product names...');
+    let collectionsCreated = 0;
+    const productCollectionMap: Record<string, string | null> = {}; // itemNumber -> collectionId
+    
+    for (const product of newProducts) {
+      const collectionName = extractCollectionName(product.description);
+      if (collectionName) {
+        const collectionId = await getOrCreateCollection(collectionName);
+        productCollectionMap[product.itemNumber] = collectionId;
+        if (collectionId && !collectionCache[collectionName]) {
+          collectionsCreated++;
+        }
+      } else {
+        productCollectionMap[product.itemNumber] = null;
+      }
+    }
+    console.log(`📦 Collections processed: ${Object.keys(collectionCache).length} unique, ${collectionsCreated} newly created`);
+
     // Prepare inventory items for batch insert (only new products)
     const inventoryItems = newProducts.map(product => {
       // Safe extraction of product type with multiple fallbacks
@@ -454,6 +548,9 @@ const handler = async (req: Request): Promise<Response> => {
       // ✅ NEW: Automatically determine price_group for grid matching
       const priceGroup = determinePriceGroup(productName, categoryMapping.subcategory);
       
+      // ✅ NEW: Get collection_id from pre-processed map
+      const collectionId = productCollectionMap[product.itemNumber] || null;
+      
       return {
         user_id: user.id,
         name: productName,
@@ -462,6 +559,7 @@ const handler = async (req: Request): Promise<Response> => {
         subcategory: categoryMapping.subcategory,
         supplier: 'TWC',
         vendor_id: twcVendorId, // ✅ FIX: Set vendor_id for proper grid matching
+        collection_id: collectionId, // ✅ NEW: Link to collection
         price_group: priceGroup, // ✅ NEW: Set price_group for automatic grid matching
         active: true,
         show_in_quote: true,
@@ -474,6 +572,7 @@ const handler = async (req: Request): Promise<Response> => {
           twc_product_type: productType,
           twc_questions: product.questions || [],
           twc_fabrics_and_colours: product.fabricsAndColours || [],
+          twc_collection: extractCollectionName(product.description),
           imported_at: new Date().toISOString(),
         },
         // Default pricing - user can update later
@@ -960,6 +1059,8 @@ const handler = async (req: Request): Promise<Response> => {
         success: true,
         imported: insertedItems?.length || 0,
         templates_created: insertedTemplates?.length || 0,
+        collections_created: collectionsCreated,
+        collections_total: Object.keys(collectionCache).length,
         options_created: totalOptionsCreated,
         options_reused: totalOptionsUpdated,
         materials_created: totalMaterialsCreated,
