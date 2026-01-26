@@ -1085,7 +1085,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
-                  <QuotationTab projectId={jobId} quoteId={typeof currentQuotes != 'undefined' && currentQuotes.length > 0 ? currentQuotes[0].id : '0'}/>
+                  <QuotationTab projectId={jobId} quoteId={currentQuotes && currentQuotes.length > 0 ? currentQuotes[0].id : undefined}/>
                   {/*<QuotationTab projectId={jobId} />*/}
                 </div>
               </TabsContent>
