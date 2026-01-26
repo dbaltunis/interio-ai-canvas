@@ -1,113 +1,128 @@
 
-# Enhanced Error Display for TWC Order Submission
+# Fix TWC Option Mapping & Improve Toast Readability
 
-## Root Cause Found
+## Issues Identified
 
-The TWC API returns **detailed validation errors** but they're not being shown to users:
+### Issue 1: Option Keys Not Matching (ROOT CAUSE)
+Your saved option keys have a TWC product suffix (e.g., `control_type_ce115355`), but the mapping only checks for base keys (e.g., `control_type`).
 
+**Database has:**
 ```
-TWC Response:
-{
-  "success": false,
-  "message": "Item #1 - Control Type is a required field. 
-              Item #1 - Cont Side is a required field. 
-              Item #1 - Control Length is a required field. 
-              Item #1 - Fascia is a required field. 
-              Item #1 - Fixing is a required field..."
-}
+optionKey: "control_type_ce115355"
+optionKey: "cont_side_ce115355"  
+optionKey: "fixing_ce115355"
 ```
 
-**Current code problem (line 312):**
-```typescript
-throw new Error(data?.error || 'Failed to submit order');
-// ❌ Ignores data.message which contains the actual details!
+**Mapping expects:**
 ```
+'control_type': 'Control Type'
+'cont_side': 'Cont Side'
+'fixing': 'Fixing'
+```
+
+**Result:** No match → No fields sent → TWC validation fails
+
+### Issue 2: Toast Still Hard to Read
+The error toast needs:
+- More height for longer messages (12+ errors)
+- Visual scrollbar indicator
+- Option to expand/collapse for very long errors
+
+### Issue 3: Missing/Invalid Fields
+- `Fascia` is required by TWC but not collected
+- `Remote` with value "N/A" is invalid - should be excluded
 
 ## Solution
 
-### Part 1: Fix Error Message Display in Dialog
-
+### Fix 1: Smart Option Key Matching
 **File:** `src/components/integrations/TWCSubmitDialog.tsx`
 
-Change lines 311-320 to properly extract and display the detailed message:
+Update the mapping logic to strip TWC suffixes before matching:
 
 ```typescript
-// Before:
-} else {
-  throw new Error(data?.error || 'Failed to submit order');
-}
-} catch (error: any) {
-  console.error('Error submitting to TWC:', error);
-  toast({
-    title: "Submission Failed",
-    description: error.message || "Failed to submit order to TWC. Please try again.",
-    variant: "destructive",
-  });
-}
-
-// After:
-} else {
-  // TWC returns detailed validation in 'message' field
-  const errorDetails = data?.message || data?.error || 'Failed to submit order';
-  throw new Error(errorDetails);
-}
-} catch (error: any) {
-  console.error('Error submitting to TWC:', error);
+// Line 176-197 - Update the forEach loop:
+selectedOptions.forEach((opt: any) => {
+  const optionKey = opt.optionKey || opt.key || '';
+  const optionValue = opt.value || opt.selectedValue || opt.label || '';
   
-  // Format multi-line errors for readability
-  const errorMessage = error.message || "Failed to submit order to TWC. Please try again.";
-  const formattedMessage = errorMessage.replace(/\s*\/n\s*/g, '\n'); // TWC uses "/n" as separator
+  // Skip N/A or empty values - TWC doesn't want them
+  if (!optionValue || optionValue === 'N/A' || optionValue === 'n/a') {
+    return;
+  }
   
-  toast({
-    title: "Submission Failed",
-    description: formattedMessage,
-    variant: "destructive",
-    importance: 'important',
-    duration: 20000, // 20 seconds for long error messages
-  });
-}
+  // Strip TWC item suffix (e.g., "control_type_ce115355" → "control_type")
+  const baseKey = optionKey.replace(/_[a-z]{2}\d+$/i, '');
+  
+  // Check if this option maps to a TWC field
+  const twcFieldName = OPTION_TO_TWC_MAPPING[baseKey] || 
+                       OPTION_TO_TWC_MAPPING[baseKey.toLowerCase()] ||
+                       OPTION_TO_TWC_MAPPING[optionKey] ||
+                       OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()];
+  
+  if (twcFieldName) {
+    // ... rest of existing logic
+  }
+});
 ```
 
-### Part 2: Enhance Toast for Long Error Messages
-
+### Fix 2: Improve Toast for Long Error Messages
 **File:** `src/components/ui/toast.tsx`
 
-Add support for longer descriptions with scrollable content for detailed error messages (line 84):
+Increase max height and add visual scroll indicator:
 
 ```typescript
-// Current:
-className={cn("text-sm opacity-95 font-medium", className)}
-
-// Updated - allow longer messages to scroll:
-className={cn("text-sm opacity-95 font-medium max-h-32 overflow-y-auto whitespace-pre-line", className)}
+// Line 110 - Update ToastDescription className:
+className={cn(
+  "text-sm opacity-95 font-medium max-h-48 overflow-y-auto whitespace-pre-line scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent",
+  className
+)}
 ```
 
-### Part 3: Improve Error Toast Duration
+**File:** `src/components/ui/toaster.tsx`
 
-**File:** `src/hooks/use-toast.ts`
+Add better width for error toasts:
 
-Already has 15 second duration for errors, but we'll allow custom duration override via props.
+```typescript
+// Line 17 - Update Toast className:
+<Toast key={id} {...props} className="w-auto min-w-[320px] max-w-lg mx-auto">
+```
+
+### Fix 3: Add Missing TWC Field Mappings
+**File:** `src/components/integrations/TWCSubmitDialog.tsx`
+
+Add more mappings for common TWC fields:
+
+```typescript
+const OPTION_TO_TWC_MAPPING: Record<string, string> = {
+  // ... existing mappings
+  'fascia_type': 'Fascia',
+  'woven_tape': 'Woven Tape',
+  'acorn': 'Acorn',
+  'cut_out': 'Cut Out',
+  // Remote should NOT be mapped if value is N/A
+};
+```
+
+## Technical Summary
+
+| Issue | Root Cause | Fix |
+|-------|------------|-----|
+| "Control Type is required" | Key mismatch (`control_type_ce115355` vs `control_type`) | Strip suffix before mapping |
+| "Remote is invalid" | Sending "N/A" value | Skip N/A values |
+| Toast cut off | `max-h-32` too small | Increase to `max-h-48` |
+| Missing Fascia | Not in saved options | User needs to select it in UI, or add default |
 
 ## Files to Modify
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/components/integrations/TWCSubmitDialog.tsx` | 311-320 | Extract `data.message`, format for display |
-| `src/components/ui/toast.tsx` | 84 | Add `max-h-32 overflow-y-auto whitespace-pre-line` for scrollable long messages |
+| File | Changes |
+|------|---------|
+| `src/components/integrations/TWCSubmitDialog.tsx` | Smart key matching, skip N/A values |
+| `src/components/ui/toast.tsx` | Increase max height to 48, add scroll styling |
+| `src/components/ui/toaster.tsx` | Increase max width to `max-w-lg` |
 
-## Expected Result
+## Expected Outcome
 
-Users will see detailed errors like:
-
-```
-Submission Failed
-───────────────────
-Item #1 - Control Type is a required field
-Item #1 - Cont Side is a required field  
-Item #1 - Control Length is a required field
-Item #1 - Fascia is a required field
-Item #1 - Fixing is a required field
-...
-```
-
-Instead of just "Failed to submit order" - giving them actionable information about what's missing.
+1. Options like `control_type_ce115355` will correctly map to TWC's `Control Type`
+2. Invalid "N/A" values won't be sent to TWC
+3. Toast notifications will show more content with a visible scrollbar
+4. Users get clear feedback about which specific fields need attention
