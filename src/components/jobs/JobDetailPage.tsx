@@ -53,7 +53,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 import { ContactClientDialog } from "@/components/messaging/ContactClientDialog";
 import { useIsDealer } from "@/hooks/useIsDealer";
-
+import { SupplierOrderingDropdown } from "./SupplierOrderingDropdown";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -896,6 +896,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   <span className="hidden lg:inline ml-1">Contact</span>
                 </Button>
               )}
+              
+              {/* Supplier Ordering Dropdown */}
+              <SupplierOrderingDropdown
+                projectId={project.id}
+                projectStatusId={project.status_id}
+                projectStatusName={project.status}
+                quoteId={activeQuoteId || ""}
+                quoteItems={quotationData?.items || []}
+                quoteData={quotationData}
+                supplierOrders={(quotationData as any)?.supplier_orders}
+                clientData={client}
+                projectData={project}
+                quotationData={quotationData}
+              />
               
               <JobStatusDropdown
                 currentStatusId={project.status_id}
