@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Room = Tables<"rooms">;
@@ -52,6 +53,14 @@ export const useCreateRoom = () => {
 
   return useMutation({
     mutationFn: async (room: Omit<RoomInsert, "user_id">) => {
+      // Check project status before creating
+      if (room.project_id) {
+        const status = await checkProjectStatusAsync(room.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot add room: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
@@ -107,6 +116,20 @@ export const useUpdateRoom = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Room> & { id: string }) => {
+      // Get the room to check project status
+      const { data: room } = await supabase
+        .from("rooms")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+
+      if (room?.project_id) {
+        const status = await checkProjectStatusAsync(room.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot update room: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { data, error } = await supabase
         .from("rooms")
         .update(updates)
@@ -137,6 +160,20 @@ export const useDeleteRoom = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Get the room to check project status
+      const { data: room } = await supabase
+        .from("rooms")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+
+      if (room?.project_id) {
+        const status = await checkProjectStatusAsync(room.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot delete room: Project is in "${status.statusName}" status`);
+        }
+      }
+
       // CASCADE DELETE: Delete child records first
       
       // Step 1: Delete treatments for this room

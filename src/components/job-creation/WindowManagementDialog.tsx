@@ -725,7 +725,7 @@ export const WindowManagementDialog = ({
               onSave={handleSaveData}
               onSaveTreatment={handleTreatmentSave}
               onClose={() => handleDialogClose(false)}
-              readOnly={false}
+              readOnly={false} // Note: Status locking is now enforced at the mutation level
             />
           </div>
         </DialogContent>
