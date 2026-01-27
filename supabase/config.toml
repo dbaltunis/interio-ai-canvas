@@ -168,3 +168,15 @@ verify_jwt = true
 
 [functions.saas-consistency-audit]
 verify_jwt = false
+
+[functions.storefront-catalog]
+verify_jwt = false
+
+[functions.storefront-lead]
+verify_jwt = false
+
+[functions.storefront-options]
+verify_jwt = false
+
+[functions.storefront-estimate]
+verify_jwt = false
