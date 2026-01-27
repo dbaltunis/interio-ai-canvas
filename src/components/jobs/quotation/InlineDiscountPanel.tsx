@@ -20,6 +20,7 @@ interface InlineDiscountPanelProps {
   subtotal: number;
   taxRate: number;
   currency?: string;
+  taxInclusive?: boolean; // Whether prices include tax
   currentDiscount?: {
     type: 'percentage' | 'fixed';
     value: number;
@@ -38,6 +39,7 @@ export const InlineDiscountPanel = ({
   subtotal,
   taxRate,
   currency = 'USD',
+  taxInclusive = false,
   currentDiscount,
 }: InlineDiscountPanelProps) => {
   
@@ -91,10 +93,32 @@ export const InlineDiscountPanel = ({
   };
 
 
-  const discountAmount = calculateDiscountAmount(items, config, subtotal);
-  const subtotalAfterDiscount = subtotal - discountAmount;
-  const taxAmount = subtotalAfterDiscount * (taxRate / 100);
-  const total = subtotalAfterDiscount + taxAmount;
+  // Calculate discount - always on pre-tax amount for accounting consistency
+  const preDiscountNetSubtotal = taxInclusive ? subtotal / (1 + taxRate / 100) : subtotal;
+  const discountAmount = calculateDiscountAmount(items, config, preDiscountNetSubtotal);
+  
+  // Calculate after-discount values respecting tax mode
+  let subtotalAfterDiscount: number;
+  let taxAmount: number;
+  let total: number;
+  
+  if (taxInclusive) {
+    // Tax-inclusive: show GST-inclusive figures
+    const discountedNet = preDiscountNetSubtotal - discountAmount;
+    subtotalAfterDiscount = discountedNet;
+    total = discountedNet * (1 + taxRate / 100);
+    taxAmount = total - discountedNet;
+  } else {
+    // Tax-exclusive: standard calculation
+    subtotalAfterDiscount = subtotal - discountAmount;
+    taxAmount = subtotalAfterDiscount * (taxRate / 100);
+    total = subtotalAfterDiscount + taxAmount;
+  }
+  
+  // For display: show GST-inclusive discount amount when in tax-inclusive mode
+  const displayDiscountAmount = taxInclusive 
+    ? discountAmount * (1 + taxRate / 100) 
+    : discountAmount;
 
   const handleApply = async () => {
       try {
@@ -290,25 +314,34 @@ export const InlineDiscountPanel = ({
                 <h4 className="font-semibold text-sm mb-4 text-primary">Live Preview</h4>
                 <div className="space-y-3 text-sm bg-background rounded-lg p-4 border">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Retail Subtotal:</span>
+                    <span className="text-muted-foreground">Retail Subtotal{taxInclusive ? ' (inc. tax)' : ''}:</span>
                     <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-destructive">
-                    <span>Discount:</span>
-                    <span className="font-medium">-{formatCurrency(discountAmount, currency)}</span>
+                    <span>Discount{taxInclusive ? ' (inc. tax)' : ''}:</span>
+                    <span className="font-medium">-{formatCurrency(displayDiscountAmount, currency)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span className="font-medium">After Discount:</span>
-                    <span className="font-semibold">{formatCurrency(subtotalAfterDiscount, currency)}</span>
+                    <span className="font-semibold">{formatCurrency(taxInclusive ? total : subtotalAfterDiscount, currency)}</span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Tax ({taxRate}%):</span>
-                    <span>+{formatCurrency(taxAmount, currency)}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2 text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-primary">{formatCurrency(total, currency)}</span>
-                  </div>
+                  {!taxInclusive && (
+                    <>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Tax ({taxRate}%):</span>
+                        <span>+{formatCurrency(taxAmount, currency)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                        <span>Total:</span>
+                        <span className="text-primary">{formatCurrency(total, currency)}</span>
+                      </div>
+                    </>
+                  )}
+                  {taxInclusive && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      Tax included: {formatCurrency(taxAmount, currency)}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-4 p-3 bg-muted/50 rounded-md border">
