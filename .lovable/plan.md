@@ -1,79 +1,105 @@
 
+# Fix Wrong Login URL in Invitation Emails
 
-# Fix Empty TWC Options in Settings
+## Problem Summary
 
-## Problem Identified
+When new accounts are created or invitations are resent, the "Login Now" button in emails points to the wrong URL (`ldgrcodffsalkevafbkb.supabase.co` or a SendGrid tracking URL) instead of `https://appinterio.app/auth`.
 
-After the previous fix made TWC options visible, approximately **80 out of 210 categories appear empty** in the Options Manager.
+## Root Cause
 
-### Root Cause Analysis
+Two edge functions have incorrect fallback URLs and are missing the `/auth` path:
 
-Database investigation revealed **two distinct issues**:
+| Function | Current Fallback | Should Be |
+|----------|------------------|-----------|
+| `create-admin-account` | `https://ldgrcodffsalkevafbkb.supabase.co` | `https://appinterio.app` |
+| `resend-account-invitation` | `https://ldgrcodffsalkevafbkb.supabase.co` | `https://appinterio.app` |
 
-| Issue | Count | Cause |
-|-------|-------|-------|
-| **Orphaned Categories** | 78 | Old December 2025 migration created categories with generic keys (`motor`, `charger`, `control_type`) but no matching `treatment_options` exist |
-| **Empty TWC Options** | 2 | Legitimate TWC options (`Cutout`, `Fascia` for venetian blinds) that have 0 dropdown values |
-
-The 78 orphaned categories were created on `2025-12-16 08:39:11` by an old migration that inserted placeholder categories for common option types like `motor`, `control_type`, `charger`, etc. However:
-- These categories have keys like `motor` (no suffix)
-- TWC options have keys like `motor_1709c0bc` (with UUID suffix)
-- The UI matches by exact key, so these old categories show as empty
+Additionally, when SendGrid is used, click tracking rewrites URLs to go through tracking domains (like `url3728.interioapp.com`), which can cause 404s if DNS/redirects are misconfigured.
 
 ## Solution
 
-### Part 1: Database Cleanup Migration
+### Fix 1: Update `create-admin-account/index.ts`
 
-Delete the 78 orphaned `option_type_categories` that have no matching `treatment_options`:
+**Line 420:** Change fallback URL and add `/auth` path to the login button
 
-```sql
--- Delete orphaned option_type_categories that have no matching treatment_options
--- These show as empty tabs in the Options Manager
-DELETE FROM option_type_categories
-WHERE id IN (
-  SELECT otc.id
-  FROM option_type_categories otc
-  WHERE NOT EXISTS (
-    SELECT 1 FROM treatment_options to2 
-    WHERE to2.account_id = otc.account_id 
-    AND to2.key = otc.type_key 
-    AND to2.treatment_category = otc.treatment_category
-  )
-);
+```typescript
+// BEFORE (line 420)
+const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+
+// AFTER
+const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app';
 ```
 
-This safely removes categories that:
-- Have no matching `treatment_options` (so they can never show data)
-- Were created by old migrations before the UUID suffix pattern was adopted
+**Line 467:** Add `/auth` to the login link
 
-### Part 2: No Code Changes Required
+```typescript
+// BEFORE (line 467)
+<a href="${siteUrl}" style="...">Login Now</a>
 
-The recent fix in `TemplateOptionsManager.tsx` already creates categories with the correct suffixed keys during TWC sync. No additional code changes are needed.
+// AFTER
+<a href="${siteUrl}/auth" style="...">Login Now</a>
+```
+
+**Line 498-517:** Add SendGrid click tracking disable (like `send-invitation` does)
+
+```typescript
+// Add to SendGrid payload (after line 516):
+tracking_settings: {
+  click_tracking: {
+    enable: false,
+    enable_text: false
+  }
+}
+```
+
+### Fix 2: Update `resend-account-invitation/index.ts`
+
+**Line 111:** Change fallback URL
+
+```typescript
+// BEFORE (line 111)
+const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+
+// AFTER
+const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app';
+```
+
+**Line 140:** Add `/auth` to the login link
+
+```typescript
+// BEFORE (line 140)
+<a href="${siteUrl}" style="...">Login Now</a>
+
+// AFTER
+<a href="${siteUrl}/auth" style="...">Login Now</a>
+```
+
+### Fix 3: Verify SITE_URL Secret
+
+Ensure the `SITE_URL` secret in Supabase is set to: `https://appinterio.app`
+
+(Currently there IS a `SITE_URL` secret configured, but it may have the wrong value)
+
+---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| New SQL Migration | Delete orphaned option_type_categories |
+| File | Changes |
+|------|---------|
+| `supabase/functions/create-admin-account/index.ts` | Update fallback URL, add `/auth` to button link, add SendGrid click tracking disable |
+| `supabase/functions/resend-account-invitation/index.ts` | Update fallback URL, add `/auth` to button link |
 
 ## Impact
 
 After this fix:
-- **78 empty tabs will disappear** from the Options Manager
-- **130 populated option tabs** will remain (these work correctly)
-- **2 legitimately empty options** (Cutout, Fascia) will remain but this is correct - they truly have no values from TWC
+- New admin-created accounts will receive emails with correct login links
+- Resent invitations will have correct login links
+- SendGrid click tracking won't rewrite URLs (preventing 404s)
+- Links will go directly to `/auth` page where users can log in
 
-## What About the 2 Legitimately Empty Options?
+## Verification After Fix
 
-The `Cutout` and `Fascia` options for venetian blinds have matching `treatment_options` but 0 `option_values`. This is **not a bug** - TWC may not provide dropdown values for these fields (they might be free-text or handled differently). These should remain visible so users can:
-- Add their own custom values if needed
-- Know the option exists even if empty
-
-## Safety Checks
-
-The cleanup migration is safe because:
-- Only deletes categories with **zero** matching treatment_options
-- Uses a subquery with `NOT EXISTS` to verify no data would be lost
-- Works for ALL accounts (universal SaaS fix)
-- Categories can be recreated by re-syncing TWC if ever needed
-
+1. Create a new test account via Admin panel
+2. Check the welcome email - "Login Now" should link to `https://appinterio.app/auth`
+3. Click the link - should land on login page (not 404)
+4. Resend an invitation - should also have correct link
