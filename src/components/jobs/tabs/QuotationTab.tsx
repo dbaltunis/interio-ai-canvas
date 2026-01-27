@@ -426,13 +426,9 @@ export const QuotationTab = ({
 
     if (hasDiscount && discountAmount > 0) {
       if (taxInclusive) {
-        // Tax-inclusive mode: subtotal already includes tax
-        // Discount was calculated on pre-tax amount, so we need to:
-        // 1. Extract pre-tax subtotal from gross
-        // 2. Apply discount
-        // 3. Recalculate gross total
-        const preDiscountNetSubtotal = subtotal / (1 + taxRate);
-        const discountedNetSubtotal = preDiscountNetSubtotal - discountAmount;
+        // Tax-inclusive mode: quotationData.subtotal is ALREADY NET (extracted in useQuotationSync)
+        // discountAmount was also calculated on NET, so apply directly without double-extraction
+        const discountedNetSubtotal = subtotal - discountAmount;
         subtotalAfterDiscount = discountedNetSubtotal;
         totalAfterDiscount = discountedNetSubtotal * (1 + taxRate);
         taxAmountAfterDiscount = totalAfterDiscount - discountedNetSubtotal;

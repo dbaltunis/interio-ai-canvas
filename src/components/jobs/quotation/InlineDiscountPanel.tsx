@@ -122,11 +122,13 @@ export const InlineDiscountPanel = ({
 
   const handleApply = async () => {
       try {
+        // Always pass NET subtotal for consistent discount calculation
+        // This ensures tax-inclusive mode uses the correct base
         const result = await applyDiscount.mutateAsync({
           quoteId,
           config,
           items,
-          subtotal,
+          subtotal: preDiscountNetSubtotal,
         });
         
         console.log('✅ Discount saved to database:', result);
