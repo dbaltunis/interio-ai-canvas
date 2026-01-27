@@ -34,7 +34,7 @@ import { useCollectionsWithCounts } from "@/hooks/useCollections";
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [activeTab, setActiveTab] = useState("fabrics");
+  const [activeTab, setActiveTab] = useState("collections");
   const [showSearch, setShowSearch] = useState(false);
   
   const [showScanner, setShowScanner] = useState(false);
@@ -317,6 +317,16 @@ export const ModernInventoryDashboard = () => {
       {/* Main Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
+              {/* Collections Tab - Primary entry point for browsing by brand */}
+              <TabsTrigger value="collections" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Collections
+                {collections.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs h-5 px-1.5">
+                    {collections.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="fabrics" className="flex items-center gap-2">
                 <PixelFabricIcon size={18} />
                 Fabrics
@@ -332,16 +342,6 @@ export const ModernInventoryDashboard = () => {
               <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
                 <PixelWallpaperIcon size={18} />
                 Wallcoverings
-              </TabsTrigger>
-              {/* Collections Tab - Browse by vendor ranges */}
-              <TabsTrigger value="collections" className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4" />
-                Collections
-                {collections.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs h-5 px-1.5">
-                    {collections.length}
-                  </Badge>
-                )}
               </TabsTrigger>
               {/* Hide Vendors and Admin tabs for dealers */}
               {!isDealer && (
@@ -407,8 +407,8 @@ export const ModernInventoryDashboard = () => {
           />
         </TabsContent>
 
-        {/* Collections Tab - Browse by vendor ranges like Shopify */}
-        <TabsContent value="collections" className="space-y-6">
+        {/* Collections Tab - Primary view with brand sidebar */}
+        <TabsContent value="collections" className="space-y-0 -mt-2">
           <CollectionsView 
             onSelectCollection={(collectionId) => {
               setSelectedCollection(collectionId);
