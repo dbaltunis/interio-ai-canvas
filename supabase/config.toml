@@ -162,3 +162,9 @@ verify_jwt = false
 
 [functions.send-test-whatsapp]
 verify_jwt = true
+
+[functions.repair-permissions]
+verify_jwt = true
+
+[functions.saas-consistency-audit]
+verify_jwt = false
