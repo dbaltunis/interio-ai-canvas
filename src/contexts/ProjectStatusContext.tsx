@@ -104,7 +104,8 @@ export const ProjectStatusProvider: React.FC<ProjectStatusProviderProps> = ({
     const action = statusInfo?.action || "editable";
     
     // Determine permissions based on status action
-    const canEdit = action === "editable" || action === "progress_only";
+    // Only 'editable' allows full editing - all other states restrict modifications
+    const canEdit = action === "editable";
     const isLocked = action === "locked" || action === "completed";
     const isViewOnly = action === "view_only";
     const isCompleted = action === "completed";
@@ -201,7 +202,7 @@ export const checkProjectStatusAsync = async (projectId: string): Promise<{
   const action = status.action || "editable";
   
   return {
-    canEdit: action === "editable" || action === "progress_only",
+    canEdit: action === "editable",
     isLocked: action === "locked" || action === "completed",
     isViewOnly: action === "view_only",
     statusAction: action,

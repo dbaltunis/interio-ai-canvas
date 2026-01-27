@@ -11,33 +11,27 @@
  *    - Full edit access to the job/project
  *    - Status can be changed freely
  *    - All fields can be modified
- *    - Example: "Draft", "Planning"
+ *    - Example: "Draft", "Planning", "In Progress"
  * 
- * 2. progress_only
- *    - Status can be changed
- *    - Job/Project can be updated (e.g., adding progress notes, updating timeline)
- *    - Cannot be reverted back to earlier stages easily
- *    - Example: "In Progress", "Manufacturing"
- * 
- * 3. view_only
+ * 2. view_only
  *    - Status cannot be changed
- *    - Job/Project details can still be viewed
+ *    - Job/Project details can still be viewed but not edited
  *    - Usually represents a pending approval or external action state
  *    - Example: "Sent" (waiting for client response), "Under Review"
  * 
- * 4. locked
+ * 3. locked
  *    - Status cannot be changed
  *    - Job/Project is in a final state that shouldn't be modified
  *    - Typically requires admin override to unlock
- *    - Example: "Rejected", "Cancelled"
+ *    - Example: "Rejected", "Cancelled", "Approved"
  * 
- * 5. completed
+ * 4. completed
  *    - Status represents final completion
  *    - Cannot be changed (locked)
  *    - Auto-sets completion date if not already set
  *    - Example: "Completed", "Installed", "Delivered"
  * 
- * 6. requires_reason
+ * 5. requires_reason
  *    - Status can be set but requires a reason/note
  *    - Forces user to document why the status is being set
  *    - Example: "On Hold", "Delayed"
@@ -62,12 +56,13 @@
  * - ProjectStatusManager: Disables status changes for locked/view_only statuses
  * - StatusOverviewWidget: Filters to show only Project category statuses
  * - Dashboard: Uses category filtering to separate Quote vs Project statuses
+ * - Mutations: All room/surface/treatment mutations check status before executing
+ * - UI Components: Buttons are disabled and show lock icon when project is locked
  * 
  */
 
 export const STATUS_ACTIONS = {
   EDITABLE: 'editable',
-  PROGRESS_ONLY: 'progress_only',
   VIEW_ONLY: 'view_only',
   LOCKED: 'locked',
   COMPLETED: 'completed',

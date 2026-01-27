@@ -13,9 +13,9 @@ const DEFAULT_STATUSES = [
   { name: "Quote Sent", color: "blue", category: "Project", action: "view_only", description: "Quote sent to client", sort_order: 3, slot_number: 3 },
   { name: "Approved", color: "green", category: "Project", action: "locked", description: "Quote approved, ready to start", sort_order: 4, slot_number: 4 },
   { name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project planning phase", sort_order: 5, slot_number: 5 },
-  { name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Active work", sort_order: 6, slot_number: 6 },
-  { name: "Materials Ordered", color: "orange", category: "Project", action: "progress_only", description: "Materials ordered", sort_order: 7, slot_number: 7 },
-  { name: "Manufacturing", color: "yellow", category: "Project", action: "progress_only", description: "In manufacturing", sort_order: 8, slot_number: 8 },
+  { name: "In Progress", color: "blue", category: "Project", action: "editable", description: "Active work", sort_order: 6, slot_number: 6 },
+  { name: "Materials Ordered", color: "orange", category: "Project", action: "view_only", description: "Materials ordered", sort_order: 7, slot_number: 7 },
+  { name: "Manufacturing", color: "yellow", category: "Project", action: "view_only", description: "In manufacturing", sort_order: 8, slot_number: 8 },
   { name: "Quality Check", color: "primary", category: "Project", action: "view_only", description: "Quality inspection", sort_order: 9, slot_number: 9 },
   { name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed", sort_order: 10, slot_number: 10 },
 ];

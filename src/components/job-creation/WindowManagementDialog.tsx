@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ruler, Save, Pencil, Check, X } from "lucide-react";
+import { Ruler, Save, Pencil, Check, X, Lock } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge, MeasurementBridgeRef } from "../measurements/MeasurementBridge";
@@ -16,6 +16,8 @@ import { WindowRenameButton } from "./WindowRenameButton";
 import { useToast } from "@/hooks/use-toast";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 import { useDeleteSurface } from "@/hooks/useSurfaces";
+import { useStatusPermissions } from "@/hooks/useStatusPermissions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 interface WindowManagementDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -96,6 +98,26 @@ export const WindowManagementDialog = ({
   const {
     units
   } = useMeasurementUnits();
+
+  // Fetch project to get status_id for locking
+  const { data: projectData } = useQuery({
+    queryKey: ['project-status', projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const { data } = await supabase
+        .from('projects')
+        .select('status_id')
+        .eq('id', projectId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!projectId,
+    staleTime: 30 * 1000,
+  });
+
+  // Check status permissions for read-only mode
+  const { data: statusPermissions } = useStatusPermissions(projectData?.status_id);
+  const isStatusLocked = statusPermissions?.isLocked || statusPermissions?.isViewOnly || false;
 
   // Fetch window type to get visual_key for dynamic display
   const {
@@ -709,6 +731,17 @@ export const WindowManagementDialog = ({
             </div>
           </DialogHeader>
 
+          {/* Status Lock Banner */}
+          {isStatusLocked && (
+            <Alert className="mx-4 mt-2 bg-destructive/10 border-destructive/30">
+              <Lock className="h-4 w-4" />
+              <AlertTitle>Project Locked</AlertTitle>
+              <AlertDescription>
+                This project's status prevents editing. You can view but not modify measurements.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2 pointer-events-auto">
             <MeasurementBridge
               key={surface?.id}
@@ -725,7 +758,7 @@ export const WindowManagementDialog = ({
               onSave={handleSaveData}
               onSaveTreatment={handleTreatmentSave}
               onClose={() => handleDialogClose(false)}
-              readOnly={false} // Note: Status locking is now enforced at the mutation level
+              readOnly={isStatusLocked}
             />
           </div>
         </DialogContent>
