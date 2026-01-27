@@ -101,6 +101,10 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
       console.log(`🔒 Default HIDING option controlled by show rule: ${optionKey}`);
     });
 
+    // ✅ CRITICAL FIX: Collect ALL filter_values rules first, then combine their allowed values
+    // This prevents later rules from overwriting earlier ones
+    const allFilterValuesByOption: Record<string, Set<string>> = {};
+
     // Cascading evaluation: Keep evaluating until no changes occur
     // This handles nested conditions (e.g., headrail -> lift_system -> chain_side)
     let hasChanges = true;
@@ -120,6 +124,7 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
           conditionMet,
           action: rule.effect.action,
           target: rule.effect.target_option_key,
+          targetValues: rule.effect.target_value,
           iteration: iterations
         });
         
@@ -169,15 +174,28 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
 
             case 'filter_values':
               // Filter values within a dropdown - only show specific value IDs
+              // ✅ CRITICAL FIX: Accumulate allowed values across all matching rules
               if (target_value) {
                 const values = Array.isArray(target_value) ? target_value : [target_value];
+                
+                // Use the accumulator for filter_values
+                if (!allFilterValuesByOption[target_option_key]) {
+                  allFilterValuesByOption[target_option_key] = new Set();
+                }
+                
+                values.forEach(v => {
+                  allFilterValuesByOption[target_option_key].add(v);
+                  console.log(`🔍 ACCUMULATING filter value for ${target_option_key}: ${v}`);
+                });
+                
+                // Also update the main allowedValues for this iteration
                 if (!allowedValues[target_option_key]) {
                   allowedValues[target_option_key] = new Set();
                 }
                 values.forEach(v => {
                   allowedValues[target_option_key].add(v);
-                  console.log(`🔍 FILTERING values for ${target_option_key}: allowing ${v}`);
                 });
+                
                 hasChanges = true;
               }
               break;
@@ -185,6 +203,12 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
         }
       });
     }
+    
+    // ✅ After all iterations, merge accumulated filter values
+    Object.entries(allFilterValuesByOption).forEach(([optionKey, valueSet]) => {
+      allowedValues[optionKey] = valueSet;
+      console.log(`📋 Final filter_values for ${optionKey}:`, Array.from(valueSet));
+    });
 
     console.log('📦 Final conditional state after', iterations, 'iterations:', {
       hidden: Array.from(hiddenOptions),

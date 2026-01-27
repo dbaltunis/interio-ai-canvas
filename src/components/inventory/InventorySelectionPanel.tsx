@@ -89,6 +89,14 @@ export const InventorySelectionPanel = ({
     pattern_repeat_vertical: ""
   });
   const selectedCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  
+  // ✅ CRITICAL FIX: Reset price group filter when treatment category changes
+  useEffect(() => {
+    console.log('🔄 Treatment changed, resetting price group filter:', treatmentCategory);
+    setSelectedPriceGroup(null);
+    setSelectedQuickTypes([]);
+    setSearchTerm("");
+  }, [treatmentCategory]);
   const {
     data: inventory = []
   } = useEnhancedInventory();
