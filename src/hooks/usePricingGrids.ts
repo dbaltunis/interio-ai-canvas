@@ -116,6 +116,43 @@ export const getPriceFromGrid = (gridData: any, widthCm: number, dropCm: number)
     console.log("📊 Converted for lookup:", { width: width + gridUnit, drop: drop + gridUnit });
     console.log("📁 Grid data structure:", gridData);
     
+    // Handle widths/heights/prices format (from Gustin Decor grid imports)
+    if (gridData.widths && gridData.heights && gridData.prices) {
+      const widths = gridData.widths as number[];
+      const heights = gridData.heights as number[];
+      const prices = gridData.prices as number[][];
+      
+      console.log("📋 Grid format: widths/heights/prices (numeric arrays)");
+      console.log("📋 Available widths:", widths.map(w => w + gridUnit));
+      console.log("📋 Available heights:", heights.map(h => h + gridUnit));
+      
+      // Find the closest width index (rounds to nearest grid value)
+      const closestWidth = widths.reduce((prev: number, curr: number) => 
+        Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev
+      );
+      const widthIndex = widths.indexOf(closestWidth);
+      
+      // Find the closest height index (rounds to nearest grid value)
+      const closestHeight = heights.reduce((prev: number, curr: number) => 
+        Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev
+      );
+      const heightIndex = heights.indexOf(closestHeight);
+      
+      console.log("✅ Found closest width:", closestWidth + gridUnit, "at index", widthIndex);
+      console.log("✅ Found closest height:", closestHeight + gridUnit, "at index", heightIndex);
+      
+      // Get the price from the 2D array [height][width]
+      const price = parseFloat(prices[heightIndex]?.[widthIndex]?.toString() || "0");
+      
+      console.log("✅ GRID MATCH FOUND (widths/heights format):");
+      console.log("  📏 Width:", widthCm + "cm →", width + gridUnit, "→ Using:", closestWidth + gridUnit);
+      console.log("  📏 Height:", dropCm + "cm →", drop + gridUnit, "→ Using:", closestHeight + gridUnit);
+      console.log("  💰 Manufacturing Price:", price);
+      console.log("🔍 === END PRICING GRID LOOKUP ===");
+      
+      return price;
+    }
+    
     // Handle the data structure with dropRanges and widthRanges (from pricing grid)
     if (gridData.dropRanges && gridData.widthRanges && gridData.prices) {
       const dropRanges = gridData.dropRanges;

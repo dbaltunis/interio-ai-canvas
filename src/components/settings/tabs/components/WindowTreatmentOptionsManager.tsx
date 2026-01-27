@@ -148,12 +148,15 @@ export const WindowTreatmentOptionsManager = () => {
     cost_price: 0,
   });
 
-  // Set first option type when categories load
+  // Reset and set first option type when treatment or categories change
   useEffect(() => {
-    if (optionTypeCategories.length > 0 && !activeOptionType) {
+    if (optionTypeCategories.length > 0) {
+      // Always set to first available option type when treatment changes
       setActiveOptionType(optionTypeCategories[0].type_key);
+    } else {
+      setActiveOptionType('');
     }
-  }, [optionTypeCategories, activeOptionType]);
+  }, [activeTreatment, optionTypeCategories]);
 
   const resetForm = () => {
     setFormData({
