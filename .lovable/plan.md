@@ -1,154 +1,181 @@
 
-# Two-Level Brand/Collection Sidebar for Library
+# Improve Library Selection Step in Worksheet
 
-## Overview
+## Current State Analysis
 
-Transform the Library's Collections view into a **two-level sidebar navigation** where:
-- **Left sidebar**: Shows Brands (vendors) as expandable folders
-- **Right panel**: Shows Collections grid when a brand is selected
-- **Auto-linking**: Migrate orphan collections to auto-created vendors based on supplier names
+The Library step in the worksheet (Select Type → Treatment → **Library** → Measurements) currently has:
 
-This mirrors how professional interior design libraries work (e.g., Romo Group → Kirkby Design, Black Edition, Romo, etc.).
+| Feature | Current Implementation |
+|---------|----------------------|
+| Search | Full-text search with debouncing |
+| Price Group Filter | Horizontal scrolling buttons (1, 2, 3, Budget, etc.) |
+| Quick Type Filter | Tags like Wide (300cm+), Blockout, Sheer |
+| Filters Dropdown | Supplier, Collection, Tags (via popover) |
+| QR Scanner | Opens dialog for barcode scanning |
+| Manual Entry | Dialog to add custom item on-the-fly |
+| Grid Display | 2-4 columns depending on screen size |
+| Pagination | "Load More" button for infinite scroll |
+
+### Pain Points Identified
+
+1. **No Brand/Collection sidebar** - Users must use the Filter dropdown to navigate by supplier, losing context
+2. **Recently used fabrics not visible** - Common selections require searching each time
+3. **No favorites/pinned items** - High-usage materials aren't prioritized
+4. **Flat grid is overwhelming** - 59+ items with no visual hierarchy
+5. **Price groups take up space** - Horizontal filter bar consumes vertical space
+6. **Mobile experience is cramped** - Limited space for effective browsing
 
 ---
 
-## Visual Layout
+## Proposed Improvements
+
+### 1. Mini Brand Sidebar (Collapsible)
+
+Add a compact brand navigation sidebar (similar to Library Collections but optimized for the worksheet context):
 
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  Library                                                  [Search]  │
-├──────────────┬──────────────────────────────────────────────────────┤
-│ BRANDS       │  MASLINA Collections (90)                           │
-│              │  ┌─────────────────┐ ┌─────────────────┐             │
-│ ▼ MASLINA(90)│  │ LUX SATEN      │ │ PRAIA           │             │
-│   ▼ KEEP (64)│  │ 45 items       │ │ 32 items        │             │
-│   ▼ PIRLANTO │  │ [Edit] [View]  │ │ [Edit] [View]   │             │
-│   ▼ AVSIN    │  └─────────────────┘ └─────────────────┘             │
-│   ▼ BRODE    │  ┌─────────────────┐ ┌─────────────────┐             │
-│   ▼ MIR      │  │ SUETAS         │ │ TT4F045VELOUR   │             │
-│   ▼ NEUTEX   │  │ 28 items       │ │ 15 items        │             │
-│   ...        │  └─────────────────┘ └─────────────────┘             │
-│              │                                                      │
-│ + Add Brand  │  [Load More Collections...]                         │
-└──────────────┴──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ [Search...]                              [Filters ▼]     │
+├─────────────┬────────────────────────────────────────────┤
+│ BRANDS      │  ┌─────────┐ ┌─────────┐ ┌─────────┐       │
+│ ▸ All (59)  │  │ ADARA   │ │ PRAIA   │ │ SUETAS  │       │
+│ ▸ MASLINA   │  │ £26.50/m│ │ £34.00/m│ │ Grid    │       │
+│ ▸ KEEP      │  └─────────┘ └─────────┘ └─────────┘       │
+│ ▸ PIRLANTO  │                                            │
+│ ★ Recent    │                                            │
+│ ★ Favorites │                                            │
+└─────────────┴────────────────────────────────────────────┘
 ```
 
----
+**Features:**
+- Collapsible on mobile (sheet/drawer)
+- Click brand to filter grid instantly
+- Special "Recent" section showing last 5 selected items
+- "Favorites" section for pinned materials
 
-## Implementation Steps
+### 2. Recently Used Materials Section
 
-### Step 1: Database Migration - Auto-Link Orphan Collections
+Add a "Recent Selections" row at the top of the grid:
 
-Create vendors from orphan supplier names and link collections to them:
-
-**SQL Migration:**
-```sql
--- 1. Create vendors for each unique orphan supplier (about 25 new vendors)
-INSERT INTO vendors (user_id, name, active, company_type)
-SELECT DISTINCT 
-  c.user_id,
-  INITCAP(orphan_supplier.supplier) as name,
-  true,
-  'supplier'
-FROM collections c
-CROSS JOIN LATERAL (
-  SELECT DISTINCT supplier 
-  FROM enhanced_inventory_items 
-  WHERE collection_id = c.id 
-  AND supplier IS NOT NULL
-  LIMIT 1
-) orphan_supplier
-WHERE c.vendor_id IS NULL
-  AND orphan_supplier.supplier IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM vendors v 
-    WHERE LOWER(v.name) = LOWER(orphan_supplier.supplier)
-    AND v.user_id = c.user_id
-  )
-ON CONFLICT DO NOTHING;
-
--- 2. Link orphan collections to their newly created vendors
-UPDATE collections c
-SET vendor_id = v.id
-FROM vendors v
-WHERE c.vendor_id IS NULL
-  AND c.user_id = v.user_id
-  AND LOWER(v.name) = LOWER(
-    (SELECT DISTINCT supplier 
-     FROM enhanced_inventory_items 
-     WHERE collection_id = c.id 
-     AND supplier IS NOT NULL 
-     LIMIT 1)
-  );
+```text
+Recently Used (click to select)
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│ ADARA   │ │ PRAIA   │ │ 1234rt  │ │ FLORA   │
+│ Used 3h │ │ Used 1d │ │ Used 2d │ │ Used 5d │
+└─────────┘ └─────────┘ └─────────┘ └─────────┘
 ```
 
-**Impact**: ~433 orphan collections will be linked to ~25 new vendors (MASLINA, KEEP, PIRLANTO, etc.)
+**Implementation:**
+- Store selection history in localStorage keyed by user/project
+- Show max 4-6 items horizontally with timestamp
+- One-click to instantly select and proceed
+
+### 3. Favorites/Pinned Items
+
+Allow users to star materials that appear in a dedicated section:
+
+```text
+★ Favorites
+┌─────────┐ ┌─────────┐
+│ ADARA   │ │ PRAIA   │
+│ [★]     │ │ [★]     │
+└─────────┘ └─────────┘
+```
+
+**Implementation:**
+- Store in localStorage or database (`user_preferences.favorite_materials`)
+- Small star button on each card to toggle
+- Favorites appear at top of grid or in sidebar
+
+### 4. Compact Filter Bar
+
+Consolidate filters into a cleaner layout:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ [🔍 Search...]   Brand:[All ▼]   Price:[All ▼]   [Filters]  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Changes:**
+- Move Price Group from button row to dropdown
+- Remove "Scan QR" and "Manual Entry" to a "+" menu
+- Inline brand selector (if no sidebar)
+
+### 5. Smart Defaults Based on Treatment
+
+Automatically pre-filter based on selected treatment:
+
+| Treatment | Auto-Filter |
+|-----------|-------------|
+| Curtains | Wide fabrics (≥250cm) first, show narrow as secondary |
+| Roller Blinds | Sunscreen/Blockout tags prioritized |
+| Roman Blinds | Patterned fabrics featured |
+| Venetian | Material subcategory only |
 
 ---
 
-### Step 2: Create BrandCollectionsSidebar Component
+## Implementation Plan
 
-**New file:** `src/components/library/BrandCollectionsSidebar.tsx`
+### Step 1: Create WorksheetBrandSidebar Component
 
-Features:
-- Collapsible sidebar showing all brands (vendors with collections)
-- Search filter for brands
-- Badge showing collection count per brand
-- Click to select brand and show its collections
-- "Unassigned" folder for any remaining orphans
-- Add Brand button to create new vendors
+**New file:** `src/components/inventory/WorksheetBrandSidebar.tsx`
 
----
+A compact, worksheet-optimized version of `BrandCollectionsSidebar`:
+- Narrower width (200px vs 280px)
+- Includes "Recent" and "Favorites" special sections
+- Collapsible to icon-only mode
 
-### Step 3: Update CollectionsView with Split Layout
+### Step 2: Add Recent Selections Hook
 
-**Modified file:** `src/components/library/CollectionsView.tsx`
-
-Transform from a flat grid to a split-pane layout:
-- Left: BrandCollectionsSidebar (280px width, collapsible)
-- Right: Collections grid (existing card layout, filtered by selected brand)
+**New file:** `src/hooks/useRecentMaterialSelections.ts`
 
 ```typescript
-<div className="flex h-full">
-  <BrandCollectionsSidebar 
-    selectedBrand={selectedBrand}
-    onSelectBrand={setSelectedBrand}
-    className="w-72 border-r shrink-0"
-  />
-  <div className="flex-1 p-4">
-    {/* Existing collections grid, filtered by selectedBrand */}
-  </div>
-</div>
-```
-
----
-
-### Step 4: Add Hooks for Brand-Grouped Collections
-
-**New hook:** `useCollectionsByBrand()` in `src/hooks/useCollections.ts`
-
-Returns collections grouped by vendor with counts:
-```typescript
-interface BrandWithCollections {
-  vendor: Vendor | null; // null = Unassigned
-  collections: Collection[];
-  totalItems: number;
+interface RecentSelection {
+  itemId: string;
+  name: string;
+  imageUrl?: string;
+  selectedAt: number;
+  projectId?: string;
 }
+
+export const useRecentMaterialSelections = (limit = 6) => {
+  // Store in localStorage: `recent_materials_${userId}`
+  // Auto-prune old entries (>30 days)
+  // Returns: items[], addSelection(), clearHistory()
+};
 ```
 
----
+### Step 3: Add Favorites Hook
 
-### Step 5: Move Collections Tab Higher
+**New file:** `src/hooks/useFavoriteMaterials.ts`
 
-**Modified file:** `src/components/inventory/ModernInventoryDashboard.tsx`
+```typescript
+export const useFavoriteMaterials = () => {
+  // Store in localStorage or user_preferences table
+  // Returns: favorites[], toggleFavorite(itemId), isFavorite(itemId)
+};
+```
 
-Reorder tabs to make Collections more prominent:
-1. Collections (was 5th, now 1st)
-2. Fabrics
-3. Materials
-4. Hardware
-5. Wallcoverings
-6. Vendors (admin only)
+### Step 4: Update InventorySelectionPanel
+
+**Modified file:** `src/components/inventory/InventorySelectionPanel.tsx`
+
+Changes:
+1. Add optional `WorksheetBrandSidebar` on the left
+2. Add "Recent Selections" horizontal scroll section at top
+3. Add star button to each card for favorites
+4. Consolidate Price Group into dropdown
+5. Move QR/Manual Entry into a "+" dropdown menu
+
+### Step 5: Add Smart Treatment Defaults
+
+**Modified file:** `src/components/inventory/InventorySelectionPanel.tsx`
+
+Auto-apply filters based on `treatmentCategory`:
+- Sort wide fabrics first for curtains
+- Pre-filter by relevant tags
+- Show "Recommended for [Treatment]" label
 
 ---
 
@@ -156,54 +183,105 @@ Reorder tabs to make Collections more prominent:
 
 | File | Change |
 |------|--------|
-| `src/components/library/BrandCollectionsSidebar.tsx` | **New** - Sidebar component with expandable brand list |
-| `src/components/library/CollectionsView.tsx` | **Modify** - Add split-pane layout with sidebar |
-| `src/hooks/useCollections.ts` | **Modify** - Add `useVendorsWithCollections` hook |
-| `src/components/inventory/ModernInventoryDashboard.tsx` | **Modify** - Reorder tabs, Collections first |
-| Database migration | **New** - Auto-create vendors and link orphan collections |
+| `src/components/inventory/WorksheetBrandSidebar.tsx` | **New** - Compact brand navigation for worksheet |
+| `src/hooks/useRecentMaterialSelections.ts` | **New** - Track recently selected materials |
+| `src/hooks/useFavoriteMaterials.ts` | **New** - Manage favorite/pinned materials |
+| `src/components/inventory/InventorySelectionPanel.tsx` | **Modify** - Add sidebar, recents, favorites |
+| `src/components/inventory/RecentSelectionsRow.tsx` | **New** - Horizontal scroll of recent picks |
+| `src/components/inventory/FavoriteButton.tsx` | **New** - Star toggle for cards |
 
 ---
 
-## Technical Details
+## Visual Comparison
 
-### Vendor Creation Rules
-- Create vendors from `UPPER(supplier)` text in orphan collections
-- Use `INITCAP()` for proper capitalization (MASLINA → Maslina)
-- Set `company_type = 'supplier'` and `active = true`
-- Skip if vendor with same name already exists for that user
+**Before (Current):**
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ [Search...]                                    [Filters ▼]  │
+│ Price: [All (59)] [1 (12)] [2 (18)] [3 (7)] [4 (8)] [...]  │
+│ Type: [Wide (300cm+)]                                       │
+│ [Scan QR] [Manual Entry]                                    │
+├─────────────────────────────────────────────────────────────┤
+│ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐                    │
+│ │ 1234rt│ │ 1234rt│ │ ADARA │ │ ADARA │                    │
+│ │       │ │       │ │       │ │       │                    │
+│ └───────┘ └───────┘ └───────┘ └───────┘                    │
+│ ... 55 more items ...                                       │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### UI Behavior
-- Sidebar width: 280px (collapsible on mobile)
-- Hover on brand shows collection count
-- Selected brand highlighted with primary color
-- "All Brands" option to show all collections
-- Collections inherit current edit/search functionality
-
-### Mobile Considerations
-- Sidebar becomes a sheet/drawer on mobile
-- Swipe gesture or hamburger to toggle
-- Collections grid becomes single-column
+**After (Improved):**
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ [Search...]          [Brand ▼] [Price ▼] [+] [Filters ▼]   │
+├───────────┬─────────────────────────────────────────────────┤
+│ BRANDS    │ ★ Recently Used                                 │
+│           │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐        │
+│ ▸ All(59) │ │ ADARA │ │ PRAIA │ │ SUETAS│ │ FLORA │        │
+│ ▸ MASLINA │ │ 3h ago│ │ 1d ago│ │ 2d ago│ │ 5d ago│        │
+│ ▸ KEEP    │ └───────┘ └───────┘ └───────┘ └───────┘        │
+│ ▸ PIRLANT │                                                 │
+│ ─────────── │ All Fabrics (filtered by selected brand)       │
+│ ★ Recent  │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐        │
+│ ★ Favorite│ │ item1 │ │ item2 │ │ item3 │ │ item4 │        │
+│           │ │  [★]  │ │  [★]  │ │  [★]  │ │  [★]  │        │
+│           │ └───────┘ └───────┘ └───────┘ └───────┘        │
+└───────────┴─────────────────────────────────────────────────┘
+```
 
 ---
 
-## Data Impact
+## Benefits
 
-For your account (Gustin Decor collections are separate):
-
-| Metric | Before | After |
-|--------|--------|-------|
-| Orphan collections | 433 | ~50 (those without supplier) |
-| Vendors with collections | 1 | ~26 |
-| User experience | Flat list, hard to find | Hierarchical, organized by brand |
+1. **Faster navigation** - Sidebar lets users jump between brands instantly
+2. **Memory persistence** - Recent selections reduce repeat searching
+3. **Personal organization** - Favorites let users curate their go-to materials
+4. **Cleaner layout** - Consolidated filters free up vertical space
+5. **Smart defaults** - Treatment-aware filtering shows relevant items first
+6. **Mobile-friendly** - Sidebar collapses to drawer, recents scroll horizontally
 
 ---
 
-## Testing Checklist
+## Technical Notes
 
-1. **Library → Collections tab**: First in tab order
-2. **Sidebar shows brands**: MASLINA (90), KEEP (64), etc.
-3. **Click brand**: Right panel shows only that brand's collections
-4. **Edit collection**: Works from collection card
-5. **Search**: Filters both brands in sidebar and collections
-6. **Mobile**: Sidebar becomes drawer, touch-friendly
-7. **Other accounts**: No impact on accounts without TWC/fabric imports
+### Recent Selections Storage
+
+```typescript
+// localStorage key: `recent_materials_${userId}`
+interface StoredRecents {
+  selections: {
+    itemId: string;
+    name: string;
+    imageUrl?: string;
+    selectedAt: number;
+  }[];
+  lastUpdated: number;
+}
+```
+
+### Favorites Storage Options
+
+**Option A: localStorage** (simpler, no database change)
+```typescript
+// localStorage key: `favorite_materials_${userId}`
+favoriteIds: string[]
+```
+
+**Option B: Database** (syncs across devices)
+```sql
+-- Add to user_preferences JSONB
+UPDATE user_preferences SET 
+  data = jsonb_set(data, '{favorite_materials}', '["id1", "id2"]')
+WHERE user_id = $1;
+```
+
+Recommend **Option A** for initial implementation (faster, no migration needed).
+
+---
+
+## Mobile Considerations
+
+1. **Sidebar becomes sheet** - Bottom drawer with brand list
+2. **Recent row scrolls horizontally** - Touch-friendly swipe
+3. **Favorite stars are larger** - 44px touch targets
+4. **Filters collapse to single button** - Opens full-screen filter sheet
