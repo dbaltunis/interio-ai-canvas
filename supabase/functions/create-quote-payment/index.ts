@@ -69,15 +69,18 @@ serve(async (req) => {
     if (quote.user_id !== user.id) throw new Error("Unauthorized access to quote");
     logStep("Quote fetched", { quoteId: quote.id, total: quote.total });
 
-    // Get business settings for currency
+    // Get business settings for currency and tax settings
     const { data: businessSettings } = await supabaseClient
       .from("business_settings")
-      .select("currency, company_name")
+      .select("currency, company_name, tax_rate, pricing_settings")
       .eq("user_id", user.id)
       .single();
 
     const currency = (businessSettings?.currency || "USD").toLowerCase();
     const companyName = businessSettings?.company_name || "Company";
+    const taxRate = (businessSettings?.tax_rate || 0) / 100; // Convert from percentage
+    const pricingSettings = businessSettings?.pricing_settings as { tax_inclusive?: boolean } | null;
+    const taxInclusive = pricingSettings?.tax_inclusive || false;
 
     const project = quote.projects;
     const client = project?.clients;
@@ -86,10 +89,21 @@ serve(async (req) => {
     
     // Use pre-calculated payment_amount which already includes discount
     // payment_amount is set by the frontend with discount already applied
-    // Fallback: if no payment_amount, calculate from discounted total
+    // Fallback: if no payment_amount, calculate from discounted total with tax-inclusive awareness
     const discountAmount = quote.discount_amount || 0;
     const quoteTotal = quote.total || 0;
-    const discountedTotal = Math.max(0, quoteTotal - discountAmount);
+    
+    let discountedTotal: number;
+    if (discountAmount > 0 && taxInclusive && taxRate > 0) {
+      // Tax-inclusive: discount was calculated on pre-tax subtotal
+      // Convert to GST-inclusive discount before subtracting from GST-inclusive total
+      const discountWithGST = discountAmount * (1 + taxRate);
+      discountedTotal = Math.max(0, quoteTotal - discountWithGST);
+    } else {
+      // Tax-exclusive or no discount: simple subtraction
+      discountedTotal = Math.max(0, quoteTotal - discountAmount);
+    }
+    
     const paymentAmount = quote.payment_amount || discountedTotal;
 
     logStep("Preparing payment", { 
@@ -100,7 +114,9 @@ serve(async (req) => {
       discountAmount,
       quoteTotal,
       discountedTotal,
-      storedPaymentAmount: quote.payment_amount
+      storedPaymentAmount: quote.payment_amount,
+      taxInclusive,
+      taxRate
     });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
