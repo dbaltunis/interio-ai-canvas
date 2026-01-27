@@ -1,5 +1,3 @@
-
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,13 +5,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjects } from "@/hooks/useProjects";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, DollarSign, Clock, Users, Target, Activity, Calendar, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, DollarSign, Clock, Users, Target, Calendar, FileText } from "lucide-react";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 export const JobsDashboard = () => {
   const { data: projects } = useProjects();
   const { data: quotes } = useQuotes();
   const { data: stats } = useDashboardStats();
+  
+  // Format dates using user preferences
+  const { formattedDates: projectDates } = useFormattedDates(projects, (p) => p.created_at, false);
+  const { formattedDates: quoteDates } = useFormattedDates(quotes, (q) => q.created_at, false);
 
   // Calculate job metrics
   const totalJobs = projects?.length || 0;
@@ -217,7 +220,7 @@ export const JobsDashboard = () => {
                       <div>
                         <h4 className="font-medium">{project.name}</h4>
                         <p className="text-sm text-gray-500">
-                          Job #{project.job_number || 'N/A'} • Created {new Date(project.created_at).toLocaleDateString()}
+                          Job #{project.job_number || 'N/A'} • Created {projectDates[project.id] || new Date(project.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -334,7 +337,7 @@ export const JobsDashboard = () => {
                       <div>
                         <h4 className="font-medium">{quote.quote_number}</h4>
                         <p className="text-sm text-gray-500">
-                          ${quote.total_amount?.toLocaleString()} • {new Date(quote.created_at).toLocaleDateString()}
+                          ${quote.total_amount?.toLocaleString()} • {quoteDates[quote.id] || new Date(quote.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <Badge variant={

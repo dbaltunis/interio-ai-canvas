@@ -7,6 +7,7 @@ import { formatCurrency } from "@/utils/currency";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { ArchiveIndicator } from "./ArchiveIndicator";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface JobGridViewProps {
   jobs: any[];
@@ -17,6 +18,7 @@ interface JobGridViewProps {
 
 export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridViewProps) => {
   const { data: jobStatuses = [] } = useJobStatuses();
+  const { formattedDates } = useFormattedDates(jobs, (j) => j.created_at, false);
   
   // Count duplicates for each job
   const duplicateCounts = jobs.reduce((acc, job) => {
@@ -94,7 +96,7 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <span className="text-gray-600">
-                    {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date'}
+                    {formattedDates[job.id] || (job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date')}
                   </span>
                 </div>
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -28,6 +29,25 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
+
+// Helper components for formatted dates
+const ProjectCreatedDate = ({ clientName, createdAt }: { clientName: string; createdAt: string }) => {
+  const { formattedDate } = useFormattedDate(createdAt, false);
+  return (
+    <p className="text-sm text-muted-foreground">
+      {clientName} • Created {formattedDate || new Date(createdAt).toLocaleDateString()}
+    </p>
+  );
+};
+
+const QuoteCreatedDate = ({ createdAt }: { createdAt: string }) => {
+  const { formattedDate } = useFormattedDate(createdAt, false);
+  return (
+    <p className="text-xs text-muted-foreground">
+      Created {formattedDate || new Date(createdAt).toLocaleDateString()}
+    </p>
+  );
+};
 
 interface JobsListWithQuotesProps {
   onJobSelect: (jobId: string) => void;
@@ -206,9 +226,7 @@ export const JobsListWithQuotes = ({
                               {project.name}
                             </span>
                           </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {clientName} • Created {new Date(project.created_at).toLocaleDateString()}
-                          </p>
+                          <ProjectCreatedDate clientName={clientName} createdAt={project.created_at} />
                         </div>
                       </div>
                       
@@ -299,9 +317,7 @@ export const JobsListWithQuotes = ({
                                     {quote.status}
                                   </Badge>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Created {new Date(quote.created_at).toLocaleDateString()}
-                                </p>
+                                <QuoteCreatedDate createdAt={quote.created_at} />
                               </div>
                             </div>
                             
