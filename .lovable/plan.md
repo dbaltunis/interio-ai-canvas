@@ -1,287 +1,216 @@
 
-# Improve Library Selection Step in Worksheet
 
-## Current State Analysis
+# Replace Sidebar with Brand Dropdown + Smart Filters
 
-The Library step in the worksheet (Select Type → Treatment → **Library** → Measurements) currently has:
+## Problem Analysis
 
-| Feature | Current Implementation |
-|---------|----------------------|
-| Search | Full-text search with debouncing |
-| Price Group Filter | Horizontal scrolling buttons (1, 2, 3, Budget, etc.) |
-| Quick Type Filter | Tags like Wide (300cm+), Blockout, Sheer |
-| Filters Dropdown | Supplier, Collection, Tags (via popover) |
-| QR Scanner | Opens dialog for barcode scanning |
-| Manual Entry | Dialog to add custom item on-the-fly |
-| Grid Display | 2-4 columns depending on screen size |
-| Pagination | "Load More" button for infinite scroll |
+The current `WorksheetBrandSidebar` (200px width) causes layout issues in the Library selection popup on smaller screens because:
 
-### Pain Points Identified
+1. **Popup context has constrained width** - The panel is inside a Card within a dialog, leaving limited horizontal space
+2. **768px breakpoint is too narrow** - Tablets and smaller desktop windows (800-1200px) still show the sidebar but have insufficient grid space
+3. **Sidebar is overkill for popup** - In the main Library, a persistent sidebar makes sense; in a selection popup, users want speed, not navigation
 
-1. **No Brand/Collection sidebar** - Users must use the Filter dropdown to navigate by supplier, losing context
-2. **Recently used fabrics not visible** - Common selections require searching each time
-3. **No favorites/pinned items** - High-usage materials aren't prioritized
-4. **Flat grid is overwhelming** - 59+ items with no visual hierarchy
-5. **Price groups take up space** - Horizontal filter bar consumes vertical space
-6. **Mobile experience is cramped** - Limited space for effective browsing
+## Solution: Horizontal Filter Chips + Brand Dropdown
 
----
-
-## Proposed Improvements
-
-### 1. Mini Brand Sidebar (Collapsible)
-
-Add a compact brand navigation sidebar (similar to Library Collections but optimized for the worksheet context):
+Replace the sidebar with a **compact horizontal filter bar** that provides the same functionality without consuming horizontal space:
 
 ```text
-┌──────────────────────────────────────────────────────────┐
-│ [Search...]                              [Filters ▼]     │
-├─────────────┬────────────────────────────────────────────┤
-│ BRANDS      │  ┌─────────┐ ┌─────────┐ ┌─────────┐       │
-│ ▸ All (59)  │  │ ADARA   │ │ PRAIA   │ │ SUETAS  │       │
-│ ▸ MASLINA   │  │ £26.50/m│ │ £34.00/m│ │ Grid    │       │
-│ ▸ KEEP      │  └─────────┘ └─────────┘ └─────────┘       │
-│ ▸ PIRLANTO  │                                            │
-│ ★ Recent    │                                            │
-│ ★ Favorites │                                            │
-└─────────────┴────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ [🔍 Search...]  [Brand ▼]  [Price ▼]  [+]  [Filters]           │
+│ ★ Recent: [ADARA][PRAIA][SUETAS] ← horizontal scroll            │
+├─────────────────────────────────────────────────────────────────┤
+│ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                │
+│ │ 1234rt  │ │ ADARA   │ │ FLORA   │ │ PRAIA   │                │
+│ │  [★]    │ │  [★]    │ │  [★]    │ │  [★]    │                │
+│ └─────────┘ └─────────┘ └─────────┘ └─────────┘                │
+│                                                                  │
+│ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                │
+│ │ SUETAS  │ │ MIR     │ │ KEEP    │ │ NEUTEX  │                │
+│ │  [★]    │ │  [★]    │ │  [★]    │ │  [★]    │                │
+│ └─────────┘ └─────────┘ └─────────┘ └─────────┘                │
+│                                                                  │
+│ [Load More...]                                                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Features:**
-- Collapsible on mobile (sheet/drawer)
-- Click brand to filter grid instantly
-- Special "Recent" section showing last 5 selected items
-- "Favorites" section for pinned materials
+## Implementation Details
 
-### 2. Recently Used Materials Section
+### Step 1: Remove Desktop Sidebar from InventorySelectionPanel
 
-Add a "Recent Selections" row at the top of the grid:
+**File:** `src/components/inventory/InventorySelectionPanel.tsx`
 
-```text
-Recently Used (click to select)
-┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
-│ ADARA   │ │ PRAIA   │ │ 1234rt  │ │ FLORA   │
-│ Used 3h │ │ Used 1d │ │ Used 2d │ │ Used 5d │
-└─────────┘ └─────────┘ └─────────┘ └─────────┘
-```
+Remove the desktop sidebar rendering (lines 1104-1119) and keep only the mobile Sheet version which already works well.
 
-**Implementation:**
-- Store selection history in localStorage keyed by user/project
-- Show max 4-6 items horizontally with timestamp
-- One-click to instantly select and proceed
+### Step 2: Add Brand Dropdown to Filter Bar
 
-### 3. Favorites/Pinned Items
-
-Allow users to star materials that appear in a dedicated section:
-
-```text
-★ Favorites
-┌─────────┐ ┌─────────┐
-│ ADARA   │ │ PRAIA   │
-│ [★]     │ │ [★]     │
-└─────────┘ └─────────┘
-```
-
-**Implementation:**
-- Store in localStorage or database (`user_preferences.favorite_materials`)
-- Small star button on each card to toggle
-- Favorites appear at top of grid or in sidebar
-
-### 4. Compact Filter Bar
-
-Consolidate filters into a cleaner layout:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ [🔍 Search...]   Brand:[All ▼]   Price:[All ▼]   [Filters]  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Changes:**
-- Move Price Group from button row to dropdown
-- Remove "Scan QR" and "Manual Entry" to a "+" menu
-- Inline brand selector (if no sidebar)
-
-### 5. Smart Defaults Based on Treatment
-
-Automatically pre-filter based on selected treatment:
-
-| Treatment | Auto-Filter |
-|-----------|-------------|
-| Curtains | Wide fabrics (≥250cm) first, show narrow as secondary |
-| Roller Blinds | Sunscreen/Blockout tags prioritized |
-| Roman Blinds | Patterned fabrics featured |
-| Venetian | Material subcategory only |
-
----
-
-## Implementation Plan
-
-### Step 1: Create WorksheetBrandSidebar Component
-
-**New file:** `src/components/inventory/WorksheetBrandSidebar.tsx`
-
-A compact, worksheet-optimized version of `BrandCollectionsSidebar`:
-- Narrower width (200px vs 280px)
-- Includes "Recent" and "Favorites" special sections
-- Collapsible to icon-only mode
-
-### Step 2: Add Recent Selections Hook
-
-**New file:** `src/hooks/useRecentMaterialSelections.ts`
+Replace the sidebar brand navigation with a `Select` dropdown in the header bar:
 
 ```typescript
-interface RecentSelection {
-  itemId: string;
-  name: string;
-  imageUrl?: string;
-  selectedAt: number;
-  projectId?: string;
-}
-
-export const useRecentMaterialSelections = (limit = 6) => {
-  // Store in localStorage: `recent_materials_${userId}`
-  // Auto-prune old entries (>30 days)
-  // Returns: items[], addSelection(), clearHistory()
-};
+{/* Brand Filter Dropdown - replaces sidebar */}
+{brandGroups.length > 1 && (
+  <Select 
+    value={selectedVendor || "all"} 
+    onValueChange={(val) => setSelectedVendor(val === "all" ? undefined : val)}
+  >
+    <SelectTrigger className="w-32 h-10">
+      <Building2 className="h-3.5 w-3.5 mr-1.5" />
+      <SelectValue placeholder="Brand" />
+    </SelectTrigger>
+    <SelectContent className="max-h-[300px]">
+      <SelectItem value="all">All Brands ({totalItems})</SelectItem>
+      {brandGroups.map(({ vendorId, vendorName, itemCount }) => (
+        <SelectItem key={vendorId || 'unassigned'} value={vendorId || 'unassigned'}>
+          {vendorName} ({itemCount})
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+)}
 ```
 
-### Step 3: Add Favorites Hook
+### Step 3: Keep Recent & Favorites as Horizontal Rows
 
-**New file:** `src/hooks/useFavoriteMaterials.ts`
+The existing `RecentSelectionsRow` component is already well-designed. Keep it at the top of the grid for quick access. Add a similar horizontal row for favorites when "Favorites Only" mode is off but favorites exist:
 
 ```typescript
-export const useFavoriteMaterials = () => {
-  // Store in localStorage or user_preferences table
-  // Returns: favorites[], toggleFavorite(itemId), isFavorite(itemId)
-};
+{/* Quick access rows - Recent + Favorites preview */}
+{recentItems.length > 0 && !showFavoritesOnly && (
+  <RecentSelectionsRow ... />
+)}
+
+{/* Optional: Show top 4 favorites as chips when not in favorites-only mode */}
+{favorites.length > 0 && !showFavoritesOnly && recentItems.length === 0 && (
+  <FavoritesPreviewRow 
+    items={displayItems.filter(i => isFavorite(i.id)).slice(0, 4)}
+    onSelect={handleItemSelect}
+    onShowAll={() => setShowFavoritesOnly(true)}
+  />
+)}
 ```
 
-### Step 4: Update InventorySelectionPanel
+### Step 4: Add Favorites Toggle Button
 
-**Modified file:** `src/components/inventory/InventorySelectionPanel.tsx`
+Add a star toggle to quickly switch between all items and favorites:
 
-Changes:
-1. Add optional `WorksheetBrandSidebar` on the left
-2. Add "Recent Selections" horizontal scroll section at top
-3. Add star button to each card for favorites
-4. Consolidate Price Group into dropdown
-5. Move QR/Manual Entry into a "+" dropdown menu
+```typescript
+{/* Favorites toggle */}
+{favorites.length > 0 && (
+  <Button
+    variant={showFavoritesOnly ? "default" : "outline"}
+    size="sm"
+    className="h-10 gap-1.5"
+    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+  >
+    <Star className={cn("h-4 w-4", showFavoritesOnly && "fill-current")} />
+    <span className="hidden sm:inline">{favorites.length}</span>
+  </Button>
+)}
+```
 
-### Step 5: Add Smart Treatment Defaults
-
-**Modified file:** `src/components/inventory/InventorySelectionPanel.tsx`
-
-Auto-apply filters based on `treatmentCategory`:
-- Sort wide fabrics first for curtains
-- Pre-filter by relevant tags
-- Show "Recommended for [Treatment]" label
-
----
-
-## Files to Create/Modify
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/inventory/WorksheetBrandSidebar.tsx` | **New** - Compact brand navigation for worksheet |
-| `src/hooks/useRecentMaterialSelections.ts` | **New** - Track recently selected materials |
-| `src/hooks/useFavoriteMaterials.ts` | **New** - Manage favorite/pinned materials |
-| `src/components/inventory/InventorySelectionPanel.tsx` | **Modify** - Add sidebar, recents, favorites |
-| `src/components/inventory/RecentSelectionsRow.tsx` | **New** - Horizontal scroll of recent picks |
-| `src/components/inventory/FavoriteButton.tsx` | **New** - Star toggle for cards |
-
----
+| `src/components/inventory/InventorySelectionPanel.tsx` | Remove desktop sidebar, add Brand dropdown, add Favorites toggle button |
+| `src/components/inventory/WorksheetBrandSidebar.tsx` | Keep for mobile Sheet only (or optionally delete if we inline the mobile button) |
 
 ## Visual Comparison
 
-**Before (Current):**
+**Before (problematic):**
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ [Search...]                                    [Filters ▼]  │
-│ Price: [All (59)] [1 (12)] [2 (18)] [3 (7)] [4 (8)] [...]  │
-│ Type: [Wide (300cm+)]                                       │
-│ [Scan QR] [Manual Entry]                                    │
-├─────────────────────────────────────────────────────────────┤
-│ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐                    │
-│ │ 1234rt│ │ 1234rt│ │ ADARA │ │ ADARA │                    │
-│ │       │ │       │ │       │ │       │                    │
-│ └───────┘ └───────┘ └───────┘ └───────┘                    │
-│ ... 55 more items ...                                       │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ [Search...]                    [Price ▼] [+] [Filters]       │
+├──────────┬───────────────────────────────────────────────────┤
+│ BRANDS   │ ┌──────┐ ┌──────┐ ┌──────┐  ← only 3 cards fit   │
+│ ▸ All    │ │ item │ │ item │ │ item │                       │
+│ ▸ MASLINA│ └──────┘ └──────┘ └──────┘                       │
+│ ▸ KEEP   │                                                   │
+│ ...      │  ← sidebar takes 200px                            │
+└──────────┴───────────────────────────────────────────────────┘
 ```
 
-**After (Improved):**
+**After (fixed):**
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ [Search...]          [Brand ▼] [Price ▼] [+] [Filters ▼]   │
-├───────────┬─────────────────────────────────────────────────┤
-│ BRANDS    │ ★ Recently Used                                 │
-│           │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐        │
-│ ▸ All(59) │ │ ADARA │ │ PRAIA │ │ SUETAS│ │ FLORA │        │
-│ ▸ MASLINA │ │ 3h ago│ │ 1d ago│ │ 2d ago│ │ 5d ago│        │
-│ ▸ KEEP    │ └───────┘ └───────┘ └───────┘ └───────┘        │
-│ ▸ PIRLANT │                                                 │
-│ ─────────── │ All Fabrics (filtered by selected brand)       │
-│ ★ Recent  │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐        │
-│ ★ Favorite│ │ item1 │ │ item2 │ │ item3 │ │ item4 │        │
-│           │ │  [★]  │ │  [★]  │ │  [★]  │ │  [★]  │        │
-│           │ └───────┘ └───────┘ └───────┘ └───────┘        │
-└───────────┴─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ [Search...] [Brand ▼] [Price ▼] [★ 5] [+] [Filters]         │
+│ Recent: [ADARA] [PRAIA] [SUETAS] [FLORA] →                   │
+├──────────────────────────────────────────────────────────────┤
+│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  ← 4 cards fit now      │
+│ │ item │ │ item │ │ item │ │ item │                          │
+│ └──────┘ └──────┘ └──────┘ └──────┘                          │
+│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐                          │
+│ │ item │ │ item │ │ item │ │ item │                          │
+│ └──────┘ └──────┘ └──────┘ └──────┘                          │
+└──────────────────────────────────────────────────────────────┘
 ```
-
----
 
 ## Benefits
 
-1. **Faster navigation** - Sidebar lets users jump between brands instantly
-2. **Memory persistence** - Recent selections reduce repeat searching
-3. **Personal organization** - Favorites let users curate their go-to materials
-4. **Cleaner layout** - Consolidated filters free up vertical space
-5. **Smart defaults** - Treatment-aware filtering shows relevant items first
-6. **Mobile-friendly** - Sidebar collapses to drawer, recents scroll horizontally
-
----
+1. **Full width for grid** - No sidebar stealing horizontal space
+2. **Works on all screen sizes** - Dropdowns and horizontal scrolls adapt naturally
+3. **Faster access** - Recent items and favorites visible immediately
+4. **Same functionality** - Brand filtering via dropdown, favorites toggle, recent history
+5. **Cleaner popup UX** - Matches what users expect in a selection popup (quick, focused)
 
 ## Technical Notes
 
-### Recent Selections Storage
+### Layout Changes
+
+The main change is removing the flex container that houses the sidebar:
 
 ```typescript
-// localStorage key: `recent_materials_${userId}`
-interface StoredRecents {
-  selections: {
-    itemId: string;
-    name: string;
-    imageUrl?: string;
-    selectedAt: number;
-  }[];
-  lastUpdated: number;
-}
+// BEFORE (lines 1103-1119)
+<div className="flex-1 flex overflow-hidden mt-2">
+  {!isMobile && brandGroups.length > 1 && (
+    <WorksheetBrandSidebar ... />
+  )}
+  <Tabs ...>
+
+// AFTER
+<div className="flex-1 flex flex-col overflow-hidden mt-2">
+  <Tabs ...>
 ```
 
-### Favorites Storage Options
+### Filter Bar Restructure
 
-**Option A: localStorage** (simpler, no database change)
+The filter bar will be reorganized to include the Brand dropdown:
+
 ```typescript
-// localStorage key: `favorite_materials_${userId}`
-favoriteIds: string[]
+<div className="flex gap-2 items-center flex-wrap">
+  {/* Search */}
+  <div className="relative flex-1 min-w-[120px]">
+    <Search ... />
+    <Input ... />
+  </div>
+  
+  {/* Brand Dropdown (NEW - replaces sidebar) */}
+  {brandGroups.length > 1 && (
+    <Select value={selectedVendor || "all"} ...>
+      ...
+    </Select>
+  )}
+  
+  {/* Price Dropdown (existing) */}
+  {priceGroupStats.length > 0 && (
+    <Select ...>
+      ...
+    </Select>
+  )}
+  
+  {/* Favorites Toggle (NEW) */}
+  {favorites.length > 0 && (
+    <Button variant={showFavoritesOnly ? "default" : "outline"} ...>
+      <Star ... />
+    </Button>
+  )}
+  
+  {/* Actions + Filters (existing) */}
+  <DropdownMenu>...</DropdownMenu>
+  <FilterButton ... />
+</div>
 ```
 
-**Option B: Database** (syncs across devices)
-```sql
--- Add to user_preferences JSONB
-UPDATE user_preferences SET 
-  data = jsonb_set(data, '{favorite_materials}', '["id1", "id2"]')
-WHERE user_id = $1;
-```
+### Mobile Behavior
 
-Recommend **Option A** for initial implementation (faster, no migration needed).
+On mobile (< 768px), the Brand dropdown will still render as a compact `Select` instead of the Sheet, making the experience consistent across all screen sizes. The mobile Sheet approach can be removed since the dropdown works well on all devices.
 
----
-
-## Mobile Considerations
-
-1. **Sidebar becomes sheet** - Bottom drawer with brand list
-2. **Recent row scrolls horizontally** - Touch-friendly swipe
-3. **Favorite stars are larger** - 44px touch targets
-4. **Filters collapse to single button** - Opens full-screen filter sheet
