@@ -1,216 +1,262 @@
 
-# Fix Venetian Blinds Setup Issues for Gustin Decor
+
+# Fix Library Collections, Pricing Grid & Rules for Gustin Decor
 
 ## Issues Identified
 
-Based on thorough investigation, here are the 6 issues and their root causes:
+Based on thorough investigation, here are all the issues with their root causes and scope:
 
-| Issue | Description | Scope | Root Cause |
-|-------|-------------|-------|------------|
-| 1. Collection descriptions | Shows "Auto-created from fabric imports" | Gustin Decor only | Data migration used placeholder text |
-| 2. Pricing = €0.00 | Pricing grids not calculating | Gustin Decor only | Grid data uses `widths/heights/prices` but code expects `widthRanges/dropRanges/prices` |
-| 3. Options empty in Settings | "No lamelių plotis found" | Gustin Decor only | Options exist in database but UI queries by `activeOptionType` which doesn't match |
-| 4. Template options empty | "No options configured" | Code issue | Query in template editor not finding linked options |
-| 5. Pricing grids not used | Grids "Ready" but €0 output | Gustin Decor only | Grid format incompatibility (see issue 2) |
-| 6. Rules incomplete | Some rules missing | Gustin Decor only | Only 2 of planned 3+ rules were created |
-
-**Important Finding**: Issues 1-6 are specific to Gustin Decor's data setup, NOT affecting other accounts. However, issue 2 (grid format) is a code bug that could affect any account using the same grid format.
+| # | Issue | Root Cause | Scope |
+|---|-------|------------|-------|
+| 1 | Collections can't be edited | Edit button exists in `CategoryManager.tsx` but clicking it doesn't show proper UI | All accounts (UI bug) |
+| 2 | Library filter shows wrong items | When selecting "BAMBOO_25", showing Abachi items instead | Gustin Decor (screenshot shows BAMBOO_25 selected but Abachi displayed) |
+| 3 | Pricing shows sqm instead of grid | `useFabricEnrichment` resolves grid but it's not being passed to `calculateBlindCosts` | Potentially all accounts |
+| 4 | Option rules not filtering | Rules execute correctly (logs show `conditionMet: true`) but values still visible | Gustin Decor or code bug |
+| 5 | Venetian materials not in collections | 58 slat materials have `collection_id: NULL` but have `price_group` | Gustin Decor data issue |
+| 6 | Collections UI needs improvement | No inline edit, search, or batch actions | All accounts |
 
 ---
 
-## Detailed Technical Analysis
+## Detailed Analysis
 
-### Issue 1: Collection Descriptions
-
+### Issue 1 & 6: Collection Editing UI
 **Current State:**
-- 433 collections with `description = 'Auto-created from fabric imports'`
-- Collections have `vendor_id = NULL`
-- Fabrics have `supplier` text field with vendor names (Maslina, SCR, Neutex, etc.)
-
-**Solution:**
-- Update collection descriptions to show supplier name or remove placeholder text
-- Optionally link collections to vendors by matching supplier names
-
-### Issue 2 & 5: Pricing Grid Format Mismatch (Critical Bug)
-
-**Current Grid Data Structure (from database):**
-```json
-{
-  "widths": [500, 600, 700, ...],
-  "heights": [500, 600, 700, ...],
-  "prices": [[69, 71, 74, ...], [71, 73, 77, ...], ...]
-}
-```
-
-**Expected by `getPriceFromGrid()` function:**
-```json
-{
-  "widthRanges": ["500", "600", "700", ...],
-  "dropRanges": ["500", "600", "700", ...],
-  "prices": [[69, 71, 74, ...], [71, 73, 77, ...], ...]
-}
-```
-
-**Solution:** Update `getPriceFromGrid()` in `src/hooks/usePricingGrids.ts` to handle both formats:
-- Check for `widths`/`heights` array format (new)
-- Fall back to `widthRanges`/`dropRanges` string format (existing)
-
-### Issue 3: Options Empty in Settings Tab
+- `CategoryManager.tsx` has an Edit button (line 319-323)
+- Clicking Edit sets `editingCollection` state
+- `CollectionForm` receives `editingCollection` but may not populate correctly
+- `CollectionsView.tsx` has no edit capability at all (read-only display)
 
 **Root Cause:**
-The `WindowTreatmentOptionsManager` queries:
+The main Collections tab uses `CollectionsView.tsx` which only displays collections and allows clicking to filter - no edit functionality. The edit functionality exists in `CategoryManager.tsx` which is in a different location (Settings > Library Settings).
+
+### Issue 2: Library Filter Shows Wrong Items
+**Screenshot Analysis:**
+- User selected "BAMBOO_25" filter chip
+- Grid shows "Abachi 50mm - Aro", "Abachi 50mm - Elkin" etc.
+- These items have `price_group: ABACHI_50` not `BAMBOO_25`
+
+**Root Cause:**
+The `PriceGroupFilter` component in `InventorySelectionPanel.tsx` sets `selectedPriceGroup`, but the filtering logic on line 346 checks `item.price_group === selectedPriceGroup`. The issue is that the filter chips display `price_group` names but the items being shown have different `price_group` values.
+
+Looking at the query - this could be a display caching issue or the filter not being applied after template/treatment change.
+
+### Issue 3: Pricing Shows sqm Instead of Grid
+**What We Found:**
+- Materials have `pricing_method: 'price_grid'` and `price_group: 'BASSWOOD_25'`
+- Pricing grids exist with matching `product_type: 'venetian_blinds'` and `price_group`
+- `useFabricEnrichment` hook resolves grids correctly
+- But screenshot shows "9.95 sqm" and "3.56 sqm" in Quote Summary
+
+**Root Cause:**
+The `blindCostCalculator.ts` (line 73) checks for `fabricHasPricingGrid` using:
 ```typescript
-const relevantOptions = allTreatmentOptions.filter((opt) => 
-  opt.treatment_category === activeTreatment && opt.key === activeOptionType
-);
+const fabricHasPricingGrid = fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name;
 ```
 
-But `activeOptionType` is set from `optionTypeCategories[0].type_key` which correctly returns `slat_width_gustin`. The issue is that when switching treatment types, the `activeOptionType` doesn't reset.
+The fabric must be enriched with grid data BEFORE being passed to the calculator. If the enrichment didn't complete or wasn't passed through, it falls back to sqm calculation.
 
-**Database shows:**
-- 5 treatment_options exist with correct `account_id`
-- 28 option_values exist with correct `account_id` and `option_id`
-- 5 option_type_categories exist with correct keys
+The issue is likely in how `DynamicCurtainOptions.tsx` passes the selected fabric to `CostCalculationSummary`. The `selectedFabric` may not include the enriched grid data.
 
-**Solution:** Reset `activeOptionType` when `activeTreatment` changes, and ensure the first available option type is selected.
-
-### Issue 4: Template Editor Shows "No Options"
+### Issue 4: Option Rules Not Filtering
+**What We Found:**
+- Rules execute with `conditionMet: true` (from console logs)
+- `allowedValues` is populated with 6 UUIDs for mechanism_type_gustin
+- But UI still shows ALL 9 mechanism options including Somfy
 
 **Root Cause:**
-The template editor queries `useTemplateOptionSettings(templateId)` which looks for records in `template_option_settings`. Records exist:
-- 5 records linking template `3c4d1b0f-...` to treatment options
-- `is_enabled = true` for all
+The filtering code (line 1315-1317) filters based on UUID match:
+```typescript
+const filteredOptionValues = allowedValuesForOption && allowedValuesForOption.length > 0
+  ? option.option_values.filter((v: any) => allowedValuesForOption.includes(v.id))
+  : option.option_values;
+```
 
-The issue is likely the query filtering by `account_id` or template ownership.
+The issue is that `allowedValuesForOption` might be correctly populated but the component may not be re-rendering when the selection changes, OR there's a timing issue where the filter is applied before the rules have evaluated.
 
-**Solution:** Verify RLS policies and query logic in template options editor.
+### Issue 5: Venetian Materials Not in Collections
+**Database Check Confirmed:**
+```sql
+SELECT collection_id FROM enhanced_inventory_items 
+WHERE subcategory = 'venetian_slats' -- Returns NULL for all 58 items
+```
 
-### Issue 6: Missing Rules
-
-**Current State:** 2 rules created
-- "Slėpti Somfy ir tilt_only mechanizmus 25mm lamelėms"
-- "Slėpti 38mm juostines virveles 25mm lamelėms"
-
-**Missing Rules:**
-- Show all mechanism options for 50mm (was planned but skipped)
-- Additional rules for other option dependencies
+**Solution:** Create 6 collections and link the 58 materials by price_group.
 
 ---
 
-## Implementation Steps
+## Implementation Plan
 
-### Step 1: Fix Pricing Grid Parser (Code Change)
+### Step 1: Fix Option Value Filtering (Code)
+**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
 
-Update `src/hooks/usePricingGrids.ts` to handle the `widths/heights/prices` format:
+The issue is that `getAllowedValues` returns the allowed value IDs, but the filter might not trigger a re-render. We need to ensure the filtering happens reactively.
 
+Add more detailed logging and verify the filter actually applies:
 ```typescript
-// Add new handler for widths/heights format (lines ~120-156)
-if (gridData.widths && gridData.heights && gridData.prices) {
-  const widths = gridData.widths;
-  const heights = gridData.heights;
-  const prices = gridData.prices;
-  
-  // Find closest width and height indices
-  const closestWidth = widths.reduce((prev, curr) => 
-    Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev
-  );
-  const widthIndex = widths.indexOf(closestWidth);
-  
-  const closestHeight = heights.reduce((prev, curr) => 
-    Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev
-  );
-  const heightIndex = heights.indexOf(closestHeight);
-  
-  return parseFloat(prices[heightIndex]?.[widthIndex]?.toString() || "0");
-}
+// Add debug logging before filtering
+console.log(`🔍 Filtering ${option.key}:`, {
+  allowedValuesForOption,
+  totalValues: option.option_values?.length,
+  valuesAfterFilter: filteredOptionValues.length,
+  filteredOut: option.option_values?.filter((v: any) => 
+    allowedValuesForOption && !allowedValuesForOption.includes(v.id)
+  ).map((v: any) => v.label)
+});
 ```
 
-### Step 2: Update Collection Descriptions (Database)
+Also verify that the filter is applied to the SELECT dropdown, not just logged.
 
-Update collections to show supplier info instead of placeholder:
+### Step 2: Fix Pricing Grid Resolution (Code)
+**File:** `src/components/measurements/dynamic-options/CostCalculationSummary.tsx`
 
-```sql
-UPDATE collections c
-SET description = COALESCE(
-  (SELECT DISTINCT ei.supplier 
-   FROM enhanced_inventory_items ei 
-   WHERE ei.collection_id = c.id 
-   AND ei.supplier IS NOT NULL 
-   LIMIT 1),
-  'Kolekcija'
-)
-WHERE c.user_id = '32a92783-f482-4e3d-8ebf-c292200674e5'
-  AND c.description = 'Auto-created from fabric imports';
-```
+The issue is that `fabricToUse` might not have the enriched grid data. We need to ensure the fabric enrichment is applied before cost calculation.
 
-### Step 3: Fix Options Tab State Reset (Code Change)
+Check lines ~400-450 where `blindCosts` is calculated - verify that `fabricToUse` includes `pricing_grid_data` and `resolved_grid_name`.
 
-Update `WindowTreatmentOptionsManager.tsx` to reset option type when treatment changes:
-
+Add fallback enrichment if missing:
 ```typescript
-// Add effect to reset activeOptionType when treatment changes
-useEffect(() => {
-  if (optionTypeCategories.length > 0) {
-    setActiveOptionType(optionTypeCategories[0].type_key);
-  } else {
-    setActiveOptionType('');
+// Before calculating blind costs, ensure fabric is enriched
+const enrichedFabric = useMemo(() => {
+  if (fabricToUse?.pricing_grid_data) return fabricToUse;
+  // Trigger enrichment if fabric has price_group but no grid
+  if (fabricToUse?.price_group && !fabricToUse.pricing_grid_data) {
+    console.warn('⚠️ Fabric missing grid data, should be enriched');
   }
-}, [activeTreatment, optionTypeCategories]);
+  return fabricToUse;
+}, [fabricToUse]);
 ```
 
-### Step 4: Verify Template Options Query (Investigation + Fix)
-
-Check the query in `TemplateOptionsManager.tsx` to ensure it correctly joins options:
-- Verify `treatment_category` matches between template and options
-- Ensure account_id filtering is correct
-
-### Step 5: Add Missing Rules (Database)
-
-Add additional option rules for complete functionality:
+### Step 3: Create Venetian Material Collections (Database)
+**Migration:** Create 6 collections and link 58 materials
 
 ```sql
-INSERT INTO option_rules (template_id, name, condition, effect, active)
-VALUES (
-  '3c4d1b0f-c621-43ec-af72-c93644254fbd',
-  'Rodyti visus mechanizmus 50mm lamelėms',
-  '{"option_key": "slat_width_gustin", "operator": "equals", "value": "50_timberlux"}',
-  '{"action": "show_option", "target_option_key": "mechanism_type_gustin"}',
+-- Create 6 collections for venetian slat materials
+INSERT INTO collections (id, user_id, name, description, active)
+SELECT 
+  gen_random_uuid(),
+  '32a92783-f482-4e3d-8ebf-c292200674e5',
+  CASE price_group
+    WHEN 'BASSWOOD_25' THEN 'Basswood 25mm'
+    WHEN 'BASSWOOD_50' THEN 'Basswood 50mm'
+    WHEN 'BAMBOO_25' THEN 'Bamboo 25mm'
+    WHEN 'BAMBOO_50' THEN 'Bamboo 50mm'
+    WHEN 'ABACHI_50' THEN 'Abachi 50mm'
+    WHEN 'PAULOWNIA_50' THEN 'Paulownia 50mm'
+  END,
+  'Medinės žaliuzės - ' || price_group,
   true
-);
+FROM (SELECT DISTINCT price_group FROM enhanced_inventory_items 
+      WHERE user_id = '32a92783-f482-4e3d-8ebf-c292200674e5' 
+      AND subcategory = 'venetian_slats') pg;
+
+-- Link materials to their collections
+UPDATE enhanced_inventory_items eii
+SET collection_id = c.id
+FROM collections c
+WHERE eii.user_id = c.user_id
+  AND eii.subcategory = 'venetian_slats'
+  AND c.name = CASE eii.price_group
+    WHEN 'BASSWOOD_25' THEN 'Basswood 25mm'
+    WHEN 'BASSWOOD_50' THEN 'Basswood 50mm'
+    WHEN 'BAMBOO_25' THEN 'Bamboo 25mm'
+    WHEN 'BAMBOO_50' THEN 'Bamboo 50mm'
+    WHEN 'ABACHI_50' THEN 'Abachi 50mm'
+    WHEN 'PAULOWNIA_50' THEN 'Paulownia 50mm'
+  END;
+```
+
+### Step 4: Add Edit Button to CollectionsView (Code)
+**File:** `src/components/library/CollectionsView.tsx`
+
+Add an Edit button that opens a dialog or navigates to edit mode:
+```typescript
+// Add edit functionality to collection cards
+<Button 
+  variant="ghost" 
+  size="sm"
+  onClick={(e) => {
+    e.stopPropagation();
+    onEditCollection?.(collection.id);
+  }}
+>
+  <Edit className="h-3 w-3" />
+</Button>
+```
+
+### Step 5: Fix Library Price Group Filter (Code)
+**File:** `src/components/inventory/InventorySelectionPanel.tsx`
+
+Investigate why clicking BAMBOO_25 shows ABACHI items. This could be:
+1. Filter state not resetting when treatment changes
+2. Caching of previous filter results
+3. Incorrect `price_group` matching logic
+
+Add debug logging to verify filter state:
+```typescript
+console.log('🔍 Price Group Filter:', {
+  selectedPriceGroup,
+  itemsTotal: treatmentFabrics.length,
+  matchingItems: treatmentFabrics.filter(i => i.price_group === selectedPriceGroup).length
+});
 ```
 
 ---
 
 ## Files to Modify
 
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `src/hooks/usePricingGrids.ts` | Code | Add handler for `widths/heights/prices` grid format |
-| `src/components/settings/tabs/components/WindowTreatmentOptionsManager.tsx` | Code | Fix state reset when changing treatment types |
-| Database: `collections` | Data | Update descriptions with supplier names |
-| Database: `option_rules` | Data | Add missing conditional rules |
+| File | Change | Description |
+|------|--------|-------------|
+| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Code | Fix option value filtering, add debug logging |
+| `src/components/measurements/dynamic-options/CostCalculationSummary.tsx` | Code | Ensure fabric enrichment before blind cost calculation |
+| `src/components/library/CollectionsView.tsx` | Code | Add edit functionality to collection cards |
+| `src/components/inventory/InventorySelectionPanel.tsx` | Code | Fix price group filter reset on treatment change |
+| Database: `collections` | Data | Create 6 venetian slat collections |
+| Database: `enhanced_inventory_items` | Data | Link 58 materials to collections |
+
+---
+
+## Technical Details
+
+### Gustin Decor Identifiers
+- User ID: `32a92783-f482-4e3d-8ebf-c292200674e5`
+- Template ID: `3c4d1b0f-c621-43ec-af72-c93644254fbd`
+- Vendor ID: `f7e8d9c0-1234-5678-9abc-def012345678`
+
+### Option Rules Configuration
+The existing rules are correctly configured:
+- Condition: `slat_width_gustin` in `[25_iso, 25_timberlux]`
+- Effect: `filter_values` mechanism_type_gustin to 6 allowed IDs
+- The rules ARE matching (console logs confirm `conditionMet: true`)
+- The issue is in the React component rendering/filtering
+
+### Grid Resolution
+Grids exist and should resolve:
+- `pricing_grids` has 6 grids for `product_type: venetian_blinds`
+- Each grid has matching `price_group` (BASSWOOD_25, BAMBOO_25, etc.)
+- `gridAutoMatcher.ts` should find FALLBACK match by product_type + price_group
 
 ---
 
 ## Testing After Implementation
 
-1. **Library → Collections**: Verify descriptions show supplier names instead of "Auto-created..."
-2. **Settings → Products → Options**: Select "Venetian Blinds" → Verify options appear
-3. **Settings → Products → My Templates**: Edit "Medinės žaliuzės" → Options tab shows 5 options
-4. **Create Quote → Venetian Blinds**: 
-   - Enter 1000mm x 1500mm dimensions
-   - Verify price calculates (should be ~€99 for Basswood 25mm)
-   - Select 25mm slat → Somfy options hidden
-   - Select 50mm slat → All mechanism options visible
+1. **Library → Collections**: Verify 6 new venetian collections appear with correct item counts
+2. **Library → Filter by BAMBOO_25**: Verify only Bamboo 25mm materials show
+3. **Create Quote → Venetian Blinds**:
+   - Select Bamboo 25mm material
+   - Verify grid price appears (not sqm)
+   - Select 25mm slat width → Verify Somfy options are HIDDEN
+   - Select 50mm slat width → Verify ALL mechanism options show
+4. **Collections → Edit**: Verify edit button works and saves changes
 
 ---
 
-## Summary
+## Issue Scope Summary
 
-| Fix | Scope | Impact |
-|-----|-------|--------|
-| Grid format handler | Code (all accounts) | Fixes pricing for grids using `widths/heights` format |
-| Collection descriptions | Gustin Decor data | Improves UX with meaningful descriptions |
-| Options tab state | Code (all accounts) | Fixes state management when switching treatments |
-| Template options query | Code (all accounts) | Ensures options display in template editor |
-| Missing rules | Gustin Decor data | Completes conditional option logic |
+| Issue | Gustin Decor Only? | Affects All? |
+|-------|-------------------|--------------|
+| Option filtering bug | Investigation needed | Likely code bug |
+| Pricing shows sqm | No | Code bug (enrichment not passed) |
+| Collections can't edit | No | UI feature missing |
+| Price group filter wrong | Investigation needed | Could be code bug |
+| Materials not in collections | Yes | Data migration needed |
+
