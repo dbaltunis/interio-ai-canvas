@@ -1,142 +1,232 @@
 
 
-# Fix: Critical Data Isolation Bug - New Accounts Seeing Other Users' Jobs
+# Fix: Payment Configuration Bugs and GST/Discount Calculation Issue
 
-## Root Cause Identified
+## Why Did the Data Isolation Bug Happen?
 
-When a new account is created and the user logs in, they can see jobs/projects from **other accounts**. These appear "greyed out" with $0.00 prices because the related data (quotes, clients) is correctly blocked by RLS, but the projects themselves leak through.
-
-### The Specific Bug
-
-The RLS policy `"Allow public read access via share link"` on the `projects` table applies to **both** `anon` AND `authenticated` roles:
+The share link RLS policy bug occurred because when the feature to share work orders publicly was implemented, the policy was added to **both** `anon` AND `authenticated` roles:
 
 ```sql
 CREATE POLICY "Allow public read access via share link"
-ON projects FOR SELECT TO anon, authenticated
-USING (
-  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
-  OR
-  public.project_has_active_share_link(id)
-);
+ON projects FOR SELECT TO anon, authenticated -- BUG: should be anon only
 ```
 
-**Problem**: PostgreSQL combines permissive RLS policies with OR logic. This means ANY project with a share link becomes visible to ALL logged-in users, bypassing account isolation.
+This was likely done to handle the case where a logged-in user clicks their own shared link. However, PostgreSQL combines permissive RLS policies using **OR** logic. This meant:
 
-### Why Data Appears "Greyed Out"
+- **Policy 1**: "Users can see projects in their account" 
+- **Policy 2**: "Users can see projects with share links" (accidentally applied to ALL authenticated users)
+- **Combined**: ANY logged-in user could see ANY project with a share link
 
-| Table | RLS Status | Result |
-|-------|------------|--------|
-| `projects` | **Leaking via share link policy** | 8 projects visible to all users |
-| `quotes` | Correctly isolated | New accounts see 0 quotes |
-| `clients` | Correctly isolated | New accounts can't see clients |
-| `job_statuses` | Isolated by account | Status lookup fails ("Error fetching status") |
-
-The UI tries to join these tables client-side. When projects leak but quotes/clients don't, the result is:
-- Jobs appear in the list (from leaked projects)
-- $0.00 prices (no quotes data)
-- "No Client" or missing client names
-- Grey/unknown status badges
-
-### Evidence
-
-Database queries confirmed:
-- 4 projects with legacy `work_order_token` 
-- 4 projects with active share links
-- Total: 8 projects visible to ANY authenticated user
-- These match the "greyed out" rows the user sees
+This is a common multi-tenant security pitfall - share/public access features must be carefully scoped to only the `anon` role, never `authenticated`.
 
 ---
 
-## Solution
+## New Bugs Identified (From Your Image)
 
-### Part 1: Database Migration - Fix Share Link Policy on Projects
+### Bug 1: Fixed Amount Mode - No Save Button
 
-Change the share link policy to apply **ONLY to `anon` role**, not `authenticated`:
+**Problem**: When switching from "Percentage" to "Fixed Amount" deposit mode, the "Save Configuration" button never appears.
 
-```sql
--- Drop the problematic policy
-DROP POLICY IF EXISTS "Allow public read access via share link" ON projects;
+**Root Cause**: The `hasChanges` tracking in `InlinePaymentConfig.tsx` only monitors `paymentType` and `depositPercentage`:
 
--- Recreate with ONLY anon role (for true public sharing)
-CREATE POLICY "Allow public read access via share link"
-ON projects FOR SELECT TO anon
-USING (
-  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
-  OR
-  public.project_has_active_share_link(id)
-);
+```typescript
+// Line 54-65 - CURRENT (BUG)
+useEffect(() => {
+  const typeChanged = currentPayment.type !== paymentType;
+  const percentageChanged = currentPayment.type === 'deposit' && 
+    currentPayment.percentage !== depositPercentage;
+  
+  setHasChanges(typeChanged || percentageChanged);
+  // ❌ Does NOT track useFixedAmount or fixedAmount changes!
+}, [paymentType, depositPercentage, currentPayment]);
 ```
 
-### Part 2: Apply Same Fix to Related Tables
+**Fix**: Add `useFixedAmount` and `fixedAmount` to the change tracking logic.
 
-The same pattern exists on `clients` and `workshop_items`:
+---
 
-```sql
--- Fix clients table
-DROP POLICY IF EXISTS "Allow public read access via share link" ON clients;
-DROP POLICY IF EXISTS "Allow public read access to clients via share link" ON clients;
+### Bug 2: Deposit Amount Calculation - GST Mismatch
 
-CREATE POLICY "Allow public read access via share link"
-ON clients FOR SELECT TO anon
-USING (client_has_active_share_link(id));
+**Problem** (from your spreadsheet):
+- Quote Total (inc GST): **NZ$115.00** 
+- Discount Applied: **-NZ$10.00** (this is GST-exclusive!)
+- After Discount shown: **NZ$105.00**
+- Deposit (50%): **NZ$52.50**
 
--- Fix workshop_items table  
-DROP POLICY IF EXISTS "Allow public read access via share link" ON workshop_items;
+**What it SHOULD be**:
+- Quote Total (inc GST): **NZ$115.00**
+- Discount (GST-inclusive equivalent): **-NZ$11.50** (10 × 1.15)
+- After Discount: **NZ$103.50**
+- Deposit (50%): **NZ$51.75**
 
-CREATE POLICY "Allow public read access via share link"
-ON workshop_items FOR SELECT TO anon
-USING (
-  project_id IN (
-    SELECT id FROM projects 
-    WHERE (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
-    OR project_has_active_share_link(id)
-  )
-);
+**Root Cause**: The discount is applied to the **pre-tax subtotal** in `QuotationSummary` (which is correct for accounting), but `InlinePaymentConfig` receives:
+- `total` = GST-inclusive price (NZ$115)
+- `discountAmount` = GST-exclusive discount (NZ$10)
+
+Then it calculates: `discountedTotal = total - discountAmount = 115 - 10 = 105`
+
+But this is mathematically wrong because you're subtracting apples from oranges!
+
+**Correct calculation**: Either:
+1. Pass the already-discounted total (after GST recalculation) to the payment config, OR
+2. Pass the GST-inclusive discount amount
+
+**Fix**: Pass the **already-discounted total** (`totalAfterDiscount`) instead of the raw `total` and `discountAmount` separately.
+
+---
+
+## Solution Implementation
+
+### Part 1: Fix Missing Save Button for Fixed Amount
+
+**File**: `src/components/jobs/quotation/InlinePaymentConfig.tsx`
+
+Update the `hasChanges` tracking to include fixed amount state:
+
+```typescript
+// Track changes - FIXED
+useEffect(() => {
+  if (!currentPayment) {
+    // New config - any non-default settings count as changes
+    const hasDepositChanges = paymentType === 'deposit' || depositPercentage !== 50;
+    const hasFixedAmountChanges = useFixedAmount && fixedAmount > 0;
+    setHasChanges(hasDepositChanges || hasFixedAmountChanges);
+    return;
+  }
+  
+  const typeChanged = currentPayment.type !== paymentType;
+  const percentageChanged = currentPayment.type === 'deposit' && 
+    currentPayment.percentage !== depositPercentage;
+  const fixedAmountModeChanged = useFixedAmount; // Fixed amount is always a change from saved
+  const fixedAmountValueChanged = useFixedAmount && fixedAmount !== currentPayment.amount;
+  
+  setHasChanges(typeChanged || percentageChanged || fixedAmountModeChanged || fixedAmountValueChanged);
+}, [paymentType, depositPercentage, currentPayment, useFixedAmount, fixedAmount]);
+```
+
+Also update `handleSaveConfig` to support fixed amounts:
+
+```typescript
+const handleSaveConfig = async () => {
+  await updatePaymentConfig.mutateAsync({
+    quoteId,
+    paymentType,
+    paymentPercentage: paymentType === 'deposit' && !useFixedAmount ? depositPercentage : undefined,
+    fixedAmount: paymentType === 'deposit' && useFixedAmount ? fixedAmount : undefined,
+    total,
+    discountAmount,
+  });
+  setHasChanges(false);
+};
+```
+
+### Part 2: Fix GST-Inclusive Discount in Payment Summary
+
+**File**: `src/components/jobs/tabs/QuotationTab.tsx`
+
+Pass the **already-calculated discounted total** instead of raw total + separate discount:
+
+```typescript
+// Line 1017-1030 - FIXED
+{isPaymentConfigOpen && (
+  <InlinePaymentConfig
+    quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''}
+    total={currentQuote?.discount_type ? totalAfterDiscount : total} // Pass discounted total!
+    discountAmount={0} // No longer needed - already factored in
+    currency={projectData.currency}
+    currentPayment={currentQuote ? {
+      type: currentQuote.payment_type as 'full' | 'deposit' || 'full',
+      percentage: currentQuote.payment_percentage || undefined,
+      amount: currentQuote.payment_amount || (currentQuote?.discount_type ? totalAfterDiscount : total),
+      status: currentQuote.payment_status as 'pending' | 'paid' | 'deposit_paid' | 'failed' || undefined
+    } : undefined}
+  />
+)}
+```
+
+This ensures the payment configuration receives the **correct GST-inclusive discounted total**, and the 50% deposit will calculate correctly.
+
+### Part 3: Update useQuotePayment Hook
+
+**File**: `src/hooks/useQuotePayment.ts`
+
+Add support for fixed amounts:
+
+```typescript
+const updatePaymentConfig = useMutation({
+  mutationFn: async ({ 
+    quoteId, 
+    paymentType, 
+    paymentPercentage,
+    fixedAmount, // NEW
+    total,
+    discountAmount = 0
+  }: {
+    quoteId: string;
+    paymentType: 'full' | 'deposit';
+    paymentPercentage?: number;
+    fixedAmount?: number; // NEW
+    total: number;
+    discountAmount?: number;
+  }) => {
+    // Calculate payment amount
+    let paymentAmount: number;
+    if (paymentType === 'full') {
+      paymentAmount = total; // Already discounted from caller
+    } else if (fixedAmount !== undefined) {
+      paymentAmount = fixedAmount; // User specified exact amount
+    } else {
+      paymentAmount = (total * (paymentPercentage || 50)) / 100;
+    }
+
+    const { data, error } = await supabase
+      .from("quotes")
+      .update({
+        payment_type: paymentType,
+        payment_percentage: paymentType === 'deposit' && !fixedAmount ? paymentPercentage : null,
+        payment_amount: paymentAmount,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", quoteId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+  // ... rest unchanged
+});
 ```
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| New SQL Migration | Update 3 RLS policies to restrict `anon` only |
+| File | Changes |
+|------|---------|
+| `src/components/jobs/quotation/InlinePaymentConfig.tsx` | Fix hasChanges to include fixed amount, update handleSaveConfig |
+| `src/components/jobs/tabs/QuotationTab.tsx` | Pass totalAfterDiscount instead of total + discountAmount |
+| `src/hooks/useQuotePayment.ts` | Add fixedAmount parameter support |
 
 ---
 
-## What This Fixes
+## Expected Results After Fix
 
-After this fix:
-1. New accounts will see **only their own projects** (correctly 0 for new accounts)
-2. The "greyed out" foreign projects will no longer appear
-3. Shared work order links continue to work for anonymous viewers
-4. Authenticated users see only their account's data
-5. All existing accounts are fixed automatically (universal SaaS fix)
+Based on your spreadsheet example:
 
----
-
-## Why This Happened
-
-The share link feature was implemented to allow work orders to be shared via public URLs (like Google Docs). The policy was added to both `anon` AND `authenticated` roles, likely to handle the case where a logged-in user clicks a shared link.
-
-However, this created an unintended side effect: the policy grants access to ANY authenticated user for ANY project with a share link, breaking multi-tenant isolation.
+| Field | Current (Bug) | After Fix |
+|-------|---------------|-----------|
+| Quote Total | NZ$115.00 | NZ$115.00 |
+| Discount Applied | -NZ$10.00 (wrong: excl GST) | Discount already in total |
+| After Discount | NZ$105.00 | NZ$103.50 |
+| Payment Required (50%) | NZ$52.50 | NZ$51.75 |
+| Balance Due | NZ$52.50 | NZ$51.75 |
 
 ---
 
-## Testing Plan
+## Summary
 
-1. Create a fresh test account
-2. Verify Jobs tab shows "0 projects" badge AND zero rows
-3. Log in as an existing account with shared projects
-4. Verify those projects are still visible
-5. Open a shared work order link while logged out - verify it works
-
----
-
-## Technical Notes
-
-- This fix applies to all 600+ client accounts immediately
-- No data is lost - only visibility is corrected
-- Share links continue to function for their intended purpose
-- The fix follows the memory pattern for "share-link-rls-policy-standard"
+1. **Data Isolation Bug**: Happened because share link RLS policy was applied to authenticated users - now fixed in previous migration
+2. **Missing Save Button**: `hasChanges` effect doesn't track fixed amount state - will add those dependencies  
+3. **Incorrect Deposit Amount**: GST-exclusive discount subtracted from GST-inclusive total - will pass pre-calculated discounted total instead
 
