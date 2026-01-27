@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Treatment = Tables<"treatments">;
@@ -256,6 +257,14 @@ export const useCreateTreatment = () => {
       console.log("=== CREATING TREATMENT ===");
       console.log("Input treatment data:", treatment);
 
+      // Check project status before creating
+      if (treatment.project_id) {
+        const status = await checkProjectStatusAsync(treatment.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot add treatment: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
@@ -334,6 +343,20 @@ export const useUpdateTreatment = () => {
       console.log("Treatment ID:", id);
       console.log("Updates:", updates);
       
+      // Get treatment to check project status
+      const { data: treatment } = await supabase
+        .from("treatments")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+
+      if (treatment?.project_id) {
+        const status = await checkProjectStatusAsync(treatment.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot update treatment: Project is in "${status.statusName}" status`);
+        }
+      }
+      
       // Process JSON fields for update with enhanced safety
       const processedUpdates = { ...updates };
       
@@ -399,6 +422,14 @@ export const useDeleteTreatment = () => {
         .select("project_id, window_id, quote_id")
         .eq("id", treatmentId)
         .single();
+
+      // Check project status before deleting
+      if (treatment?.project_id) {
+        const status = await checkProjectStatusAsync(treatment.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot delete treatment: Project is in "${status.statusName}" status`);
+        }
+      }
 
       // Delete the treatment
       const { error: treatmentError } = await supabase

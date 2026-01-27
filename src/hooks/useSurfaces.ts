@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
@@ -48,6 +49,14 @@ export const useCreateSurface = () => {
       console.log("=== CREATING SURFACE ===");
       console.log("Surface data being sent:", surface);
       
+      // Check project status before creating
+      if (surface.project_id) {
+        const status = await checkProjectStatusAsync(surface.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot add window: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
@@ -96,6 +105,20 @@ export const useUpdateSurface = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Surface> & { id: string }) => {
+      // Get surface to check project status
+      const { data: surface } = await supabase
+        .from("surfaces")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+
+      if (surface?.project_id) {
+        const status = await checkProjectStatusAsync(surface.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot update window: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { data, error } = await supabase
         .from("surfaces")
         .update(updates)
@@ -139,6 +162,14 @@ export const useDeleteSurface = () => {
         .select("project_id")
         .eq("id", id)
         .single();
+
+      // Check project status before deleting
+      if (surface?.project_id) {
+        const status = await checkProjectStatusAsync(surface.project_id);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot delete window: Project is in "${status.statusName}" status`);
+        }
+      }
 
       // Delete the surface
       const { error: surfaceError } = await supabase
