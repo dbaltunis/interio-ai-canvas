@@ -1,105 +1,156 @@
 
-# Fix Wrong Login URL in Invitation Emails
+# Fix: Critical Data Isolation Bug - New Accounts Seeing Other Users' Jobs
 
-## Problem Summary
+## Root Cause Identified
 
-When new accounts are created or invitations are resent, the "Login Now" button in emails points to the wrong URL (`ldgrcodffsalkevafbkb.supabase.co` or a SendGrid tracking URL) instead of `https://appinterio.app/auth`.
+When a new account is created and the user logs in, they can see jobs/projects from **other accounts**. These appear "greyed out" with $0.00 prices because the related data (quotes, clients) is correctly blocked by RLS, but the projects themselves leak through.
 
-## Root Cause
+### The Specific Bug
 
-Two edge functions have incorrect fallback URLs and are missing the `/auth` path:
+The RLS policy `"Allow public read access via share link"` on the `projects` table applies to **both** `anon` AND `authenticated` roles:
 
-| Function | Current Fallback | Should Be |
-|----------|------------------|-----------|
-| `create-admin-account` | `https://ldgrcodffsalkevafbkb.supabase.co` | `https://appinterio.app` |
-| `resend-account-invitation` | `https://ldgrcodffsalkevafbkb.supabase.co` | `https://appinterio.app` |
+```sql
+CREATE POLICY "Allow public read access via share link"
+ON projects FOR SELECT TO anon, authenticated
+USING (
+  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+  OR
+  public.project_has_active_share_link(id)
+);
+```
 
-Additionally, when SendGrid is used, click tracking rewrites URLs to go through tracking domains (like `url3728.interioapp.com`), which can cause 404s if DNS/redirects are misconfigured.
+**Problem**: PostgreSQL combines permissive RLS policies with OR logic. This means ANY project with a share link becomes visible to ALL logged-in users, bypassing account isolation.
+
+### Why Data Appears "Greyed Out"
+
+| Table | RLS Status | Result |
+|-------|------------|--------|
+| `projects` | **Leaking via share link policy** | 8 projects visible to all users |
+| `quotes` | Correctly isolated | New accounts see 0 quotes |
+| `clients` | Correctly isolated | New accounts can't see clients |
+| `job_statuses` | Isolated by account | Status lookup fails ("Error fetching status") |
+
+The UI tries to join these tables client-side. When projects leak but quotes/clients don't, the result is:
+- Jobs appear in the list (from leaked projects)
+- $0.00 prices (no quotes data)
+- "No Client" or missing client names
+- Grey/unknown status badges
+
+### Evidence
+
+Database queries confirmed:
+- 4 projects with legacy `work_order_token` 
+- 4 projects with active share links
+- Total: 8 projects visible to ANY authenticated user
+- These match the "greyed out" rows the user sees
+
+---
 
 ## Solution
 
-### Fix 1: Update `create-admin-account/index.ts`
+### Part 1: Database Migration - Fix Share Link Policy
 
-**Line 420:** Change fallback URL and add `/auth` path to the login button
+Change the share link policy to apply **ONLY to `anon` role**, not `authenticated`:
 
-```typescript
-// BEFORE (line 420)
-const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+```sql
+-- Drop the problematic policy
+DROP POLICY IF EXISTS "Allow public read access via share link" ON projects;
 
-// AFTER
-const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app';
+-- Recreate with ONLY anon role (for true public sharing)
+CREATE POLICY "Allow public read access via share link"
+ON projects FOR SELECT TO anon
+USING (
+  (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+  OR
+  public.project_has_active_share_link(id)
+);
 ```
 
-**Line 467:** Add `/auth` to the login link
+**Impact**: Anonymous users can still view shared work orders via link. Authenticated users must pass the account isolation policy.
 
-```typescript
-// BEFORE (line 467)
-<a href="${siteUrl}" style="...">Login Now</a>
+### Part 2: Apply Same Fix to Related Tables
 
-// AFTER
-<a href="${siteUrl}/auth" style="...">Login Now</a>
+The same pattern exists on `clients` and potentially `workshop_items`:
+
+```sql
+-- Fix clients table
+DROP POLICY IF EXISTS "Allow public read access via share link" ON clients;
+DROP POLICY IF EXISTS "Allow public read access to clients via share link" ON clients;
+
+CREATE POLICY "Allow public read access via share link"
+ON clients FOR SELECT TO anon
+USING (client_has_active_share_link(id));
+
+-- Fix workshop_items table  
+DROP POLICY IF EXISTS "Allow public read access via share link" ON workshop_items;
+
+CREATE POLICY "Allow public read access via share link"
+ON workshop_items FOR SELECT TO anon
+USING (
+  project_id IN (
+    SELECT id FROM projects 
+    WHERE (work_order_token IS NOT NULL AND work_order_shared_at IS NOT NULL)
+    OR project_has_active_share_link(id)
+  )
+);
 ```
 
-**Line 498-517:** Add SendGrid click tracking disable (like `send-invitation` does)
+### Part 3: Handle Authenticated Users Viewing Shared Links
 
-```typescript
-// Add to SendGrid payload (after line 516):
-tracking_settings: {
-  click_tracking: {
-    enable: false,
-    enable_text: false
-  }
-}
+For authenticated users who legitimately want to view a shared work order (e.g., clicking a shared link while logged in), create a **separate restrictive policy** that only allows access when the user is accessing via the token:
+
+```sql
+-- Allow authenticated users to view projects ONLY via share token in URL
+-- This requires passing the token as a claim or handling in the application
+-- For now, authenticated users viewing shared links will be handled by the 
+-- existing account isolation policy (they'll see it if they're in the same account)
 ```
 
-### Fix 2: Update `resend-account-invitation/index.ts`
-
-**Line 111:** Change fallback URL
-
-```typescript
-// BEFORE (line 111)
-const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
-
-// AFTER
-const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app';
-```
-
-**Line 140:** Add `/auth` to the login link
-
-```typescript
-// BEFORE (line 140)
-<a href="${siteUrl}" style="...">Login Now</a>
-
-// AFTER
-<a href="${siteUrl}/auth" style="...">Login Now</a>
-```
-
-### Fix 3: Verify SITE_URL Secret
-
-Ensure the `SITE_URL` secret in Supabase is set to: `https://appinterio.app`
-
-(Currently there IS a `SITE_URL` secret configured, but it may have the wrong value)
+Since authenticated users typically view their OWN shared work orders (same account), the existing `Permission-based project access` policy will handle this correctly.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/create-admin-account/index.ts` | Update fallback URL, add `/auth` to button link, add SendGrid click tracking disable |
-| `supabase/functions/resend-account-invitation/index.ts` | Update fallback URL, add `/auth` to button link |
+| File | Change |
+|------|--------|
+| New SQL Migration | Update 3 RLS policies to restrict `anon` only |
 
-## Impact
+---
+
+## What This Fixes
 
 After this fix:
-- New admin-created accounts will receive emails with correct login links
-- Resent invitations will have correct login links
-- SendGrid click tracking won't rewrite URLs (preventing 404s)
-- Links will go directly to `/auth` page where users can log in
+1. New accounts will see **only their own projects** (correctly 0 for new accounts)
+2. The "greyed out" foreign projects will no longer appear
+3. Shared work order links continue to work for anonymous viewers
+4. Authenticated users see only their account's data
+5. All existing accounts are fixed automatically (universal SaaS fix)
 
-## Verification After Fix
+---
 
-1. Create a new test account via Admin panel
-2. Check the welcome email - "Login Now" should link to `https://appinterio.app/auth`
-3. Click the link - should land on login page (not 404)
-4. Resend an invitation - should also have correct link
+## Why This Happened
+
+The share link feature was implemented to allow work orders to be shared via public URLs (like Google Docs). The policy was added to both `anon` AND `authenticated` roles, likely to handle the case where a logged-in user clicks a shared link.
+
+However, this created an unintended side effect: the policy grants access to ANY authenticated user for ANY project with a share link, breaking multi-tenant isolation.
+
+---
+
+## Testing Plan
+
+1. Create a fresh test account
+2. Verify Jobs tab shows "0 projects" badge AND zero rows
+3. Log in as an existing account with shared projects
+4. Verify those projects are still visible
+5. Open a shared work order link while logged out - verify it works
+6. Open the same link while logged in as a DIFFERENT account - verify it shows the shared content (via anon session fallback)
+
+---
+
+## Technical Notes
+
+- This fix applies to all 600+ client accounts immediately
+- No data is lost - only visibility is corrected
+- Share links continue to function for their intended purpose
+- The fix follows the memory pattern for "share-link-rls-policy-standard"
