@@ -10508,6 +10508,7 @@ export type Database = {
       }
       cleanup_duplicate_invitations: { Args: never; Returns: undefined }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
+      cleanup_orphaned_data: { Args: never; Returns: Json }
       client_has_active_share_link: {
         Args: { client_uuid: string }
         Returns: boolean
@@ -10535,6 +10536,7 @@ export type Database = {
       }
       fix_broken_user_data: { Args: { target_user_id: string }; Returns: Json }
       fix_pending_invitations: { Args: never; Returns: Json }
+      fix_twc_required_options: { Args: never; Returns: Json }
       fix_user_permissions_for_role: {
         Args: { target_user_id: string }
         Returns: Json
@@ -10687,6 +10689,7 @@ export type Database = {
         Returns: boolean
       }
       refresh_client_stats: { Args: never; Returns: undefined }
+      repair_account_full: { Args: { target_user_id: string }; Returns: Json }
       repair_broken_invitation_account: {
         Args: {
           inviter_id_param: string
