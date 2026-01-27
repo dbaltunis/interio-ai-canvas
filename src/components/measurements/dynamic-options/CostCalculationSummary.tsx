@@ -370,12 +370,23 @@ export const CostCalculationSummary = ({
   // BLINDS: Use clean calculator (check both category and template name)
   if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
     try {
+      // ✅ CRITICAL DEBUG: Log fabric enrichment status
       console.log('🔧 Calculating blind costs with:', {
         width,
         height,
-        selectedOptions,
+        selectedOptions: selectedOptions?.length || 0,
         hasTemplate: !!template,
-        hasFabric: !!fabricToUse
+        hasFabric: !!fabricToUse,
+        fabricName: fabricToUse?.name,
+        // ✅ ENRICHMENT CHECK
+        hasPricingGrid: !!fabricToUse?.pricing_grid_data,
+        hasResolvedGridName: !!fabricToUse?.resolved_grid_name,
+        pricingMethod: fabricToUse?.pricing_method,
+        priceGroup: fabricToUse?.price_group,
+        // ✅ If no grid, log why
+        enrichmentMissing: fabricToUse?.price_group && !fabricToUse?.pricing_grid_data 
+          ? 'HAS price_group but NO grid data - enrichment may have failed!' 
+          : null
       });
       
       const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements);

@@ -37,9 +37,32 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
 
       // Check if fabric has grid routing info
       const hasPriceGroup = fabricItem.price_group;
-      // ✅ FIX: Use product_category OR subcategory OR treatment_category from formData
-      const productCategory = fabricItem.product_category || fabricItem.subcategory || formData?.treatment_category;
+      // ✅ CRITICAL FIX: Check multiple sources for product category
+      // Priority: subcategory (venetian_slats) > product_category > treatment_category from form
+      const productCategory = 
+        fabricItem.subcategory ||  // e.g., "venetian_slats" 
+        fabricItem.product_category ||  // Legacy field
+        formData?.treatment_category;   // From form/template
+      
+      // ✅ For blinds, map subcategory to product_type for grid lookup
+      // venetian_slats → venetian_blinds
+      const productTypeForGrid = fabricItem.subcategory?.includes('venetian') 
+        ? 'venetian_blinds' 
+        : fabricItem.subcategory?.includes('roller')
+        ? 'roller_blinds'
+        : productCategory;
+      
       const hasSystemType = formData?.system_type;
+
+      console.log('🔍 Fabric enrichment check:', {
+        fabricName: fabricItem.name,
+        hasPriceGroup,
+        priceGroup: fabricItem.price_group,
+        subcategory: fabricItem.subcategory,
+        productCategory,
+        productTypeForGrid,
+        userId: fabricItem.user_id
+      });
 
       if (!hasPriceGroup) {
         // No price group, can't resolve grid - use fabric as-is
@@ -52,9 +75,10 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
       setIsLoading(true);
       try {
         const gridResult = await resolveGridForProduct({
-          productType: productCategory,
-          systemType: hasSystemType || productCategory, // Fallback to category
+          productType: productTypeForGrid,  // ✅ Use mapped product type
+          systemType: hasSystemType || productTypeForGrid, // Fallback to category
           fabricPriceGroup: fabricItem.price_group,
+          fabricSupplierId: fabricItem.vendor_id,  // ✅ Pass vendor for auto-matching
           userId: fabricItem.user_id
         });
 
