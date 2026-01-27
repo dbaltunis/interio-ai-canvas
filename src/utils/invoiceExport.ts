@@ -440,6 +440,10 @@ export function prepareInvoiceExportData(
   const currency = extractCurrency(businessSettings);
   const defaultAccountCode = '200'; // Standard sales account code
   
+  // Get tax-inclusive setting from pricing_settings
+  const pricingSettings = businessSettings?.pricing_settings as any;
+  const taxInclusive = pricingSettings?.tax_inclusive || false;
+  
   // Get discount info from quote
   const discountAmount = quote?.discount_amount || 0;
   const discountType = quote?.discount_type as 'percentage' | 'fixed' | undefined;
@@ -450,10 +454,25 @@ export function prepareInvoiceExportData(
     return sum + (item.unit_price || item.total || 0);
   }, 0);
   
-  // Apply discount to get actual subtotal
-  const subtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
-  const taxAmount = subtotalAfterDiscount * (taxRate / 100);
-  const total = subtotalAfterDiscount + taxAmount;
+  // Apply discount and calculate tax based on tax_inclusive setting
+  let subtotalAfterDiscount: number;
+  let taxAmount: number;
+  let total: number;
+  
+  if (taxInclusive) {
+    // Items include tax - discount was calculated on net, need to apply GST to discount too
+    const discountWithGST = discountAmount * (1 + taxRate / 100);
+    const grossAfterDiscount = Math.max(0, itemsSubtotal - discountWithGST);
+    subtotalAfterDiscount = grossAfterDiscount / (1 + taxRate / 100); // Extract net subtotal
+    total = grossAfterDiscount; // Gross total includes tax
+    taxAmount = total - subtotalAfterDiscount;
+  } else {
+    // Tax-exclusive (standard) - discount applies to net, tax calculated after
+    subtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
+    taxAmount = subtotalAfterDiscount * (taxRate / 100);
+    total = subtotalAfterDiscount + taxAmount;
+  }
+  
   const amountPaid = quote?.amount_paid || 0;
   
   // Build discount description
@@ -512,8 +531,10 @@ export function prepareInvoiceExportData(
     customerName: client?.name,
     itemCount: lineItems.length,
     itemsSubtotal,
+    taxInclusive,
     discountAmount,
     subtotalAfterDiscount,
+    taxRate,
     taxAmount,
     total,
     currency
