@@ -438,6 +438,32 @@ export const DynamicCurtainOptions = ({
       onHeadingChange(headingId);
     }
     
+    // ✅ BRIDGE FIX: Sync heading selection to TWC heading_type options
+    // TWC imports create heading_type_* treatment options, but user selects via inventory selector
+    // This bridges the two systems so TWC validation passes
+    const headingTypeOptions = treatmentOptions.filter(opt => 
+      opt.key.toLowerCase().includes('heading_type')
+    );
+    if (headingTypeOptions.length > 0 && heading) {
+      console.log('🔗 Bridging heading selection to TWC heading_type options:', headingTypeOptions.map(o => o.key));
+      headingTypeOptions.forEach(opt => {
+        // Find matching value by name, or use first available value
+        const matchingValue = opt.option_values?.find(v => 
+          v.label.toLowerCase().includes(heading.name.toLowerCase()) ||
+          heading.name.toLowerCase().includes(v.label.toLowerCase())
+        ) || opt.option_values?.[0];
+        
+        if (matchingValue) {
+          console.log(`✅ Setting ${opt.key} to ${matchingValue.label} (${matchingValue.id})`);
+          setTreatmentOptionSelections(prev => ({
+            ...prev,
+            [opt.key]: matchingValue.id
+          }));
+          onChange(`treatment_option_${opt.key}`, matchingValue.id);
+        }
+      });
+    }
+    
     // ✅ CRITICAL FIX: ALWAYS set heading fullness from the heading's database value
     // Priority: heading.fullness_ratio > metadata.fullness_ratio > ERROR (no fallback!)
     if (heading) {

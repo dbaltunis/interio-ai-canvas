@@ -36,9 +36,11 @@ export const ValidationAlert = ({
     if (onConfigureTemplate) {
       onConfigureTemplate();
     } else if (templateId) {
-      navigate(`/settings?tab=products&editTemplate=${templateId}`);
+      // Navigate to template editor with proper sub-tab
+      navigate(`/settings?tab=products&subtab=templates&editTemplate=${templateId}`);
     } else {
-      navigate('/settings?tab=products');
+      // Fallback to templates list, not generic products tab
+      navigate('/settings?tab=products&subtab=templates');
     }
   };
 

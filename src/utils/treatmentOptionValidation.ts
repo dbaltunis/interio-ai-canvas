@@ -28,6 +28,14 @@ export const validateTreatmentOptions = (
   const warnings: ValidationError[] = [];
 
   treatmentOptions.forEach(option => {
+    // ✅ FIX: Skip heading_type validation - handled by inventory heading selector
+    // TWC imports create heading_type_* options, but the core inventory selector updates selected_heading
+    // This prevents dual-system validation conflicts
+    if (option.key.toLowerCase().includes('heading_type')) {
+      console.log(`⏭️ Skipping validation for ${option.key}: handled by inventory heading selector`);
+      return; // Skip this option entirely - heading is validated via selected_heading
+    }
+    
     // ✅ FIX: Only validate required options that are ALSO enabled on the template
     // If enabledOptionIds is provided, check if this option is enabled
     const isEnabledOnTemplate = enabledOptionIds 
