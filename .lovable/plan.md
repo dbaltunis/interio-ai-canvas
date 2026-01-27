@@ -1,298 +1,262 @@
 
-# Comprehensive SaaS Consistency Audit System
+# Gustin Decor Online Store + InterioApp + Shopify Integration
 
 ## Overview
 
-This system will provide a complete audit and auto-repair capability for all InterioApp accounts, identifying configuration gaps, orphaned data, and divergent settings while respecting intentional custom configurations (like Homekaara).
+This plan outlines the integration architecture for connecting the **new Gustin Decor Lovable project** (online storefront) with:
+1. **InterioApp** (this project) - Pricing engine, fabric catalog, lead management
+2. **Shopify** - Checkout, payments, inventory sync
 
 ## Current State Analysis
 
-Based on database investigation:
+| Component | Status | Data |
+|-----------|--------|------|
+| Gustin InterioApp Account | Active | 1,361 fabrics, 5 headings, 0 options configured |
+| Account ID | `32a92783-f482-4e3d-8ebf-c292200674e5` | |
+| Shopify Connection | Not Connected | No `shopify_integrations` record |
+| InterioApp Online Store | Not Created | No `online_stores` record |
+| Clients/Projects | 0 clients, 2 projects | Fresh account |
 
-| Metric | Finding |
-|--------|---------|
-| Total Owner Accounts | 13 |
-| Accounts with Full Permissions (77) | 12 |
-| Accounts Missing Permissions | 1 (InterioApp DEMO - missing 13) |
-| Accounts Missing Account Settings | 5 (InterioApp Free Trial, CCCO Admin, 1 client, Angely-Paris, Holly's dad, InterioApp_Australasia) |
-| Orphaned Projects | 5 |
-| Orphaned Quotes | 3 |
-| Orphaned Clients | 1 |
-| Orphaned Inventory Items | 100 |
-| TWC Data (deleted user account) | 157 options for non-existent account |
+## Architecture
 
-## Technical Implementation
-
-### Part 1: New Edge Function - `saas-consistency-audit`
-
-**Location**: `supabase/functions/saas-consistency-audit/index.ts`
-
-**Capabilities**:
-- Scan all Owner/System Owner accounts
-- Check 8 configuration categories per account
-- Identify orphaned data across 6 tables
-- Detect divergent TWC settings
-- Generate auto-fix SQL script
-- Return detailed JSON report
-
-**Audit Categories**:
-1. Permissions (77 expected for Owner)
-2. Business Settings (1 required)
-3. Account Settings (1 required)
-4. Number Sequences (5 types: job, quote, invoice, order, draft)
-5. Job Statuses (minimum 4)
-6. Client Stages (10 default)
-7. Subscription Status
-8. TWC Options (heading_type should be required=false)
-
-**Endpoint Design**:
 ```text
-POST /saas-consistency-audit
-Authorization: Bearer <System Owner token>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         INTEGRATION ARCHITECTURE                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   NEW LOVABLE PROJECT               INTERIOAPP                SHOPIFY       │
+│   (Gustin Online Store)             (This Project)            (Checkout)    │
+│                                                                             │
+│   ┌───────────────────┐                                                     │
+│   │   Product Pages   │                                                     │
+│   │   - Uzuolaidos    │──── GET /storefront-catalog ────┐                  │
+│   │   - Zaliuzes      │     (Fetch fabrics + prices)    │                  │
+│   │   - Roletai       │                                  ▼                  │
+│   └───────────────────┘                        ┌─────────────────┐         │
+│                                                │  InterioApp     │         │
+│   ┌───────────────────┐                        │  Database       │         │
+│   │   Calculator UI   │                        │  - Fabrics      │         │
+│   │   - Dimensions    │──── POST /storefront-estimate ─│  - Options      │         │
+│   │   - Options       │     (Get price)         │  - Pricing      │         │
+│   │   - Fabric Select │                        └─────────────────┘         │
+│   └───────────────────┘                                  │                  │
+│           │                                              │                  │
+│           │                                              │                  │
+│   ┌───────▼───────────┐                                  │                  │
+│   │   Lead Capture    │                                  │                  │
+│   │   - Contact Form  │──── POST /storefront-lead ──────►│                  │
+│   │   - Quote Request │     (Create client in InterioApp)│                  │
+│   └───────────────────┘                                  │                  │
+│           │                                              │                  │
+│           ▼                                              │                  │
+│   ┌───────────────────┐      ┌────────────────────┐     │                  │
+│   │   Add to Cart     │─────►│   Shopify Store    │◄────┘                  │
+│   │   (Buy Now)       │      │   (Checkout)       │   Inventory Sync       │
+│   └───────────────────┘      └─────────┬──────────┘                        │
+│                                        │                                    │
+│                              Webhook (orders/create)                       │
+│                                        │                                    │
+│                                        ▼                                    │
+│                              ┌─────────────────┐                           │
+│                              │ shopify-webhook │                           │
+│                              │ -order          │                           │
+│                              │ → Create Client │                           │
+│                              │ → Create Project│                           │
+│                              └─────────────────┘                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-Response Schema:
+## Implementation Plan
+
+### Phase 1: API Infrastructure (InterioApp Changes)
+
+#### 1.1 Database Migration - Add Storefront API Key
+
+Add a `storefront_api_key` column to `account_settings` for per-account API authentication:
+
+```sql
+ALTER TABLE public.account_settings 
+ADD COLUMN IF NOT EXISTS storefront_api_key TEXT DEFAULT encode(gen_random_bytes(32), 'hex');
+
+-- Generate keys for existing accounts
+UPDATE public.account_settings 
+SET storefront_api_key = encode(gen_random_bytes(32), 'hex')
+WHERE storefront_api_key IS NULL;
+```
+
+#### 1.2 Create Edge Function: `storefront-catalog`
+
+**Purpose**: Fetch fabrics and products for storefront display
+**Authentication**: Account ID + API Key (no user login required)
+
+```text
+Endpoint: GET /storefront-catalog
+
+Query Parameters:
+- account_id (required): UUID of the InterioApp account
+- api_key (required): Storefront API key
+- category: filter by category (fabric, heading, etc.)
+- collection: filter by collection name
+- limit: pagination (default 50)
+- offset: pagination offset
+
+Response:
 {
-  timestamp: string,
-  summary: {
-    total_accounts: number,
-    healthy_accounts: number,
-    needs_attention: number,
-    orphaned_records: number
-  },
-  accounts: [{
-    user_id: string,
-    display_name: string,
-    email: string,
-    health_score: number,
-    health_status: "healthy" | "warning" | "critical",
-    is_custom_account: boolean,  // Mark accounts like Homekaara
-    missing_configs: {
-      permissions: { expected: 77, actual: number, missing: string[] },
-      business_settings: boolean,
-      account_settings: boolean,
-      number_sequences: { expected: 5, actual: number, missing: string[] },
-      job_statuses: number,
-      client_stages: { expected: 10, actual: number },
-      subscription: boolean
-    },
-    twc_issues: {
-      heading_type_required: boolean,
-      orphaned_options: number
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Fabric Name",
+      "sku": "SKU-001",
+      "collection": "Premium Collection",
+      "color": "Ivory",
+      "width_cm": 280,
+      "image_url": "https://...",
+      "price_per_meter": 45.00,
+      "currency": "EUR"
     }
-  }],
-  orphaned_data: {
-    projects: [{ id, user_id }],
-    quotes: [{ id, user_id }],
-    clients: [{ id, user_id }],
-    inventory_items: [{ id, user_id }],
-    treatment_options: [{ id, account_id }]
-  },
-  auto_fix_script: string  // Generated SQL to fix all issues
+  ],
+  "pagination": { "total": 1361, "limit": 50, "offset": 0, "has_more": true }
 }
 ```
 
-### Part 2: Database Functions for Auto-Repair
+#### 1.3 Create Edge Function: `storefront-lead`
 
-**New SQL Migration** with these functions:
+**Purpose**: Capture leads from external storefronts (replaces receive-external-lead with multi-tenant support)
 
-```sql
--- 1. repair_account_full(user_id) - Comprehensive account repair
-CREATE OR REPLACE FUNCTION public.repair_account_full(target_user_id uuid)
-RETURNS jsonb AS $$
-DECLARE
-  result jsonb := '{"fixes_applied": []}';
-  fixes text[] := '{}';
-BEGIN
-  -- Fix permissions using existing function
-  PERFORM public.fix_user_permissions_for_role(target_user_id);
-  fixes := array_append(fixes, 'permissions');
-  
-  -- Create business_settings if missing
-  INSERT INTO business_settings (user_id, measurement_units, tax_type, tax_rate)
-  VALUES (target_user_id, 'mm', 'GST', 15)
-  ON CONFLICT (user_id) DO NOTHING;
-  IF FOUND THEN fixes := array_append(fixes, 'business_settings'); END IF;
-  
-  -- Create account_settings if missing
-  INSERT INTO account_settings (account_owner_id, currency, language)
-  VALUES (target_user_id, 'USD', 'en')
-  ON CONFLICT (account_owner_id) DO NOTHING;
-  IF FOUND THEN fixes := array_append(fixes, 'account_settings'); END IF;
-  
-  -- Create number_sequences if missing
-  INSERT INTO number_sequences (user_id, entity_type, prefix, next_number, padding)
-  VALUES 
-    (target_user_id, 'job', 'JOB', 1000, 4),
-    (target_user_id, 'quote', 'QTE', 1000, 4),
-    (target_user_id, 'invoice', 'INV', 1000, 4),
-    (target_user_id, 'order', 'ORD', 1000, 4),
-    (target_user_id, 'draft', 'DFT', 1000, 4)
-  ON CONFLICT (user_id, entity_type) DO NOTHING;
-  
-  -- Create job_statuses if missing
-  IF NOT EXISTS (SELECT 1 FROM job_statuses WHERE user_id = target_user_id) THEN
-    INSERT INTO job_statuses (user_id, name, color, is_default, sort_order, status_type)
-    VALUES 
-      (target_user_id, 'New', '#3B82F6', true, 1, 'active'),
-      (target_user_id, 'In Progress', '#F59E0B', false, 2, 'active'),
-      (target_user_id, 'Pending', '#8B5CF6', false, 3, 'active'),
-      (target_user_id, 'On Hold', '#6B7280', false, 4, 'active'),
-      (target_user_id, 'Completed', '#10B981', false, 5, 'completed'),
-      (target_user_id, 'Cancelled', '#EF4444', false, 6, 'cancelled');
-    fixes := array_append(fixes, 'job_statuses');
-  END IF;
-  
-  -- Client stages already have auto-seeding trigger
-  
-  result := jsonb_build_object(
-    'success', true,
-    'user_id', target_user_id,
-    'fixes_applied', to_jsonb(fixes)
-  );
-  
-  RETURN result;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+```text
+Endpoint: POST /storefront-lead
 
--- 2. cleanup_orphaned_data() - Remove orphaned records
-CREATE OR REPLACE FUNCTION public.cleanup_orphaned_data()
-RETURNS jsonb AS $$
-DECLARE
-  deleted_counts jsonb := '{}';
-  del_count integer;
-BEGIN
-  -- Delete orphaned projects
-  DELETE FROM projects WHERE user_id NOT IN (SELECT user_id FROM user_profiles);
-  GET DIAGNOSTICS del_count = ROW_COUNT;
-  deleted_counts := deleted_counts || jsonb_build_object('projects', del_count);
-  
-  -- Delete orphaned quotes
-  DELETE FROM quotes WHERE user_id NOT IN (SELECT user_id FROM user_profiles);
-  GET DIAGNOSTICS del_count = ROW_COUNT;
-  deleted_counts := deleted_counts || jsonb_build_object('quotes', del_count);
-  
-  -- Delete orphaned clients
-  DELETE FROM clients WHERE user_id NOT IN (SELECT user_id FROM user_profiles);
-  GET DIAGNOSTICS del_count = ROW_COUNT;
-  deleted_counts := deleted_counts || jsonb_build_object('clients', del_count);
-  
-  -- Delete orphaned inventory items
-  DELETE FROM enhanced_inventory_items WHERE user_id NOT IN (SELECT user_id FROM user_profiles);
-  GET DIAGNOSTICS del_count = ROW_COUNT;
-  deleted_counts := deleted_counts || jsonb_build_object('inventory_items', del_count);
-  
-  -- Delete orphaned treatment options (account_id based)
-  DELETE FROM treatment_options WHERE account_id NOT IN (SELECT user_id FROM user_profiles);
-  GET DIAGNOSTICS del_count = ROW_COUNT;
-  deleted_counts := deleted_counts || jsonb_build_object('treatment_options', del_count);
-  
-  RETURN jsonb_build_object(
-    'success', true,
-    'timestamp', now(),
-    'deleted', deleted_counts
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+Request Body:
+{
+  "account_id": "32a92783-f482-4e3d-8ebf-c292200674e5",
+  "api_key": "<storefront_api_key>",
+  "name": "Jonas Jonaitis",
+  "email": "jonas@example.lt",
+  "phone": "+37061234567",
+  "message": "Interested in blackout curtains",
+  "product_interest": "Naktinė užuolaida",
+  "source": "gustindecor.com"
+}
 
--- 3. fix_twc_required_options() - Fix TWC heading_type options
-CREATE OR REPLACE FUNCTION public.fix_twc_required_options()
-RETURNS jsonb AS $$
-DECLARE
-  updated_count integer;
-BEGIN
-  UPDATE treatment_options
-  SET required = false
-  WHERE source = 'twc'
-    AND key LIKE 'heading_type%'
-    AND required = true;
-  
-  GET DIAGNOSTICS updated_count = ROW_COUNT;
-  
-  RETURN jsonb_build_object(
-    'success', true,
-    'twc_options_fixed', updated_count
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+Response:
+{
+  "success": true,
+  "lead_id": "uuid",
+  "message": "Lead created successfully"
+}
 ```
 
-### Part 3: Frontend Hook - `useSaaSAudit`
+#### 1.4 Create Edge Function: `storefront-options`
 
-**Location**: `src/hooks/useSaaSAudit.ts`
+**Purpose**: Fetch product configuration options (lining, heading, etc.)
 
-```typescript
-// Hook capabilities:
-- useRunAudit() - Trigger full audit
-- useRepairAccount(userId) - Fix single account
-- useRepairAllAccounts() - Fix all flagged accounts
-- useCleanupOrphans() - Remove orphaned data
-- useDownloadReport() - Export JSON report
+```text
+Endpoint: GET /storefront-options
+
+Query Parameters:
+- account_id: UUID
+- api_key: string
+- treatment_type: curtains | blinds | shutters (optional)
+
+Response:
+{
+  "success": true,
+  "options": [
+    {
+      "key": "lining_type",
+      "label": "Pamušalas",
+      "values": [
+        { "code": "unlined", "label": "Be pamušalo", "price_modifier": 0 },
+        { "code": "blackout", "label": "Blackout", "price_modifier": 15 }
+      ]
+    }
+  ]
+}
 ```
 
-### Part 4: Admin UI Enhancement
+#### 1.5 Create Edge Function: `storefront-estimate`
 
-**Modify**: `src/pages/AdminAccountHealth.tsx`
+**Purpose**: Calculate price estimate for configurator display
 
-**New Components**:
+```text
+Endpoint: POST /storefront-estimate
 
-1. **`AuditActionsBar.tsx`** - Header with audit controls
-   - "Run Full Audit" button
-   - "Fix All Issues" button (with confirmation)
-   - "Download Report" button
-   - "Cleanup Orphaned Data" button
+Request Body:
+{
+  "account_id": "uuid",
+  "api_key": "string",
+  "fabric_id": "uuid",
+  "width_mm": 2000,
+  "drop_mm": 2400,
+  "quantity": 1,
+  "options": {
+    "lining_type": "blackout",
+    "heading_type": "wave"
+  }
+}
 
-2. **`AuditReportDialog.tsx`** - Modal with detailed results
-   - Summary cards (Total/Healthy/Warning/Critical)
-   - Account-by-account breakdown
-   - Missing permissions list
-   - Generated SQL script viewer
-   - Export options
-
-3. **`OrphanedDataCard.tsx`** - Shows orphaned record counts
-   - Projects, Quotes, Clients, Inventory counts
-   - "Preview" button to see orphaned IDs
-   - "Cleanup" button with confirmation
-
-4. **`BulkRepairButton.tsx`** - Repairs all accounts
-   - Shows progress during repair
-   - Lists what was fixed per account
-   - Refreshes health data after completion
-
-### Part 5: Custom Account Detection
-
-To respect accounts with intentional custom configurations (like Homekaara), the audit will:
-
-1. **Mark known custom accounts** via a new column or lookup:
-   - Check `account_feature_flags` for special flags
-   - Check if account has Homekaara-specific edge function called
-   
-2. **Show but don't auto-fix** custom accounts:
-   - Display in audit with "Custom Configuration" badge
-   - Skip in "Fix All" operations
-   - Allow manual fix with confirmation
-
-### Part 6: Standard Permissions List
-
-Store the 77 expected Owner permissions in a database table for consistency:
-
-```sql
-CREATE TABLE IF NOT EXISTS public.standard_role_permissions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  role text NOT NULL,
-  permission_name text NOT NULL,
-  is_required boolean DEFAULT true,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(role, permission_name)
-);
-
--- Seed the 77 Owner permissions
-INSERT INTO standard_role_permissions (role, permission_name)
-VALUES 
-  ('Owner', 'create_appointments'),
-  ('Owner', 'create_clients'),
-  -- ... all 77 permissions
-ON CONFLICT (role, permission_name) DO NOTHING;
+Response:
+{
+  "success": true,
+  "estimate": {
+    "fabric_meters": 12.5,
+    "fabric_cost": 562.50,
+    "making_cost": 85.00,
+    "total": 647.50,
+    "currency": "EUR",
+    "note": "Estimate only. Final price confirmed after measurement."
+  }
+}
 ```
+
+### Phase 2: Documentation Update
+
+Add new section to `src/pages/Documentation.tsx`:
+
+**New Section: "Storefront Integration API"**
+
+Subsections:
+1. **Getting Started** - Account ID and API key retrieval
+2. **Authentication** - How to authenticate API requests
+3. **Fabric Catalog API** - Fetching products with examples
+4. **Lead Capture API** - Submitting leads with full spec
+5. **Product Options API** - Configuration options
+6. **Price Estimate API** - Calculator integration
+7. **Shopify Integration** - How orders flow in
+8. **Error Codes** - Standard error responses
+9. **Code Examples** - JavaScript/React examples
+
+### Phase 3: Shopify Connection
+
+No code changes required - uses existing OAuth flow:
+
+1. Gustin navigates to Settings → Integrations → Shopify
+2. Enters their Shopify store domain
+3. Completes OAuth authorization
+4. Webhooks auto-register (`orders/create`, `customers/create`)
+5. When order comes in → `shopify-webhook-order` creates Client + Project
+
+### Phase 4: Inventory Sync (Bidirectional)
+
+Enhance existing sync to support:
+
+1. **Shopify → InterioApp**: When Shopify inventory changes, update `enhanced_inventory_items.quantity`
+2. **InterioApp → Shopify**: When InterioApp stock decrements (project status change), update Shopify
+
+This requires:
+- New Edge Function: `shopify-sync-inventory` with bidirectional logic
+- Add Shopify `inventory_levels/update` webhook handling
+
+### Phase 5: Settings UI Enhancement
+
+Add to Settings → Integrations:
+
+1. **API Access Card** displaying:
+   - Account ID (read-only, copy button)
+   - Storefront API Key (masked, regenerate button)
+   - Quick links to documentation
 
 ---
 
@@ -300,47 +264,79 @@ ON CONFLICT (role, permission_name) DO NOTHING;
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/saas-consistency-audit/index.ts` | Main audit edge function |
-| `src/hooks/useSaaSAudit.ts` | React Query hooks for audit operations |
-| `src/components/admin/health/AuditActionsBar.tsx` | Audit control buttons |
-| `src/components/admin/health/AuditReportDialog.tsx` | Full audit results modal |
-| `src/components/admin/health/OrphanedDataCard.tsx` | Orphan cleanup UI |
-| `src/components/admin/health/BulkRepairButton.tsx` | Fix-all functionality |
-| New SQL migration | Database functions + standard permissions table |
+| `supabase/functions/storefront-catalog/index.ts` | Public catalog API |
+| `supabase/functions/storefront-lead/index.ts` | Multi-tenant lead capture |
+| `supabase/functions/storefront-options/index.ts` | Product options API |
+| `supabase/functions/storefront-estimate/index.ts` | Price calculator API |
+| `supabase/functions/shopify-sync-inventory/index.ts` | Bidirectional inventory sync |
+| New SQL migration | Add `storefront_api_key` to `account_settings` |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/AdminAccountHealth.tsx` | Add audit actions bar, orphaned data card |
-| `src/hooks/useAccountHealth.ts` | Add audit types to existing interfaces |
-| `supabase/config.toml` | Add `saas-consistency-audit` function config |
+| `src/pages/Documentation.tsx` | Add "Storefront Integration API" section (~200 lines) |
+| `supabase/config.toml` | Register 5 new edge functions |
+| `src/pages/Settings.tsx` or integration settings | Add API Access card |
 
 ---
 
-## Expected Outcomes
+## Gustin-Specific Setup Checklist
 
-1. **One-Click Audit**: System Owner can scan all 13+ accounts with a single click
-2. **Actionable Report**: Clear breakdown of what's missing per account
-3. **Auto-Repair**: Fix all issues with one button (skipping custom accounts)
-4. **Orphan Cleanup**: Safely remove the 109 orphaned records identified
-5. **Custom Account Respect**: Homekaara and other custom accounts are flagged but not auto-modified
-6. **Standard Definition**: Central source of truth for what every account should have
-7. **Audit History**: Optionally store audit results for trend analysis
+After implementation:
 
-## Testing Checklist
+1. Generate Gustin's storefront API key (automatic via migration)
+2. Provide credentials to new Lovable project:
+   - `INTERIOAPP_ACCOUNT_ID`: `32a92783-f482-4e3d-8ebf-c292200674e5`
+   - `INTERIOAPP_API_KEY`: (from account_settings.storefront_api_key)
+   - API Base URL: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/`
+3. Connect Gustin's Shopify store via OAuth
+4. Test lead capture from storefront
+5. Test order webhook flow
 
-1. Run audit on production - verify it identifies:
-   - InterioApp DEMO missing 13 permissions
-   - 5 accounts missing account_settings
-   - 109 orphaned records
-   
-2. Fix single account (InterioApp DEMO) - verify permissions added
+---
 
-3. Re-run audit - verify account now shows healthy
+## Security Considerations
 
-4. Test "Cleanup Orphaned Data" - verify 109 records removed without affecting valid data
+- API keys validated per-request
+- Rate limiting: 100 requests/minute per account (implement in edge functions)
+- No cost prices exposed in catalog API (only selling prices)
+- CORS configured for Gustin domain
+- Webhook signatures verified for Shopify
 
-5. Test "Fix All" - verify it skips Homekaara (if marked as custom)
+---
 
-6. Download report - verify JSON structure matches expected schema
+## Expected API Documentation Output
+
+The Documentation page will include complete specs like:
+
+```
+## Storefront Fabric Catalog API
+
+**Endpoint:** GET https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/storefront-catalog
+
+**Authentication:** Include account_id and api_key as query parameters
+
+**Example Request:**
+```javascript
+const response = await fetch(
+  `${INTERIOAPP_API_URL}/storefront-catalog?account_id=${ACCOUNT_ID}&api_key=${API_KEY}&category=fabric&limit=20`
+);
+const { data, pagination } = await response.json();
+```
+
+**Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique fabric identifier |
+| name | string | Display name |
+| sku | string | Product code |
+| collection | string | Collection name |
+| color | string | Color name |
+| width_cm | number | Fabric width in cm |
+| image_url | string | Product image URL |
+| price_per_meter | number | Selling price per meter |
+| currency | string | Price currency (EUR, USD, etc.) |
+```
+
+This gives the new Gustin Decor Lovable project everything needed to integrate!
