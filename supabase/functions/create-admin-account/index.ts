@@ -417,7 +417,7 @@ serve(async (req) => {
 
     // Step 6: Send welcome email with temporary password
     try {
-      const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app';
       const brandName = Deno.env.get('BRAND_NAME') || 'InterioApp';
       
       // Get admin's account owner to fetch integration settings (optional custom SendGrid)
@@ -464,7 +464,7 @@ serve(async (req) => {
                       <table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 32px;">
                         <tr>
                           <td align="center">
-                            <a href="${siteUrl}" style="display:inline-block; padding:16px 32px; background:#415e6b; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600; font-size:16px;">Login Now</a>
+                            <a href="${siteUrl}/auth" style="display:inline-block; padding:16px 32px; background:#415e6b; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600; font-size:16px;">Login Now</a>
                           </td>
                         </tr>
                       </table>
@@ -514,6 +514,12 @@ serve(async (req) => {
               type: 'text/html',
               value: emailHtml,
             }],
+            tracking_settings: {
+              click_tracking: {
+                enable: false,
+                enable_text: false
+              }
+            }
           }),
         });
 
