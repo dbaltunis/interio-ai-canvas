@@ -1,265 +1,178 @@
 
-# Fix Job Delegation and Status Locking
 
-## Problem Summary
+# Complete Status Locking and Remove Progress Only
 
-### Issue 1: Job Delegation Not Working
-The Project Team UI exists (`ProjectTeam.tsx`) but uses **hardcoded mock data**. There's no database table to store user-to-project assignments, so when you "assign" team members, it's lost on page refresh.
+## Problem Analysis
 
-### Issue 2: Status Locking Not Enforced
-The status system has actions like `locked`, `completed`, and `view_only` defined, but they're not enforced:
+### Issue 1: "Progress Only" Status is Unclear
+The user wants to remove the "Progress Only" action type from the dropdown since its purpose is unclear and confusing.
 
-| Component | Current Behavior | Expected |
-|-----------|-----------------|----------|
-| ProjectOverview.tsx | Partially checks status | OK |
-| WindowManagementDialog.tsx | `readOnly={false}` hardcoded | Should respect status |
-| useCreateRoom | No check | Should prevent creation when locked |
-| useUpdateRoom | No check | Should prevent updates when locked |
-| useDeleteRoom | No check | Should prevent deletion when locked |
-| useSurfaces (CRUD) | No check | Should respect status |
-| useTreatments (CRUD) | No check | Should respect status |
-| DynamicWindowWorksheet | Has `readOnly` prop but never receives true | Should receive lock state |
+### Issue 2: Status Locking Still Not Working
+Despite adding status checks to mutation hooks, the locking is not working because:
 
----
+1. **ProjectStatusProvider is never used**: The context provider was created but never wraps any component
+2. **ProjectLockedBanner is never rendered**: The visual indicator component exists but isn't used anywhere
+3. **WindowManagementDialog has hardcoded `readOnly={false}`**: Line 728 bypasses status checks in the UI
+4. **UI buttons are not disabled**: Components like `StreamlinedJobsInterface`, `RoomCard`, and `RoomsGrid` don't check status before rendering action buttons
 
-## Solution Part 1: Project Assignments Database
+## Current Status Flow
 
-### New Table: `project_assignments`
+```text
+Status Actions:
+┌─────────────────────────────────────────────────────┐
+│ editable       → Full editing allowed               │
+│ view_only      → No status change, view only        │
+│ locked         → Final state, no changes            │
+│ progress_only  → UNCLEAR - REMOVE THIS              │
+│ completed      → Final + sets completion date       │
+│ requires_reason→ Needs note when setting            │
+└─────────────────────────────────────────────────────┘
 
-```sql
-CREATE TABLE public.project_assignments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'member',
-  assigned_by UUID REFERENCES auth.users(id),
-  assigned_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  notes TEXT,
-  is_active BOOLEAN DEFAULT true,
-  UNIQUE(project_id, user_id)
-);
-
--- RLS policies
-ALTER TABLE public.project_assignments ENABLE ROW LEVEL SECURITY;
-
--- Users can see assignments for projects they own or are assigned to
-CREATE POLICY "project_assignments_select" ON public.project_assignments
-FOR SELECT USING (
-  project_id IN (
-    SELECT id FROM public.projects 
-    WHERE user_id = public.get_effective_account_owner(auth.uid())
-  )
-  OR user_id = auth.uid()
-);
-
--- Only project owners can manage assignments
-CREATE POLICY "project_assignments_insert" ON public.project_assignments
-FOR INSERT WITH CHECK (
-  project_id IN (
-    SELECT id FROM public.projects 
-    WHERE user_id = public.get_effective_account_owner(auth.uid())
-  )
-);
-
-CREATE POLICY "project_assignments_update" ON public.project_assignments
-FOR UPDATE USING (
-  project_id IN (
-    SELECT id FROM public.projects 
-    WHERE user_id = public.get_effective_account_owner(auth.uid())
-  )
-);
-
-CREATE POLICY "project_assignments_delete" ON public.project_assignments
-FOR DELETE USING (
-  project_id IN (
-    SELECT id FROM public.projects 
-    WHERE user_id = public.get_effective_account_owner(auth.uid())
-  )
-);
+Current Enforcement:
+┌─────────────────────────────────────────────────────┐
+│ useRooms.ts        ✅ Has checkProjectStatusAsync   │
+│ useSurfaces.ts     ✅ Has checkProjectStatusAsync   │
+│ useTreatments.ts   ✅ Has checkProjectStatusAsync   │
+│ ProjectStatusProvider ❌ Created but never used     │
+│ ProjectLockedBanner   ❌ Created but never rendered │
+│ WindowManagementDialog❌ readOnly={false} hardcoded │
+│ UI Action Buttons     ❌ Not disabled when locked   │
+└─────────────────────────────────────────────────────┘
 ```
 
-### New Hook: `useProjectAssignments.ts`
+## Solution
+
+### Part 1: Remove "Progress Only" from Action Behaviors
+
+**File: `src/components/settings/StatusSlotManager.tsx`**
+- Remove `progress_only` from the Select options (line 262)
+- Update DEFAULT_STATUS_TEMPLATES to use `editable` instead of `progress_only`
+
+**File: `src/lib/statusActions.ts`**
+- Remove `PROGRESS_ONLY` from `STATUS_ACTIONS` constant
+- Update documentation
+
+**File: `src/contexts/ProjectStatusContext.tsx`**
+- Remove `progress_only` from canEdit logic - only `editable` should allow editing
+- Update `checkProjectStatusAsync` similarly
+
+**File: `src/hooks/useStatusPermissions.ts`**
+- Remove `progress_only` from canEdit logic
+
+**File: `src/components/settings/SeedJobStatuses.tsx`**
+- Update DEFAULT_STATUSES to use `editable` instead of `progress_only`
+
+### Part 2: Wire Up ProjectStatusProvider
+
+**File: `src/components/job-creation/ProjectTabContent.tsx`** (or main project page wrapper)
+- Wrap content with `ProjectStatusProvider`
 
 ```typescript
-// Provides: 
-// - useProjectAssignments(projectId) - list assigned users
-// - useAssignUserToProject() - mutation to add user
-// - useRemoveUserFromProject() - mutation to remove
-// - useIsUserAssigned(projectId, userId) - check if user has access
+import { ProjectStatusProvider } from "@/contexts/ProjectStatusContext";
+
+// In render:
+<ProjectStatusProvider projectId={project?.id}>
+  {/* existing content */}
+</ProjectStatusProvider>
 ```
 
-### Update `ProjectTeam.tsx`
+### Part 3: Add Visual Locked Banner
 
-Replace mock data with real database queries using the new hook. Persist assignments to `project_assignments` table.
-
----
-
-## Solution Part 2: Status Lock Enforcement
-
-### Step 1: Create Shared Context/Provider
-
-**New file:** `src/contexts/ProjectStatusContext.tsx`
+**File: Main project layout component**
+- Import and render `ProjectLockedBanner` at the top of project pages
 
 ```typescript
-interface ProjectStatusContextValue {
-  projectId: string | null;
-  statusId: string | null;
-  canEdit: boolean;
-  isLocked: boolean;
-  isViewOnly: boolean;
-  statusAction: string;
-  checkAndWarn: (action: string) => boolean; // Shows toast if locked
-}
+import { ProjectLockedBanner } from "@/components/projects/ProjectLockedBanner";
+
+// In render, after header:
+<ProjectLockedBanner className="mb-4" />
 ```
 
-### Step 2: Wrap Project Pages with Context
+### Part 4: Fix WindowManagementDialog readOnly
 
-The context provider fetches status permissions once and shares them to all child components. This prevents multiple queries and ensures consistency.
-
-### Step 3: Update WindowManagementDialog
+**File: `src/components/job-creation/WindowManagementDialog.tsx`**
+- Import `useStatusPermissions` hook
+- Replace `readOnly={false}` with dynamic status check
 
 ```typescript
-// BEFORE
-readOnly={false}
+import { useStatusPermissions } from "@/hooks/useStatusPermissions";
 
-// AFTER  
-const { canEdit, isLocked, checkAndWarn } = useProjectStatus();
-// ...
-readOnly={!canEdit || isLocked}
+// Inside component:
+const { data: project } = useQuery({...}); // Already fetching surface
+const statusPermissions = useStatusPermissions(surface?.project?.status_id);
+const isReadOnly = !statusPermissions.data?.canEdit || statusPermissions.data?.isLocked || statusPermissions.data?.isViewOnly;
+
+// In MeasurementBridge:
+<MeasurementBridge
+  readOnly={isReadOnly}
+  ...
+/>
 ```
 
-### Step 4: Update All Mutation Hooks
+### Part 5: Disable UI Action Buttons When Locked
 
-Create a helper that wraps mutations with status checks:
+**File: `src/components/job-creation/RoomsGrid.tsx`**
+**File: `src/components/job-creation/StreamlinedJobsInterface.tsx`**
+**File: `src/components/job-creation/RoomCard.tsx`**
+**File: `src/components/job-creation/SurfaceCreationButtons.tsx`**
+
+For each component that has "Add Room", "Add Window", or action buttons:
+- Import `useStatusPermissions`
+- Check status before rendering/enabling buttons
+- Show visual indicator (lock icon, disabled state)
 
 ```typescript
-// src/hooks/useStatusProtectedMutation.ts
-export const useStatusProtectedMutation = <TData, TVariables>(
-  mutationFn: (vars: TVariables) => Promise<TData>,
-  getProjectId: (vars: TVariables) => string
-) => {
-  return useMutation({
-    mutationFn: async (variables: TVariables) => {
-      const projectId = getProjectId(variables);
-      const status = await checkProjectStatus(projectId);
-      
-      if (status.isLocked || !status.canEdit) {
-        throw new Error(`Cannot modify: Project is ${status.statusAction}`);
-      }
-      
-      return mutationFn(variables);
-    }
-  });
-};
+const statusPermissions = useStatusPermissions(project?.status_id);
+const canModify = statusPermissions.data?.canEdit && !statusPermissions.data?.isLocked;
+
+// In buttons:
+<Button 
+  onClick={handleAddRoom} 
+  disabled={!canModify}
+  title={!canModify ? "Project is locked" : undefined}
+>
+  {!canModify && <Lock className="h-4 w-4 mr-2" />}
+  Add Room
+</Button>
 ```
-
-### Step 5: Update Individual Hooks
-
-| Hook | Change |
-|------|--------|
-| `useCreateRoom` | Add project status check before insert |
-| `useUpdateRoom` | Add project status check before update |
-| `useDeleteRoom` | Add project status check before delete |
-| `useCreateSurface` | Add project status check |
-| `useUpdateSurface` | Add project status check |
-| `useDeleteSurface` | Add project status check |
-| `useCreateTreatment` | Add project status check |
-| `useUpdateTreatment` | Add project status check |
-| `useDeleteTreatment` | Add project status check |
-
-### Step 6: Visual Indicators
-
-Update worksheet components to show locked state:
-
-```typescript
-// Show banner when project is locked
-{isLocked && (
-  <Alert variant="warning" className="mb-4">
-    <Lock className="h-4 w-4" />
-    <AlertTitle>Project Locked</AlertTitle>
-    <AlertDescription>
-      This project is in "{statusName}" status and cannot be edited.
-    </AlertDescription>
-  </Alert>
-)}
-```
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/hooks/useProjectAssignments.ts` | CRUD for project_assignments table |
-| `src/contexts/ProjectStatusContext.tsx` | Shared status state for project pages |
-| `src/hooks/useStatusProtectedMutation.ts` | Helper for status-checked mutations |
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/projects/ProjectTeam.tsx` | Replace mock data with database queries |
-| `src/components/job-creation/WindowManagementDialog.tsx` | Pass status-based readOnly prop |
-| `src/hooks/useRooms.ts` | Add status checks to mutations |
-| `src/hooks/useSurfaces.ts` | Add status checks to mutations |
-| `src/hooks/useTreatments.ts` | Add status checks to mutations |
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | Add locked banner UI |
-| `src/components/job-creation/JobCreationWizard.tsx` | Wrap with status context |
+| `src/lib/statusActions.ts` | Remove PROGRESS_ONLY |
+| `src/contexts/ProjectStatusContext.tsx` | Remove progress_only from canEdit logic |
+| `src/hooks/useStatusPermissions.ts` | Remove progress_only from canEdit logic |
+| `src/components/settings/StatusSlotManager.tsx` | Remove progress_only option, update templates |
+| `src/components/settings/SeedJobStatuses.tsx` | Update default statuses |
+| `src/components/job-creation/WindowManagementDialog.tsx` | Dynamic readOnly based on status |
+| `src/components/job-creation/ProjectTabContent.tsx` | Wrap with ProjectStatusProvider, add banner |
+| `src/components/job-creation/RoomsGrid.tsx` | Disable buttons when locked |
+| `src/components/job-creation/StreamlinedJobsInterface.tsx` | Disable buttons when locked |
+| `src/components/job-creation/RoomCard.tsx` | Disable actions when locked |
+| `src/pages/Documentation.tsx` | Update references to progress_only |
 
----
+## Migration for Existing Data
+
+For accounts that already have statuses with `progress_only` action:
+- They will continue to work (treated as editable for backwards compatibility)
+- Users can manually update them to `editable` in settings
 
 ## Expected Behavior After Fix
 
-### Job Delegation
-1. Admin opens project → Team tab
-2. Clicks "Add Member" → selects user from dropdown
-3. Assignment persists to `project_assignments` table
-4. Assigned users can see the project in their list
-5. Removing assignment revokes access
+| Status Action | Can Edit | Status Change | Visual |
+|---------------|----------|---------------|--------|
+| editable | Yes | Yes | Normal |
+| view_only | No | No | Yellow banner |
+| locked | No | No | Red banner + Lock icons |
+| completed | No | No | Red banner + Lock icons |
+| requires_reason | Yes (with note) | Yes | Normal |
 
-### Status Locking
-1. Admin sets project status to "Completed" (action: `completed`)
-2. All edit buttons become disabled/hidden
-3. Worksheet opens in read-only mode with lock banner
-4. Attempting to save shows toast: "Project is locked in Completed status"
-5. Room/Surface/Treatment creation blocked with error message
+### User Experience Flow
 
----
+1. **Admin sets status to "Completed" or "Locked"**
+2. **Visual feedback**: Red banner appears at top of project page
+3. **Buttons disabled**: Add Room, Add Window buttons show lock icon and are disabled
+4. **Dialog read-only**: WindowManagementDialog opens in read-only mode
+5. **Mutation blocked**: If somehow triggered, mutation hooks throw error with toast
 
-## Visual Mockup: Locked Project
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ 🔒 PROJECT LOCKED                                           │
-│ This project is in "Completed" status and cannot be edited. │
-│ Contact an admin if you need to make changes.               │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ Window: Master Bedroom - Bay Window                         │
-│ Status: Completed ✓                                         │
-├─────────────────────────────────────────────────────────────┤
-│ [Window Type]  [Treatment]  [Library]  [Measurements]       │
-│                                                             │
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Curtains - ADARA Sheer                                  │ │
-│ │ Width: 2400mm  Height: 2100mm                           │ │
-│ │ Total: $1,245.00                                        │ │
-│ │                                                         │ │
-│ │ [View Details]  [Save] ← disabled/hidden                │ │
-│ └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Implementation Order
-
-1. **Database**: Create `project_assignments` table with RLS
-2. **Hook**: `useProjectAssignments.ts` for CRUD operations
-3. **Component**: Update `ProjectTeam.tsx` to use real data
-4. **Context**: Create `ProjectStatusContext.tsx`
-5. **Helper**: Create `useStatusProtectedMutation.ts`
-6. **Mutations**: Update room/surface/treatment hooks with status checks
-7. **UI**: Update `WindowManagementDialog` and worksheet components
-8. **Testing**: Verify lock behavior across all project statuses
