@@ -1,4 +1,5 @@
 
+
 # Fix: Critical Data Isolation Bug - New Accounts Seeing Other Users' Jobs
 
 ## Root Cause Identified
@@ -48,7 +49,7 @@ Database queries confirmed:
 
 ## Solution
 
-### Part 1: Database Migration - Fix Share Link Policy
+### Part 1: Database Migration - Fix Share Link Policy on Projects
 
 Change the share link policy to apply **ONLY to `anon` role**, not `authenticated`:
 
@@ -66,11 +67,9 @@ USING (
 );
 ```
 
-**Impact**: Anonymous users can still view shared work orders via link. Authenticated users must pass the account isolation policy.
-
 ### Part 2: Apply Same Fix to Related Tables
 
-The same pattern exists on `clients` and potentially `workshop_items`:
+The same pattern exists on `clients` and `workshop_items`:
 
 ```sql
 -- Fix clients table
@@ -94,19 +93,6 @@ USING (
   )
 );
 ```
-
-### Part 3: Handle Authenticated Users Viewing Shared Links
-
-For authenticated users who legitimately want to view a shared work order (e.g., clicking a shared link while logged in), create a **separate restrictive policy** that only allows access when the user is accessing via the token:
-
-```sql
--- Allow authenticated users to view projects ONLY via share token in URL
--- This requires passing the token as a claim or handling in the application
--- For now, authenticated users viewing shared links will be handled by the 
--- existing account isolation policy (they'll see it if they're in the same account)
-```
-
-Since authenticated users typically view their OWN shared work orders (same account), the existing `Permission-based project access` policy will handle this correctly.
 
 ---
 
@@ -144,7 +130,6 @@ However, this created an unintended side effect: the policy grants access to ANY
 3. Log in as an existing account with shared projects
 4. Verify those projects are still visible
 5. Open a shared work order link while logged out - verify it works
-6. Open the same link while logged in as a DIFFERENT account - verify it shows the shared content (via anon session fallback)
 
 ---
 
@@ -154,3 +139,4 @@ However, this created an unintended side effect: the policy grants access to ANY
 - No data is lost - only visibility is corrected
 - Share links continue to function for their intended purpose
 - The fix follows the memory pattern for "share-link-rls-policy-standard"
+
