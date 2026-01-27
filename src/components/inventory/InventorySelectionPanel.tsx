@@ -54,8 +54,6 @@ import { useRecentMaterialSelections } from "@/hooks/useRecentMaterialSelections
 import { useFavoriteMaterials } from "@/hooks/useFavoriteMaterials";
 import { RecentSelectionsRow } from "./RecentSelectionsRow";
 import { FavoriteButton } from "./FavoriteButton";
-import { WorksheetBrandSidebar } from "./WorksheetBrandSidebar";
-import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -92,7 +90,6 @@ export const InventorySelectionPanel = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceGroup, setSelectedPriceGroup] = useState<string | null>(null);
   const [selectedQuickTypes, setSelectedQuickTypes] = useState<string[]>([]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     name: "",
@@ -107,7 +104,6 @@ export const InventorySelectionPanel = ({
   // New hooks for recent selections and favorites
   const { items: recentItems, addSelection, clearHistory, getRelativeTime } = useRecentMaterialSelections();
   const { favorites, toggleFavorite, isFavorite } = useFavoriteMaterials();
-  const isMobile = useMediaQuery("(max-width: 768px)");
   
   // ✅ CRITICAL FIX: Reset price group filter when treatment category changes
   useEffect(() => {
@@ -847,8 +843,8 @@ export const InventorySelectionPanel = ({
   }, [treatmentCategory, availableTabs.length]);
 
   return <div className={`h-full flex flex-col ${className}`}>
-      <div className="flex gap-2 items-center animate-fade-in">
-        <div className="relative flex-1">
+      <div className="flex gap-2 items-center flex-wrap animate-fade-in">
+        <div className="relative flex-1 min-w-[120px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-transform" />
           <Input 
             placeholder="Search fabrics, materials..." 
@@ -861,19 +857,25 @@ export const InventorySelectionPanel = ({
           )}
         </div>
         
-        {/* Brand filter (mobile) */}
-        {isMobile && brandGroups.length > 1 && (
-          <WorksheetBrandSidebar
-            brands={brandGroups}
-            selectedBrand={selectedVendor || null}
-            onSelectBrand={(id) => setSelectedVendor(id || undefined)}
-            totalItems={treatmentFabrics.length}
-            recentCount={recentItems.length}
-            favoritesCount={favorites.length}
-            onShowRecent={() => setShowFavoritesOnly(false)}
-            onShowFavorites={() => setShowFavoritesOnly(true)}
-            isMobile={true}
-          />
+        {/* Brand Dropdown - replaces sidebar */}
+        {brandGroups.length > 1 && (
+          <Select 
+            value={selectedVendor || "all"} 
+            onValueChange={(val) => setSelectedVendor(val === "all" ? undefined : val)}
+          >
+            <SelectTrigger className="w-28 h-10">
+              <Building2 className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+              <SelectValue placeholder="Brand" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">All ({treatmentFabrics.length})</SelectItem>
+              {brandGroups.map(({ vendorId, vendorName, itemCount }) => (
+                <SelectItem key={vendorId || 'unassigned'} value={vendorId || 'unassigned'}>
+                  {vendorName} ({itemCount})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         
         {/* Compact Price Group Dropdown */}
@@ -894,6 +896,24 @@ export const InventorySelectionPanel = ({
               ))}
             </SelectContent>
           </Select>
+        )}
+        
+        {/* Favorites Toggle */}
+        {favorites.length > 0 && (
+          <Button
+            variant={showFavoritesOnly ? "default" : "outline"}
+            size="sm"
+            className="h-10 gap-1.5 px-3"
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+          >
+            <FavoriteButton
+              isFavorite={showFavoritesOnly}
+              onToggle={() => {}}
+              className="pointer-events-none"
+              size="sm"
+            />
+            <span className="text-xs">{favorites.length}</span>
+          </Button>
         )}
         
         {/* Actions dropdown (QR + Manual) */}
@@ -1099,25 +1119,8 @@ export const InventorySelectionPanel = ({
         </DialogContent>
       </Dialog>
 
-      {/* Main content with optional sidebar */}
-      <div className="flex-1 flex overflow-hidden mt-2">
-        {/* Desktop Brand Sidebar */}
-        {!isMobile && brandGroups.length > 1 && (
-          <WorksheetBrandSidebar
-            brands={brandGroups}
-            selectedBrand={selectedVendor || null}
-            onSelectBrand={(id) => setSelectedVendor(id || undefined)}
-            totalItems={treatmentFabrics.length}
-            recentCount={recentItems.length}
-            favoritesCount={favorites.length}
-            onShowRecent={() => setShowFavoritesOnly(false)}
-            onShowFavorites={() => setShowFavoritesOnly(true)}
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="shrink-0"
-          />
-        )}
-        
+      {/* Main content - full width without sidebar */}
+      <div className="flex-1 flex flex-col overflow-hidden mt-2">
         {/* Category tabs and content */}
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden">
           {availableTabs.length > 1 && (
