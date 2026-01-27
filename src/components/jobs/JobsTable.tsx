@@ -9,6 +9,7 @@ import { JobActionsMenu } from "./JobActionsMenu";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { MaterialsStatusBadge } from "./MaterialsStatusBadge";
 import { useNavigate } from "react-router-dom";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface JobsTableProps {
   searchClient: string;
@@ -33,6 +34,9 @@ export const JobsTable = ({
   const { data: quotes } = useQuotes();
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
+  
+  // Format dates using user preferences
+  const { formattedDates } = useFormattedDates(quotes, (q) => q.created_at, false);
 
   // Filter quotes based on search and filter criteria
   const filteredQuotes = quotes?.filter(quote => {
@@ -128,7 +132,7 @@ export const JobsTable = ({
                 )}
               </div>
               <div className="text-gray-500">{client?.phone || '-'}</div>
-              <div className="text-gray-900">{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
+              <div className="text-gray-900">{formattedDates[quote.id] || new Date(quote.created_at).toLocaleDateString()}</div>
               <div>
                 <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
                   {getStatusLabel(quote.status)}

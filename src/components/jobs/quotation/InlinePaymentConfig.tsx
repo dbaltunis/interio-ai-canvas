@@ -45,12 +45,13 @@ export const InlinePaymentConfig = ({
     if (currentPayment) {
       setPaymentType(currentPayment.type);
       if (currentPayment.type === 'deposit') {
-        if (currentPayment.percentage) {
+        // Check if percentage is explicitly set (not null/undefined and > 0)
+        if (currentPayment.percentage !== null && currentPayment.percentage !== undefined && currentPayment.percentage > 0) {
           // Saved as percentage
           setUseFixedAmount(false);
           setDepositPercentage(currentPayment.percentage);
         } else if (currentPayment.amount && currentPayment.amount > 0) {
-          // Saved as fixed amount (percentage is null but amount exists)
+          // Saved as fixed amount (percentage is null/undefined but amount exists)
           setUseFixedAmount(true);
           setFixedAmount(currentPayment.amount);
         }

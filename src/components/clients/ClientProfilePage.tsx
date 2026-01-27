@@ -340,6 +340,26 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                           />
                         </div>
                         <div className="space-y-1">
+                          <Label className="text-[10px]">State</Label>
+                          <Input
+                            value={editedClient.state || ''}
+                            onChange={(e) => setEditedClient({ ...editedClient, state: e.target.value })}
+                            className="h-7 text-xs"
+                            placeholder="State/Province"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">Zip Code</Label>
+                          <Input
+                            value={editedClient.zip_code || ''}
+                            onChange={(e) => setEditedClient({ ...editedClient, zip_code: e.target.value })}
+                            className="h-7 text-xs"
+                            placeholder="Zip/Postal Code"
+                          />
+                        </div>
+                        <div className="space-y-1">
                           <Label className="text-[10px]">Country</Label>
                           <Input
                             value={editedClient.country || ''}

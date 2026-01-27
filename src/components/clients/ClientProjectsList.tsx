@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUnifiedClientNotes } from "@/hooks/useUnifiedClientNotes";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -36,6 +37,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   const [isCreating, setIsCreating] = useState(false);
   const { isLoading: permissionsLoading } = useUserPermissions();
   const { formatCurrency } = useFormattedCurrency();
+  const { formattedDates: dueDates } = useFormattedDates(projects, (p) => p.due_date, false);
 
   // Calculate project value from quotes
   const getProjectValue = (project: any): number => {
@@ -362,7 +364,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                   <TableCell>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Calendar className="h-3 w-3 mr-1" />
-                      {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+                      {project.due_date ? (dueDates[project.id] || new Date(project.due_date).toLocaleDateString()) : 'Not set'}
                     </div>
                   </TableCell>
                   <TableCell>
