@@ -1,140 +1,148 @@
 
 
-# Fix: TWC Heading Validation & SaaS Consistency Issues
+# Fix: Client Edit, Date Format, Payment Terms, and Payment Summary Issues
 
-## Problem Summary
+## Summary
 
-You've identified a critical systemic issue affecting new TWC-synced accounts. The problems are:
+This plan addresses 4 distinct bugs found during testing:
 
-1. **Heading Selection Not Recognized**: User selects "Standard 2x" heading but validation still shows "Heading Type is required"
-2. **Configure Template Button Broken**: Redirects to blank settings page
-3. **SaaS Consistency Gap**: Fixes applied to some accounts don't apply to all accounts
-
----
-
-## Root Cause Analysis
-
-### Issue 1: Dual Heading System Conflict
-
-The system has **two competing heading data structures**:
-
-| System | Selection Field | Used By |
-|--------|----------------|---------|
-| Core Inventory | `selected_heading` | Standard heading selector |
-| TWC Import | `heading_type_*` option | TWC validation system |
-
-**What happens:**
-1. User selects heading → updates `selected_heading` (line 433 in DynamicCurtainOptions)
-2. UI hides TWC `heading_type` dropdown to prevent duplicates (lines 1272-1275)
-3. Validation checks `selections['heading_type_*']` → finds empty → blocks job
-
-**Database evidence:**
-```
-TWC options with required=TRUE:
-- heading_type_218e5db9 (account b0c727dd) - required: true
-- heading_type_0ccab47a (account 1bbd8c29) - required: true
-- heading_type_c981cb07 (account f740ef45) - required: true
-```
-
-The TWC sync sets `required: false` (line 844), but something else is setting it to `true`.
-
-### Issue 2: Configure Template Navigation
-
-The `ValidationAlert.tsx` navigates to `/settings?tab=products&editTemplate=${templateId}`, but:
-- If `templateId` is missing, it falls back to `/settings?tab=products`
-- The products tab may render blank if no sub-tab is selected
-
-### Issue 3: SaaS Inconsistency Pattern
-
-This is a **recurring architectural problem**:
-- Account-specific setup functions (e.g., `setup-homekaara-account`) create variations
-- Database migrations don't always backfill existing data
-- No centralized "default configuration" system
+1. **Clients > Details: Country = USA, can't edit** - Missing State/Zip fields in edit form
+2. **Date format incorrect** - Multiple areas use raw JavaScript `.toLocaleDateString()` instead of user preferences
+3. **Payment terms: cannot save fixed deposit amount** - Investigation needed
+4. **Configure Payment > Payment summary** - Issue needs clarification
 
 ---
 
-## Technical Solution
+## Issue 1: Client Edit Form Missing Fields
 
-### Fix 1: Bridge Heading Selection to TWC Validation
+### Problem
+The client edit form in `ClientProfilePage.tsx` is missing `state` and `zip_code` fields. The grid layout only shows City and Country side-by-side, but state/zip are required for complete address data.
 
-When user selects a heading via the inventory selector, **also update the TWC treatment option selection** so validation passes.
+### Root Cause
+Lines 332-350 in `ClientProfilePage.tsx` show a 2-column grid with City and Country, but the database schema includes `state` and `zip_code` fields that were never added to the edit form.
 
-**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
+### Solution
+Add `state` and `zip_code` fields to the client edit form in a logical layout:
 
-In `handleHeadingChange`, after updating `selected_heading`, also update any `heading_type*` treatment option selections:
+**File**: `src/components/clients/ClientProfilePage.tsx`
+
+```text
+Current layout (line 332):
+  City | Country
+
+New layout:
+  City | State
+  Zip Code | Country
+```
+
+---
+
+## Issue 2: Date Format Not Using User Preferences
+
+### Problem
+Multiple areas of the application use raw JavaScript date formatting (`.toLocaleDateString()`) instead of the user's configured date format preference.
+
+### Affected Areas Found
+
+| Location | File | Issue |
+|----------|------|-------|
+| Jobs Table - Created column | `JobsTable.tsx:131` | `new Date(quote.created_at).toLocaleDateString('en-GB')` |
+| Jobs List - Created date | `JobsListWithQuotes.tsx:210` | `new Date(project.created_at).toLocaleDateString()` |
+| Jobs List - Quote created | `JobsListWithQuotes.tsx:303` | `new Date(quote.created_at).toLocaleDateString()` |
+| Jobs Grid - Date | `JobGridView.tsx:97` | `new Date(job.created_at).toLocaleDateString()` |
+| Jobs Dashboard - Project date | `JobsDashboard.tsx:220` | `new Date(project.created_at).toLocaleDateString()` |
+| Jobs Dashboard - Quote date | `JobsDashboard.tsx:337` | `new Date(quote.created_at).toLocaleDateString()` |
+| Client Projects - Due date | `ClientProjectsList.tsx:365` | `new Date(project.due_date).toLocaleDateString()` |
+| Client Notes - Timestamp | `ClientAllNotesSection.tsx:182` | Uses `formatDistanceToNow` (acceptable for relative time) |
+
+### Solution
+Replace raw JavaScript date calls with `useFormattedDate` hook or `formatUserDate` utility across all affected files.
+
+**Pattern to follow** (already used in `QuoteViewer.tsx:48-49`):
+```typescript
+import { useFormattedDate } from "@/hooks/useFormattedDate";
+
+// In component
+const { formattedDate: formattedCreatedDate } = useFormattedDate(quote.created_at, false);
+
+// In render
+{formattedCreatedDate || new Date(quote.created_at).toLocaleDateString()}
+```
+
+---
+
+## Issue 3: Payment Terms - Fixed Deposit Amount Not Saving
+
+### Investigation
+
+Looking at `InlinePaymentConfig.tsx` and `useQuotePayment.ts`:
+
+**Code Flow:**
+1. `InlinePaymentConfig.tsx:108` passes `fixedAmount` to mutation:
+   ```typescript
+   fixedAmount: paymentType === 'deposit' && useFixedAmount ? fixedAmount : undefined,
+   ```
+
+2. `useQuotePayment.ts:70-71` calculates payment amount:
+   ```typescript
+   } else if (fixedAmount !== undefined) {
+     paymentAmount = fixedAmount; // User specified exact amount
+   }
+   ```
+
+3. `useQuotePayment.ts:78-81` saves to database:
+   ```typescript
+   .update({
+     payment_type: paymentType,
+     payment_percentage: paymentType === 'deposit' && !fixedAmount ? paymentPercentage : null,
+     payment_amount: paymentAmount,
+   ```
+
+**Potential Issue:**
+The `quotes` table stores `payment_amount` correctly, but the **loading logic** in `InlinePaymentConfig.tsx` (lines 44-58) may not properly restore fixed amount mode:
 
 ```typescript
-// EXISTING: Update measurements.selected_heading
-onChange('selected_heading', headingId);
-
-// NEW: Bridge to TWC validation - find any heading_type options and set them
-const headingTypeOptions = treatmentOptions.filter(opt => 
-  opt.key.toLowerCase().includes('heading_type')
-);
-if (headingTypeOptions.length > 0 && heading) {
-  headingTypeOptions.forEach(opt => {
-    // Find matching value or use first value
-    const matchingValue = opt.option_values?.find(v => 
-      v.label.toLowerCase().includes(heading.name.toLowerCase())
-    ) || opt.option_values?.[0];
-    
-    if (matchingValue) {
-      setTreatmentOptionSelections(prev => ({
-        ...prev,
-        [opt.key]: matchingValue.id
-      }));
-      onChange(`treatment_option_${opt.key}`, matchingValue.id);
-    }
-  });
+if (currentPayment.percentage) {
+  // Saved as percentage
+  setUseFixedAmount(false);
+  setDepositPercentage(currentPayment.percentage);
+} else if (currentPayment.amount && currentPayment.amount > 0) {
+  // Saved as fixed amount (percentage is null but amount exists)
+  setUseFixedAmount(true);
+  setFixedAmount(currentPayment.amount);
 }
 ```
 
-### Fix 2: Skip Validation for Heading Options Handled by Inventory Selector
+**Problem**: When `payment_percentage` is `null` AND `payment_amount` exists, the code correctly sets `useFixedAmount(true)`. However, if the database returns `0` for percentage instead of `null`, the first condition would evaluate as falsy and work correctly.
 
-**File:** `src/utils/treatmentOptionValidation.ts`
-
-Add a check to skip validation for `heading_type` options when the system uses inventory-based heading selection:
+### Solution
+Add explicit check for fixed amount mode by checking if percentage is specifically `null` (not just falsy):
 
 ```typescript
-// NEW: Skip heading_type validation - handled by inventory selector
-if (option.key.toLowerCase().includes('heading_type')) {
-  console.log(`⏭️ Skipping validation for ${option.key}: handled by inventory selector`);
-  return; // Skip this option entirely
+if (currentPayment.percentage !== null && currentPayment.percentage !== undefined && currentPayment.percentage > 0) {
+  // Saved as percentage
+  setUseFixedAmount(false);
+  setDepositPercentage(currentPayment.percentage);
+} else if (currentPayment.amount && currentPayment.amount > 0) {
+  // Saved as fixed amount
+  setUseFixedAmount(true);
+  setFixedAmount(currentPayment.amount);
 }
 ```
 
-### Fix 3: Fix Configure Template Navigation
+---
 
-**File:** `src/components/shared/ValidationAlert.tsx`
+## Issue 4: Configure Payment > Payment Summary
 
-Update the fallback navigation to use a more reliable route:
+### Clarification Needed
+The Payment Summary section in `InlinePaymentConfig.tsx` (lines 257-288) appears to display correctly with:
+- Quote Total
+- Discount Applied (if any)
+- After Discount total
+- Payment Required
+- Remaining balance
 
-```typescript
-const handleConfigureTemplate = () => {
-  if (onConfigureTemplate) {
-    onConfigureTemplate();
-  } else if (templateId) {
-    // Navigate to template editor with proper sub-tab
-    navigate(`/settings?tab=products&subtab=templates&editTemplate=${templateId}`);
-  } else {
-    // Fallback to templates list, not generic products
-    navigate('/settings?tab=products&subtab=templates');
-  }
-};
-```
-
-### Fix 4: Database Migration to Reset TWC Options to Non-Required
-
-Create a migration to ensure all TWC-sourced `heading_type` options are set to `required: false`:
-
-```sql
--- Fix TWC heading_type options incorrectly marked as required
-UPDATE treatment_options
-SET required = false
-WHERE source = 'twc'
-  AND key LIKE 'heading_type%'
-  AND required = true;
-```
+If there's a specific issue with the Payment Summary display, please describe what is incorrect or missing. The current implementation looks complete based on code review.
 
 ---
 
@@ -142,28 +150,21 @@ WHERE source = 'twc'
 
 | File | Change |
 |------|--------|
-| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Bridge heading selection to TWC options |
-| `src/utils/treatmentOptionValidation.ts` | Skip validation for heading_type options |
-| `src/components/shared/ValidationAlert.tsx` | Fix navigation path |
-| New SQL migration | Reset TWC heading options to non-required |
+| `src/components/clients/ClientProfilePage.tsx` | Add state/zip_code fields to edit form |
+| `src/components/jobs/JobsTable.tsx` | Use `useFormattedDate` for created_at |
+| `src/components/jobs/JobsListWithQuotes.tsx` | Use `useFormattedDate` for created dates |
+| `src/components/jobs/JobGridView.tsx` | Use `useFormattedDate` for job dates |
+| `src/components/jobs/JobsDashboard.tsx` | Use `useFormattedDate` for project/quote dates |
+| `src/components/clients/ClientProjectsList.tsx` | Use `useFormattedDate` for due dates |
+| `src/components/jobs/quotation/InlinePaymentConfig.tsx` | Fix fixed amount mode detection |
 
 ---
 
-## Long-Term SaaS Consistency Recommendation
+## Testing Checklist
 
-To prevent this pattern from recurring:
-
-1. **Centralized Default Config Table**: Create `default_account_settings` that ALL new accounts inherit
-2. **Migration Backfill Pattern**: Every migration that adds features should include a backfill for existing accounts
-3. **Account Setup Audit**: Review all `setup-*-account` functions to ensure they don't create divergent configurations
-4. **Validation Bypass for Hidden Options**: If an option is hidden from the UI, it should automatically be excluded from blocking validation
-
----
-
-## Testing Scenarios
-
-1. **New TWC Account**: Sync products → Select curtain template → Select heading → Should NOT show validation error
-2. **Existing Accounts**: Heading selection should continue to work as before
-3. **Configure Template Button**: Should navigate to template editor, not blank page
-4. **Page Refresh**: Heading selection should persist without re-triggering validation errors
+1. **Client Edit**: Edit client → Change country from "USA" to "United States" → Save → Verify saved
+2. **State/Zip**: Add state and zip code → Save → Verify persisted
+3. **Date Format**: Settings → Change date format → Jobs list shows updated format
+4. **Payment Terms**: Set fixed deposit amount ($500) → Save → Refresh → Fixed amount still selected and shows $500
+5. **Payment Summary**: Verify displays correctly after configuration
 
