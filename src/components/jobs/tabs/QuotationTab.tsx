@@ -411,14 +411,46 @@ export const QuotationTab = ({
       currency = 'USD';
     }
 
+    // Get tax-inclusive setting from business settings
+    const pricingSettings = businessSettings?.pricing_settings as any;
+    const taxInclusive = pricingSettings?.tax_inclusive || false;
+
     // Calculate discount if applicable - check for discount_type, not just amount
     const hasDiscount = !!currentQuote?.discount_type;
-    const discountAmount = currentQuote?.discount_amount || 0;
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
-    const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+    const discountAmount = currentQuote?.discount_amount || 0; // This is always pre-tax
+
+    // Calculate discounted values respecting tax_inclusive setting
+    let subtotalAfterDiscount: number;
+    let taxAmountAfterDiscount: number;
+    let totalAfterDiscount: number;
+
+    if (hasDiscount && discountAmount > 0) {
+      if (taxInclusive) {
+        // Tax-inclusive mode: subtotal already includes tax
+        // Discount was calculated on pre-tax amount, so we need to:
+        // 1. Extract pre-tax subtotal from gross
+        // 2. Apply discount
+        // 3. Recalculate gross total
+        const preDiscountNetSubtotal = subtotal / (1 + taxRate);
+        const discountedNetSubtotal = preDiscountNetSubtotal - discountAmount;
+        subtotalAfterDiscount = discountedNetSubtotal;
+        totalAfterDiscount = discountedNetSubtotal * (1 + taxRate);
+        taxAmountAfterDiscount = totalAfterDiscount - discountedNetSubtotal;
+      } else {
+        // Tax-exclusive mode: discount applies directly to subtotal
+        subtotalAfterDiscount = subtotal - discountAmount;
+        taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
+        totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+      }
+    } else {
+      subtotalAfterDiscount = subtotal;
+      taxAmountAfterDiscount = taxAmount;
+      totalAfterDiscount = total;
+    }
+
     console.log('📊 QuotationTab - projectData calculation:', {
       currentQuoteId: currentQuote?.id,
+      taxInclusive,
       hasDiscount,
       discountType: currentQuote?.discount_type,
       discountValue: currentQuote?.discount_value,
@@ -1006,13 +1038,24 @@ export const QuotationTab = ({
       </Card>
 
       {/* Inline Discount Panel - Pass sellingTotal (retail price with markup) for discount calculations */}
-      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={quotationData.sellingTotal || subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
-      type: currentQuote.discount_type as 'percentage' | 'fixed',
-      value: currentQuote.discount_value || 0,
-      scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
-      amount: currentQuote.discount_amount || 0,
-      selectedItems: currentQuote.selected_discount_items as string[] || undefined
-    } : undefined} />
+      <InlineDiscountPanel 
+        isOpen={isDiscountDialogOpen} 
+        onClose={() => setIsDiscountDialogOpen(false)} 
+        quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''} 
+        projectId={projectId} 
+        items={quotationData.items || []} 
+        subtotal={quotationData.sellingTotal || subtotal} 
+        taxRate={taxRate * 100} 
+        currency={projectData.currency}
+        taxInclusive={(businessSettings?.pricing_settings as any)?.tax_inclusive || false}
+        currentDiscount={currentQuote?.discount_type ? {
+          type: currentQuote.discount_type as 'percentage' | 'fixed',
+          value: currentQuote.discount_value || 0,
+          scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
+          amount: currentQuote.discount_amount || 0,
+          selectedItems: currentQuote.selected_discount_items as string[] || undefined
+        } : undefined} 
+      />
 
       {/* Inline Payment Config Panel - Pass GST-inclusive discounted total */}
       {isPaymentConfigOpen && (
