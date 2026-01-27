@@ -40,33 +40,44 @@ export const InlinePaymentConfig = ({
   // Calculate discounted total
   const discountedTotal = Math.max(0, total - discountAmount);
 
-  // Load current payment config
+  // Load current payment config - properly restore fixed amount mode
   useEffect(() => {
     if (currentPayment) {
       setPaymentType(currentPayment.type);
-      if (currentPayment.type === 'deposit' && currentPayment.percentage) {
-        setDepositPercentage(currentPayment.percentage);
+      if (currentPayment.type === 'deposit') {
+        if (currentPayment.percentage) {
+          // Saved as percentage
+          setUseFixedAmount(false);
+          setDepositPercentage(currentPayment.percentage);
+        } else if (currentPayment.amount && currentPayment.amount > 0) {
+          // Saved as fixed amount (percentage is null but amount exists)
+          setUseFixedAmount(true);
+          setFixedAmount(currentPayment.amount);
+        }
       }
     }
   }, [currentPayment]);
 
-  // Track changes - includes fixed amount mode
+  // Track changes - includes fixed amount mode and mode selection
   useEffect(() => {
     if (!currentPayment) {
-      // New config - any non-default settings count as changes
-      const hasDepositChanges = paymentType === 'deposit' || depositPercentage !== 50;
-      const hasFixedAmountChanges = useFixedAmount && fixedAmount > 0;
-      setHasChanges(hasDepositChanges || hasFixedAmountChanges);
+      // New config - show save when deposit mode selected or any value entered
+      const isDepositMode = paymentType === 'deposit';
+      const hasValueEntered = useFixedAmount ? fixedAmount > 0 : depositPercentage !== 50;
+      setHasChanges(isDepositMode || hasValueEntered);
       return;
     }
     
     const typeChanged = currentPayment.type !== paymentType;
-    const percentageChanged = currentPayment.type === 'deposit' && !useFixedAmount &&
-      currentPayment.percentage !== depositPercentage;
-    const fixedAmountModeChanged = useFixedAmount; // Fixed amount mode is always a change from saved percentage
+    
+    // Detect if currently in fixed amount mode vs saved mode
+    const wasSavedAsFixedAmount = currentPayment.type === 'deposit' && !currentPayment.percentage && currentPayment.amount > 0;
+    const modeChanged = useFixedAmount !== wasSavedAsFixedAmount;
+    
+    const percentageChanged = !useFixedAmount && currentPayment.percentage !== depositPercentage;
     const fixedAmountValueChanged = useFixedAmount && fixedAmount !== currentPayment.amount;
     
-    setHasChanges(typeChanged || percentageChanged || fixedAmountModeChanged || fixedAmountValueChanged);
+    setHasChanges(typeChanged || modeChanged || percentageChanged || fixedAmountValueChanged);
   }, [paymentType, depositPercentage, currentPayment, useFixedAmount, fixedAmount]);
 
   const calculatePaymentAmount = () => {
