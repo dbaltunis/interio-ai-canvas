@@ -1,239 +1,256 @@
 
+# Fix: QuotationSummary Double-Discount Bug and Edge Function Tax-Inclusive Fallback
 
-# Comprehensive Testing Report: Payment Calculations, Tax Modes & CSV Export
+## Summary
 
-## Executive Summary
+This plan addresses two remaining issues identified in the comprehensive payment calculation audit:
 
-After extensive investigation of the codebase and database, I've identified **4 critical bugs** that need to be fixed:
-
-1. **Fixed Amount Deposit - Save Button Not Appearing** (User Reported)
-2. **Fixed Amount Not Loading From Saved Config**
-3. **CSV Export Ignores Tax-Inclusive Mode**
-4. **Payment Summary in InlinePaymentConfig Still Shows Incorrect Discount**
+1. **QuotationSummary Double-Discount Bug**: The component subtracts `discountAmount` from `subtotal` even when `subtotal` is already discounted
+2. **Edge Function Tax-Inclusive Fallback**: The `create-quote-payment` function's fallback calculation ignores the `tax_inclusive` setting
 
 ---
 
-## Bug #1: Fixed Amount Deposit - Save Button Issue
+## Issue #1: QuotationSummary Double-Discount Bug
 
-### Root Cause
-The `hasChanges` logic has TWO issues:
+### Current State
 
-**Issue A - Initial Fixed Amount of 0:**
+**File**: `src/components/jobs/quotation/QuotationSummary.tsx`
+
+The component is currently **unused** (orphaned code) - `QuoteProfitSummary` has replaced it in `QuotationTab.tsx`. However, the bug should still be fixed for code hygiene and future safety.
+
+**Bug Location (Line 63)**:
 ```typescript
-// Line 58 in InlinePaymentConfig.tsx
-const hasFixedAmountChanges = useFixedAmount && fixedAmount > 0;
-```
-When a user clicks "Fixed Amount" button, `useFixedAmount` becomes true, but `fixedAmount` is still 0. Since `fixedAmount > 0` is false, `hasChanges` remains false and the Save button doesn't appear until the user actually enters a value.
-
-**Issue B - Never Restores Fixed Amount Mode:**
-```typescript
-// Lines 44-51 - Loading saved config
-useEffect(() => {
-  if (currentPayment) {
-    setPaymentType(currentPayment.type);
-    if (currentPayment.type === 'deposit' && currentPayment.percentage) {
-      setDepositPercentage(currentPayment.percentage);
-    }
-    // ❌ MISSING: setUseFixedAmount and setFixedAmount when percentage is null!
-  }
-}, [currentPayment]);
-```
-When loading a saved fixed amount payment config (where `percentage` is null), the code never sets `useFixedAmount = true` or loads the saved `amount`.
-
-### Fix Required
-```typescript
-// Update useEffect to properly load fixed amount config
-useEffect(() => {
-  if (currentPayment) {
-    setPaymentType(currentPayment.type);
-    if (currentPayment.type === 'deposit') {
-      if (currentPayment.percentage) {
-        // Saved as percentage
-        setUseFixedAmount(false);
-        setDepositPercentage(currentPayment.percentage);
-      } else if (currentPayment.amount) {
-        // Saved as fixed amount
-        setUseFixedAmount(true);
-        setFixedAmount(currentPayment.amount);
-      }
-    }
-  }
-}, [currentPayment]);
-
-// Update hasChanges for initial mode selection
-useEffect(() => {
-  if (!currentPayment) {
-    // Show save button when deposit mode is selected (even before entering amount)
-    const isDepositMode = paymentType === 'deposit';
-    setHasChanges(isDepositMode);
-    return;
-  }
-  // ... rest of logic
-}, [paymentType, depositPercentage, currentPayment, useFixedAmount, fixedAmount]);
+const subtotalAfterDiscount = subtotal - discountAmount;
 ```
 
----
+**Problem**: The component interface expects EITHER:
+- `subtotal` = pre-discount amount (and it applies discount), OR  
+- `subtotal` = already-discounted amount (and should NOT apply discount again)
 
-## Bug #2: Payment Summary Shows Incorrect Discount (UI Issue)
+The current code always subtracts, causing double-discounting if the caller passes an already-discounted subtotal.
 
-### Current Code (Lines 253-264)
+### Solution
+
+Add a new prop `originalSubtotal` to explicitly separate pre-discount and post-discount values, making the component's behavior unambiguous:
+
 ```typescript
+interface QuotationSummaryProps {
+  subtotal: number;              // After discount (what displays as "After Discount")
+  originalSubtotal?: number;     // Before discount (optional, for display purposes)
+  // ... rest unchanged
+}
+```
+
+Then update the logic:
+```typescript
+// Use originalSubtotal if provided, otherwise assume subtotal is pre-discount
+const displayOriginalSubtotal = originalSubtotal ?? subtotal;
+const displayDiscountedSubtotal = discountAmount > 0 ? subtotal : displayOriginalSubtotal;
+// No need to recalculate - just use what's passed
+```
+
+**Simpler Alternative (Recommended)**: Since this component appears unused, simply remove the redundant calculation and trust the passed values:
+
+```typescript
+// Line 63 - BEFORE
+const subtotalAfterDiscount = subtotal - discountAmount;
+
+// Line 63 - AFTER  
+// subtotal is already the discounted value when discount is applied
+// discountAmount is only for display purposes
+const subtotalAfterDiscount = subtotal;
+```
+
+And update the UI to show discount properly:
+```typescript
+// Lines 130-148 - Update discount section display
 {discountAmount > 0 && (
-  <div className="flex justify-between text-sm text-green-600">
-    <span>Discount Applied:</span>
-    <span>-{formatCurrency(discountAmount, currency)}</span>
+  <div className="space-y-1">
+    <div className="flex justify-between text-sm items-center">
+      <span className="text-destructive flex items-center gap-2">
+        Discount Applied:
+        {onEditDiscount && (
+          <button onClick={onEditDiscount} className="text-xs underline hover:no-underline">
+            Edit
+          </button>
+        )}
+      </span>
+      <span className="text-destructive">-{formatCurrency(discountAmount)}</span>
+    </div>
+    <div className="flex justify-between font-medium">
+      <span>After Discount:</span>
+      <span>{formatCurrency(subtotal)}</span>  {/* subtotal IS the after-discount value */}
+    </div>
   </div>
 )}
 ```
 
-### Problem
-The `InlinePaymentConfig` receives `discountAmount = 0` because it now receives `totalAfterDiscount` directly (as per earlier fix). However, the UI still tries to show the discount line.
-
-Since the total already has the discount applied, but the component doesn't know the original total, it can't accurately display the discount breakdown.
-
-### Fix Required
-Either:
-1. Pass `originalTotal` and `discountedTotal` separately, OR
-2. Remove the discount display section entirely since it's informational only
-
 ---
 
-## Bug #3: CSV Export Ignores Tax-Inclusive Mode
+## Issue #2: Edge Function Tax-Inclusive Fallback
 
-### Location: `src/utils/invoiceExport.ts` lines 453-456
+### Current State
 
-### Current Code
+**File**: `supabase/functions/create-quote-payment/index.ts`
+
+**Bug Location (Lines 90-93)**:
 ```typescript
-// Apply discount to get actual subtotal
-const subtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
-const taxAmount = subtotalAfterDiscount * (taxRate / 100);
-const total = subtotalAfterDiscount + taxAmount;
+const discountAmount = quote.discount_amount || 0;
+const quoteTotal = quote.total || 0;
+const discountedTotal = Math.max(0, quoteTotal - discountAmount);  // ❌ WRONG for tax-inclusive
+const paymentAmount = quote.payment_amount || discountedTotal;
 ```
 
-### Problem
-This always calculates tax as tax-exclusive, ignoring the `tax_inclusive` setting from `businessSettings.pricing_settings`.
+**Problem**: `discount_amount` is stored as a pre-tax value. For tax-inclusive businesses:
+- `quoteTotal` = $115 (inc. GST)
+- `discount_amount` = $10 (excl. GST)
+- `discountedTotal` = $115 - $10 = $105 ❌
 
-For tax-inclusive businesses (NZ, AU, UK), this produces:
-- Wrong subtotal (should be net, not gross)
-- Wrong tax amount (calculated on gross instead of extracted from it)
-- Potentially wrong total
+**Should be**:
+- GST-inclusive discount = $10 × 1.15 = $11.50
+- `discountedTotal` = $115 - $11.50 = $103.50 ✓
 
-### Fix Required
+### Solution
+
+1. **Fetch pricing_settings from business_settings**:
 ```typescript
-const pricingSettings = businessSettings?.pricing_settings as any;
+const { data: businessSettings } = await supabaseClient
+  .from("business_settings")
+  .select("currency, company_name, tax_rate, pricing_settings")  // Add tax_rate and pricing_settings
+  .eq("user_id", user.id)
+  .single();
+
+const currency = (businessSettings?.currency || "USD").toLowerCase();
+const companyName = businessSettings?.company_name || "Company";
+const taxRate = (businessSettings?.tax_rate || 0) / 100;  // Convert from percentage
+const pricingSettings = businessSettings?.pricing_settings as { tax_inclusive?: boolean } | null;
 const taxInclusive = pricingSettings?.tax_inclusive || false;
-
-let subtotalAfterDiscount: number;
-let taxAmount: number;
-let total: number;
-
-if (taxInclusive) {
-  // Items include tax - extract net value
-  const grossSubtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount * (1 + taxRate / 100));
-  subtotalAfterDiscount = grossSubtotalAfterDiscount / (1 + taxRate / 100);
-  total = grossSubtotalAfterDiscount;
-  taxAmount = total - subtotalAfterDiscount;
-} else {
-  // Tax-exclusive (standard)
-  subtotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
-  taxAmount = subtotalAfterDiscount * (taxRate / 100);
-  total = subtotalAfterDiscount + taxAmount;
-}
 ```
 
----
+2. **Update fallback calculation**:
+```typescript
+// Fallback calculation respects tax_inclusive mode
+const discountAmount = quote.discount_amount || 0;
+const quoteTotal = quote.total || 0;
 
-## Bug #4: Database Evidence of Calculation Inconsistencies
+let discountedTotal: number;
+if (discountAmount > 0 && taxInclusive && taxRate > 0) {
+  // Tax-inclusive: discount was calculated on pre-tax subtotal
+  // Convert to GST-inclusive discount before subtracting from GST-inclusive total
+  const discountWithGST = discountAmount * (1 + taxRate);
+  discountedTotal = Math.max(0, quoteTotal - discountWithGST);
+} else {
+  // Tax-exclusive or no discount: simple subtraction
+  discountedTotal = Math.max(0, quoteTotal - discountAmount);
+}
 
-### Sample Data Analysis
+const paymentAmount = quote.payment_amount || discountedTotal;
+```
 
-| Quote | Subtotal | Discount% | Discount Amt | Tax Rate | Expected Discount | Actual | Issue |
-|-------|----------|-----------|--------------|----------|-------------------|--------|-------|
-| DRAFT-013 | $296.92 | 10% | $19.85 | 15% | $29.69 | $19.85 | Discount applied to different base? |
-| DRAFT-002 | $271.15 | 20% | $54.23 | 15% | $54.23 | $54.23 | ✓ Correct |
-| DRAFT-631 | $746.65 | 35% | $261.33 | 0% | $261.33 | $261.33 | ✓ Correct |
-
-The inconsistency in DRAFT-013 suggests the discount was applied to a different subtotal (possibly pre-markup cost instead of selling price). This may be a historical data issue.
-
----
-
-## Test Scenarios for Verification
-
-### Scenario 1: Tax-Exclusive Mode (Default)
-- **Settings**: tax_inclusive = false, tax_rate = 15%
-- **Subtotal**: $100.00
-- **Discount**: 10% ($10.00)
-- **Expected Results**:
-  - Discounted Subtotal: $90.00
-  - GST: $13.50
-  - **Total: $103.50**
-  - 50% Deposit: **$51.75**
-
-### Scenario 2: Tax-Inclusive Mode (NZ/AU)
-- **Settings**: tax_inclusive = true, tax_rate = 15%
-- **Display Total**: $115.00 (= $100 net + $15 GST)
-- **Discount**: 10% of net ($10.00)
-- **Expected Results**:
-  - Discounted Net: $90.00
-  - GST: $13.50
-  - **Total After Discount: $103.50**
-  - 50% Deposit: **$51.75**
-
-### Scenario 3: Fixed Amount Deposit
-- **Total After Discount**: $103.50
-- **Fixed Deposit**: $50.00
-- **Expected**:
-  - Payment Required: **$50.00**
-  - Balance Due: **$53.50**
-  - "Save Configuration" button MUST appear when:
-    1. User switches to "Deposit Payment"
-    2. User clicks "Fixed Amount"
-    3. User enters any amount
-
-### Scenario 4: CSV Export Validation
-- Export a quote with discount in both tax modes
-- Verify CSV contains:
-  - Correct subtotal (pre-tax for tax-exclusive, net for tax-inclusive)
-  - Correct discount amount
-  - Correct tax calculation
-  - Correct total matching UI
+3. **Add enhanced logging**:
+```typescript
+logStep("Preparing payment", { 
+  paymentAmount, 
+  paymentType, 
+  currency,
+  clientEmail,
+  discountAmount,
+  quoteTotal,
+  discountedTotal,
+  storedPaymentAmount: quote.payment_amount,
+  taxInclusive,  // NEW
+  taxRate        // NEW
+});
+```
 
 ---
 
 ## Files to Modify
 
-| File | Bug | Change Required |
-|------|-----|-----------------|
-| `src/components/jobs/quotation/InlinePaymentConfig.tsx` | #1, #2 | Fix loading of fixed amount, update hasChanges logic |
-| `src/utils/invoiceExport.ts` | #3 | Add tax_inclusive handling to prepareInvoiceExportData |
+| File | Change |
+|------|--------|
+| `src/components/jobs/quotation/QuotationSummary.tsx` | Remove double-discount calculation at line 63 |
+| `supabase/functions/create-quote-payment/index.ts` | Add tax_inclusive handling to fallback calculation |
 
 ---
 
-## Implementation Steps
+## Technical Details
 
-### Step 1: Fix InlinePaymentConfig Fixed Amount Loading
-- Update the `useEffect` that loads `currentPayment` to properly restore fixed amount mode
-- Ensure `useFixedAmount` and `fixedAmount` are set when percentage is null but amount exists
+### QuotationSummary.tsx Changes
 
-### Step 2: Fix hasChanges Logic
-- Show Save button when user switches to deposit mode even before entering amount
-- Track mode changes separately from value changes
+**Line 63**: Remove the redundant subtraction
+```typescript
+// BEFORE
+const subtotalAfterDiscount = subtotal - discountAmount;
 
-### Step 3: Fix CSV Export Tax-Inclusive Handling
-- Add tax_inclusive detection from businessSettings
-- Update calculation logic to handle both modes
-- Ensure exported totals match UI totals exactly
+// AFTER - subtotal is already the discounted value
+const subtotalAfterDiscount = subtotal;
+```
 
-### Step 4: Verify with Test Cases
-- Test all 4 scenarios above
-- Verify CSV exports match UI in both tax modes
+**Lines 143-146**: Update display to use subtotal directly (already correct label)
+```typescript
+<div className="flex justify-between font-medium">
+  <span>After Discount:</span>
+  <span>{formatCurrency(subtotalAfterDiscount)}</span>
+</div>
+```
+
+### create-quote-payment/index.ts Changes
+
+**Lines 73-77**: Expand business settings query
+```typescript
+const { data: businessSettings } = await supabaseClient
+  .from("business_settings")
+  .select("currency, company_name, tax_rate, pricing_settings")
+  .eq("user_id", user.id)
+  .single();
+
+const currency = (businessSettings?.currency || "USD").toLowerCase();
+const companyName = businessSettings?.company_name || "Company";
+const taxRate = (businessSettings?.tax_rate || 0) / 100;
+const pricingSettings = businessSettings?.pricing_settings as { tax_inclusive?: boolean } | null;
+const taxInclusive = pricingSettings?.tax_inclusive || false;
+```
+
+**Lines 90-93**: Tax-aware fallback calculation
+```typescript
+const discountAmount = quote.discount_amount || 0;
+const quoteTotal = quote.total || 0;
+
+let discountedTotal: number;
+if (discountAmount > 0 && taxInclusive && taxRate > 0) {
+  const discountWithGST = discountAmount * (1 + taxRate);
+  discountedTotal = Math.max(0, quoteTotal - discountWithGST);
+} else {
+  discountedTotal = Math.max(0, quoteTotal - discountAmount);
+}
+
+const paymentAmount = quote.payment_amount || discountedTotal;
+```
 
 ---
 
-## Expected Outcomes After Fix
+## Verification
 
-1. **Save Button**: Appears immediately when switching to Fixed Amount mode in deposits
-2. **Saved Config Loading**: Fixed amount configs properly restore when re-opening payment panel
-3. **CSV Export**: Correctly handles tax-inclusive pricing for Xero/QuickBooks imports
-4. **Calculation Consistency**: All calculations match between UI, payment processing, and CSV export
+After implementation:
 
+1. **QuotationSummary** (if ever used):
+   - When passed `subtotal=90` and `discountAmount=10`, displays "After Discount: $90" (not $80)
+
+2. **Stripe Payment (Tax-Exclusive)**:
+   - Quote total: $103.50 (subtotal $90 + $13.50 GST)
+   - Discount: $10 (pre-tax)
+   - Payment amount: $103.50 (already includes discount in total)
+
+3. **Stripe Payment (Tax-Inclusive, Fallback)**:
+   - Quote total: $115 (inc. GST)
+   - Discount: $10 (pre-tax stored value)
+   - Fallback calculation: $115 - ($10 × 1.15) = $103.50 ✓
+
+---
+
+## Notes
+
+- The `QuotationSummary` component appears to be unused (replaced by `QuoteProfitSummary`), but fixing it prevents future bugs if it's reactivated
+- The edge function fix only affects the fallback path - if `payment_amount` is properly set by the frontend (which it now is after previous fixes), this fallback won't be triggered
+- Both fixes align with Xero/QuickBooks export standards (discounts applied to pre-tax subtotals)
