@@ -457,6 +457,7 @@ export const QuotationTab = ({
       taxRate,
       taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
       total: hasDiscount ? totalAfterDiscount : total,
+      totalAfterDiscount, // GST-inclusive discounted total for payment calculations
       currency,
       markupPercentage,
       amountPaid: currentQuote?.amount_paid || 0,
@@ -1013,17 +1014,17 @@ export const QuotationTab = ({
       selectedItems: currentQuote.selected_discount_items as string[] || undefined
     } : undefined} />
 
-      {/* Inline Payment Config Panel */}
+      {/* Inline Payment Config Panel - Pass GST-inclusive discounted total */}
       {isPaymentConfigOpen && (
         <InlinePaymentConfig
           quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''}
-          total={total}
-          discountAmount={currentQuote?.discount_amount || 0}
+          total={currentQuote?.discount_type ? projectData.totalAfterDiscount : total}
+          discountAmount={0}
           currency={projectData.currency}
           currentPayment={currentQuote ? {
             type: currentQuote.payment_type as 'full' | 'deposit' || 'full',
             percentage: currentQuote.payment_percentage || undefined,
-            amount: currentQuote.payment_amount || total,
+            amount: currentQuote.payment_amount || (currentQuote?.discount_type ? projectData.totalAfterDiscount : total),
             status: currentQuote.payment_status as 'pending' | 'paid' | 'deposit_paid' | 'failed' || undefined
           } : undefined}
         />

@@ -50,19 +50,24 @@ export const InlinePaymentConfig = ({
     }
   }, [currentPayment]);
 
-  // Track changes
+  // Track changes - includes fixed amount mode
   useEffect(() => {
     if (!currentPayment) {
-      setHasChanges(paymentType === 'deposit' || depositPercentage !== 50);
+      // New config - any non-default settings count as changes
+      const hasDepositChanges = paymentType === 'deposit' || depositPercentage !== 50;
+      const hasFixedAmountChanges = useFixedAmount && fixedAmount > 0;
+      setHasChanges(hasDepositChanges || hasFixedAmountChanges);
       return;
     }
     
     const typeChanged = currentPayment.type !== paymentType;
-    const percentageChanged = currentPayment.type === 'deposit' && 
+    const percentageChanged = currentPayment.type === 'deposit' && !useFixedAmount &&
       currentPayment.percentage !== depositPercentage;
+    const fixedAmountModeChanged = useFixedAmount; // Fixed amount mode is always a change from saved percentage
+    const fixedAmountValueChanged = useFixedAmount && fixedAmount !== currentPayment.amount;
     
-    setHasChanges(typeChanged || percentageChanged);
-  }, [paymentType, depositPercentage, currentPayment]);
+    setHasChanges(typeChanged || percentageChanged || fixedAmountModeChanged || fixedAmountValueChanged);
+  }, [paymentType, depositPercentage, currentPayment, useFixedAmount, fixedAmount]);
 
   const calculatePaymentAmount = () => {
     if (paymentType === 'full') return discountedTotal;
@@ -88,9 +93,9 @@ export const InlinePaymentConfig = ({
     await updatePaymentConfig.mutateAsync({
       quoteId,
       paymentType,
-      paymentPercentage: paymentType === 'deposit' ? depositPercentage : undefined,
-      total,
-      discountAmount,
+      paymentPercentage: paymentType === 'deposit' && !useFixedAmount ? depositPercentage : undefined,
+      fixedAmount: paymentType === 'deposit' && useFixedAmount ? fixedAmount : undefined,
+      total: discountedTotal, // Pass discounted total (discount already factored in)
     });
     setHasChanges(false);
   };

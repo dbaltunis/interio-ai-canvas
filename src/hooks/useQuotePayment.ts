@@ -54,26 +54,30 @@ export const useQuotePayment = () => {
       quoteId, 
       paymentType, 
       paymentPercentage,
+      fixedAmount,
       total,
-      discountAmount = 0
     }: {
       quoteId: string;
       paymentType: 'full' | 'deposit';
       paymentPercentage?: number;
-      total: number;
-      discountAmount?: number;
+      fixedAmount?: number;
+      total: number; // Expected to already have discount applied (GST-inclusive discounted total)
     }) => {
-      // Calculate payment on DISCOUNTED total
-      const discountedTotal = Math.max(0, total - discountAmount);
-      const paymentAmount = paymentType === 'full' 
-        ? discountedTotal 
-        : (discountedTotal * (paymentPercentage || 50)) / 100;
+      // Calculate payment amount
+      let paymentAmount: number;
+      if (paymentType === 'full') {
+        paymentAmount = total; // Already discounted from caller
+      } else if (fixedAmount !== undefined) {
+        paymentAmount = fixedAmount; // User specified exact amount
+      } else {
+        paymentAmount = (total * (paymentPercentage || 50)) / 100;
+      }
 
       const { data, error } = await supabase
         .from("quotes")
         .update({
           payment_type: paymentType,
-          payment_percentage: paymentType === 'deposit' ? paymentPercentage : null,
+          payment_percentage: paymentType === 'deposit' && !fixedAmount ? paymentPercentage : null,
           payment_amount: paymentAmount,
           updated_at: new Date().toISOString(),
         })
