@@ -60,7 +60,9 @@ export const QuotationSummary = ({
   };
 
   const markupAmount = treatmentTotal * (markupPercentage / 100);
-  const subtotalAfterDiscount = subtotal - discountAmount;
+  // subtotal is already the discounted value when discount is applied
+  // discountAmount is only for display purposes - do not subtract again
+  const subtotalAfterDiscount = subtotal;
   
   // Calculate profit metrics for authorized users
   const effectiveCost = costTotal || treatmentTotal;
