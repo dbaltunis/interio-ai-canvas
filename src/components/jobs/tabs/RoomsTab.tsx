@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
+import { useProjectStatus } from "@/contexts/ProjectStatusContext";
 
 interface RoomsTabProps {
   projectId: string;
@@ -51,9 +52,15 @@ export const RoomsTab = ({
   const { data: markupSettings } = useMarkupSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
+  
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
-  const isReadOnly = !canEditJob || editPermissionsLoading;
+  
+  // Use project status context for locking (when inside provider)
+  const { isLocked, isViewOnly, isLoading: statusLoading } = useProjectStatus();
+  
+  // Combine permission and status checks
+  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || isViewOnly || statusLoading;
 
   // Fetch all room products for this project
   const roomIds = rooms.map(r => r.id);

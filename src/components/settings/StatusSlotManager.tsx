@@ -35,11 +35,11 @@ const DEFAULT_STATUS_TEMPLATES = [
   { slot: 2, name: "Quote Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote sent to client", document_type: "quote" as DocumentType },
   { slot: 3, name: "Quote Approved", color: "green", category: "Quote", action: "locked", description: "Quote approved by client", document_type: "quote" as DocumentType },
   { slot: 4, name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project planning phase", document_type: "order" as DocumentType },
-  { slot: 5, name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Active project work", document_type: "order" as DocumentType },
-  { slot: 6, name: "Materials Ordered", color: "orange", category: "Project", action: "progress_only", description: "Materials have been ordered", document_type: "order" as DocumentType },
-  { slot: 7, name: "Manufacturing", color: "yellow", category: "Project", action: "progress_only", description: "Manufacturing in progress", document_type: "order" as DocumentType },
+  { slot: 5, name: "In Progress", color: "blue", category: "Project", action: "editable", description: "Active project work", document_type: "order" as DocumentType },
+  { slot: 6, name: "Materials Ordered", color: "orange", category: "Project", action: "view_only", description: "Materials have been ordered", document_type: "order" as DocumentType },
+  { slot: 7, name: "Manufacturing", color: "yellow", category: "Project", action: "view_only", description: "Manufacturing in progress", document_type: "order" as DocumentType },
   { slot: 8, name: "Quality Check", color: "primary", category: "Project", action: "view_only", description: "Quality inspection", document_type: "order" as DocumentType },
-  { slot: 9, name: "Ready for Delivery", color: "green", category: "Project", action: "view_only", description: "Ready to deliver", document_type: "order" as DocumentType },
+  { slot: 9, name: "Ready for Delivery", color: "green", category: "Project", action: "locked", description: "Ready to deliver", document_type: "order" as DocumentType },
   { slot: 10, name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed", document_type: "invoice" as DocumentType },
 ];
 
@@ -259,7 +259,6 @@ export const StatusSlotManager = () => {
                           <SelectItem value="editable">Editable</SelectItem>
                           <SelectItem value="view_only">View Only</SelectItem>
                           <SelectItem value="locked">Locked</SelectItem>
-                          <SelectItem value="progress_only">Progress Only</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="requires_reason">Requires Reason</SelectItem>
                         </SelectContent>

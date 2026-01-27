@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Home, Square, Settings2 } from "lucide-react";
+import { Plus, Home, Square, Settings2, Lock } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { WindowSelectionDialog } from "./WindowSelectionDialog";
 import { useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
@@ -12,6 +12,7 @@ import { useCreateTreatment } from "@/hooks/useTreatments";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useStatusPermissions } from "@/hooks/useStatusPermissions";
 
 interface StreamlinedJobsInterfaceProps {
   project: any;
@@ -33,6 +34,10 @@ export const StreamlinedJobsInterface = ({
   const currency = useCurrency();
   const createSurface = useCreateSurface();
   const createTreatment = useCreateTreatment();
+  
+  // Check status permissions for read-only mode
+  const { data: statusPermissions } = useStatusPermissions(project?.status_id);
+  const isStatusLocked = statusPermissions?.isLocked || statusPermissions?.isViewOnly || false;
   
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
@@ -198,6 +203,13 @@ export const StreamlinedJobsInterface = ({
 
   return (
     <div className="space-y-6">
+      {isStatusLocked && (
+        <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm">
+          <Lock className="h-4 w-4 text-destructive" />
+          <span>This project is locked and cannot be edited.</span>
+        </div>
+      )}
+      
       <div className="text-center">
         <h3 className="text-lg font-semibold mb-2">Project Management</h3>
         <p className="text-muted-foreground">Click + buttons to add rooms, windows, and treatments instantly</p>
@@ -220,9 +232,10 @@ export const StreamlinedJobsInterface = ({
                     size="sm"
                     onClick={() => handleAddWindow(room.id)}
                     className="h-8 w-8 p-0"
-                    disabled={createSurface.isPending}
+                    disabled={createSurface.isPending || isStatusLocked}
+                    title={isStatusLocked ? "Project is locked" : undefined}
                   >
-                    <Plus className="h-4 w-4" />
+                    {isStatusLocked ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -256,8 +269,10 @@ export const StreamlinedJobsInterface = ({
                               size="sm"
                               onClick={() => handleAddTreatment(room.id)}
                               className="h-6 w-6 p-0"
+                              disabled={isStatusLocked}
+                              title={isStatusLocked ? "Project is locked" : undefined}
                             >
-                              <Plus className="h-3 w-3" />
+                              {isStatusLocked ? <Lock className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                             </Button>
                           </div>
                           
@@ -300,9 +315,11 @@ export const StreamlinedJobsInterface = ({
                     variant="outline"
                     size="sm"
                     className="w-full mt-2"
+                    disabled={isStatusLocked}
+                    title={isStatusLocked ? "Project is locked" : undefined}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Treatment
+                    {isStatusLocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                    {isStatusLocked ? "Locked" : "Add Treatment"}
                   </Button>
                 </div>
               </CardContent>
@@ -315,14 +332,15 @@ export const StreamlinedJobsInterface = ({
           <CardContent className="flex flex-col items-center justify-center h-48 p-6">
             <Button
               onClick={handleAddRoom}
-              disabled={createRoom.isPending}
+              disabled={createRoom.isPending || isStatusLocked}
               className="h-12 w-12 rounded-full mb-3"
+              title={isStatusLocked ? "Project is locked" : undefined}
             >
-              <Plus className="h-6 w-6" />
+              {isStatusLocked ? <Lock className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
             </Button>
-            <h3 className="font-medium text-center">Add New Room</h3>
+            <h3 className="font-medium text-center">{isStatusLocked ? "Project Locked" : "Add New Room"}</h3>
             <p className="text-sm text-muted-foreground text-center mt-1">
-              {createRoom.isPending ? 'Adding room...' : 'Click to add a new room'}
+              {isStatusLocked ? 'Cannot add rooms to locked project' : createRoom.isPending ? 'Adding room...' : 'Click to add a new room'}
             </p>
           </CardContent>
         </Card>

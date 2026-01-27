@@ -35,7 +35,8 @@ export const useStatusPermissions = (statusId: string | null | undefined) => {
         };
       }
 
-      const canEdit = statusInfo.action === 'editable' || statusInfo.action === 'progress_only';
+      // Only 'editable' allows full editing
+      const canEdit = statusInfo.action === 'editable';
       const isLocked = statusInfo.action === 'locked' || statusInfo.action === 'completed';
       const isViewOnly = statusInfo.action === 'view_only';
       const requiresReason = statusInfo.action === 'requires_reason';

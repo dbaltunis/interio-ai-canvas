@@ -10,6 +10,8 @@ import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
+import { ProjectStatusProvider, useProjectStatus } from "@/contexts/ProjectStatusContext";
+import { ProjectLockedBanner } from "@/components/projects/ProjectLockedBanner";
 
 interface ProjectTabContentProps {
   activeTab: string;
@@ -21,7 +23,8 @@ interface ProjectTabContentProps {
   shouldRedirectToQuote?: boolean;
 }
 
-export const ProjectTabContent = ({ 
+// Inner component that uses the context
+const ProjectTabContentInner = ({ 
   activeTab, 
   project, 
   quote, 
@@ -36,15 +39,22 @@ export const ProjectTabContent = ({
   const { user } = useAuth();
   const client = clients?.find(c => c.id === project.client_id);
   
+  // Use project status context for locking - this now works because we're inside the provider
+  const { isLocked, isViewOnly, canEdit: statusCanEdit, isLoading: statusLoading } = useProjectStatus();
+  
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
-  const isReadOnly = !canEditJob || editPermissionsLoading;
+  
+  // Combine permission and status checks
+  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || isViewOnly || statusLoading;
 
   const handleClientSelect = async (clientId: string) => {
     if (isReadOnly) {
       toast({
         title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
+        description: isLocked || isViewOnly 
+          ? "This project's status prevents editing."
+          : "You don't have permission to edit this job.",
         variant: "destructive",
       });
       return;
@@ -82,7 +92,9 @@ export const ProjectTabContent = ({
     if (isReadOnly) {
       toast({
         title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
+        description: isLocked || isViewOnly 
+          ? "This project's status prevents editing."
+          : "You don't have permission to edit this job.",
         variant: "destructive",
       });
       return;
@@ -125,7 +137,9 @@ export const ProjectTabContent = ({
       <Alert className="mb-4">
         <Lock className="h-4 w-4" />
         <AlertDescription>
-          <strong>View Only:</strong> You don't have permission to edit this job. Contact your administrator if you need access.
+          <strong>View Only:</strong> {isLocked || isViewOnly 
+            ? "This project's status prevents editing." 
+            : "You don't have permission to edit this job."} Contact your administrator if you need access.
         </AlertDescription>
       </Alert>
     );
@@ -188,7 +202,17 @@ export const ProjectTabContent = ({
 
   return (
     <main className="p-4 md:p-6">
+      <ProjectLockedBanner className="mb-4" />
       {renderTabContent()}
     </main>
+  );
+};
+
+// Main component that provides the context
+export const ProjectTabContent = (props: ProjectTabContentProps) => {
+  return (
+    <ProjectStatusProvider projectId={props.project?.id}>
+      <ProjectTabContentInner {...props} />
+    </ProjectStatusProvider>
   );
 };
