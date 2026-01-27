@@ -59,10 +59,10 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
         name: editName,
         description: editDescription,
       });
-      toast.success("Kolekcija atnaujinta");
+      toast.success("Collection updated");
       setEditingCollection(null);
     } catch (error) {
-      toast.error("Nepavyko atnaujinti kolekcijos");
+      toast.error("Failed to update collection");
     }
   };
 
@@ -99,11 +99,11 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
     return (
       <div className="text-center py-16 border-2 border-dashed border-border rounded-lg">
         <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Kolekcijų nerasta</h3>
+        <h3 className="text-xl font-semibold mb-2">No Collections Found</h3>
         <p className="text-muted-foreground max-w-md mx-auto mb-4">
           {selectedVendor 
-            ? "Šis tiekėjas dar neturi kolekcijų. Kolekcijos sukuriamos automatiškai sinchronizuojant produktus."
-            : "Kolekcijos padeda tvarkyti inventorių pagal tiekėjų asortimentą. Jos atsiras sinchronizavus produktus iš tiekėjų."
+            ? "This vendor has no collections yet. Collections are created automatically when syncing products."
+            : "Collections help organize inventory by vendor assortment. They will appear when products are synced from vendors."
           }
         </p>
       </div>
@@ -117,21 +117,21 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Ieškoti kolekcijų..."
+            placeholder="Search collections..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
           />
         </div>
         <p className="text-sm text-muted-foreground">
-          {filteredCollections.length} kolekcij{filteredCollections.length === 1 ? 'a' : 'os'} 
-          {selectedVendor && " iš šio tiekėjo"}
+          {filteredCollections.length} collection{filteredCollections.length === 1 ? '' : 's'}
+          {selectedVendor && " from this vendor"}
         </p>
       </div>
 
       {filteredCollections.length === 0 && searchTerm && (
         <div className="text-center py-8 text-muted-foreground">
-          Nerasta kolekcijų pagal „{searchTerm}"
+          No collections found for "{searchTerm}"
         </div>
       )}
 
@@ -149,7 +149,7 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
                 </CardTitle>
                 <div className="flex items-center gap-1">
                   <Badge variant="secondary" className="shrink-0">
-                    {collection.itemCount} vnt.
+                    {collection.itemCount} items
                   </Badge>
                   <Button 
                     variant="ghost" 
@@ -197,7 +197,7 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
                   }}
                 >
                   <ExternalLink className="h-3 w-3 mr-1" />
-                  Peržiūrėti
+                  View
                 </Button>
               </div>
             </CardContent>
@@ -209,37 +209,37 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor }: Collecti
       <Dialog open={!!editingCollection} onOpenChange={(open) => !open && setEditingCollection(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Redaguoti kolekciją</DialogTitle>
+            <DialogTitle>Edit Collection</DialogTitle>
             <DialogDescription>
-              Pakeiskite kolekcijos pavadinimą arba aprašymą.
+              Change the collection name or description.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Pavadinimas</Label>
+              <Label htmlFor="edit-name">Name</Label>
               <Input
                 id="edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Kolekcijos pavadinimas"
+                placeholder="Collection name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Aprašymas</Label>
+              <Label htmlFor="edit-description">Description</Label>
               <Input
                 id="edit-description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Trumpas aprašymas"
+                placeholder="Short description"
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingCollection(null)}>
-              Atšaukti
+              Cancel
             </Button>
             <Button onClick={handleSaveEdit} disabled={updateCollection.isPending}>
-              {updateCollection.isPending ? "Saugoma..." : "Išsaugoti"}
+              {updateCollection.isPending ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
