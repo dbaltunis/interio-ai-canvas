@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine, Loader2, Building2 } from "lucide-react";
+import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine, Loader2, Building2, MoreHorizontal } from "lucide-react";
 import { FilterButton } from "@/components/library/FilterButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
@@ -25,6 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -44,6 +50,12 @@ import { PriceGroupFilter } from "./PriceGroupFilter";
 import { QuickTypeFilter } from "./QuickTypeFilter";
 import { ColorSwatchSelector } from "./ColorSwatchSelector";
 import { MissingGridWarning } from "./MissingGridWarning";
+import { useRecentMaterialSelections } from "@/hooks/useRecentMaterialSelections";
+import { useFavoriteMaterials } from "@/hooks/useFavoriteMaterials";
+import { RecentSelectionsRow } from "./RecentSelectionsRow";
+import { FavoriteButton } from "./FavoriteButton";
+import { WorksheetBrandSidebar } from "./WorksheetBrandSidebar";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -80,6 +92,8 @@ export const InventorySelectionPanel = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceGroup, setSelectedPriceGroup] = useState<string | null>(null);
   const [selectedQuickTypes, setSelectedQuickTypes] = useState<string[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     name: "",
     price: "",
@@ -90,12 +104,18 @@ export const InventorySelectionPanel = ({
   });
   const selectedCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   
+  // New hooks for recent selections and favorites
+  const { items: recentItems, addSelection, clearHistory, getRelativeTime } = useRecentMaterialSelections();
+  const { favorites, toggleFavorite, isFavorite } = useFavoriteMaterials();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   // ✅ CRITICAL FIX: Reset price group filter when treatment category changes
   useEffect(() => {
     console.log('🔄 Treatment changed, resetting price group filter:', treatmentCategory);
     setSelectedPriceGroup(null);
     setSelectedQuickTypes([]);
     setSearchTerm("");
+    setShowFavoritesOnly(false);
   }, [treatmentCategory]);
   const {
     data: inventory = []
@@ -145,6 +165,28 @@ export const InventorySelectionPanel = ({
     return Array.from(groups.entries())
       .map(([group, count]) => ({ group, count }))
       .sort((a, b) => a.group.localeCompare(b.group));
+  }, [treatmentFabrics]);
+
+  // Calculate brand groups for sidebar
+  const brandGroups = useMemo(() => {
+    const groups = new Map<string | null, { vendorName: string; count: number }>();
+    treatmentFabrics.forEach(item => {
+      const vendorId = item.vendor_id || null;
+      const vendorName = item.vendor?.name || item.supplier || 'Unassigned';
+      const existing = groups.get(vendorId);
+      if (existing) {
+        existing.count++;
+      } else {
+        groups.set(vendorId, { vendorName, count: 1 });
+      }
+    });
+    return Array.from(groups.entries())
+      .map(([vendorId, { vendorName, count }]) => ({
+        vendorId,
+        vendorName,
+        itemCount: count
+      }))
+      .sort((a, b) => a.vendorName.localeCompare(b.vendorName));
   }, [treatmentFabrics]);
 
   // Calculate available quick filter types
@@ -583,6 +625,17 @@ export const InventorySelectionPanel = ({
       return null;
     };
     const imageUrl = getImageUrl();
+    
+    // Handle item selection with recent tracking
+    const handleSelect = () => {
+      if (isSelected) {
+        onItemDeselect(category);
+      } else {
+        addSelection(item);
+        onItemSelect(category, item);
+      }
+    };
+    
     return <Card 
       key={item.id} 
       ref={(el) => {
@@ -591,7 +644,7 @@ export const InventorySelectionPanel = ({
         }
       }}
       className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} 
-      onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
+      onClick={handleSelect}
     >
         <CardContent className="p-1">
           <div className="flex flex-col space-y-1">
@@ -610,10 +663,17 @@ export const InventorySelectionPanel = ({
               />
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full z-10" />}
               
+              {/* Favorite button */}
+              <FavoriteButton
+                isFavorite={isFavorite(item.id)}
+                onToggle={() => toggleFavorite(item.id)}
+                className="absolute top-1 left-1 z-10"
+              />
+              
               {/* Pricing Grid Badge Overlay */}
               {(category === 'fabric' || category === 'material') && (item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data) && (
                 <div className="absolute bottom-1 left-1 right-1 z-10">
-                  <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
+                  <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-success hover:bg-success/90 text-success-foreground w-full justify-center">
                     ✓ Grid: {item.price_group || item.resolved_grid_name || 'Assigned'}
                   </Badge>
                 </div>
@@ -789,18 +849,71 @@ export const InventorySelectionPanel = ({
   return <div className={`h-full flex flex-col ${className}`}>
       <div className="flex gap-2 items-center animate-fade-in">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-transform" />
           <Input 
-            placeholder="Search library: fabrics, hardware, materials..." 
+            placeholder="Search fabrics, materials..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)} 
-            className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
+            className="pl-9 h-10 text-sm transition-all duration-200"
           />
-          {/* Loading indicator for server-side search */}
           {isFabricsFetching && (
-            <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
           )}
         </div>
+        
+        {/* Brand filter (mobile) */}
+        {isMobile && brandGroups.length > 1 && (
+          <WorksheetBrandSidebar
+            brands={brandGroups}
+            selectedBrand={selectedVendor || null}
+            onSelectBrand={(id) => setSelectedVendor(id || undefined)}
+            totalItems={treatmentFabrics.length}
+            recentCount={recentItems.length}
+            favoritesCount={favorites.length}
+            onShowRecent={() => setShowFavoritesOnly(false)}
+            onShowFavorites={() => setShowFavoritesOnly(true)}
+            isMobile={true}
+          />
+        )}
+        
+        {/* Compact Price Group Dropdown */}
+        {priceGroupStats.length > 0 && (
+          <Select 
+            value={selectedPriceGroup || "all"} 
+            onValueChange={(val) => setSelectedPriceGroup(val === "all" ? null : val)}
+          >
+            <SelectTrigger className="w-24 h-10">
+              <SelectValue placeholder="Price" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Prices</SelectItem>
+              {priceGroupStats.map(({ group, count }) => (
+                <SelectItem key={group} value={group}>
+                  {group} ({count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        
+        {/* Actions dropdown (QR + Manual) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setScannerOpen(true)}>
+              <ScanLine className="h-4 w-4 mr-2" />
+              Scan QR Code
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowManualEntry(true)}>
+              <Edit3 className="h-4 w-4 mr-2" />
+              Manual Entry
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <FilterButton
           selectedVendor={selectedVendor}
@@ -814,61 +927,29 @@ export const InventorySelectionPanel = ({
       
       {/* TWC Linked Materials Indicator - shows when filtering by parent product */}
       {parentProductId && (
-        <div className="flex items-center gap-2 py-2 px-3 border border-primary/30 bg-primary/10 rounded-md">
-          <Building2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-primary">
-            TWC Linked Materials
-          </span>
-          <Badge variant="secondary" className="ml-auto text-xs">
+        <div className="flex items-center gap-2 py-1.5 px-3 border border-primary/30 bg-primary/10 rounded-md">
+          <Building2 className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-medium text-primary">TWC Linked Materials</span>
+          <Badge variant="secondary" className="ml-auto text-[10px]">
             {treatmentFabrics.length} items
           </Badge>
         </div>
       )}
       
-      {/* Price Group and Quick Type Filters - shown when there are price groups */}
-      {(priceGroupStats.length > 0 || availableQuickTypes.length > 0) && (
-        <div className="flex flex-col gap-2 py-2 px-1 border-b border-border/50 bg-muted/30 rounded-md">
-          {priceGroupStats.length > 0 && (
-            <PriceGroupFilter
-              priceGroups={priceGroupStats}
-              selectedGroup={selectedPriceGroup}
-              onGroupChange={setSelectedPriceGroup}
-            />
-          )}
-          {availableQuickTypes.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground shrink-0">Type:</span>
-              <QuickTypeFilter
-                selectedTypes={selectedQuickTypes}
-                onTypeToggle={handleQuickTypeToggle}
-                availableTypes={availableQuickTypes}
-              />
-            </div>
-          )}
+      {/* Quick Type Filters - compact row */}
+      {availableQuickTypes.length > 0 && (
+        <div className="flex items-center gap-2 py-1">
+          <span className="text-[10px] font-medium text-muted-foreground shrink-0">Type:</span>
+          <QuickTypeFilter
+            selectedTypes={selectedQuickTypes}
+            onTypeToggle={handleQuickTypeToggle}
+            availableTypes={availableQuickTypes}
+          />
         </div>
       )}
       
-      <div className="flex gap-2 items-center">
-        
-        <Button 
-          variant="outline" 
-          className="h-12 px-4 shrink-0"
-          onClick={() => setScannerOpen(true)}
-        >
-          <ScanLine className="h-4 w-4 mr-2" />
-          Scan QR
-        </Button>
-        
-        <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="h-12 px-4 shrink-0"
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              Manual Entry
-            </Button>
-          </DialogTrigger>
+      {/* Manual Entry Dialog */}
+      <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Manual Entry</DialogTitle>
@@ -1017,85 +1098,150 @@ export const InventorySelectionPanel = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
 
-      {/* Category tabs */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden mt-2">
-        {availableTabs.length > 1 && (
-          <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, minmax(0, 1fr))` }}>
-            {availableTabs.map(({ key, label, icon: Icon }) => (
-              <TabsTrigger key={key} value={key} className="flex items-center justify-center gap-1.5 text-sm">
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      {/* Main content with optional sidebar */}
+      <div className="flex-1 flex overflow-hidden mt-2">
+        {/* Desktop Brand Sidebar */}
+        {!isMobile && brandGroups.length > 1 && (
+          <WorksheetBrandSidebar
+            brands={brandGroups}
+            selectedBrand={selectedVendor || null}
+            onSelectBrand={(id) => setSelectedVendor(id || undefined)}
+            totalItems={treatmentFabrics.length}
+            recentCount={recentItems.length}
+            favoritesCount={favorites.length}
+            onShowRecent={() => setShowFavoritesOnly(false)}
+            onShowFavorites={() => setShowFavoritesOnly(true)}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="shrink-0"
+          />
         )}
+        
+        {/* Category tabs and content */}
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden">
+          {availableTabs.length > 1 && (
+            <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, minmax(0, 1fr))` }}>
+              {availableTabs.map(({ key, label, icon: Icon }) => (
+                <TabsTrigger key={key} value={key} className="flex items-center justify-center gap-1.5 text-sm">
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          )}
 
-        {availableTabs.map(({
-        key,
-        label
-      }) => {
-          const categoryItems = getInventoryByCategory(key);
-          
-          return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
-            {/* Skeleton loading state */}
-            {key === 'fabric' && isFabricsLoading && categoryItems.length === 0 && (
-              <ScrollArea className="h-full">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 pr-3">
-                  <InventoryCardSkeleton count={8} />
-                </div>
-              </ScrollArea>
-            )}
+          {availableTabs.map(({ key, label }) => {
+            const categoryItems = getInventoryByCategory(key);
             
-            {/* Items grid */}
-            {(!isFabricsLoading || categoryItems.length > 0) && (
-              <ScrollArea className="h-full">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 pr-3">
-                  {categoryItems.map(item => renderInventoryItem(item, key))}
-                </div>
+            // Filter for favorites if showFavoritesOnly is true
+            const displayItems = showFavoritesOnly 
+              ? categoryItems.filter(item => isFavorite(item.id))
+              : categoryItems;
+            
+            // Handle recent item selection
+            const handleRecentSelect = (itemId: string) => {
+              const item = categoryItems.find(i => i.id === itemId);
+              if (item) {
+                addSelection(item);
+                onItemSelect(key, item);
+              }
+            };
+            
+            return (
+              <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
+                {/* Recently Used Row */}
+                {recentItems.length > 0 && !showFavoritesOnly && (
+                  <RecentSelectionsRow
+                    items={recentItems}
+                    getRelativeTime={getRelativeTime}
+                    onSelect={handleRecentSelect}
+                    onClear={clearHistory}
+                    className="border-b border-border/50 px-2"
+                  />
+                )}
                 
-                {/* Load More button */}
-                {key === 'fabric' && hasNextPage && (
-                  <div className="flex justify-center py-4">
+                {/* Favorites indicator */}
+                {showFavoritesOnly && (
+                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-border/50 bg-amber-50 dark:bg-amber-950/30">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">★ Showing Favorites Only</span>
+                      <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                        {displayItems.length}
+                      </Badge>
+                    </div>
                     <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => fetchNextPage()}
-                      disabled={isFetchingNextPage}
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 px-2 text-[10px]"
+                      onClick={() => setShowFavoritesOnly(false)}
                     >
-                      {isFetchingNextPage ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        `Load More (${categoryItems.length} shown)`
-                      )}
+                      Show All
                     </Button>
                   </div>
                 )}
-              </ScrollArea>
-            )}
+                
+                {/* Skeleton loading state */}
+                {key === 'fabric' && isFabricsLoading && displayItems.length === 0 && (
+                  <ScrollArea className="h-full">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 p-2">
+                      <InventoryCardSkeleton count={8} />
+                    </div>
+                  </ScrollArea>
+                )}
+                
+                {/* Items grid */}
+                {(!isFabricsLoading || displayItems.length > 0) && (
+                  <ScrollArea className="h-full">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 p-2">
+                      {displayItems.map(item => renderInventoryItem(item, key))}
+                    </div>
+                    
+                    {/* Load More button */}
+                    {key === 'fabric' && hasNextPage && !showFavoritesOnly && (
+                      <div className="flex justify-center py-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => fetchNextPage()}
+                          disabled={isFetchingNextPage}
+                        >
+                          {isFetchingNextPage ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            `Load More (${displayItems.length} shown)`
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
 
-            {categoryItems.length === 0 && !isFabricsLoading && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">
-                  {treatmentCategory === 'wallpaper' && key === 'fabric' 
-                    ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
-                    : key === 'material'
-                    ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
-                    : key === 'hardware'
-                    ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
-                    : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`}
-                </p>
-                {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
-              </div>
-            )}
-          </TabsContent>;
-        })}
-      </Tabs>
+                {displayItems.length === 0 && !isFabricsLoading && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">
+                      {showFavoritesOnly 
+                        ? 'No favorites yet. Star items to add them here.'
+                        : treatmentCategory === 'wallpaper' && key === 'fabric' 
+                        ? 'No wallpaper items found.'
+                        : key === 'material'
+                        ? `No ${label.toLowerCase()} found.`
+                        : key === 'hardware'
+                        ? 'No hardware found.'
+                        : `No ${label.toLowerCase()} items found.`}
+                    </p>
+                    {searchTerm && !showFavoritesOnly && <p className="text-xs mt-1">Try different search terms</p>}
+                  </div>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      </div>
       
       <QRCodeScanner
         open={scannerOpen}
