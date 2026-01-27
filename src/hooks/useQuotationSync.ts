@@ -920,6 +920,35 @@ export const useQuotationSync = ({
     let quoteId: string;
 
     if (existingQuote) {
+      // CRITICAL FIX: Recalculate discount_amount if discount config exists
+      // This ensures discount persists after page refresh and item changes
+      let discountAmount = existingQuote.discount_amount || 0;
+      
+      if (existingQuote.discount_type && existingQuote.discount_value) {
+        const { calculateDiscountAmount } = await import('@/utils/quotes/calculateDiscountAmount');
+        
+        discountAmount = calculateDiscountAmount(
+          quotationData.items,
+          {
+            type: existingQuote.discount_type as 'percentage' | 'fixed',
+            value: existingQuote.discount_value,
+            scope: (existingQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items') || 'all',
+            selectedItems: Array.isArray(existingQuote.selected_discount_items) 
+              ? existingQuote.selected_discount_items as string[]
+              : undefined
+          },
+          quotationData.subtotal
+        );
+        
+        console.log('[QUOTE SYNC] Recalculated discount:', {
+          type: existingQuote.discount_type,
+          value: existingQuote.discount_value,
+          scope: existingQuote.discount_scope,
+          newSubtotal: quotationData.subtotal,
+          recalculatedDiscount: discountAmount
+        });
+      }
+      
       // Update existing quote - PROTECT user-edited fields
       await updateQuote.mutateAsync({
         id: existingQuote.id,
@@ -928,13 +957,14 @@ export const useQuotationSync = ({
         tax_rate: taxRate, // CRITICAL: Also update tax_rate so tax line displays
         tax_amount: quotationData.taxAmount,
         total_amount: quotationData.total,
+        discount_amount: discountAmount, // CRITICAL: Include recalculated discount
         notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
         updated_at: new Date().toISOString()
         // DO NOT include company_logo_url, custom_notes, or other user-edited fields
         // These should only be updated through explicit user actions in the quote editor
       });
       quoteId = existingQuote.id;
-      console.log('✅ QuotationSync: Updated quote', existingQuote.quote_number);
+      console.log('✅ QuotationSync: Updated quote', existingQuote.quote_number, 'with discount:', discountAmount);
     } else if (autoCreateQuote && quotationData.baseSubtotal > 0) {
       // Create new quote
       const quoteNumber = `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
