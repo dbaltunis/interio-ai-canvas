@@ -1,169 +1,102 @@
 
-# Fix: Discount Amount Not Recalculated During Quote Sync
 
-## Root Cause Identified
+# Fix: Tax-Inclusive Discount Calculation Bugs
 
-After thorough investigation, I found the critical bug:
+## Summary
 
-**The `useQuotationSync` hook updates quote totals but does NOT recalculate the `discount_amount` when the subtotal changes.**
+Found **3 critical bugs** in the discount calculation flow that cause incorrect amounts in tax-inclusive mode (NZ/AU/UK businesses). The bugs compound to create wildly wrong totals after page refresh.
 
-### Evidence from Database
+## Bugs Identified
 
-| Field | Value | Analysis |
-|-------|-------|----------|
-| `discount_type` | `percentage` | ✓ Saved correctly |
-| `discount_value` | `10.00` | ✓ Saved correctly |
-| `discount_scope` | `all` | ✓ Saved correctly |
-| `discount_amount` | `0.00` | ❌ **Should be £48.75** (10% of £487.50) |
-| `subtotal` | `£487.50` | ✓ Updated by sync |
-| `total_amount` | `£487.50` | ❌ Should reflect discount |
+### Bug #1: `InlineDiscountPanel` saves discount on GROSS instead of NET
 
-### The Problem Flow
+**File:** `src/components/jobs/quotation/InlineDiscountPanel.tsx`  
+**Line:** 129
 
-```text
-1. User applies 10% discount → discount_amount = £50 (on subtotal £500)
-2. User makes changes OR page refreshes
-3. useQuotationSync runs and detects changes
-4. Sync recalculates: subtotal = £487.50, total = £487.50
-5. Sync updates quote with NEW subtotal/total
-6. BUT sync does NOT recalculate discount_amount!
-7. discount_amount stays at £0 (or stale value)
-8. UI shows no discount because discount_amount = 0
-```
+**Problem:** When saving the discount, the component passes the GROSS `subtotal` (£487.50) to `applyDiscount`, but `calculateDiscountAmount` should receive the NET amount for tax-inclusive mode.
 
----
-
-## Solution
-
-### Update `useQuotationSync.ts` to Recalculate Discount
-
-When updating a quote, check if a discount configuration exists and recalculate the `discount_amount` based on the NEW subtotal.
-
-**Location**: `src/hooks/useQuotationSync.ts` lines 922-935
-
-**Current Code**:
+**Current:**
 ```typescript
-await updateQuote.mutateAsync({
-  id: existingQuote.id,
-  client_id: clientId || null,
-  subtotal: quotationData.subtotal,
-  tax_rate: taxRate,
-  tax_amount: quotationData.taxAmount,
-  total_amount: quotationData.total,
-  notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
-  updated_at: new Date().toISOString()
+const result = await applyDiscount.mutateAsync({
+  quoteId,
+  config,
+  items,
+  subtotal,  // This is GROSS (sellingTotal)
 });
 ```
 
-**Fixed Code**:
+**Fix:** Pass the pre-calculated net amount instead:
 ```typescript
-// CRITICAL FIX: Recalculate discount_amount if discount config exists
-let discountAmount = 0;
-if (existingQuote.discount_type && existingQuote.discount_value) {
-  const discountConfig = {
-    type: existingQuote.discount_type as 'percentage' | 'fixed',
-    value: existingQuote.discount_value,
-    scope: existingQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
-    selectedItems: existingQuote.selected_discount_items || undefined
-  };
-  
-  // Recalculate discount on NEW subtotal
-  if (discountConfig.scope === 'all') {
-    discountAmount = discountConfig.type === 'percentage'
-      ? (quotationData.subtotal * discountConfig.value) / 100
-      : Math.min(discountConfig.value, quotationData.subtotal);
-  } else if (discountConfig.scope === 'fabrics_only') {
-    // Filter fabric items and calculate
-    const fabricItems = quotationData.items.filter(item => {
-      const text = (item.name + ' ' + item.description).toLowerCase();
-      return text.includes('fabric') || text.includes('material') || 
-             text.includes('blind') || text.includes('curtain');
-    });
-    const fabricTotal = fabricItems.reduce((sum, item) => sum + (item.total || 0), 0);
-    discountAmount = discountConfig.type === 'percentage'
-      ? (fabricTotal * discountConfig.value) / 100
-      : Math.min(discountConfig.value, fabricTotal);
-  } else if (discountConfig.scope === 'selected_items' && discountConfig.selectedItems) {
-    const selectedSet = new Set(discountConfig.selectedItems);
-    const selectedTotal = quotationData.items
-      .filter(item => selectedSet.has(item.id))
-      .reduce((sum, item) => sum + (item.total || 0), 0);
-    discountAmount = discountConfig.type === 'percentage'
-      ? (selectedTotal * discountConfig.value) / 100
-      : Math.min(discountConfig.value, selectedTotal);
-  }
-  
-  console.log('[QUOTE SYNC] Recalculated discount:', {
-    config: discountConfig,
-    newSubtotal: quotationData.subtotal,
-    recalculatedDiscount: discountAmount
-  });
-}
-
-await updateQuote.mutateAsync({
-  id: existingQuote.id,
-  client_id: clientId || null,
-  subtotal: quotationData.subtotal,
-  tax_rate: taxRate,
-  tax_amount: quotationData.taxAmount,
-  total_amount: quotationData.total,
-  discount_amount: discountAmount, // CRITICAL: Include recalculated discount
-  notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
-  updated_at: new Date().toISOString()
+const result = await applyDiscount.mutateAsync({
+  quoteId,
+  config,
+  items,
+  subtotal: preDiscountNetSubtotal,  // Use NET for tax-inclusive consistency
 });
 ```
 
 ---
 
-## Alternative: Extract Helper Function
+### Bug #2: `QuotationTab` double-extracts NET from subtotal
 
-To avoid code duplication with `useQuoteDiscount.ts`, extract the calculation logic to a shared utility:
+**File:** `src/components/jobs/tabs/QuotationTab.tsx`  
+**Line:** 434
 
-**Create**: `src/utils/quotes/calculateDiscountAmount.ts`
+**Problem:** In tax-inclusive mode, `quotationData.subtotal` is ALREADY the net value (extracted in `useQuotationSync` line 795). But line 434 divides by `(1 + taxRate)` again, causing double-extraction.
 
+**Current:**
 ```typescript
-export interface DiscountConfig {
-  type: 'percentage' | 'fixed';
-  value: number;
-  scope: 'all' | 'fabrics_only' | 'selected_items';
-  selectedItems?: string[];
-}
-
-export const calculateDiscountAmount = (
-  items: any[],
-  config: DiscountConfig,
-  subtotal: number
-): number => {
-  let discountableAmount = 0;
-
-  if (config.scope === 'all') {
-    discountableAmount = subtotal;
-  } else if (config.scope === 'fabrics_only') {
-    const fabricItems = items.filter(item => {
-      const text = ((item.name || '') + ' ' + (item.description || '')).toLowerCase();
-      return text.includes('fabric') || text.includes('material') ||
-             text.includes('textile') || text.includes('curtain') ||
-             text.includes('drape') || text.includes('blind') ||
-             text.includes('roman') || text.includes('roller');
-    });
-    discountableAmount = fabricItems.reduce((sum, item) => 
-      sum + (item.total || item.total_price || 0), 0);
-  } else if (config.scope === 'selected_items' && config.selectedItems) {
-    const selectedSet = new Set(config.selectedItems);
-    discountableAmount = items
-      .filter(item => selectedSet.has(item.id))
-      .reduce((sum, item) => sum + (item.total || item.total_price || 0), 0);
-  }
-
-  if (config.type === 'percentage') {
-    return (discountableAmount * config.value) / 100;
-  } else {
-    return Math.min(config.value, discountableAmount);
-  }
-};
+if (taxInclusive) {
+  const preDiscountNetSubtotal = subtotal / (1 + taxRate);  // WRONG: subtotal is already NET!
+  const discountedNetSubtotal = preDiscountNetSubtotal - discountAmount;
 ```
 
-Then update both `useQuotationSync.ts` and `useQuoteDiscount.ts` to use this shared function.
+**Fix:** Use `quotationData.sellingTotal` (GROSS) as the base, or recognize that `subtotal` is already net:
+```typescript
+if (taxInclusive) {
+  // subtotal is already NET (extracted in useQuotationSync)
+  // discountAmount was calculated on NET, so apply directly
+  const discountedNetSubtotal = subtotal - discountAmount;  // subtotal IS net already
+  subtotalAfterDiscount = discountedNetSubtotal;
+  totalAfterDiscount = discountedNetSubtotal * (1 + taxRate);
+  taxAmountAfterDiscount = totalAfterDiscount - discountedNetSubtotal;
+}
+```
+
+---
+
+### Bug #3: `useQuotationSync` discount recalculation inconsistency
+
+**File:** `src/hooks/useQuotationSync.ts`  
+**Line:** 940
+
+**Problem:** The sync passes `quotationData.subtotal` to `calculateDiscountAmount`. In tax-inclusive mode, this is NET (£423.91), but the initial save from `InlineDiscountPanel` passed GROSS. This causes the discount to change on every refresh.
+
+**Current:**
+```typescript
+discountAmount = calculateDiscountAmount(
+  quotationData.items,
+  { type, value, scope, selectedItems },
+  quotationData.subtotal  // NET in tax-inclusive mode
+);
+```
+
+**Fix:** Always pass the NET subtotal for consistency. Since `quotationData.subtotal` is already NET in tax-inclusive mode (after Bug #1 fix), this will be consistent.
+
+---
+
+## Correct Math After Fixes
+
+**Tax-Inclusive Example (15% GST, £487.50 items, 10% discount on all):**
+
+| Step | Value | Calculation |
+|------|-------|-------------|
+| Gross selling total | £487.50 | Item prices (inc. GST) |
+| Net subtotal | £423.91 | 487.50 / 1.15 |
+| Discount (10% on NET) | £42.39 | 423.91 × 0.10 |
+| Net after discount | £381.52 | 423.91 - 42.39 |
+| Gross after discount | £438.75 | 381.52 × 1.15 |
+| GST amount | £57.23 | 438.75 - 381.52 |
 
 ---
 
@@ -171,47 +104,88 @@ Then update both `useQuotationSync.ts` and `useQuoteDiscount.ts` to use this sha
 
 | File | Change |
 |------|--------|
-| `src/hooks/useQuotationSync.ts` | Add discount recalculation when updating quote |
-| `src/utils/quotes/calculateDiscountAmount.ts` | NEW - shared discount calculation utility |
-| `src/hooks/useQuoteDiscount.ts` | Update to use shared utility (optional refactor) |
+| `src/components/jobs/quotation/InlineDiscountPanel.tsx` | Pass NET subtotal to applyDiscount |
+| `src/components/jobs/tabs/QuotationTab.tsx` | Remove double-extraction in tax-inclusive branch |
 
 ---
 
-## Verification Steps
+## Technical Implementation
 
-After implementing the fix:
+### InlineDiscountPanel.tsx (Line 129)
 
-1. **Page Refresh Test**:
-   - Apply 10% discount on a quote with £487.50 subtotal
-   - Hard refresh the page (Ctrl+Shift+R)
-   - Verify discount line shows `-£48.75`
-   - Verify total shows `£438.75` (or tax-adjusted equivalent)
+```typescript
+// BEFORE
+const result = await applyDiscount.mutateAsync({
+  quoteId,
+  config,
+  items,
+  subtotal,
+});
 
-2. **Item Change Test**:
-   - Apply discount, then add/remove a window treatment
-   - Verify discount recalculates based on new subtotal
+// AFTER - Pass NET subtotal for consistent discount calculation
+const result = await applyDiscount.mutateAsync({
+  quoteId,
+  config,
+  items,
+  subtotal: preDiscountNetSubtotal, // Use calculated NET for tax-inclusive compatibility
+});
+```
 
-3. **Multiple Scopes Test**:
-   - Test `all`, `fabrics_only`, and `selected_items` scopes
-   - Verify each recalculates correctly after page refresh
+### QuotationTab.tsx (Lines 428-443)
+
+```typescript
+// BEFORE
+if (hasDiscount && discountAmount > 0) {
+  if (taxInclusive) {
+    const preDiscountNetSubtotal = subtotal / (1 + taxRate);  // WRONG!
+    const discountedNetSubtotal = preDiscountNetSubtotal - discountAmount;
+    // ...
+  }
+}
+
+// AFTER
+if (hasDiscount && discountAmount > 0) {
+  if (taxInclusive) {
+    // In tax-inclusive mode, quotationData.subtotal is already NET (extracted in useQuotationSync)
+    // discountAmount was also calculated on NET, so apply directly
+    const discountedNetSubtotal = subtotal - discountAmount;
+    subtotalAfterDiscount = discountedNetSubtotal;
+    totalAfterDiscount = discountedNetSubtotal * (1 + taxRate);
+    taxAmountAfterDiscount = totalAfterDiscount - discountedNetSubtotal;
+  } else {
+    // Tax-exclusive mode unchanged
+    subtotalAfterDiscount = subtotal - discountAmount;
+    taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
+    totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+  }
+}
+```
 
 ---
 
-## Expected Outcome
+## Verification Scenarios
 
-| Before Fix | After Fix |
-|------------|-----------|
-| Discount shows in config but not applied | Discount shows correctly in quote total |
-| `discount_amount = 0` after refresh | `discount_amount` recalculates on every sync |
-| UI shows full price | UI shows discounted price |
-| Payment calculations wrong | Payment calculations correct |
+### Test 1: Tax-Exclusive (Current Setup)
+- Items: £487.50, Discount: 10%, Tax: 15%
+- Expected: Discount £48.75, Total £504.56 (after discount + tax)
+
+### Test 2: Tax-Inclusive (NZ/AU/UK)
+- Items: £487.50 (inc. GST), Discount: 10%, Tax: 15%
+- Expected: Discount £42.39 (on NET), Total £438.75 (after discount, inc. GST)
+
+### Test 3: Page Refresh Persistence
+- Apply discount, hard refresh (Ctrl+Shift+R)
+- Discount should show same values before and after refresh
+
+### Test 4: Item Changes
+- Apply discount, then modify item prices
+- Discount should recalculate proportionally
 
 ---
 
-## Technical Notes
+## Notes
 
-- The discount is always calculated on the **pre-tax subtotal** (selling price with markup, before GST)
-- This follows accounting standards (Xero/QuickBooks)
-- The fix maintains compatibility with tax-inclusive mode calculations in `QuotationTab.tsx`
-- The `total_amount` stored in DB remains the **pre-discount total** - discount is applied at display time
-- This is consistent with the existing architecture where `QuotationTab.tsx` handles discount display logic
+- The fix aligns discount calculations with Xero/QuickBooks standards (discount on pre-tax amount)
+- Both `InlineDiscountPanel` and `useQuotationSync` will now consistently use NET subtotal for discount calculation
+- The edge function fallback logic (already fixed) will correctly handle these values
+
