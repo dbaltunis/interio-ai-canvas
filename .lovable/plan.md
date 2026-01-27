@@ -1,342 +1,243 @@
 
-# Gustin Decor Online Store + InterioApp + Shopify Integration
+
+# New `storefront-project` Edge Function
 
 ## Overview
 
-This plan outlines the integration architecture for connecting the **new Gustin Decor Lovable project** (online storefront) with:
-1. **InterioApp** (this project) - Pricing engine, fabric catalog, lead management
-2. **Shopify** - Checkout, payments, inventory sync
+This plan adds a new public API endpoint that allows the Gustin Decor online store (or any external storefront) to create **projects with quotes and treatments** in InterioApp when a customer completes the calculator flow.
 
-## Current State Analysis
+## Safety Assurance
 
-| Component | Status | Data |
-|-----------|--------|------|
-| Gustin InterioApp Account | Active | 1,361 fabrics, 5 headings, 0 options configured |
-| Account ID | `32a92783-f482-4e3d-8ebf-c292200674e5` | |
-| Shopify Connection | Not Connected | No `shopify_integrations` record |
-| InterioApp Online Store | Not Created | No `online_stores` record |
-| Clients/Projects | 0 clients, 2 projects | Fresh account |
+**This will NOT break any existing code because:**
+- We're creating a **brand new edge function** (`storefront-project`)
+- No existing functions are modified
+- The new function follows the exact same patterns as:
+  - `shopify-webhook-order` (creates clients and projects)
+  - `storefront-lead` (validates account_id + api_key)
+  - `storefront-estimate` (calculation logic)
+- Uses service role key for database operations (same as other storefront functions)
+- All existing API endpoints remain unchanged
 
-## Architecture
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         INTEGRATION ARCHITECTURE                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   NEW LOVABLE PROJECT               INTERIOAPP                SHOPIFY       │
-│   (Gustin Online Store)             (This Project)            (Checkout)    │
-│                                                                             │
-│   ┌───────────────────┐                                                     │
-│   │   Product Pages   │                                                     │
-│   │   - Uzuolaidos    │──── GET /storefront-catalog ────┐                  │
-│   │   - Zaliuzes      │     (Fetch fabrics + prices)    │                  │
-│   │   - Roletai       │                                  ▼                  │
-│   └───────────────────┘                        ┌─────────────────┐         │
-│                                                │  InterioApp     │         │
-│   ┌───────────────────┐                        │  Database       │         │
-│   │   Calculator UI   │                        │  - Fabrics      │         │
-│   │   - Dimensions    │──── POST /storefront-estimate ─│  - Options      │         │
-│   │   - Options       │     (Get price)         │  - Pricing      │         │
-│   │   - Fabric Select │                        └─────────────────┘         │
-│   └───────────────────┘                                  │                  │
-│           │                                              │                  │
-│           │                                              │                  │
-│   ┌───────▼───────────┐                                  │                  │
-│   │   Lead Capture    │                                  │                  │
-│   │   - Contact Form  │──── POST /storefront-lead ──────►│                  │
-│   │   - Quote Request │     (Create client in InterioApp)│                  │
-│   └───────────────────┘                                  │                  │
-│           │                                              │                  │
-│           ▼                                              │                  │
-│   ┌───────────────────┐      ┌────────────────────┐     │                  │
-│   │   Add to Cart     │─────►│   Shopify Store    │◄────┘                  │
-│   │   (Buy Now)       │      │   (Checkout)       │   Inventory Sync       │
-│   └───────────────────┘      └─────────┬──────────┘                        │
-│                                        │                                    │
-│                              Webhook (orders/create)                       │
-│                                        │                                    │
-│                                        ▼                                    │
-│                              ┌─────────────────┐                           │
-│                              │ shopify-webhook │                           │
-│                              │ -order          │                           │
-│                              │ → Create Client │                           │
-│                              │ → Create Project│                           │
-│                              └─────────────────┘                           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Implementation Plan
-
-### Phase 1: API Infrastructure (InterioApp Changes)
-
-#### 1.1 Database Migration - Add Storefront API Key
-
-Add a `storefront_api_key` column to `account_settings` for per-account API authentication:
-
-```sql
-ALTER TABLE public.account_settings 
-ADD COLUMN IF NOT EXISTS storefront_api_key TEXT DEFAULT encode(gen_random_bytes(32), 'hex');
-
--- Generate keys for existing accounts
-UPDATE public.account_settings 
-SET storefront_api_key = encode(gen_random_bytes(32), 'hex')
-WHERE storefront_api_key IS NULL;
-```
-
-#### 1.2 Create Edge Function: `storefront-catalog`
-
-**Purpose**: Fetch fabrics and products for storefront display
-**Authentication**: Account ID + API Key (no user login required)
+## Data Flow
 
 ```text
-Endpoint: GET /storefront-catalog
-
-Query Parameters:
-- account_id (required): UUID of the InterioApp account
-- api_key (required): Storefront API key
-- category: filter by category (fabric, heading, etc.)
-- collection: filter by collection name
-- limit: pagination (default 50)
-- offset: pagination offset
-
-Response:
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "name": "Fabric Name",
-      "sku": "SKU-001",
-      "collection": "Premium Collection",
-      "color": "Ivory",
-      "width_cm": 280,
-      "image_url": "https://...",
-      "price_per_meter": 45.00,
-      "currency": "EUR"
-    }
-  ],
-  "pagination": { "total": 1361, "limit": 50, "offset": 0, "has_more": true }
-}
+External Storefront                      InterioApp Database
+┌────────────────────┐                  ┌─────────────────────┐
+│                    │                  │                     │
+│  Customer fills    │                  │                     │
+│  calculator form   │                  │                     │
+│  with:             │                  │                     │
+│  - Dimensions      │                  │                     │
+│  - Fabric choice   │  POST /storefront-project  ┌──────────┐│
+│  - Options         │ ────────────────────────► │ clients  ││
+│  - Contact info    │                  │        └──────────┘│
+│                    │                  │              │      │
+│                    │                  │        ┌─────▼────┐ │
+│                    │                  │        │ projects │ │
+│                    │                  │        └──────────┘ │
+│                    │                  │              │      │
+│                    │                  │        ┌─────▼────┐ │
+│                    │                  │        │  quotes  │ │
+│                    │                  │        └──────────┘ │
+│                    │                  │              │      │
+│                    │                  │        ┌─────▼────┐ │
+│ ◄──────────────────┼──────────────────┤        │treatments│ │
+│  Returns:          │                  │        └──────────┘ │
+│  - project_id      │                  │                     │
+│  - quote_id        │                  └─────────────────────┘
+│  - treatment_id    │
+│  - pricing         │
+└────────────────────┘
 ```
 
-#### 1.3 Create Edge Function: `storefront-lead`
+## New Edge Function: `storefront-project`
 
-**Purpose**: Capture leads from external storefronts (replaces receive-external-lead with multi-tenant support)
+### Endpoint Specification
 
-```text
-Endpoint: POST /storefront-lead
+**URL:** `POST https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/storefront-project`
 
-Request Body:
+**Authentication:** Account ID + API Key (same as other storefront endpoints)
+
+### Request Schema
+
+```json
 {
   "account_id": "32a92783-f482-4e3d-8ebf-c292200674e5",
-  "api_key": "<storefront_api_key>",
-  "name": "Jonas Jonaitis",
-  "email": "jonas@example.lt",
-  "phone": "+37061234567",
-  "message": "Interested in blackout curtains",
-  "product_interest": "Naktinė užuolaida",
-  "source": "gustindecor.com"
-}
-
-Response:
-{
-  "success": true,
-  "lead_id": "uuid",
-  "message": "Lead created successfully"
-}
-```
-
-#### 1.4 Create Edge Function: `storefront-options`
-
-**Purpose**: Fetch product configuration options (lining, heading, etc.)
-
-```text
-Endpoint: GET /storefront-options
-
-Query Parameters:
-- account_id: UUID
-- api_key: string
-- treatment_type: curtains | blinds | shutters (optional)
-
-Response:
-{
-  "success": true,
-  "options": [
+  "api_key": "efc64ac7...",
+  "customer": {
+    "name": "Jonas Jonaitis",
+    "email": "jonas@example.lt",
+    "phone": "+37061234567"
+  },
+  "items": [
     {
-      "key": "lining_type",
-      "label": "Pamušalas",
-      "values": [
-        { "code": "unlined", "label": "Be pamušalo", "price_modifier": 0 },
-        { "code": "blackout", "label": "Blackout", "price_modifier": 15 }
-      ]
+      "fabric_id": "uuid",
+      "template_id": "uuid (optional)",
+      "width_mm": 2000,
+      "drop_mm": 2400,
+      "quantity": 2,
+      "room_name": "Living Room",
+      "options": {
+        "lining_type": "blackout",
+        "heading_type": "wave"
+      },
+      "notes": "Custom note"
     }
-  ]
+  ],
+  "source": "gustindecor.com",
+  "message": "Optional customer message"
 }
 ```
 
-#### 1.5 Create Edge Function: `storefront-estimate`
+### Response Schema
 
-**Purpose**: Calculate price estimate for configurator display
-
-```text
-Endpoint: POST /storefront-estimate
-
-Request Body:
-{
-  "account_id": "uuid",
-  "api_key": "string",
-  "fabric_id": "uuid",
-  "width_mm": 2000,
-  "drop_mm": 2400,
-  "quantity": 1,
-  "options": {
-    "lining_type": "blackout",
-    "heading_type": "wave"
-  }
-}
-
-Response:
+```json
 {
   "success": true,
-  "estimate": {
-    "fabric_meters": 12.5,
-    "fabric_cost": 562.50,
-    "making_cost": 85.00,
-    "total": 647.50,
-    "currency": "EUR",
-    "note": "Estimate only. Final price confirmed after measurement."
-  }
+  "project": {
+    "id": "project-uuid",
+    "title": "Online Quote - Jonas Jonaitis",
+    "quote_number": "Q-2026-0042"
+  },
+  "quote": {
+    "id": "quote-uuid",
+    "subtotal": 562.50,
+    "tax_amount": 118.13,
+    "total": 680.63,
+    "currency": "EUR"
+  },
+  "treatments": [
+    {
+      "id": "treatment-uuid",
+      "room_name": "Living Room",
+      "fabric_name": "Premium Velvet",
+      "unit_price": 280.32,
+      "total_price": 560.64
+    }
+  ],
+  "client_id": "client-uuid",
+  "is_new_client": true
 }
 ```
 
-### Phase 2: Documentation Update
+### Error Responses
 
-Add new section to `src/pages/Documentation.tsx`:
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `account_id is required` | Missing account_id |
+| 400 | `api_key is required` | Missing api_key |
+| 400 | `customer.name and customer.email are required` | Missing customer info |
+| 400 | `items array is required and cannot be empty` | No items provided |
+| 401 | `Invalid API key` | API key doesn't match |
+| 404 | `Account not found` | Invalid account_id |
+| 404 | `Fabric not found: {id}` | Invalid fabric_id |
+| 500 | `Internal server error` | Server error |
 
-**New Section: "Storefront Integration API"**
+## Technical Implementation
 
-Subsections:
-1. **Getting Started** - Account ID and API key retrieval
-2. **Authentication** - How to authenticate API requests
-3. **Fabric Catalog API** - Fetching products with examples
-4. **Lead Capture API** - Submitting leads with full spec
-5. **Product Options API** - Configuration options
-6. **Price Estimate API** - Calculator integration
-7. **Shopify Integration** - How orders flow in
-8. **Error Codes** - Standard error responses
-9. **Code Examples** - JavaScript/React examples
-
-### Phase 3: Shopify Connection
-
-No code changes required - uses existing OAuth flow:
-
-1. Gustin navigates to Settings → Integrations → Shopify
-2. Enters their Shopify store domain
-3. Completes OAuth authorization
-4. Webhooks auto-register (`orders/create`, `customers/create`)
-5. When order comes in → `shopify-webhook-order` creates Client + Project
-
-### Phase 4: Inventory Sync (Bidirectional)
-
-Enhance existing sync to support:
-
-1. **Shopify → InterioApp**: When Shopify inventory changes, update `enhanced_inventory_items.quantity`
-2. **InterioApp → Shopify**: When InterioApp stock decrements (project status change), update Shopify
-
-This requires:
-- New Edge Function: `shopify-sync-inventory` with bidirectional logic
-- Add Shopify `inventory_levels/update` webhook handling
-
-### Phase 5: Settings UI Enhancement
-
-Add to Settings → Integrations:
-
-1. **API Access Card** displaying:
-   - Account ID (read-only, copy button)
-   - Storefront API Key (masked, regenerate button)
-   - Quick links to documentation
-
----
-
-## Files to Create
+### Files to Create
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/storefront-catalog/index.ts` | Public catalog API |
-| `supabase/functions/storefront-lead/index.ts` | Multi-tenant lead capture |
-| `supabase/functions/storefront-options/index.ts` | Product options API |
-| `supabase/functions/storefront-estimate/index.ts` | Price calculator API |
-| `supabase/functions/shopify-sync-inventory/index.ts` | Bidirectional inventory sync |
-| New SQL migration | Add `storefront_api_key` to `account_settings` |
+| `supabase/functions/storefront-project/index.ts` | New edge function |
 
-## Files to Modify
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/Documentation.tsx` | Add "Storefront Integration API" section (~200 lines) |
-| `supabase/config.toml` | Register 5 new edge functions |
-| `src/pages/Settings.tsx` or integration settings | Add API Access card |
+| `supabase/config.toml` | Add `[functions.storefront-project]` with `verify_jwt = false` |
+| `src/pages/Documentation.tsx` | Add new endpoint documentation |
 
----
+### Implementation Steps
 
-## Gustin-Specific Setup Checklist
+1. **Create the edge function** with:
+   - Account ID + API key validation (same pattern as `storefront-lead`)
+   - Find or create client (same logic as `shopify-webhook-order`)
+   - Create project with appropriate source
+   - Create quote linked to project
+   - Create room(s) for each unique room_name
+   - Create treatment(s) with full pricing calculation (using `storefront-estimate` logic)
+   - Calculate quote totals
+   - Return all created IDs and pricing
 
-After implementation:
+2. **Register in config.toml**:
+   ```toml
+   [functions.storefront-project]
+   verify_jwt = false
+   ```
 
-1. Generate Gustin's storefront API key (automatic via migration)
-2. Provide credentials to new Lovable project:
-   - `INTERIOAPP_ACCOUNT_ID`: `32a92783-f482-4e3d-8ebf-c292200674e5`
-   - `INTERIOAPP_API_KEY`: (from account_settings.storefront_api_key)
-   - API Base URL: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/`
-3. Connect Gustin's Shopify store via OAuth
-4. Test lead capture from storefront
-5. Test order webhook flow
+3. **Update Documentation** with complete endpoint specification
 
----
+### Database Tables Used
 
-## Security Considerations
+| Table | Operation | Purpose |
+|-------|-----------|---------|
+| `account_settings` | SELECT | Validate API key |
+| `business_settings` | SELECT | Get tax rate, margins |
+| `clients` | SELECT, INSERT, UPDATE | Find or create customer |
+| `projects` | INSERT | Create new project |
+| `quotes` | INSERT, UPDATE | Create quote with totals |
+| `rooms` | INSERT | Create room records |
+| `treatments` | INSERT | Create treatment records |
+| `enhanced_inventory_items` | SELECT | Get fabric details |
+| `curtain_templates` | SELECT | Get template settings |
+| `client_activity_log` | INSERT | Log activity |
+| `user_notifications` | INSERT | Notify account owner |
 
-- API keys validated per-request
-- Rate limiting: 100 requests/minute per account (implement in edge functions)
-- No cost prices exposed in catalog API (only selling prices)
-- CORS configured for Gustin domain
-- Webhook signatures verified for Shopify
+### Pricing Calculation
 
----
+The function will reuse the calculation logic from `storefront-estimate`:
+- Fetch fabric selling_price and width
+- Apply template fullness_ratio
+- Calculate fabric meters needed
+- Apply option costs
+- Add making/labor costs
+- Apply tax rate
+- Sum to get totals
 
-## Expected API Documentation Output
+### Security Measures
 
-The Documentation page will include complete specs like:
+- API key validation required
+- Service role used (bypasses RLS for multi-tenant access)
+- Input validation for all fields
+- Email format validation
+- No sensitive data exposed in responses
+- Logging for audit trail
 
+## Gustin Decor Integration
+
+After this endpoint is deployed, the Gustin Decor online store can:
+
+1. **Customer fills calculator** → dimensions, fabric, options
+2. **Customer submits form** → contact info
+3. **POST to `/storefront-project`** → creates everything in InterioApp
+4. **Redirect to Shopify checkout** (if immediate purchase) or **show confirmation** (if quote request)
+5. **Gustin team sees new project** in InterioApp with all details
+
+## Testing Plan
+
+After implementation, test with:
+
+```bash
+curl -X POST https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/storefront-project \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_id": "32a92783-f482-4e3d-8ebf-c292200674e5",
+    "api_key": "efc64ac7cb8d1759cdb7c2192f5dbe7f91be266c1b3e14a68c6539fd22913f3a",
+    "customer": {
+      "name": "Test Customer",
+      "email": "test@example.com",
+      "phone": "+37061234567"
+    },
+    "items": [
+      {
+        "width_mm": 2000,
+        "drop_mm": 2400,
+        "quantity": 1,
+        "room_name": "Living Room"
+      }
+    ],
+    "source": "api-test"
+  }'
 ```
-## Storefront Fabric Catalog API
 
-**Endpoint:** GET https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/storefront-catalog
-
-**Authentication:** Include account_id and api_key as query parameters
-
-**Example Request:**
-```javascript
-const response = await fetch(
-  `${INTERIOAPP_API_URL}/storefront-catalog?account_id=${ACCOUNT_ID}&api_key=${API_KEY}&category=fabric&limit=20`
-);
-const { data, pagination } = await response.json();
-```
-
-**Response Fields:**
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique fabric identifier |
-| name | string | Display name |
-| sku | string | Product code |
-| collection | string | Collection name |
-| color | string | Color name |
-| width_cm | number | Fabric width in cm |
-| image_url | string | Product image URL |
-| price_per_meter | number | Selling price per meter |
-| currency | string | Price currency (EUR, USD, etc.) |
-```
-
-This gives the new Gustin Decor Lovable project everything needed to integrate!
