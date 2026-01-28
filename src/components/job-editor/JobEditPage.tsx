@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useUpdateProject } from "@/hooks/useProjects";
 import { ProjectHeader } from "../job-creation/ProjectHeader";
 import { ProjectNavigation } from "../job-creation/ProjectNavigation";
 import { ProjectTabContent } from "../job-creation/ProjectTabContent";
@@ -14,6 +15,7 @@ interface JobEditPageProps {
 export const JobEditPage = ({ jobId, onBack }: JobEditPageProps) => {
   const [activeTab, setActiveTab] = useState("jobs");
   const { data: quotes } = useQuotes();
+  const updateProject = useUpdateProject();
 
   // If jobId is "new", show the new job creation page
   if (jobId === "new") {
@@ -35,17 +37,34 @@ export const JobEditPage = ({ jobId, onBack }: JobEditPageProps) => {
     );
   }
 
+  // Handler for project name updates
+  const handleProjectUpdate = async (updates: { name?: string }) => {
+    if (!job?.project_id) {
+      console.error('No project_id found for job:', job?.id);
+      throw new Error('Cannot update - no project ID');
+    }
+    
+    await updateProject.mutateAsync({
+      id: job.project_id,
+      ...updates
+    });
+  };
+
+  // Get the project name (from the linked project, not the quote_number)
+  const projectName = job.projects?.name || job.quote_number || "Job";
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto max-w-7xl space-y-4 p-4">
         <ProjectHeader 
-          projectName={job.quote_number || "Job"} 
+          projectName={projectName} 
           projectNumber={job.quote_number}
           projectValue={job.total_amount}
           currentStatus={job.status}
           projectId={job} // Pass the whole job object so the component can extract project_id
           quoteId={job.id}
-          onBack={onBack} 
+          onBack={onBack}
+          onProjectUpdate={handleProjectUpdate}
         />
         <ProjectNavigation 
           activeTab={activeTab} 
