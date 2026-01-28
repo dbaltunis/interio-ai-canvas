@@ -1,144 +1,144 @@
 
-# Fix StatusReasonsWidget: Layout, Filtering & Drill-down Details
+# Add Job Name Editing Capability
 
-## Issue Analysis
+## Problem Summary
 
-### Issue 1: Layout - 3 Widgets in a Row Looks Bad
-**Current:** Charts row uses `lg:grid-cols-3` when all 3 widgets are visible
-**Problem:** Three charts crammed in one row on laptop screens looks cramped
+Jobs are created with auto-generated names like "New Job 1/28/2026" which makes them hard to identify. While a `ProjectJobsHeader` component with inline name editing already exists in the codebase, it's not being used. The main `ProjectHeader` component shows the name as static text with no edit option.
 
-### Issue 2: Filtering Shows Wrong Count
-**Database shows:** Two "Rejected" entries for today (2026-01-28):
-- 08:10:34 - Same project rejected (no reason)
-- 18:26:03 - Same project rejected again ("too expensive")
+## Solution Overview
 
-**This is correct behavior** - the widget tracks every status change event, not unique projects. If a project is rejected twice in the same day (e.g., rejected → un-rejected → rejected again), both events are counted.
-
-**The real issue:** The query correctly filters by date but doesn't filter by the effective account owner for the status changes. The status_change_history doesn't have an owner filter applied.
-
-### Issue 3: Need More Details from the Pie Chart
-**Current:** Pie shows counts but no way to see actual reasons or project names
-**Needed:** Click to expand with a list of rejection reasons, popular reasons, etc.
+Integrate inline job name editing into the `ProjectHeader` component, allowing users to click an edit button next to the project name to rename it to something meaningful (e.g., "Johnson Kitchen Renovation" instead of "New Job 1/28/2026").
 
 ---
 
-## Solution Implementation
+## Implementation Details
 
-### Part 1: Change Layout to 2 Columns
+### Part 1: Add Inline Name Editing to ProjectHeader
 
-**Update `EnhancedHomeDashboard.tsx`:**
+**File:** `src/components/job-creation/ProjectHeader.tsx`
 
-Change the charts row from 3 columns to 2 columns:
-- Row 1: Revenue Trend + Jobs by Status
-- Row 2: Rejections & Cancellations (full width or paired with another widget)
+**Changes:**
+1. Add state for inline editing (borrowing pattern from existing `ProjectJobsHeader.tsx`)
+2. Replace static `<h1>{projectName}</h1>` with editable input toggle
+3. Add Edit, Save, Cancel button controls
+4. Call `onProjectUpdate` when name is saved
+5. Respect `canEditJob` permission check
 
+**UI Before:**
 ```text
-BEFORE (cramped):
-+----------------+----------------+----------------+
-| Revenue Trend  | Jobs Status    | Rejections     |
-+----------------+----------------+----------------+
-
-AFTER (cleaner):
-+------------------------+------------------------+
-| Revenue Trend          | Jobs by Status         |
-+------------------------+------------------------+
-+------------------------+------------------------+
-| Rejections & Cancels   | (Dynamic widget space) |
-+------------------------+------------------------+
+[<-] Back to Jobs  |  New Job 1/28/2026
+                      #ORD-0218
 ```
 
-**Code change:**
-```typescript
-// Charts Row 1: Revenue + Jobs
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  {canViewRevenue !== false && <RevenueTrendChart />}
-  {canViewJobs !== false && <JobsStatusChart />}
-</div>
+**UI After:**
+```text
+[<-] Back to Jobs  |  New Job 1/28/2026  [Edit icon]
+                      #ORD-0218
 
-// Charts Row 2: Rejections (separate row)
-{canViewRevenue !== false && (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <StatusReasonsWidget />
+(When editing:)
+[<-] Back to Jobs  |  [_____________] [checkmark] [X]
+                      #ORD-0218
+```
+
+### Part 2: Wire Up the onProjectUpdate Prop
+
+**File:** `src/components/job-editor/JobEditPage.tsx`
+
+Ensure `onProjectUpdate` callback is passed to ProjectHeader and handles the name update properly.
+
+### Part 3: Add Update Handler in JobEditPage
+
+**Changes:**
+- Create handler that calls `useUpdateProject` mutation with new name
+- Pass handler to `ProjectHeader` component
+
+---
+
+## Technical Implementation
+
+### ProjectHeader.tsx Changes
+
+```typescript
+// Add to component state
+const [isEditingName, setIsEditingName] = useState(false);
+const [editedName, setEditedName] = useState(projectName);
+
+// Add save handler
+const handleSaveName = async () => {
+  if (!editedName.trim() || editedName === projectName) {
+    setIsEditingName(false);
+    setEditedName(projectName);
+    return;
+  }
+  
+  try {
+    await onProjectUpdate?.({ name: editedName.trim() });
+    setIsEditingName(false);
+    toast({ title: "Success", description: "Project name updated" });
+  } catch (error) {
+    setEditedName(projectName);
+    toast({ title: "Error", description: "Failed to update name", variant: "destructive" });
+  }
+};
+```
+
+```typescript
+// Replace static h1 with editable version
+{isEditingName ? (
+  <div className="flex items-center gap-2">
+    <Input
+      value={editedName}
+      onChange={(e) => setEditedName(e.target.value)}
+      className="h-8 w-48"
+      onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+      autoFocus
+    />
+    <Button size="icon" variant="ghost" onClick={handleSaveName}>
+      <Check className="h-4 w-4" />
+    </Button>
+    <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(false); setEditedName(projectName); }}>
+      <X className="h-4 w-4" />
+    </Button>
+  </div>
+) : (
+  <div className="flex items-center gap-2">
+    <h1 className="text-xl font-semibold">{projectName}</h1>
+    {canEditJob && (
+      <Button size="icon" variant="ghost" onClick={() => setIsEditingName(true)}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+    )}
   </div>
 )}
 ```
 
-### Part 2: Fix Filtering - Add Project Owner Filter
+### JobEditPage.tsx Changes
 
-**Update `useStatusReasonsKPI.ts`:**
-
-The hook needs to filter by projects owned by the effective account owner. Currently it fetches ALL status changes regardless of project ownership.
-
-**Add join to projects table with owner filter:**
 ```typescript
-// Get projects owned by the effective owner first
-const { data: ownedProjects } = await supabase
-  .from('projects')
-  .select('id')
-  .eq('user_id', effectiveOwnerId);
+// Add project update handler
+const updateProject = useUpdateProject();
 
-const projectIds = ownedProjects?.map(p => p.id) || [];
+const handleProjectUpdate = async (updates: Partial<Project>) => {
+  if (!job?.project_id) return;
+  
+  try {
+    await updateProject.mutateAsync({
+      id: job.project_id,
+      ...updates
+    });
+  } catch (error) {
+    console.error("Failed to update project:", error);
+    throw error;
+  }
+};
 
-// Then filter status changes by those projects
-const { data: currentChanges } = await supabase
-  .from('status_change_history')
-  .select(...)
-  .in('project_id', projectIds)  // Filter by owned projects
-  .in('new_status_name', ['Rejected', 'Cancelled', 'On Hold'])
-  .gte('changed_at', dateRange.startDate.toISOString())
-  .lte('changed_at', dateRange.endDate.toISOString());
+// Pass to ProjectHeader
+<ProjectHeader 
+  projectName={job.quote_number || "Job"} 
+  ...
+  onProjectUpdate={handleProjectUpdate}
+/>
 ```
-
-### Part 3: Add Drill-down Dialog with Details
-
-**Enhance `StatusReasonsWidget.tsx`:**
-
-Add a clickable dialog/sheet that shows:
-1. List of all rejections/cancellations with reasons
-2. Top 5 most common reasons (grouped)
-3. Project name + who made the change + when
-
-**New UI with click-to-expand:**
-
-```text
-+------------------------------------------+
-| Rejections & Cancellations    ↓ -50%     |
-|            [Click for details]           |
-+------------------------------------------+
-|                                          |
-|  [Donut Chart]     • Rejected      2     |  ← Clicking chart opens dialog
-|                    • Cancelled     0     |
-|                    • On Hold       0     |
-+------------------------------------------+
-
-DIALOG (on click):
-+--------------------------------------------------+
-| Rejection Details                           [X]  |
-+--------------------------------------------------+
-| Top Reasons:                                     |
-| 1. "too expensive" (50%)                         |
-| 2. "client changed mind" (30%)                   |
-| 3. "project scope changed" (20%)                 |
-+--------------------------------------------------+
-| Recent Changes:                                  |
-| +----------------------------------------------+ |
-| | [🔴] Project Name            Rejected        | |
-| |      "too expensive"                         | |
-| |      👤 Darius B. · 📅 2 hours ago           | |
-| +----------------------------------------------+ |
-| | [🔴] Another Project         Rejected        | |
-| |      (no reason provided)                    | |
-| |      👤 John D. · 📅 10 hours ago            | |
-| +----------------------------------------------+ |
-+--------------------------------------------------+
-```
-
-**Implementation:**
-- Add `useState` for dialog open state
-- Make chart/card clickable with cursor-pointer
-- Use `Dialog` or `Sheet` component for detail view
-- Group reasons by frequency and show top 5
-- Show full list with project names and metadata
 
 ---
 
@@ -146,154 +146,24 @@ DIALOG (on click):
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Change layout from 3-column to 2x2 grid |
-| `src/hooks/useStatusReasonsKPI.ts` | Add project owner filter to query |
-| `src/components/dashboard/StatusReasonsWidget.tsx` | Add click-to-expand dialog with detailed list and top reasons |
+| `src/components/job-creation/ProjectHeader.tsx` | Add inline name editing with Input, Check, X buttons |
+| `src/components/job-editor/JobEditPage.tsx` | Add `handleProjectUpdate` function and pass to ProjectHeader |
 
 ---
 
-## Technical Details
+## Expected Behavior
 
-### Layout Change
-```typescript
-// EnhancedHomeDashboard.tsx
-
-// Charts Row - 2 per row, not 3
-{(canViewRevenue !== false || canViewJobs !== false) && (
-  <>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {canViewRevenue !== false && (
-        <Suspense fallback={<WidgetSkeleton />}>
-          <RevenueTrendChart />
-        </Suspense>
-      )}
-      {canViewJobs !== false && (
-        <Suspense fallback={<WidgetSkeleton />}>
-          <JobsStatusChart />
-        </Suspense>
-      )}
-    </div>
-    {canViewRevenue !== false && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Suspense fallback={<WidgetSkeleton />}>
-          <StatusReasonsWidget />
-        </Suspense>
-      </div>
-    )}
-  </>
-)}
-```
-
-### Owner Filter in Hook
-```typescript
-// useStatusReasonsKPI.ts
-
-// First get owned project IDs
-const { data: ownedProjects } = await supabase
-  .from('projects')
-  .select('id')
-  .eq('user_id', effectiveOwnerId);
-
-const projectIds = (ownedProjects || []).map(p => p.id);
-
-if (projectIds.length === 0) {
-  return { current: [], currentCounts: {...}, total: 0, ... };
-}
-
-// Filter status changes by owned projects AND date range
-const { data: currentChanges } = await supabase
-  .from('status_change_history')
-  .select(`id, new_status_name, reason, user_name, user_email, changed_at, project_id`)
-  .in('project_id', projectIds)  // Only owned projects
-  .in('new_status_name', ['Rejected', 'Cancelled', 'On Hold'])
-  .gte('changed_at', dateRange.startDate.toISOString())
-  .lte('changed_at', dateRange.endDate.toISOString())
-  .order('changed_at', { ascending: false });
-```
-
-### Drill-down Dialog Component
-```typescript
-// StatusReasonsWidget.tsx - add dialog
-
-const [detailsOpen, setDetailsOpen] = useState(false);
-
-// Group reasons by frequency
-const topReasons = useMemo(() => {
-  const reasonCounts: Record<string, number> = {};
-  data?.current?.forEach(item => {
-    const reason = item.reason || 'No reason provided';
-    reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
-  });
-  return Object.entries(reasonCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([reason, count]) => ({
-      reason,
-      count,
-      percentage: ((count / (data?.total || 1)) * 100).toFixed(0)
-    }));
-}, [data]);
-
-// Make card clickable
-<Card 
-  variant="analytics" 
-  className="cursor-pointer hover:shadow-md transition-shadow"
-  onClick={() => setDetailsOpen(true)}
->
-  ...
-</Card>
-
-// Dialog with details
-<Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-  <DialogContent className="max-w-lg">
-    <DialogHeader>
-      <DialogTitle>Rejection & Cancellation Details</DialogTitle>
-    </DialogHeader>
-    
-    {/* Top Reasons Section */}
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium">Top Reasons</h4>
-      {topReasons.map((r, i) => (
-        <div key={i} className="flex justify-between text-xs">
-          <span>"{r.reason}"</span>
-          <span className="text-muted-foreground">{r.percentage}%</span>
-        </div>
-      ))}
-    </div>
-    
-    {/* Recent Changes List */}
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium">Recent Changes</h4>
-      <ScrollArea className="h-[200px]">
-        {data?.current?.map(item => (
-          <div key={item.id} className="...">
-            {/* Similar to RecentlyCreatedJobsWidget item style */}
-          </div>
-        ))}
-      </ScrollArea>
-    </div>
-  </DialogContent>
-</Dialog>
-```
+1. **View Mode**: Job name shows with small edit pencil icon next to it (visible only to users with edit permission)
+2. **Edit Mode**: Clicking pencil converts name to input field with Save/Cancel buttons
+3. **Save**: Updates project name in database, shows success toast
+4. **Cancel**: Reverts to original name, closes edit mode
+5. **Permissions**: Edit button only visible if `canEditJob` is true
+6. **Locked Status**: Edit button hidden when project is in locked status
 
 ---
 
-## Expected Behavior After Implementation
+## User Experience Improvement
 
-### Layout
-- Revenue Trend and Jobs by Status appear side by side (row 1)
-- Rejections & Cancellations appears in a second row (2 columns)
-- Clean, uncrammed appearance on all screen sizes
+**Before:** User creates job -> Sees "New Job 1/28/2026" -> Has to search by job number -> Hard to identify in lists
 
-### Filtering Accuracy
-- Only shows rejections/cancellations for projects owned by the current user
-- Date filter correctly applied (today = only today's changes)
-- If same project rejected twice today, shows 2 (correct - tracking events)
-
-### Details Drill-down
-1. User clicks on the pie chart widget
-2. Dialog opens showing:
-   - Top 5 most common rejection reasons with percentages
-   - Scrollable list of all recent status changes
-   - Each item shows: project name, status badge, reason in quotes, who + when
-3. User can scan for patterns or click to navigate to specific projects
+**After:** User creates job -> Clicks edit pencil -> Types "Johnson Kitchen Blinds" -> Save -> Easy to identify in all views including the Rejections widget
