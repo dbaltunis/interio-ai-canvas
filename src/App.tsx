@@ -35,6 +35,7 @@ import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
 import { WelcomeTour } from "./components/teaching/WelcomeTour";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
+import { UpdateBanner } from "./components/version/UpdateBanner";
 import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
 
@@ -174,6 +175,7 @@ const App = () => {
               <Toaster />
               <BrowserRouter>
                 <NavObserver />
+                <UpdateBanner />
                 <AuthProvider>
                   
                   <AccountStatusGuard>
