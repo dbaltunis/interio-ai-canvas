@@ -1,34 +1,42 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, Clock, XCircle, PauseCircle, User, Calendar } from "lucide-react";
+import { AlertTriangle, XCircle, PauseCircle, User, Calendar, CheckCircle2 } from "lucide-react";
 import { useStatusReasonsKPI } from "@/hooks/useStatusReasonsKPI";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
+import { PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 
-const getStatusIcon = (status: string | null) => {
+const getStatusConfig = (status: string | null) => {
   switch (status) {
     case 'Rejected':
-      return <XCircle className="h-4 w-4 text-destructive" />;
+      return {
+        icon: XCircle,
+        bgClass: "bg-destructive/10",
+        iconClass: "text-destructive",
+        badgeVariant: "destructive" as const,
+      };
     case 'Cancelled':
-      return <AlertTriangle className="h-4 w-4 text-warning" />;
+      return {
+        icon: AlertTriangle,
+        bgClass: "bg-warning/10",
+        iconClass: "text-warning",
+        badgeVariant: "secondary" as const,
+      };
     case 'On Hold':
-      return <PauseCircle className="h-4 w-4 text-primary" />;
+      return {
+        icon: PauseCircle,
+        bgClass: "bg-primary/10",
+        iconClass: "text-primary",
+        badgeVariant: "outline" as const,
+      };
     default:
-      return <Clock className="h-4 w-4 text-muted-foreground" />;
-  }
-};
-
-const getStatusVariant = (status: string | null): "destructive" | "secondary" | "outline" => {
-  switch (status) {
-    case 'Rejected':
-      return "destructive";
-    case 'Cancelled':
-      return "secondary";
-    case 'On Hold':
-      return "outline";
-    default:
-      return "outline";
+      return {
+        icon: AlertTriangle,
+        bgClass: "bg-muted",
+        iconClass: "text-muted-foreground",
+        badgeVariant: "outline" as const,
+      };
   }
 };
 
@@ -37,23 +45,17 @@ export const StatusReasonsWidget = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card variant="analytics" className="h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-5 w-5 text-warning" />
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <AlertTriangle className="h-4 w-4" />
             Rejections & Cancellations
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            ))}
-          </div>
+        <CardContent className="pt-0 space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
         </CardContent>
       </Card>
     );
@@ -61,10 +63,10 @@ export const StatusReasonsWidget = () => {
 
   if (error) {
     return (
-      <Card>
+      <Card variant="analytics" className="h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-5 w-5 text-warning" />
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <AlertTriangle className="h-4 w-4" />
             Rejections & Cancellations
           </CardTitle>
         </CardHeader>
@@ -77,22 +79,22 @@ export const StatusReasonsWidget = () => {
 
   if (!statusReasons || statusReasons.length === 0) {
     return (
-      <Card>
+      <Card variant="analytics" className="h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-5 w-5 text-warning" />
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <AlertTriangle className="h-4 w-4" />
             Rejections & Cancellations
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="rounded-full bg-muted p-3 mb-3">
-              <AlertTriangle className="h-6 w-6 text-muted-foreground" />
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <div className="p-3 rounded-full bg-success/10">
+                <CheckCircle2 className="h-8 w-8 text-success" />
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">No rejections or cancellations recorded</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Reasons will appear here when projects are rejected or cancelled
-            </p>
+            <p className="text-sm font-medium text-foreground mb-1">All projects on track! 🎉</p>
+            <p className="text-xs text-muted-foreground">No rejections or cancellations recorded</p>
           </div>
         </CardContent>
       </Card>
@@ -100,55 +102,64 @@ export const StatusReasonsWidget = () => {
   }
 
   return (
-    <Card>
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <AlertTriangle className="h-5 w-5 text-warning" />
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <AlertTriangle className="h-4 w-4" />
           Rejections & Cancellations
-          <Badge variant="secondary" className="ml-auto text-xs">
-            {statusReasons.length}
-          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <ScrollArea className="h-[280px] pr-4">
-          <div className="space-y-4">
-            {statusReasons.map((item) => (
-              <div
-                key={item.id}
-                className="border-b border-border/50 pb-3 last:border-0 last:pb-0"
-              >
-                {/* Project Name & Status */}
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h4 className="font-medium text-sm leading-tight line-clamp-1">
-                    {item.project_name}
-                  </h4>
-                  <Badge variant={getStatusVariant(item.new_status_name)} className="shrink-0 text-xs">
-                    {getStatusIcon(item.new_status_name)}
-                    <span className="ml-1">{item.new_status_name}</span>
-                  </Badge>
+        <ScrollArea className="h-[280px] pr-3">
+          <div className="space-y-1.5">
+            {statusReasons.map((item) => {
+              const config = getStatusConfig(item.new_status_name);
+              const StatusIcon = config.icon;
+              
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 p-2 rounded-md bg-background border border-border/50 hover:bg-muted/50 transition-all"
+                >
+                  <div className={`shrink-0 p-1.5 rounded-md ${config.bgClass}`}>
+                    <StatusIcon className={`h-3 w-3 ${config.iconClass}`} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-medium text-xs text-foreground truncate">
+                        {item.project_name || "Untitled Project"}
+                      </h4>
+                      <Badge 
+                        variant={config.badgeVariant}
+                        className="text-[10px] shrink-0 h-4 px-1.5 font-medium"
+                      >
+                        {item.new_status_name}
+                      </Badge>
+                    </div>
+                    
+                    {item.reason && (
+                      <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">
+                        "{item.reason}"
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1 truncate">
+                        <User className="h-2.5 w-2.5 shrink-0" />
+                        <span className="truncate">{item.user_name || item.user_email || 'Unknown'}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-2.5 w-2.5 shrink-0" />
+                        <span>
+                          {formatDistanceToNow(new Date(item.changed_at), { addSuffix: true })}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Reason */}
-                {item.reason && (
-                  <p className="text-sm text-muted-foreground italic mb-2 line-clamp-2">
-                    "{item.reason}"
-                  </p>
-                )}
-
-                {/* Meta info */}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    {item.user_name || item.user_email || 'Unknown'}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDistanceToNow(new Date(item.changed_at), { addSuffix: true })}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
       </CardContent>

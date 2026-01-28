@@ -186,7 +186,6 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 17,
     category: "analytics",
     size: "medium",
-    requiredPermission: "view_primary_kpis",
   },
 ];
 
