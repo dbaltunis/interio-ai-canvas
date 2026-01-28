@@ -10,6 +10,7 @@ interface ValidationAlertProps {
   className?: string;
   templateId?: string;
   onConfigureTemplate?: () => void;
+  hideConfigure?: boolean; // Hide the Configure Template button
 }
 
 export const ValidationAlert = ({ 
@@ -17,7 +18,8 @@ export const ValidationAlert = ({
   warnings = [], 
   className,
   templateId,
-  onConfigureTemplate
+  onConfigureTemplate,
+  hideConfigure = false
 }: ValidationAlertProps) => {
   const navigate = useNavigate();
   
@@ -59,7 +61,7 @@ export const ValidationAlert = ({
             </li>
           ))}
         </ul>
-        {hasActions && (
+        {hasActions && templateId && !hideConfigure && (
           <div className="mt-3 flex gap-2">
             <Button 
               variant="outline" 

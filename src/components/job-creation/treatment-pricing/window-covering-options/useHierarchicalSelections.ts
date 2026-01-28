@@ -8,7 +8,7 @@ export const useHierarchicalSelections = (
   const [hierarchicalSelections, setHierarchicalSelections] = useState<Record<string, string>>({});
   const autoSelectedRef = useRef<Set<string>>(new Set());
 
-  // Auto-select first option in each subcategory, or single option immediately
+  // Auto-select first option in each subcategory (not just single options)
   useEffect(() => {
     if (hierarchicalOptions.length === 0) return;
     
@@ -24,15 +24,8 @@ export const useHierarchicalSelections = (
         // Skip if already auto-selected this key
         if (autoSelectedRef.current.has(selectionKey)) return;
         
-        // Auto-select if only one option OR if no selection and options exist
-        if (subSubOptions.length === 1 && !currentSelection) {
-          // Single option - always auto-select
-          newSelections[selectionKey] = subSubOptions[0].id;
-          optionsToToggle.push(subSubOptions[0].id);
-          autoSelectedRef.current.add(selectionKey);
-          console.log(`✅ Auto-selected single option for ${subcategory.name}:`, subSubOptions[0].name);
-        } else if (subSubOptions.length > 0 && !currentSelection) {
-          // Multiple options - auto-select first
+        // Auto-select first option if none selected (not just single option)
+        if (subSubOptions.length > 0 && !currentSelection) {
           newSelections[selectionKey] = subSubOptions[0].id;
           optionsToToggle.push(subSubOptions[0].id);
           autoSelectedRef.current.add(selectionKey);

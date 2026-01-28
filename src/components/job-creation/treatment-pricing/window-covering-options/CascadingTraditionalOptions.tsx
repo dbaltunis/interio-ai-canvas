@@ -99,7 +99,7 @@ export const CascadingTraditionalOptions = ({
     return null;
   }, [groupedOptions, selectedOptions]);
 
-  // Auto-select single options for each type
+  // Auto-select first option for each type (not just single options)
   useEffect(() => {
     Object.keys(groupedOptions).forEach(optionType => {
       // Skip if already auto-selected this type
@@ -108,9 +108,9 @@ export const CascadingTraditionalOptions = ({
       const filteredOptions = getFilteredOptionsForType(optionType);
       const currentSelection = getSelectedForType(optionType);
       
-      // Auto-select if single option and none selected
-      if (filteredOptions.length === 1 && !currentSelection) {
-        console.log(`✅ Auto-selecting single traditional option for ${optionType}:`, filteredOptions[0].name);
+      // Auto-select first option if none selected (not just single option)
+      if (filteredOptions.length > 0 && !currentSelection) {
+        console.log(`✅ Auto-selecting first traditional option for ${optionType}:`, filteredOptions[0].name);
         autoSelectedTypes.current.add(optionType);
         // Use setTimeout to avoid state updates during render
         setTimeout(() => {

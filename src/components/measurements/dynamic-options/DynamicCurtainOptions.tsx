@@ -844,12 +844,13 @@ export const DynamicCurtainOptions = ({
 
   return (
     <div className="space-y-3 px-3">
-      {/* Validation Alert - SUPPRESS for TWC templates as they have their own option structure */}
+      {/* Validation Alert - SUPPRESS for TWC templates, hide Configure button */}
       {!isTWCTemplate && (validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
           errors={validation.errors}
           warnings={validation.warnings}
           templateId={template?.id}
+          hideConfigure={true}
         />
       )}
 
