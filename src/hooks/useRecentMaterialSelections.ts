@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface RecentSelection {
   itemId: string;
@@ -10,17 +11,32 @@ export interface RecentSelection {
   selectedAt: number;
 }
 
-const STORAGE_KEY = 'recent_material_selections';
+const STORAGE_KEY_PREFIX = 'recent_material_selections';
 const MAX_ITEMS = 6;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
   const [items, setItems] = useState<RecentSelection[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Load from localStorage on mount
+  // Get current user ID on mount for account-specific storage
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  // Account-specific storage key - prevents cross-account data leakage
+  const storageKey = userId 
+    ? `${STORAGE_KEY_PREFIX}_${userId}` 
+    : null; // Don't access storage until we have user ID
+
+  // Load from localStorage when user ID is available
+  useEffect(() => {
+    if (!storageKey) return;
+    
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed: RecentSelection[] = JSON.parse(stored);
         // Filter out expired entries
@@ -31,7 +47,7 @@ export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
     } catch (e) {
       console.error('Failed to load recent selections:', e);
     }
-  }, [limit]);
+  }, [storageKey, limit]);
 
   // Add a new selection
   const addSelection = useCallback((item: {
@@ -43,6 +59,8 @@ export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
     vendor?: { name?: string };
     supplier?: string;
   }) => {
+    if (!storageKey) return; // Don't persist without user ID
+    
     setItems(prev => {
       // Remove existing entry for this item if present
       const filtered = prev.filter(s => s.itemId !== item.id);
@@ -60,26 +78,28 @@ export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
       
       const updated = [newEntry, ...filtered].slice(0, MAX_ITEMS);
       
-      // Persist to localStorage
+      // Persist to localStorage with account-specific key
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
       } catch (e) {
         console.error('Failed to save recent selections:', e);
       }
       
       return updated;
     });
-  }, []);
+  }, [storageKey]);
 
-  // Clear all history
+  // Clear all history for current account
   const clearHistory = useCallback(() => {
+    if (!storageKey) return;
+    
     setItems([]);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } catch (e) {
       console.error('Failed to clear recent selections:', e);
     }
-  }, []);
+  }, [storageKey]);
 
   // Get relative time string
   const getRelativeTime = useCallback((timestamp: number) => {
@@ -97,6 +117,7 @@ export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
     items,
     addSelection,
     clearHistory,
-    getRelativeTime
+    getRelativeTime,
+    isReady: !!storageKey // Indicates if storage is ready (user ID loaded)
   };
 };

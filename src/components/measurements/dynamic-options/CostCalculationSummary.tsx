@@ -467,7 +467,7 @@ export const CostCalculationSummary = ({
 
     if (blindCosts.manufacturingCost > 0) {
       tableItems.push({
-        name: 'Manufacturing',
+        name: 'Making/Labor',
         details: '',
         price: blindCosts.manufacturingCost,
         category: 'manufacturing',
@@ -810,7 +810,7 @@ export const CostCalculationSummary = ({
     });
   }
 
-  // Manufacturing - with per-item markup and clear math display
+  // Making/Labor - with per-item markup and clear math display
   if (manufacturingCost > 0) {
     let mfgDetails = '';
     if (manufacturingDetails) {
@@ -825,7 +825,7 @@ export const CostCalculationSummary = ({
     }
     
     tableItems.push({
-      name: manufacturingDetails?.manufacturingType ? `Manufacturing (${manufacturingDetails.manufacturingType})` : 'Manufacturing',
+      name: manufacturingDetails?.manufacturingType ? `Making/Labor (${manufacturingDetails.manufacturingType})` : 'Making/Labor',
       details: mfgDetails,
       price: manufacturingCost,
       category: 'manufacturing',
