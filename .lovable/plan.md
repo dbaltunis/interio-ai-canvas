@@ -1,172 +1,141 @@
 
-# Add Missing Widgets to Dashboard Customizer
+
+# Fix: Admin Panel Cannot Update Account Type or Features
 
 ## Problem Identified
 
-The "Customize Dashboard Widgets" dialog is missing several key widgets that exist in the dashboard. Currently only 8 widgets appear in the customizer (as shown in your screenshot), but the dashboard actually has many more components.
+The Admin Panel (`/admin/accounts`) cannot update account types or toggle unlimited users because of a **missing RLS policy**.
 
-### What's Missing
+### Root Cause
 
-| Widget | Component | Current State |
-|--------|-----------|---------------|
-| **Revenue Trend** | `RevenueTrendChart.tsx` | Hardcoded in charts row - NOT customizable |
-| **Jobs by Status** | `JobsStatusChart.tsx` | Hardcoded in charts row - NOT customizable |
-| **Rejections & Cancellations** | `StatusReasonsWidget.tsx` | Hardcoded in charts row - NOT customizable |
-| **Quick Actions** | `QuickActions.tsx` | Component exists but unused |
-| **Sales Pipeline** | `PipelineOverview.tsx` | Component exists but unused |
-| **E-Commerce Gateway** | `ECommerceGatewayWidget.tsx` | Conditionally shown - NOT customizable |
-| **Online Store Setup** | `OnlineStoreSetupWidget.tsx` | Component exists but unused |
+The `user_profiles` table has inconsistent RLS policies:
 
-### Why This Matters
+| Operation | Policy | System Owner Access |
+|-----------|--------|---------------------|
+| **SELECT** | `get_effective_account_owner()` only | **NO bypass** |
+| **UPDATE** | `get_effective_account_owner() OR is_admin()` | Has bypass |
 
-Users can only show/hide 8 widgets, but the dashboard has ~15+ visual elements. The main charts (Revenue, Jobs, Rejections) are always visible with no option to disable them.
+When a System Owner tries to update another account's profile:
+1. The UPDATE query runs with RLS
+2. RLS first evaluates SELECT permissions (to identify which rows to update)
+3. SELECT policy blocks access to other accounts' profiles
+4. Update silently affects 0 rows
+
+### Why Feature Flags Work (Sometimes)
+
+The `account_feature_flags` table has proper System Owner policies:
+```sql
+-- This policy exists and works:
+"System owners can manage all feature flags" -- cmd: ALL
+```
+
+But it relies on knowing the `user_id` upfront (passed from the edge function data), so it may work when the data is cached but fail on fresh queries.
 
 ---
 
 ## Solution
 
-### 1. Add Missing Widgets to DEFAULT_WIDGETS
+Add a System Owner bypass to the `user_profiles` SELECT policy OR add a dedicated System Owner SELECT policy.
 
-Update `src/hooks/useDashboardWidgets.ts` to include all dashboard components:
+### Option 1: Add Dedicated Policy (Recommended)
 
-```typescript
-// New widgets to add:
-{
-  id: "revenue-trend",
-  name: "Revenue Trend",
-  description: "Monthly revenue chart with trend analysis",
-  enabled: true,
-  order: 1,
-  category: "finance",
-  size: "medium",
-  requiredPermission: "view_revenue_kpis",
-},
-{
-  id: "jobs-status",
-  name: "Jobs by Status",
-  description: "Pie chart showing project status distribution",
-  enabled: true,
-  order: 2,
-  category: "analytics",
-  size: "medium",
-  requiredPermission: "view_all_jobs",
-},
-{
-  id: "status-reasons",
-  name: "Rejections & Cancellations",
-  description: "Track project rejections, cancellations, and holds",
-  enabled: true,
-  order: 3,
-  category: "analytics",
-  size: "medium",
-  requiredPermission: "view_revenue_kpis",
-},
-{
-  id: "quick-actions",
-  name: "Quick Actions",
-  description: "Shortcuts to create projects, clients, and more",
-  enabled: true,
-  order: 4,
-  category: "analytics",
-  size: "small",
-},
-{
-  id: "sales-pipeline",
-  name: "Sales Pipeline",
-  description: "Visual pipeline of quotes by stage",
-  enabled: false, // Disabled by default
-  order: 5,
-  category: "finance",
-  size: "medium",
-  requiredPermission: "view_revenue_kpis",
-},
-{
-  id: "ecommerce-gateway",
-  name: "E-Commerce Setup",
-  description: "Get started with online selling",
-  enabled: true,
-  order: 6,
-  category: "integrations",
-  size: "medium",
-},
+Create a new SELECT policy specifically for System Owner access:
+
+```sql
+-- Add System Owner global SELECT access to user_profiles
+CREATE POLICY "System owners can view all profiles"
+ON public.user_profiles
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE user_profiles.user_id = auth.uid()
+    AND user_profiles.role = 'System Owner'
+  )
+);
 ```
 
-### 2. Update EnhancedHomeDashboard.tsx
+### Why This Pattern?
 
-Modify the dashboard to render charts based on widget configuration instead of hardcoded permission checks:
-
-**Before (hardcoded):**
-```tsx
-{(canViewRevenue !== false || canViewJobs !== false) && (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    {canViewRevenue !== false && <RevenueTrendChart />}
-    {canViewJobs !== false && <JobsStatusChart />}
-  </div>
-)}
-```
-
-**After (widget-driven):**
-```tsx
-{/* Charts Row - now controlled by widget configs */}
-{enabledWidgets.some(w => ['revenue-trend', 'jobs-status'].includes(w.id)) && (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    {isWidgetEnabled('revenue-trend') && <RevenueTrendChart />}
-    {isWidgetEnabled('jobs-status') && <JobsStatusChart />}
-  </div>
-)}
-```
-
-### 3. Add Icons for New Widgets
-
-Update `DashboardWidgetCustomizer.tsx` to include icons for the new widgets:
-
-```typescript
-const icons: Record<string, any> = {
-  // Existing...
-  "revenue-trend": DollarSign,
-  "jobs-status": PieChart,
-  "status-reasons": AlertTriangle,
-  "quick-actions": Zap,
-  "sales-pipeline": GitBranch,
-  "ecommerce-gateway": ShoppingCart,
-};
-```
+This matches the existing pattern used for other admin tables:
+- `account_feature_flags` - has `System owners can manage all feature flags`
+- `user_subscriptions` - has `System owners can view all subscriptions`
 
 ---
 
-## Result After Implementation
+## Files to Create
 
-The customizer will show all widgets (15+) organized by category:
-
-| Category | Widgets |
-|----------|---------|
-| **Finance** | Revenue Trend, Sales Pipeline |
-| **Analytics** | Jobs by Status, Rejections & Cancellations, Project Status, Team Performance, Recently Created Jobs |
-| **Communication** | Team Members, Upcoming Events, Recent Appointments, Recent Emails |
-| **Integrations** | Calendar Connection, E-Commerce Setup, Online Store widgets, Shopify widgets |
-
-Users will be able to:
-- Show/hide ANY widget including charts
-- Reorder widgets
-- Resize widgets
-- Enable/disable features they don't use
-
----
-
-## Files to Modify
-
-| File | Changes |
+| File | Purpose |
 |------|---------|
-| `src/hooks/useDashboardWidgets.ts` | Add 6+ new widget definitions to DEFAULT_WIDGETS |
-| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Refactor charts to use widget configs; add QuickActions and PipelineOverview rendering |
-| `src/components/dashboard/DashboardWidgetCustomizer.tsx` | Add icons for new widgets |
+| `supabase/migrations/[timestamp]_add_system_owner_select_policy.sql` | Add missing RLS policy |
 
 ---
 
-## Technical Notes
+## Migration SQL
 
-- Existing user preferences will be preserved via the merge logic in `useDashboardWidgets.ts`
-- New widgets will appear with their default `enabled` state for existing users
-- Permission checks remain in place - users still won't see widgets they don't have access to
-- The widget order will respect user customizations
+```sql
+-- Add System Owner SELECT policy to user_profiles
+-- This allows the admin panel to view and update any account
+
+CREATE POLICY "System owners can view all profiles"
+ON public.user_profiles
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_profiles up
+    WHERE up.user_id = auth.uid()
+    AND up.role = 'System Owner'
+  )
+);
+
+-- Note: The UPDATE policy already has is_admin() bypass, so no changes needed there
+```
+
+---
+
+## Technical Details
+
+### Current State
+
+```text
+user_profiles RLS:
+  SELECT: get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
+  UPDATE: (same as SELECT) OR is_admin()
+  INSERT: (same as SELECT)
+  DELETE: (same as SELECT)
+```
+
+### After Fix
+
+```text
+user_profiles RLS:
+  SELECT: (existing policy) OR (System Owner check)  <- NEW
+  UPDATE: (existing policy) OR is_admin()            <- Already has bypass
+  INSERT: (existing policy)                          <- May need bypass too
+  DELETE: (existing policy)                          <- May need bypass too
+```
+
+---
+
+## Verification Steps
+
+After migration:
+1. Go to `/admin/accounts`
+2. Open any account dialog
+3. Change account type from dropdown
+4. Verify success toast appears
+5. Toggle "Unlimited Seats" switch
+6. Verify feature flag saves correctly
+
+---
+
+## Summary
+
+| Issue | Fix |
+|-------|-----|
+| Cannot change account type | Add System Owner SELECT policy |
+| Cannot toggle unlimited users | Same fix (relies on user_profiles SELECT) |
+| Silent failures | RLS will now allow SELECT, UPDATE will work |
 
