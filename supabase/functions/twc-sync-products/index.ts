@@ -266,9 +266,10 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'material', subcategory: 'shutter_material' };
       }
       
-      // Roman = FABRIC with roman_fabric (sewn products)
+      // Roman = FABRIC with curtain_fabric (sewn products, shares fabrics with curtains)
+      // CRITICAL: Use curtain_fabric so they appear in Library "Curtain & Roman" tab
       if (lowerDesc.includes('roman')) {
-        return { category: 'fabric', subcategory: 'roman_fabric' };
+        return { category: 'fabric', subcategory: 'curtain_fabric' };
       }
       
       // Awning = fabric with awning_fabric
@@ -370,9 +371,10 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'fabric', subcategory: 'curtain_fabric' };
       }
       
-      // ✅ CRITICAL: Roman fabrics = FABRIC category (sewn products, NOT materials)
+      // ✅ CRITICAL: Roman fabrics = FABRIC category (sewn products, shares curtain fabrics)
+      // Use curtain_fabric so they appear in Library "Curtain & Roman" tab
       if (parentDesc.includes('roman')) {
-        return { category: 'fabric', subcategory: 'roman_fabric' };
+        return { category: 'fabric', subcategory: 'curtain_fabric' };
       }
       
       // Fall back to original logic using material name
