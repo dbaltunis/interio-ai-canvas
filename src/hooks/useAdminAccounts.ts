@@ -227,3 +227,54 @@ export const useUpdateTrialDuration = () => {
     },
   });
 };
+
+export const useCreateTrialSubscription = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      trialDays = 14,
+    }: {
+      userId: string;
+      trialDays?: number;
+    }) => {
+      // Calculate trial end date
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+      // Create a trial subscription with the Starter plan
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .insert({
+          user_id: userId,
+          plan_id: "bbebd0c6-88a5-4c37-8a10-ab51b5d9b94c", // Starter plan
+          status: "trialing",
+          subscription_type: "trial",
+          trial_ends_at: trialEndsAt.toISOString(),
+          total_users: 3, // Default trial seat limit
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminAccounts"] });
+      toast({
+        title: "Trial subscription created",
+        description: "A 14-day trial subscription has been created for this account.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create trial subscription. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error creating trial subscription:", error);
+    },
+  });
+};

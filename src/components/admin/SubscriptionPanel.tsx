@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AccountWithDetails, SubscriptionType } from "@/types/subscriptions";
-import { useUpdateSubscriptionType, useUpdateTrialDuration } from "@/hooks/useAdminAccounts";
+import { useUpdateSubscriptionType, useUpdateTrialDuration, useCreateTrialSubscription } from "@/hooks/useAdminAccounts";
 import { useAdminAccountInvoices } from "@/hooks/useAdminAccountInvoices";
 import { useAdminAccountFeatures, useUpdateAccountFeature, useUpdateSeatLimit, isFeatureEnabled } from "@/hooks/useAdminAccountFeatures";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
 
   const updateSubscriptionType = useUpdateSubscriptionType();
   const updateTrialDuration = useUpdateTrialDuration();
+  const createTrialSubscription = useCreateTrialSubscription();
   const updateAccountFeature = useUpdateAccountFeature();
   const updateSeatLimit = useUpdateSeatLimit();
 
@@ -141,6 +142,12 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
     return <Badge variant={variants[status || ""] || "secondary"}>{status || "unknown"}</Badge>;
   };
 
+  const handleCreateTrialSubscription = () => {
+    if (window.confirm("Create a 14-day trial subscription for this account?")) {
+      createTrialSubscription.mutate({ userId: account.user_id });
+    }
+  };
+
   if (!account.subscription) {
     return (
       <Card>
@@ -148,7 +155,20 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
           <p className="text-center text-muted-foreground">
             No subscription found for this account.
           </p>
-          <Button className="w-full mt-4">Create Trial Subscription</Button>
+          <Button 
+            className="w-full mt-4" 
+            onClick={handleCreateTrialSubscription}
+            disabled={createTrialSubscription.isPending}
+          >
+            {createTrialSubscription.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Creating...
+              </>
+            ) : (
+              "Create Trial Subscription"
+            )}
+          </Button>
         </CardContent>
       </Card>
     );
