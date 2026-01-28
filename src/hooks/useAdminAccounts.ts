@@ -251,7 +251,7 @@ export const useCreateTrialSubscription = () => {
           user_id: userId,
           plan_id: "bbebd0c6-88a5-4c37-8a10-ab51b5d9b94c", // Starter plan
           status: "trial",
-          subscription_type: "trial",
+          subscription_type: "standard",
           trial_ends_at: trialEndsAt.toISOString(),
           total_users: 3, // Default trial seat limit
         })
