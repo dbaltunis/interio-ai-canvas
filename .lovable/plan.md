@@ -1,158 +1,92 @@
 
-# Fix TWC Import Issues: Fabric Details, Grid Linking, Validation UX & Pre-Selection
 
-## Issues Identified
+# Fix TWC Import: Missing vendor_id on Child Materials + Data Backfill
 
-### Issue 1: Curtain Fabric Details Missing (Width Shows "Not set - check inventory", Price $0.00)
-**Current State:** TWC sync sets `fabric_width: 300` and `cost_price: 0` for curtain fabrics
-**Problem:** While `fabric_width` IS being set (300cm), the `cost_price` and `selling_price` remain at $0.00 because TWC doesn't provide pricing data in their API response
+## Root Cause Identified
 
-**Database Check Confirms:**
-| name | fabric_width | cost_price | price_group |
-|------|-------------|------------|-------------|
-| Curtains - AMANDA | 300 | 0 | 2 |
-| Curtains - AESOP | 300 | 0 | 6 |
+**Critical Bug Found:** The TWC sync creates child materials (fabrics) WITHOUT the `vendor_id` field:
 
-The fabrics DO have `fabric_width` (300cm), `price_group`, and `vendor_id` set - the sync is working. However, the UI shows "Not set - check inventory" because the component may be checking a different field or the data isn't flowing through correctly.
+```text
+Parent Items:     vendor_id = SET ✅ (line 561)
+Child Materials:  vendor_id = NULL ❌ (lines 1011-1041 - MISSING)
+```
 
-### Issue 2: Grids Not Attached to Fabrics ("No pricing grid for Group X")
-**Current State:** Grids exist in DB with matching `price_group` values (1, 2, 6, etc.)
-**Problem:** The grid resolution logic may not be matching correctly because:
-1. Case sensitivity: Fabric has `price_group: "2"` but grid might have `"GROUP2"` or `"BUDGET"`
-2. Product type mismatch: `product_type: "curtains"` vs template's `treatment_category`
-3. Vendor ID not matching (different TWC vendor IDs per account)
+**Database Evidence:**
+| Status | Count | % |
+|--------|-------|---|
+| Missing vendor_id | 174 | 60% |
+| Has vendor_id | 115 | 40% |
 
-### Issue 3: Red "Required" List with Configure Template Button
-**Current State:** Shows red alert with "X is required" for many options
-**Problem:** 
-- TWC templates create options with `required: false` but validation still shows red styling
-- The `Configure Template` button navigates to settings but may not work for TWC templates
-- isTWCTemplate detection suppresses alerts but might not be working for all cases
-
-### Issue 4: Configure Template Button Goes Nowhere
-**Current State:** Button calls `navigate('/settings?tab=products&subtab=templates&editTemplate=${templateId}')`
-**Problem:** If templateId is undefined or the route doesn't handle it properly, it navigates to an empty page
-
-### Issue 5: No Option Pre-Selection (User Request)
-**Current State:** Auto-select only works when there's exactly 1 option
-**Desired State:** Pre-select first option in ALL dropdowns, with a setting to toggle this behavior
+This is why grids aren't matching - the auto-matcher needs `vendor_id` for exact supplier matching, and 60% of curtain fabrics don't have it.
 
 ---
 
-## Solution Implementation
+## What TWC API Provides (and Doesn't)
 
-### Part 1: Fix Fabric Width Display in UI
+**Available from TWC API:**
+- Product descriptions ✅
+- Questions/Options ✅
+- Fabrics & Colours ✅  
+- Price Groups (per color) ✅
+- Fabric Width (default 300cm) ✅
 
-The fabric data IS correct in DB (`fabric_width: 300`), but the UI component may be looking at the wrong field.
+**NOT available from TWC API:**
+- Cost prices ❌ (TWC doesn't expose wholesale costs)
+- Selling prices ❌ (Dealers set their own)
 
-**File:** `src/components/job-creation/treatment-pricing/fabric-details/FabricBasicDetails.tsx` (or similar)
+This means `cost_price: 0` is expected behavior - users must set their own prices or rely entirely on pricing grids (which IS the intended workflow for TWC).
 
-- Ensure it reads `fabric_width` directly from fabric item
-- Add fallback: `fabricWidth = fabric.fabric_width || fabric.fabric_width_cm || 300`
+---
 
-### Part 2: Fix Grid Resolution for TWC Fabrics
+## Solution
 
-**Files to Update:**
-- `src/utils/pricing/gridAutoMatcher.ts` - Case-insensitive price_group matching
-- `src/hooks/pricing/useFabricEnrichment.ts` - Ensure vendor_id is passed
+### Part 1: Fix Edge Function - Add vendor_id to Child Materials
 
-**Changes:**
-```typescript
-// gridAutoMatcher.ts - Make price_group matching case-insensitive
-.ilike('price_group', priceGroup) // Instead of .eq()
-// OR normalize both sides:
-const normalizedPriceGroup = priceGroup?.toString().toUpperCase();
-```
+**File:** `supabase/functions/twc-sync-products/index.ts`
 
-### Part 3: Suppress Red Validation for TWC + Remove Configure Template Button
-
-**File:** `src/components/shared/ValidationAlert.tsx`
-
-**Changes:**
-1. Add prop `hideConfigure?: boolean` to suppress the button
-2. Add prop `isTWCTemplate?: boolean` to change styling/behavior
-
-**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
-
-**Changes:**
-1. Pass `hideConfigure={isTWCTemplate}` to ValidationAlert
-2. Ensure isTWCTemplate detection works for all TWC template patterns
-
-### Part 4: Remove Configure Template Button from TWC Templates
-
-**File:** `src/components/shared/ValidationAlert.tsx`
+Around line 1011, add `vendor_id: twcVendorId` to the child material insert:
 
 ```typescript
-// Hide button if no templateId OR if explicitly hidden
-{hasActions && templateId && !hideConfigure && (
-  <Button ... />
-)}
+const { error: materialError } = await supabaseClient
+  .from('enhanced_inventory_items')
+  .insert({
+    user_id: user.id,
+    name: `${parentItem.name} - ${material.material}`,
+    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
+    category: materialCategoryMapping.category,
+    subcategory: materialCategoryMapping.subcategory,
+    supplier: 'TWC',
+    vendor_id: twcVendorId,  // ✅ ADD THIS - Critical for grid matching
+    active: true,
+    // ... rest of fields
+  });
 ```
 
-### Part 5: Add Pre-Select First Option Toggle
+### Part 2: Backfill Existing Data
 
-**A. Add Setting to Account Settings**
+All existing TWC materials without `vendor_id` need to be updated. This requires:
 
-**File:** `src/hooks/useAccountSettings.ts` - Add to interface:
-```typescript
-interface AccountSettings {
-  // ... existing fields
-  workflow_settings?: {
-    auto_select_first_option?: boolean; // New setting
-    // ... other workflow settings
-  };
-}
-```
+1. Find each user's TWC vendor ID
+2. Update all their TWC materials to use that vendor ID
 
-**B. Update Auto-Selection Logic**
+**SQL Migration (Run SQL in Supabase Dashboard):**
 
-**File:** `src/components/job-creation/treatment-pricing/window-covering-options/CascadingTraditionalOptions.tsx`
+```sql
+-- Backfill vendor_id for TWC materials that are missing it
+-- Links to the same TWC vendor as the parent product
 
-```typescript
-// Current: Only auto-select if single option
-if (filteredOptions.length === 1 && !currentSelection) { ... }
-
-// New: Auto-select first if enabled in settings
-const { data: settings } = useAccountSettings();
-const autoSelectFirst = settings?.workflow_settings?.auto_select_first_option ?? true;
-
-if (!currentSelection && filteredOptions.length > 0) {
-  if (filteredOptions.length === 1 || autoSelectFirst) {
-    // Auto-select first option
-  }
-}
-```
-
-**File:** `src/components/shared/CascadingOptionSelect.tsx`
-
-```typescript
-// Update auto-select to work for all cases when enabled
-useEffect(() => {
-  if (autoSelectFirst && options.length > 0 && !selectedId) {
-    stableOnSelect(options[0].id, null);
-  }
-}, [options, selectedId, autoSelectFirst]);
-```
-
-**C. Add Toggle in Settings UI**
-
-**File:** `src/components/settings/tabs/products/WorkflowSettingsSection.tsx` (new or existing)
-
-```tsx
-<div className="flex items-center justify-between">
-  <div>
-    <Label>Auto-select first option</Label>
-    <p className="text-sm text-muted-foreground">
-      Automatically pre-select the first option in dropdowns
-    </p>
-  </div>
-  <Switch
-    checked={settings?.workflow_settings?.auto_select_first_option ?? true}
-    onCheckedChange={(checked) => updateSettings({
-      workflow_settings: { ...settings?.workflow_settings, auto_select_first_option: checked }
-    })}
-  />
-</div>
+WITH twc_vendors AS (
+  -- Get each user's TWC vendor
+  SELECT user_id, id as vendor_id
+  FROM vendors 
+  WHERE name ILIKE '%TWC%'
+)
+UPDATE enhanced_inventory_items eii
+SET vendor_id = tv.vendor_id
+FROM twc_vendors tv
+WHERE eii.user_id = tv.user_id
+  AND eii.supplier = 'TWC'
+  AND eii.vendor_id IS NULL;
 ```
 
 ---
@@ -161,109 +95,76 @@ useEffect(() => {
 
 | File | Change |
 |------|--------|
-| `src/utils/pricing/gridAutoMatcher.ts` | Case-insensitive price_group matching |
-| `src/hooks/pricing/useFabricEnrichment.ts` | Ensure vendor_id flows through |
-| `src/components/shared/ValidationAlert.tsx` | Add `hideConfigure` prop, conditionally hide button |
-| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Pass hideConfigure for TWC templates |
-| `src/components/shared/CascadingOptionSelect.tsx` | Add autoSelectFirst prop with setting integration |
-| `src/components/job-creation/treatment-pricing/window-covering-options/CascadingTraditionalOptions.tsx` | Integrate auto-select first setting |
-| `src/components/job-creation/treatment-pricing/window-covering-options/useHierarchicalSelections.ts` | Integrate auto-select first setting |
-| `src/hooks/useAccountSettings.ts` | Add workflow_settings interface |
-| `src/components/settings/tabs/WorkflowTab.tsx` or similar | Add toggle for pre-selection setting |
+| `supabase/functions/twc-sync-products/index.ts` | Add `vendor_id: twcVendorId` to child material insert (~line 1019) |
+
+## Database Action Required
+
+Run SQL migration to backfill existing data (affects all Australasia/Greg's accounts).
+
+---
+
+## Expected Results
+
+### After Fix
+
+1. **New imports:** All child materials will have `vendor_id` set
+2. **Existing data:** Backfill migration updates 174+ fabrics
+3. **Grid matching:** Auto-matcher can now do exact supplier+product+group matching
+4. **Pricing accuracy:** Grids resolve correctly → accurate quotes
+
+### What Users Still Need to Do
+
+- Pricing grids must exist for their TWC products (Groups 1-6, Budget)
+- If they want per-meter fabric pricing, they need to set `cost_price` manually (TWC API doesn't provide this)
 
 ---
 
 ## Technical Details
 
-### Grid Matching Fix
+### Current Child Material Insert (Missing vendor_id)
 ```typescript
-// src/utils/pricing/gridAutoMatcher.ts
-export const autoMatchPricingGrid = async (params: AutoMatchParams) => {
-  const { supplierId, productType, priceGroup, userId } = params;
-  
-  // Normalize price group for case-insensitive matching
-  const normalizedPriceGroup = priceGroup?.toString().trim();
-  
-  // Try exact match first, then case-insensitive
-  let { data: grids, error } = await supabase
-    .from('pricing_grids')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('product_type', productType)
-    .eq('active', true);
-  
-  if (grids && grids.length > 0) {
-    // Case-insensitive price_group match
-    const matchingGrid = grids.find(g => 
-      g.price_group?.toString().toUpperCase() === normalizedPriceGroup?.toUpperCase()
-    );
-    // Also try without "GROUP" prefix: "2" matches "GROUP2" or "2"
-    if (!matchingGrid) {
-      const numericMatch = grids.find(g => 
-        g.price_group?.toString().replace(/GROUP/i, '').trim() === normalizedPriceGroup
-      );
-      if (numericMatch) return numericMatch;
-    }
-  }
-};
+// Line 1011-1041
+const { error: materialError } = await supabaseClient
+  .from('enhanced_inventory_items')
+  .insert({
+    user_id: user.id,
+    name: `${parentItem.name} - ${material.material}`,
+    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
+    category: materialCategoryMapping.category,
+    subcategory: materialCategoryMapping.subcategory,
+    supplier: 'TWC',
+    // ❌ vendor_id is MISSING
+    active: true,
+    show_in_quote: true,
+    // ...
+  });
 ```
 
-### Validation Alert Prop Update
+### Fixed Child Material Insert
 ```typescript
-// src/components/shared/ValidationAlert.tsx
-interface ValidationAlertProps {
-  errors?: ValidationError[];
-  warnings?: ValidationError[];
-  className?: string;
-  templateId?: string;
-  onConfigureTemplate?: () => void;
-  hideConfigure?: boolean; // NEW: Hide the Configure Template button
-}
-
-// In render:
-{hasActions && templateId && !hideConfigure && (
-  <Button ...>Configure Template</Button>
-)}
-```
-
-### Auto-Select First Option Flow
-```typescript
-// src/components/shared/CascadingOptionSelect.tsx
-interface CascadingOptionSelectProps {
-  // ... existing props
-  autoSelectFirst?: boolean; // NEW: Default to first option if multiple
-}
-
-// Update auto-select effect:
-useEffect(() => {
-  if (options.length > 0 && !selectedId && hasAutoSelected.current !== options[0].id) {
-    // Only auto-select if single option OR autoSelectFirst is enabled
-    if (options.length === 1 || autoSelectFirst) {
-      hasAutoSelected.current = options[0].id;
-      setTimeout(() => stableOnSelect(options[0].id, null), 0);
-    }
-  }
-}, [options, selectedId, autoSelectFirst]);
+const { error: materialError } = await supabaseClient
+  .from('enhanced_inventory_items')
+  .insert({
+    user_id: user.id,
+    name: `${parentItem.name} - ${material.material}`,
+    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
+    category: materialCategoryMapping.category,
+    subcategory: materialCategoryMapping.subcategory,
+    supplier: 'TWC',
+    vendor_id: twcVendorId,  // ✅ ADD THIS
+    active: true,
+    show_in_quote: true,
+    // ...
+  });
 ```
 
 ---
 
-## Expected Behavior After Implementation
+## Impact Scope
 
-### Grid Matching
-- Fabrics with `price_group: "2"` will match grids with `"2"`, `"GROUP2"`, `"group2"`, etc.
-- No more "No pricing grid for Group X" warnings when grids exist
+- **All Australasia accounts** with TWC imports
+- **Greg's demo accounts** with TWC products
+- **Any account** that imported TWC products before this fix
 
-### Validation Alert
-- TWC templates: No red "required" list, no Configure Template button
-- Non-TWC templates: Continue showing validation as before
+The backfill migration will fix all existing data in one operation, and the code fix ensures all future imports work correctly.
 
-### Pre-Selection
-- Default behavior: First option in every dropdown is pre-selected
-- Setting toggle in Settings: Users can disable this if they prefer manual selection
-- Single option: Always auto-selected (existing behavior)
-
-### UX Improvement
-- Users see populated dropdowns immediately
-- Can still change options if needed
-- Less friction when creating quotes with TWC products
