@@ -7639,6 +7639,76 @@ export type Database = {
         }
         Relationships: []
       }
+      status_change_history: {
+        Row: {
+          changed_at: string | null
+          changed_by: string
+          created_at: string | null
+          id: string
+          new_status_id: string | null
+          new_status_name: string | null
+          notes: string | null
+          previous_status_id: string | null
+          previous_status_name: string | null
+          project_id: string
+          reason: string | null
+          user_email: string | null
+          user_name: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by: string
+          created_at?: string | null
+          id?: string
+          new_status_id?: string | null
+          new_status_name?: string | null
+          notes?: string | null
+          previous_status_id?: string | null
+          previous_status_name?: string | null
+          project_id: string
+          reason?: string | null
+          user_email?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string
+          created_at?: string | null
+          id?: string
+          new_status_id?: string | null
+          new_status_name?: string | null
+          notes?: string | null
+          previous_status_id?: string | null
+          previous_status_name?: string | null
+          project_id?: string
+          reason?: string | null
+          user_email?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_change_history_new_status_id_fkey"
+            columns: ["new_status_id"]
+            isOneToOne: false
+            referencedRelation: "job_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_change_history_previous_status_id_fkey"
+            columns: ["previous_status_id"]
+            isOneToOne: false
+            referencedRelation: "job_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_change_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_category_settings: {
         Row: {
           category: string

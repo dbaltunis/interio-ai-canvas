@@ -18,8 +18,6 @@ interface ProjectStatusContextValue {
   statusInfo: StatusInfo | null;
   canEdit: boolean;
   isLocked: boolean;
-  isViewOnly: boolean;
-  isCompleted: boolean;
   requiresReason: boolean;
   statusAction: string;
   isLoading: boolean;
@@ -32,8 +30,6 @@ const defaultValue: ProjectStatusContextValue = {
   statusInfo: null,
   canEdit: true,
   isLocked: false,
-  isViewOnly: false,
-  isCompleted: false,
   requiresReason: false,
   statusAction: "editable",
   isLoading: false,
@@ -103,19 +99,17 @@ export const ProjectStatusProvider: React.FC<ProjectStatusProviderProps> = ({
   const value = useMemo(() => {
     const action = statusInfo?.action || "editable";
     
-    // Determine permissions based on status action
-    // Only 'editable' allows full editing - all other states restrict modifications
+    // Simplified permissions: only 'editable' allows editing
+    // 'locked', 'view_only', 'completed' all treated as locked
     const canEdit = action === "editable";
-    const isLocked = action === "locked" || action === "completed";
-    const isViewOnly = action === "view_only";
-    const isCompleted = action === "completed";
+    const isLocked = action === "locked" || action === "view_only" || action === "completed";
     const requiresReason = action === "requires_reason";
 
     // Function to check and warn before performing an action
     const checkAndWarn = (actionType: string): boolean => {
-      if (isLocked || isViewOnly) {
+      if (isLocked) {
         toast({
-          title: `Project ${isLocked ? "Locked" : "View Only"}`,
+          title: "Project Locked",
           description: `This project is in "${statusInfo?.name || "locked"}" status and cannot be modified. ${actionType} is not allowed.`,
           variant: "destructive",
         });
@@ -130,8 +124,6 @@ export const ProjectStatusProvider: React.FC<ProjectStatusProviderProps> = ({
       statusInfo: statusInfo || null,
       canEdit,
       isLocked,
-      isViewOnly,
-      isCompleted,
       requiresReason,
       statusAction: action,
       isLoading: projectLoading || statusLoading,

@@ -256,11 +256,24 @@ export const StatusSlotManager = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="editable">Editable</SelectItem>
-                          <SelectItem value="view_only">View Only</SelectItem>
-                          <SelectItem value="locked">Locked</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="requires_reason">Requires Reason</SelectItem>
+                          <SelectItem value="editable">
+                            <div className="flex flex-col">
+                              <span>Editable</span>
+                              <span className="text-xs text-muted-foreground">Allow changes to project</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="locked">
+                            <div className="flex flex-col">
+                              <span>Locked</span>
+                              <span className="text-xs text-muted-foreground">No changes allowed</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="requires_reason">
+                            <div className="flex flex-col">
+                              <span>Requires Reason</span>
+                              <span className="text-xs text-muted-foreground">Must document why</span>
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

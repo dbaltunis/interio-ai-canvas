@@ -57,10 +57,10 @@ export const RoomsTab = ({
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   
   // Use project status context for locking (when inside provider)
-  const { isLocked, isViewOnly, isLoading: statusLoading } = useProjectStatus();
+  const { isLocked, isLoading: statusLoading } = useProjectStatus();
   
   // Combine permission and status checks
-  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || isViewOnly || statusLoading;
+  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || statusLoading;
 
   // Fetch all room products for this project
   const roomIds = rooms.map(r => r.id);
