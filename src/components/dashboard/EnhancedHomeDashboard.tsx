@@ -178,15 +178,9 @@ const DashboardContent = () => {
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
-      {/* Charts Row - PERMISSION-GATED (renders only if user has permission) */}
+      {/* Charts Row 1 - PERMISSION-GATED (renders only if user has permission) */}
       {(canViewRevenue !== false || canViewJobs !== false) && (
-        <div className={`grid grid-cols-1 ${
-          canViewRevenue !== false && canViewJobs !== false 
-            ? 'lg:grid-cols-3' 
-            : canViewRevenue !== false || canViewJobs !== false 
-              ? 'lg:grid-cols-2' 
-              : ''
-        } gap-4`}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {canViewRevenue !== false && (
             <Suspense fallback={<WidgetSkeleton />}>
               <RevenueTrendChart />
@@ -197,12 +191,15 @@ const DashboardContent = () => {
               <JobsStatusChart />
             </Suspense>
           )}
-          {/* Rejections widget - same permission as Revenue */}
-          {canViewRevenue !== false && (
-            <Suspense fallback={<WidgetSkeleton />}>
-              <StatusReasonsWidget />
-            </Suspense>
-          )}
+        </div>
+      )}
+
+      {/* Charts Row 2 - Rejections widget in separate row */}
+      {canViewRevenue !== false && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Suspense fallback={<WidgetSkeleton />}>
+            <StatusReasonsWidget />
+          </Suspense>
         </div>
       )}
 

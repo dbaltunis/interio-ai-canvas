@@ -42,12 +42,38 @@ export const useStatusReasonsKPI = () => {
         };
       }
 
+      // First, get all project IDs owned by this user
+      const { data: ownedProjects, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, name')
+        .eq('user_id', effectiveOwnerId);
+
+      if (projectsError) {
+        console.error("Error fetching owned projects:", projectsError);
+        throw projectsError;
+      }
+
+      const projectIds = (ownedProjects || []).map(p => p.id);
+      const projectMap = new Map((ownedProjects || []).map(p => [p.id, p.name]));
+
+      // If user has no projects, return empty data
+      if (projectIds.length === 0) {
+        return {
+          current: [],
+          currentCounts: { Rejected: 0, Cancelled: 0, 'On Hold': 0 },
+          previousCounts: { Rejected: 0, Cancelled: 0, 'On Hold': 0 },
+          total: 0,
+          previousTotal: 0,
+          changePercent: 0,
+        };
+      }
+
       // Calculate previous period for comparison
       const daysDiff = differenceInDays(dateRange.endDate, dateRange.startDate) + 1;
       const previousStart = subDays(dateRange.startDate, daysDiff);
       const previousEnd = subDays(dateRange.startDate, 1);
 
-      // Fetch current period status changes
+      // Fetch current period status changes - filtered by owned projects
       const { data: currentChanges, error: currentError } = await supabase
         .from('status_change_history')
         .select(`
@@ -59,6 +85,7 @@ export const useStatusReasonsKPI = () => {
           changed_at,
           project_id
         `)
+        .in('project_id', projectIds)
         .in('new_status_name', ['Rejected', 'Cancelled', 'On Hold'])
         .gte('changed_at', dateRange.startDate.toISOString())
         .lte('changed_at', dateRange.endDate.toISOString())
@@ -69,10 +96,11 @@ export const useStatusReasonsKPI = () => {
         throw currentError;
       }
 
-      // Fetch previous period status changes for comparison
+      // Fetch previous period status changes for comparison - filtered by owned projects
       const { data: previousChanges, error: previousError } = await supabase
         .from('status_change_history')
         .select('new_status_name')
+        .in('project_id', projectIds)
         .in('new_status_name', ['Rejected', 'Cancelled', 'On Hold'])
         .gte('changed_at', previousStart.toISOString())
         .lte('changed_at', previousEnd.toISOString());
@@ -108,40 +136,14 @@ export const useStatusReasonsKPI = () => {
         changePercent = 100; // If no previous data but current exists, 100% increase
       }
 
-      // Get project names for current period entries
-      if (currentChanges && currentChanges.length > 0) {
-        const projectIds = [...new Set(currentChanges.map(sc => sc.project_id))];
-        
-        const { data: projects, error: projectError } = await supabase
-          .from('projects')
-          .select('id, name')
-          .in('id', projectIds);
-
-        if (projectError) {
-          console.error("Error fetching project names:", projectError);
-        }
-
-        const projectMap = new Map(
-          (projects || []).map(p => [p.id, p.name])
-        );
-
-        const enrichedChanges = currentChanges.map(sc => ({
-          ...sc,
-          project_name: projectMap.get(sc.project_id) || 'Unknown Project'
-        }));
-
-        return {
-          current: enrichedChanges,
-          currentCounts,
-          previousCounts,
-          total,
-          previousTotal,
-          changePercent,
-        };
-      }
+      // Enrich with project names
+      const enrichedChanges = (currentChanges || []).map(sc => ({
+        ...sc,
+        project_name: projectMap.get(sc.project_id) || 'Unknown Project'
+      }));
 
       return {
-        current: [],
+        current: enrichedChanges,
         currentCounts,
         previousCounts,
         total,
