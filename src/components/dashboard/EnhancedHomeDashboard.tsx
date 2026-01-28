@@ -33,6 +33,7 @@ const TeamMembersWidget = lazyWithRetry(() => import("./TeamMembersWidget").then
 const DealerPerformanceWidget = lazyWithRetry(() => import("./DealerPerformanceWidget"), "DealerPerformanceWidget");
 const RecentlyCreatedJobsWidget = lazyWithRetry(() => import("./RecentlyCreatedJobsWidget").then(m => ({ default: m.RecentlyCreatedJobsWidget })), "RecentlyCreatedJobsWidget");
 const RecentAppointmentsWidget = lazyWithRetry(() => import("./RecentAppointmentsWidget").then(m => ({ default: m.RecentAppointmentsWidget })), "RecentAppointmentsWidget");
+const StatusReasonsWidget = lazyWithRetry(() => import("./StatusReasonsWidget").then(m => ({ default: m.StatusReasonsWidget })), "StatusReasonsWidget");
 
 // Widget skeleton fallback
 const WidgetSkeleton = () => (
@@ -234,6 +235,8 @@ const DashboardContent = () => {
                 return hasOnlineStore.data ? <OnlineStoreOrdersWidget /> : null;
               case "online-store-products":
                 return hasOnlineStore.data ? <OnlineStoreProductsWidget /> : null;
+              case "status-reasons":
+                return <StatusReasonsWidget />;
               default:
                 return null;
             }

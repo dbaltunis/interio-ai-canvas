@@ -6,6 +6,12 @@ import { Plus } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useProjects } from "@/hooks/useProjects";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RoomsGridProps {
   rooms: any[];
@@ -91,16 +97,29 @@ export const RoomsGrid = ({
       {/* Add Room Button - always show when there are existing rooms */}
       {rooms && rooms.length > 0 && (
         <div className="flex justify-center">
-          <Button
-            onClick={onCreateRoom}
-            disabled={isCreatingRoom || isReadOnly}
-            variant="outline"
-            size="lg"
-            className="flex items-center space-x-2 px-6 py-3 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-          >
-            <Plus className="h-5 w-5" />
-            <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    onClick={onCreateRoom}
+                    disabled={isCreatingRoom || isReadOnly}
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center space-x-2 px-6 py-3 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {isReadOnly && (
+                <TooltipContent>
+                  <p>Project is locked. Change status to edit.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )}
     </div>

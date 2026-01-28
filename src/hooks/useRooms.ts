@@ -101,10 +101,13 @@ export const useCreateRoom = () => {
     },
     onError: (error) => {
       console.error("Failed to create room:", error);
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message || "Failed to create room. Please try again.",
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message || "Failed to create room. Please try again.",
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });
@@ -145,10 +148,13 @@ export const useUpdateRoom = () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
     onError: (error) => {
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message,
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });
@@ -219,10 +225,13 @@ export const useDeleteRoom = () => {
       });
     },
     onError: (error) => {
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message,
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });
