@@ -13,6 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useStatusPermissions } from "@/hooks/useStatusPermissions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StreamlinedJobsInterfaceProps {
   project: any;
@@ -228,15 +234,27 @@ export const StreamlinedJobsInterface = ({
                     <Home className="h-5 w-5" />
                     {room.name}
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAddWindow(room.id)}
-                    className="h-8 w-8 p-0"
-                    disabled={createSurface.isPending || isStatusLocked}
-                    title={isStatusLocked ? "Project is locked" : undefined}
-                  >
-                    {isStatusLocked ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddWindow(room.id)}
+                            className="h-8 w-8 p-0"
+                            disabled={createSurface.isPending || isStatusLocked}
+                          >
+                            {isStatusLocked ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {isStatusLocked && (
+                        <TooltipContent>
+                          <p>Project is locked. Change status to edit.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardTitle>
               </CardHeader>
               
@@ -265,15 +283,27 @@ export const StreamlinedJobsInterface = ({
                               <Square className="h-3 w-3" />
                               <span>{surface.name}</span>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAddTreatment(room.id)}
-                              className="h-6 w-6 p-0"
-                              disabled={isStatusLocked}
-                              title={isStatusLocked ? "Project is locked" : undefined}
-                            >
-                              {isStatusLocked ? <Lock className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleAddTreatment(room.id)}
+                                      className="h-6 w-6 p-0"
+                                      disabled={isStatusLocked}
+                                    >
+                                      {isStatusLocked ? <Lock className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                {isStatusLocked && (
+                                  <TooltipContent>
+                                    <p>Project is locked. Change status to edit.</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           
                           {/* Show treatments for this surface */}
@@ -310,17 +340,29 @@ export const StreamlinedJobsInterface = ({
                   </div>
 
                   {/* Add Treatment Button for Room */}
-                  <Button
-                    onClick={() => handleAddTreatment(room.id)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    disabled={isStatusLocked}
-                    title={isStatusLocked ? "Project is locked" : undefined}
-                  >
-                    {isStatusLocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                    {isStatusLocked ? "Locked" : "Add Treatment"}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="w-full">
+                          <Button
+                            onClick={() => handleAddTreatment(room.id)}
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            disabled={isStatusLocked}
+                          >
+                            {isStatusLocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                            {isStatusLocked ? "Locked" : "Add Treatment"}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {isStatusLocked && (
+                        <TooltipContent>
+                          <p>Project is locked. Change status to edit.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </CardContent>
             </Card>
@@ -330,14 +372,26 @@ export const StreamlinedJobsInterface = ({
         {/* Add new room card */}
         <Card className="relative border-dashed border-2 hover:border-primary/50 transition-colors">
           <CardContent className="flex flex-col items-center justify-center h-48 p-6">
-            <Button
-              onClick={handleAddRoom}
-              disabled={createRoom.isPending || isStatusLocked}
-              className="h-12 w-12 rounded-full mb-3"
-              title={isStatusLocked ? "Project is locked" : undefined}
-            >
-              {isStatusLocked ? <Lock className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      onClick={handleAddRoom}
+                      disabled={createRoom.isPending || isStatusLocked}
+                      className="h-12 w-12 rounded-full mb-3"
+                    >
+                      {isStatusLocked ? <Lock className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {isStatusLocked && (
+                  <TooltipContent>
+                    <p>Project is locked. Change status to edit.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <h3 className="font-medium text-center">{isStatusLocked ? "Project Locked" : "Add New Room"}</h3>
             <p className="text-sm text-muted-foreground text-center mt-1">
               {isStatusLocked ? 'Cannot add rooms to locked project' : createRoom.isPending ? 'Adding room...' : 'Click to add a new room'}

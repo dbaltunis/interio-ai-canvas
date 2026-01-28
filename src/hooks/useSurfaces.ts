@@ -90,10 +90,13 @@ export const useCreateSurface = () => {
     onError: (error) => {
       console.error("=== SURFACE CREATION ERROR ===");
       console.error("Create surface error:", error);
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message,
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });
@@ -138,10 +141,13 @@ export const useUpdateSurface = () => {
       });
     },
     onError: (error) => {
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message,
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });
@@ -242,10 +248,13 @@ export const useDeleteSurface = () => {
       });
     },
     onError: (error) => {
+      const isStatusBlock = error.message?.includes('Project is in');
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: isStatusBlock ? "Project Locked" : "Error",
+        description: isStatusBlock 
+          ? "This project's status prevents editing. Change the status to make modifications."
+          : error.message,
+        variant: isStatusBlock ? "default" : "destructive",
       });
     },
   });

@@ -178,6 +178,16 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "analytics",
     size: "medium",
   },
+  {
+    id: "status-reasons",
+    name: "Rejections & Cancellations",
+    description: "Recent project rejections and cancellation reasons",
+    enabled: true,
+    order: 17,
+    category: "analytics",
+    size: "medium",
+    requiredPermission: "view_primary_kpis",
+  },
 ];
 
 export const useDashboardWidgets = () => {
