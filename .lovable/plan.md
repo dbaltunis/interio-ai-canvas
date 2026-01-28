@@ -1,92 +1,89 @@
 
+# Fix TWC Products Not Appearing in Library Page
 
-# Fix TWC Import: Missing vendor_id on Child Materials + Data Backfill
+## Root Cause Analysis
 
-## Root Cause Identified
+After tracing through the code, I found **multiple filtering mismatches** between what TWC imports create and what the Library page displays:
 
-**Critical Bug Found:** The TWC sync creates child materials (fabrics) WITHOUT the `vendor_id` field:
+### Issue 1: Missing Subcategory Tabs in Library
 
-```text
-Parent Items:     vendor_id = SET ✅ (line 561)
-Child Materials:  vendor_id = NULL ❌ (lines 1011-1041 - MISSING)
+**FabricInventoryView.tsx** has these tabs:
+```typescript
+const FABRIC_CATEGORIES = [
+  { key: "all", label: "All Fabrics" },
+  { key: "curtain_fabric", label: "Curtain & Roman" },
+  { key: "lining_fabric", label: "Linings" },
+  { key: "sheer_fabric", label: "Sheers" },
+  { key: "awning_fabric", label: "Awnings" },
+  { key: "upholstery_fabric", label: "Upholstery" },
+];
 ```
 
-**Database Evidence:**
-| Status | Count | % |
-|--------|-------|---|
-| Missing vendor_id | 174 | 60% |
-| Has vendor_id | 115 | 40% |
+**But TWC imports create:**
+- `roman_fabric` → NOT matched by any tab except "All Fabrics"
+- The "Curtain & Roman" tab filters by `subcategory === 'curtain_fabric'` which excludes `roman_fabric`
 
-This is why grids aren't matching - the auto-matcher needs `vendor_id` for exact supplier matching, and 60% of curtain fabrics don't have it.
+### Issue 2: Inconsistent Category Mapping
 
----
+TWC sync currently maps:
+- Roman products → `category: 'fabric', subcategory: 'roman_fabric'`
+- But romans should use `curtain_fabric` since they share the same fabrics
 
-## What TWC API Provides (and Doesn't)
+### Issue 3: Cellular Blinds Wrong Category
 
-**Available from TWC API:**
-- Product descriptions ✅
-- Questions/Options ✅
-- Fabrics & Colours ✅  
-- Price Groups (per color) ✅
-- Fabric Width (default 300cm) ✅
-
-**NOT available from TWC API:**
-- Cost prices ❌ (TWC doesn't expose wholesale costs)
-- Selling prices ❌ (Dealers set their own)
-
-This means `cost_price: 0` is expected behavior - users must set their own prices or rely entirely on pricing grids (which IS the intended workflow for TWC).
+TWC creates cellular with `category: 'material', subcategory: 'cellular'`
+But `cellular_blinds` in `TREATMENT_SUBCATEGORIES` expects `category: 'fabric'`
 
 ---
 
-## Solution
+## Solution Overview
 
-### Part 1: Fix Edge Function - Add vendor_id to Child Materials
+### Part 1: Update Library Tab Filters (FabricInventoryView)
 
-**File:** `supabase/functions/twc-sync-products/index.ts`
-
-Around line 1011, add `vendor_id: twcVendorId` to the child material insert:
+Modify filtering logic to accept both `curtain_fabric` AND `roman_fabric` under the same "Curtain & Roman" tab:
 
 ```typescript
-const { error: materialError } = await supabaseClient
-  .from('enhanced_inventory_items')
-  .insert({
-    user_id: user.id,
-    name: `${parentItem.name} - ${material.material}`,
-    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
-    category: materialCategoryMapping.category,
-    subcategory: materialCategoryMapping.subcategory,
-    supplier: 'TWC',
-    vendor_id: twcVendorId,  // ✅ ADD THIS - Critical for grid matching
-    active: true,
-    // ... rest of fields
-  });
+const matchesCategory = activeCategory === "all" || 
+  item.subcategory === activeCategory ||
+  // Group roman_fabric with curtain_fabric
+  (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
 ```
 
-### Part 2: Backfill Existing Data
+### Part 2: Fix TWC Category Mapping (Edge Function)
 
-All existing TWC materials without `vendor_id` need to be updated. This requires:
+Update `twc-sync-products/index.ts` to align with Library expectations:
 
-1. Find each user's TWC vendor ID
-2. Update all their TWC materials to use that vendor ID
+| Product Type | Category | Subcategory (Current → Fixed) |
+|-------------|----------|-------------------------------|
+| Roman | fabric | `roman_fabric` → `curtain_fabric` |
+| Cellular | material | `cellular` → Keep but add to Material tabs |
 
-**SQL Migration (Run SQL in Supabase Dashboard):**
+### Part 3: Add Missing Subcategory Tabs
+
+**MaterialInventoryView.tsx** - Add `cellular` to `MATERIAL_CATEGORIES` since TWC creates them:
+
+```typescript
+const MATERIAL_CATEGORIES = [
+  { key: "all", label: "All Materials" },
+  { key: "roller_fabric", label: "Roller Blinds" },
+  { key: "venetian_slats", label: "Venetian" },
+  { key: "vertical_slats", label: "Vertical" },
+  { key: "cellular", label: "Cellular" }, // Already exists ✅
+  { key: "panel_glide_fabric", label: "Panel Glide" },
+  { key: "shutter_material", label: "Shutters" },
+];
+```
+
+This is already correct in the codebase!
+
+### Part 4: Backfill Existing Data
+
+Run SQL migration to unify roman_fabric → curtain_fabric for consistency:
 
 ```sql
--- Backfill vendor_id for TWC materials that are missing it
--- Links to the same TWC vendor as the parent product
-
-WITH twc_vendors AS (
-  -- Get each user's TWC vendor
-  SELECT user_id, id as vendor_id
-  FROM vendors 
-  WHERE name ILIKE '%TWC%'
-)
-UPDATE enhanced_inventory_items eii
-SET vendor_id = tv.vendor_id
-FROM twc_vendors tv
-WHERE eii.user_id = tv.user_id
-  AND eii.supplier = 'TWC'
-  AND eii.vendor_id IS NULL;
+UPDATE enhanced_inventory_items 
+SET subcategory = 'curtain_fabric' 
+WHERE subcategory = 'roman_fabric' AND supplier = 'TWC';
 ```
 
 ---
@@ -95,76 +92,78 @@ WHERE eii.user_id = tv.user_id
 
 | File | Change |
 |------|--------|
-| `supabase/functions/twc-sync-products/index.ts` | Add `vendor_id: twcVendorId` to child material insert (~line 1019) |
-
-## Database Action Required
-
-Run SQL migration to backfill existing data (affects all Australasia/Greg's accounts).
+| `src/components/inventory/FabricInventoryView.tsx` | Add `roman_fabric` grouping to "Curtain & Roman" tab filter |
+| `supabase/functions/twc-sync-products/index.ts` | Map roman → `curtain_fabric` instead of `roman_fabric` |
+| Database | Backfill 126 roman_fabric items to curtain_fabric |
 
 ---
 
-## Expected Results
+## Technical Implementation Details
 
-### After Fix
+### FabricInventoryView.tsx Changes
 
-1. **New imports:** All child materials will have `vendor_id` set
-2. **Existing data:** Backfill migration updates 174+ fabrics
-3. **Grid matching:** Auto-matcher can now do exact supplier+product+group matching
-4. **Pricing accuracy:** Grids resolve correctly → accurate quotes
+Update the filtering logic around line 134:
 
-### What Users Still Need to Do
-
-- Pricing grids must exist for their TWC products (Groups 1-6, Budget)
-- If they want per-meter fabric pricing, they need to set `cost_price` manually (TWC API doesn't provide this)
-
----
-
-## Technical Details
-
-### Current Child Material Insert (Missing vendor_id)
 ```typescript
-// Line 1011-1041
-const { error: materialError } = await supabaseClient
-  .from('enhanced_inventory_items')
-  .insert({
-    user_id: user.id,
-    name: `${parentItem.name} - ${material.material}`,
-    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
-    category: materialCategoryMapping.category,
-    subcategory: materialCategoryMapping.subcategory,
-    supplier: 'TWC',
-    // ❌ vendor_id is MISSING
-    active: true,
-    show_in_quote: true,
-    // ...
-  });
+const matchesCategory = activeCategory === "all" || 
+  item.subcategory === activeCategory ||
+  // Roman fabrics display under Curtain & Roman tab
+  (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
 ```
 
-### Fixed Child Material Insert
+### TWC Sync Edge Function Changes
+
+In `mapCategoryForMaterial()` function (around line 373):
+
 ```typescript
-const { error: materialError } = await supabaseClient
-  .from('enhanced_inventory_items')
-  .insert({
-    user_id: user.id,
-    name: `${parentItem.name} - ${material.material}`,
-    sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
-    category: materialCategoryMapping.category,
-    subcategory: materialCategoryMapping.subcategory,
-    supplier: 'TWC',
-    vendor_id: twcVendorId,  // ✅ ADD THIS
-    active: true,
-    show_in_quote: true,
-    // ...
-  });
+// CRITICAL: Roman fabrics = curtain_fabric (same fabrics, show in same Library section)
+if (parentDesc.includes('roman')) {
+  return { category: 'fabric', subcategory: 'curtain_fabric' }; // Changed from 'roman_fabric'
+}
+```
+
+And in `mapCategory()` function (around line 270):
+
+```typescript
+// Roman = FABRIC with curtain_fabric (sewn products, shares fabrics with curtains)
+if (lowerDesc.includes('roman')) {
+  return { category: 'fabric', subcategory: 'curtain_fabric' }; // Changed from 'roman_fabric'
+}
+```
+
+### SQL Migration for Backfill
+
+```sql
+-- Unify roman_fabric to curtain_fabric for Library display consistency
+UPDATE enhanced_inventory_items 
+SET subcategory = 'curtain_fabric',
+    updated_at = NOW()
+WHERE subcategory = 'roman_fabric';
 ```
 
 ---
 
-## Impact Scope
+## Expected Outcome After Implementation
 
-- **All Australasia accounts** with TWC imports
-- **Greg's demo accounts** with TWC products
-- **Any account** that imported TWC products before this fix
+| Library Section | Before | After |
+|----------------|--------|-------|
+| **Fabrics Tab** | | |
+| All Fabrics | 507 items | 507 items |
+| Curtain & Roman | 289 items | 415 items (+126 roman) |
+| Awnings | 92 items | 92 items |
+| **Materials Tab** | | |
+| All Materials | 384 items | 384 items |
+| Roller Blinds | 228 items | 228 items |
+| Panel Glide | 114 items | 114 items |
+| Cellular | 4 items | 4 items |
+| **Hardware Tab** | | |
+| Tracks | 9 items | 9 items |
 
-The backfill migration will fix all existing data in one operation, and the code fix ensures all future imports work correctly.
+---
 
+## Why This Fixes the Global SaaS Issue
+
+1. **Edge Function Fix**: Future TWC imports across ALL accounts will use consistent subcategories
+2. **Backfill Migration**: Existing data across ALL accounts gets unified
+3. **Library Filter Fix**: Even if some items have `roman_fabric`, they'll display correctly
+4. **No CSV Import Breakage**: The changes only affect TWC mapping logic, not general import
