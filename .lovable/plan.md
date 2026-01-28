@@ -1,125 +1,139 @@
 
-# Fix TWC Library Organization: Collection Linking for All Items
+# Fix Three Issues: Recent Fabrics Cross-Account, Option Pre-Selection, and Pricing Clarification
 
-## Problem Summary
+## Issue 1: Recent Fabrics Showing from Other Accounts
 
-The Library shows collections (DESIGNER, MOTORISED, RESIDENTIAL) with only 3 items total, but **896 fabric items have no collection linkage**. Users see fabrics in the measurement popup but not organized in the Library.
+### Root Cause
+The "Recently Used" feature stores selections in **localStorage** using a global key `recent_material_selections`. This is browser-specific, NOT account-specific.
 
-### Database Evidence
+**Evidence from database:**
+| Item Name | User ID (Account) |
+|-----------|-------------------|
+| ADARA | ec930f73 (Greg's account) |
+| 1234rt | ec930f73 (Greg's account) |
 
-| Type | With Collection | Without Collection | Total |
-|------|-----------------|-------------------|-------|
-| Parent Products | 3 | 126 | 129 |
-| Child Materials (Fabrics) | **0** | **896** | 896 |
+The demo user (`f740ef45`) sees items from Greg's account because they share the same browser.
 
-### Root Causes
+### Solution
+Make localStorage key account-specific by including user ID:
 
-1. **Collection Name Extraction Fails**: The regex pattern expects "Product Type - COLLECTION" format, but most TWC products have names like "Balmoral Light Filter", "Aventus 5%", "Sanctuary Light Filter" - no dash separator.
+**File:** `src/hooks/useRecentMaterialSelections.ts`
 
-2. **Child Materials Missing Collection**: The edge function sets `collection_id` for parent products but **NOT** for child fabrics (line 1013-1044 is missing `collection_id`).
+```typescript
+// Current (broken):
+const STORAGE_KEY = 'recent_material_selections';
 
-3. **Product Name IS the Collection**: TWC product names like "Balmoral Light Filter" ARE the collection/range names and should be used directly as collection names.
+// Fixed (account-isolated):
+const STORAGE_KEY_PREFIX = 'recent_material_selections';
+
+// Inside the hook, get user ID and use account-specific key
+const { data: user } = useQuery(['current-user'], async () => {
+  const { data } = await supabase.auth.getUser();
+  return data.user;
+});
+
+const storageKey = user?.id 
+  ? `${STORAGE_KEY_PREFIX}_${user.id}` 
+  : STORAGE_KEY_PREFIX;
+```
 
 ---
 
-## Solution
+## Issue 2: Option Pre-Selection Not Working for New Products
 
-### Part 1: Fix Collection Name Extraction (Edge Function)
+### Root Cause
+The code at line 249 explicitly says: `// REMOVED: Auto-select first option logic`. This was intentional to prevent "random" values, but it means TWC products require manual selection for every dropdown.
 
-Update `extractCollectionName()` to handle TWC naming patterns better:
+### Current Behavior
+- Options show as empty (no selection)
+- Red validation warnings appear for all required fields
+- User must manually select each option
 
+### Solution
+Add a **per-template setting** for pre-selection behavior, stored in the template or user preferences.
+
+**Option A: Template-level setting**
+Add `auto_select_first_option` boolean to `curtain_templates` table:
+- When `true`: Auto-select first available option for each dropdown
+- When `false`: Require manual selection (current behavior)
+- TWC imports can default this to `true`
+
+**Option B: Global user setting**
+Add toggle in Settings > Preferences: "Auto-select first option in measurement popup"
+
+### Implementation
+**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
+
+Add conditional auto-selection:
 ```typescript
-const extractCollectionName = (productName: string | undefined | null): string | null => {
-  if (!productName || typeof productName !== 'string') return null;
+useEffect(() => {
+  // Only auto-select if template has auto_select_first_option enabled
+  if (!template?.auto_select_first_option) return;
   
-  // Pattern 1: "Product Type - COLLECTION NAME" 
-  const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9\s]+)/i);
-  if (dashPattern && dashPattern[1]) {
-    return dashPattern[1].toUpperCase().trim();
-  }
-  
-  // Pattern 2: "(COLLECTION)" parenthetical
-  const parenPattern = productName.match(/\(([A-Z][A-Z0-9]+)\)/i);
-  if (parenPattern && parenPattern[1]) {
-    return parenPattern[1].toUpperCase();
-  }
-  
-  // Pattern 3 (NEW): Use product name directly as collection
-  // "Balmoral Light Filter" → "BALMORAL LIGHT FILTER"
-  // Skip generic names like "Verticals", "Honeycells" 
-  const genericNames = ['verticals', 'honeycells', 'new recloth', 'zip screen'];
-  if (!genericNames.includes(productName.toLowerCase().trim())) {
-    return productName.toUpperCase().trim();
-  }
-  
-  return null;
-};
-```
-
-### Part 2: Inherit Collection in Child Materials (Edge Function)
-
-Add `collection_id` to child material insert (around line 1022):
-
-```typescript
-const { error: materialError } = await supabaseClient
-  .from('enhanced_inventory_items')
-  .insert({
-    user_id: user.id,
-    name: `${parentItem.name} - ${material.material}`,
-    // ... existing fields ...
-    supplier: 'TWC',
-    vendor_id: twcVendorId,
-    collection_id: parentItem.collection_id,  // ✅ ADD THIS - Inherit from parent
-    // ... rest of fields ...
+  treatmentOptions.forEach(option => {
+    const currentValue = treatmentOptionSelections[option.key];
+    if (!currentValue && option.option_values?.length > 0) {
+      handleTreatmentOptionChange(option.key, option.option_values[0].id);
+    }
   });
+}, [template?.auto_select_first_option, treatmentOptions]);
 ```
 
-### Part 3: Backfill Existing Data (SQL Migration)
-
-Run migration to create collections from product names and link all orphaned fabrics:
-
+**Database migration:**
 ```sql
--- Step 1: Create collections from parent product names
-WITH parent_products AS (
-  SELECT DISTINCT 
-    user_id,
-    name as collection_name,
-    vendor_id
-  FROM enhanced_inventory_items
-  WHERE supplier = 'TWC' 
-    AND metadata->>'parent_product_id' IS NULL
-    AND collection_id IS NULL
-    AND name NOT IN ('Verticals', 'Honeycells', 'New Recloth', 'Zip Screen')
-)
-INSERT INTO collections (user_id, name, vendor_id, description, season, active)
-SELECT 
-  user_id,
-  collection_name,
-  vendor_id,
-  'TWC Collection: ' || collection_name,
-  'All Season',
-  true
-FROM parent_products
-ON CONFLICT (user_id, name) DO NOTHING;
+ALTER TABLE curtain_templates 
+ADD COLUMN auto_select_first_option boolean DEFAULT false;
 
--- Step 2: Link parent products to their collections
-UPDATE enhanced_inventory_items eii
-SET collection_id = c.id
-FROM collections c
-WHERE eii.supplier = 'TWC'
-  AND eii.metadata->>'parent_product_id' IS NULL
-  AND eii.collection_id IS NULL
-  AND eii.user_id = c.user_id
-  AND eii.name = c.name;
-
--- Step 3: Link child materials to parent's collection
-UPDATE enhanced_inventory_items child
-SET collection_id = parent.collection_id
-FROM enhanced_inventory_items parent
-WHERE child.metadata->>'parent_product_id' = parent.id::text
-  AND child.collection_id IS NULL
-  AND parent.collection_id IS NOT NULL;
+-- Enable for all TWC templates
+UPDATE curtain_templates 
+SET auto_select_first_option = true 
+WHERE inventory_item_id IN (
+  SELECT id FROM enhanced_inventory_items WHERE supplier = 'TWC'
+);
 ```
+
+---
+
+## Issue 3: Pricing Clarification - What Does Manufacturing Include?
+
+### Current Pricing Breakdown
+
+The pricing summary shows:
+
+| Line Item | What It Includes |
+|-----------|------------------|
+| **Fabric Cost** | Fabric material only (linear meters × cost per meter) |
+| **Manufacturing Cost** | Labor/making cost only (sewing, construction) |
+| **Heading Cost** | Heading tape/material cost |
+| **Lining Cost** | Lining fabric cost |
+| **Options Cost** | Additional accessories (tracks, hardware, etc.) |
+
+### Answer to User's Question
+**Manufacturing = Curtain MAKING price only (labor/sewing).**
+Fabric is charged separately on the "Fabric Cost" line.
+
+### Verification from Code
+```typescript
+// Lines 3105-3172 in DynamicWindowWorksheet.tsx
+// manufacturingCost is calculated using:
+// - pricePerUnit (machine_price_per_metre or hand_price_per_metre)
+// - Multiplied by linear meters
+// This is ONLY the labor/sewing cost
+
+// Fabric cost is calculated separately:
+// fabricCost = pricePerMeter × totalMeters
+```
+
+### User's Concern
+If the "Fabric Cost" shows $0 or is missing:
+1. **No fabric selected** - User needs to select a fabric from the Library
+2. **Fabric has no cost_price set** - TWC fabrics default to $0 (dealers set their own prices)
+3. **Pricing grid in use** - Grid price may include fabric + making bundled
+
+### Recommendation
+Add clearer labels in the cost breakdown to reduce confusion:
+- "Fabric Material" instead of "Fabric Cost"
+- "Making/Labor" instead of "Manufacturing"
 
 ---
 
@@ -127,63 +141,78 @@ WHERE child.metadata->>'parent_product_id' = parent.id::text
 
 | File | Change |
 |------|--------|
-| `supabase/functions/twc-sync-products/index.ts` | 1. Update `extractCollectionName()` to use product name as collection<br>2. Add `collection_id: parentItem.collection_id` to child material insert |
-| SQL Migration | Create collections + backfill all 1,000+ items |
-
----
-
-## Expected Outcome
-
-| Before | After |
-|--------|-------|
-| 3 collections (DESIGNER, MOTORISED, RESIDENTIAL) | 100+ collections (Balmoral, Aventus, Sanctuary, etc.) |
-| 3 items with collection links | 1,000+ items with collection links |
-| Fabrics not filtered by collection | All fabrics organized under their collection |
+| `src/hooks/useRecentMaterialSelections.ts` | Make storage key account-specific |
+| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Add conditional auto-select based on template setting |
+| `supabase/migrations/xxx.sql` | Add `auto_select_first_option` column to `curtain_templates` |
+| `src/components/measurements/dynamic-options/CostCalculationSummary.tsx` | Clarify labels (optional UX improvement) |
 
 ---
 
 ## Technical Details
 
-### Current extractCollectionName() - Only matches "X - Y" pattern
-```typescript
-const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9]+)/i);
-```
-Only "Curtain Tracks - Motorised" matches this.
+### Recent Materials Storage Key Fix
 
-### Fixed extractCollectionName() - Uses product name as collection
 ```typescript
-// Fallback: Use product name directly as collection name
-// "Balmoral Light Filter" → "BALMORAL LIGHT FILTER"
-return productName.toUpperCase().trim();
+// useRecentMaterialSelections.ts - Lines 1-35
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface RecentSelection {
+  itemId: string;
+  name: string;
+  imageUrl?: string;
+  color?: string;
+  priceGroup?: string;
+  vendorName?: string;
+  selectedAt: number;
+}
+
+const STORAGE_KEY_PREFIX = 'recent_material_selections';
+const MAX_ITEMS = 6;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
+  const [items, setItems] = useState<RecentSelection[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get current user ID on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  // Account-specific storage key
+  const storageKey = userId 
+    ? `${STORAGE_KEY_PREFIX}_${userId}` 
+    : STORAGE_KEY_PREFIX;
+  
+  // ... rest of hook uses storageKey instead of STORAGE_KEY
+};
 ```
 
-### Current child material insert (missing collection_id)
-```typescript
-.insert({
-  user_id: user.id,
-  name: `${parentItem.name} - ${material.material}`,
-  supplier: 'TWC',
-  vendor_id: twcVendorId,
-  // ❌ collection_id NOT set
-})
-```
+### Auto-Select Template Setting
 
-### Fixed child material insert
-```typescript
-.insert({
-  user_id: user.id,
-  name: `${parentItem.name} - ${material.material}`,
-  supplier: 'TWC',
-  vendor_id: twcVendorId,
-  collection_id: parentItem.collection_id,  // ✅ Inherit from parent
-})
+```sql
+-- Migration: Add auto_select_first_option to templates
+ALTER TABLE curtain_templates 
+ADD COLUMN IF NOT EXISTS auto_select_first_option boolean DEFAULT false;
+
+-- Enable for TWC templates by default
+UPDATE curtain_templates ct
+SET auto_select_first_option = true
+FROM enhanced_inventory_items eii
+WHERE ct.inventory_item_id = eii.id
+  AND eii.supplier = 'TWC';
 ```
 
 ---
 
-## Impact
+## Expected Outcomes
 
-- **All existing accounts**: Backfill migration will organize 1,000+ items into collections
-- **All future imports**: Edge function fix ensures proper collection linking
-- **Library UX**: Users can browse by Brand → Collection → Fabrics naturally
-- **No CSV Import breakage**: Changes only affect TWC sync logic
+| Issue | Before | After |
+|-------|--------|-------|
+| Recent Fabrics | Shows items from all accounts using same browser | Shows only current account's items |
+| Pre-Selection | All dropdowns empty, requires manual selection | TWC templates auto-select first option |
+| Pricing Clarity | "Manufacturing Cost" label unclear | Labels clarify fabric vs. labor costs |
