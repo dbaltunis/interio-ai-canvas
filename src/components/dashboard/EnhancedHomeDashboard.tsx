@@ -96,13 +96,30 @@ const DashboardContent = () => {
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
 
   // ALL useMemo hooks MUST be called BEFORE any conditional returns (React Rules of Hooks)
+  // Helper to check if a specific widget is enabled
+  const isWidgetEnabled = (widgetId: string) => {
+    const widget = widgets.find(w => w.id === widgetId);
+    if (!widget?.enabled) return false;
+    
+    // Check permissions for specific widgets
+    if (widget.requiredPermission === 'view_revenue_kpis') return canViewRevenue !== false;
+    if (widget.requiredPermission === 'view_all_jobs') return canViewJobs !== false;
+    
+    return true;
+  };
+
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
     // Don't filter until we know the store status
     if (hasOnlineStore.isLoading) return [];
     
-    const widgets = getEnabledWidgets();
-    const filtered = widgets.filter(widget => {
+    const allWidgets = getEnabledWidgets();
+    const filtered = allWidgets.filter(widget => {
+      // Chart widgets are handled separately in the charts row
+      if (['revenue-trend', 'jobs-status', 'status-reasons'].includes(widget.id)) {
+        return false; // Don't show in dynamic grid
+      }
+      
       // MUTUAL EXCLUSIVITY: Only one e-commerce platform can be active
       if (widget.integrationType === 'shopify') {
         // Hide Shopify widgets if InteriorApp store exists
@@ -117,6 +134,11 @@ const DashboardContent = () => {
         // Show InteriorApp store widgets only if store exists
         if (hasOnlineStore.data !== true) return false;
       }
+      
+      // E-commerce gateway only shows if neither platform is set up
+      if (widget.id === 'ecommerce-gateway') {
+        if (hasOnlineStore.data || isShopifyConnected) return false;
+      }
 
       // Then check permissions
       if (!widget.requiredPermission) return true;
@@ -128,12 +150,14 @@ const DashboardContent = () => {
       if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
       if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
       if (widget.requiredPermission === 'view_team_members') return canViewTeamMembers !== false;
+      if (widget.requiredPermission === 'view_revenue_kpis') return canViewRevenue !== false;
+      if (widget.requiredPermission === 'view_all_jobs') return canViewJobs !== false;
 
       return true; // Default to showing during loading
     });
     
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
+  }, [widgets, getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, canViewTeamMembers, canViewRevenue, canViewJobs, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
   // Compact metrics for top row - PERMISSION-FILTERED (not role-based)
   // Users see only the KPIs they have permission to view
@@ -178,15 +202,15 @@ const DashboardContent = () => {
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
-      {/* Charts Row 1 - PERMISSION-GATED (renders only if user has permission) */}
-      {(canViewRevenue !== false || canViewJobs !== false) && (
+      {/* Charts Row 1 - Now controlled by widget configs */}
+      {(isWidgetEnabled('revenue-trend') || isWidgetEnabled('jobs-status')) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {canViewRevenue !== false && (
+          {isWidgetEnabled('revenue-trend') && (
             <Suspense fallback={<WidgetSkeleton />}>
               <RevenueTrendChart />
             </Suspense>
           )}
-          {canViewJobs !== false && (
+          {isWidgetEnabled('jobs-status') && (
             <Suspense fallback={<WidgetSkeleton />}>
               <JobsStatusChart />
             </Suspense>
@@ -194,8 +218,8 @@ const DashboardContent = () => {
         </div>
       )}
 
-      {/* Charts Row 2 - Rejections widget in separate row */}
-      {canViewRevenue !== false && (
+      {/* Charts Row 2 - Rejections widget controlled by widget config */}
+      {isWidgetEnabled('status-reasons') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Suspense fallback={<WidgetSkeleton />}>
             <StatusReasonsWidget />

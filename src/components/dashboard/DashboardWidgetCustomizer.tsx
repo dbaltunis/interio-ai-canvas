@@ -43,10 +43,27 @@ interface DashboardWidgetCustomizerProps {
 
 const getWidgetIcon = (widgetId: string) => {
   const icons: Record<string, any> = {
+    // Chart widgets
+    "revenue-trend": DollarSign,
+    "jobs-status": BarChart3,
+    "status-reasons": BarChart3,
+    "quick-actions": Briefcase,
+    "sales-pipeline": DollarSign,
+    "ecommerce-gateway": ShoppingBag,
+    // Shopify widgets
     shopify: ShoppingBag,
+    "shopify-orders": ShoppingBag,
+    "shopify-products": ShoppingBag,
+    "shopify-categories": ShoppingBag,
+    // Online store widgets
+    "online-store-analytics": BarChart3,
+    "online-store-orders": ShoppingBag,
+    "online-store-products": ShoppingBag,
+    // General widgets
     team: Users,
     "dealer-performance": BarChart3,
     events: Calendar,
+    "recent-appointments": Calendar,
     emails: Mail,
     status: BarChart3,
     revenue: DollarSign,
@@ -139,6 +156,9 @@ export const DashboardWidgetCustomizer = ({
       if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
       if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
       if (widget.requiredPermission === 'view_team_members') return canViewTeamMembers !== false;
+      // New chart widget permissions
+      if (widget.requiredPermission === 'view_revenue_kpis') return true; // Show in customizer, filtered on dashboard
+      if (widget.requiredPermission === 'view_all_jobs') return true; // Show in customizer, filtered on dashboard
 
       // Default to showing during loading
       return true;
