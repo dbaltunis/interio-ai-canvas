@@ -246,9 +246,39 @@ export const DynamicCurtainOptions = ({
     }
   }, [selectedHeading, getDefaultValue, treatmentOptionSelections]);
   
-  // ❌ REMOVED: Auto-select first option logic
-  // WHITELIST approach: User must explicitly select options
-  // No auto-selection prevents "random" values appearing
+  // ✅ AUTO-SELECT: Conditionally auto-select first option based on template setting
+  // When template.auto_select_first_option is true, pre-select first available value for each option
+  useEffect(() => {
+    // Only auto-select if template has the setting enabled
+    if (!template?.auto_select_first_option) return;
+    
+    // Don't run if options haven't loaded yet
+    if (treatmentOptions.length === 0) return;
+    
+    // Collect options that need auto-selection
+    const updates: Record<string, string> = {};
+    
+    treatmentOptions.forEach(option => {
+      if (!option.option_values || option.option_values.length === 0) return;
+      
+      const currentValue = treatmentOptionSelections[option.key];
+      // Only auto-select if no value is currently set
+      if (!currentValue) {
+        const firstValue = option.option_values[0];
+        if (firstValue?.id) {
+          updates[option.key] = firstValue.id;
+          console.log(`🎯 Auto-selecting first option for ${option.key}:`, firstValue.label || firstValue.id);
+        }
+      }
+    });
+    
+    // Apply all updates at once
+    if (Object.keys(updates).length > 0) {
+      Object.entries(updates).forEach(([key, value]) => {
+        handleTreatmentOptionChange(key, value);
+      });
+    }
+  }, [template?.auto_select_first_option, treatmentOptions, treatmentOptionSelections]);
 
   // Restore sub-category selections from saved measurements when editing
   useEffect(() => {

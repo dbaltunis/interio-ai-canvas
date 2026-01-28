@@ -2393,6 +2393,7 @@ export type Database = {
       curtain_templates: {
         Row: {
           active: boolean
+          auto_select_first_option: boolean | null
           average_drop_width: number | null
           blind_bottom_hem_cm: number | null
           blind_header_hem_cm: number | null
@@ -2472,6 +2473,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          auto_select_first_option?: boolean | null
           average_drop_width?: number | null
           blind_bottom_hem_cm?: number | null
           blind_header_hem_cm?: number | null
@@ -2551,6 +2553,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          auto_select_first_option?: boolean | null
           average_drop_width?: number | null
           blind_bottom_hem_cm?: number | null
           blind_header_hem_cm?: number | null
