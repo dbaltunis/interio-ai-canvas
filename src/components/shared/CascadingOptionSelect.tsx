@@ -31,6 +31,7 @@ interface CascadingOptionSelectProps {
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
+  autoSelectFirst?: boolean; // Auto-select first option if multiple exist
 }
 
 const formatPricingLabel = (option: OptionItem, currency: string): string => {
@@ -79,7 +80,8 @@ export const CascadingOptionSelect = ({
   currency,
   placeholder,
   disabled = false,
-  required = false
+  required = false,
+  autoSelectFirst = true // Default to auto-selecting first option
 }: CascadingOptionSelectProps) => {
   const selectedOption = options.find(opt => opt.id === selectedId);
   const hasAutoSelected = useRef<string | null>(null);
@@ -95,17 +97,21 @@ export const CascadingOptionSelect = ({
     hasAutoSelected.current = null;
   }, [optionsKey]);
   
-  // Auto-select if only one option and nothing selected
+  // Auto-select first option if enabled and nothing selected
   useEffect(() => {
-    if (options.length === 1 && !selectedId && hasAutoSelected.current !== options[0].id) {
-      console.log(`✅ Auto-selecting single option for ${label}:`, options[0].name);
+    // Auto-select if: single option OR (autoSelectFirst enabled AND multiple options)
+    const shouldAutoSelect = options.length > 0 && !selectedId && hasAutoSelected.current !== options[0].id;
+    const isEligible = options.length === 1 || autoSelectFirst;
+    
+    if (shouldAutoSelect && isEligible) {
+      console.log(`✅ Auto-selecting ${options.length === 1 ? 'single' : 'first'} option for ${label}:`, options[0].name);
       hasAutoSelected.current = options[0].id;
       // Use setTimeout to avoid state updates during render
       setTimeout(() => {
         stableOnSelect(options[0].id, null);
       }, 0);
     }
-  }, [options, selectedId, label, stableOnSelect, optionsKey]);
+  }, [options, selectedId, label, stableOnSelect, optionsKey, autoSelectFirst]);
   
   const handleValueChange = (value: string) => {
     const previousId = selectedId;
@@ -116,8 +122,9 @@ export const CascadingOptionSelect = ({
     }
   };
 
-  // Show red indicator if required, has multiple options, and none selected
-  const showRequiredIndicator = !selectedId && options.length > 1;
+  // Show red indicator only if required prop is true AND nothing selected
+  // Note: With autoSelectFirst enabled, this should rarely show
+  const showRequiredIndicator = required && !selectedId && options.length > 1;
 
   return (
     <div className="grid grid-cols-[180px_1fr] gap-4 items-center">
