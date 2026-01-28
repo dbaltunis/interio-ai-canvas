@@ -416,9 +416,9 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Pattern 1: "Product Type - COLLECTION NAME VARIANT" 
       // e.g., "Straight Drop - SKYE LIGHT FILTER" → "SKYE"
-      const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9]+)/i);
+      const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9\s]+)/i);
       if (dashPattern && dashPattern[1]) {
-        return dashPattern[1].toUpperCase();
+        return dashPattern[1].toUpperCase().trim();
       }
       
       // Pattern 2: Product has parenthetical collection
@@ -426,6 +426,17 @@ const handler = async (req: Request): Promise<Response> => {
       const parenPattern = productName.match(/\(([A-Z][A-Z0-9]+)\)/i);
       if (parenPattern && parenPattern[1]) {
         return parenPattern[1].toUpperCase();
+      }
+      
+      // Pattern 3 (NEW): Use product name directly as collection name
+      // "Balmoral Light Filter" → "BALMORAL LIGHT FILTER"
+      // Skip generic product type names that aren't collection names
+      const genericNames = ['verticals', 'honeycells', 'new recloth', 'zip screen', 
+        'roller blinds', 'venetian blinds', 'curtains', 'shutters', 'awnings',
+        'panel glide', 'cellular blinds', 'roman blinds'];
+      const lowerName = productName.toLowerCase().trim();
+      if (!genericNames.some(g => lowerName === g || lowerName.startsWith(g + ' -'))) {
+        return productName.toUpperCase().trim();
       }
       
       return null;
@@ -1020,6 +1031,7 @@ const handler = async (req: Request): Promise<Response> => {
                   subcategory: materialCategoryMapping.subcategory,
                   supplier: 'TWC',
                   vendor_id: twcVendorId,  // Critical for grid matching
+                  collection_id: parentItem.collection_id,  // ✅ Inherit collection from parent product
                   active: true,
                   show_in_quote: true,
                   description: `Material: ${material.material} | Colors: ${colorTags.join(', ')}`,
