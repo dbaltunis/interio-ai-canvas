@@ -1,169 +1,108 @@
 
 
-# Simple Update Notification Banner
+# Add v2.4.1 Release Notes to What's New Dialog
 
-## What You're Getting
+## Overview
 
-A simple, non-intrusive banner at the top of the screen that:
-1. Appears when you deploy a new version
-2. Shows a friendly message recommending to refresh
-3. Has a "Refresh Now" button
-4. Can be dismissed
+Update the `app_versions` table with the new v2.4.1 release notes so users can see what was fixed/improved in this update.
 
 ---
 
-## Visual Design Preview
+## Database Update Required
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  🎉 New update available (v2.4.1) • Please refresh to get the latest       │
-│                                                      [Refresh Now]  [×]    │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Colors & Styling:**
-- **Background**: Soft blue gradient (`bg-gradient-to-r from-blue-500/10 to-primary/10`)
-- **Border**: Subtle blue border (`border-blue-200 dark:border-blue-800`)
-- **Icon**: Sparkles emoji or Lucide `Sparkles` icon
-- **Text**: Clean, readable (`text-foreground`)
-- **Refresh Button**: Primary color, pill-shaped
-- **Close Button**: Subtle X icon on the right
-
-**Mobile Responsive**: Stacks vertically on small screens
+Run a SQL migration to:
+1. Mark v2.4.0 as `is_current = false`
+2. Insert new v2.4.1 record with `is_current = true` and complete release notes
 
 ---
 
-## How It Works
+## v2.4.1 Release Notes Content
 
-1. **On app load**: Check `localStorage` for the last seen version
-2. **Compare**: If current version > stored version → show banner
-3. **On dismiss**: Store current version in `localStorage`, hide banner
-4. **On refresh click**: Store version + reload the page
+### Highlights
+- Account-isolated Recent Fabrics (no more cross-account data)
+- Auto-select first option for TWC templates
+- Clearer pricing labels (Making/Labor vs Fabric)
+- Update notification banner for new deployments
+
+### New Features
+- **Update Notification Banner**: Friendly banner appears when a new version is deployed, recommending users to save work and refresh
+- **Template Auto-Selection Setting**: TWC templates now auto-populate required dropdowns to reduce manual input
+
+### Improvements
+- Recent Materials now isolated per account (localStorage keyed by user ID)
+- "Manufacturing Cost" renamed to "Making/Labor" for clarity
+- TWC Library collections properly linked (1,011 of 1,025 items)
+- Duplicate collections cleaned up with unique constraint added
+
+### Security
+- Multi-tenant isolation enhanced for localStorage data
 
 ---
 
-## Files to Create/Modify
+## SQL Migration
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/version/UpdateBanner.tsx` | **Create** | The notification banner component |
-| `src/App.tsx` | **Modify** | Add banner after AuthProvider (line ~177) |
-| `src/constants/version.ts` | Already updated | Version is 2.4.1 |
+```sql
+-- Mark current version as not current
+UPDATE app_versions SET is_current = false WHERE is_current = true;
 
----
-
-## Component Code
-
-**UpdateBanner.tsx** - Simple, clean banner:
-
-```tsx
-import { useState, useEffect } from "react";
-import { X, Sparkles, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { APP_VERSION } from "@/constants/version";
-
-const LAST_SEEN_VERSION_KEY = "interioapp_last_seen_version";
-
-export const UpdateBanner = () => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const lastSeenVersion = localStorage.getItem(LAST_SEEN_VERSION_KEY);
-    
-    // Show banner if no version stored or version is different
-    if (!lastSeenVersion || lastSeenVersion !== APP_VERSION) {
-      setIsVisible(true);
-    }
-  }, []);
-
-  const handleDismiss = () => {
-    localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
-    setIsVisible(false);
-  };
-
-  const handleRefresh = () => {
-    localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
-    window.location.reload();
-  };
-
-  if (!isVisible) return null;
-
-  return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] animate-fade-in">
-      <div className="bg-gradient-to-r from-blue-500/10 via-primary/5 to-blue-500/10 
-                      border-b border-blue-200 dark:border-blue-800/50 
-                      px-4 py-2.5 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          {/* Message */}
-          <div className="flex items-center gap-2 text-sm">
-            <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="text-foreground">
-              <span className="font-medium">New update available</span>
-              <span className="text-muted-foreground ml-1">(v{APP_VERSION})</span>
-              <span className="hidden sm:inline text-muted-foreground"> • Save your work and refresh for the latest features</span>
-            </span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button 
-              size="sm" 
-              onClick={handleRefresh}
-              className="h-7 px-3 text-xs font-medium rounded-full"
-            >
-              <RefreshCw className="h-3 w-3 mr-1.5" />
-              Refresh Now
-            </Button>
-            <button
-              onClick={handleDismiss}
-              className="p-1 rounded-full text-muted-foreground hover:text-foreground 
-                         hover:bg-foreground/10 transition-colors"
-              aria-label="Dismiss"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+-- Insert v2.4.1
+INSERT INTO app_versions (
+  version,
+  version_number,
+  version_type,
+  release_date,
+  is_current,
+  is_published,
+  release_notes
+) VALUES (
+  'v2.4.1',
+  241,
+  'patch',
+  CURRENT_DATE,
+  true,
+  true,
+  '{
+    "summary": "Bug fixes and usability improvements for template options, library organization, and multi-account data isolation.",
+    "highlights": [
+      "Account-isolated Recent Fabrics - no more cross-account data leakage",
+      "Auto-select first option for TWC templates reduces manual input",
+      "Clearer pricing labels: Making/Labor vs Fabric Cost",
+      "Update notification banner for new deployments"
+    ],
+    "newFeatures": [
+      {
+        "title": "Update Notification Banner",
+        "description": "A friendly banner now appears when a new version is deployed, recommending users to save work and refresh their browser."
+      },
+      {
+        "title": "Template Auto-Selection",
+        "description": "TWC templates now auto-populate required option dropdowns, reducing manual selection and validation errors."
+      }
+    ],
+    "improvements": [
+      "Recent Materials list now isolated per account (no longer shared across logins on same browser)",
+      "Manufacturing Cost renamed to Making/Labor for clearer pricing breakdown",
+      "TWC Library collections properly linked (1,011 of 1,025 items organized)",
+      "Duplicate collection records cleaned up with database constraint added"
+    ],
+    "security": [
+      "Enhanced multi-tenant isolation for localStorage data"
+    ]
+  }'::jsonb
+);
 ```
 
 ---
 
-## App.tsx Integration
+## Files to Create
 
-Add the banner inside the BrowserRouter, right after NavObserver:
-
-```tsx
-// Line ~176 in App.tsx
-<BrowserRouter>
-  <NavObserver />
-  <UpdateBanner />  {/* ← Add here */}
-  <AuthProvider>
-```
-
-**Note**: Placed before AuthProvider so it shows even during login/logout.
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/xxx.sql` | Insert v2.4.1 release notes |
 
 ---
 
-## After Implementation
+## Result
 
-Once I implement this:
-1. The banner will automatically appear in your preview
-2. You'll see exactly how it looks
-3. You can click "Refresh Now" or dismiss it
-4. It will remember your choice via localStorage
-
----
-
-## Summary
-
-| Item | Status |
-|------|--------|
-| Version constant | ✅ Already 2.4.1 |
-| Banner component | 🔧 Will create |
-| App integration | 🔧 Will add import + component |
-| Immediate visibility | ✅ Will show in preview |
+After this migration, clicking the version badge (v2.4.1) will show the "What's New" dialog with all the fixes and improvements from this release.
 
