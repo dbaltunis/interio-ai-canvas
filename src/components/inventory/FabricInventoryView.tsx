@@ -132,7 +132,9 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
       item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
-      item.subcategory === activeCategory;
+      item.subcategory === activeCategory ||
+      // Group roman_fabric with curtain_fabric under "Curtain & Roman" tab
+      (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
 
     // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
     const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
