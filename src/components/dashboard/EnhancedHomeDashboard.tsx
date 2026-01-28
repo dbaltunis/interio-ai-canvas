@@ -180,7 +180,13 @@ const DashboardContent = () => {
 
       {/* Charts Row - PERMISSION-GATED (renders only if user has permission) */}
       {(canViewRevenue !== false || canViewJobs !== false) && (
-        <div className={`grid grid-cols-1 ${canViewRevenue !== false && canViewJobs !== false ? 'lg:grid-cols-2' : ''} gap-4`}>
+        <div className={`grid grid-cols-1 ${
+          canViewRevenue !== false && canViewJobs !== false 
+            ? 'lg:grid-cols-3' 
+            : canViewRevenue !== false || canViewJobs !== false 
+              ? 'lg:grid-cols-2' 
+              : ''
+        } gap-4`}>
           {canViewRevenue !== false && (
             <Suspense fallback={<WidgetSkeleton />}>
               <RevenueTrendChart />
@@ -189,6 +195,12 @@ const DashboardContent = () => {
           {canViewJobs !== false && (
             <Suspense fallback={<WidgetSkeleton />}>
               <JobsStatusChart />
+            </Suspense>
+          )}
+          {/* Rejections widget - same permission as Revenue */}
+          {canViewRevenue !== false && (
+            <Suspense fallback={<WidgetSkeleton />}>
+              <StatusReasonsWidget />
             </Suspense>
           )}
         </div>
@@ -235,8 +247,7 @@ const DashboardContent = () => {
                 return hasOnlineStore.data ? <OnlineStoreOrdersWidget /> : null;
               case "online-store-products":
                 return hasOnlineStore.data ? <OnlineStoreProductsWidget /> : null;
-              case "status-reasons":
-                return <StatusReasonsWidget />;
+              // status-reasons is now rendered directly in charts row with revenue permission
               default:
                 return null;
             }
