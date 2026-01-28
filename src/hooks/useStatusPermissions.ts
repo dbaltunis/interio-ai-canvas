@@ -1,7 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Updated to use status ID instead of status name
+/**
+ * Hook to check status permissions for a project
+ * 
+ * Simplified status system:
+ * - editable: Full edit access
+ * - locked: No editing allowed (includes legacy view_only, completed)
+ * - requires_reason: Editing allowed, but status changes need reason
+ */
 export const useStatusPermissions = (statusId: string | null | undefined) => {
   return useQuery({
     queryKey: ["status_permissions", statusId],
@@ -10,7 +17,6 @@ export const useStatusPermissions = (statusId: string | null | undefined) => {
         return {
           canEdit: true,
           isLocked: false,
-          isViewOnly: false,
           requiresReason: false,
           statusAction: 'editable' as const,
           statusInfo: null
@@ -28,25 +34,24 @@ export const useStatusPermissions = (statusId: string | null | undefined) => {
         return {
           canEdit: true,
           isLocked: false,
-          isViewOnly: false,
           requiresReason: false,
           statusAction: 'editable' as const,
           statusInfo: null
         };
       }
 
-      // Only 'editable' allows full editing
-      const canEdit = statusInfo.action === 'editable';
-      const isLocked = statusInfo.action === 'locked' || statusInfo.action === 'completed';
-      const isViewOnly = statusInfo.action === 'view_only';
-      const requiresReason = statusInfo.action === 'requires_reason';
+      // Simplified logic: only 'editable' allows editing
+      // 'locked', 'view_only', 'completed' all treated as locked
+      const action = statusInfo.action || 'editable';
+      const canEdit = action === 'editable';
+      const isLocked = action === 'locked' || action === 'view_only' || action === 'completed';
+      const requiresReason = action === 'requires_reason';
 
       return {
         canEdit,
         isLocked,
-        isViewOnly,
         requiresReason,
-        statusAction: statusInfo.action || 'editable',
+        statusAction: action,
         statusInfo
       };
     },

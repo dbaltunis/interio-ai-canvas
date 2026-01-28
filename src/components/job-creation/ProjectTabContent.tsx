@@ -40,19 +40,19 @@ const ProjectTabContentInner = ({
   const client = clients?.find(c => c.id === project.client_id);
   
   // Use project status context for locking - this now works because we're inside the provider
-  const { isLocked, isViewOnly, canEdit: statusCanEdit, isLoading: statusLoading } = useProjectStatus();
+  const { isLocked, canEdit: statusCanEdit, isLoading: statusLoading } = useProjectStatus();
   
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   
   // Combine permission and status checks
-  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || isViewOnly || statusLoading;
+  const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || statusLoading;
 
   const handleClientSelect = async (clientId: string) => {
     if (isReadOnly) {
       toast({
         title: "Permission Denied",
-        description: isLocked || isViewOnly 
+        description: isLocked
           ? "This project's status prevents editing."
           : "You don't have permission to edit this job.",
         variant: "destructive",
@@ -92,7 +92,7 @@ const ProjectTabContentInner = ({
     if (isReadOnly) {
       toast({
         title: "Permission Denied",
-        description: isLocked || isViewOnly 
+        description: isLocked 
           ? "This project's status prevents editing."
           : "You don't have permission to edit this job.",
         variant: "destructive",
@@ -137,7 +137,7 @@ const ProjectTabContentInner = ({
       <Alert className="mb-4">
         <Lock className="h-4 w-4" />
         <AlertDescription>
-          <strong>View Only:</strong> {isLocked || isViewOnly 
+          <strong>View Only:</strong> {isLocked 
             ? "This project's status prevents editing." 
             : "You don't have permission to edit this job."} Contact your administrator if you need access.
         </AlertDescription>

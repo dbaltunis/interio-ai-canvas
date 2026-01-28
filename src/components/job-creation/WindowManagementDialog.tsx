@@ -117,7 +117,7 @@ export const WindowManagementDialog = ({
 
   // Check status permissions for read-only mode
   const { data: statusPermissions } = useStatusPermissions(projectData?.status_id);
-  const isStatusLocked = statusPermissions?.isLocked || statusPermissions?.isViewOnly || false;
+  const isStatusLocked = statusPermissions?.isLocked || false;
 
   // Fetch window type to get visual_key for dynamic display
   const {
@@ -323,6 +323,12 @@ export const WindowManagementDialog = ({
   // Dialog close handler - check for unsaved changes
   const handleDialogClose = async (open: boolean) => {
     if (!open) {
+      // If in read-only mode, skip unsaved changes check and close directly
+      if (isStatusLocked) {
+        onClose();
+        return;
+      }
+      
       // Check if there are unsaved changes
       if (worksheetRef.current?.hasUnsavedChanges()) {
         setShowUnsavedDialog(true);

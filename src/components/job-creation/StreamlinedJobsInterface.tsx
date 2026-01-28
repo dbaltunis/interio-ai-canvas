@@ -37,7 +37,7 @@ export const StreamlinedJobsInterface = ({
   
   // Check status permissions for read-only mode
   const { data: statusPermissions } = useStatusPermissions(project?.status_id);
-  const isStatusLocked = statusPermissions?.isLocked || statusPermissions?.isViewOnly || false;
+  const isStatusLocked = statusPermissions?.isLocked || false;
   
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);

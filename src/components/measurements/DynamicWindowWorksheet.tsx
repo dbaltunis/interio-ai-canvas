@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Package, Calculator, Save } from "lucide-react";
+import { Ruler, Package, Calculator, Save, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { saveQueueService } from "@/services/saveQueueService";
@@ -3372,6 +3372,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   })()}
                   
                 <Button onClick={async () => {
+                  if (readOnly) return; // Safety check
+                  
                   setIsSaving(true);
                   
                   try {
@@ -3407,20 +3409,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     setIsSaving(false);
                   }
                 }} disabled={
-                  isSaving || (
+                  readOnly || isSaving || (
                     // For wallpaper, check wall_width and wall_height
                     treatmentCategory === 'wallpaper' 
                       ? (!measurements.wall_width || !measurements.wall_height)
                       : (!measurements.rail_width || !measurements.drop)
                   )
                 } className={`w-full ${
-                  hasUnsavedChanges 
+                  readOnly
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : hasUnsavedChanges 
                     ? 'bg-red-100 hover:bg-red-200 text-red-900 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-100 border border-red-300 dark:border-red-800' 
                     : lastSaveTime && (Date.now() - lastSaveTime < 3000)
                     ? 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800'
                     : ''
                 }`}>
-                    {isSaving ? (
+                    {readOnly ? (
+                      <>
+                        <Lock className="h-4 w-4 mr-2" />
+                        <span>View Only</span>
+                      </>
+                    ) : isSaving ? (
                       <>
                         <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-foreground" />
                         Saving...
