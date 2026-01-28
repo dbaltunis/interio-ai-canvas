@@ -1,89 +1,124 @@
 
-# Fix TWC Products Not Appearing in Library Page
+# Fix TWC Library Organization: Collection Linking for All Items
 
-## Root Cause Analysis
+## Problem Summary
 
-After tracing through the code, I found **multiple filtering mismatches** between what TWC imports create and what the Library page displays:
+The Library shows collections (DESIGNER, MOTORISED, RESIDENTIAL) with only 3 items total, but **896 fabric items have no collection linkage**. Users see fabrics in the measurement popup but not organized in the Library.
 
-### Issue 1: Missing Subcategory Tabs in Library
+### Database Evidence
 
-**FabricInventoryView.tsx** has these tabs:
-```typescript
-const FABRIC_CATEGORIES = [
-  { key: "all", label: "All Fabrics" },
-  { key: "curtain_fabric", label: "Curtain & Roman" },
-  { key: "lining_fabric", label: "Linings" },
-  { key: "sheer_fabric", label: "Sheers" },
-  { key: "awning_fabric", label: "Awnings" },
-  { key: "upholstery_fabric", label: "Upholstery" },
-];
-```
+| Type | With Collection | Without Collection | Total |
+|------|-----------------|-------------------|-------|
+| Parent Products | 3 | 126 | 129 |
+| Child Materials (Fabrics) | **0** | **896** | 896 |
 
-**But TWC imports create:**
-- `roman_fabric` → NOT matched by any tab except "All Fabrics"
-- The "Curtain & Roman" tab filters by `subcategory === 'curtain_fabric'` which excludes `roman_fabric`
+### Root Causes
 
-### Issue 2: Inconsistent Category Mapping
+1. **Collection Name Extraction Fails**: The regex pattern expects "Product Type - COLLECTION" format, but most TWC products have names like "Balmoral Light Filter", "Aventus 5%", "Sanctuary Light Filter" - no dash separator.
 
-TWC sync currently maps:
-- Roman products → `category: 'fabric', subcategory: 'roman_fabric'`
-- But romans should use `curtain_fabric` since they share the same fabrics
+2. **Child Materials Missing Collection**: The edge function sets `collection_id` for parent products but **NOT** for child fabrics (line 1013-1044 is missing `collection_id`).
 
-### Issue 3: Cellular Blinds Wrong Category
-
-TWC creates cellular with `category: 'material', subcategory: 'cellular'`
-But `cellular_blinds` in `TREATMENT_SUBCATEGORIES` expects `category: 'fabric'`
+3. **Product Name IS the Collection**: TWC product names like "Balmoral Light Filter" ARE the collection/range names and should be used directly as collection names.
 
 ---
 
-## Solution Overview
+## Solution
 
-### Part 1: Update Library Tab Filters (FabricInventoryView)
+### Part 1: Fix Collection Name Extraction (Edge Function)
 
-Modify filtering logic to accept both `curtain_fabric` AND `roman_fabric` under the same "Curtain & Roman" tab:
-
-```typescript
-const matchesCategory = activeCategory === "all" || 
-  item.subcategory === activeCategory ||
-  // Group roman_fabric with curtain_fabric
-  (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
-```
-
-### Part 2: Fix TWC Category Mapping (Edge Function)
-
-Update `twc-sync-products/index.ts` to align with Library expectations:
-
-| Product Type | Category | Subcategory (Current → Fixed) |
-|-------------|----------|-------------------------------|
-| Roman | fabric | `roman_fabric` → `curtain_fabric` |
-| Cellular | material | `cellular` → Keep but add to Material tabs |
-
-### Part 3: Add Missing Subcategory Tabs
-
-**MaterialInventoryView.tsx** - Add `cellular` to `MATERIAL_CATEGORIES` since TWC creates them:
+Update `extractCollectionName()` to handle TWC naming patterns better:
 
 ```typescript
-const MATERIAL_CATEGORIES = [
-  { key: "all", label: "All Materials" },
-  { key: "roller_fabric", label: "Roller Blinds" },
-  { key: "venetian_slats", label: "Venetian" },
-  { key: "vertical_slats", label: "Vertical" },
-  { key: "cellular", label: "Cellular" }, // Already exists ✅
-  { key: "panel_glide_fabric", label: "Panel Glide" },
-  { key: "shutter_material", label: "Shutters" },
-];
+const extractCollectionName = (productName: string | undefined | null): string | null => {
+  if (!productName || typeof productName !== 'string') return null;
+  
+  // Pattern 1: "Product Type - COLLECTION NAME" 
+  const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9\s]+)/i);
+  if (dashPattern && dashPattern[1]) {
+    return dashPattern[1].toUpperCase().trim();
+  }
+  
+  // Pattern 2: "(COLLECTION)" parenthetical
+  const parenPattern = productName.match(/\(([A-Z][A-Z0-9]+)\)/i);
+  if (parenPattern && parenPattern[1]) {
+    return parenPattern[1].toUpperCase();
+  }
+  
+  // Pattern 3 (NEW): Use product name directly as collection
+  // "Balmoral Light Filter" → "BALMORAL LIGHT FILTER"
+  // Skip generic names like "Verticals", "Honeycells" 
+  const genericNames = ['verticals', 'honeycells', 'new recloth', 'zip screen'];
+  if (!genericNames.includes(productName.toLowerCase().trim())) {
+    return productName.toUpperCase().trim();
+  }
+  
+  return null;
+};
 ```
 
-This is already correct in the codebase!
+### Part 2: Inherit Collection in Child Materials (Edge Function)
 
-### Part 4: Backfill Existing Data
+Add `collection_id` to child material insert (around line 1022):
 
-Run SQL migration to unify roman_fabric → curtain_fabric for consistency:
+```typescript
+const { error: materialError } = await supabaseClient
+  .from('enhanced_inventory_items')
+  .insert({
+    user_id: user.id,
+    name: `${parentItem.name} - ${material.material}`,
+    // ... existing fields ...
+    supplier: 'TWC',
+    vendor_id: twcVendorId,
+    collection_id: parentItem.collection_id,  // ✅ ADD THIS - Inherit from parent
+    // ... rest of fields ...
+  });
+```
+
+### Part 3: Backfill Existing Data (SQL Migration)
+
+Run migration to create collections from product names and link all orphaned fabrics:
 
 ```sql
-UPDATE enhanced_inventory_items 
-SET subcategory = 'curtain_fabric' 
-WHERE subcategory = 'roman_fabric' AND supplier = 'TWC';
+-- Step 1: Create collections from parent product names
+WITH parent_products AS (
+  SELECT DISTINCT 
+    user_id,
+    name as collection_name,
+    vendor_id
+  FROM enhanced_inventory_items
+  WHERE supplier = 'TWC' 
+    AND metadata->>'parent_product_id' IS NULL
+    AND collection_id IS NULL
+    AND name NOT IN ('Verticals', 'Honeycells', 'New Recloth', 'Zip Screen')
+)
+INSERT INTO collections (user_id, name, vendor_id, description, season, active)
+SELECT 
+  user_id,
+  collection_name,
+  vendor_id,
+  'TWC Collection: ' || collection_name,
+  'All Season',
+  true
+FROM parent_products
+ON CONFLICT (user_id, name) DO NOTHING;
+
+-- Step 2: Link parent products to their collections
+UPDATE enhanced_inventory_items eii
+SET collection_id = c.id
+FROM collections c
+WHERE eii.supplier = 'TWC'
+  AND eii.metadata->>'parent_product_id' IS NULL
+  AND eii.collection_id IS NULL
+  AND eii.user_id = c.user_id
+  AND eii.name = c.name;
+
+-- Step 3: Link child materials to parent's collection
+UPDATE enhanced_inventory_items child
+SET collection_id = parent.collection_id
+FROM enhanced_inventory_items parent
+WHERE child.metadata->>'parent_product_id' = parent.id::text
+  AND child.collection_id IS NULL
+  AND parent.collection_id IS NOT NULL;
 ```
 
 ---
@@ -92,78 +127,63 @@ WHERE subcategory = 'roman_fabric' AND supplier = 'TWC';
 
 | File | Change |
 |------|--------|
-| `src/components/inventory/FabricInventoryView.tsx` | Add `roman_fabric` grouping to "Curtain & Roman" tab filter |
-| `supabase/functions/twc-sync-products/index.ts` | Map roman → `curtain_fabric` instead of `roman_fabric` |
-| Database | Backfill 126 roman_fabric items to curtain_fabric |
+| `supabase/functions/twc-sync-products/index.ts` | 1. Update `extractCollectionName()` to use product name as collection<br>2. Add `collection_id: parentItem.collection_id` to child material insert |
+| SQL Migration | Create collections + backfill all 1,000+ items |
 
 ---
 
-## Technical Implementation Details
+## Expected Outcome
 
-### FabricInventoryView.tsx Changes
+| Before | After |
+|--------|-------|
+| 3 collections (DESIGNER, MOTORISED, RESIDENTIAL) | 100+ collections (Balmoral, Aventus, Sanctuary, etc.) |
+| 3 items with collection links | 1,000+ items with collection links |
+| Fabrics not filtered by collection | All fabrics organized under their collection |
 
-Update the filtering logic around line 134:
+---
 
+## Technical Details
+
+### Current extractCollectionName() - Only matches "X - Y" pattern
 ```typescript
-const matchesCategory = activeCategory === "all" || 
-  item.subcategory === activeCategory ||
-  // Roman fabrics display under Curtain & Roman tab
-  (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
+const dashPattern = productName.match(/^[^-]+\s*-\s*([A-Z][A-Z0-9]+)/i);
+```
+Only "Curtain Tracks - Motorised" matches this.
+
+### Fixed extractCollectionName() - Uses product name as collection
+```typescript
+// Fallback: Use product name directly as collection name
+// "Balmoral Light Filter" → "BALMORAL LIGHT FILTER"
+return productName.toUpperCase().trim();
 ```
 
-### TWC Sync Edge Function Changes
-
-In `mapCategoryForMaterial()` function (around line 373):
-
+### Current child material insert (missing collection_id)
 ```typescript
-// CRITICAL: Roman fabrics = curtain_fabric (same fabrics, show in same Library section)
-if (parentDesc.includes('roman')) {
-  return { category: 'fabric', subcategory: 'curtain_fabric' }; // Changed from 'roman_fabric'
-}
+.insert({
+  user_id: user.id,
+  name: `${parentItem.name} - ${material.material}`,
+  supplier: 'TWC',
+  vendor_id: twcVendorId,
+  // ❌ collection_id NOT set
+})
 ```
 
-And in `mapCategory()` function (around line 270):
-
+### Fixed child material insert
 ```typescript
-// Roman = FABRIC with curtain_fabric (sewn products, shares fabrics with curtains)
-if (lowerDesc.includes('roman')) {
-  return { category: 'fabric', subcategory: 'curtain_fabric' }; // Changed from 'roman_fabric'
-}
-```
-
-### SQL Migration for Backfill
-
-```sql
--- Unify roman_fabric to curtain_fabric for Library display consistency
-UPDATE enhanced_inventory_items 
-SET subcategory = 'curtain_fabric',
-    updated_at = NOW()
-WHERE subcategory = 'roman_fabric';
+.insert({
+  user_id: user.id,
+  name: `${parentItem.name} - ${material.material}`,
+  supplier: 'TWC',
+  vendor_id: twcVendorId,
+  collection_id: parentItem.collection_id,  // ✅ Inherit from parent
+})
 ```
 
 ---
 
-## Expected Outcome After Implementation
+## Impact
 
-| Library Section | Before | After |
-|----------------|--------|-------|
-| **Fabrics Tab** | | |
-| All Fabrics | 507 items | 507 items |
-| Curtain & Roman | 289 items | 415 items (+126 roman) |
-| Awnings | 92 items | 92 items |
-| **Materials Tab** | | |
-| All Materials | 384 items | 384 items |
-| Roller Blinds | 228 items | 228 items |
-| Panel Glide | 114 items | 114 items |
-| Cellular | 4 items | 4 items |
-| **Hardware Tab** | | |
-| Tracks | 9 items | 9 items |
-
----
-
-## Why This Fixes the Global SaaS Issue
-
-1. **Edge Function Fix**: Future TWC imports across ALL accounts will use consistent subcategories
-2. **Backfill Migration**: Existing data across ALL accounts gets unified
-3. **Library Filter Fix**: Even if some items have `roman_fabric`, they'll display correctly
-4. **No CSV Import Breakage**: The changes only affect TWC mapping logic, not general import
+- **All existing accounts**: Backfill migration will organize 1,000+ items into collections
+- **All future imports**: Edge function fix ensures proper collection linking
+- **Library UX**: Users can browse by Brand → Collection → Fabrics naturally
+- **No CSV Import breakage**: Changes only affect TWC sync logic
