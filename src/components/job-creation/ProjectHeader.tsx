@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus, FileText, Mail, Printer, Package } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus, FileText, Mail, Printer, Package, Pencil, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
@@ -85,6 +85,49 @@ export const ProjectHeader = ({
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
   const [showStatusActionDialog, setShowStatusActionDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  
+  // Inline name editing state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(projectName);
+  const [isSavingName, setIsSavingName] = useState(false);
+  
+  // Keep editedName in sync when projectName changes
+  useEffect(() => {
+    setEditedName(projectName);
+  }, [projectName]);
+
+  const handleSaveName = async () => {
+    if (!editedName.trim() || editedName === projectName) {
+      setIsEditingName(false);
+      setEditedName(projectName);
+      return;
+    }
+    
+    setIsSavingName(true);
+    try {
+      await onProjectUpdate?.({ name: editedName.trim() });
+      setIsEditingName(false);
+      toast({ 
+        title: "Success", 
+        description: "Project name updated",
+        importance: 'important'
+      });
+    } catch (error) {
+      setEditedName(projectName);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update project name", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(projectName);
+    setIsEditingName(false);
+  };
   
   const actualProjectId = (typeof projectId === 'object' && projectId && 'project_id' in projectId) 
     ? projectId.project_id 
@@ -329,7 +372,53 @@ export const ProjectHeader = ({
           </Button>
           <div className="h-6 w-px bg-border" />
           <div className="flex flex-col">
-            <h1 className="text-xl font-semibold">{projectName}</h1>
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="h-8 w-64 text-lg font-semibold"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                  autoFocus
+                  disabled={isSavingName}
+                />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={handleSaveName}
+                  disabled={isSavingName}
+                  className="h-8 w-8"
+                >
+                  <Check className="h-4 w-4 text-green-600" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={handleCancelEdit}
+                  disabled={isSavingName}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-semibold">{projectName}</h1>
+                {canEditJob && currentStatusInfo?.action !== 'locked' && (
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => setIsEditingName(true)}
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="flex items-center space-x-4 mt-1">
               {projectNumber && (
                 <span className="text-sm text-muted-foreground">#{projectNumber}</span>
