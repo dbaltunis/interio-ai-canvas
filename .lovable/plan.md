@@ -1,120 +1,58 @@
 
 
-# Fix: Admin Panel Cannot Update Account Type or Features
+# Fix: System Owner Cannot Create Trial Subscriptions
 
-## Problem Identified
+## Problem
 
-The Admin Panel (`/admin/accounts`) cannot update account types or toggle unlimited users because of a **missing RLS policy**.
+The `user_subscriptions` table is missing an **INSERT policy** for System Owners.
 
-### Root Cause
+### Current RLS Policies
 
-The `user_profiles` table has inconsistent RLS policies:
+| Policy | Command | Allows System Owner? |
+|--------|---------|---------------------|
+| `System owners can view all subscriptions` | SELECT | Yes |
+| `System owners can update all subscriptions` | UPDATE | Yes |
+| `Users can insert their own subscription` | INSERT | **No** (only `auth.uid() = user_id`) |
 
-| Operation | Policy | System Owner Access |
-|-----------|--------|---------------------|
-| **SELECT** | `get_effective_account_owner()` only | **NO bypass** |
-| **UPDATE** | `get_effective_account_owner() OR is_admin()` | Has bypass |
-
-When a System Owner tries to update another account's profile:
-1. The UPDATE query runs with RLS
-2. RLS first evaluates SELECT permissions (to identify which rows to update)
-3. SELECT policy blocks access to other accounts' profiles
-4. Update silently affects 0 rows
-
-### Why Feature Flags Work (Sometimes)
-
-The `account_feature_flags` table has proper System Owner policies:
-```sql
--- This policy exists and works:
-"System owners can manage all feature flags" -- cmd: ALL
-```
-
-But it relies on knowing the `user_id` upfront (passed from the edge function data), so it may work when the data is cached but fail on fresh queries.
+When you click "Create Trial Subscription" for InterioApp DEMO:
+1. The mutation tries to INSERT a row with `user_id = [DEMO user's ID]`
+2. RLS checks: `auth.uid() = user_id` → Your ID does not equal DEMO's ID
+3. Insert is blocked with error code `42501`
 
 ---
 
 ## Solution
 
-Add a System Owner bypass to the `user_profiles` SELECT policy OR add a dedicated System Owner SELECT policy.
+Add a System Owner INSERT policy to `user_subscriptions`.
 
-### Option 1: Add Dedicated Policy (Recommended)
-
-Create a new SELECT policy specifically for System Owner access:
+### Migration SQL
 
 ```sql
--- Add System Owner global SELECT access to user_profiles
-CREATE POLICY "System owners can view all profiles"
-ON public.user_profiles
-FOR SELECT
+-- Add System Owner INSERT policy to user_subscriptions
+-- This allows admins to create subscriptions for any account
+
+CREATE POLICY "System owners can insert subscriptions"
+ON public.user_subscriptions
+FOR INSERT
 TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.user_profiles
-    WHERE user_profiles.user_id = auth.uid()
-    AND user_profiles.role = 'System Owner'
-  )
+WITH CHECK (
+  public.is_system_owner(auth.uid())
 );
 ```
 
-### Why This Pattern?
-
-This matches the existing pattern used for other admin tables:
-- `account_feature_flags` - has `System owners can manage all feature flags`
-- `user_subscriptions` - has `System owners can view all subscriptions`
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/[timestamp]_add_system_owner_select_policy.sql` | Add missing RLS policy |
-
----
-
-## Migration SQL
-
-```sql
--- Add System Owner SELECT policy to user_profiles
--- This allows the admin panel to view and update any account
-
-CREATE POLICY "System owners can view all profiles"
-ON public.user_profiles
-FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.user_profiles up
-    WHERE up.user_id = auth.uid()
-    AND up.role = 'System Owner'
-  )
-);
-
--- Note: The UPDATE policy already has is_admin() bypass, so no changes needed there
-```
+This uses the existing `is_system_owner()` function we created earlier (which is `SECURITY DEFINER` to avoid recursion).
 
 ---
 
 ## Technical Details
 
-### Current State
-
-```text
-user_profiles RLS:
-  SELECT: get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
-  UPDATE: (same as SELECT) OR is_admin()
-  INSERT: (same as SELECT)
-  DELETE: (same as SELECT)
-```
-
 ### After Fix
 
 ```text
-user_profiles RLS:
-  SELECT: (existing policy) OR (System Owner check)  <- NEW
-  UPDATE: (existing policy) OR is_admin()            <- Already has bypass
-  INSERT: (existing policy)                          <- May need bypass too
-  DELETE: (existing policy)                          <- May need bypass too
+user_subscriptions RLS:
+  SELECT: (own row) OR (same account) OR (System Owner)  <- Already works
+  INSERT: (own row) OR (System Owner)                    <- NEW
+  UPDATE: (own row) OR (System Owner)                    <- Already works
 ```
 
 ---
@@ -123,19 +61,8 @@ user_profiles RLS:
 
 After migration:
 1. Go to `/admin/accounts`
-2. Open any account dialog
-3. Change account type from dropdown
+2. Open InterioApp DEMO account
+3. Click "Create Trial Subscription"
 4. Verify success toast appears
-5. Toggle "Unlimited Seats" switch
-6. Verify feature flag saves correctly
-
----
-
-## Summary
-
-| Issue | Fix |
-|-------|-----|
-| Cannot change account type | Add System Owner SELECT policy |
-| Cannot toggle unlimited users | Same fix (relies on user_profiles SELECT) |
-| Silent failures | RLS will now allow SELECT, UPDATE will work |
+5. Subscription details should now display
 
