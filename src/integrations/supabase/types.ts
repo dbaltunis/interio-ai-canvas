@@ -10792,6 +10792,7 @@ export type Database = {
       is_bug_admin: { Args: never; Returns: boolean }
       is_dealer: { Args: { _user_id: string }; Returns: boolean }
       is_same_account: { Args: { target_user_id: string }; Returns: boolean }
+      is_system_owner: { Args: { _user_id: string }; Returns: boolean }
       is_valid_email: { Args: { email_address: string }; Returns: boolean }
       link_user_to_account: {
         Args: { child_user_id: string; parent_user_id?: string }
