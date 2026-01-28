@@ -1,68 +1,45 @@
 
 
-# Fix: System Owner Cannot Create Trial Subscriptions
+# Fix: Wrong Status Value ("trialing" instead of "trial")
 
-## Problem
+## The Problem (Simple)
 
-The `user_subscriptions` table is missing an **INSERT policy** for System Owners.
+The database only accepts these status values: `trial`, `active`, `canceled`, `past_due`, `unpaid`
 
-### Current RLS Policies
+The code was sending: `"trialing"` (wrong spelling)
 
-| Policy | Command | Allows System Owner? |
-|--------|---------|---------------------|
-| `System owners can view all subscriptions` | SELECT | Yes |
-| `System owners can update all subscriptions` | UPDATE | Yes |
-| `Users can insert their own subscription` | INSERT | **No** (only `auth.uid() = user_id`) |
+The database rejected it with error code `23514` (check constraint violation).
 
-When you click "Create Trial Subscription" for InterioApp DEMO:
-1. The mutation tries to INSERT a row with `user_id = [DEMO user's ID]`
-2. RLS checks: `auth.uid() = user_id` → Your ID does not equal DEMO's ID
-3. Insert is blocked with error code `42501`
+## The Fix
 
----
+Change ONE line in `src/hooks/useAdminAccounts.ts`:
 
-## Solution
+```typescript
+// Line 253 - BEFORE (wrong):
+status: "trialing",
 
-Add a System Owner INSERT policy to `user_subscriptions`.
-
-### Migration SQL
-
-```sql
--- Add System Owner INSERT policy to user_subscriptions
--- This allows admins to create subscriptions for any account
-
-CREATE POLICY "System owners can insert subscriptions"
-ON public.user_subscriptions
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  public.is_system_owner(auth.uid())
-);
+// Line 253 - AFTER (correct):
+status: "trial",
 ```
 
-This uses the existing `is_system_owner()` function we created earlier (which is `SECURITY DEFINER` to avoid recursion).
+## Why This Kept Failing
 
----
+Every time you clicked the button, it sent the wrong status value. The RLS changes I made earlier were for a different issue (viewing profiles). The actual insert error was this typo the entire time.
 
-## Technical Details
-
-### After Fix
-
-```text
-user_subscriptions RLS:
-  SELECT: (own row) OR (same account) OR (System Owner)  <- Already works
-  INSERT: (own row) OR (System Owner)                    <- NEW
-  UPDATE: (own row) OR (System Owner)                    <- Already works
+The network request showed the error clearly:
+```json
+{
+  "code": "23514",
+  "message": "new row for relation \"user_subscriptions\" violates check constraint \"user_subscriptions_status_check\""
+}
 ```
 
----
+## Summary
 
-## Verification Steps
-
-After migration:
-1. Go to `/admin/accounts`
-2. Open InterioApp DEMO account
-3. Click "Create Trial Subscription"
-4. Verify success toast appears
-5. Subscription details should now display
+| What | Detail |
+|------|--------|
+| File to change | `src/hooks/useAdminAccounts.ts` |
+| Line | 253 |
+| Wrong value | `"trialing"` |
+| Correct value | `"trial"` |
 
