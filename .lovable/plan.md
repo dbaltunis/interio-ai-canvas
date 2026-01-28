@@ -1,117 +1,84 @@
 
 # Fix Status Locking UX and Add Reason KPI Dashboard
 
-## Problem Summary
+## Overview
 
-Based on my investigation, I've identified three issues with the current status system:
+This plan addresses three issues with the current status system:
+1. Users see hard red error messages when trying to add items to locked projects
+2. The reason dialog doesn't appear for Rejected/Cancelled statuses (database misconfiguration)
+3. No dashboard widget showing rejection/cancellation reasons as KPI
 
-### Issue 1: Unfriendly Error Messages When Locked
-When a project is locked and user tries to add a window, they see a hard red "destructive" toast saying:
+## Current State Analysis
+
+**Database Configuration Issue Found:**
+The `job_statuses` table has incorrect `action` values:
+- Multiple "Rejected" and "Cancelled" statuses are set to `action: locked` 
+- Only 2 status entries correctly use `requires_reason`
+- "On Hold" is set to `editable` instead of `requires_reason`
+
+**UI Feedback Issue:**
+When a locked project blocks an action, the mutation hooks show red "destructive" toasts saying:
 ```
 Error: Cannot add window: Project is in "Rejected" status
 ```
+This looks like a system error rather than a helpful warning.
 
-This is technically correct but the UX is poor because:
-- It looks like something is broken (red = error)
-- The message appears AFTER the user clicks, wasting their action
-- The UI buttons should be disabled BEFORE user tries to click
+---
 
-**Root cause**: The mutation hooks (`useRooms.ts`, `useSurfaces.ts`) throw errors that get displayed as red toasts, but the UI buttons in `StreamlinedJobsInterface.tsx` are only partially checking status (they show lock icons but don't fully prevent all actions).
+## Solution Implementation
 
-### Issue 2: Reason Dialog Not Appearing
-The reason dialog should appear when changing to "Rejected" or "Cancelled" status, but it's NOT appearing.
+### Part 1: Improve Locked Project UX (User-Friendly Feedback)
 
-**Root cause from database**: The statuses are misconfigured:
-```sql
--- Current configuration (WRONG)
-Rejected (Project): action = 'locked' ❌
-Cancelled (Project): action = 'locked' ❌  
-On Hold: action = 'editable' ❌
+**Changes to `RoomsGrid.tsx`:**
+- Add tooltips to the "Add Another Room" button when disabled
+- Show informative message: "Project is locked. Change status to edit."
 
--- Should be:
-Rejected (Project): action = 'requires_reason' ✓
-Cancelled (Project): action = 'requires_reason' ✓
-On Hold: action = 'requires_reason' ✓
-```
+**Changes to `StreamlinedJobsInterface.tsx`:**
+- Wrap disabled buttons with tooltips explaining why they're disabled
+- Include the current status name in the tooltip
 
-The code in `JobStatusDropdown.tsx` is correct - it checks for `action === 'requires_reason'`, but the database has the wrong action type stored.
+**Changes to Mutation Hooks (`useRooms.ts`, `useSurfaces.ts`, `useTreatments.ts`):**
+- Change error toast variant from `destructive` (red) to `default` (amber/info)
+- Update error title from "Error" to "Project Locked"
+- Provide helpful description guiding user to change status first
 
-### Issue 3: Reason Not Displayed as KPI
-Currently, there is no dashboard widget showing:
-- Projects that were rejected/cancelled
-- The reasons given for each
-- Analytics on rejection reasons
-
-## Solution
-
-### Part 1: Better UX for Locked Projects
-
-**1.1 Disable buttons BEFORE user clicks (not after)**
-
-In `StreamlinedJobsInterface.tsx`, the buttons already show lock icons when `isStatusLocked=true`, but they can still be clicked. We need to fully disable them:
-
+Example toast change:
 ```typescript
-// Current (partially working)
-<Button onClick={handleAddRoom} disabled={isStatusLocked}>
-  {isStatusLocked ? <Lock /> : <Plus />}
-  Add Room
-</Button>
+// Before
+toast({
+  title: "Error",
+  description: error.message,
+  variant: "destructive"  // Red
+});
 
-// Enhanced (show tooltip explaining WHY disabled)
-<TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <span> {/* Wrapper needed for disabled button tooltip */}
-        <Button onClick={handleAddRoom} disabled={isStatusLocked}>
-          {isStatusLocked ? <Lock /> : <Plus />}
-          Add Room
-        </Button>
-      </span>
-    </TooltipTrigger>
-    {isStatusLocked && (
-      <TooltipContent>
-        <p>Project is locked because status is "{statusPermissions?.statusName}"</p>
-        <p className="text-xs text-muted-foreground">Change status to edit</p>
-      </TooltipContent>
-    )}
-  </Tooltip>
-</TooltipProvider>
+// After
+const isStatusBlock = error.message?.includes('Project is in');
+toast({
+  title: isStatusBlock ? "Project Locked" : "Error",
+  description: isStatusBlock 
+    ? "This project's status prevents editing. Change the status to make modifications."
+    : error.message,
+  variant: isStatusBlock ? "default" : "destructive"  // Amber for status blocks
+});
 ```
 
-**1.2 Show a friendly amber warning instead of red error**
+---
 
-Update mutation error handling to show amber "info" toast for status-related blocks:
+### Part 2: Fix Status Configuration (Enable Reason Dialog)
 
-```typescript
-// In useRooms.ts, useSurfaces.ts
-onError: (error) => {
-  const isStatusBlock = error.message?.includes('Project is in');
-  toast({
-    title: isStatusBlock ? "Project Locked" : "Error",
-    description: isStatusBlock 
-      ? "This project's status prevents editing. Change the status to make modifications."
-      : error.message,
-    variant: isStatusBlock ? "default" : "destructive", // Amber not red
-  });
-}
-```
-
-### Part 2: Fix Status Configuration
-
-**2.1 Update database statuses to use `requires_reason`**
-
+**Database Update Required:**
 Run SQL to fix the misconfigured statuses:
 
 ```sql
 -- Fix Rejected statuses to require reason
 UPDATE job_statuses 
 SET action = 'requires_reason' 
-WHERE name = 'Rejected' AND category = 'Project';
+WHERE name = 'Rejected';
 
 -- Fix Cancelled statuses to require reason
 UPDATE job_statuses 
 SET action = 'requires_reason' 
-WHERE name = 'Cancelled' AND category = 'Project';
+WHERE name = 'Cancelled';
 
 -- Fix On Hold to require reason
 UPDATE job_statuses 
@@ -119,124 +86,133 @@ SET action = 'requires_reason'
 WHERE name = 'On Hold';
 ```
 
-After this fix, when user selects "Rejected" from the dropdown:
-1. `JobStatusDropdown.tsx` sees `action === 'requires_reason'`
-2. Opens `StatusReasonDialog` popup
-3. User must enter reason before status changes
-4. Reason is logged to `status_change_history` table
+After this fix:
+1. User selects "Rejected" from dropdown
+2. `JobStatusDropdown.tsx` detects `action === 'requires_reason'`
+3. Opens `StatusReasonDialog` popup (already implemented)
+4. User enters reason (mandatory)
+5. Status changes and reason is logged to `status_change_history` table
 
-### Part 3: Add Reason KPI Dashboard Widget
+---
 
-**3.1 Create new widget: `StatusReasonsWidget.tsx`**
+### Part 3: Add Status Reasons KPI Dashboard Widget
 
-A dashboard widget showing:
-- Recent rejections/cancellations with reasons
-- Pie chart of rejection reasons (if there are patterns)
-- Timeline of status changes
+**New File: `src/hooks/useStatusReasonsKPI.ts`**
+Hook to fetch recent rejections/cancellations with reasons:
 
 ```typescript
-// src/components/dashboard/StatusReasonsWidget.tsx
-export const StatusReasonsWidget = () => {
-  const { data: recentChanges } = useQuery({
-    queryKey: ['recent-status-changes'],
+export const useStatusReasonsKPI = (limit: number = 10) => {
+  return useQuery({
+    queryKey: ['status-reasons-kpi', limit],
     queryFn: async () => {
       const { data } = await supabase
         .from('status_change_history')
         .select(`
-          id,
-          new_status_name,
-          reason,
-          user_name,
-          changed_at,
-          project:projects(name)
+          id, new_status_name, reason, user_name, changed_at,
+          project:projects(id, name)
         `)
         .in('new_status_name', ['Rejected', 'Cancelled', 'On Hold'])
+        .not('reason', 'is', null)
         .order('changed_at', { ascending: false })
-        .limit(10);
-      return data;
+        .limit(limit);
+      return data || [];
     }
   });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
-          Recent Rejections & Cancellations
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {recentChanges?.map(change => (
-          <div key={change.id} className="flex justify-between items-start py-2 border-b">
-            <div>
-              <p className="font-medium">{change.project?.name}</p>
-              <Badge variant="outline">{change.new_status_name}</Badge>
-              {change.reason && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  "{change.reason}"
-                </p>
-              )}
-            </div>
-            <div className="text-right text-sm text-muted-foreground">
-              <p>{change.user_name}</p>
-              <p>{formatDate(change.changed_at)}</p>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
 };
 ```
 
-**3.2 Add widget to dashboard widget list**
+**New File: `src/components/dashboard/StatusReasonsWidget.tsx`**
+Dashboard widget showing recent rejections with reasons:
 
-Register the new widget in the widget registry so admins can enable it.
+```text
++------------------------------------------+
+| ⚠ Recent Rejections & Cancellations     |
++------------------------------------------+
+| Smith Kitchen Renovation                  |
+| [Rejected] "Client budget constraints"    |
+| by John · Jan 28, 9:30 AM                |
++------------------------------------------+
+| Johnson Living Room                       |
+| [Cancelled] "Project scope changed"       |
+| by Jane · Jan 27, 2:00 PM                |
++------------------------------------------+
+```
 
-**3.3 Add permission check**
+**Update: `src/hooks/useDashboardWidgets.ts`**
+Register new widget in DEFAULT_WIDGETS array:
 
-Only show to users with `view_analytics` or `view_primary_kpis` permission.
+```typescript
+{
+  id: "status-reasons",
+  name: "Rejections & Cancellations",
+  description: "Recent project rejections and cancellation reasons",
+  enabled: true,
+  order: 14,
+  category: "analytics",
+  size: "medium",
+  requiredPermission: "view_primary_kpis"
+}
+```
+
+**Update: `src/components/dashboard/EnhancedHomeDashboard.tsx`**
+Add case for new widget in render switch:
+
+```typescript
+case "status-reasons":
+  return <StatusReasonsWidget />;
+```
+
+---
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useRooms.ts` | Change error toast from red to amber for status blocks |
-| `src/hooks/useSurfaces.ts` | Change error toast from red to amber for status blocks |
-| `src/hooks/useTreatments.ts` | Change error toast from red to amber for status blocks |
-| `src/components/job-creation/StreamlinedJobsInterface.tsx` | Add tooltips to locked buttons explaining why |
-| `src/components/job-creation/RoomsGrid.tsx` | Add tooltips to locked buttons |
-| Database migration | Update Rejected/Cancelled/On Hold to `requires_reason` |
+| `src/hooks/useRooms.ts` | Change status-block error toast from red to amber |
+| `src/hooks/useSurfaces.ts` | Change status-block error toast from red to amber |
+| `src/hooks/useTreatments.ts` | Change status-block error toast from red to amber |
+| `src/components/job-creation/RoomsGrid.tsx` | Add tooltip to disabled button |
+| `src/components/job-creation/StreamlinedJobsInterface.tsx` | Add tooltips to locked buttons |
+| `src/hooks/useDashboardWidgets.ts` | Add "status-reasons" widget definition |
+| `src/components/dashboard/EnhancedHomeDashboard.tsx` | Add StatusReasonsWidget to render switch |
 
 ## Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/components/dashboard/StatusReasonsWidget.tsx` | Dashboard KPI widget for rejection reasons |
-| `src/hooks/useStatusReasonsKPI.ts` | Hook to fetch status change analytics |
+| `src/hooks/useStatusReasonsKPI.ts` | Hook to fetch status change reasons |
+| `src/components/dashboard/StatusReasonsWidget.tsx` | Dashboard widget for rejection/cancellation KPI |
 
-## Expected Behavior After Fix
+## Database Changes
+
+| Table | Change |
+|-------|--------|
+| `job_statuses` | UPDATE action to 'requires_reason' for Rejected, Cancelled, On Hold |
+
+---
+
+## Expected Behavior After Implementation
 
 ### Locked Project UX
 1. User sees project in "Rejected" status
 2. Red banner at top: "Project Locked"
-3. All action buttons show lock icon and are disabled
+3. Add Room button is disabled with lock icon
 4. Hovering shows tooltip: "Project is locked. Change status to edit."
-5. NO red error toasts anymore
+5. If user somehow triggers action, shows amber info toast instead of red error
 
 ### Reason Dialog Flow
-1. User clicks status dropdown → selects "Rejected"
-2. Dialog appears: "Please provide a reason for rejecting this project"
+1. User clicks status dropdown and selects "Rejected"
+2. Dialog appears: "Reason Required - Please explain why this project is being rejected"
 3. User types: "Client budget constraints"
 4. Clicks "Confirm"
-5. Status changes AND reason is saved
+5. Status changes AND reason is saved to history
 6. Toast: "Status changed to Rejected with reason recorded"
 
-### Dashboard KPI
+### Dashboard KPI Widget
 1. Admin opens Dashboard
-2. Sees "Recent Rejections & Cancellations" widget
-3. Shows list:
-   - "Smith Kitchen Renovation" → Rejected
-     "Client budget constraints" - by John, Jan 28
-   - "Johnson Living Room" → Cancelled
-     "Project scope changed" - by Jane, Jan 27
+2. Sees "Rejections & Cancellations" widget
+3. Shows timeline of recent rejections with:
+   - Project name
+   - Status badge (Rejected/Cancelled/On Hold)
+   - Reason in quotes
+   - Who made the change and when
