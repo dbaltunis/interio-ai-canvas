@@ -3,9 +3,9 @@
  * Update these when releasing new versions
  */
 
-export const APP_VERSION = "2.4.0";
-export const APP_BUILD_DATE = "2026-01-26";
-export const APP_BUILD_TIMESTAMP = "2026-01-26T12:00:00Z";
+export const APP_VERSION = "2.4.1";
+export const APP_BUILD_DATE = "2026-01-28";
+export const APP_BUILD_TIMESTAMP = "2026-01-28T20:40:00Z";
 
 export const getFullVersion = () => {
   return `v${APP_VERSION}-${APP_BUILD_DATE.replace(/-/g, '')}`;
