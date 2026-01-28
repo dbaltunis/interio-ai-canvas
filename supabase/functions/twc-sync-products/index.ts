@@ -1017,6 +1017,7 @@ const handler = async (req: Request): Promise<Response> => {
                   category: materialCategoryMapping.category,
                   subcategory: materialCategoryMapping.subcategory,
                   supplier: 'TWC',
+                  vendor_id: twcVendorId,  // Critical for grid matching
                   active: true,
                   show_in_quote: true,
                   description: `Material: ${material.material} | Colors: ${colorTags.join(', ')}`,
