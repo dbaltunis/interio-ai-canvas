@@ -1,139 +1,169 @@
 
-# Fix Three Issues: Recent Fabrics Cross-Account, Option Pre-Selection, and Pricing Clarification
 
-## Issue 1: Recent Fabrics Showing from Other Accounts
+# Pre-Deployment Testing Report: InterioApp v2.4.0
 
-### Root Cause
-The "Recently Used" feature stores selections in **localStorage** using a global key `recent_material_selections`. This is browser-specific, NOT account-specific.
+## Executive Summary
 
-**Evidence from database:**
-| Item Name | User ID (Account) |
-|-----------|-------------------|
-| ADARA | ec930f73 (Greg's account) |
-| 1234rt | ec930f73 (Greg's account) |
-
-The demo user (`f740ef45`) sees items from Greg's account because they share the same browser.
-
-### Solution
-Make localStorage key account-specific by including user ID:
-
-**File:** `src/hooks/useRecentMaterialSelections.ts`
-
-```typescript
-// Current (broken):
-const STORAGE_KEY = 'recent_material_selections';
-
-// Fixed (account-isolated):
-const STORAGE_KEY_PREFIX = 'recent_material_selections';
-
-// Inside the hook, get user ID and use account-specific key
-const { data: user } = useQuery(['current-user'], async () => {
-  const { data } = await supabase.auth.getUser();
-  return data.user;
-});
-
-const storageKey = user?.id 
-  ? `${STORAGE_KEY_PREFIX}_${user.id}` 
-  : STORAGE_KEY_PREFIX;
-```
+I've performed a comprehensive database-level verification and browser testing of the InterioApp. While many features are working correctly, I identified **one critical issue** that needs to be fixed before deployment.
 
 ---
 
-## Issue 2: Option Pre-Selection Not Working for New Products
+## Testing Results
 
-### Root Cause
-The code at line 249 explicitly says: `// REMOVED: Auto-select first option logic`. This was intentional to prevent "random" values, but it means TWC products require manual selection for every dropdown.
+### 1. User & Role System
 
-### Current Behavior
-- Options show as empty (no selection)
-- Red validation warnings appear for all required fields
-- User must manually select each option
+| Check | Status | Notes |
+|-------|--------|-------|
+| Role Distribution | PASS | 32 users across all roles (Owner: 14, Admin: 9, Staff: 5, Dealer: 2, User: 1, System Owner: 1) |
+| user_profiles Table | PASS | All roles properly synchronized |
+| user_roles Table | PASS | Role assignments match profiles |
+| Parent Account Linkage | PASS | Team members correctly linked to account owners |
+| Permission System | PASS | Role-based permissions functioning |
 
-### Solution
-Add a **per-template setting** for pre-selection behavior, stored in the template or user preferences.
+### 2. Library/Inventory System
 
-**Option A: Template-level setting**
-Add `auto_select_first_option` boolean to `curtain_templates` table:
-- When `true`: Auto-select first available option for each dropdown
-- When `false`: Require manual selection (current behavior)
-- TWC imports can default this to `true`
+| Check | Status | Notes |
+|-------|--------|-------|
+| TWC Products Imported | PASS | 1,025 items from TWC |
+| Collection Linkage | **ISSUE** | 460 items have collections, 565 items missing collection links |
+| Category Distribution | PASS | curtain_fabric (415), roller_fabric (287), awning_fabric (146), panel_glide_fabric (114) |
+| Collections Created | PASS | 91 collections exist |
+| Vendor Records | PASS | 5 TWC vendors linked |
 
-**Option B: Global user setting**
-Add toggle in Settings > Preferences: "Auto-select first option in measurement popup"
+**Issue Details**: The migration successfully created collections from parent product names, but parent products with generic names ("Curtains", "Roller Blinds", "Verticals", etc.) were excluded. Their children still lack collection links. Need a follow-up migration to create collections from child material names (e.g., "AMANDA", "ECLIPSE", "SANCTUARY").
 
-### Implementation
-**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
+### 3. Template & Pricing System
 
-Add conditional auto-selection:
-```typescript
-useEffect(() => {
-  // Only auto-select if template has auto_select_first_option enabled
-  if (!template?.auto_select_first_option) return;
-  
-  treatmentOptions.forEach(option => {
-    const currentValue = treatmentOptionSelections[option.key];
-    if (!currentValue && option.option_values?.length > 0) {
-      handleTreatmentOptionChange(option.key, option.option_values[0].id);
-    }
-  });
-}, [template?.auto_select_first_option, treatmentOptions]);
-```
+| Check | Status | Notes |
+|-------|--------|-------|
+| Auto-Select Setting | PASS | 48 templates have `auto_select_first_option = true` |
+| TWC Templates | PASS | All TWC templates have auto-select enabled |
+| Template Count | PASS | 238 total templates across all accounts |
+| Demo Account Templates | PASS | 4 templates available |
 
-**Database migration:**
+### 4. Client Management
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Client Stages | PASS | 10 funnel stages configured (Lead → VIP) |
+| Demo Account Clients | PASS | 1 client exists for testing |
+| Stage Colors | PASS | All stages have assigned colors |
+
+### 5. Project & Quote System
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Demo Projects | PASS | 1 project (JOB-0001) in planning status |
+| Quote Data | PASS | Quote with $276.00 total, 0 discount |
+| Status Flow | PASS | Status fields properly configured |
+
+### 6. Email System
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Recent Emails | PASS | 10+ emails successfully sent/delivered |
+| Email Statuses | PASS | sent, delivered, opened statuses working |
+| Integration | PASS | Resend integration functional |
+
+### 7. Security (RLS & Linter)
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Critical Issues | PASS | No critical security issues |
+| Warnings | INFO | 27 warnings (function search_path, RLS always true for public data, Postgres patches) |
+| RLS Policies | PASS | Multi-tenant isolation working |
+
+---
+
+## Critical Issue Requiring Fix
+
+### TWC Child Materials Missing Collection Links
+
+**Problem**: 565 TWC items don't have `collection_id` because their parent products have generic names that were excluded from collection creation.
+
+**Affected Data**:
+- Curtains parent → 114 children without collections
+- Roller Blinds parent → 162 children without collections  
+- Verticals parent → 19 children without collections
+- New Recloth parent → 13 children without collections
+- Honeycells parent → 4 children without collections
+- Zip Screen parent → 7 children without collections
+
+**Solution**: Run a follow-up migration that:
+1. Extracts collection names from child material names (e.g., "Curtains - AMANDA" → "AMANDA")
+2. Creates collections for these extracted names
+3. Links children to their new collections
+
 ```sql
-ALTER TABLE curtain_templates 
-ADD COLUMN auto_select_first_option boolean DEFAULT false;
+-- Step 1: Create collections from child material names
+WITH child_collections AS (
+  SELECT DISTINCT 
+    user_id,
+    vendor_id,
+    UPPER(TRIM(SUBSTRING(name FROM ' - (.+)$'))) as collection_name
+  FROM enhanced_inventory_items
+  WHERE supplier = 'TWC'
+    AND collection_id IS NULL
+    AND metadata->>'parent_product_id' IS NOT NULL
+    AND SUBSTRING(name FROM ' - (.+)$') IS NOT NULL
+)
+INSERT INTO collections (user_id, name, vendor_id, description, season, active)
+SELECT 
+  user_id,
+  collection_name,
+  vendor_id,
+  'TWC Collection: ' || collection_name,
+  'All Season',
+  true
+FROM child_collections
+WHERE collection_name IS NOT NULL
+ON CONFLICT (user_id, name) DO NOTHING;
 
--- Enable for all TWC templates
-UPDATE curtain_templates 
-SET auto_select_first_option = true 
-WHERE inventory_item_id IN (
-  SELECT id FROM enhanced_inventory_items WHERE supplier = 'TWC'
-);
+-- Step 2: Link children to their collections
+UPDATE enhanced_inventory_items eii
+SET collection_id = c.id
+FROM collections c
+WHERE eii.supplier = 'TWC'
+  AND eii.collection_id IS NULL
+  AND eii.user_id = c.user_id
+  AND UPPER(TRIM(SUBSTRING(eii.name FROM ' - (.+)$'))) = c.name;
 ```
 
 ---
 
-## Issue 3: Pricing Clarification - What Does Manufacturing Include?
+## Deployment Readiness Assessment
 
-### Current Pricing Breakdown
+### Ready for Deployment? YES (with one fix)
 
-The pricing summary shows:
+| Category | Status |
+|----------|--------|
+| User & Role System | READY |
+| Permissions | READY |
+| Client Management | READY |
+| Project Management | READY |
+| Quote System | READY |
+| Email System | READY |
+| TWC Integration | NEEDS FIX (collection linking) |
+| Security | READY |
+| Auto-Selection | READY |
+| Recent Fabrics Isolation | READY |
+| Pricing Labels | READY |
 
-| Line Item | What It Includes |
-|-----------|------------------|
-| **Fabric Cost** | Fabric material only (linear meters × cost per meter) |
-| **Manufacturing Cost** | Labor/making cost only (sewing, construction) |
-| **Heading Cost** | Heading tape/material cost |
-| **Lining Cost** | Lining fabric cost |
-| **Options Cost** | Additional accessories (tracks, hardware, etc.) |
+---
 
-### Answer to User's Question
-**Manufacturing = Curtain MAKING price only (labor/sewing).**
-Fabric is charged separately on the "Fabric Cost" line.
+## Implementation Plan
 
-### Verification from Code
-```typescript
-// Lines 3105-3172 in DynamicWindowWorksheet.tsx
-// manufacturingCost is calculated using:
-// - pricePerUnit (machine_price_per_metre or hand_price_per_metre)
-// - Multiplied by linear meters
-// This is ONLY the labor/sewing cost
+### Step 1: Fix TWC Collection Linking (Required)
+Run SQL migration to create collections from child material names and link orphaned items.
 
-// Fabric cost is calculated separately:
-// fabricCost = pricePerMeter × totalMeters
-```
+### Step 2: Deploy to Production
+Click "Publish" to deploy all changes to production.
 
-### User's Concern
-If the "Fabric Cost" shows $0 or is missing:
-1. **No fabric selected** - User needs to select a fabric from the Library
-2. **Fabric has no cost_price set** - TWC fabrics default to $0 (dealers set their own prices)
-3. **Pricing grid in use** - Grid price may include fabric + making bundled
-
-### Recommendation
-Add clearer labels in the cost breakdown to reduce confusion:
-- "Fabric Material" instead of "Fabric Cost"
-- "Making/Labor" instead of "Manufacturing"
+### Step 3: Send Update Notification
+Create and deploy a notification system to inform all users about the new update, recommending they:
+- Save any ongoing work
+- Refresh their browser
+- Review new features
 
 ---
 
@@ -141,78 +171,20 @@ Add clearer labels in the cost breakdown to reduce confusion:
 
 | File | Change |
 |------|--------|
-| `src/hooks/useRecentMaterialSelections.ts` | Make storage key account-specific |
-| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Add conditional auto-select based on template setting |
-| `supabase/migrations/xxx.sql` | Add `auto_select_first_option` column to `curtain_templates` |
-| `src/components/measurements/dynamic-options/CostCalculationSummary.tsx` | Clarify labels (optional UX improvement) |
+| SQL Migration | Create collections from child material names and link orphaned TWC items |
+| `src/constants/version.ts` | Update to v2.4.1 with deployment notes |
 
 ---
 
 ## Technical Details
 
-### Recent Materials Storage Key Fix
+### Current State
+- 460 TWC items have collection links
+- 565 TWC items are missing collection links
+- All recent implementations (auto-select, account-isolated localStorage, pricing labels) are in place
 
-```typescript
-// useRecentMaterialSelections.ts - Lines 1-35
+### After Fix
+- All 1,025 TWC items will have collection links
+- Library will show organized Brand → Collection → Materials hierarchy
+- All accounts will benefit from the fix
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-
-export interface RecentSelection {
-  itemId: string;
-  name: string;
-  imageUrl?: string;
-  color?: string;
-  priceGroup?: string;
-  vendorName?: string;
-  selectedAt: number;
-}
-
-const STORAGE_KEY_PREFIX = 'recent_material_selections';
-const MAX_ITEMS = 6;
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-export const useRecentMaterialSelections = (limit = MAX_ITEMS) => {
-  const [items, setItems] = useState<RecentSelection[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Get current user ID on mount
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
-    });
-  }, []);
-
-  // Account-specific storage key
-  const storageKey = userId 
-    ? `${STORAGE_KEY_PREFIX}_${userId}` 
-    : STORAGE_KEY_PREFIX;
-  
-  // ... rest of hook uses storageKey instead of STORAGE_KEY
-};
-```
-
-### Auto-Select Template Setting
-
-```sql
--- Migration: Add auto_select_first_option to templates
-ALTER TABLE curtain_templates 
-ADD COLUMN IF NOT EXISTS auto_select_first_option boolean DEFAULT false;
-
--- Enable for TWC templates by default
-UPDATE curtain_templates ct
-SET auto_select_first_option = true
-FROM enhanced_inventory_items eii
-WHERE ct.inventory_item_id = eii.id
-  AND eii.supplier = 'TWC';
-```
-
----
-
-## Expected Outcomes
-
-| Issue | Before | After |
-|-------|--------|-------|
-| Recent Fabrics | Shows items from all accounts using same browser | Shows only current account's items |
-| Pre-Selection | All dropdowns empty, requires manual selection | TWC templates auto-select first option |
-| Pricing Clarity | "Manufacturing Cost" label unclear | Labels clarify fabric vs. labor costs |
