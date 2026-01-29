@@ -1,179 +1,184 @@
 
+# Client Search & Display Improvements for Job Page
 
-# Pause Notifications & Fix Performance Issues
+## Issues Identified
 
-## Summary
+### Issue 1: Missing Fields in Client Creation Form
+The quick client creation form in the job page is missing many fields that exist in the full client form:
+- Funnel Stage selector
+- Country selector  
+- Notes field
+- Tags input
+- Lead Intelligence section (Lead Source, Referral Source, Deal Value, Priority Level, Marketing Consent, Follow-up Date)
 
-Removing the recently added notification infrastructure and focusing on fixing the core performance problems that are causing the app to run slowly.
+### Issue 2: Search Requires Typing First
+Currently shows "Start typing to search for clients" with no client list visible until user types. Users want to browse available clients without typing.
 
----
+### Issue 3: Search Filtering Not Alphabetical
+The current filtering uses substring matching (`includes()`), so typing "e" returns any client with "e" anywhere in name/company/email. Results are not sorted alphabetically.
 
-## Part 1: Remove Notification System (Pause)
+### Issue 4: Minimal Client Info After Selection
+After selecting a client, only name and email are shown. Missing:
+- Client type badge (B2B/B2C)
+- Phone number
+- Address
+- Company name for B2B
+- Funnel stage
+- Tags
 
-### Files to Delete
-| File | Reason |
-|------|--------|
-| `src/pages/Notifications.tsx` | New notification page - not needed |
-| `src/components/notifications/UnifiedNotificationCenter.tsx` | Complex notification center |
-| `src/components/notifications/NotificationFilters.tsx` | New notification filters |
-| `src/components/notifications/NotificationItem.tsx` | New notification item |
-| `src/components/notifications/NotificationSettingsPanel.tsx` | Notification preferences |
-| `src/contexts/NotificationContext.tsx` | Real-time notification context |
-| `src/hooks/useUnifiedNotifications.ts` | New unified notifications hook |
-| `src/hooks/useNotificationPreferences.ts` | Preferences hook |
-| `supabase/functions/unified-notification-service/` | Edge function folder |
-
-### Files to Modify
-
-**`src/App.tsx`**
-- Remove the `/notifications` route
-- Remove the `Notifications` lazy import
-
-**`src/components/notifications/GeneralNotificationDropdown.tsx`**
-- Remove the "View all notifications" link to the notifications page
-
-**`supabase/config.toml`**
-- Remove the `unified-notification-service` edge function entry (if added)
-
----
-
-## Part 2: Performance Issues Identified
-
-### Issue 1: Duplicate Permission Queries (CRITICAL)
-
-**Problem**: The `user_permissions` table is queried **39+ times** on page load from different components, each with slightly different query keys.
-
-**Evidence from code search**:
-- `src/pages/Index.tsx` → `['explicit-user-permissions', user?.id]`
-- `src/components/layout/ResponsiveHeader.tsx` → `['explicit-user-permissions-nav', user?.id]`  
-- `src/components/calendar/CalendarView.tsx` → `['explicit-user-permissions-calendar-view', user?.id]`
-- ... and **36 more files** doing the same query
-
-**Impact**: Each component fetches the same `user_permissions` data independently, causing:
-- ~30-40 redundant API calls on Dashboard load
-- Increased latency as Supabase rate limits kick in
-- React re-renders as each query resolves
-
-**Fix**: Centralize permission fetching into a single shared hook with a unified query key.
-
-### Issue 2: Duplicate Team Presence Calls
-
-**Problem**: Network logs show `get_team_presence` called **3 times** simultaneously at 15:35:37.
-
-**Evidence**:
-- Line 32-46: First call
-- Line 48-62: Second call (duplicate)  
-- Line 64-75: Third call (duplicate)
-
-**Cause**: Multiple components calling `useFilteredTeamPresence()`:
-- `PresenceContext.tsx` (app-level)
-- `TeamMembersWidget.tsx` (dashboard)
-- `useDirectMessages.ts` (messaging)
-- `TeamPresenceCard.tsx` (if visible)
-
-**Impact**: 3-4x redundant API calls for the same data.
-
-**Fix**: Use PresenceContext data exclusively instead of calling the hook again.
-
-### Issue 3: Window Focus Refetches
-
-**Problem**: Console log shows `[JOBS] Window focus - invalidating queries instead of navigating` - this invalidates ALL job-related queries on every window focus.
-
-**Evidence**: `JobsFocusHandler.tsx` invalidates `quotes`, `projects`, `clients` on every focus event.
-
-**Impact**: Every tab switch triggers 3+ query refetches.
-
-**Fix**: Remove or debounce the focus handler, rely on React Query's built-in `refetchOnWindowFocus`.
-
-### Issue 4: Large Data Payloads
-
-**Problem**: Network shows clients query returning **full client objects** with 30+ fields each.
-
-**Evidence**: Response body shows full client records with notes, tags, metadata, etc.
-
-**Impact**: Large JSON payloads slow parsing and memory usage.
-
-**Fix**: Use `.select()` to only fetch needed columns for list views.
+### Issue 5: Client Not Locked When Project is Locked
+The "Change Client" button is not disabled when the project has a locked status.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Remove Notification Infrastructure
-- Delete 8 files (notification components, context, hooks)
-- Remove route from App.tsx
-- Remove edge function
-- Update GeneralNotificationDropdown to remove link
+### File 1: `src/components/job-creation/steps/ClientSearchStep.tsx`
 
-### Step 2: Centralize Permission Queries
-Create a single permission provider that all components share:
+**Changes:**
+
+1. **Add missing fields to newClientData and the create form:**
+   - Add `notes`, `country`, `funnel_stage`, `lead_source`, `referral_source`, `deal_value`, `priority_level`, `marketing_consent`, `follow_up_date`, `tags` fields
+   - Import and use `LeadSourceSelect` component
+   - Import `FUNNEL_STAGES`, `COUNTRIES` constants
+   - Add `useClientStages` hook for dynamic stages
+
+2. **Show recent clients by default (no typing required):**
+   - Show first 10 clients alphabetically when no search term entered
+   - Add "Recent Clients" section header
+
+3. **Fix alphabetical sorting:**
+   - Sort `filteredClients` alphabetically by name
+   - Use `startsWith` for primary matches, then `includes` for secondary
+   - Show matches that start with the search term first
+
+4. **Enhanced client card in search results:**
+   - Show client type badge (B2B/B2C)
+   - Show phone if available
+   - Show funnel stage badge
+   - Show address summary
+
+5. **Enhanced selected client display:**
+   - Show full address
+   - Show funnel stage with color badge
+   - Show phone and email with icons
+   - Show tags
+   - Show company info for B2B clients
+   - Show lead source/priority if set
+
+6. **Add isLocked prop support:**
+   - Accept `isLocked` prop to disable editing when project is locked
+   - Pass through to disable Edit and Change Client buttons
+
+### File 2: `src/components/jobs/tabs/ProjectDetailsTab.tsx`
+
+**Changes:**
+
+1. **Import and use `useProjectStatus` context:**
+   - Import `useProjectStatus` from `@/contexts/ProjectStatusContext`
+   - Get `isLocked` from the context
+   - Combine with existing `canEditJob` check
+
+2. **Disable client actions when locked:**
+   - Pass `isLocked` state to ClientSearchStep component
+   - Disable "Change Client" button when project is locked
+
+3. **Enhanced client info display:**
+   - Show client type badge
+   - Show full address (street, city, state, zip)
+   - Show funnel stage with colored badge
+   - Show tags as badges
+   - Show phone with icon
+   - Display B2B specific info (company name, contact person)
+
+---
+
+## Technical Details
+
+### Search Algorithm Improvement
 
 ```typescript
-// New: src/contexts/PermissionContext.tsx
-// Fetches user_permissions ONCE and provides via context
-// All 39 components use this instead of individual queries
+// Sort by relevance: startsWith matches first, then alphabetical
+const filteredClients = clients
+  ?.filter(client => 
+    client.name.toLowerCase().includes(term) ||
+    client.company_name?.toLowerCase().includes(term) ||
+    client.email?.toLowerCase().includes(term)
+  )
+  .sort((a, b) => {
+    const aName = a.name.toLowerCase();
+    const bName = b.name.toLowerCase();
+    const aStarts = aName.startsWith(term);
+    const bStarts = bName.startsWith(term);
+    
+    // Prioritize startsWith matches
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    
+    // Then alphabetical
+    return aName.localeCompare(bName);
+  }) || [];
 ```
 
-### Step 3: Fix Team Presence Duplication
-Modify components to use `useUserPresence()` from PresenceContext instead of calling `useFilteredTeamPresence()` directly.
+### Default Client List (No Search Term)
 
-### Step 4: Remove Aggressive Focus Handler
-Delete or neuter `JobsFocusHandler.tsx` - let React Query handle focus refetches with its built-in behavior.
-
-### Step 5: Optimize Query Selects
-Update list queries to only select needed columns:
 ```typescript
-// Before
-.select("*")
+// When no search term, show first 10 clients alphabetically
+const displayClients = searchTerm 
+  ? filteredClients 
+  : clients?.slice().sort((a, b) => 
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    ).slice(0, 10) || [];
+```
 
-// After  
-.select("id, name, email, status, created_at")
+### Lock Status Integration
+
+```typescript
+// In ProjectDetailsTab.tsx
+import { useProjectStatus } from "@/contexts/ProjectStatusContext";
+
+const { isLocked, isLoading: statusLoading } = useProjectStatus();
+
+// Combined read-only check
+const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || statusLoading;
+
+// Pass to ClientSearchStep
+<ClientSearchStep 
+  formData={{ client_id: formData.client_id }}
+  updateFormData={...}
+  isLocked={isReadOnly}
+/>
 ```
 
 ---
 
-## Expected Performance Improvement
+## New Fields for Client Creation Form
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Permission API calls | ~40 | 1 |
-| Team presence calls | 3-4 | 1 |
-| Focus refetch queries | 3+ | 0 (use staleTime) |
-| Payload size | Full objects | Minimal columns |
-| Estimated load time | Slow | 50-70% faster |
-
----
-
-## Files Summary
-
-### Delete (9 files)
-1. `src/pages/Notifications.tsx`
-2. `src/components/notifications/UnifiedNotificationCenter.tsx`
-3. `src/components/notifications/NotificationFilters.tsx`
-4. `src/components/notifications/NotificationItem.tsx`
-5. `src/components/notifications/NotificationSettingsPanel.tsx`
-6. `src/contexts/NotificationContext.tsx`
-7. `src/hooks/useUnifiedNotifications.ts`
-8. `src/hooks/useNotificationPreferences.ts`
-9. `supabase/functions/unified-notification-service/` (entire folder)
-
-### Create (1 file)
-1. `src/contexts/PermissionContext.tsx` - Centralized permission provider
-
-### Modify (5+ files)
-1. `src/App.tsx` - Remove notification route
-2. `src/components/notifications/GeneralNotificationDropdown.tsx` - Remove link
-3. `src/components/jobs/JobsFocusHandler.tsx` - Remove or disable
-4. `src/components/dashboard/TeamMembersWidget.tsx` - Use context
-5. `src/hooks/useDirectMessages.ts` - Use context
-6. Multiple components - Use PermissionContext instead of individual queries
+| Field | Component | Description |
+|-------|-----------|-------------|
+| Country | Select dropdown | Uses COUNTRIES constant |
+| Funnel Stage | Select dropdown | Uses dynamic stages from useClientStages |
+| Notes | Textarea | General notes about client |
+| Tags | Tag input | Add/remove tags |
+| Lead Source | LeadSourceSelect | Custom lead source selector |
+| Referral Source | Input | Who referred this client |
+| Deal Value | Number input | Estimated deal value |
+| Priority Level | Select | low/medium/high/urgent |
+| Marketing Consent | Checkbox | Marketing opt-in |
+| Follow-up Date | Date input | Next follow-up date |
 
 ---
 
-## Technical Notes
+## Permissions & Security
 
-- Database migration added new columns to `notifications` table - these can remain (no harm)
-- New tables `notification_preferences` and `notification_mentions` can remain empty
-- The RLS policies on new tables are harmless
-- Focus on frontend performance first, database optimizations can follow
+- All changes respect existing permission system via `useCanEditJob` hook
+- Project locking respects `useProjectStatus` context
+- RLS policies remain unchanged - client data filtered by `effectiveOwnerId`
+- Dealer restrictions via `useDealerOwnClients` hook still apply
 
+---
+
+## Files to Modify
+
+1. `src/components/job-creation/steps/ClientSearchStep.tsx` - Main changes for all 5 issues
+2. `src/components/jobs/tabs/ProjectDetailsTab.tsx` - Lock status + enhanced display
