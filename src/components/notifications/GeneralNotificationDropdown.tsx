@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, X, ExternalLink, CheckCheck, FolderOpen, Info, AlertTriangle, AlertCircle } from "lucide-react";
+import { Bell, X, ExternalLink, CheckCheck, FolderOpen, Info, AlertTriangle, AlertCircle, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,7 +12,7 @@ import {
 } from "@/hooks/useGeneralNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const getNotificationIcon = (type: GeneralNotification['type']) => {
   switch (type) {
@@ -92,18 +92,30 @@ export const GeneralNotificationDropdown = () => {
               <Bell className="h-5 w-5 text-primary" />
               <h3 className="font-semibold text-lg">Notifications</h3>
             </div>
-            {notificationCount > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleMarkAllRead}
-                className="text-xs h-7"
-                disabled={markAllRead.isPending}
+            <div className="flex items-center gap-1">
+              {notificationCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleMarkAllRead}
+                  className="text-xs h-7"
+                  disabled={markAllRead.isPending}
+                >
+                  <CheckCheck className="h-3 w-3 mr-1" />
+                  Mark all read
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                asChild
               >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Mark all read
+                <Link to="/notifications" onClick={() => setIsOpen(false)}>
+                  <Settings className="h-4 w-4" />
+                </Link>
               </Button>
-            )}
+            </div>
           </div>
         </div>
         

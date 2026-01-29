@@ -62,6 +62,7 @@ const AdminAccountHealth = lazyWithRetry(() => import("./pages/AdminAccountHealt
 const OnboardingSubmissions = lazyWithRetry(() => import("./pages/OnboardingSubmissions"), "OnboardingSubmissions");
 const SubscriptionSuccess = lazyWithRetry(() => import("./pages/SubscriptionSuccess"), "SubscriptionSuccess");
 const SubscriptionCanceled = lazyWithRetry(() => import("./pages/SubscriptionCanceled"), "SubscriptionCanceled");
+const Notifications = lazyWithRetry(() => import("./pages/Notifications"), "Notifications");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -358,6 +359,15 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <OnlineStore />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Unified Notification Center */}
+                <Route path="/notifications" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Notifications />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />

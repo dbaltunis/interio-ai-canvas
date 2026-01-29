@@ -4919,6 +4919,98 @@ export type Database = {
           },
         ]
       }
+      notification_mentions: {
+        Row: {
+          context_id: string | null
+          context_type: string
+          created_at: string | null
+          id: string
+          mentioned_by_user_id: string
+          mentioned_user_id: string
+          notification_id: string
+          read: boolean | null
+        }
+        Insert: {
+          context_id?: string | null
+          context_type: string
+          created_at?: string | null
+          id?: string
+          mentioned_by_user_id: string
+          mentioned_user_id: string
+          notification_id: string
+          read?: boolean | null
+        }
+        Update: {
+          context_id?: string | null
+          context_type?: string
+          created_at?: string | null
+          id?: string
+          mentioned_by_user_id?: string
+          mentioned_user_id?: string
+          notification_id?: string
+          read?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_mentions_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          category_preferences: Json | null
+          created_at: string | null
+          digest_day: string | null
+          digest_frequency: string | null
+          digest_time: string | null
+          email_enabled: boolean | null
+          id: string
+          push_enabled: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          sms_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category_preferences?: Json | null
+          created_at?: string | null
+          digest_day?: string | null
+          digest_frequency?: string | null
+          digest_time?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category_preferences?: Json | null
+          created_at?: string | null
+          digest_day?: string | null
+          digest_frequency?: string | null
+          digest_time?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_templates: {
         Row: {
           category: string
@@ -5000,10 +5092,18 @@ export type Database = {
       notifications: {
         Row: {
           action_url: string | null
+          category: string | null
           created_at: string
+          expires_at: string | null
+          group_key: string | null
           id: string
           message: string
+          metadata: Json | null
+          parent_id: string | null
+          priority: string | null
           read: boolean | null
+          source_id: string | null
+          source_type: string | null
           title: string
           type: string | null
           updated_at: string
@@ -5011,10 +5111,18 @@ export type Database = {
         }
         Insert: {
           action_url?: string | null
+          category?: string | null
           created_at?: string
+          expires_at?: string | null
+          group_key?: string | null
           id?: string
           message: string
+          metadata?: Json | null
+          parent_id?: string | null
+          priority?: string | null
           read?: boolean | null
+          source_id?: string | null
+          source_type?: string | null
           title: string
           type?: string | null
           updated_at?: string
@@ -5022,16 +5130,32 @@ export type Database = {
         }
         Update: {
           action_url?: string | null
+          category?: string | null
           created_at?: string
+          expires_at?: string | null
+          group_key?: string | null
           id?: string
           message?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          priority?: string | null
           read?: boolean | null
+          source_id?: string | null
+          source_type?: string | null
           title?: string
           type?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       number_sequences: {
         Row: {
