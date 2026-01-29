@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, X, ExternalLink, CheckCheck, FolderOpen, Info, AlertTriangle, AlertCircle, Settings } from "lucide-react";
+import { Bell, X, CheckCheck, FolderOpen, Info, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,7 +12,7 @@ import {
 } from "@/hooks/useGeneralNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const getNotificationIcon = (type: GeneralNotification['type']) => {
   switch (type) {
@@ -105,16 +105,6 @@ export const GeneralNotificationDropdown = () => {
                   Mark all read
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                asChild
-              >
-                <Link to="/notifications" onClick={() => setIsOpen(false)}>
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
             </div>
           </div>
         </div>
