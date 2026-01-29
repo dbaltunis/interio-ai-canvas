@@ -2124,6 +2124,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               id: selectedItems.fabric.id,
               name: selectedItems.fabric.name,
               fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+              cost_price: selectedItems.fabric.cost_price, // ✅ FIX: Save cost_price for accurate Cost column display
               selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
               category: selectedItems.fabric.category,
               image_url: selectedItems.fabric.image_url,
@@ -2411,6 +2412,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 fabric_id: selectedItems.fabric.id,
                 name: selectedItems.fabric.name,
                 fabric_width: selectedItems.fabric.fabric_width,
+                cost_price: selectedItems.fabric.cost_price, // ✅ FIX: Save cost_price for accurate Cost column display
                 selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
                 // CRITICAL: Preserve pricing grid data
                 pricing_grid_data: selectedItems.fabric.pricing_grid_data,
