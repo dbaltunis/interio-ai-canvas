@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle, Pencil, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
+import { useProjectStatus } from "@/contexts/ProjectStatusContext";
 import { 
   PixelUserIcon, 
   PixelClipboardIcon, 
@@ -77,6 +80,11 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Inline editing state for project name
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -189,6 +197,16 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
+  // Permission check for editing project name
+  const { canEditJob } = useCanEditJob(project);
+  const { isLocked } = useProjectStatus();
+  const canEditProjectName = canEditJob && !isLocked;
+  
+  // Sync editedName with project.name
+  useEffect(() => {
+    setEditedName(project?.name || "");
+  }, [project?.name]);
+  
   // If user tries to access workroom tab but doesn't have permission, redirect to details
   // (This handles cases where user navigates directly via URL)
   // NOTE: This must be called before any conditional returns to follow Rules of Hooks
@@ -263,6 +281,40 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const handleUpdateProject = async (projectData: any) => {
     await updateProject.mutateAsync(projectData);
+  };
+
+  // Handlers for inline project name editing
+  const handleSaveName = async () => {
+    if (!editedName.trim() || editedName.trim() === project.name) {
+      setIsEditingName(false);
+      setEditedName(project.name || "");
+      return;
+    }
+    
+    setIsSavingName(true);
+    try {
+      await updateProject.mutateAsync({ id: project.id, name: editedName.trim() });
+      setIsEditingName(false);
+      toast({
+        title: "Project name updated",
+        description: `Renamed to "${editedName.trim()}"`,
+      });
+    } catch (error) {
+      console.error("Failed to update project name:", error);
+      setEditedName(project.name || "");
+      toast({
+        title: "Failed to update name",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(project.name || "");
+    setIsEditingName(false);
   };
 
   const handleDuplicateJob = async () => {
@@ -869,19 +921,66 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               <Separator orientation="vertical" className="h-5 sm:h-6 bg-border/60" />
               
               <div className="flex flex-col gap-0 min-w-0">
-                {client && (
-                  <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate flex items-center gap-1.5 sm:gap-2">
-                    {client.name}
+                {/* Project Name - editable */}
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveName();
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                      className="h-8 text-base sm:text-lg font-bold max-w-[200px] sm:max-w-[300px]"
+                      autoFocus
+                      disabled={isSavingName}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleSaveName}
+                      disabled={isSavingName}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancelEdit}
+                      disabled={isSavingName}
+                      className="h-7 w-7 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate">
+                      {project.name || "Untitled Project"}
+                    </h1>
+                    {canEditProjectName && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingName(true)}
+                        className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     {duplicates && (
                       <DuplicateJobIndicator 
                         isDuplicate={duplicates.isDuplicate}
                         duplicateCount={duplicates.children.length}
                       />
                     )}
-                  </h1>
+                  </div>
                 )}
+                
+                {/* Client name + date as subtitle */}
                 <span className="text-xs sm:text-sm text-muted-foreground">
-                  {formattedCreatedDate || new Date(project.created_at).toLocaleDateString()}
+                  {client?.name && `${client.name} • `}{formattedCreatedDate || new Date(project.created_at).toLocaleDateString()}
                 </span>
               </div>
             </div>
