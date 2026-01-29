@@ -1,6 +1,5 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { getAvatarColor, getInitials } from '@/lib/avatar-utils';
 import {
@@ -34,15 +33,17 @@ export const TeamAvatarStack = ({
 }: TeamAvatarStackProps) => {
   const visibleMembers = assignedMembers.slice(0, maxVisible);
   const remainingCount = Math.max(0, assignedMembers.length - maxVisible);
+  const hasTeamMembers = assignedMembers.length > 0;
   
   const ownerInitials = getInitials(owner.name);
   const ownerColor = getAvatarColor(owner.id);
+  const ownerFirstName = owner.name.split(' ')[0];
 
   return (
     <TooltipProvider>
       <div 
         className={cn(
-          "flex items-center cursor-pointer group",
+          "flex items-center cursor-pointer group gap-2",
           className
         )}
         onClick={(e) => {
@@ -50,23 +51,20 @@ export const TeamAvatarStack = ({
           onClick?.();
         }}
       >
-        {/* Owner avatar with star badge */}
+        {/* Owner avatar - always visible */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="relative">
-              <Avatar className="h-7 w-7 border-2 border-background transition-transform group-hover:scale-105">
-                {owner.avatarUrl ? (
-                  <AvatarImage src={owner.avatarUrl} alt={owner.name} />
-                ) : null}
-                <AvatarFallback className={cn(ownerColor, "text-primary-foreground text-xs font-medium")}>
-                  {ownerInitials}
-                </AvatarFallback>
-              </Avatar>
-              {/* Gold star badge */}
-              <div className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
-                <Star className="h-2 w-2 text-amber-900 fill-amber-900" />
-              </div>
-            </div>
+            <Avatar className={cn(
+              "border-2 border-background transition-transform group-hover:scale-105",
+              hasTeamMembers ? "h-7 w-7 ring-2 ring-primary/20" : "h-6 w-6"
+            )}>
+              {owner.avatarUrl ? (
+                <AvatarImage src={owner.avatarUrl} alt={owner.name} />
+              ) : null}
+              <AvatarFallback className={cn(ownerColor, "text-primary-foreground text-xs font-medium")}>
+                {ownerInitials}
+              </AvatarFallback>
+            </Avatar>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
             <p className="font-medium">{owner.name}</p>
@@ -74,9 +72,16 @@ export const TeamAvatarStack = ({
           </TooltipContent>
         </Tooltip>
 
-        {/* Assigned team members - stacked */}
-        {visibleMembers.length > 0 && (
-          <div className="flex -space-x-2 ml-1">
+        {/* Owner name - only when team exists */}
+        {hasTeamMembers && (
+          <span className="text-xs font-medium text-muted-foreground max-w-[60px] truncate">
+            {ownerFirstName}
+          </span>
+        )}
+
+        {/* Assigned team members - stacked, only when team exists */}
+        {hasTeamMembers && (
+          <div className="flex -space-x-2">
             {visibleMembers.map((member, index) => {
               const memberInitials = getInitials(member.name);
               const memberColor = getAvatarColor(member.id);

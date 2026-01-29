@@ -37,6 +37,7 @@ import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
+import { ProjectActivityTab } from "./tabs/ProjectActivityTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
@@ -841,6 +842,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "rooms", label: "Project", mobileLabel: "Project", icon: PixelClipboardIcon, disabled: false },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: PixelDocumentIcon, disabled: false },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: PixelTeamIcon, disabled: !canViewWorkroomExplicit },
+    { id: "activity", label: "Activity", mobileLabel: "Activity", icon: PixelClipboardIcon, disabled: false },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -1111,6 +1113,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     </div>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="activity" className="mt-0">
+                <div className="modern-card p-6">
+                  <ProjectActivityTab projectId={jobId} />
+                </div>
               </TabsContent>
             </div>
           </div>

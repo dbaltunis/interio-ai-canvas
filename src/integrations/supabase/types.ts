@@ -6187,6 +6187,47 @@ export type Database = {
         }
         Relationships: []
       }
+      project_activity_log: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          project_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_assignments: {
         Row: {
           assigned_at: string | null
@@ -10882,6 +10923,10 @@ export type Database = {
         Returns: undefined
       }
       update_user_last_seen: { Args: { user_id: string }; Returns: undefined }
+      user_has_project_access: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
+      }
       user_has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

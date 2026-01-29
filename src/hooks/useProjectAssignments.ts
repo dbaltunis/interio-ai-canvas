@@ -93,15 +93,31 @@ export const useAssignUserToProject = () => {
       projectId,
       userId,
       role = "member",
-      notes
+      notes,
+      projectName
     }: {
       projectId: string;
       userId: string;
       role?: string;
       notes?: string;
+      projectName?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
+
+      // Get current user's profile for activity log
+      const { data: currentUserProfile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Get assigned user's profile for notification
+      const { data: assignedUserProfile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", userId)
+        .maybeSingle();
 
       const { data, error } = await supabase
         .from("project_assignments")
@@ -121,10 +137,42 @@ export const useAssignUserToProject = () => {
         throw error;
       }
 
+      // Log activity
+      await supabase
+        .from("project_activity_log")
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          activity_type: 'team_assigned',
+          title: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project`,
+          description: notes || null,
+          metadata: {
+            assigned_user_id: userId,
+            assigned_user_name: assignedUserProfile?.display_name,
+            assigned_by_name: currentUserProfile?.display_name,
+            role
+          }
+        });
+
+      // Create in-app notification for assigned user
+      await supabase
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          type: 'info',
+          title: 'New Project Assignment',
+          message: `You've been assigned to "${projectName || 'a project'}" by ${currentUserProfile?.display_name || 'a team member'}`,
+          read: false,
+          action_url: `/?jobId=${projectId}`
+        });
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["project-assignments", data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast({
         title: "Success",
         description: "Team member assigned to project",
@@ -161,6 +209,23 @@ export const useRemoveUserFromProject = () => {
       projectId: string;
       userId: string;
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Get current user's profile for activity log
+      const { data: currentUserProfile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Get removed user's profile
+      const { data: removedUserProfile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+
       // Soft delete by setting is_active to false
       const { error } = await supabase
         .from("project_assignments")
@@ -173,10 +238,27 @@ export const useRemoveUserFromProject = () => {
         throw error;
       }
 
+      // Log activity
+      await supabase
+        .from("project_activity_log")
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          activity_type: 'team_removed',
+          title: `${removedUserProfile?.display_name || 'Team member'} was removed from this project`,
+          metadata: {
+            removed_user_id: userId,
+            removed_user_name: removedUserProfile?.display_name,
+            removed_by_name: currentUserProfile?.display_name
+          }
+        });
+
       return { projectId, userId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["project-assignments", data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.projectId] });
       toast({
         title: "Success",
         description: "Team member removed from project",
