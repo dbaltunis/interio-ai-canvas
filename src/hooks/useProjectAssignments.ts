@@ -213,13 +213,13 @@ export const useAssignUserToProject = () => {
       // Get project client name for email
       const { data: projectData } = await supabase
         .from("projects")
-        .select("clients(first_name, last_name, company_name)")
+        .select("clients(name, company_name, contact_person)")
         .eq("id", projectId)
         .maybeSingle();
       
-      const client = projectData?.clients as { first_name?: string; last_name?: string; company_name?: string } | null;
+      const client = projectData?.clients as { name?: string; company_name?: string; contact_person?: string } | null;
       const clientName = client 
-        ? (client.company_name || `${client.first_name || ''} ${client.last_name || ''}`.trim())
+        ? (client.company_name || client.name || 'Unknown Client')
         : undefined;
 
       // Send email notification (fire and forget - don't block the UI)
