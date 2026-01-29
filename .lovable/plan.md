@@ -1,203 +1,251 @@
 
-# Changes Implementation Plan
+# Comprehensive Analysis: Team Assignment Permissions Testing & Issues
 
-Based on your requests, here are the changes needed:
+## Executive Summary
 
----
-
-## 1. Dynamic "Invite Team" vs "Limit Access" Label
-
-**Current Issue**: The menu always shows "Limit Access", but it should show "Invite team" when staff members (with `view_assigned_jobs` only) have **not** been invited yet, and "Limit Access" when they have been invited.
-
-**Logic**:
-- If there are `needsAssignmentMembers` and **none** of them are assigned → Show "Invite team" 
-- If there are `needsAssignmentMembers` and **some or all** are assigned → Show "Limit Access"
-- If all team members have `view_all_jobs` (no one needs assignment) → Show "Limit Access" (or hide entirely since there's nothing to manage)
-
-**Files to Modify**:
-- `src/components/jobs/JobsTableView.tsx` - Update menu item label based on assignment status
+After thorough investigation, I've identified **3 critical issues** that need to be fixed for the team assignment system to work 100%:
 
 ---
 
-## 2. Fix: Admins Can Manage Job Access
+## Issue 1: CRITICAL - RLS Policy Does NOT Check Project Assignments
 
-**Current Issue**: Admins can't use the "Limit Access" feature even though they have `manage_team` permission.
+### The Problem
+When Mike or Ross (Staff role with `view_assigned_jobs` permission) logs in, they **cannot see assigned jobs** because the RLS policy on the `projects` table does not check the `project_assignments` table.
 
-**Root Cause Analysis**: Need to verify the permission check. According to `ROLE_PERMISSIONS`:
-- Admin role **does have** `manage_team` permission ✓
+### Current RLS Policy on `projects`:
+```sql
+SELECT ... WHERE (
+  get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
+  AND (
+    get_user_role(auth.uid()) = 'System Owner'
+    OR get_user_role(auth.uid()) = 'Owner'
+    OR is_admin()
+    OR has_permission('view_all_jobs')
+    OR has_permission('view_all_projects')
+    OR (has_permission('view_own_jobs') AND auth.uid() = user_id)
+    -- MISSING: Check project_assignments for view_assigned_jobs!
+  )
+)
+```
 
-**Investigation Needed**: Check if there's a bug in how the `canManageTeamAccess` permission is being evaluated. The check uses `useHasPermission('manage_team')` which should return true for Admins.
+### What's Missing:
+```sql
+OR (has_permission('view_assigned_jobs') AND EXISTS (
+  SELECT 1 FROM project_assignments 
+  WHERE project_id = projects.id 
+  AND user_id = auth.uid() 
+  AND is_active = true
+))
+```
 
-**Likely Fix**: The permission hook may not be merging role-based permissions correctly with custom permissions.
-
----
-
-## 3. Remove Separate Activity Tab from Job Detail
-
-**Current Issue**: There's a separate "Activity" tab in the job detail page that duplicates the `ProjectActivityCard` in the Client tab.
-
-**Solution**: Remove the "Activity" tab from `allTabs` array in `JobDetailPage.tsx`. The activity will remain visible only in the `ProjectDetailsTab` (Client tab) via the `ProjectActivityCard`.
-
-**Files to Modify**:
-- `src/components/jobs/JobDetailPage.tsx` - Remove activity tab from `allTabs` array and remove the `TabsContent` for activity
-
----
-
-## 4. Add More Activity Types to Track
-
-**Current Activity Types** (from `useProjectActivityLog.ts`):
-- `status_changed`
-- `team_assigned` / `team_removed`
-- `email_sent`
-- `quote_created` / `quote_sent`
-- `note_added`
-- `client_linked`
-- `project_created`
-- `project_duplicated`
-
-**New Activity Types to Add**:
-
-| Event | Activity Type | Where to Log |
-|-------|--------------|--------------|
-| Room created | `room_added` | When a new room is added |
-| Window/Surface created | `window_added` | When a new window is added |
-| Treatment created | `treatment_added` | When a treatment is added |
-| Client added to job | `client_added` | When a client is linked (already `client_linked`) |
-| Share link created | `share_link_created` | When a share link is generated |
-| PDF saved/exported | `pdf_exported` | When a PDF is generated |
-
-**Files to Modify**:
-- `src/hooks/useProjectActivityLog.ts` - Add new activity types
-- `src/components/jobs/ProjectActivityCard.tsx` - Add icons and colors for new types
-- `src/components/jobs/tabs/ProjectActivityTab.tsx` - Add icons, colors, and labels for new types
-- Various hooks/components that create rooms, windows, treatments, share links, PDFs - Add activity logging
+### Same Issue Affects:
+| Table | Current RLS | Missing project_assignments Check |
+|-------|-------------|-----------------------------------|
+| `projects` | Uses `has_permission('view_all_jobs')` only | Yes - CRITICAL |
+| `rooms` | Same pattern | Yes |
+| `surfaces` | Same pattern | Yes |
+| `treatments` | Same pattern | Yes |
+| `quotes` | Uses account isolation only | Yes |
+| `project_activity_log` | Has correct check via `user_has_project_access()` | No - Already correct |
 
 ---
 
-## Detailed Implementation
+## Issue 2: No Email Notification for Assignments
 
-### Step 1: Dynamic Menu Label in JobsTableView.tsx
+### Current State
+- In-app notification IS created when assigning a user (line 157-167 in `useProjectAssignments.ts`)
+- **NO email notification** is sent
+- Users may not see the in-app notification if they're not logged in
 
-```typescript
-// In the renderCellContent function for 'actions' case:
-// Calculate if any needs-assignment members are assigned to this project
-const projectAssignments = projectAssignmentsMap[project.id] || [];
-const needsAssignmentIds = new Set(
-  (teamPermissionsData?.needsAssignmentMembers ?? []).map(m => m.id)
+### What Users See Now
+When assigned to a project:
+1. **If logged in**: They see an in-app notification via the notifications table
+2. **If NOT logged in**: They won't know until they log in and check notifications
+
+### User's Expected Experience
+When assigned to a project, users should receive:
+1. In-app notification (already working)
+2. Email notification with project details and a direct link
+
+---
+
+## Issue 3: NotificationDropdown is Appointment-Only
+
+### Current State
+The `NotificationDropdown` component in the header only shows **appointment notifications**, not general notifications including project assignments.
+
+The general `notifications` table exists and is populated correctly, but there's no UI to display them - the header's NotificationDropdown was simplified and only shows appointment-related notifications.
+
+---
+
+## Database Verification
+
+### Mike's Assignments:
+| Project | Active |
+|---------|--------|
+| New Job 1/28/2026 | Yes |
+
+### Ross's Assignments:
+| Project | Active |
+|---------|--------|
+| New Job 1/29/2026 | Yes |
+
+### Their Permissions:
+Both Mike and Ross have:
+- `view_assigned_jobs` - Can ONLY see jobs they're assigned to
+- `create_jobs` - Can create new jobs
+- `view_assigned_clients` - Can ONLY see clients linked to assigned jobs
+- NO `view_all_jobs` - Cannot see all jobs
+
+---
+
+## What Mike/Ross Would See Today
+
+### When NOT Assigned:
+- **Projects tab**: Empty (no jobs visible)
+- **Dashboard**: No job-related KPIs
+- **Client tab**: Empty (if clients are only linked to unassigned jobs)
+
+### When Assigned (but RLS is broken):
+- **Projects tab**: Still empty (RLS doesn't check assignments!)
+- This is the BUG - they're assigned but can't see the job
+
+### After RLS Fix:
+- **Projects tab**: Only assigned jobs visible
+- **Job details**: All rooms, windows, treatments, accessories visible (if RLS is fixed on those tables too)
+- **Client info**: Client linked to the job visible
+
+---
+
+## Implementation Plan
+
+### Phase 1: Fix RLS Policies (CRITICAL)
+
+Create a migration to update RLS on affected tables:
+
+```sql
+-- 1. Create helper function for assignment check
+CREATE OR REPLACE FUNCTION public.user_is_assigned_to_project(p_project_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM project_assignments 
+    WHERE project_id = p_project_id 
+    AND user_id = auth.uid() 
+    AND is_active = true
+  )
+$$;
+
+-- 2. Update projects SELECT policy
+DROP POLICY IF EXISTS "Permission-based project access" ON projects;
+CREATE POLICY "Permission-based project access" ON projects FOR SELECT
+USING (
+  get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
+  AND (
+    get_user_role(auth.uid()) = 'System Owner'
+    OR get_user_role(auth.uid()) = 'Owner'
+    OR is_admin()
+    OR has_permission('view_all_jobs')
+    OR has_permission('view_all_projects')
+    OR (has_permission('view_own_jobs') AND auth.uid() = user_id)
+    OR (has_permission('view_jobs') AND auth.uid() = user_id)
+    OR (has_permission('create_jobs') AND auth.uid() = user_id)
+    -- NEW: Check project_assignments for view_assigned_jobs
+    OR (has_permission('view_assigned_jobs') AND user_is_assigned_to_project(id))
+  )
 );
-const hasAnyNeedsAssignmentAssigned = projectAssignments.some(
-  a => needsAssignmentIds.has(a.user_id)
-);
 
-// Show "Invite team" when staff aren't invited, "Limit Access" when they are
-const menuLabel = hasAnyNeedsAssignmentAssigned ? "Limit Access" : "Invite team";
-const MenuIcon = hasAnyNeedsAssignmentAssigned ? ShieldCheck : UserPlus;
+-- 3. Similarly update rooms, surfaces, treatments, quotes
 ```
 
-### Step 2: Remove Activity Tab from JobDetailPage.tsx
+**Tables to Update:**
+- `projects` (SELECT, UPDATE, DELETE)
+- `rooms` (SELECT, UPDATE, DELETE)
+- `surfaces` (SELECT, UPDATE, DELETE)
+- `treatments` (SELECT, UPDATE, DELETE)
+- `quotes` (SELECT, UPDATE, DELETE)
 
-Remove the activity tab from the `allTabs` array (line 845):
-```typescript
-const allTabs = [
-  { id: "details", label: "Client", mobileLabel: "Client", icon: PixelUserIcon, disabled: false },
-  { id: "rooms", label: "Project", mobileLabel: "Project", icon: PixelClipboardIcon, disabled: false },
-  { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: PixelDocumentIcon, disabled: false },
-  { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: PixelTeamIcon, disabled: !canViewWorkroomExplicit },
-  // REMOVE: { id: "activity", label: "Activity", mobileLabel: "Activity", icon: Activity, disabled: false },
-];
-```
+### Phase 2: Add Email Notification for Assignments
 
-Also remove the `TabsContent` for activity (lines 1118-1122).
-
-### Step 3: Update Activity Types
-
-**In `useProjectActivityLog.ts`**, add new types:
-```typescript
-export type ProjectActivityType = 
-  | 'status_changed'
-  | 'team_assigned'
-  | 'team_removed'
-  | 'email_sent'
-  | 'quote_created'
-  | 'quote_sent'
-  | 'note_added'
-  | 'client_linked'
-  | 'project_created'
-  | 'project_duplicated'
-  // NEW TYPES:
-  | 'room_added'
-  | 'window_added'
-  | 'treatment_added'
-  | 'share_link_created'
-  | 'pdf_exported';
-```
-
-**In `ProjectActivityCard.tsx` and `ProjectActivityTab.tsx`**, add icons and colors for new types:
-```typescript
-const activityIcons = {
-  // ... existing icons
-  room_added: Home,         // or DoorOpen
-  window_added: Square,     // or Maximize2
-  treatment_added: Palette, // or Wand2
-  share_link_created: Link,
-  pdf_exported: FileOutput, // or Download
-};
-
-const activityColors = {
-  // ... existing colors
-  room_added: "text-sky-500",
-  window_added: "text-slate-500", 
-  treatment_added: "text-fuchsia-500",
-  share_link_created: "text-lime-500",
-  pdf_exported: "text-rose-500",
-};
-```
-
-### Step 4: Add Logging to Creation Points
-
-Find where rooms, windows, treatments, share links, and PDFs are created and add:
+Create an edge function `send-assignment-notification`:
 
 ```typescript
-import { logProjectActivity } from "@/hooks/useProjectActivityLog";
+// supabase/functions/send-assignment-notification/index.ts
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
-// After successfully creating a room:
-await logProjectActivity({
-  projectId: project.id,
-  activityType: 'room_added',
-  title: `Added room "${roomName}"`,
-  metadata: { room_id: newRoom.id, room_name: roomName }
+serve(async (req) => {
+  const { assignedUserEmail, assignedUserName, projectName, projectId, assignedBy } = await req.json();
+  
+  const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+  
+  await resend.emails.send({
+    from: "InterioApp <notifications@interioapp.com>",
+    to: [assignedUserEmail],
+    subject: `You've been assigned to "${projectName}"`,
+    html: `
+      <h1>New Project Assignment</h1>
+      <p>Hi ${assignedUserName},</p>
+      <p>${assignedBy} has assigned you to the project <strong>${projectName}</strong>.</p>
+      <p><a href="https://interioapp-ai.lovable.app/?jobId=${projectId}">View Project</a></p>
+    `
+  });
+  
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
 });
 ```
 
-Similar logging for:
-- Windows: `useCreateSurface` or surface creation component
-- Treatments: Treatment creation logic
-- Share links: Share link generation component
-- PDF exports: PDF generation utilities
+Update `useProjectAssignments.ts` to call this function after assignment.
+
+### Phase 3: Display General Notifications
+
+Update the header to include a general notifications indicator that shows project assignment notifications alongside appointment notifications.
 
 ---
 
-## Files to Modify Summary
+## Files to Create/Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/jobs/JobsTableView.tsx` | Dynamic "Invite team" / "Limit Access" label based on assignment status |
-| `src/components/jobs/JobDetailPage.tsx` | Remove Activity tab from `allTabs` and remove `TabsContent` |
-| `src/hooks/useProjectActivityLog.ts` | Add new activity types |
-| `src/components/jobs/ProjectActivityCard.tsx` | Add icons/colors for new activity types |
-| `src/components/jobs/tabs/ProjectActivityTab.tsx` | Add icons/colors/labels for new activity types |
-| `src/hooks/useRooms.ts` or room creation component | Log `room_added` activity |
-| `src/hooks/useSurfaces.ts` or surface creation | Log `window_added` activity |
-| Treatment creation logic | Log `treatment_added` activity |
-| Share link creation | Log `share_link_created` activity |
-| PDF generation | Log `pdf_exported` activity |
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/migrations/XXXXXX_fix_project_assignments_rls.sql` | **CREATE** | Fix RLS policies to check project_assignments |
+| `supabase/functions/send-assignment-notification/index.ts` | **CREATE** | Email notification for assignments |
+| `src/hooks/useProjectAssignments.ts` | Modify | Call email notification function |
+| `src/components/layout/ResponsiveHeader.tsx` | Modify | Show general notifications indicator |
 
 ---
 
-## Note on "Compact" Activity Display
+## Testing Checklist
 
-The `ProjectActivityCard` already has a compact format that shows:
-- Icon + title + user + relative time
-- "View All" expands to show full history
+After implementation, verify:
 
-This won't look like "toilet paper" since it shows 5 items by default with compact formatting. The full timeline is only shown when expanded.
+1. **Mike (Staff with view_assigned_jobs)**:
+   - [ ] Cannot see unassigned jobs
+   - [ ] CAN see jobs assigned to him
+   - [ ] Can see all rooms in assigned jobs
+   - [ ] Can see all windows/surfaces in assigned jobs
+   - [ ] Can see all treatments in assigned jobs
+   - [ ] Can see client info for assigned jobs
+   - [ ] Receives in-app notification when assigned
+   - [ ] Receives email notification when assigned
+
+2. **Ross (Staff with view_assigned_jobs)**:
+   - Same checklist as Mike
+
+3. **Kuldeep (Admin with view_all_jobs)**:
+   - [ ] CAN see all jobs regardless of assignment
+   - [ ] Can assign team members via "Manage Access"
+
+4. **Owner**:
+   - [ ] CAN see all jobs
+   - [ ] Can assign/unassign team members
+   - [ ] Sees accurate team access status in job list
+
+---
+
+## Priority
+
+1. **CRITICAL**: Fix RLS policies - Without this, assigned users literally cannot see their jobs
+2. **HIGH**: Email notifications - Important for users who aren't constantly logged in
+3. **MEDIUM**: General notifications UI - Nice to have for visibility
