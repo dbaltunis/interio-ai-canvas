@@ -66,10 +66,21 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
     city: "",
     state: "",
     zip_code: "",
+    country: "",
     abn: "",
     business_email: "",
-    business_phone: ""
+    business_phone: "",
+    notes: "",
+    funnel_stage: "",
+    lead_source: "",
+    referral_source: "",
+    deal_value: "",
+    priority_level: "",
+    marketing_consent: false,
+    follow_up_date: null as Date | null,
+    tags: [] as string[],
   });
+  const [editTagInput, setEditTagInput] = useState("");
 
   // Get dynamic funnel stages
   const { data: clientStages = [] } = useClientStages();
@@ -202,12 +213,52 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
     try {
       await updateClient.mutateAsync({
         id: selectedClient.id,
-        ...editClientData
+        name: editClientData.name,
+        email: editClientData.email || undefined,
+        phone: editClientData.phone || undefined,
+        company_name: editClientData.company_name || undefined,
+        client_type: editClientData.client_type,
+        address: editClientData.address || undefined,
+        city: editClientData.city || undefined,
+        state: editClientData.state || undefined,
+        zip_code: editClientData.zip_code || undefined,
+        country: editClientData.country || undefined,
+        abn: editClientData.abn || undefined,
+        business_email: editClientData.business_email || undefined,
+        business_phone: editClientData.business_phone || undefined,
+        notes: editClientData.notes || undefined,
+        funnel_stage: editClientData.funnel_stage || undefined,
+        lead_source: editClientData.lead_source || undefined,
+        referral_source: editClientData.referral_source || undefined,
+        deal_value: editClientData.deal_value ? parseFloat(editClientData.deal_value) : undefined,
+        priority_level: editClientData.priority_level || undefined,
+        marketing_consent: editClientData.marketing_consent,
+        follow_up_date: editClientData.follow_up_date ? format(editClientData.follow_up_date, 'yyyy-MM-dd') : undefined,
+        tags: editClientData.tags.length > 0 ? editClientData.tags : undefined,
       });
       setShowEditDialog(false);
+      setEditTagInput("");
     } catch (error) {
       console.error("Failed to update client:", error);
     }
+  };
+
+  const handleAddEditTag = () => {
+    const trimmed = editTagInput.trim();
+    if (trimmed && !editClientData.tags.includes(trimmed)) {
+      setEditClientData(prev => ({
+        ...prev,
+        tags: [...prev.tags, trimmed]
+      }));
+      setEditTagInput("");
+    }
+  };
+
+  const handleRemoveEditTag = (tag: string) => {
+    setEditClientData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tag)
+    }));
   };
 
   const openEditDialog = () => {
@@ -222,10 +273,21 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
         city: selectedClient.city || "",
         state: selectedClient.state || "",
         zip_code: selectedClient.zip_code || "",
+        country: selectedClient.country || "",
         abn: selectedClient.abn || "",
         business_email: selectedClient.business_email || "",
-        business_phone: selectedClient.business_phone || ""
+        business_phone: selectedClient.business_phone || "",
+        notes: selectedClient.notes || "",
+        funnel_stage: selectedClient.funnel_stage || "",
+        lead_source: selectedClient.lead_source || "",
+        referral_source: selectedClient.referral_source || "",
+        deal_value: selectedClient.deal_value ? String(selectedClient.deal_value) : "",
+        priority_level: selectedClient.priority_level || "",
+        marketing_consent: selectedClient.marketing_consent || false,
+        follow_up_date: selectedClient.follow_up_date ? new Date(selectedClient.follow_up_date) : null,
+        tags: selectedClient.tags || [],
       });
+      setEditTagInput("");
       setShowEditDialog(true);
     }
   };
@@ -862,35 +924,37 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
 
       {/* Edit Client Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Client Details</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit_name">Client Name *</Label>
-              <Input
-                id="edit_name"
-                value={editClientData.name}
-                onChange={(e) => setEditClientData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Full name"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit_client_type">Client Type</Label>
-              <Select 
-                value={editClientData.client_type} 
-                onValueChange={(value: "B2B" | "B2C") => setEditClientData(prev => ({ ...prev, client_type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="B2C">Individual (B2C)</SelectItem>
-                  <SelectItem value="B2B">Business (B2B)</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_name">Client Name *</Label>
+                <Input
+                  id="edit_name"
+                  value={editClientData.name}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_client_type">Client Type</Label>
+                <Select 
+                  value={editClientData.client_type} 
+                  onValueChange={(value: "B2B" | "B2C") => setEditClientData(prev => ({ ...prev, client_type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="B2C">Individual (B2C)</SelectItem>
+                    <SelectItem value="B2B">Business (B2B)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {editClientData.client_type === "B2B" && (
@@ -961,6 +1025,109 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
               </div>
             </div>
 
+            {/* Funnel Stage & Lead Source */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Funnel Stage</Label>
+                <Select 
+                  value={editClientData.funnel_stage} 
+                  onValueChange={(value) => setEditClientData(prev => ({ ...prev, funnel_stage: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientStages.map(stage => (
+                      <SelectItem key={stage.id} value={stage.name}>
+                        {stage.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Lead Source</Label>
+                <LeadSourceSelect
+                  value={editClientData.lead_source}
+                  onValueChange={(value) => setEditClientData(prev => ({ ...prev, lead_source: value }))}
+                  placeholder="Select source"
+                />
+              </div>
+            </div>
+
+            {/* Priority & Deal Value */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Priority Level</Label>
+                <Select 
+                  value={editClientData.priority_level} 
+                  onValueChange={(value) => setEditClientData(prev => ({ ...prev, priority_level: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit_deal_value">Deal Value</Label>
+                <Input
+                  id="edit_deal_value"
+                  type="number"
+                  value={editClientData.deal_value}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, deal_value: e.target.value }))}
+                  placeholder="Estimated value"
+                />
+              </div>
+            </div>
+
+            {/* Referral & Follow-up */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_referral_source">Referral Source</Label>
+                <Input
+                  id="edit_referral_source"
+                  value={editClientData.referral_source}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, referral_source: e.target.value }))}
+                  placeholder="Who referred this client?"
+                />
+              </div>
+              <div>
+                <Label>Follow-up Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !editClientData.follow_up_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {editClientData.follow_up_date 
+                        ? format(editClientData.follow_up_date, "PPP") 
+                        : "Pick a date"
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={editClientData.follow_up_date || undefined}
+                      onSelect={(date) => setEditClientData(prev => ({ ...prev, follow_up_date: date || null }))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Address */}
             <div>
               <Label htmlFor="edit_address">Address</Label>
               <Input
@@ -971,7 +1138,7 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="edit_city">City</Label>
                 <Input
@@ -999,6 +1166,81 @@ export const ClientSearchStep = ({ formData, updateFormData, isLocked = false }:
                   placeholder="ZIP"
                 />
               </div>
+              <div>
+                <Label>Country</Label>
+                <Select 
+                  value={editClientData.country} 
+                  onValueChange={(value) => setEditClientData(prev => ({ ...prev, country: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map(country => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <Label>Tags</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={editTagInput}
+                  onChange={(e) => setEditTagInput(e.target.value)}
+                  placeholder="Add a tag"
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddEditTag())}
+                />
+                <Button type="button" variant="outline" onClick={handleAddEditTag}>
+                  <Tag className="h-4 w-4" />
+                </Button>
+              </div>
+              {editClientData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {editClientData.tags.map(tag => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                      <button 
+                        onClick={() => handleRemoveEditTag(tag)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Label htmlFor="edit_notes">Notes</Label>
+              <Textarea
+                id="edit_notes"
+                value={editClientData.notes}
+                onChange={(e) => setEditClientData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes about the client"
+                rows={3}
+              />
+            </div>
+
+            {/* Marketing Consent */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit_marketing_consent"
+                checked={editClientData.marketing_consent}
+                onCheckedChange={(checked) => 
+                  setEditClientData(prev => ({ ...prev, marketing_consent: checked === true }))
+                }
+              />
+              <Label htmlFor="edit_marketing_consent" className="text-sm">
+                Client has consented to marketing communications
+              </Label>
             </div>
 
             <div className="flex gap-2 pt-4">
