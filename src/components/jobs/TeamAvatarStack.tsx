@@ -31,13 +31,21 @@ export const TeamAvatarStack = ({
   onClick,
   className
 }: TeamAvatarStackProps) => {
-  const visibleMembers = assignedMembers.slice(0, maxVisible);
-  const remainingCount = Math.max(0, assignedMembers.length - maxVisible);
   const hasTeamMembers = assignedMembers.length > 0;
+  
+  // Truncate owner first name to 6 chars for tighter layouts
+  const rawFirstName = owner.name.split(' ')[0];
+  const ownerFirstName = rawFirstName.length > 6 
+    ? rawFirstName.slice(0, 6) + '.' 
+    : rawFirstName;
+  
+  // Reduce visible count when owner name is long
+  const effectiveMaxVisible = ownerFirstName.length > 5 ? Math.min(maxVisible, 2) : maxVisible;
+  const visibleMembers = assignedMembers.slice(0, effectiveMaxVisible);
+  const remainingCount = Math.max(0, assignedMembers.length - effectiveMaxVisible);
   
   const ownerInitials = getInitials(owner.name);
   const ownerColor = getAvatarColor(owner.id);
-  const ownerFirstName = owner.name.split(' ')[0];
 
   return (
     <TooltipProvider>
@@ -74,14 +82,14 @@ export const TeamAvatarStack = ({
 
         {/* Owner name - only when team exists */}
         {hasTeamMembers && (
-          <span className="text-xs font-medium text-muted-foreground max-w-[60px] truncate">
+          <span className="text-xs font-medium text-muted-foreground max-w-[50px] truncate">
             {ownerFirstName}
           </span>
         )}
 
         {/* Assigned team members - stacked, only when team exists */}
         {hasTeamMembers && (
-          <div className="flex -space-x-2">
+          <div className="flex -space-x-2.5">
             {visibleMembers.map((member, index) => {
               const memberInitials = getInitials(member.name);
               const memberColor = getAvatarColor(member.id);

@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatusId, shouldRegenerateNumberByIds } from "./useNumberSequenceGeneration";
+import { logProjectActivity } from "./useProjectActivityLog";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { EntityType } from "./useNumberSequences";
@@ -163,6 +164,20 @@ export const useCreateProject = () => {
         .single();
 
       if (error) throw error;
+      
+      // Log activity for the Activity tab
+      await logProjectActivity({
+        projectId: data.id,
+        activityType: project.parent_job_id ? 'project_duplicated' : 'project_created',
+        title: project.parent_job_id 
+          ? `Project duplicated from another job` 
+          : 'Project created',
+        metadata: { 
+          job_number: data.job_number, 
+          source_project_id: project.parent_job_id || null
+        }
+      });
+      
       return data;
     },
     onSuccess: () => {

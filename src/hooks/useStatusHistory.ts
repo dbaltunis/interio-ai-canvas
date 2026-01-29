@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logProjectActivity } from "./useProjectActivityLog";
 
 interface StatusChangeRecord {
   id: string;
@@ -97,10 +98,27 @@ export const useLogStatusChange = () => {
         throw error;
       }
 
+      // Also log to project activity log for the Activity tab
+      await logProjectActivity({
+        projectId,
+        activityType: 'status_changed',
+        title: `Status changed from "${previousStatusName || 'None'}" to "${newStatusName}"`,
+        description: reason || notes || null,
+        metadata: {
+          previous_status_id: previousStatusId,
+          new_status_id: newStatusId,
+          previous_status_name: previousStatusName,
+          new_status_name: newStatusName,
+          reason,
+          notes
+        }
+      });
+
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["status_history", variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ["project-activity-log", variables.projectId] });
     },
   });
 };

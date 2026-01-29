@@ -1,6 +1,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logProjectActivity } from "./useProjectActivityLog";
 
 export type ProjectNote = {
   id: string;
@@ -119,6 +120,17 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
           )
         }));
       }
+    }
+
+    // Log activity for the Activity tab (only for project notes)
+    if (filter.column === 'project_id') {
+      await logProjectActivity({
+        projectId: filter.value,
+        activityType: 'note_added',
+        title: 'Added a note',
+        description: content.length > 100 ? content.substring(0, 100) + '...' : content,
+        metadata: { note_id: inserted.id, mentions: mentionedUserIds }
+      });
     }
 
     // Optimistic update (realtime will also sync)
