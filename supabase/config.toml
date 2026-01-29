@@ -183,3 +183,6 @@ verify_jwt = false
 
 [functions.storefront-project]
 verify_jwt = false
+
+[functions.send-assignment-notification]
+verify_jwt = true

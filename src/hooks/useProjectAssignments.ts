@@ -166,6 +166,35 @@ export const useAssignUserToProject = () => {
           action_url: `/?jobId=${projectId}`
         });
 
+      // Get project client name for email
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("clients(first_name, last_name, company_name)")
+        .eq("id", projectId)
+        .maybeSingle();
+      
+      const client = projectData?.clients as { first_name?: string; last_name?: string; company_name?: string } | null;
+      const clientName = client 
+        ? (client.company_name || `${client.first_name || ''} ${client.last_name || ''}`.trim())
+        : undefined;
+
+      // Send email notification (fire and forget - don't block the UI)
+      supabase.functions.invoke('send-assignment-notification', {
+        body: {
+          assignedUserId: userId,
+          projectId,
+          projectName: projectName || 'Untitled Project',
+          clientName,
+          assignedByName: currentUserProfile?.display_name || 'A team member'
+        }
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Failed to send assignment email:', error);
+        } else {
+          console.log('Assignment email sent successfully');
+        }
+      });
+
       return data;
     },
     onSuccess: (data) => {

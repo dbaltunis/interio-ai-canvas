@@ -10934,6 +10934,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_is_assigned_to_project: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
       user_owns_email: {
         Args: { check_email: string; check_user_id: string }
         Returns: boolean

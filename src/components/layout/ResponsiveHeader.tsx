@@ -4,7 +4,7 @@ import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-// Removed NotificationDropdown - simplified UI
+import { GeneralNotificationDropdown } from '@/components/notifications/GeneralNotificationDropdown';
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
@@ -291,8 +291,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               })
             )}
           </nav>
-          {/* Right: User Profile */}
+          {/* Right: Notifications + User Profile */}
           <div className="flex items-center gap-2">
+            <GeneralNotificationDropdown />
             <UserProfile
               onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
               showCollaborationIndicator={hasActivity}
