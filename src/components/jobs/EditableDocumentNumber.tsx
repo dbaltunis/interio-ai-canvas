@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hash } from "lucide-react";
+import { Hash, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSequenceLabel, type EntityType } from "@/hooks/useNumberSequences";
 
@@ -28,47 +28,41 @@ export const EditableDocumentNumber = ({
   
   // Use settings label if autoLabel is true, otherwise use prop
   const label = autoLabel ? settingsLabel : (propLabel || settingsLabel);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [previewNumber, setPreviewNumber] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  // Auto-generate number on first mount if value is empty
+  // Preview what the next number WOULD be (without consuming it)
+  // Industry standard: Only reserve/consume number on actual save
   useEffect(() => {
-    if (!hasLoaded && !value) {
-      generateNextNumber();
-      setHasLoaded(true);
-    } else {
-      setHasLoaded(true);
-    }
-  }, []);
+    const fetchPreview = async () => {
+      if (hasLoaded) return;
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-  const generateNextNumber = async () => {
-    setIsGenerating(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+        // Use preview function - does NOT increment counter
+        const { data, error } = await supabase.rpc("preview_next_sequence_number", {
+          p_user_id: user.id,
+          p_entity_type: entityType,
+        });
 
-      const { data, error } = await supabase.rpc("get_next_sequence_number", {
-        p_user_id: user.id,
-        p_entity_type: entityType,
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        onChange(data);
+        if (!error && data) {
+          setPreviewNumber(data);
+          // Only set as value if no value is provided
+          if (!value) {
+            onChange(data);
+          }
+        }
+      } catch (error) {
+        console.error("Error previewing number:", error);
+      } finally {
+        setHasLoaded(true);
       }
-    } catch (error: any) {
-      console.error("Error generating number:", error);
-      // Generate fallback number
-      const prefix = entityType === 'quote' ? 'QT' : 
-                     entityType === 'invoice' ? 'INV' : 
-                     entityType === 'order' ? 'ORD' : 
-                     entityType === 'draft' ? 'DFT' : 'DOC';
-      onChange(`${prefix}-${Date.now().toString().slice(-6)}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    };
+
+    fetchPreview();
+  }, [entityType, hasLoaded, value, onChange]);
 
   const handleChange = (newValue: string) => {
     onChange(newValue);
@@ -79,13 +73,24 @@ export const EditableDocumentNumber = ({
       <Label className="flex items-center gap-2">
         <Hash className="h-4 w-4" />
         {label}
+        {previewNumber && value === previewNumber && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Eye className="h-3 w-3" />
+            Preview
+          </span>
+        )}
       </Label>
       <Input
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        disabled={disabled || isGenerating}
+        disabled={disabled}
       />
+      {previewNumber && value === previewNumber && (
+        <p className="text-xs text-muted-foreground">
+          Number will be reserved when saved
+        </p>
+      )}
     </div>
   );
 };
