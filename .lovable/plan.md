@@ -1,320 +1,152 @@
 
-# Email Marketing Hub 3.0: Radical Simplification
 
-## The Core Problem
+# Fix Compose Email Dialog: Scrolling & Template Consistency
 
-You've perfectly described the issue: **"Everything and nothing in one"**
+## Problem Summary
 
-The current system has:
-- Multiple entry points (modal wizard vs full-page builder)
-- Confusing colored groups that aren't editable
-- Templates showing raw CSS code instead of proper previews
-- Too many buttons, options, and disconnected features
-- No clear single path from "I want to send an email" to "Done!"
+You've identified two key issues with the "Compose Email" dialog:
 
-## The Steve Jobs Principle: Do ONE Thing Perfectly
-
-Instead of trying to do everything, we'll create **one simple, delightful flow**:
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   ┌──────────┐     ┌──────────┐     ┌──────────┐               │
-│   │  WHO     │ ──▶ │  WHAT    │ ──▶ │  SEND    │               │
-│   │ (Pick    │     │ (Write   │     │ (One     │               │
-│   │ Contacts)│     │ Message) │     │ Click)   │               │
-│   └──────────┘     └──────────┘     └──────────┘               │
-│                                                                 │
-│         A child could do this. That's the goal.                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+1. **Not scrolling/fitting properly** - The dialog content is cut off and doesn't scroll
+2. **Different templates** - The dropdown shows 3 hardcoded templates ("Quote Follow-up", "Project Update", "Thank You") while the Templates page shows 6 database templates
 
 ---
 
-## What We'll Remove (Declutter)
+## Root Cause Analysis
 
-| Remove | Why |
-|--------|-----|
-| Full-page `/campaigns/new` builder | Redundant with modal wizard |
-| "Quick Start Templates" cards on campaigns page | Confusing - they're not connected to real templates |
-| 4-step wizard → simplify to 3 steps | Schedule step can merge into review |
-| Colored funnel stage groups | Keep as simple filter, not visual clutter |
-| Raw CSS in template previews | Fix to show real content |
-| Hardcoded mock templates | Use only database templates |
+### Issue 1: Compose Dialog Not Scrolling
+
+**Location:** `src/components/jobs/EmailManagement.tsx` (lines 220-231)
+
+The composer modal is rendered as a fixed overlay:
+```tsx
+<div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+  <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <EmailComposer ... />
+  </div>
+</div>
+```
+
+The outer wrapper has `overflow-hidden` but the `EmailComposer` component inside (`src/components/jobs/email/EmailComposer.tsx`) uses a `<Card>` component that doesn't have proper scrolling enabled on its content.
+
+**Fix:** Add `overflow-y-auto` and proper height constraints to the EmailComposer's `CardContent` and the wrapper.
 
 ---
 
-## What We'll Fix (Make Work)
+### Issue 2: Template Dropdown Shows Wrong Templates
 
-### 1. Template Preview - Show Content, Not Code
+**Location:** `src/components/jobs/email/EmailComposer.tsx` (lines 49-68)
 
-**Current Problem**: Templates show `body { font-family: Arial, sans-serif; line-height: 1.6...`
-
-**Fix**: Strip `<style>` tags AND HTML, show only text content
-
-```typescript
-// File: src/components/jobs/email/EmailTemplateLibrary.tsx
-// Current (broken):
-const getPlainTextPreview = (html: string): string => {
-  let text = html.replace(/<[^>]+>/g, ' ');  // This catches <style> tag but not content
-  return text;
-};
-
-// Fixed:
-const getPlainTextPreview = (html: string): string => {
-  // First remove style blocks entirely (including content)
-  let text = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  // Then remove remaining HTML tags
-  text = text.replace(/<[^>]+>/g, ' ');
-  // Clean up whitespace and entities
-  text = text.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-  return text;
-};
+The templates are **hardcoded** directly in the component:
+```tsx
+const emailTemplates = [
+  { id: "quote_follow_up", name: "Quote Follow-up", ... },
+  { id: "project_update", name: "Project Update", ... },
+  { id: "thank_you", name: "Thank You", ... }
+];
 ```
 
-### 2. Simplify Recipients Step
+These are **NOT** the database templates you see in the Templates tab (which come from `useGeneralEmailTemplates`).
 
-**Current Problem**: Colorful grouped boxes that can't be edited, confusing visual hierarchy
+**Why there are 2 different template sources:**
+| Source | Where Used | Count |
+|--------|-----------|-------|
+| Hardcoded in `EmailComposer.tsx` | Compose dialog dropdown | 3 templates |
+| Database via `useGeneralEmailTemplates` | Templates tab (EmailTemplateLibrary) | 6 templates |
 
-**Fix**: Clean list with simple checkboxes, quick filter dropdown (not colorful groups)
-
-- Remove the colored `STAGE_CONFIG` visual styling
-- Simple white/gray rows with subtle hover
-- One filter dropdown: "All", "New Leads", "Contacted", etc.
-- Remove the "Group" toggle button - always show flat list
-
-### 3. One Entry Point
-
-**Current Problem**: "New Campaign" button opens modal, but there's also `/campaigns/new` route
-
-**Fix**: 
-- Keep ONLY the modal wizard (faster, less navigation)
-- Remove the full-page CampaignBuilder route
-- Make the modal cleaner and more spacious
-
-### 4. Template Connection
-
-**Current Problem**: "Quick Start Templates" (Newsletter, Follow-up, Promotion) are hardcoded and don't match database templates
-
-**Fix**:
-- Remove hardcoded template presets
-- Show ONLY database templates from "Manage Templates"
-- If user has no templates, show "Create your first template" prompt
-
----
-
-## New Simplified UI
-
-### Email Campaigns Page
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Email Campaigns                              [+ New Campaign]   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ [All (4)] [Drafts (0)] [Scheduled (0)] [Sent (3)]              │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │ Follow-up Campaign                              ✓ Sent      ││
-│ │ Following up on your recent inquiry                         ││
-│ │ 3 recipients • Sent Jan 19, 2026                            ││
-│ └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │ January Newsletter                              ✓ Sent      ││
-│ │ Exciting updates from our team!                             ││
-│ │ 15 recipients • Sent Jan 15, 2026                           ││
-│ └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Removed**:
-- "Quick Start Templates" section (confusing, not connected)
-- Grid/List view toggle (just use list - simpler)
-- Complex search - just simple filter tabs
-
-### New Campaign Modal (3 Steps)
-
-**Step 1: Who** (Pick recipients - clean list)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ New Email Campaign                                   Step 1/3   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ Who are you emailing?                                           │
-│                                                                 │
-│ ┌───────────────────────────────────────┐  [All Stages ▾]      │
-│ │ 🔍 Search contacts...                 │  [Select All] [Clear]│
-│ └───────────────────────────────────────┘                       │
-│                                                                 │
-│ 460 contacts with email                                         │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │ ☑ John Smith                                                ││
-│ │   john@example.com                                          ││
-│ ├─────────────────────────────────────────────────────────────┤│
-│ │ ☑ Mary Jones                                                ││
-│ │   mary@client.com                                           ││
-│ ├─────────────────────────────────────────────────────────────┤│
-│ │ ☐ Bob Wilson                                                ││
-│ │   bob@company.com                                           ││
-│ └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│                                            3 selected           │
-│                                                                 │
-│                                       [Back] [Next: Write →]   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Step 2: What** (Write your message)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ New Email Campaign                                   Step 2/3   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ What do you want to say?                                        │
-│                                                                 │
-│ Campaign Name (internal)                                        │
-│ ┌───────────────────────────────────────────────────────────┐  │
-│ │ January Follow-up                                         │  │
-│ └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│ Subject Line                                                    │
-│ ┌───────────────────────────────────────────────────────────┐  │
-│ │ Quick question for you                                    │  │
-│ └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│ Message                                                         │
-│ ┌───────────────────────────────────────────────────────────┐  │
-│ │ Hi {{client_name}},                                       │  │
-│ │                                                           │  │
-│ │ I wanted to follow up on...                               │  │
-│ │                                                           │  │
-│ └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│                                       [← Back] [Next: Send →]  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Step 3: Send** (Review & launch)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ New Email Campaign                                   Step 3/3   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ ┌───────────────────────────────────────────────────────────┐  │
-│ │  ✓ Ready to send                                          │  │
-│ │                                                           │  │
-│ │  Campaign: January Follow-up                              │  │
-│ │  Subject: Quick question for you                          │  │
-│ │  Recipients: 3 contacts                                   │  │
-│ │                                                           │  │
-│ │  • John Smith (john@example.com)                          │  │
-│ │  • Mary Jones (mary@client.com)                           │  │
-│ │  • Bob Wilson (bob@company.com)                           │  │
-│ └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│ ○ Send Now                                                      │
-│ ○ Schedule for Later  [Pick Date] [Pick Time]                  │
-│                                                                 │
-│                                       [← Back] [🚀 Send Now]   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Templates Page Fixes
-
-### Current Problem
-Shows: `Preview: body { font-family: Arial, sans-serif; line-height: 1.6; color:...`
-
-### Fixed Preview
-Shows: `Preview: Hi {{client.name}}, Thanks for requesting a demo. Please use the link below...`
-
-**Also**:
-- Remove the paper airplane icon button (confusing - what does it do?)
-- Keep only "Edit" and "Use" buttons
-- Show when each template is used (tooltip already exists - make it more visible)
+**Fix:** Replace hardcoded templates with the database templates from `useGeneralEmailTemplates`.
 
 ---
 
 ## Implementation Plan
 
-### File Changes
+### Fix 1: Make Compose Dialog Scrollable
 
-| File | Action |
-|------|--------|
-| `src/pages/CampaignBuilder.tsx` | **DELETE** - Remove full-page builder |
-| `src/App.tsx` | Remove `/campaigns/new` route |
-| `src/components/jobs/email/EmailCampaignsModern.tsx` | Remove "Quick Start Templates" section, simplify to list view only |
-| `src/components/campaigns/CampaignWizard.tsx` | Clean up UI, merge schedule into step 3 |
-| `src/components/campaigns/steps/CampaignRecipientsStep.tsx` | Remove colorful groups, simple clean list with filter dropdown |
-| `src/components/jobs/email/EmailTemplateLibrary.tsx` | Fix `getPlainTextPreview` to strip `<style>` blocks |
-| `src/components/email-templates/EmailTemplatesList.tsx` | Same fix for template list preview |
+**File:** `src/components/jobs/EmailManagement.tsx`
 
-### Priority Order
+Change the composer wrapper (lines 219-231):
+```tsx
+// Before
+<div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
 
-1. **Fix template preview** (quick win - trust builder)
-2. **Simplify recipients step** (remove visual clutter)
-3. **Remove redundant full-page builder** (one path only)
-4. **Clean up campaigns page** (remove confusing templates section)
+// After  
+<div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-auto">
+```
+
+**File:** `src/components/jobs/email/EmailComposer.tsx`
+
+Add scrolling to the Card:
+```tsx
+// Line 179 - Add height constraint and scrolling
+<Card className="w-full max-w-4xl mx-auto h-full flex flex-col">
+  <CardHeader className="pb-4 flex-shrink-0">
+    ...
+  </CardHeader>
+  <CardContent className="space-y-6 overflow-y-auto flex-1">
+    ...
+  </CardContent>
+</Card>
+```
 
 ---
 
-## Technical Details
+### Fix 2: Use Database Templates in Compose Dropdown
 
-### Fix 1: Template Preview (Both Files)
+**File:** `src/components/jobs/email/EmailComposer.tsx`
 
-```typescript
-// In EmailTemplateLibrary.tsx and EmailTemplatesList.tsx
-const getPlainTextPreview = (html: string): string => {
-  // Remove style blocks entirely (content between <style> tags)
-  let text = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  // Remove script blocks too (just in case)
-  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-  // Remove all remaining HTML tags
-  text = text.replace(/<[^>]+>/g, ' ');
-  // Clean up entities and whitespace
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&amp;/g, '&');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/\s+/g, ' ').trim();
-  return text;
+1. Add import for `useGeneralEmailTemplates`:
+```tsx
+import { useGeneralEmailTemplates } from "@/hooks/useGeneralEmailTemplates";
+```
+
+2. Replace hardcoded templates with database fetch:
+```tsx
+// Remove hardcoded emailTemplates array (lines 49-68)
+
+// Add hook call inside component
+const { data: emailTemplates = [] } = useGeneralEmailTemplates();
+```
+
+3. Update template selection handler:
+```tsx
+const handleTemplateSelect = (templateId: string) => {
+  const template = emailTemplates.find(t => t.id === templateId);
+  if (template) {
+    setEmailData(prev => ({
+      ...prev,
+      subject: template.subject,
+      content: template.content,
+      template: templateId
+    }));
+  }
 };
 ```
 
-### Fix 2: Simplify Recipients Step
-
-- Replace grouped view with flat list
-- Add simple filter dropdown for funnel stage
-- Remove colorful background bars
-- Use subtle selection state (checkbox + light background)
-
-### Fix 3: Remove Full-Page Builder
-
-- Delete `src/pages/CampaignBuilder.tsx`
-- Remove route from `src/App.tsx`
-- Update any navigation that pointed to `/campaigns/new` to open the modal instead
-
-### Fix 4: Clean Up Campaigns Page
-
-- Remove `Quick Start Templates` Card entirely
-- Remove grid/list view toggle (use list only)
-- Keep: Header with "New Campaign" button, filter tabs, campaign list
+4. Update dropdown to show database templates:
+```tsx
+<SelectContent>
+  {emailTemplates.filter(t => t.active).map((template) => (
+    <SelectItem key={template.id} value={template.id}>
+      {template.template_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+    </SelectItem>
+  ))}
+</SelectContent>
+```
 
 ---
 
-## Result: Simple & Trustworthy
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `src/components/jobs/EmailManagement.tsx` | Fix wrapper overflow for scrolling |
+| `src/components/jobs/email/EmailComposer.tsx` | 1) Add flex/scroll to Card layout<br>2) Replace hardcoded templates with `useGeneralEmailTemplates` hook |
+
+---
+
+## Result
 
 After these changes:
+1. The Compose Email dialog will scroll properly when content is long
+2. The template dropdown will show the **same 6 templates** you see in the Templates tab
+3. One single source of truth for templates (database)
 
-1. **One button**: "New Campaign" → Opens clean 3-step modal
-2. **One flow**: Pick contacts → Write message → Send
-3. **Templates work**: Preview shows real content, not CSS code
-4. **Trust**: Views tracking already works (you noticed!) - keep and highlight this
-5. **Clean**: No colorful clutter, no confusing options, no dead-end buttons
-
-A kid could send a campaign. That's the goal.
