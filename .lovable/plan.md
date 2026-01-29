@@ -1,122 +1,188 @@
 
-# Complete Fix: Add Missing `cost_price` to Saved Fabric Details
+# Multi-Team Member Assignment for Jobs
 
-## Root Cause Confirmed
+## Overview
 
-The `pricePerMeter` fix was applied correctly (prioritizing `cost_price`), BUT when treatments are saved to the database, the `cost_price` field is **NOT being included** in the `fabric_details` JSONB.
+This feature adds the ability to:
+1. Assign multiple team members to a job from the Team column
+2. Display a stacked avatar group showing the owner (with a star) and assigned team members
+3. Click on the Team column to open a selection dialog for adding/removing team members
+4. Persist assignments using the existing `project_assignments` database table
 
-### Evidence from Database
+---
 
-**Inventory Item (LELIN 231)**:
-| Field | Value |
-|-------|-------|
-| cost_price | 440 ✅ |
-| selling_price | 924 ✅ |
+## Current State Analysis
 
-**Saved workshop_items.fabric_details**:
-```json
-{
-  "name": "LELIN 231",
-  "selling_price": 924,
-  "cost_price": /* MISSING! */
+### What Already Exists
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `project_assignments` table | Exists | Stores user_id, project_id, role, is_active |
+| `useProjectAssignments` hook | Exists | Full CRUD operations for assignments |
+| `JobTeamInviteDialog` | Exists | Multi-select team member dialog (uses quotes table) |
+| Team column in JobsTableView | Exists | Currently shows only the project owner |
+
+### What Needs to Change
+
+| Area | Change Required |
+|------|-----------------|
+| Team column display | Show stacked avatars instead of single owner |
+| Click behavior | Open multi-select team dialog on column click |
+| Data source | Use `project_assignments` table (not quotes.template_custom_data) |
+| Visual design | Owner gets star indicator, team members stack in half-circle |
+
+---
+
+## Implementation Plan
+
+### Phase 1: Create Stacked Avatar Component
+
+Create a new component `TeamAvatarStack` that displays:
+- Owner avatar with a gold star overlay
+- Additional team members as overlapping circles (max 3 visible)
+- "+N" indicator if more than 3 additional members
+- Clickable to open assignment dialog
+
+```text
+┌───────────────────────────────────┐
+│  [★👤]                            │  ← Owner with star
+│      [👤][👤][👤] +2              │  ← Team members stacked + overflow
+└───────────────────────────────────┘
+```
+
+**File**: `src/components/jobs/TeamAvatarStack.tsx`
+
+### Phase 2: Create Enhanced Team Selection Dialog
+
+Modify or replace `JobTeamInviteDialog` to:
+- Use `project_assignments` table (not quotes.template_custom_data)
+- Show currently assigned members with checkboxes pre-selected
+- Allow bulk selection/deselection
+- Include search filtering
+- Display role badges for each team member
+
+**File**: `src/components/jobs/ProjectTeamAssignDialog.tsx`
+
+### Phase 3: Update JobsTableView Team Column
+
+Modify the Team column rendering in `JobsTableView.tsx` to:
+- Fetch assignments per project
+- Render `TeamAvatarStack` component
+- Pass click handler to open assignment dialog
+
+**Lines to modify**: 927-952 (case 'team')
+
+### Phase 4: Add Bulk Fetch for Assignments
+
+Create a new hook `useProjectsWithAssignments` that:
+- Fetches assignments for all visible projects in a single query
+- Returns a map of projectId → assignments[]
+- Optimizes performance by batching database calls
+
+**File**: `src/hooks/useProjectsWithAssignments.ts`
+
+---
+
+## Technical Details
+
+### TeamAvatarStack Component API
+
+```typescript
+interface TeamAvatarStackProps {
+  owner: {
+    id: string;
+    name: string;
+    initials: string;
+    avatarUrl?: string;
+    color: string;
+  };
+  assignedMembers: Array<{
+    id: string;
+    name: string;
+    initials: string;
+    avatarUrl?: string;
+    role: string;
+  }>;
+  maxVisible?: number; // default: 3
+  onClick?: () => void;
 }
 ```
 
-When the treatment is reloaded, `selectedFabricItem.cost_price` is `undefined` (not saved), so the code falls back to `selling_price: 924`.
+### Visual Design Specifications
 
----
+| Element | Style |
+|---------|-------|
+| Owner avatar | 28x28px, gold star overlay in top-right corner |
+| Team avatars | 24x24px, overlapping by 8px, border: 2px white |
+| Overflow indicator | "+N" text, muted-foreground color |
+| Container | flex row, items-center, gap-1 |
 
-## Files to Modify
+### Star Badge for Owner
 
-### File 1: `src/components/measurements/DynamicWindowWorksheet.tsx`
-
-**Location 1: Lines 2123-2139** (fabric_details in summaryData)
-
-Add `cost_price` to the saved fabric details:
-
-```typescript
-fabric_details: selectedItems.fabric ? {
-  id: selectedItems.fabric.id,
-  name: selectedItems.fabric.name,
-  fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
-  cost_price: selectedItems.fabric.cost_price,  // ✅ ADD THIS
-  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
-  category: selectedItems.fabric.category,
-  image_url: selectedItems.fabric.image_url,
-  color: measurements.selected_color || selectedItems.fabric.tags?.[0] || selectedItems.fabric.color || null,
-  pricing_grid_data: selectedItems.fabric.pricing_grid_data,
-  resolved_grid_name: selectedItems.fabric.resolved_grid_name,
-  resolved_grid_code: selectedItems.fabric.resolved_grid_code,
-  resolved_grid_id: selectedItems.fabric.resolved_grid_id,
-  price_group: selectedItems.fabric.price_group,
-  product_category: selectedItems.fabric.product_category
-} : null,
+```css
+/* Gold star overlay */
+.owner-star {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: #fbbf24; /* amber-400 */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 ```
 
-**Location 2: Lines 2409-2422** (fabric_details in treatmentData)
+### Database Query for Bulk Assignments
 
-Add `cost_price` to the treatment record:
-
-```typescript
-fabric_details: selectedItems.fabric ? {
-  id: selectedItems.fabric.id,
-  fabric_id: selectedItems.fabric.id,
-  name: selectedItems.fabric.name,
-  fabric_width: selectedItems.fabric.fabric_width,
-  cost_price: selectedItems.fabric.cost_price,  // ✅ ADD THIS
-  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
-  pricing_grid_data: selectedItems.fabric.pricing_grid_data,
-  resolved_grid_name: selectedItems.fabric.resolved_grid_name,
-  resolved_grid_code: selectedItems.fabric.resolved_grid_code,
-  resolved_grid_id: selectedItems.fabric.resolved_grid_id,
-  price_group: selectedItems.fabric.price_group,
-  product_category: selectedItems.fabric.product_category
-} : null,
+```sql
+SELECT pa.*, up.display_name, up.avatar_url, up.role as user_role
+FROM project_assignments pa
+LEFT JOIN user_profiles up ON up.user_id = pa.user_id
+WHERE pa.project_id IN (...project_ids)
+AND pa.is_active = true
+ORDER BY pa.assigned_at DESC
 ```
 
 ---
 
-## Why This Is Required
+## File Changes Summary
 
-The flow is:
-1. User selects fabric from inventory (has `cost_price: 440`)
-2. Treatment is saved to `windows_summary` and `workshop_items`
-3. **If `cost_price` isn't saved**, it's lost forever
-4. When treatment is loaded, only `selling_price: 924` is available
-5. The `pricePerMeter` fix tries `cost_price` first → gets `undefined`
-6. Falls back to `selling_price: 924` → wrong price displayed
-
----
-
-## Testing Required After Fix
-
-### New Treatments
-1. Create new project with curtain treatment
-2. Select fabric that has both `cost_price` and `selling_price`
-3. Verify Cost column shows `cost_price × meters` (not selling_price)
-4. Verify Sell column shows `cost × (1 + implied_markup%)`
-
-### Existing Treatments
-Existing treatments saved before this fix will NOT have `cost_price` in their `fabric_details`. They will continue to use `selling_price` until:
-- The user opens and re-saves the treatment (which will now include `cost_price`)
-- OR a migration script updates existing records
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/jobs/TeamAvatarStack.tsx` | Create | Stacked avatar display component |
+| `src/components/jobs/ProjectTeamAssignDialog.tsx` | Create | Multi-select assignment dialog using project_assignments |
+| `src/hooks/useProjectsWithAssignments.ts` | Create | Bulk fetch hook for assignments |
+| `src/components/jobs/JobsTableView.tsx` | Modify | Update Team column rendering |
+| `src/hooks/useProjectAssignments.ts` | Modify | Add bulk assign mutation |
 
 ---
 
-## Impact Assessment
+## RLS Considerations
 
-| Scenario | Impact |
-|----------|--------|
-| New treatments | Will work correctly after fix |
-| Existing treatments | Will need re-save to update |
-| Other accounts | No negative impact - only adds data |
-| Markup settings | Already fixed - 0% respected |
+The `project_assignments` table should already have RLS policies. We need to verify:
+1. Team members can read assignments for projects they own OR are assigned to
+2. Only project owners/admins can insert/delete assignments
+3. Multi-tenant isolation is maintained via `parent_account_id`
 
 ---
 
-## Code Changes Summary
+## User Flow
 
-| File | Lines | Change |
-|------|-------|--------|
-| DynamicWindowWorksheet.tsx | 2127 | Add `cost_price: selectedItems.fabric.cost_price,` |
-| DynamicWindowWorksheet.tsx | 2414 | Add `cost_price: selectedItems.fabric.cost_price,` |
+1. User views Jobs list → sees Team column with stacked avatars
+2. User clicks on Team column → opens ProjectTeamAssignDialog
+3. User searches/filters team members → selects multiple via checkboxes
+4. User clicks "Save Assignments" → inserts/removes from project_assignments
+5. Team column updates to show new stacked avatars
+6. Assigned team members can now see the job in their dashboard (if permission allows)
+
+---
+
+## Future Enhancements (Not in Scope)
+
+- Role-based filtering (only show installers for install jobs)
+- Notification to assigned team members
+- Calendar integration for assigned members
+- Permission levels per assignment (view-only, edit, admin)
