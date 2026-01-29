@@ -10705,7 +10705,9 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
-      generate_batch_number: { Args: { p_user_id: string }; Returns: string }
+      generate_batch_number:
+        | { Args: never; Returns: string }
+        | { Args: { p_user_id: string }; Returns: string }
       get_account_feature_config: {
         Args: { _feature_key: string; _user_id: string }
         Returns: Json
