@@ -87,6 +87,8 @@ export const useCreateQuote = () => {
       }
 
       // Generate quote number using number sequences based on status
+      // IMPORTANT: This is called at SAVE time, not form load time
+      // Following industry standard (QuickBooks, Xero): Reserve number only on save
       let quoteNumber = quote.quote_number;
       if (!quoteNumber || quoteNumber.trim() === '') {
         // Determine entity type based on quote status

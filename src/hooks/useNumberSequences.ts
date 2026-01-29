@@ -184,6 +184,25 @@ export const useGetNextSequenceNumber = () => {
   });
 };
 
+// Preview next number WITHOUT consuming/incrementing it
+// Use this for showing what the next number WOULD be in forms
+export const usePreviewNextSequenceNumber = () => {
+  return useMutation({
+    mutationFn: async (entityType: EntityType) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data, error } = await supabase.rpc("preview_next_sequence_number", {
+        p_user_id: user.id,
+        p_entity_type: entityType,
+      });
+
+      if (error) throw error;
+      return data as string | null;
+    },
+  });
+};
+
 // Hook to get sequence label and config for a specific entity type
 export const useSequenceLabel = (entityType: EntityType) => {
   const { data: sequences = [] } = useNumberSequences();

@@ -113,6 +113,8 @@ export const useCreateProject = () => {
       const accountOwnerId = profile?.parent_account_id || user.id;
 
       // Generate job number using number sequences if not provided
+      // IMPORTANT: This is called at SAVE time, not form load time
+      // Following industry standard (QuickBooks, Xero): Reserve number only on save
       let jobNumber = project.job_number;
       if (!jobNumber || jobNumber.trim() === '') {
         const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {

@@ -11063,6 +11063,10 @@ export type Database = {
         Args: { category_input: string }
         Returns: string
       }
+      preview_next_sequence_number: {
+        Args: { p_entity_type: string; p_user_id: string }
+        Returns: string
+      }
       project_has_active_share_link: {
         Args: { project_uuid: string }
         Returns: boolean
