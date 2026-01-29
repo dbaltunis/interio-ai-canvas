@@ -119,22 +119,66 @@ export const useAssignUserToProject = () => {
         .eq("user_id", userId)
         .maybeSingle();
 
-      const { data, error } = await supabase
+      // Check for existing assignment (active or inactive) to handle soft-delete pattern
+      const { data: existingAssignment, error: checkError } = await supabase
         .from("project_assignments")
-        .insert({
-          project_id: projectId,
-          user_id: userId,
-          role,
-          assigned_by: user.id,
-          notes: notes || null,
-          is_active: true
-        })
-        .select()
-        .single();
+        .select("id, is_active")
+        .eq("project_id", projectId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
-      if (error) {
-        console.error("Error assigning user to project:", error);
-        throw error;
+      if (checkError) {
+        console.error("Error checking existing assignment:", checkError);
+        throw checkError;
+      }
+
+      let data;
+
+      if (existingAssignment) {
+        if (existingAssignment.is_active) {
+          // Already actively assigned - throw to prevent duplicate toast
+          throw new Error("ALREADY_ASSIGNED");
+        }
+        
+        // Reactivate existing inactive assignment (UPSERT pattern)
+        const { data: reactivatedData, error: reactivateError } = await supabase
+          .from("project_assignments")
+          .update({ 
+            is_active: true, 
+            assigned_by: user.id,
+            assigned_at: new Date().toISOString(),
+            role,
+            notes: notes || null
+          })
+          .eq("id", existingAssignment.id)
+          .select()
+          .single();
+          
+        if (reactivateError) {
+          console.error("Error reactivating assignment:", reactivateError);
+          throw reactivateError;
+        }
+        data = reactivatedData;
+      } else {
+        // Insert new assignment
+        const { data: newData, error: insertError } = await supabase
+          .from("project_assignments")
+          .insert({
+            project_id: projectId,
+            user_id: userId,
+            role,
+            assigned_by: user.id,
+            notes: notes || null,
+            is_active: true
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          console.error("Error assigning user to project:", insertError);
+          throw insertError;
+        }
+        data = newData;
       }
 
       // Log activity
@@ -208,8 +252,8 @@ export const useAssignUserToProject = () => {
       });
     },
     onError: (error: any) => {
-      // Handle unique constraint violation
-      if (error.code === "23505") {
+      // Handle already assigned case (both our custom error and unique constraint)
+      if (error.message === "ALREADY_ASSIGNED" || error.code === "23505") {
         toast({
           title: "Already Assigned",
           description: "This team member is already assigned to this project",
