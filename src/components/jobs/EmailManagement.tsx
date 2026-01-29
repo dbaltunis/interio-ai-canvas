@@ -218,7 +218,7 @@ export const EmailManagement = () => {
       {/* Composer Modal */}
       {showComposer && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-          <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+          <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-auto flex flex-col">
             <EmailComposer 
               onClose={() => {
                 setShowComposer(false);

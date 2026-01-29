@@ -14,6 +14,7 @@ import { useSendEmail } from "@/hooks/useSendEmail";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useGeneralEmailTemplates } from "@/hooks/useGeneralEmailTemplates";
 
 interface EmailComposerProps {
   onClose?: () => void;
@@ -26,6 +27,7 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
   const { data: clients = [] } = useClients();
   const { user } = useAuth();
   const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
+  const { data: emailTemplates = [] } = useGeneralEmailTemplates();
   
   // Find the client if clientId is provided
   const targetClient = clientId ? clients.find(c => c.id === clientId) : null;
@@ -45,27 +47,6 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
   
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
-
-  const emailTemplates = [
-    {
-      id: "quote_follow_up",
-      name: "Quote Follow-up",
-      subject: "Following up on your quote",
-      content: `<p>Dear [Client Name],</p><p>I hope this message finds you well. I wanted to follow up on the quote we provided for your project.</p><p>Please let me know if you have any questions or if you'd like to proceed.</p><p>Best regards,<br/>[Your Name]</p>`
-    },
-    {
-      id: "project_update",
-      name: "Project Update",
-      subject: "Project Update",
-      content: `<p>Dear [Client Name],</p><p>I wanted to provide you with an update on your project.</p><p>Current Status: [Status]</p><p>Next Steps: [Next Steps]</p><p>Please don't hesitate to reach out if you have any questions.</p><p>Best regards,<br/>[Your Name]</p>`
-    },
-    {
-      id: "thank_you",
-      name: "Thank You",
-      subject: "Thank you for your business",
-      content: `<p>Dear [Client Name],</p><p>Thank you for choosing our services. We're delighted to have worked with you.</p><p>Please let us know if you need any follow-up assistance.</p><p>Best regards,<br/>[Your Name]</p>`
-    }
-  ];
 
   const handleAddRecipient = () => {
     if (newRecipient && !emailData.recipients.includes(newRecipient)) {
@@ -106,8 +87,8 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
     if (template) {
       setEmailData(prev => ({
         ...prev,
-        subject: template.subject,
-        content: template.content,
+        subject: template.subject || "",
+        content: template.content || "",
         template: templateId
       }));
     }
@@ -176,8 +157,8 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
   const validClients = clients.filter(client => client.email && client.email.trim() !== '');
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader className="pb-4">
+    <Card className="w-full max-w-4xl mx-auto h-full flex flex-col">
+      <CardHeader className="pb-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
@@ -197,7 +178,7 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-y-auto flex-1">
         {isPermissionLoaded && !canSendEmails && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -217,9 +198,9 @@ export const EmailComposer = ({ onClose, clientId, initialSubject, initialConten
                   <SelectValue placeholder="Choose a template (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {emailTemplates.map((template) => (
+                  {emailTemplates.filter(t => t.active).map((template) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.name}
+                      {template.template_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                     </SelectItem>
                   ))}
                 </SelectContent>
