@@ -11,7 +11,7 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash, Phone, Tag } from "lucide-react";
 import { syncSequenceCounter, getEntityTypeFromStatus, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
 import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -634,29 +634,82 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         <CardContent>
           {selectedClient ? (
             <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
+              {/* Name with Type Badge */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-lg font-semibold text-foreground">
                   {getClientDisplayName(selectedClient)}
                 </p>
-                {selectedClient.client_type === 'B2B' && selectedClient.name && (
-                  <p className="text-xs text-muted-foreground">Contact: {selectedClient.name}</p>
-                )}
+                <Badge variant="outline" className="text-xs">
+                  {selectedClient.client_type === "B2B" ? "Business" : "Individual"}
+                </Badge>
               </div>
-              
+
+              {/* Company name contact for B2B */}
+              {selectedClient.client_type === 'B2B' && selectedClient.name && (
+                <p className="text-sm text-muted-foreground">
+                  Contact: {selectedClient.name}
+                </p>
+              )}
+
+              {/* Funnel Stage Badge */}
+              {selectedClient.funnel_stage && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedClient.funnel_stage}
+                </Badge>
+              )}
+
+              {/* Contact Info - Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 {selectedClient.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="text-xs truncate">{selectedClient.email}</span>
                   </div>
                 )}
                 {selectedClient.phone && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs">📞</span>
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="text-xs">{selectedClient.phone}</span>
                   </div>
                 )}
               </div>
+
+              {/* Address */}
+              {(selectedClient.address || selectedClient.city) && (
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span className="text-xs">
+                    {[selectedClient.address, selectedClient.city, selectedClient.state, selectedClient.zip_code]
+                      .filter(Boolean).join(", ")}
+                  </span>
+                </div>
+              )}
+
+              {/* Tags */}
+              {selectedClient.tags && selectedClient.tags.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Tag className="h-3 w-3 text-muted-foreground" />
+                  {selectedClient.tags.map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Deal Value & Priority */}
+              {(selectedClient.deal_value || selectedClient.priority_level) && (
+                <div className="flex items-center gap-3 text-sm">
+                  {selectedClient.deal_value && selectedClient.deal_value > 0 && (
+                    <span className="text-green-600 dark:text-green-400 font-medium text-xs">
+                      {formatCurrency(selectedClient.deal_value)}
+                    </span>
+                  )}
+                  {selectedClient.priority_level && (
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {selectedClient.priority_level} priority
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
