@@ -109,10 +109,19 @@ export const EmailTemplateLibrary = ({ onSelectTemplate }: EmailTemplateLibraryP
     }
   };
 
-  // Strip HTML for preview
+  // Strip HTML and style blocks for clean preview
   const getPlainTextPreview = (html: string): string => {
-    let text = html.replace(/<[^>]+>/g, ' ');
+    // First remove style blocks entirely (including content)
+    let text = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    // Remove script blocks too (just in case)
+    text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove all remaining HTML tags
+    text = text.replace(/<[^>]+>/g, ' ');
+    // Clean up entities and whitespace
     text = text.replace(/&nbsp;/g, ' ');
+    text = text.replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<');
+    text = text.replace(/&gt;/g, '>');
     text = text.replace(/\s+/g, ' ').trim();
     return text;
   };
