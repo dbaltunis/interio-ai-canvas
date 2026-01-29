@@ -170,13 +170,6 @@ export const SettingsGroupedNavigation = ({
           canView: canViewSettingsForTabs,
           disabled: !canViewSettingsForTabs,
         },
-        { 
-          value: 'notifications', 
-          label: 'Notifications', 
-          icon: Bell, 
-          canView: canViewNotifications,
-          disabled: !canViewNotifications,
-        },
       ].filter(item => item.canView || item.disabled),
     },
     {
