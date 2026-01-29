@@ -2991,8 +2991,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     // Get price from fabric item or fabricCalculation - never calculate from total/meters
                     const selectedFabricItem = selectedItems.fabric || selectedItems.material;
-                    const pricePerMeter = selectedFabricItem?.price_per_meter 
-                      || selectedFabricItem?.selling_price 
+                    // ✅ FIX: Use cost_price as base - markup is applied separately in CostCalculationSummary
+                    // This ensures Cost column shows actual cost (₹440/m), and Sell column shows cost + markup (₹924/m)
+                    const pricePerMeter = selectedFabricItem?.cost_price
+                      || selectedFabricItem?.price_per_meter 
+                      || selectedFabricItem?.selling_price  // Fallback only if no cost_price exists
                       || fabricCalculation?.pricePerMeter 
                       || 0;
                     
