@@ -124,13 +124,13 @@ export const UpdateAnnouncementModal = () => {
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 z-[9999] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           >
-            <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
+            <div className="w-full max-w-sm rounded-xl border border-border bg-card shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               {/* Header */}
               <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-4 py-4 text-center border-b border-border/50">
                 <div className="inline-flex items-center justify-center gap-1.5 mb-1">
@@ -145,8 +145,8 @@ export const UpdateAnnouncementModal = () => {
                 <p className="text-xs text-muted-foreground">{formattedDate}</p>
               </div>
 
-              {/* Content */}
-              <div className="px-4 py-3">
+              {/* Content - Scrollable */}
+              <div className="px-4 py-3 overflow-y-auto flex-1">
                 {/* Highlights - Always visible */}
                 {renderSection(highlightsSection, 0)}
 
@@ -169,7 +169,7 @@ export const UpdateAnnouncementModal = () => {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-2 space-y-3 max-h-[30vh] overflow-y-auto">
+                      <div className="pt-2 space-y-3">
                         {additionalSections.map((section, index) => 
                           renderSection(section, index, 0.05)
                         )}
