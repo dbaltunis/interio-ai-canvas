@@ -1,152 +1,167 @@
 
+# Document Numbering System Fix
 
-# Fix Compose Email Dialog: Scrolling & Template Consistency
+## Problems Identified
 
-## Problem Summary
+After thorough investigation, I found **three critical issues** with your document numbering system:
 
-You've identified two key issues with the "Compose Email" dialog:
+### Issue 1: Duplicate Job Numbers (JOB-0202 everywhere)
 
-1. **Not scrolling/fitting properly** - The dialog content is cut off and doesn't scroll
-2. **Different templates** - The dropdown shows 3 hardcoded templates ("Quote Follow-up", "Project Update", "Thank You") while the Templates page shows 6 database templates
+**Root Cause**: Your job sequence has `next_number = 20251077` but `padding = 3`. PostgreSQL's `LPAD` function with a length shorter than the string **truncates** it:
+
+```
+LPAD('20251077', 3, '0') → '202'
+```
+
+Every new job gets `JOB-202` because the sequence keeps incrementing (20251077 → 20251078 → 20251079...) but all truncate to `202`.
+
+**Evidence from database**:
+- `number_sequences` for job: `next_number = 20251077`, `padding = 3`
+- 27 projects all have `job_number = 'JOB-202'`
 
 ---
 
-## Root Cause Analysis
+### Issue 2: Invoice Numbers Skipping (001 → 003)
 
-### Issue 1: Compose Dialog Not Scrolling
+**Root Cause**: The `get_next_sequence_number` function atomically increments the counter **every time it's called**, even if the generated number is never saved.
 
-**Location:** `src/components/jobs/EmailManagement.tsx` (lines 220-231)
+**The industry standard** (QuickBooks, Xero, FreshBooks):
+- Number is **reserved** only when document is **saved/finalized**
+- "Draft" documents don't consume sequence numbers
+- Discarded documents don't create gaps
 
-The composer modal is rendered as a fixed overlay:
-```tsx
-<div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-  <div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
-    <EmailComposer ... />
-  </div>
-</div>
-```
-
-The outer wrapper has `overflow-hidden` but the `EmailComposer` component inside (`src/components/jobs/email/EmailComposer.tsx`) uses a `<Card>` component that doesn't have proper scrolling enabled on its content.
-
-**Fix:** Add `overflow-y-auto` and proper height constraints to the EmailComposer's `CardContent` and the wrapper.
+**Current behavior**:
+1. You create invoice → calls `get_next_sequence_number` → returns `INV-001`, increments to 2
+2. You "downgrade" (don't save) → number 001 is lost
+3. You create invoice again → calls `get_next_sequence_number` → returns `INV-002`, increments to 3
+4. You upgrade again → returns `INV-003`
 
 ---
 
-### Issue 2: Template Dropdown Shows Wrong Templates
+### Issue 3: Corrupted Sequence Numbers
 
-**Location:** `src/components/jobs/email/EmailComposer.tsx` (lines 49-68)
+**Root Cause**: At some point, date values (like `20251077` - possibly meant to be 2025-10-77) were incorrectly written to the `next_number` column instead of sequential integers.
 
-The templates are **hardcoded** directly in the component:
-```tsx
-const emailTemplates = [
-  { id: "quote_follow_up", name: "Quote Follow-up", ... },
-  { id: "project_update", name: "Project Update", ... },
-  { id: "thank_you", name: "Thank You", ... }
-];
-```
-
-These are **NOT** the database templates you see in the Templates tab (which come from `useGeneralEmailTemplates`).
-
-**Why there are 2 different template sources:**
-| Source | Where Used | Count |
-|--------|-----------|-------|
-| Hardcoded in `EmailComposer.tsx` | Compose dialog dropdown | 3 templates |
-| Database via `useGeneralEmailTemplates` | Templates tab (EmailTemplateLibrary) | 6 templates |
-
-**Fix:** Replace hardcoded templates with the database templates from `useGeneralEmailTemplates`.
+**Affected sequences for your account**:
+| Type | Current next_number | Should be ~|
+|------|---------------------|------------|
+| Job | 20,251,077 | ~90 |
+| Invoice | 20,251,042 | ~85 |
+| Draft | 207 | OK |
+| Quote | 10 | OK |
+| Order | 88 | OK |
 
 ---
 
-## Implementation Plan
+## Solution Plan
 
-### Fix 1: Make Compose Dialog Scrollable
+### Part 1: Fix Database Function (prevent truncation)
 
-**File:** `src/components/jobs/EmailManagement.tsx`
+Modify `get_next_sequence_number` to handle large numbers correctly:
 
-Change the composer wrapper (lines 219-231):
-```tsx
-// Before
-<div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-hidden flex flex-col">
-
-// After  
-<div className="fixed inset-4 md:inset-8 lg:inset-16 bg-card border rounded-xl shadow-2xl overflow-auto">
-```
-
-**File:** `src/components/jobs/email/EmailComposer.tsx`
-
-Add scrolling to the Card:
-```tsx
-// Line 179 - Add height constraint and scrolling
-<Card className="w-full max-w-4xl mx-auto h-full flex flex-col">
-  <CardHeader className="pb-4 flex-shrink-0">
-    ...
-  </CardHeader>
-  <CardContent className="space-y-6 overflow-y-auto flex-1">
-    ...
-  </CardContent>
-</Card>
+```sql
+-- Use GREATEST to ensure padding is at least the number's length
+v_result := v_prefix || LPAD(
+  v_current_number::TEXT, 
+  GREATEST(v_padding, LENGTH(v_current_number::TEXT)), 
+  '0'
+);
 ```
 
 ---
 
-### Fix 2: Use Database Templates in Compose Dropdown
+### Part 2: Implement Industry-Standard "Reserve on Save" Pattern
 
-**File:** `src/components/jobs/email/EmailComposer.tsx`
+**New Approach**:
 
-1. Add import for `useGeneralEmailTemplates`:
-```tsx
-import { useGeneralEmailTemplates } from "@/hooks/useGeneralEmailTemplates";
-```
+1. **Preview numbers** - Show what the next number *would be* without consuming it
+2. **Reserve on save** - Only increment sequence when document is actually saved
+3. **Reuse cancelled numbers** - Track voided/cancelled numbers in a pool table for reuse (optional - regulatory for some industries)
 
-2. Replace hardcoded templates with database fetch:
-```tsx
-// Remove hardcoded emailTemplates array (lines 49-68)
+**Files to modify**:
+- `supabase/migrations/` - New migration for updated function
+- `src/hooks/useProjects.ts` - Generate number on save, not on form load
+- `src/hooks/useQuotes.ts` - Same pattern
+- `src/components/jobs/EditableDocumentNumber.tsx` - Remove auto-generate on mount
 
-// Add hook call inside component
-const { data: emailTemplates = [] } = useGeneralEmailTemplates();
-```
+**New database function**: `preview_next_sequence_number` (read-only, no increment)
 
-3. Update template selection handler:
-```tsx
-const handleTemplateSelect = (templateId: string) => {
-  const template = emailTemplates.find(t => t.id === templateId);
-  if (template) {
-    setEmailData(prev => ({
-      ...prev,
-      subject: template.subject,
-      content: template.content,
-      template: templateId
-    }));
-  }
-};
-```
+---
 
-4. Update dropdown to show database templates:
-```tsx
-<SelectContent>
-  {emailTemplates.filter(t => t.active).map((template) => (
-    <SelectItem key={template.id} value={template.id}>
-      {template.template_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-    </SelectItem>
-  ))}
-</SelectContent>
+### Part 3: Reset Corrupted Sequences
+
+**One-time data fix** (SQL to run):
+
+```sql
+-- Reset job sequence based on actual highest job number used
+UPDATE number_sequences 
+SET next_number = COALESCE(
+  (SELECT MAX(REGEXP_REPLACE(job_number, '[^0-9]', '', 'g')::INTEGER) + 1 
+   FROM projects 
+   WHERE user_id = '708d8e36-8fa3-4e07-b43b-c0a90941f991'
+   AND job_number ~ '^[A-Z]+-[0-9]+$'),
+  1
+)
+WHERE user_id = '708d8e36-8fa3-4e07-b43b-c0a90941f991' 
+AND entity_type = 'job';
+
+-- Same for invoice
+UPDATE number_sequences 
+SET next_number = COALESCE(
+  (SELECT MAX(REGEXP_REPLACE(invoice_number, '[^0-9]', '', 'g')::INTEGER) + 1 
+   FROM quotes 
+   WHERE user_id = '708d8e36-8fa3-4e07-b43b-c0a90941f991'
+   AND invoice_number ~ '^[A-Z]+-[0-9]+$'),
+  1
+)
+WHERE user_id = '708d8e36-8fa3-4e07-b43b-c0a90941f991' 
+AND entity_type = 'invoice';
 ```
 
 ---
 
-## Summary of Changes
+### Part 4: Display Fix (remove truncation formatting)
+
+The `formatJobNumber` function in `src/lib/format-job-number.ts` truncates to last 4 digits. This hides issues but also hides real numbers.
+
+**Options**:
+1. **Keep full number visible** - Show `JOB-20251077` as-is
+2. **Smart truncation** - Only truncate if > 8 digits, showing first 2 + last 4
+
+I recommend **showing full numbers** for clarity and trust.
+
+---
+
+## Implementation Order
+
+1. **Fix the function** - Prevent LPAD truncation (migration)
+2. **Reset corrupted data** - One-time SQL fix via Cloud View
+3. **Update display** - Show full job numbers
+4. **Implement reserve-on-save** - Industry standard pattern
+5. **Add preview capability** - Show next number without consuming
+
+---
+
+## Industry Standard Comparison
+
+| Feature | QuickBooks | Xero | Current App | After Fix |
+|---------|------------|------|-------------|-----------|
+| Sequential numbers | Yes | Yes | No (gaps) | Yes |
+| Reserve on save only | Yes | Yes | No | Yes |
+| Preview next number | Yes | Yes | No | Yes |
+| Never skip/duplicate | Yes | Yes | No | Yes |
+| Allow manual override | Yes | Yes | Yes | Yes |
+| Sync after manual entry | Yes | Yes | Partial | Yes |
+
+---
+
+## Files to Create/Modify
 
 | File | Change |
 |------|--------|
-| `src/components/jobs/EmailManagement.tsx` | Fix wrapper overflow for scrolling |
-| `src/components/jobs/email/EmailComposer.tsx` | 1) Add flex/scroll to Card layout<br>2) Replace hardcoded templates with `useGeneralEmailTemplates` hook |
-
----
-
-## Result
-
-After these changes:
-1. The Compose Email dialog will scroll properly when content is long
-2. The template dropdown will show the **same 6 templates** you see in the Templates tab
-3. One single source of truth for templates (database)
-
+| `supabase/migrations/[new].sql` | Fix LPAD truncation, add preview function |
+| `src/lib/format-job-number.ts` | Remove/update truncation logic |
+| `src/hooks/useProjects.ts` | Move number generation to save time |
+| `src/hooks/useQuotes.ts` | Same pattern |
+| `src/components/jobs/EditableDocumentNumber.tsx` | Preview number instead of consuming |
+| `src/hooks/useNumberSequences.ts` | Add `previewNextNumber` function |
