@@ -62,7 +62,7 @@ const AdminAccountHealth = lazyWithRetry(() => import("./pages/AdminAccountHealt
 const OnboardingSubmissions = lazyWithRetry(() => import("./pages/OnboardingSubmissions"), "OnboardingSubmissions");
 const SubscriptionSuccess = lazyWithRetry(() => import("./pages/SubscriptionSuccess"), "SubscriptionSuccess");
 const SubscriptionCanceled = lazyWithRetry(() => import("./pages/SubscriptionCanceled"), "SubscriptionCanceled");
-const CampaignBuilder = lazyWithRetry(() => import("./pages/CampaignBuilder"), "CampaignBuilder");
+
 
 
 const queryClient = new QueryClient({
@@ -364,14 +364,6 @@ const App = () => {
                   </ProtectedRoute>
                 } />
 
-                {/* Campaign Builder - Full Page */}
-                <Route path="/campaigns/new" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
-                      <CampaignBuilder />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
 
                 {/* Main application - all functionality handled through tabs */}
                 <Route path="/" element={
