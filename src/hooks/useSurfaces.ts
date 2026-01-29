@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
+import { logProjectActivity } from "@/hooks/useProjectActivityLog";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
@@ -74,9 +75,19 @@ export const useCreateSurface = () => {
       console.log("Surface created successfully:", data);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log("=== SURFACE CREATION SUCCESS ===");
       console.log("Created surface data:", data);
+      
+      // Log activity
+      if (data.project_id) {
+        await logProjectActivity({
+          projectId: data.project_id,
+          activityType: 'window_added',
+          title: `Added window "${data.name}"`,
+          metadata: { surface_id: data.id, surface_name: data.name }
+        });
+      }
       
       // Invalidate multiple related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });

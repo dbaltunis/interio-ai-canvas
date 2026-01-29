@@ -11,7 +11,12 @@ export type ProjectActivityType =
   | 'note_added'
   | 'client_linked'
   | 'project_created'
-  | 'project_duplicated';
+  | 'project_duplicated'
+  | 'room_added'
+  | 'window_added'
+  | 'treatment_added'
+  | 'share_link_created'
+  | 'pdf_exported';
 
 export interface ProjectActivity {
   id: string;

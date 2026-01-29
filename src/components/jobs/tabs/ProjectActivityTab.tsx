@@ -43,6 +43,11 @@ const activityIcons: Record<ProjectActivityType | 'status_changed_legacy', React
   client_linked: Link,
   project_created: Plus,
   project_duplicated: Copy,
+  room_added: Plus,
+  window_added: Plus,
+  treatment_added: Plus,
+  share_link_created: Link,
+  pdf_exported: FileText,
 };
 
 const activityColors: Record<ProjectActivityType | 'status_changed_legacy', string> = {
@@ -57,6 +62,11 @@ const activityColors: Record<ProjectActivityType | 'status_changed_legacy', stri
   client_linked: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
   project_created: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
   project_duplicated: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+  room_added: 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400',
+  window_added: 'bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400',
+  treatment_added: 'bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
+  share_link_created: 'bg-lime-100 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400',
+  pdf_exported: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
 };
 
 const activityLabels: Record<ProjectActivityType | 'status_changed_legacy', string> = {
@@ -71,6 +81,11 @@ const activityLabels: Record<ProjectActivityType | 'status_changed_legacy', stri
   client_linked: 'Client',
   project_created: 'Created',
   project_duplicated: 'Duplicated',
+  room_added: 'Room',
+  window_added: 'Window',
+  treatment_added: 'Treatment',
+  share_link_created: 'Share',
+  pdf_exported: 'PDF',
 };
 
 type FilterType = 'all' | 'status' | 'team' | 'emails' | 'quotes' | 'other';
