@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Users, Star, ShieldCheck } from "lucide-react";
+import { Search, Users, Star, Lock } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useProjectAssignments, useAssignUserToProject, useRemoveUserFromProject } from "@/hooks/useProjectAssignments";
 import { getAvatarColor, getInitials } from '@/lib/avatar-utils';
@@ -177,11 +177,11 @@ export const ProjectTeamAssignDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            Manage Team Access
+            <Lock className="h-5 w-5" />
+            Limit Access
           </DialogTitle>
           <DialogDescription>
-            All team members have access by default. Unselect members to limit access to <span className="font-medium">{projectName}</span>
+            All team members have access by default. Unselect members to restrict access to <span className="font-medium">{projectName}</span>
           </DialogDescription>
         </DialogHeader>
 

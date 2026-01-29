@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive, UserPlus } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive, ShieldCheck } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -105,6 +105,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   // Use explicit delete permission from parent if provided, otherwise fall back to useHasPermission
   const canDeleteJobsFallback = useHasPermission('delete_jobs');
   const canDeleteJobs = canDeleteJobsProp !== undefined ? canDeleteJobsProp : canDeleteJobsFallback;
+  const canManageTeamAccess = useHasPermission('manage_team');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
@@ -999,19 +1000,21 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                     </Badge>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => {
-                    setSelectedProjectForTeam({
-                      id: project.id,
-                      name: project.name || `Job #${project.job_number}`,
-                      ownerId: project.user_id,
-                    });
-                    setTeamAssignDialogOpen(true);
-                  }}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Invite team
-                </DropdownMenuItem>
+                {canManageTeamAccess && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      setSelectedProjectForTeam({
+                        id: project.id,
+                        name: project.name || `Job #${project.job_number}`,
+                        ownerId: project.user_id,
+                      });
+                      setTeamAssignDialogOpen(true);
+                    }}
+                  >
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Limit Access
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>
                   <Copy className="mr-2 h-4 w-4" />

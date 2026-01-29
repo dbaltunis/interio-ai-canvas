@@ -1,7 +1,9 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import { getAvatarColor, getInitials } from '@/lib/avatar-utils';
+import { Lock } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -31,16 +33,12 @@ export const TeamAvatarStack = ({
   onClick,
   className
 }: TeamAvatarStackProps) => {
-  const hasTeamMembers = assignedMembers.length > 0;
+  // If no assigned members, it means full access (everyone can see)
+  const isFullAccess = assignedMembers.length === 0;
+  const isRestricted = assignedMembers.length > 0;
   
-  // Truncate owner first name to 6 chars for tighter layouts
-  const rawFirstName = owner.name.split(' ')[0];
-  const ownerFirstName = rawFirstName.length > 6 
-    ? rawFirstName.slice(0, 6) + '.' 
-    : rawFirstName;
-  
-  // Reduce visible count when owner name is long
-  const effectiveMaxVisible = ownerFirstName.length > 5 ? Math.min(maxVisible, 2) : maxVisible;
+  // For restricted mode, show avatars with lock indicator
+  const effectiveMaxVisible = isRestricted ? Math.min(maxVisible, 3) : maxVisible;
   const visibleMembers = assignedMembers.slice(0, effectiveMaxVisible);
   const remainingCount = Math.max(0, assignedMembers.length - effectiveMaxVisible);
   
@@ -64,7 +62,7 @@ export const TeamAvatarStack = ({
           <TooltipTrigger asChild>
             <Avatar className={cn(
               "border-2 border-background transition-transform group-hover:scale-105",
-              hasTeamMembers ? "h-7 w-7 ring-2 ring-primary/20" : "h-6 w-6"
+              isRestricted ? "h-7 w-7 ring-2 ring-primary/20" : "h-6 w-6"
             )}>
               {owner.avatarUrl ? (
                 <AvatarImage src={owner.avatarUrl} alt={owner.name} />
@@ -80,36 +78,45 @@ export const TeamAvatarStack = ({
           </TooltipContent>
         </Tooltip>
 
-        {/* Owner name - only when team exists */}
-        {hasTeamMembers && (
-          <span className="text-xs font-medium text-muted-foreground max-w-[50px] truncate">
-            {ownerFirstName}
-          </span>
+        {/* Full access badge - shown when no restrictions */}
+        {isFullAccess && (
+          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+            All team
+          </Badge>
         )}
 
-        {/* Assigned team members - stacked, only when team exists */}
-        {hasTeamMembers && (
+        {/* Restricted access - show assigned team members with lock indicator */}
+        {isRestricted && (
           <div className="flex -space-x-2.5">
             {visibleMembers.map((member, index) => {
               const memberInitials = getInitials(member.name);
               const memberColor = getAvatarColor(member.id);
+              const isFirst = index === 0;
               
               return (
                 <Tooltip key={member.id}>
                   <TooltipTrigger asChild>
-                    <Avatar 
-                      className={cn(
-                        "h-6 w-6 border-2 border-background transition-transform group-hover:scale-105"
+                    <div className="relative">
+                      <Avatar 
+                        className={cn(
+                          "h-6 w-6 border-2 border-background transition-transform group-hover:scale-105"
+                        )}
+                        style={{ zIndex: visibleMembers.length - index }}
+                      >
+                        {member.avatarUrl ? (
+                          <AvatarImage src={member.avatarUrl} alt={member.name} />
+                        ) : null}
+                        <AvatarFallback className={cn(memberColor, "text-primary-foreground text-[10px] font-medium")}>
+                          {memberInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Lock icon on first avatar to indicate restricted access */}
+                      {isFirst && (
+                        <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-500 flex items-center justify-center ring-1 ring-background">
+                          <Lock className="h-2 w-2 text-white" />
+                        </div>
                       )}
-                      style={{ zIndex: visibleMembers.length - index }}
-                    >
-                      {member.avatarUrl ? (
-                        <AvatarImage src={member.avatarUrl} alt={member.name} />
-                      ) : null}
-                      <AvatarFallback className={cn(memberColor, "text-primary-foreground text-[10px] font-medium")}>
-                        {memberInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
                     <p className="font-medium">{member.name}</p>
