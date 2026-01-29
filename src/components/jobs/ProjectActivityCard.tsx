@@ -37,6 +37,11 @@ const activityIcons: Record<ProjectActivityType, React.ElementType> = {
   client_linked: Link,
   project_created: Plus,
   project_duplicated: Copy,
+  room_added: Plus,
+  window_added: Plus,
+  treatment_added: Plus,
+  share_link_created: Link,
+  pdf_exported: FileText,
 };
 
 const activityColors: Record<ProjectActivityType, string> = {
@@ -50,6 +55,11 @@ const activityColors: Record<ProjectActivityType, string> = {
   client_linked: "text-cyan-500",
   project_created: "text-primary",
   project_duplicated: "text-violet-500",
+  room_added: "text-sky-500",
+  window_added: "text-slate-500",
+  treatment_added: "text-fuchsia-500",
+  share_link_created: "text-lime-500",
+  pdf_exported: "text-rose-500",
 };
 
 const CompactActivityItem = ({ activity }: { activity: ProjectActivity }) => {

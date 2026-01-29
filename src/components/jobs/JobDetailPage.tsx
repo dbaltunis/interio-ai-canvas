@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle, Activity } from "lucide-react";
+import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
 import { 
   PixelUserIcon, 
   PixelClipboardIcon, 
@@ -37,7 +37,7 @@ import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
-import { ProjectActivityTab } from "./tabs/ProjectActivityTab";
+
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
@@ -842,7 +842,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "rooms", label: "Project", mobileLabel: "Project", icon: PixelClipboardIcon, disabled: false },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: PixelDocumentIcon, disabled: false },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: PixelTeamIcon, disabled: !canViewWorkroomExplicit },
-    { id: "activity", label: "Activity", mobileLabel: "Activity", icon: Activity, disabled: false },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -1115,11 +1114,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 )}
               </TabsContent>
 
-              <TabsContent value="activity" className="mt-0">
-                <div className="modern-card p-6">
-                  <ProjectActivityTab projectId={jobId} />
-                </div>
-              </TabsContent>
             </div>
           </div>
         </Tabs>

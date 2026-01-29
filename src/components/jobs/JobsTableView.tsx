@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive, ShieldCheck } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive, ShieldCheck, UserPlus } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -1026,19 +1026,35 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   )}
                 </DropdownMenuItem>
                 {canManageTeamAccess && (
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      setSelectedProjectForTeam({
-                        id: project.id,
-                        name: project.name || `Job #${project.job_number}`,
-                        ownerId: project.user_id,
-                      });
-                      setTeamAssignDialogOpen(true);
-                    }}
-                  >
-                    <ShieldCheck className="mr-2 h-4 w-4" />
-                    Limit Access
-                  </DropdownMenuItem>
+                  (() => {
+                    // Calculate if any needs-assignment members are assigned to this project
+                    const projectAssignments = projectAssignmentsMap[project.id] || [];
+                    const needsAssignmentIds = new Set(
+                      (teamPermissionsData?.needsAssignmentMembers ?? []).map(m => m.id)
+                    );
+                    const hasAnyNeedsAssignmentAssigned = projectAssignments.some(
+                      (a: { user_id: string }) => needsAssignmentIds.has(a.user_id)
+                    );
+                    // Show "Invite team" when no needs-assignment members are assigned, "Limit Access" when they are
+                    const menuLabel = hasAnyNeedsAssignmentAssigned ? "Limit Access" : "Invite team";
+                    const MenuIcon = hasAnyNeedsAssignmentAssigned ? ShieldCheck : UserPlus;
+                    
+                    return (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setSelectedProjectForTeam({
+                            id: project.id,
+                            name: project.name || `Job #${project.job_number}`,
+                            ownerId: project.user_id,
+                          });
+                          setTeamAssignDialogOpen(true);
+                        }}
+                      >
+                        <MenuIcon className="mr-2 h-4 w-4" />
+                        {menuLabel}
+                      </DropdownMenuItem>
+                    );
+                  })()
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>

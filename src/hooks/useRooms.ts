@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
+import { logProjectActivity } from "@/hooks/useProjectActivityLog";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Room = Tables<"rooms">;
@@ -95,7 +96,16 @@ export const useCreateRoom = () => {
       
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Log activity
+      if (data.project_id) {
+        await logProjectActivity({
+          projectId: data.project_id,
+          activityType: 'room_added',
+          title: `Added room "${data.name}"`,
+          metadata: { room_id: data.id, room_name: data.name }
+        });
+      }
       // Invalidate all room queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
