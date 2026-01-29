@@ -33,6 +33,7 @@ import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useProjectStatus } from "@/contexts/ProjectStatusContext";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -43,7 +44,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { user } = useAuth();
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
-  const isReadOnly = !canEditJob || editPermissionsLoading;
+  // Use project status context for lock status
+  const { isLocked: projectIsLocked, isLoading: statusLoading } = useProjectStatus();
+  // Combined read-only check: no edit permission OR project is locked
+  const isReadOnly = !canEditJob || editPermissionsLoading || projectIsLocked || statusLoading;
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
@@ -691,6 +695,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   handleClientSelection(value);
                 }
               }}
+              isLocked={isReadOnly}
             />
           </div>
         </div>
