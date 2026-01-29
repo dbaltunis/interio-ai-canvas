@@ -1,337 +1,267 @@
 
 
-# Enhanced Team Display and Project Activity Log
+# Enhanced Team UX and Activity Tracking Fixes
 
-## Summary of Changes
+## Summary
 
-This plan addresses four requests:
-1. **Team column display** - Show owner name only when team members are invited, remove the star
-2. **Default behavior for open access** - Best practice recommendation for accounts where all team members have equal access
-3. **Notifications when team members are invited** - What happens when assignments are made
-4. **Project Activity Log** - A new tab/section to track all project-level events
+This plan addresses the following issues:
+1. **Add "Invite Team Member" to the Actions dropdown menu** - Make team assignment accessible from the focus group
+2. **Handle long names and multiple team members in Team column** - Prevent layout issues
+3. **Activity tracking records not showing** - Integrate activity logging with existing operations
+4. **Complete remaining activity log integrations** - Status changes, quotes, notes, etc.
 
 ---
 
-## Part 1: Team Avatar Stack Improvements
+## Issue 1: Add "Invite Team Member" to Actions Dropdown
 
 ### Current State
-- Owner always shows with a gold star badge
-- Owner avatar is always 28x28px
-- No textual name is shown
+The "Invite Team Member" action is only accessible by clicking directly on the Team column avatars, which is not discoverable or user-friendly.
 
-### Proposed Changes
+### Solution
+Add a new "Invite Team Member" menu item in the Actions dropdown (the three-dot menu shown in the screenshot).
 
-**Visual Logic:**
+**File: `src/components/jobs/JobsTableView.tsx`**
 
-| Scenario | Display |
-|----------|---------|
-| No team assigned | Owner avatar only (no star, no name) |
-| Team members assigned | Owner avatar (slightly larger) + name + stacked team avatars |
+**Location:** Lines 988-1029 (inside the DropdownMenuContent for actions)
+
+Add between "Write Note" and "Duplicate Job":
+
+```typescript
+import { UserPlus } from "lucide-react"; // Add to imports
+
+// In the dropdown menu, after "Write Note":
+<DropdownMenuItem 
+  onClick={() => {
+    setSelectedProjectForTeam({
+      id: project.id,
+      name: project.name || `Job #${project.job_number}`,
+      ownerId: project.user_id,
+    });
+    setTeamAssignDialogOpen(true);
+  }}
+>
+  <UserPlus className="mr-2 h-4 w-4" />
+  Invite Team Member
+</DropdownMenuItem>
+<DropdownMenuSeparator />
+```
+
+---
+
+## Issue 2: Handle Long Names and Multiple Team Members
+
+### Current State
+- Owner name can overflow if too long (max-w-[60px] is set but may still cause issues)
+- Multiple team avatars can take too much horizontal space
+
+### Solution
+Enhance `TeamAvatarStack.tsx` with better space management:
 
 **File: `src/components/jobs/TeamAvatarStack.tsx`**
 
-```text
-BEFORE (always shows):
-[★👤]  ← star on all
+**Changes:**
 
-AFTER (conditional):
-No team:     [👤]              ← Just owner avatar, clean
-With team:   [👤 Daniel] [MI][KU]  ← Owner with name + team stacked
-```
-
-Changes:
-- Remove the gold star badge completely
-- Only show owner's name when `assignedMembers.length > 0`
-- Make owner avatar slightly more prominent when team exists (ring/border highlight)
-- Keep the avatar-only display when no team is assigned (clean, minimal)
-
----
-
-## Part 2: Default Behavior for Open Access Accounts
-
-### Best Practice Recommendation
-
-When an account has "all team has equal access to all projects", displaying every team member on every job would be:
-- Visually cluttered
-- Redundant information
-- Performance-heavy
-
-**Recommended Approach:**
-
-| Scenario | Display | Meaning |
-|----------|---------|---------|
-| Open access account (no restrictions) | Show owner only | "Everyone has access" is implied |
-| Restricted access with explicit assignments | Show owner + assigned members | "Only these people have access" |
-
-**Implementation:** This is already the default behavior. The `project_assignments` table only stores explicit assignments. If a project has no assignments and the account has open permissions, all team members can see it based on role permissions, but they won't be displayed in the Team column.
-
-**Optional Enhancement:** Add a tooltip or indicator "Open to all team members" on hover when no explicit assignments exist but the account has open access settings.
-
----
-
-## Part 3: Notifications for Team Assignments
-
-### Current State
-- When a team member is assigned, a record is inserted into `project_assignments`
-- **No notification is sent**
-- The assigned member will see the job in their list on next refresh
-
-### Proposed Enhancements
-
-**Option A: In-App Notification (Recommended)**
-Create a notification record when assignments are made:
+1. **Reduce maxVisible from 3 to 2** when there's a long owner name
+2. **Shorten the owner name display** to first name only with max 50px width
+3. **Add a compact mode** for narrow columns
+4. **Improve overflow indicator** styling
 
 ```typescript
-// When assigning a team member
-await supabase.from('notifications').insert({
-  user_id: assignedUserId,
-  type: 'project_assigned',
-  title: 'New Project Assignment',
-  message: `You've been assigned to "${projectName}"`,
-  metadata: { project_id: projectId, assigned_by: currentUserId },
-  read: false
+// Update the ownerFirstName to be shorter
+const ownerFirstName = owner.name.split(' ')[0].slice(0, 6) + 
+  (owner.name.split(' ')[0].length > 6 ? '.' : '');
+
+// Reduce visible count for tighter layouts
+const effectiveMaxVisible = ownerFirstName.length > 5 ? Math.min(maxVisible, 2) : maxVisible;
+const visibleMembers = assignedMembers.slice(0, effectiveMaxVisible);
+const remainingCount = Math.max(0, assignedMembers.length - effectiveMaxVisible);
+
+// Tighter spacing for stacked avatars
+<div className="flex -space-x-2.5"> // Slightly more overlap
+```
+
+**Specific Changes:**
+- Truncate owner first name to 6 characters with ellipsis
+- Reduce max-width for name to 50px
+- Make avatar sizes slightly smaller (h-6 w-6 for owner when team exists)
+- Increase avatar overlap from -2 to -2.5 for tighter stacking
+- Add responsive maxVisible: 2 on smaller screens
+
+---
+
+## Issue 3: Activity Tracking Not Showing Records
+
+### Root Cause Analysis
+
+The `ProjectActivityTab` is properly integrated into the job detail page (under the "More" dropdown with "Workroom"). However, activity records are only being logged when:
+1. Team members are assigned/removed via `useProjectAssignments.ts`
+
+**Missing integrations:**
+- Status changes
+- Note creation
+- Quote creation
+- Email sending
+- Client linking
+- Project creation
+- Project duplication
+
+### Solution: Add Activity Logging to Key Operations
+
+**File 1: `src/hooks/useLogStatusChange.ts`**
+
+Add activity logging when status changes:
+
+```typescript
+import { logProjectActivity } from './useProjectActivityLog';
+
+// After successful status change:
+await logProjectActivity({
+  projectId,
+  activityType: 'status_changed',
+  title: `Status changed from "${previousStatusName}" to "${newStatusName}"`,
+  description: reason || notes || null,
+  metadata: {
+    previous_status_id: previousStatusId,
+    new_status_id: newStatusId,
+    previous_status_name: previousStatusName,
+    new_status_name: newStatusName,
+    reason,
+    notes
+  }
 });
 ```
 
-**Option B: Email Notification**
-Send an email via edge function when assignment is created:
-- Subject: "You've been assigned to a new project"
-- Body: Project name, client, link to view
+**File 2: `src/hooks/useProjectNotes.ts`** (or similar)
 
-**For this plan, we'll implement Option A (in-app notifications).**
-
----
-
-## Part 4: Project Activity Log (Audit Trail)
-
-### Concept
-A dedicated section/tab in the Job Detail page that logs ALL significant events:
-
-| Event Type | Example |
-|------------|---------|
-| Status changes | "Status changed from Draft to Quote Sent by Daniel at Jan 29, 2026 3:45pm" |
-| Team assignments | "Sarah was assigned to this project by Daniel at Jan 28, 2026 10:00am" |
-| Emails sent | "Quote email sent to client@email.com by Daniel at Jan 27, 2026" |
-| Notes added | "Note added by Sarah at Jan 26, 2026" |
-| Quote created | "Quote v1 created by Daniel at Jan 25, 2026" |
-| Client linked | "Client 'John Smith' linked to project by Daniel" |
-
-### Database Table
-
-**Table: `project_activity_log`**
-
-```sql
-CREATE TABLE project_activity_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
-  user_id UUID REFERENCES auth.users(id) NOT NULL,
-  activity_type TEXT NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE INDEX idx_project_activity_project_id ON project_activity_log(project_id);
-CREATE INDEX idx_project_activity_created_at ON project_activity_log(created_at DESC);
-```
-
-**Activity Types:**
-- `status_changed` - Status transitions
-- `team_assigned` - Team member added
-- `team_removed` - Team member removed
-- `email_sent` - Email to client
-- `quote_created` - New quote version
-- `quote_sent` - Quote emailed/shared
-- `note_added` - Note created
-- `client_linked` - Client assigned
-- `project_created` - Initial creation
-- `project_duplicated` - Job duplicated from another
-
-### UI Component
-
-**New Tab: "Activity" in JobDetailPage**
-
-```text
-Tabs: [Client] [Project] [Quote] [Workroom] [Activity]
-                                              ↑ NEW
-```
-
-**Component: `src/components/jobs/tabs/ProjectActivityTab.tsx`**
-
-Features:
-- Timeline view with icons per activity type
-- Filterable by type (All, Status, Team, Emails)
-- Shows user name, action, timestamp
-- Expandable for additional details (e.g., "Reason: Client requested changes")
-
-### Automatic Logging Points
-
-Events will be logged automatically at these code locations:
-
-| Event | Hook/Function to Modify |
-|-------|------------------------|
-| Status change | Already exists in `status_change_history` - will sync to new table |
-| Team assignment | `useAssignUserToProject` mutation |
-| Email sent | `useProjectCommunicationStats` or email sending function |
-| Quote created | `useCreateQuote` mutation |
-| Note added | `useCreateProjectNote` |
-
----
-
-## File Changes Summary
-
-### New Files
-| File | Description |
-|------|-------------|
-| `src/components/jobs/tabs/ProjectActivityTab.tsx` | Activity timeline UI |
-| `src/hooks/useProjectActivityLog.ts` | Hook for fetching/creating activity records |
-| `supabase/migrations/project_activity_log.sql` | Database table creation |
-
-### Modified Files
-| File | Changes |
-|------|---------|
-| `src/components/jobs/TeamAvatarStack.tsx` | Remove star, show name only when team exists |
-| `src/components/jobs/JobDetailPage.tsx` | Add Activity tab |
-| `src/hooks/useProjectAssignments.ts` | Log assignment activity + create notification |
-| `src/hooks/useLogStatusChange.ts` | Also log to project_activity_log |
-
----
-
-## Technical Details
-
-### TeamAvatarStack Updates
-
-```tsx
-// New display logic
-const hasTeamMembers = assignedMembers.length > 0;
-
-return (
-  <div className="flex items-center gap-2">
-    {/* Owner avatar - always visible */}
-    <Avatar className={cn(
-      "border-2 border-background",
-      hasTeamMembers ? "h-7 w-7 ring-2 ring-primary/20" : "h-6 w-6"
-    )}>
-      ...
-    </Avatar>
-    
-    {/* Owner name - only when team exists */}
-    {hasTeamMembers && (
-      <span className="text-xs font-medium text-muted-foreground max-w-[60px] truncate">
-        {owner.name.split(' ')[0]}
-      </span>
-    )}
-    
-    {/* Team avatars - only when team exists */}
-    {hasTeamMembers && (
-      <div className="flex -space-x-2">
-        {/* ... existing stacked avatars ... */}
-      </div>
-    )}
-  </div>
-);
-```
-
-### Activity Log Hook
+Add logging when notes are created:
 
 ```typescript
-export type ProjectActivityType = 
-  | 'status_changed'
-  | 'team_assigned'
-  | 'team_removed'
-  | 'email_sent'
-  | 'quote_created'
-  | 'note_added'
-  | 'client_linked'
-  | 'project_created'
-  | 'project_duplicated';
-
-export const useLogProjectActivity = () => {
-  return useMutation({
-    mutationFn: async ({
-      projectId,
-      activityType,
-      title,
-      description,
-      metadata
-    }: {
-      projectId: string;
-      activityType: ProjectActivityType;
-      title: string;
-      description?: string;
-      metadata?: any;
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("project_activity_log")
-        .insert({
-          project_id: projectId,
-          user_id: user.id,
-          activity_type: activityType,
-          title,
-          description,
-          metadata
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  });
-};
+await logProjectActivity({
+  projectId,
+  activityType: 'note_added',
+  title: 'Added a note',
+  description: noteContent.substring(0, 100) + (noteContent.length > 100 ? '...' : ''),
+  metadata: { note_id: newNote.id }
+});
 ```
 
-### RLS Policy for Activity Log
+**File 3: `src/hooks/useQuotes.ts`**
 
-```sql
--- Users can view activity for projects they have access to
-CREATE POLICY "View project activities"
-ON project_activity_log FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM projects p 
-    WHERE p.id = project_activity_log.project_id 
-    AND p.user_id = auth.uid()
-  )
-  OR EXISTS (
-    SELECT 1 FROM project_assignments pa 
-    WHERE pa.project_id = project_activity_log.project_id 
-    AND pa.user_id = auth.uid() 
-    AND pa.is_active = true
-  )
-);
+Add logging when quotes are created:
 
--- Users can insert activity for projects they have access to
-CREATE POLICY "Insert project activities"
-ON project_activity_log FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+```typescript
+await logProjectActivity({
+  projectId: quote.project_id,
+  activityType: 'quote_created',
+  title: `Quote v${quote.version_number || 1} created`,
+  metadata: { quote_id: quote.id }
+});
+```
+
+**File 4: `src/hooks/useProjects.ts` (createProject mutation)**
+
+Add logging when projects are created:
+
+```typescript
+await logProjectActivity({
+  projectId: newProject.id,
+  activityType: 'project_created',
+  title: 'Project created',
+  metadata: { job_number: newProject.job_number }
+});
+```
+
+**File 5: `src/components/jobs/JobDetailPage.tsx` (duplicateJob function)**
+
+Add logging when projects are duplicated:
+
+```typescript
+await logProjectActivity({
+  projectId: newProject.id,
+  activityType: 'project_duplicated',
+  title: `Duplicated from Job #${originalJobNumber}`,
+  description: `Source job: ${sourceJobId}`,
+  metadata: { source_project_id: jobId, source_job_number: originalJobNumber }
+});
 ```
 
 ---
 
-## Implementation Order
+## Issue 4: Activity Tab Icon
 
-1. **Phase 1: TeamAvatarStack improvements** (quick win)
-   - Remove star
-   - Add conditional name display
+The Activity tab currently uses `PixelClipboardIcon` which is the same as Project tab, making it confusing.
 
-2. **Phase 2: Project Activity Log table and UI**
-   - Create database table
-   - Create hook
-   - Create tab component
-   - Add to JobDetailPage
+**File: `src/components/jobs/JobDetailPage.tsx`**
 
-3. **Phase 3: Automatic logging integration**
-   - Integrate with status changes
-   - Integrate with team assignments
-   - Integrate with email sending
-   - Integrate with notes
+**Change:**
+```typescript
+import { Activity } from "lucide-react";
 
-4. **Phase 4: In-app notifications for assignments**
-   - Create notification on assignment
-   - Display in notification center
+// In allTabs array:
+{ id: "activity", label: "Activity", mobileLabel: "Activity", icon: Activity, disabled: false },
+```
+
+---
+
+## Files to Modify Summary
+
+| File | Changes |
+|------|---------|
+| `src/components/jobs/JobsTableView.tsx` | Add "Invite Team Member" to actions dropdown |
+| `src/components/jobs/TeamAvatarStack.tsx` | Better space management for long names |
+| `src/components/jobs/JobDetailPage.tsx` | Fix Activity tab icon, add logging to duplicate |
+| `src/hooks/useLogStatusChange.ts` | Add activity logging for status changes |
+| `src/hooks/useProjectNotes.ts` | Add activity logging for notes |
+| `src/hooks/useQuotes.ts` | Add activity logging for quote creation |
+| `src/hooks/useProjects.ts` | Add activity logging for project creation |
+
+---
+
+## Technical Notes
+
+### Activity Log Integration Points
+
+The existing `useProjectAssignments.ts` shows the pattern for logging:
+
+```typescript
+// Log activity
+await supabase
+  .from("project_activity_log")
+  .insert({
+    project_id: projectId,
+    user_id: currentUser.id,
+    activity_type: 'team_assigned',
+    title: `${assignedName} was assigned to this project`,
+    description: notes || null,
+    metadata: { assigned_user_id: userId, role }
+  });
+```
+
+The same pattern should be applied to other operations.
+
+### Display Improvements
+
+For the Team column width issue:
+- Total Team column width should stay under ~150px
+- Owner avatar: 24px (when team exists)
+- Owner name: max 50px
+- Team avatars (max 2): 24px each with -10px overlap = ~38px
+- Overflow indicator: 24px
+- Gaps: ~8px
+- **Total: ~144px**
+
+---
+
+## Expected Results
+
+After implementation:
+1. Users can click "Invite Team Member" directly from the job's three-dot menu
+2. Long names and multiple team members won't break the table layout
+3. The Activity tab will show all project activities including:
+   - Status changes (e.g., "Status changed from Draft to Quote Sent")
+   - Team assignments (e.g., "Sarah was assigned to this project")
+   - Notes added
+   - Quotes created
+   - Project duplications
+4. Activity tab has a unique icon for better discoverability
 
