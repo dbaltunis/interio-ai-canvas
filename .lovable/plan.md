@@ -1,267 +1,234 @@
 
 
-# Enhanced Team UX and Activity Tracking Fixes
+# Add Activity Log to Client Section (First Tab)
 
-## Summary
+## Overview
 
-This plan addresses the following issues:
-1. **Add "Invite Team Member" to the Actions dropdown menu** - Make team assignment accessible from the focus group
-2. **Handle long names and multiple team members in Team column** - Prevent layout issues
-3. **Activity tracking records not showing** - Integrate activity logging with existing operations
-4. **Complete remaining activity log integrations** - Status changes, quotes, notes, etc.
+Based on your feedback, you want to add the **Project Activity Log** directly to the **Client section** (the first tab you see when viewing/creating a job) rather than keeping it as a separate tab.
+
+This makes sense because:
+- **Immediate visibility**: Users see project history right away
+- **Context**: Activity log sits alongside client info, notes, and timeline
+- **Reduced navigation**: No need to click to a separate tab to see what happened
+- **Better UX**: Everything about the project state is in one place
 
 ---
 
-## Issue 1: Add "Invite Team Member" to Actions Dropdown
+## Current Layout of Client Tab (ProjectDetailsTab)
 
-### Current State
-The "Invite Team Member" action is only accessible by clicking directly on the Team column avatars, which is not discoverable or user-friendly.
-
-### Solution
-Add a new "Invite Team Member" menu item in the Actions dropdown (the three-dot menu shown in the screenshot).
-
-**File: `src/components/jobs/JobsTableView.tsx`**
-
-**Location:** Lines 988-1029 (inside the DropdownMenuContent for actions)
-
-Add between "Write Note" and "Duplicate Job":
-
-```typescript
-import { UserPlus } from "lucide-react"; // Add to imports
-
-// In the dropdown menu, after "Write Note":
-<DropdownMenuItem 
-  onClick={() => {
-    setSelectedProjectForTeam({
-      id: project.id,
-      name: project.name || `Job #${project.job_number}`,
-      ownerId: project.user_id,
-    });
-    setTeamAssignDialogOpen(true);
-  }}
->
-  <UserPlus className="mr-2 h-4 w-4" />
-  Invite Team Member
-</DropdownMenuItem>
-<DropdownMenuSeparator />
+```text
+┌────────────────────────────────────────────────────┐
+│  Compact Summary Bar                               │
+│  [Client] [Rooms: 2] [Quote: $3,500]               │
+├────────────────────────────────────────────────────┤
+│  Timeline: Jan 15 → Jan 30                         │
+├────────────────────────────────────────────────────┤
+│  📋 Document Number                                │
+│  Draft #DFT-0123                                   │
+├────────────────────────────────────────────────────┤
+│  👤 Client Assignment                              │
+│  John Smith • john@email.com                       │
+├────────────────────────────────────────────────────┤
+│  📝 Project Notes                                  │
+│  [Note entries...]                                 │
+└────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Issue 2: Handle Long Names and Multiple Team Members
+## Proposed Layout (Activity Log Added)
 
-### Current State
-- Owner name can overflow if too long (max-w-[60px] is set but may still cause issues)
-- Multiple team avatars can take too much horizontal space
+Add the Activity Log **below Project Notes** to create a complete project history view:
 
-### Solution
-Enhance `TeamAvatarStack.tsx` with better space management:
-
-**File: `src/components/jobs/TeamAvatarStack.tsx`**
-
-**Changes:**
-
-1. **Reduce maxVisible from 3 to 2** when there's a long owner name
-2. **Shorten the owner name display** to first name only with max 50px width
-3. **Add a compact mode** for narrow columns
-4. **Improve overflow indicator** styling
-
-```typescript
-// Update the ownerFirstName to be shorter
-const ownerFirstName = owner.name.split(' ')[0].slice(0, 6) + 
-  (owner.name.split(' ')[0].length > 6 ? '.' : '');
-
-// Reduce visible count for tighter layouts
-const effectiveMaxVisible = ownerFirstName.length > 5 ? Math.min(maxVisible, 2) : maxVisible;
-const visibleMembers = assignedMembers.slice(0, effectiveMaxVisible);
-const remainingCount = Math.max(0, assignedMembers.length - effectiveMaxVisible);
-
-// Tighter spacing for stacked avatars
-<div className="flex -space-x-2.5"> // Slightly more overlap
-```
-
-**Specific Changes:**
-- Truncate owner first name to 6 characters with ellipsis
-- Reduce max-width for name to 50px
-- Make avatar sizes slightly smaller (h-6 w-6 for owner when team exists)
-- Increase avatar overlap from -2 to -2.5 for tighter stacking
-- Add responsive maxVisible: 2 on smaller screens
-
----
-
-## Issue 3: Activity Tracking Not Showing Records
-
-### Root Cause Analysis
-
-The `ProjectActivityTab` is properly integrated into the job detail page (under the "More" dropdown with "Workroom"). However, activity records are only being logged when:
-1. Team members are assigned/removed via `useProjectAssignments.ts`
-
-**Missing integrations:**
-- Status changes
-- Note creation
-- Quote creation
-- Email sending
-- Client linking
-- Project creation
-- Project duplication
-
-### Solution: Add Activity Logging to Key Operations
-
-**File 1: `src/hooks/useLogStatusChange.ts`**
-
-Add activity logging when status changes:
-
-```typescript
-import { logProjectActivity } from './useProjectActivityLog';
-
-// After successful status change:
-await logProjectActivity({
-  projectId,
-  activityType: 'status_changed',
-  title: `Status changed from "${previousStatusName}" to "${newStatusName}"`,
-  description: reason || notes || null,
-  metadata: {
-    previous_status_id: previousStatusId,
-    new_status_id: newStatusId,
-    previous_status_name: previousStatusName,
-    new_status_name: newStatusName,
-    reason,
-    notes
-  }
-});
-```
-
-**File 2: `src/hooks/useProjectNotes.ts`** (or similar)
-
-Add logging when notes are created:
-
-```typescript
-await logProjectActivity({
-  projectId,
-  activityType: 'note_added',
-  title: 'Added a note',
-  description: noteContent.substring(0, 100) + (noteContent.length > 100 ? '...' : ''),
-  metadata: { note_id: newNote.id }
-});
-```
-
-**File 3: `src/hooks/useQuotes.ts`**
-
-Add logging when quotes are created:
-
-```typescript
-await logProjectActivity({
-  projectId: quote.project_id,
-  activityType: 'quote_created',
-  title: `Quote v${quote.version_number || 1} created`,
-  metadata: { quote_id: quote.id }
-});
-```
-
-**File 4: `src/hooks/useProjects.ts` (createProject mutation)**
-
-Add logging when projects are created:
-
-```typescript
-await logProjectActivity({
-  projectId: newProject.id,
-  activityType: 'project_created',
-  title: 'Project created',
-  metadata: { job_number: newProject.job_number }
-});
-```
-
-**File 5: `src/components/jobs/JobDetailPage.tsx` (duplicateJob function)**
-
-Add logging when projects are duplicated:
-
-```typescript
-await logProjectActivity({
-  projectId: newProject.id,
-  activityType: 'project_duplicated',
-  title: `Duplicated from Job #${originalJobNumber}`,
-  description: `Source job: ${sourceJobId}`,
-  metadata: { source_project_id: jobId, source_job_number: originalJobNumber }
-});
+```text
+┌────────────────────────────────────────────────────┐
+│  Compact Summary Bar                               │
+│  [Client] [Rooms: 2] [Quote: $3,500]               │
+├────────────────────────────────────────────────────┤
+│  Timeline: Jan 15 → Jan 30                         │
+├────────────────────────────────────────────────────┤
+│  📋 Document Number                                │
+│  Draft #DFT-0123                                   │
+├────────────────────────────────────────────────────┤
+│  👤 Client Assignment                              │
+│  John Smith • john@email.com                       │
+├────────────────────────────────────────────────────┤
+│  📝 Project Notes                                  │
+│  [Note entries...]                                 │
+├────────────────────────────────────────────────────┤
+│  🕐 Project Activity                         ← NEW │
+│  ─────────────────────────────────────────────     │
+│  ○ Status changed from "Draft" to "Quote Sent"    │
+│    by Daniel • Jan 29, 2:45pm                     │
+│  ○ Quote v1 created                               │
+│    by Daniel • Jan 28, 10:00am                    │
+│  ○ Client assigned: John Smith                    │
+│    by Daniel • Jan 27, 3:30pm                     │
+│  ○ Project created                                │
+│    by Daniel • Jan 27, 3:15pm                     │
+│                                    [View All →]   │
+└────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Issue 4: Activity Tab Icon
+## Design Decisions
 
-The Activity tab currently uses `PixelClipboardIcon` which is the same as Project tab, making it confusing.
+### Option A: Compact Card (Recommended)
 
-**File: `src/components/jobs/JobDetailPage.tsx`**
+Show the **last 5 activities** in a compact card with a "View All" link that expands or opens the full timeline.
 
-**Change:**
-```typescript
-import { Activity } from "lucide-react";
+**Pros:**
+- Keeps the page scannable
+- Most important/recent activity visible at a glance
+- Full history available on demand
 
-// In allTabs array:
-{ id: "activity", label: "Activity", mobileLabel: "Activity", icon: Activity, disabled: false },
+### Option B: Collapsible Section
+
+Make the Activity section collapsible (like an accordion), defaulting to collapsed state.
+
+**Pros:**
+- Users who don't need it won't see it
+- Keeps page shorter for simple jobs
+
+### Recommended: Option A (Compact Card with "View All")
+
+---
+
+## Implementation Plan
+
+### File Changes
+
+| File | Change |
+|------|--------|
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Add `ProjectActivityCard` component |
+| `src/components/jobs/ProjectActivityCard.tsx` | **NEW** - Compact activity timeline card |
+| `src/components/jobs/JobDetailPage.tsx` | Remove Activity from separate tab (optional - keep for detailed view) |
+
+### New Component: ProjectActivityCard
+
+```tsx
+// src/components/jobs/ProjectActivityCard.tsx
+
+interface ProjectActivityCardProps {
+  projectId: string;
+  maxItems?: number;  // Default: 5
+  onViewAll?: () => void;  // Optional expand callback
+}
+```
+
+Features:
+- Shows most recent 5 activities by default
+- Each activity shows: icon, title, user name, relative timestamp
+- "View All" button to expand to full timeline or navigate to Activity tab
+- Compact single-line entries to save vertical space
+
+### UI Design
+
+**Activity Entry (Compact):**
+
+```text
+[○] Status → Quote Sent           by Daniel • 2h ago
+[○] Note added                    by Sarah  • Yesterday
+[○] Quote v1 created              by Daniel • Jan 27
+```
+
+**Activity Entry (Expanded on View All):**
+
+```text
+┌─────────────────────────────────────────────────────┐
+│ ○ Status changed from "Draft" to "Quote Sent"      │
+│   Reason: Ready for client review                  │
+│   by Daniel • January 29, 2026 at 2:45 PM          │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Files to Modify Summary
+## Technical Details
 
-| File | Changes |
-|------|---------|
-| `src/components/jobs/JobsTableView.tsx` | Add "Invite Team Member" to actions dropdown |
-| `src/components/jobs/TeamAvatarStack.tsx` | Better space management for long names |
-| `src/components/jobs/JobDetailPage.tsx` | Fix Activity tab icon, add logging to duplicate |
-| `src/hooks/useLogStatusChange.ts` | Add activity logging for status changes |
-| `src/hooks/useProjectNotes.ts` | Add activity logging for notes |
-| `src/hooks/useQuotes.ts` | Add activity logging for quote creation |
-| `src/hooks/useProjects.ts` | Add activity logging for project creation |
+### Integration with ProjectDetailsTab
 
----
+```tsx
+// In ProjectDetailsTab.tsx, after ProjectNotesCard:
 
-## Technical Notes
+import { ProjectActivityCard } from "../ProjectActivityCard";
 
-### Activity Log Integration Points
-
-The existing `useProjectAssignments.ts` shows the pattern for logging:
-
-```typescript
-// Log activity
-await supabase
-  .from("project_activity_log")
-  .insert({
-    project_id: projectId,
-    user_id: currentUser.id,
-    activity_type: 'team_assigned',
-    title: `${assignedName} was assigned to this project`,
-    description: notes || null,
-    metadata: { assigned_user_id: userId, role }
-  });
+// In the return JSX, after {/* Project Notes */}:
+<ProjectActivityCard 
+  projectId={project.id}
+  maxItems={5}
+/>
 ```
 
-The same pattern should be applied to other operations.
+### Compact Activity Item Component
 
-### Display Improvements
+```tsx
+const activityIcons: Record<string, LucideIcon> = {
+  status_changed: ArrowRightCircle,
+  team_assigned: UserPlus,
+  team_removed: UserMinus,
+  email_sent: Mail,
+  quote_created: FileText,
+  note_added: MessageSquare,
+  client_linked: Link,
+  project_created: Plus,
+  project_duplicated: Copy,
+};
 
-For the Team column width issue:
-- Total Team column width should stay under ~150px
-- Owner avatar: 24px (when team exists)
-- Owner name: max 50px
-- Team avatars (max 2): 24px each with -10px overlap = ~38px
-- Overflow indicator: 24px
-- Gaps: ~8px
-- **Total: ~144px**
+const CompactActivityItem = ({ activity }) => (
+  <div className="flex items-center justify-between py-2 border-b last:border-0">
+    <div className="flex items-center gap-2">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-sm truncate max-w-[200px]">{activity.title}</span>
+    </div>
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span>{activity.user_name}</span>
+      <span>•</span>
+      <span>{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</span>
+    </div>
+  </div>
+);
+```
 
 ---
 
-## Expected Results
+## Handling the Separate Activity Tab
 
-After implementation:
-1. Users can click "Invite Team Member" directly from the job's three-dot menu
-2. Long names and multiple team members won't break the table layout
-3. The Activity tab will show all project activities including:
-   - Status changes (e.g., "Status changed from Draft to Quote Sent")
-   - Team assignments (e.g., "Sarah was assigned to this project")
-   - Notes added
-   - Quotes created
-   - Project duplications
-4. Activity tab has a unique icon for better discoverability
+Two options:
+
+### Option 1: Keep Both (Recommended)
+- **Client Section**: Show compact recent activity (5 items)
+- **Activity Tab**: Show full detailed timeline with filters
+
+This gives users quick access AND detailed history when needed.
+
+### Option 2: Remove Activity Tab
+- Move all activity display to Client section
+- Add expandable "full history" view within the card
+
+I recommend **Option 1** - keep the detailed Activity tab but make the compact card the primary entry point.
+
+---
+
+## Files Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/jobs/ProjectActivityCard.tsx` | Create | Compact activity timeline card |
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Modify | Add ProjectActivityCard after notes |
+
+---
+
+## Expected Result
+
+When viewing a job, the Client section (first tab) will now show:
+1. Summary bar with client, rooms, quote
+2. Timeline with dates
+3. Document number
+4. Client assignment
+5. Project notes
+6. **Project Activity** (last 5 events with "View All" link)
+
+Users get immediate visibility into what happened on the project without navigating to a separate tab.
 
