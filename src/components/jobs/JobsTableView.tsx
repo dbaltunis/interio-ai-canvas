@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive, UserPlus } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -998,6 +998,19 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                       {projectNotes[project.id]}
                     </Badge>
                   )}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setSelectedProjectForTeam({
+                      id: project.id,
+                      name: project.name || `Job #${project.job_number}`,
+                      ownerId: project.user_id,
+                    });
+                    setTeamAssignDialogOpen(true);
+                  }}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Team Member
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>

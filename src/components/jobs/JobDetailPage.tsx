@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle, Activity } from "lucide-react";
 import { 
   PixelUserIcon, 
   PixelClipboardIcon, 
@@ -842,7 +842,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "rooms", label: "Project", mobileLabel: "Project", icon: PixelClipboardIcon, disabled: false },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: PixelDocumentIcon, disabled: false },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: PixelTeamIcon, disabled: !canViewWorkroomExplicit },
-    { id: "activity", label: "Activity", mobileLabel: "Activity", icon: PixelClipboardIcon, disabled: false },
+    { id: "activity", label: "Activity", mobileLabel: "Activity", icon: Activity, disabled: false },
   ];
 
   const mainTabs = allTabs.slice(0, 3);

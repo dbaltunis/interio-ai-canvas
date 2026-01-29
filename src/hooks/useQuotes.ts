@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber, syncSequenceCounter } from "./useNumberSequenceGeneration";
+import { logProjectActivity } from "./useProjectActivityLog";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Quote = Tables<"quotes">;
@@ -152,6 +153,16 @@ export const useCreateQuote = () => {
           ? 'quote'
           : 'draft';
         await syncSequenceCounter(entityType as any, quoteNumber);
+      }
+      
+      // Log activity for the Activity tab
+      if (data.project_id) {
+        await logProjectActivity({
+          projectId: data.project_id,
+          activityType: 'quote_created',
+          title: `Quote ${data.quote_number || ''} created`,
+          metadata: { quote_id: data.id, quote_number: data.quote_number }
+        });
       }
       
       return data;
