@@ -1010,7 +1010,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   }}
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Invite Team Member
+                  Invite team
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Users, Star } from "lucide-react";
+import { Search, Users, Star, ShieldCheck } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useProjectAssignments, useAssignUserToProject, useRemoveUserFromProject } from "@/hooks/useProjectAssignments";
 import { getAvatarColor, getInitials } from '@/lib/avatar-utils';
@@ -36,7 +36,8 @@ export const ProjectTeamAssignDialog = ({
   ownerId
 }: ProjectTeamAssignDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({});
+  const [selectedMembers, setSelectedMembers] = useState<Record<string, boolean>>({});
+  const [initialized, setInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const { data: teamMembers = [], isLoading: isLoadingTeam } = useTeamMembers();
@@ -45,12 +46,7 @@ export const ProjectTeamAssignDialog = ({
   const removeUser = useRemoveUserFromProject();
   const queryClient = useQueryClient();
 
-  // Get currently assigned user IDs
-  const assignedUserIds = useMemo(() => {
-    return new Set(currentAssignments.map(a => a.user_id));
-  }, [currentAssignments]);
-
-  // Filter team members (exclude owner from the list since they're always shown)
+  // Filter team members (exclude owner from the list since they're always assigned)
   const filteredMembers = useMemo(() => {
     return teamMembers
       .filter(member => member.id !== ownerId) // Exclude owner
@@ -65,31 +61,73 @@ export const ProjectTeamAssignDialog = ({
       });
   }, [teamMembers, ownerId, searchTerm]);
 
-  // Determine if a member is checked (considering pending changes)
-  const isChecked = (memberId: string) => {
-    if (pendingChanges[memberId] !== undefined) {
-      return pendingChanges[memberId];
+  // Get all non-owner member IDs
+  const allMemberIds = useMemo(() => {
+    return teamMembers
+      .filter(member => member.id !== ownerId)
+      .map(member => member.id);
+  }, [teamMembers, ownerId]);
+
+  // Get currently assigned user IDs (excluding owner)
+  const assignedUserIds = useMemo(() => {
+    return new Set(currentAssignments.map(a => a.user_id).filter(id => id !== ownerId));
+  }, [currentAssignments, ownerId]);
+
+  // Initialize selection state when dialog opens
+  // Default: ALL members selected (full access), user unchecks to limit
+  useEffect(() => {
+    if (open && !isLoadingTeam && !isLoadingAssignments && !initialized) {
+      const initialState: Record<string, boolean> = {};
+      
+      // If there are NO assignments yet, default all to selected (full access)
+      // If there ARE assignments, use the current assignment state
+      const hasExistingAssignments = currentAssignments.length > 0;
+      
+      allMemberIds.forEach(memberId => {
+        if (hasExistingAssignments) {
+          // Use existing assignment state
+          initialState[memberId] = assignedUserIds.has(memberId);
+        } else {
+          // No assignments yet - default to all selected
+          initialState[memberId] = true;
+        }
+      });
+      
+      setSelectedMembers(initialState);
+      setInitialized(true);
     }
-    return assignedUserIds.has(memberId);
-  };
+  }, [open, isLoadingTeam, isLoadingAssignments, initialized, allMemberIds, assignedUserIds, currentAssignments.length]);
+
+  // Reset when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setInitialized(false);
+      setSelectedMembers({});
+      setSearchTerm("");
+    }
+  }, [open]);
 
   // Handle checkbox toggle
   const handleToggle = (memberId: string) => {
-    const currentState = isChecked(memberId);
-    setPendingChanges(prev => ({
+    setSelectedMembers(prev => ({
       ...prev,
-      [memberId]: !currentState
+      [memberId]: !prev[memberId]
     }));
   };
 
-  // Save all pending changes
+  // Count selected members
+  const selectedCount = Object.values(selectedMembers).filter(Boolean).length;
+  const totalMembers = allMemberIds.length;
+  const allSelected = selectedCount === totalMembers;
+
+  // Save all changes
   const handleSave = async () => {
     setIsSaving(true);
     
     try {
       const promises: Promise<any>[] = [];
       
-      for (const [memberId, shouldBeAssigned] of Object.entries(pendingChanges)) {
+      for (const [memberId, shouldBeAssigned] of Object.entries(selectedMembers)) {
         const isCurrentlyAssigned = assignedUserIds.has(memberId);
         
         if (shouldBeAssigned && !isCurrentlyAssigned) {
@@ -110,7 +148,6 @@ export const ProjectTeamAssignDialog = ({
       // Invalidate bulk assignments query
       queryClient.invalidateQueries({ queryKey: ["projects-assignments-bulk"] });
       
-      setPendingChanges({});
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving team assignments:", error);
@@ -120,10 +157,18 @@ export const ProjectTeamAssignDialog = ({
   };
 
   // Check if there are unsaved changes
-  const hasChanges = Object.keys(pendingChanges).some(memberId => {
-    const originalState = assignedUserIds.has(memberId);
-    return pendingChanges[memberId] !== originalState;
-  });
+  const hasChanges = useMemo(() => {
+    const hasExistingAssignments = currentAssignments.length > 0;
+    
+    return Object.entries(selectedMembers).some(([memberId, isSelected]) => {
+      if (hasExistingAssignments) {
+        return isSelected !== assignedUserIds.has(memberId);
+      } else {
+        // For new projects with no assignments, any unchecked member is a change
+        return !isSelected;
+      }
+    });
+  }, [selectedMembers, assignedUserIds, currentAssignments.length]);
 
   const isLoading = isLoadingTeam || isLoadingAssignments;
 
@@ -132,15 +177,23 @@ export const ProjectTeamAssignDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Assign Team Members
+            <ShieldCheck className="h-5 w-5" />
+            Manage Team Access
           </DialogTitle>
           <DialogDescription>
-            Select team members to assign to <span className="font-medium">{projectName}</span>
+            All team members have access by default. Unselect members to limit access to <span className="font-medium">{projectName}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Access summary */}
+          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+            <span className="text-sm text-muted-foreground">Team access:</span>
+            <Badge variant={allSelected ? "default" : "secondary"}>
+              {allSelected ? "All members" : `${selectedCount} of ${totalMembers}`}
+            </Badge>
+          </div>
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -154,7 +207,7 @@ export const ProjectTeamAssignDialog = ({
 
           {/* Team members list */}
           <ScrollArea className="h-[300px] pr-4">
-            {isLoading ? (
+            {isLoading || !initialized ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 Loading team members...
               </div>
@@ -168,7 +221,7 @@ export const ProjectTeamAssignDialog = ({
                 {filteredMembers.map((member) => {
                   const initials = getInitials(member.name);
                   const color = getAvatarColor(member.id);
-                  const checked = isChecked(member.id);
+                  const checked = selectedMembers[member.id] ?? true;
                   
                   return (
                     <div
@@ -177,7 +230,7 @@ export const ProjectTeamAssignDialog = ({
                         "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
                         checked 
                           ? "border-primary bg-primary/5" 
-                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50 opacity-60"
                       )}
                       onClick={() => handleToggle(member.id)}
                     >
@@ -219,7 +272,7 @@ export const ProjectTeamAssignDialog = ({
           <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
             <Star className="h-4 w-4 text-amber-500" />
             <span className="text-xs text-muted-foreground">
-              The project owner is always assigned and cannot be removed
+              The project owner always has full access
             </span>
           </div>
         </div>
@@ -232,7 +285,7 @@ export const ProjectTeamAssignDialog = ({
             onClick={handleSave} 
             disabled={!hasChanges || isSaving}
           >
-            {isSaving ? "Saving..." : "Save Assignments"}
+            {isSaving ? "Saving..." : "Save Access"}
           </Button>
         </DialogFooter>
       </DialogContent>
