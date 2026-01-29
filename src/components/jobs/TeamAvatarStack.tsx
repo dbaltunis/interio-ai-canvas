@@ -80,17 +80,20 @@ export const TeamAvatarStack = ({
           onClick?.();
         }}
       >
-        {/* Owner avatar - always visible */}
+        {/* Owner avatar + name */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Avatar className="h-6 w-6 border-2 border-background transition-transform group-hover:scale-105">
-              {owner.avatarUrl ? (
-                <AvatarImage src={owner.avatarUrl} alt={owner.name} />
-              ) : null}
-              <AvatarFallback className={cn(ownerColor, "text-primary-foreground text-xs font-medium")}>
-                {ownerInitials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-1.5">
+              <Avatar className="h-6 w-6 border-2 border-background transition-transform group-hover:scale-105">
+                {owner.avatarUrl ? (
+                  <AvatarImage src={owner.avatarUrl} alt={owner.name} />
+                ) : null}
+                <AvatarFallback className={cn(ownerColor, "text-primary-foreground text-xs font-medium")}>
+                  {ownerInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-foreground truncate max-w-[80px]">{owner.name}</span>
+            </div>
           </TooltipTrigger>
           <TooltipContent side="right" className="text-xs">
             <p className="font-medium">{owner.name}</p>
