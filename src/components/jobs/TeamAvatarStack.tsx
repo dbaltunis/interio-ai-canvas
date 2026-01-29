@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import { getAvatarColor, getInitials } from '@/lib/avatar-utils';
-import { Lock } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -49,18 +48,19 @@ export const TeamAvatarStack = ({
   // Total people who can see this job (excluding owner since they're always shown separately)
   const totalWithAccess = fullAccessMembers.length + assignedMembers.length;
   
+  // Calculate if ALL team members who need assignment ARE assigned
+  const needsAssignmentCount = totalTeamSize - fullAccessMembers.length;
+  const allNeedingAssignmentAreAssigned = 
+    needsAssignmentCount <= 0 || assignedMembers.length >= needsAssignmentCount;
+  
   // If ALL non-owner team members have view_all_jobs, show "All team" badge
-  // This means everyone can see the job without explicit assignment
   const allTeamHasFullAccess = totalTeamSize > 0 && fullAccessMembers.length >= totalTeamSize;
   
-  // Show "All team" if everyone has full access OR if there are no restrictions at all
-  // (i.e., no explicit assignments and all members can view all jobs)
-  const showAllTeamBadge = allTeamHasFullAccess;
-  
-  // If there are members who need assignment but aren't assigned, show lock icon
-  // This indicates restricted access
-  const hasRestrictedAccess = assignedMembers.length > 0 || 
-    (fullAccessMembers.length < totalTeamSize && totalTeamSize > 0);
+  // Everyone has access when:
+  // - All members have full access (view_all_jobs), OR
+  // - All members who need assignment have been assigned
+  const everyoneHasAccess = allTeamHasFullAccess || 
+    (needsAssignmentCount > 0 && allNeedingAssignmentAreAssigned);
   
   // Combine visible members: full access + assigned
   const visibleMembers = [...fullAccessMembers, ...assignedMembers].slice(0, maxVisible);
@@ -69,25 +69,29 @@ export const TeamAvatarStack = ({
   const ownerInitials = getInitials(owner.name);
   const ownerColor = getAvatarColor(owner.id);
 
+  // Determine access state for badge display
+  const accessState: 'all' | 'limited' | 'private' = everyoneHasAccess 
+    ? 'all' 
+    : visibleMembers.length > 0 
+      ? 'limited' 
+      : 'private';
+
   return (
     <TooltipProvider>
-      <div 
-        className={cn(
-          "flex items-center cursor-pointer group gap-2",
-          className
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.();
-        }}
-      >
-        {/* Owner avatar - always visible */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Avatar className={cn(
-              "border-2 border-background transition-transform group-hover:scale-105",
-              hasRestrictedAccess ? "h-7 w-7 ring-2 ring-primary/20" : "h-6 w-6"
-            )}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div 
+            className={cn(
+              "flex items-center cursor-pointer group gap-2",
+              className
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.();
+            }}
+          >
+            {/* Owner avatar - always visible */}
+            <Avatar className="h-6 w-6 border-2 border-background transition-transform group-hover:scale-105">
               {owner.avatarUrl ? (
                 <AvatarImage src={owner.avatarUrl} alt={owner.name} />
               ) : null}
@@ -95,92 +99,84 @@ export const TeamAvatarStack = ({
                 {ownerInitials}
               </AvatarFallback>
             </Avatar>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
-            <p className="font-medium">{owner.name}</p>
-            <p className="text-muted-foreground">Owner</p>
-          </TooltipContent>
-        </Tooltip>
 
-        {/* All team badge - shown when everyone has view_all_jobs */}
-        {showAllTeamBadge && (
-          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-            All team
-          </Badge>
-        )}
-
-        {/* Show team members when there's any access info to display */}
-        {!showAllTeamBadge && visibleMembers.length > 0 && (
-          <div className="flex -space-x-2.5">
-            {visibleMembers.map((member, index) => {
-              const memberInitials = getInitials(member.name);
-              const memberColor = getAvatarColor(member.id);
-              const isFirst = index === 0;
-              const isFullAccess = 'hasViewAllJobs' in member && member.hasViewAllJobs;
-              
-              return (
-                <Tooltip key={member.id}>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
-                      <Avatar 
-                        className={cn(
-                          "h-6 w-6 border-2 border-background transition-transform group-hover:scale-105"
-                        )}
-                        style={{ zIndex: visibleMembers.length - index }}
-                      >
-                        {member.avatarUrl ? (
-                          <AvatarImage src={member.avatarUrl} alt={member.name} />
-                        ) : null}
-                        <AvatarFallback className={cn(memberColor, "text-primary-foreground text-[10px] font-medium")}>
-                          {memberInitials}
-                        </AvatarFallback>
-                      </Avatar>
-                      {/* Lock icon on first avatar when there's restricted access */}
-                      {isFirst && hasRestrictedAccess && (
-                        <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-500 flex items-center justify-center ring-1 ring-background">
-                          <Lock className="h-2 w-2 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    <p className="font-medium">{member.name}</p>
-                    <p className="text-muted-foreground">
-                      {isFullAccess ? 'Full Access' : 'Assigned'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-            
-            {/* Overflow indicator */}
-            {remainingCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
+            {/* Show team members when there's any access info to display (not "all team") */}
+            {accessState !== 'all' && visibleMembers.length > 0 && (
+              <div className="flex -space-x-2.5">
+                {visibleMembers.map((member, index) => {
+                  const memberInitials = getInitials(member.name);
+                  const memberColor = getAvatarColor(member.id);
+                  
+                  return (
+                    <Avatar 
+                      key={member.id}
+                      className="h-6 w-6 border-2 border-background transition-transform group-hover:scale-105"
+                      style={{ zIndex: visibleMembers.length - index }}
+                    >
+                      {member.avatarUrl ? (
+                        <AvatarImage src={member.avatarUrl} alt={member.name} />
+                      ) : null}
+                      <AvatarFallback className={cn(memberColor, "text-primary-foreground text-[10px] font-medium")}>
+                        {memberInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                  );
+                })}
+                
+                {/* Overflow indicator */}
+                {remainingCount > 0 && (
                   <Avatar className="h-6 w-6 border-2 border-background bg-muted">
                     <AvatarFallback className="text-[10px] font-medium text-muted-foreground bg-muted">
                       +{remainingCount}
                     </AvatarFallback>
                   </Avatar>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  <p>{remainingCount} more team member{remainingCount > 1 ? 's' : ''}</p>
-                </TooltipContent>
-              </Tooltip>
+                )}
+              </div>
+            )}
+
+            {/* Access level badge */}
+            {accessState === 'all' && (
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                All team
+              </Badge>
+            )}
+            
+            {accessState === 'limited' && (
+              <Badge 
+                variant="warning" 
+                className="text-[10px] h-5 px-1.5"
+              >
+                Limited
+              </Badge>
+            )}
+            
+            {accessState === 'private' && totalTeamSize > 0 && (
+              <Badge 
+                variant="warning" 
+                className="text-[10px] h-5 px-1.5"
+              >
+                Private
+              </Badge>
             )}
           </div>
-        )}
-
-        {/* When no one else has access (only owner) and not all team badge */}
-        {!showAllTeamBadge && visibleMembers.length === 0 && totalTeamSize > 0 && (
-          <div className="flex items-center gap-1">
-            <div className="h-3.5 w-3.5 rounded-full bg-amber-500 flex items-center justify-center">
-              <Lock className="h-2 w-2 text-white" />
-            </div>
-            <span className="text-[10px] text-muted-foreground">Owner only</span>
-          </div>
-        )}
-      </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs max-w-[200px]">
+          <p className="font-medium mb-1">
+            {accessState === 'all' 
+              ? "All team members can view" 
+              : accessState === 'limited'
+                ? `${visibleMembers.length + 1} team member${visibleMembers.length > 0 ? 's' : ''} can view`
+                : "Only owner can view"
+            }
+          </p>
+          <p className="text-muted-foreground">
+            {accessState === 'all' 
+              ? "No access restrictions on this job"
+              : "Click to manage team access"
+            }
+          </p>
+        </TooltipContent>
+      </Tooltip>
     </TooltipProvider>
   );
 };
