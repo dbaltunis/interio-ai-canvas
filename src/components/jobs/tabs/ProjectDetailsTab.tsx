@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
+import { ProjectActivityCard } from "../ProjectActivityCard";
 import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
@@ -669,6 +670,9 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
       {/* Project Notes */}
       <ProjectNotesCard projectId={project.id} />
+
+      {/* Project Activity */}
+      <ProjectActivityCard projectId={project.id} maxItems={5} />
 
       {/* Client Search Modal */}
       {showClientSearch && (
