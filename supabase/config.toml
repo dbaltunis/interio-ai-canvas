@@ -186,3 +186,6 @@ verify_jwt = false
 
 [functions.send-assignment-notification]
 verify_jwt = true
+
+[functions.unified-notification-service]
+verify_jwt = true
