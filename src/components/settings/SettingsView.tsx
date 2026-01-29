@@ -14,7 +14,7 @@ import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
-import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
+
 import { CommunicationsTab } from "./tabs/CommunicationsTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
@@ -408,9 +408,6 @@ export const SettingsView = () => {
             <CommunicationsTab />
           </TabsContent>}
 
-        {canViewNotifications && <TabsContent value="notifications" className="animate-fade-in">
-          <NotificationManagementTab />
-        </TabsContent>}
 
         <TabsContent value="security" className="animate-fade-in">
           <SecurityPrivacyTab />
