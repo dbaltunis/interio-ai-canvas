@@ -1,251 +1,304 @@
 
-# Comprehensive Analysis: Team Assignment Permissions Testing & Issues
+# Fix: Team Assignment Toggle Issue & Security Improvements
 
-## Executive Summary
+## Root Cause Analysis
 
-After thorough investigation, I've identified **3 critical issues** that need to be fixed for the team assignment system to work 100%:
+### Issue 1: "Already Assigned" Error When Re-Enabling Team Members
 
----
+**Problem**: When you toggle team member access off and then try to toggle it back on, you get the error "Already Assigned - This team member is already assigned to this project".
 
-## Issue 1: CRITICAL - RLS Policy Does NOT Check Project Assignments
+**Root Cause**: The database has a unique constraint `project_assignments_project_id_user_id_key` on `(project_id, user_id)` but the app uses soft-delete pattern (`is_active = false`). When the assignment is deactivated:
 
-### The Problem
-When Mike or Ross (Staff role with `view_assigned_jobs` permission) logs in, they **cannot see assigned jobs** because the RLS policy on the `projects` table does not check the `project_assignments` table.
+1. The row still exists in the database with `is_active = false`
+2. When you try to re-assign, the code tries to INSERT a new row
+3. The unique constraint rejects the duplicate `(project_id, user_id)` pair
 
-### Current RLS Policy on `projects`:
-```sql
-SELECT ... WHERE (
-  get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
-  AND (
-    get_user_role(auth.uid()) = 'System Owner'
-    OR get_user_role(auth.uid()) = 'Owner'
-    OR is_admin()
-    OR has_permission('view_all_jobs')
-    OR has_permission('view_all_projects')
-    OR (has_permission('view_own_jobs') AND auth.uid() = user_id)
-    -- MISSING: Check project_assignments for view_assigned_jobs!
-  )
-)
+**Database Evidence**:
+```
+project_id: 28ac028f-e9d8-4be6-b2de-8a6765e124c1
+user_id: Mike (819d7abe...) - is_active: false
+user_id: Ross (624a5ec1...) - is_active: false
 ```
 
-### What's Missing:
-```sql
-OR (has_permission('view_assigned_jobs') AND EXISTS (
-  SELECT 1 FROM project_assignments 
-  WHERE project_id = projects.id 
-  AND user_id = auth.uid() 
-  AND is_active = true
-))
-```
-
-### Same Issue Affects:
-| Table | Current RLS | Missing project_assignments Check |
-|-------|-------------|-----------------------------------|
-| `projects` | Uses `has_permission('view_all_jobs')` only | Yes - CRITICAL |
-| `rooms` | Same pattern | Yes |
-| `surfaces` | Same pattern | Yes |
-| `treatments` | Same pattern | Yes |
-| `quotes` | Uses account isolation only | Yes |
-| `project_activity_log` | Has correct check via `user_has_project_access()` | No - Already correct |
+Both records exist but are inactive, so the INSERT fails with error 23505 (unique constraint violation).
 
 ---
 
-## Issue 2: No Email Notification for Assignments
+### Issue 2: Security Scan Findings (33 issues total)
 
-### Current State
-- In-app notification IS created when assigning a user (line 157-167 in `useProjectAssignments.ts`)
-- **NO email notification** is sent
-- Users may not see the in-app notification if they're not logged in
+| Category | Count | Severity |
+|----------|-------|----------|
+| Function Search Path Missing | 17 | WARN |
+| RLS Policy Always True | 9 | WARN |
+| Public Data Exposure | 4 | ERROR |
+| Materialized View in API | 1 | WARN |
+| Postgres Security Patches | 1 | WARN |
 
-### What Users See Now
-When assigned to a project:
-1. **If logged in**: They see an in-app notification via the notifications table
-2. **If NOT logged in**: They won't know until they log in and check notifications
-
-### User's Expected Experience
-When assigned to a project, users should receive:
-1. In-app notification (already working)
-2. Email notification with project details and a direct link
-
----
-
-## Issue 3: NotificationDropdown is Appointment-Only
-
-### Current State
-The `NotificationDropdown` component in the header only shows **appointment notifications**, not general notifications including project assignments.
-
-The general `notifications` table exists and is populated correctly, but there's no UI to display them - the header's NotificationDropdown was simplified and only shows appointment-related notifications.
+**Critical Security Findings**:
+- `clients` table: Customer contact info publicly readable
+- `projects` table: Business operations data publicly readable  
+- `workshop_items` table: Manufacturing costs publicly readable
+- `rooms` table: Customer project details publicly readable
 
 ---
 
-## Database Verification
+## Fix Implementation Plan
 
-### Mike's Assignments:
-| Project | Active |
-|---------|--------|
-| New Job 1/28/2026 | Yes |
+### Fix 1: Team Assignment Toggle (CRITICAL)
 
-### Ross's Assignments:
-| Project | Active |
-|---------|--------|
-| New Job 1/29/2026 | Yes |
+**Solution**: Change the assignment logic to use **UPSERT** instead of INSERT, and UPDATE instead of soft-delete when re-assigning.
 
-### Their Permissions:
-Both Mike and Ross have:
-- `view_assigned_jobs` - Can ONLY see jobs they're assigned to
-- `create_jobs` - Can create new jobs
-- `view_assigned_clients` - Can ONLY see clients linked to assigned jobs
-- NO `view_all_jobs` - Cannot see all jobs
-
----
-
-## What Mike/Ross Would See Today
-
-### When NOT Assigned:
-- **Projects tab**: Empty (no jobs visible)
-- **Dashboard**: No job-related KPIs
-- **Client tab**: Empty (if clients are only linked to unassigned jobs)
-
-### When Assigned (but RLS is broken):
-- **Projects tab**: Still empty (RLS doesn't check assignments!)
-- This is the BUG - they're assigned but can't see the job
-
-### After RLS Fix:
-- **Projects tab**: Only assigned jobs visible
-- **Job details**: All rooms, windows, treatments, accessories visible (if RLS is fixed on those tables too)
-- **Client info**: Client linked to the job visible
-
----
-
-## Implementation Plan
-
-### Phase 1: Fix RLS Policies (CRITICAL)
-
-Create a migration to update RLS on affected tables:
-
-```sql
--- 1. Create helper function for assignment check
-CREATE OR REPLACE FUNCTION public.user_is_assigned_to_project(p_project_id UUID)
-RETURNS BOOLEAN
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM project_assignments 
-    WHERE project_id = p_project_id 
-    AND user_id = auth.uid() 
-    AND is_active = true
-  )
-$$;
-
--- 2. Update projects SELECT policy
-DROP POLICY IF EXISTS "Permission-based project access" ON projects;
-CREATE POLICY "Permission-based project access" ON projects FOR SELECT
-USING (
-  get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
-  AND (
-    get_user_role(auth.uid()) = 'System Owner'
-    OR get_user_role(auth.uid()) = 'Owner'
-    OR is_admin()
-    OR has_permission('view_all_jobs')
-    OR has_permission('view_all_projects')
-    OR (has_permission('view_own_jobs') AND auth.uid() = user_id)
-    OR (has_permission('view_jobs') AND auth.uid() = user_id)
-    OR (has_permission('create_jobs') AND auth.uid() = user_id)
-    -- NEW: Check project_assignments for view_assigned_jobs
-    OR (has_permission('view_assigned_jobs') AND user_is_assigned_to_project(id))
-  )
-);
-
--- 3. Similarly update rooms, surfaces, treatments, quotes
-```
-
-**Tables to Update:**
-- `projects` (SELECT, UPDATE, DELETE)
-- `rooms` (SELECT, UPDATE, DELETE)
-- `surfaces` (SELECT, UPDATE, DELETE)
-- `treatments` (SELECT, UPDATE, DELETE)
-- `quotes` (SELECT, UPDATE, DELETE)
-
-### Phase 2: Add Email Notification for Assignments
-
-Create an edge function `send-assignment-notification`:
+**Option A - Recommended**: Modify `useAssignUserToProject` to check for existing (inactive) assignments first:
 
 ```typescript
-// supabase/functions/send-assignment-notification/index.ts
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+// In useAssignUserToProject.mutationFn:
 
-serve(async (req) => {
-  const { assignedUserEmail, assignedUserName, projectName, projectId, assignedBy } = await req.json();
+// 1. Check if there's an existing (inactive) assignment
+const { data: existingAssignment } = await supabase
+  .from("project_assignments")
+  .select("id, is_active")
+  .eq("project_id", projectId)
+  .eq("user_id", userId)
+  .maybeSingle();
+
+if (existingAssignment) {
+  if (existingAssignment.is_active) {
+    // Already active - skip silently or throw
+    return existingAssignment;
+  }
   
-  const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-  
-  await resend.emails.send({
-    from: "InterioApp <notifications@interioapp.com>",
-    to: [assignedUserEmail],
-    subject: `You've been assigned to "${projectName}"`,
-    html: `
-      <h1>New Project Assignment</h1>
-      <p>Hi ${assignedUserName},</p>
-      <p>${assignedBy} has assigned you to the project <strong>${projectName}</strong>.</p>
-      <p><a href="https://interioapp-ai.lovable.app/?jobId=${projectId}">View Project</a></p>
-    `
-  });
-  
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
-});
+  // 2. Reactivate the existing assignment
+  const { data, error } = await supabase
+    .from("project_assignments")
+    .update({ 
+      is_active: true, 
+      assigned_by: user.id,
+      assigned_at: new Date().toISOString()
+    })
+    .eq("id", existingAssignment.id)
+    .select()
+    .single();
+    
+  if (error) throw error;
+  return data;
+}
+
+// 3. No existing assignment - insert new
+const { data, error } = await supabase
+  .from("project_assignments")
+  .insert({ ... })
+  .select()
+  .single();
 ```
 
-Update `useProjectAssignments.ts` to call this function after assignment.
-
-### Phase 3: Display General Notifications
-
-Update the header to include a general notifications indicator that shows project assignment notifications alongside appointment notifications.
+**Files to Modify**:
+- `src/hooks/useProjectAssignments.ts` - Update `useAssignUserToProject` mutation
 
 ---
 
-## Files to Create/Modify
+### Fix 2: Security Definer Functions - Add search_path (HIGH)
 
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/migrations/XXXXXX_fix_project_assignments_rls.sql` | **CREATE** | Fix RLS policies to check project_assignments |
-| `supabase/functions/send-assignment-notification/index.ts` | **CREATE** | Email notification for assignments |
-| `src/hooks/useProjectAssignments.ts` | Modify | Call email notification function |
-| `src/components/layout/ResponsiveHeader.tsx` | Modify | Show general notifications indicator |
+**Problem**: 17 security definer functions are missing `SET search_path = public`. This is a potential security issue where attackers could create shadow functions to intercept calls.
 
----
+**Affected Functions**:
+1. `create_default_shopify_statuses`
+2. `ensure_shopify_statuses`
+3. `generate_batch_number`
+4. `notify_owner_on_project_creation`
+5. `seed_default_client_stages`
+6. `seed_default_email_templates`
+7. `seed_default_job_statuses`
+8. `seed_default_quote_template`
+9. And 9 others (trigger functions)
 
-## Testing Checklist
-
-After implementation, verify:
-
-1. **Mike (Staff with view_assigned_jobs)**:
-   - [ ] Cannot see unassigned jobs
-   - [ ] CAN see jobs assigned to him
-   - [ ] Can see all rooms in assigned jobs
-   - [ ] Can see all windows/surfaces in assigned jobs
-   - [ ] Can see all treatments in assigned jobs
-   - [ ] Can see client info for assigned jobs
-   - [ ] Receives in-app notification when assigned
-   - [ ] Receives email notification when assigned
-
-2. **Ross (Staff with view_assigned_jobs)**:
-   - Same checklist as Mike
-
-3. **Kuldeep (Admin with view_all_jobs)**:
-   - [ ] CAN see all jobs regardless of assignment
-   - [ ] Can assign team members via "Manage Access"
-
-4. **Owner**:
-   - [ ] CAN see all jobs
-   - [ ] Can assign/unassign team members
-   - [ ] Sees accurate team access status in job list
+**Fix**: Create a migration to update all these functions with:
+```sql
+CREATE OR REPLACE FUNCTION public.function_name()
+RETURNS ...
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public  -- ADD THIS
+AS $function$
+  ...
+$function$;
+```
 
 ---
 
-## Priority
+### Fix 3: Overly Permissive RLS Policies (MEDIUM)
 
-1. **CRITICAL**: Fix RLS policies - Without this, assigned users literally cannot see their jobs
-2. **HIGH**: Email notifications - Important for users who aren't constantly logged in
-3. **MEDIUM**: General notifications UI - Nice to have for visibility
+**Problem**: 9 tables have `WITH CHECK (true)` or `USING (true)` policies that bypass security:
+
+| Table | Policy | Issue |
+|-------|--------|-------|
+| `appointments_booked` | Public can create bookings | `WITH CHECK (true)` |
+| `permission_audit_log` | System can insert audit logs | `WITH CHECK (true)` |
+| `pipeline_analytics` | System can manage analytics | `USING (true)`, `WITH CHECK (true)` |
+| `store_inquiries` | Anyone can create inquiries | `WITH CHECK (true)` |
+| `store_orders` | Service role can insert/update | `WITH CHECK (true)` |
+
+**Review Needed**: These might be intentional for public features, but should be verified.
+
+---
+
+### Fix 4: Public Data Exposure (ERROR - CRITICAL)
+
+The security scan detected that these tables may be exposing data publicly. However, based on the recent RLS migration, these should now have proper policies. This might be a false positive or the scan ran before the migration was applied.
+
+**Verify**: Run a test query as anonymous user to confirm data is protected.
+
+---
+
+## Implementation Summary
+
+| Task | Priority | Files/Location |
+|------|----------|----------------|
+| Fix assignment toggle logic | CRITICAL | `src/hooks/useProjectAssignments.ts` |
+| Add search_path to security definer functions | HIGH | Database migration |
+| Review permissive RLS policies | MEDIUM | Database migration (if needed) |
+| Verify public data exposure fix | LOW | Test queries |
+
+---
+
+## Technical Details
+
+### File: `src/hooks/useProjectAssignments.ts`
+
+**Change in `useAssignUserToProject`**:
+
+```typescript
+export const useAssignUserToProject = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      userId,
+      role = "member",
+      notes,
+      projectName
+    }: {
+      projectId: string;
+      userId: string;
+      role?: string;
+      notes?: string;
+      projectName?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Check for existing assignment (active or inactive)
+      const { data: existingAssignment, error: checkError } = await supabase
+        .from("project_assignments")
+        .select("id, is_active")
+        .eq("project_id", projectId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking existing assignment:", checkError);
+        throw checkError;
+      }
+
+      let assignmentData;
+
+      if (existingAssignment) {
+        if (existingAssignment.is_active) {
+          // Already actively assigned - just return it
+          throw new Error("ALREADY_ASSIGNED");
+        }
+        
+        // Reactivate existing inactive assignment
+        const { data, error } = await supabase
+          .from("project_assignments")
+          .update({ 
+            is_active: true, 
+            assigned_by: user.id,
+            assigned_at: new Date().toISOString(),
+            role,
+            notes: notes || null
+          })
+          .eq("id", existingAssignment.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        assignmentData = data;
+      } else {
+        // Insert new assignment
+        const { data, error } = await supabase
+          .from("project_assignments")
+          .insert({
+            project_id: projectId,
+            user_id: userId,
+            role,
+            assigned_by: user.id,
+            notes: notes || null,
+            is_active: true
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        assignmentData = data;
+      }
+
+      // ... rest of the function (activity log, notifications, email)
+      
+      return assignmentData;
+    },
+    onError: (error: any) => {
+      if (error.message === "ALREADY_ASSIGNED" || error.code === "23505") {
+        toast({
+          title: "Already Assigned",
+          description: "This team member is already assigned to this project",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to assign team member",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+};
+```
+
+### Database Migration: Fix Security Definer Functions
+
+```sql
+-- Fix all security definer functions to include SET search_path = public
+-- This prevents search_path manipulation attacks
+
+-- Example for one function (repeat for all 17):
+CREATE OR REPLACE FUNCTION public.seed_default_client_stages()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public  -- ADD THIS LINE
+AS $function$
+BEGIN
+  -- ... existing function body ...
+END;
+$function$;
+```
+
+---
+
+## Why These RLS Issues Keep Happening
+
+The recurring RLS issues in this app stem from a few patterns:
+
+1. **Complex Multi-Tenant Model**: The app uses `get_effective_account_owner()` for team hierarchies, which requires careful policy design
+2. **Soft-Delete Pattern**: Using `is_active` flags instead of actual DELETE creates unique constraint conflicts
+3. **Permission-Based Access**: The `has_permission()` checks add complexity to policies
+4. **Project Assignments Feature**: Adding a new access layer (project_assignments) without updating all related RLS policies
+
+**Prevention**: 
+- Always test RLS policies with different user roles before deploying
+- When using soft-delete, consider using UPSERT patterns
+- Document the permission model and keep it consistent
+
