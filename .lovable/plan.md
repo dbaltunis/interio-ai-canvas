@@ -1,193 +1,187 @@
 
-# Team Assignment System - Standards and Implementation
+# Fix Team Assignment Permissions Logic
 
-## Confirmed Business Rules
+## The Problem
 
-Based on your answers, here are the **confirmed standards**:
+When you create a new job, the UI shows **"All team has access"** with all team members selected by default. However, this is **incorrect** because:
 
-| Rule | Standard |
-|------|----------|
-| **Who sees "Limit Access"** | Anyone with `manage_team` permission |
-| **Default Team Column** | Owner avatar + "All team" badge |
-| **Restricted Team Column** | Owner avatar + assigned member avatars + lock icon overlay on last avatar |
+1. **Mike** has the role `Staff` with only `view_assigned_jobs` permission (NOT `view_all_jobs`)
+2. Without `view_all_jobs`, Mike can **only** see jobs he is explicitly assigned to
+3. The current UI is misleading - it implies Mike has access when he actually doesn't
 
----
+### Screenshot Analysis
+From your screenshot of Mike's permissions:
+- `View All Jobs` = **OFF** (disabled)
+- `View Assigned Jobs` = **ON** (enabled with "Default" badge)
+- This means Mike can **only see jobs he's explicitly assigned to**
 
-## Visual Standards
+## Root Cause
 
-### Default State (All Team Has Access)
+The `ProjectTeamAssignDialog` and `TeamAvatarStack` components don't consider **each team member's individual job viewing permissions**. They just show all team members and assume everyone has access.
 
-When a job is created and no access restrictions are set:
+## The Solution
 
-```text
-┌──────────────────────────────────────────┐
-│  [👤 Owner Avatar]  All team             │
-│                     ────────             │
-│                     (small badge)        │
-└──────────────────────────────────────────┘
-```
+We need to differentiate between:
+1. **Users with `view_all_jobs`**: Can see all jobs automatically (no assignment needed)
+2. **Users with only `view_assigned_jobs`**: Can ONLY see jobs they're explicitly assigned to
 
-### Restricted State (Some Members Removed)
+### Visual Standards (Updated)
 
-When the owner restricts access (e.g., 4 of 6 members have access):
+| Scenario | Team Column Display |
+|----------|---------------------|
+| All team members have `view_all_jobs` | Owner + "All team" badge |
+| Some members only have `view_assigned_jobs` | Owner + avatars of those with access + lock icon |
+| Restricted (explicit assignments) | Owner + assigned avatars + lock icon |
 
-```text
-┌──────────────────────────────────────────┐
-│  [👤 Owner] [🔒📷] [📷] [📷]             │
-│                                          │
-│  The lock icon overlays the first        │
-│  team avatar to indicate restriction     │
-└──────────────────────────────────────────┘
-```
+### Dialog Behavior (Updated)
 
-The lock icon on an avatar indicates "access is restricted" - not everyone on the team can see this job.
+The "Limit Access" dialog should show:
+1. **Section 1: Full Access** - Team members with `view_all_jobs` (always have access, can't be unchecked)
+2. **Section 2: Requires Assignment** - Team members with only `view_assigned_jobs` (can be checked/unchecked)
 
----
+## Implementation Plan
 
-## Permission Logic
+### Step 1: Create a Hook to Fetch Team Members with Their Permissions
 
-### Who Sees "Limit Access" Button?
+Create a new hook `useTeamMembersWithJobPermissions` that:
+- Fetches all team members (like `useTeamMembers`)
+- Also fetches each member's `view_all_jobs` and `view_assigned_jobs` permissions
+- Returns members categorized by their access level
 
 ```typescript
-// In JobsTableView.tsx and JobDetailPage.tsx
-const canManageTeamAccess = useHasPermission('manage_team');
+// New hook: src/hooks/useTeamMembersWithJobPermissions.ts
 
-// Show button only if user has manage_team permission
-{canManageTeamAccess && (
-  <DropdownMenuItem onClick={() => openTeamDialog()}>
-    <ShieldCheck className="mr-2 h-4 w-4" />
-    Limit Access
-  </DropdownMenuItem>
-)}
+interface TeamMemberWithAccess extends TeamMember {
+  hasViewAllJobs: boolean;
+  hasViewAssignedJobs: boolean;
+}
+
+export const useTeamMembersWithJobPermissions = () => {
+  // Fetch team members
+  // For each member, call RPC get_user_effective_permissions
+  // Categorize: fullAccess vs needsAssignment
+};
 ```
 
-### Who Gets Listed in Team Dialog?
+### Step 2: Update ProjectTeamAssignDialog
 
-The dialog lists all team members the current user can see (from `useTeamMembers`). However, the dialog itself is only accessible to users with `manage_team` permission.
-
-For limited users (e.g., Staff with only `view_assigned_jobs`):
-- They will NOT see the "Limit Access" button at all
-- They can only see jobs assigned to them
-- The Team column still shows who has access (for transparency)
-
----
-
-## Assignment Logic (Already Implemented)
-
-The current "limit access" model from the previous change works as follows:
-
-1. **New Job Created**: All team members are **selected by default** (full access)
-2. **Opening Dialog**: Shows all team members with checkboxes, all checked
-3. **Restricting Access**: User unchecks members they want to restrict
-4. **Saving**: Only checked members remain assigned to the project
-
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/jobs/TeamAvatarStack.tsx` | Add "All team" badge for default state, add lock icon overlay for restricted state |
-| `src/components/jobs/JobsTableView.tsx` | Add permission check for "Limit Access" button, rename from "Invite team" to "Limit Access" |
-| `src/components/jobs/ProjectTeamAssignDialog.tsx` | Update dialog title/description to match "Limit Access" terminology |
-
----
-
-## Technical Implementation Details
-
-### 1. Update TeamAvatarStack.tsx
-
-**Default State (No assignments = everyone has access)**:
-- Show: Owner avatar + "All team" badge
-- Logic: If `assignedMembers.length === 0`, show the badge
-
-**Restricted State (Has specific assignments)**:
-- Show: Owner avatar + assigned member avatars + lock icon overlay on first member avatar
-- Logic: If `assignedMembers.length > 0`, show avatars with lock indicator
+Modify the dialog to:
+1. Show members with `view_all_jobs` in a separate section (or with a badge)
+2. Only allow assignment changes for members with `view_assigned_jobs`
+3. Update the description to explain the access model
 
 ```tsx
-// Determine if access is restricted
-const isRestricted = assignedMembers.length > 0;
-const isFullAccess = assignedMembers.length === 0;
+// Updated dialog sections:
+<DialogDescription>
+  Team members with "View All Jobs" permission always have access.
+  Other team members need to be assigned to see this job.
+</DialogDescription>
 
-// Render different UIs
-{isFullAccess && (
-  <Badge variant="secondary" className="text-xs">All team</Badge>
-)}
-
-{isRestricted && (
-  <div className="flex -space-x-2.5">
-    {/* First avatar with lock overlay */}
-    <div className="relative">
-      <Avatar>...</Avatar>
-      <Lock className="absolute -top-1 -right-1 h-3 w-3 text-amber-600" />
+{/* Full Access Section */}
+<div className="border-b pb-3">
+  <p className="text-xs text-muted-foreground mb-2">
+    Always have access (View All Jobs permission)
+  </p>
+  {fullAccessMembers.map(member => (
+    <div className="opacity-60">
+      <Avatar /> {member.name}
+      <Badge>Full Access</Badge>
     </div>
-    {/* Other avatars */}
-    ...
-  </div>
-)}
+  ))}
+</div>
+
+{/* Assignment Required Section */}
+<div>
+  <p className="text-xs text-muted-foreground mb-2">
+    Requires assignment to access
+  </p>
+  {needsAssignmentMembers.map(member => (
+    <div onClick={() => handleToggle(member.id)}>
+      <Checkbox checked={selectedMembers[member.id]} />
+      <Avatar /> {member.name}
+    </div>
+  ))}
+</div>
 ```
 
-### 2. Update JobsTableView.tsx
+### Step 3: Update TeamAvatarStack
 
-Add permission check before showing the menu item:
+Update the component to:
+1. Receive information about who has `view_all_jobs` vs `view_assigned_jobs`
+2. Calculate actual access:
+   - Members with `view_all_jobs` = always have access
+   - Members with `view_assigned_jobs` = only have access if assigned
+3. Display accurate access status
 
 ```tsx
-const canManageTeamAccess = useHasPermission('manage_team');
+// Props update
+interface TeamAvatarStackProps {
+  owner: TeamMemberInfo;
+  assignedMembers?: TeamMemberInfo[];
+  fullAccessMembers?: TeamMemberInfo[]; // NEW: members with view_all_jobs
+  maxVisible?: number;
+  onClick?: () => void;
+}
 
-// In the dropdown menu:
-{canManageTeamAccess && (
-  <DropdownMenuItem onClick={() => openTeamDialog()}>
-    <ShieldCheck className="mr-2 h-4 w-4" />
-    Limit Access
-  </DropdownMenuItem>
-)}
+// Logic update
+const totalWithAccess = fullAccessMembers.length + assignedMembers.length;
+const showAllTeamBadge = fullAccessMembers.length === totalTeamSize - 1; // -1 for owner
 ```
 
-### 3. Update ProjectTeamAssignDialog.tsx
+### Step 4: Update JobsTableView
 
-Update labels to match the "Limit Access" model:
-- Title: "Limit Access" (instead of "Manage Team Access")
-- Description: "All team members have access by default. Unselect members to restrict access."
-- Button: "Save" or "Update Access"
+Pass the additional permission data to `TeamAvatarStack`:
+- Fetch team members with their permissions
+- Pass both `assignedMembers` and `fullAccessMembers` to the component
 
----
+## Database Query for Permissions
+
+Use the existing `get_user_effective_permissions` RPC function to check each team member's permissions:
+
+```sql
+SELECT 
+  up.user_id,
+  up.display_name,
+  'view_all_jobs' = ANY(get_user_effective_permissions(up.user_id)) as has_view_all_jobs,
+  'view_assigned_jobs' = ANY(get_user_effective_permissions(up.user_id)) as has_view_assigned_jobs
+FROM user_profiles up
+WHERE up.parent_account_id = :account_owner_id
+   OR up.user_id = :account_owner_id
+```
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/hooks/useTeamMembersWithJobPermissions.ts` | **CREATE** | New hook to fetch team members with their job viewing permissions |
+| `src/components/jobs/ProjectTeamAssignDialog.tsx` | Modify | Separate full access vs needs assignment members |
+| `src/components/jobs/TeamAvatarStack.tsx` | Modify | Accept and display full access members |
+| `src/components/jobs/JobsTableView.tsx` | Modify | Use new hook and pass data to TeamAvatarStack |
 
 ## Edge Cases
 
-### User With Only `view_assigned_jobs` Permission
+### User with Both Permissions
+If a user has BOTH `view_all_jobs` AND `view_assigned_jobs`, treat them as "Full Access" (view_all_jobs takes precedence).
 
-- They see jobs assigned to them
-- The Team column shows owner + assigned avatars (or "All team")
-- They do NOT see "Limit Access" button (no `manage_team` permission)
-- They cannot modify who has access
+### Dealers
+Dealers only have `view_assigned_jobs`, so they should always appear in the "Requires Assignment" section.
 
-### New User Joins Account
-
-- If no assignments exist on a job, they can see it (full access default)
-- If assignments exist and they're not in the list, they cannot see it (RLS enforced)
-
-### Single-User Account
-
-- Team column shows just the owner avatar
-- No "All team" badge (no team to show)
-- "Limit Access" button shows but dialog would be empty
-
----
+### New Team Member Added to Account
+When a new team member joins:
+- If they have `view_all_jobs` by role → they automatically see all jobs
+- If they only have `view_assigned_jobs` → they only see jobs assigned to them (not existing unassigned jobs)
 
 ## Memory Update
 
-After implementation, the memory should be updated to reflect:
+After implementation, update the memory entry for "multi-team-assignment-ui-standard" to include:
 
-> **Multi-Team Assignment UI Standard**: The multi-team assignment system allows delegating projects to multiple users via the `project_assignments` table. The UI for displaying these assignments uses a stacked avatar group. When NO assignments exist (default = all team access), show owner avatar + "All team" badge. When assignments exist (restricted access), show owner avatar with team avatars and a lock icon overlay on the first team avatar. The assignment dialog is accessible ONLY to users with `manage_team` permission via "Limit Access" in the Actions dropdown. The dialog operates on a "limit access" model: all team members are displayed as selected by default, and users unselect those they wish to restrict access for.
-
----
+> The multi-team assignment system respects user permissions. Members with `view_all_jobs` permission always have access to all jobs (shown as "Full Access"). Members with only `view_assigned_jobs` permission can only see jobs they're explicitly assigned to. The "Limit Access" dialog shows both categories separately - full access members are displayed but cannot be toggled, while assignment-required members can be checked/unchecked.
 
 ## Summary
 
-1. **Rename button**: "Invite team" → "Limit Access"
-2. **Add permission check**: Only show button if user has `manage_team`
-3. **Update Team column display**:
-   - No assignments → Owner + "All team" badge
-   - Has assignments → Owner + avatars + lock icon indicator
-4. **Dialog already correct**: Uses "limit access" model from previous change
+1. **Create hook** to fetch team permissions per member
+2. **Update dialog** to show two sections: Full Access vs Requires Assignment
+3. **Update avatar stack** to accurately reflect who has access
+4. **Update table view** to pass correct data
+
+This ensures the UI accurately reflects who can actually see each job based on their permissions.
