@@ -301,7 +301,7 @@ export const QuotationTab = ({
   const total = quotationData.total || 0;
   const taxRate = (businessSettings?.tax_rate || 0) / 100;
   const pricingSettings = businessSettings?.pricing_settings as any;
-  const markupPercentage = pricingSettings?.default_markup_percentage || 50;
+  const markupPercentage = pricingSettings?.default_markup_percentage ?? 0;
 
   // Use quotationData.items directly - they already have the correct children array with pricing!
   // DO NOT map/simplify the children array - it has the correct structure from useQuotationSync
