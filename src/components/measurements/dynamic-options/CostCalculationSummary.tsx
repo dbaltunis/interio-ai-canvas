@@ -735,8 +735,29 @@ export const CostCalculationSummary = ({
   // Each item type uses its own markup from settings hierarchy
   // =========================================================
   
-  // ✅ RESOLVE FABRIC MARKUP (e.g., curtains at 40%)
+  // ✅ FIX: Calculate implied markup from library pricing (same as blinds section)
+  // This prevents double-markup when fabric has both cost_price and selling_price
+  const curtainFabricCostPrice = fabricToUse?.cost_price || 0;
+  const curtainFabricSellingPrice = fabricToUse?.selling_price || 0;
+  const curtainHasLibraryPricing = curtainFabricCostPrice > 0 && curtainFabricSellingPrice > curtainFabricCostPrice;
+  const curtainImpliedMarkup = curtainHasLibraryPricing 
+    ? ((curtainFabricSellingPrice - curtainFabricCostPrice) / curtainFabricCostPrice) * 100 
+    : undefined;
+  
+  if (curtainImpliedMarkup && curtainImpliedMarkup > 0) {
+    console.log('💰 [CURTAIN LIBRARY PRICING] Using implied markup:', {
+      cost_price: curtainFabricCostPrice,
+      selling_price: curtainFabricSellingPrice,
+      impliedMarkup: `${curtainImpliedMarkup.toFixed(1)}%`,
+      note: 'Prevents double-markup on library fabrics'
+    });
+  }
+  
+  // ✅ RESOLVE FABRIC MARKUP with priority: Product > Implied > Grid > Category
   const fabricMarkupResult = resolveMarkup({
+    impliedMarkup: curtainImpliedMarkup, // Pass implied markup to prevent double-markup
+    gridMarkup: fabricToUse?.pricing_grid_markup, // Pass grid markup if exists
+    productMarkup: fabricToUse?.markup_percentage, // Pass product markup if exists
     category: treatmentCategory || 'curtains',
     markupSettings
   });

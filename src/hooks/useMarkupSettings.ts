@@ -27,14 +27,14 @@ export interface MarkupSettings {
   show_markup_to_staff: boolean;
 }
 
-// SENSIBLE DEFAULTS: Previously all 0%, which caused markups to not apply
-// Now: Default 50%, Material 40%, Labor 30% as fallbacks when categories are 0%
+// ✅ FIX: Default values are now 0% - user must explicitly set markups
+// Previously had hardcoded 50%/40%/30% which applied even when user set 0% in settings
 export const defaultMarkupSettings: MarkupSettings = {
-  default_markup_percentage: 50,  // Ultimate fallback
-  labor_markup_percentage: 30,    // For installation, manufacturing, sewing
-  material_markup_percentage: 40, // For fabric, hardware, materials
+  default_markup_percentage: 0,   // User must set intentionally
+  labor_markup_percentage: 0,     // User must set intentionally
+  material_markup_percentage: 0,  // User must set intentionally - was 40% causing double-markup!
   category_markups: {
-    fabric: 0,     // Keep 0 so Material fallback (40%) applies
+    fabric: 0,
     hardware: 0,
     installation: 0,
     curtains: 0,
@@ -68,15 +68,21 @@ export const useMarkupSettings = () => {
           ? JSON.parse(businessSettings.pricing_settings) 
           : businessSettings.pricing_settings;
         
-        // Deep merge category_markups to preserve all keys including new manufacturing ones
-        const merged = {
-          ...defaultMarkupSettings,
-          ...pricingSettings,
+        // ✅ FIX: Use nullish coalescing (??) to preserve explicit 0 values from database
+        // The spread operator treats 0 and undefined the same, which was overwriting user's 0% settings
+        const merged: MarkupSettings = {
+          default_markup_percentage: pricingSettings.default_markup_percentage ?? defaultMarkupSettings.default_markup_percentage,
+          labor_markup_percentage: pricingSettings.labor_markup_percentage ?? defaultMarkupSettings.labor_markup_percentage,
+          material_markup_percentage: pricingSettings.material_markup_percentage ?? defaultMarkupSettings.material_markup_percentage,
+          minimum_markup_percentage: pricingSettings.minimum_markup_percentage ?? defaultMarkupSettings.minimum_markup_percentage,
+          dynamic_pricing_enabled: pricingSettings.dynamic_pricing_enabled ?? defaultMarkupSettings.dynamic_pricing_enabled,
+          quantity_discounts_enabled: pricingSettings.quantity_discounts_enabled ?? defaultMarkupSettings.quantity_discounts_enabled,
+          show_markup_to_staff: pricingSettings.show_markup_to_staff ?? defaultMarkupSettings.show_markup_to_staff,
           category_markups: {
             ...defaultMarkupSettings.category_markups,
             ...(pricingSettings.category_markups || {})
           }
-        } as MarkupSettings;
+        };
         
         console.log('[MARKUP LOAD] Loaded from DB:', merged.category_markups);
         return merged;
