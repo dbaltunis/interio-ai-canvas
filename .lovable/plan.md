@@ -1,223 +1,139 @@
 
 
-# Apple-Style Update Announcement Modal
+# Fix Update Announcement Modal - Compact Design
 
-## Overview
+## Problem
+The current modal is too large and overwhelming. Users who just want to dismiss it are forced to see a wall of text.
 
-Replace the current top-of-page banner notification with a beautiful, centered Apple-style modal that automatically appears for users who haven't seen the new version. This will provide a premium "what's new" experience similar to Apple's software update announcements.
+## Solution
+Create a **compact modal** with:
+1. **Condensed header** - smaller padding, tighter typography
+2. **Only show Highlights by default** - the 3 most important updates
+3. **"View all updates" expandable link** - reveals remaining sections on click
+4. **Smaller max-height** - `max-h-[40vh]` instead of `50vh`
+5. **More compact list styling** - tighter spacing
 
 ---
 
-## UI/UX Preview (What It Will Look Like)
+## Visual Before/After
 
+**BEFORE (Current):**
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                                                                     │
-│           ╔═══════════════════════════════════════════╗             │
-│           ║                                           ║             │
-│           ║      ✨  What's New in v2.4.2             ║             │
-│           ║         January 29, 2026                  ║             │
-│           ║                                           ║             │
-│           ║  ─────────────────────────────────────    ║             │
-│           ║                                           ║             │
-│           ║  ★ HIGHLIGHTS                             ║             │
-│           ║                                           ║             │
-│           ║  • 4x Performance Improvement             ║             │
-│           ║    Database compute upgraded for          ║             │
-│           ║    faster loading across all features     ║             │
-│           ║                                           ║             │
-│           ║  • Team Access Control (Australasia)      ║             │
-│           ║    Invite users & limit project access    ║             │
-│           ║                                           ║             │
-│           ║  ─────────────────────────────────────    ║             │
-│           ║                                           ║             │
-│           ║  ✦ NEW FEATURES                           ║             │
-│           ║                                           ║             │
-│           ║  • Multi-Team Assignment                  ║             │
-│           ║    Delegate projects to multiple team     ║             │
-│           ║    members with granular access control   ║             │
-│           ║                                           ║             │
-│           ║  • Project Creation Fix                   ║             │
-│           ║    Resolved "Failed to create" error      ║             │
-│           ║    for all user types                     ║             │
-│           ║                                           ║             │
-│           ║  ─────────────────────────────────────    ║             │
-│           ║                                           ║             │
-│           ║  ✦ IMPROVEMENTS                           ║             │
-│           ║                                           ║             │
-│           ║  • Document numbering fixed               ║             │
-│           ║  • Markup settings preserve 0% values     ║             │
-│           ║  • Work order sharing RLS policies        ║             │
-│           ║  • Notification trigger stability         ║             │
-│           ║                                           ║             │
-│           ║  ─────────────────────────────────────    ║             │
-│           ║                                           ║             │
-│           ║         ┌────────────────────┐            ║             │
-│           ║         │  ✓ Got it, thanks  │            ║             │
-│           ║         └────────────────────┘            ║             │
-│           ║                                           ║             │
-│           ╚═══════════════════════════════════════════╝             │
-│                                                                     │
-│                    (blurred backdrop overlay)                       │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│      ✨ What's New                  │
+│      Version 2.4.2                  │
+│      January 29, 2026               │
+├─────────────────────────────────────┤
+│  ⚡ HIGHLIGHTS                      │
+│  • 4x Performance...                │
+│  • Team Access Control...           │
+│  • Project Creation Fixed...        │
+│                                     │
+│  👥 NEW FEATURES                    │  ← All visible
+│  • Multi-Team Assignment...         │     (overwhelming)
+│  • Limit Access Feature...          │
+│                                     │
+│  🔧 IMPROVEMENTS                    │
+│  • Document numbering...            │
+│  • Markup settings...               │
+│  • Work order sharing...            │
+│  • Notification system...           │
+│                                     │
+│  🛡️ SECURITY                        │
+│  • Enhanced RLS policies...         │
+│  • Improved function security...    │
+├─────────────────────────────────────┤
+│      [ ✓ Got it, thanks ]           │
+└─────────────────────────────────────┘
+```
+
+**AFTER (Fixed):**
+```text
+┌─────────────────────────────────┐
+│     ✨ What's New               │
+│     Version 2.4.2               │
+│     January 29, 2026            │
+├─────────────────────────────────┤
+│  ⚡ HIGHLIGHTS                  │
+│  • 4x Performance Improvement   │
+│  • Team Access Control          │
+│  • Project Creation Fixed       │
+│                                 │
+│     ▼ View all updates          │  ← Click to expand
+├─────────────────────────────────┤
+│    [ ✓ Got it, thanks ]         │
+└─────────────────────────────────┘
+```
+
+**AFTER (Expanded):**
+```text
+┌─────────────────────────────────┐
+│     ✨ What's New               │
+│     Version 2.4.2               │
+├─────────────────────────────────┤
+│  ⚡ HIGHLIGHTS                  │
+│  • 4x Performance Improvement   │
+│  • Team Access Control          │
+│  • Project Creation Fixed       │
+│─────────────────────────────────│
+│  👥 NEW FEATURES (scrollable)   │
+│  • Multi-Team Assignment        │
+│  • Limit Access Feature         │
+│─────────────────────────────────│
+│  🔧 IMPROVEMENTS                │
+│  • Document numbering...        │
+│  ...                            │
+│                                 │
+│     ▲ Show less                 │
+├─────────────────────────────────┤
+│    [ ✓ Got it, thanks ]         │
+└─────────────────────────────────┘
 ```
 
 ---
 
-## Implementation Details
+## Technical Changes
 
-### 1. Update Version Constants
+### File: `src/components/version/UpdateAnnouncementModal.tsx`
 
-**File:** `src/constants/version.ts`
+**Changes:**
+1. **Add state for expand/collapse**: `const [showAll, setShowAll] = useState(false)`
 
-```typescript
-export const APP_VERSION = "2.4.2";
-export const APP_BUILD_DATE = "2026-01-29";
-export const APP_BUILD_TIMESTAMP = "2026-01-29T21:00:00Z";
-```
+2. **Reduce modal width**: `max-w-md` instead of `max-w-lg`
 
-This version bump will:
-- Reset the `interioapp_last_seen_version` check for ALL users
-- Trigger the new modal to appear automatically
+3. **Compact header padding**: `px-5 py-4` instead of `px-6 py-6`
 
----
+4. **Shorter list items**: Truncate long descriptions
 
-### 2. Create Apple-Style Announcement Modal
+5. **Split content into two groups**:
+   - `highlightsOnly` - Just the first "Highlights" section (always visible)
+   - `additionalContent` - New Features, Improvements, Security (hidden by default)
 
-**New File:** `src/components/version/UpdateAnnouncementModal.tsx`
+6. **Add expand/collapse toggle**:
+   ```tsx
+   <button onClick={() => setShowAll(!showAll)} className="...">
+     <ChevronDown className={showAll ? "rotate-180" : ""} />
+     {showAll ? "Show less" : "View all updates"}
+   </button>
+   ```
 
-**Design Elements:**
-- **Framer Motion animations** - Smooth slide-up + fade-in entrance
-- **Glassmorphism overlay** - Premium blurred backdrop
-- **Apple-inspired typography** - Clean, centered headers
-- **Gradient accents** - Subtle primary color highlights
-- **Emoji icons** - Visual categorization (★ Highlights, ✦ Features)
-- **Single CTA button** - "Got it, thanks" dismissal
+7. **AnimatePresence for expand animation**: Smooth height transition
 
-**Animation Specs:**
-```typescript
-// Modal entrance
-initial: { opacity: 0, scale: 0.95, y: 20 }
-animate: { opacity: 1, scale: 1, y: 0 }
-exit: { opacity: 0, scale: 0.95, y: -10 }
-transition: { type: "spring", damping: 25, stiffness: 300 }
+8. **Reduce scrollable area**: `max-h-[35vh]` when expanded
 
-// Overlay
-initial: { opacity: 0 }
-animate: { opacity: 1 }
-exit: { opacity: 0 }
-```
-
-**Auto-show Logic:**
-- Checks `localStorage` for `interioapp_last_seen_version`
-- Shows modal if version differs from `APP_VERSION`
-- Marks as seen when user clicks "Got it"
+9. **Compact footer**: `py-3` instead of `py-4`, smaller button
 
 ---
 
-### 3. Replace UpdateBanner in App.tsx
+## Content Updates
 
-**File:** `src/App.tsx`
+**Highlights (Always Visible) - Shortened:**
+- "4x Performance Improvement"
+- "Team Access Control (Australasia)"  
+- "Project Creation Fixed"
 
-Replace:
-```typescript
-import { UpdateBanner } from "./components/version/UpdateBanner";
-// ...
-<UpdateBanner />
-```
-
-With:
-```typescript
-import { UpdateAnnouncementModal } from "./components/version/UpdateAnnouncementModal";
-// ...
-<UpdateAnnouncementModal />
-```
-
----
-
-### 4. Update Database Release Notes
-
-**Migration:** Update `app_versions` table with v2.4.2 content
-
-```sql
--- Set previous version as not current
-UPDATE app_versions SET is_current = false WHERE is_current = true;
-
--- Insert new version
-INSERT INTO app_versions (
-  version,
-  version_type,
-  release_date,
-  is_current,
-  is_published,
-  release_notes
-) VALUES (
-  'v2.4.2',
-  'minor',
-  '2026-01-29',
-  true,
-  true,
-  '{
-    "summary": "Major performance upgrade and team collaboration features for all users.",
-    "highlights": [
-      "4x Performance Improvement - Database compute upgraded for faster loading",
-      "Team Access Control (Australasia) - Invite users and limit project access",
-      "Project Creation Fixed - No more \"Failed to create\" errors"
-    ],
-    "newFeatures": [
-      {
-        "title": "Multi-Team Assignment",
-        "description": "Delegate projects to multiple team members with granular access control. Owners and staff avatars displayed inline."
-      },
-      {
-        "title": "Limit Access Feature",
-        "description": "Control which team members can see specific projects. Full access vs assignment-based visibility."
-      }
-    ],
-    "improvements": [
-      "Document numbering sequences reset and stabilized (JOB-0085+)",
-      "Markup settings now preserve explicit 0% values for Australasia market",
-      "Work order sharing RLS policies fixed for authenticated users",
-      "Notification triggers use correct column references",
-      "Client name resolution fixed in team assignment flow"
-    ],
-    "security": [
-      "RLS policy consolidation for notifications table",
-      "SECURITY DEFINER functions properly bypass user checks"
-    ]
-  }'::jsonb
-);
-```
-
----
-
-## Files Changed
-
-| File | Action | Description |
-|------|--------|-------------|
-| `src/constants/version.ts` | Edit | Bump to v2.4.2 |
-| `src/components/version/UpdateAnnouncementModal.tsx` | Create | New Apple-style modal |
-| `src/App.tsx` | Edit | Replace UpdateBanner with new modal |
-| `supabase/migrations/[new].sql` | Create | Add v2.4.2 release notes |
-
----
-
-## Mobile Responsive Design
-
-The modal will be fully responsive:
-- **Desktop:** 500px max-width, centered
-- **Tablet:** 90% width, larger touch targets
-- **Mobile:** Full width with 16px margins, scrollable content
-
----
-
-## Key Differences from Current Banner
-
-| Current (Banner) | New (Modal) |
-|------------------|-------------|
-| Top-of-page strip | Centered modal overlay |
-| Easy to miss | Impossible to miss |
-| Minimal info | Full release notes |
-| Refresh button | "Got it" acknowledgment |
-| Plain styling | Apple-inspired premium UI |
+**Expanded Content (Click to Show):**
+- New Features (2 items)
+- Improvements (4 items, shortened)
+- Security (2 items)
 
