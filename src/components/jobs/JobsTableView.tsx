@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -59,6 +59,9 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { ArchiveIndicator } from "./ArchiveIndicator";
+import { TeamAvatarStack } from "./TeamAvatarStack";
+import { ProjectTeamAssignDialog } from "./ProjectTeamAssignDialog";
+import { useProjectsWithAssignments } from "@/hooks/useProjectsWithAssignments";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -112,12 +115,18 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
   const [duplicateData, setDuplicateData] = useState<Record<string, any>>({});
+  const [teamAssignDialogOpen, setTeamAssignDialogOpen] = useState(false);
+  const [selectedProjectForTeam, setSelectedProjectForTeam] = useState<{ id: string; name: string; ownerId: string } | null>(null);
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
 
   // Fetch communication stats for all projects
   const projectsInfo = projects.map(p => ({ projectId: p.id, clientId: p.client_id }));
   const { data: projectCommStats = {} } = useProjectCommunicationStats(projectsInfo);
+  
+  // Fetch team assignments for all visible projects
+  const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
+  const { data: projectAssignmentsMap = {} } = useProjectsWithAssignments(projectIds);
 
   // Filter columns for tablet view - show only 5 most important columns
   const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
@@ -925,30 +934,41 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'team':
+        const owner = users.find(user => user.id === project.user_id);
+        const ownerInfo = getOwnerInfo({ user_id: project.user_id });
+        const projectAssignments = projectAssignmentsMap[project.id] || [];
+        
+        // Build owner object for TeamAvatarStack
+        const ownerForStack = {
+          id: project.user_id || '',
+          name: ownerInfo.firstName || 'Unknown',
+          avatarUrl: owner?.avatar_url,
+        };
+        
+        // Build assigned members list (excluding owner)
+        const assignedMembers = projectAssignments
+          .filter(a => a.user_id !== project.user_id)
+          .map(a => ({
+            id: a.user_id,
+            name: a.profile?.display_name || 'Unknown',
+            avatarUrl: a.profile?.avatar_url || undefined,
+            role: a.profile?.role || a.role,
+          }));
+        
         return (
-          <div className="flex items-center space-x-2">
-            <Avatar className="h-6 w-6">
-              {(() => {
-                const owner = users.find(user => user.id === project.user_id);
-                const ownerInfo = getOwnerInfo({ user_id: project.user_id });
-                const avatarUrl = owner?.avatar_url;
-                return avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
-                    alt={ownerInfo.firstName}
-                    className="h-6 w-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <AvatarFallback className={`${ownerInfo.color} text-primary-foreground text-xs font-medium`}>
-                    {ownerInfo.initials}
-                  </AvatarFallback>
-                );
-              })()}
-            </Avatar>
-            <span className="text-sm text-muted-foreground truncate max-w-[100px]" title={getOwnerInfo({ user_id: project.user_id }).firstName}>
-              {getOwnerInfo({ user_id: project.user_id }).firstName}
-            </span>
-          </div>
+          <TeamAvatarStack
+            owner={ownerForStack}
+            assignedMembers={assignedMembers}
+            maxVisible={3}
+            onClick={() => {
+              setSelectedProjectForTeam({
+                id: project.id,
+                name: project.name || `Job #${project.job_number}`,
+                ownerId: project.user_id,
+              });
+              setTeamAssignDialogOpen(true);
+            }}
+          />
         );
       
       case 'actions':
@@ -1123,6 +1143,16 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         onNoteSaved={handleNoteSaved}
         onNoteDeleted={handleNoteDeleted}
       />
+
+      {selectedProjectForTeam && (
+        <ProjectTeamAssignDialog
+          open={teamAssignDialogOpen}
+          onOpenChange={setTeamAssignDialogOpen}
+          projectId={selectedProjectForTeam.id}
+          projectName={selectedProjectForTeam.name}
+          ownerId={selectedProjectForTeam.ownerId}
+        />
+      )}
     </>
   );
 };
