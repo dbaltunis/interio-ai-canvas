@@ -2041,6 +2041,94 @@ export type Database = {
         }
         Relationships: []
       }
+      client_list_members: {
+        Row: {
+          added_at: string
+          client_id: string
+          id: string
+          list_id: string
+        }
+        Insert: {
+          added_at?: string
+          client_id: string
+          id?: string
+          list_id: string
+        }
+        Update: {
+          added_at?: string
+          client_id?: string
+          id?: string
+          list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_list_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_list_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "client_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_lists: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          filters: Json | null
+          icon: string | null
+          id: string
+          last_email_sent_at: string | null
+          member_count: number | null
+          name: string
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          filters?: Json | null
+          icon?: string | null
+          id?: string
+          last_email_sent_at?: string | null
+          member_count?: number | null
+          name: string
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          filters?: Json | null
+          icon?: string | null
+          id?: string
+          last_email_sent_at?: string | null
+          member_count?: number | null
+          name?: string
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_measurements: {
         Row: {
           client_id: string | null
