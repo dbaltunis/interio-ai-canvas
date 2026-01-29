@@ -59,9 +59,10 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { ArchiveIndicator } from "./ArchiveIndicator";
-import { TeamAvatarStack } from "./TeamAvatarStack";
+import { TeamAvatarStack, FullAccessMemberInfo } from "./TeamAvatarStack";
 import { ProjectTeamAssignDialog } from "./ProjectTeamAssignDialog";
 import { useProjectsWithAssignments } from "@/hooks/useProjectsWithAssignments";
+import { useTeamMembersWithJobPermissions } from "@/hooks/useTeamMembersWithJobPermissions";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -128,6 +129,9 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   // Fetch team assignments for all visible projects
   const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
   const { data: projectAssignmentsMap = {} } = useProjectsWithAssignments(projectIds);
+  
+  // Fetch team members with their job permissions for accurate access display
+  const { data: teamPermissionsData } = useTeamMembersWithJobPermissions();
 
   // Filter columns for tablet view - show only 5 most important columns
   const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
@@ -946,9 +950,25 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
           avatarUrl: owner?.avatar_url,
         };
         
-        // Build assigned members list (excluding owner)
+        // Get full access members (excluding owner) - these users always have access
+        const fullAccessMembersForStack: FullAccessMemberInfo[] = (teamPermissionsData?.fullAccessMembers ?? [])
+          .filter(m => m.id !== project.user_id)
+          .map(m => ({
+            id: m.id,
+            name: m.name,
+            avatarUrl: m.avatar_url,
+            role: m.role,
+            hasViewAllJobs: true,
+          }));
+        
+        // Build assigned members list (only those who need assignment, excluding owner)
+        // These are members from projectAssignments who are in needsAssignmentMembers
+        const needsAssignmentIds = new Set(
+          (teamPermissionsData?.needsAssignmentMembers ?? []).map(m => m.id)
+        );
+        
         const assignedMembers = projectAssignments
-          .filter(a => a.user_id !== project.user_id)
+          .filter(a => a.user_id !== project.user_id && needsAssignmentIds.has(a.user_id))
           .map(a => ({
             id: a.user_id,
             name: a.profile?.display_name || 'Unknown',
@@ -956,10 +976,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
             role: a.profile?.role || a.role,
           }));
         
+        // Total team size (excluding owner)
+        const totalTeamSize = (teamPermissionsData?.allMembers?.length ?? 0);
+        
         return (
           <TeamAvatarStack
             owner={ownerForStack}
             assignedMembers={assignedMembers}
+            fullAccessMembers={fullAccessMembersForStack}
+            totalTeamSize={totalTeamSize}
             maxVisible={3}
             onClick={() => {
               setSelectedProjectForTeam({
