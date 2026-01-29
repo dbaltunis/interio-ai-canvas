@@ -1,33 +1,54 @@
 
-# Client Search & Display Improvements for Job Page
 
-## Issues Identified
+# Enhance Edit Client Dialog & Client Display in Job Page
 
-### Issue 1: Missing Fields in Client Creation Form
-The quick client creation form in the job page is missing many fields that exist in the full client form:
-- Funnel Stage selector
-- Country selector  
-- Notes field
-- Tags input
-- Lead Intelligence section (Lead Source, Referral Source, Deal Value, Priority Level, Marketing Consent, Follow-up Date)
+## Summary
 
-### Issue 2: Search Requires Typing First
-Currently shows "Start typing to search for clients" with no client list visible until user types. Users want to browse available clients without typing.
+The Edit Client dialog is missing many fields that exist in the Create New Client form. Additionally, the Client Assignment section in the job details shows minimal client information. This plan will add all the missing fields to the Edit dialog and enhance the client display.
 
-### Issue 3: Search Filtering Not Alphabetical
-The current filtering uses substring matching (`includes()`), so typing "e" returns any client with "e" anywhere in name/company/email. Results are not sorted alphabetically.
+---
 
-### Issue 4: Minimal Client Info After Selection
-After selecting a client, only name and email are shown. Missing:
-- Client type badge (B2B/B2C)
-- Phone number
-- Address
-- Company name for B2B
-- Funnel stage
-- Tags
+## Issue 1: Edit Client Dialog Missing Fields
 
-### Issue 5: Client Not Locked When Project is Locked
-The "Change Client" button is not disabled when the project has a locked status.
+**Current State (Screenshot 2)**
+The Edit Client Details dialog only shows:
+- Client Name
+- Client Type
+- Email / Phone
+- Address / City / State / ZIP
+
+**Missing Fields (compared to Create form - Screenshot 1)**
+| Field | Type |
+|-------|------|
+| Country | Select dropdown |
+| Funnel Stage | Select dropdown (dynamic from useClientStages) |
+| Lead Source | LeadSourceSelect component |
+| Priority Level | Select dropdown |
+| Deal Value | Number input |
+| Referral Source | Text input |
+| Follow-up Date | Date picker |
+| Notes | Textarea |
+| Tags | Tag input with add/remove |
+| Marketing Consent | Checkbox |
+
+---
+
+## Issue 2: Client Assignment Card Shows Minimal Info
+
+**Current State (Screenshot 3)**
+The Client Assignment card only displays:
+- Client name
+- Email with icon
+- Phone with emoji
+
+**Should Display (like the selected client card in ClientSearchStep)**
+- Client name with type badge (B2B/B2C)
+- Company name for B2B clients
+- Funnel stage badge (colored)
+- Email and phone with icons
+- Full address with MapPin icon
+- Tags as badges
+- Deal value and priority level
 
 ---
 
@@ -35,150 +56,222 @@ The "Change Client" button is not disabled when the project has a locked status.
 
 ### File 1: `src/components/job-creation/steps/ClientSearchStep.tsx`
 
-**Changes:**
+**Changes to `editClientData` state (line 59-72)**
 
-1. **Add missing fields to newClientData and the create form:**
-   - Add `notes`, `country`, `funnel_stage`, `lead_source`, `referral_source`, `deal_value`, `priority_level`, `marketing_consent`, `follow_up_date`, `tags` fields
-   - Import and use `LeadSourceSelect` component
-   - Import `FUNNEL_STAGES`, `COUNTRIES` constants
-   - Add `useClientStages` hook for dynamic stages
+Add the missing fields to the state object:
 
-2. **Show recent clients by default (no typing required):**
-   - Show first 10 clients alphabetically when no search term entered
-   - Add "Recent Clients" section header
+```typescript
+const [editClientData, setEditClientData] = useState({
+  // Existing fields
+  name: "",
+  email: "",
+  phone: "",
+  company_name: "",
+  client_type: "B2C" as "B2B" | "B2C",
+  address: "",
+  city: "",
+  state: "",
+  zip_code: "",
+  abn: "",
+  business_email: "",
+  business_phone: "",
+  // New fields to add
+  country: "",
+  notes: "",
+  funnel_stage: "",
+  lead_source: "",
+  referral_source: "",
+  deal_value: "",
+  priority_level: "",
+  marketing_consent: false,
+  follow_up_date: null as Date | null,
+  tags: [] as string[],
+});
+```
 
-3. **Fix alphabetical sorting:**
-   - Sort `filteredClients` alphabetically by name
-   - Use `startsWith` for primary matches, then `includes` for secondary
-   - Show matches that start with the search term first
+**Changes to `openEditDialog` function (line 213-231)**
 
-4. **Enhanced client card in search results:**
-   - Show client type badge (B2B/B2C)
-   - Show phone if available
-   - Show funnel stage badge
-   - Show address summary
+Update to populate all the new fields from the selected client:
 
-5. **Enhanced selected client display:**
-   - Show full address
-   - Show funnel stage with color badge
-   - Show phone and email with icons
-   - Show tags
-   - Show company info for B2B clients
-   - Show lead source/priority if set
+```typescript
+setEditClientData({
+  // ... existing fields
+  country: selectedClient.country || "",
+  notes: selectedClient.notes || "",
+  funnel_stage: selectedClient.funnel_stage || "",
+  lead_source: selectedClient.lead_source || "",
+  referral_source: selectedClient.referral_source || "",
+  deal_value: selectedClient.deal_value ? String(selectedClient.deal_value) : "",
+  priority_level: selectedClient.priority_level || "",
+  marketing_consent: selectedClient.marketing_consent || false,
+  follow_up_date: selectedClient.follow_up_date ? new Date(selectedClient.follow_up_date) : null,
+  tags: selectedClient.tags || [],
+});
+```
 
-6. **Add isLocked prop support:**
-   - Accept `isLocked` prop to disable editing when project is locked
-   - Pass through to disable Edit and Change Client buttons
+**Changes to `handleEditClient` function (line 199-211)**
+
+Update to send all new fields to the API:
+
+```typescript
+await updateClient.mutateAsync({
+  id: selectedClient.id,
+  ...editClientData,
+  deal_value: editClientData.deal_value ? parseFloat(editClientData.deal_value) : undefined,
+  follow_up_date: editClientData.follow_up_date ? format(editClientData.follow_up_date, 'yyyy-MM-dd') : undefined,
+  tags: editClientData.tags.length > 0 ? editClientData.tags : undefined,
+});
+```
+
+**Add tag management for edit dialog**
+
+Add new state and helper functions:
+
+```typescript
+const [editTagInput, setEditTagInput] = useState("");
+
+const handleAddEditTag = () => {
+  const trimmed = editTagInput.trim();
+  if (trimmed && !editClientData.tags.includes(trimmed)) {
+    setEditClientData(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmed]
+    }));
+    setEditTagInput("");
+  }
+};
+
+const handleRemoveEditTag = (tag: string) => {
+  setEditClientData(prev => ({
+    ...prev,
+    tags: prev.tags.filter(t => t !== tag)
+  }));
+};
+```
+
+**Update Edit Client Dialog UI (lines 863-1022)**
+
+Add all the missing form fields matching the Create form layout:
+- Funnel Stage & Lead Source (grid of 2)
+- Priority Level & Deal Value (grid of 2)
+- Referral Source & Follow-up Date (grid of 2)
+- Country selector (add to address section)
+- Notes textarea
+- Tags input with add/remove
+- Marketing Consent checkbox
+
+---
 
 ### File 2: `src/components/jobs/tabs/ProjectDetailsTab.tsx`
 
-**Changes:**
+**Enhance Client Assignment Card (lines 634-660)**
 
-1. **Import and use `useProjectStatus` context:**
-   - Import `useProjectStatus` from `@/contexts/ProjectStatusContext`
-   - Get `isLocked` from the context
-   - Combine with existing `canEditJob` check
+Replace the minimal display with comprehensive client info:
 
-2. **Disable client actions when locked:**
-   - Pass `isLocked` state to ClientSearchStep component
-   - Disable "Change Client" button when project is locked
+```tsx
+{selectedClient ? (
+  <div className="space-y-3">
+    {/* Name with Type Badge */}
+    <div className="flex items-center gap-2 flex-wrap">
+      <p className="text-lg font-semibold text-foreground">
+        {getClientDisplayName(selectedClient)}
+      </p>
+      <Badge variant="outline" className="text-xs">
+        {selectedClient.client_type === "B2B" ? "Business" : "Individual"}
+      </Badge>
+    </div>
 
-3. **Enhanced client info display:**
-   - Show client type badge
-   - Show full address (street, city, state, zip)
-   - Show funnel stage with colored badge
-   - Show tags as badges
-   - Show phone with icon
-   - Display B2B specific info (company name, contact person)
+    {/* Company name for B2B */}
+    {selectedClient.client_type === 'B2B' && selectedClient.name && (
+      <p className="text-sm text-muted-foreground">
+        Contact: {selectedClient.name}
+      </p>
+    )}
 
----
+    {/* Funnel Stage Badge */}
+    {selectedClient.funnel_stage && (
+      <Badge variant="secondary" className="text-xs">
+        {selectedClient.funnel_stage}
+      </Badge>
+    )}
 
-## Technical Details
+    {/* Contact Info - Grid */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+      {selectedClient.email && (
+        <div className="flex items-center gap-2">
+          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="truncate">{selectedClient.email}</span>
+        </div>
+      )}
+      {selectedClient.phone && (
+        <div className="flex items-center gap-2">
+          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>{selectedClient.phone}</span>
+        </div>
+      )}
+    </div>
 
-### Search Algorithm Improvement
+    {/* Address */}
+    {(selectedClient.address || selectedClient.city) && (
+      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+        <MapPin className="h-3.5 w-3.5 mt-0.5" />
+        <span>
+          {[selectedClient.address, selectedClient.city, selectedClient.state, selectedClient.zip_code]
+            .filter(Boolean).join(", ")}
+        </span>
+      </div>
+    )}
 
-```typescript
-// Sort by relevance: startsWith matches first, then alphabetical
-const filteredClients = clients
-  ?.filter(client => 
-    client.name.toLowerCase().includes(term) ||
-    client.company_name?.toLowerCase().includes(term) ||
-    client.email?.toLowerCase().includes(term)
-  )
-  .sort((a, b) => {
-    const aName = a.name.toLowerCase();
-    const bName = b.name.toLowerCase();
-    const aStarts = aName.startsWith(term);
-    const bStarts = bName.startsWith(term);
-    
-    // Prioritize startsWith matches
-    if (aStarts && !bStarts) return -1;
-    if (!aStarts && bStarts) return 1;
-    
-    // Then alphabetical
-    return aName.localeCompare(bName);
-  }) || [];
+    {/* Tags */}
+    {selectedClient.tags?.length > 0 && (
+      <div className="flex items-center gap-1 flex-wrap">
+        {selectedClient.tags.map(tag => (
+          <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+        ))}
+      </div>
+    )}
+
+    {/* Deal Value & Priority */}
+    {(selectedClient.deal_value || selectedClient.priority_level) && (
+      <div className="flex items-center gap-3 text-sm">
+        {selectedClient.deal_value > 0 && (
+          <span className="text-green-600 font-medium">
+            ${selectedClient.deal_value.toLocaleString()}
+          </span>
+        )}
+        {selectedClient.priority_level && (
+          <Badge variant="outline" className="text-xs capitalize">
+            {selectedClient.priority_level} priority
+          </Badge>
+        )}
+      </div>
+    )}
+  </div>
+) : (
+  // ... empty state unchanged
+)}
 ```
 
-### Default Client List (No Search Term)
+**Add missing imports**
 
-```typescript
-// When no search term, show first 10 clients alphabetically
-const displayClients = searchTerm 
-  ? filteredClients 
-  : clients?.slice().sort((a, b) => 
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-    ).slice(0, 10) || [];
-```
-
-### Lock Status Integration
-
-```typescript
-// In ProjectDetailsTab.tsx
-import { useProjectStatus } from "@/contexts/ProjectStatusContext";
-
-const { isLocked, isLoading: statusLoading } = useProjectStatus();
-
-// Combined read-only check
-const isReadOnly = !canEditJob || editPermissionsLoading || isLocked || statusLoading;
-
-// Pass to ClientSearchStep
-<ClientSearchStep 
-  formData={{ client_id: formData.client_id }}
-  updateFormData={...}
-  isLocked={isReadOnly}
-/>
-```
-
----
-
-## New Fields for Client Creation Form
-
-| Field | Component | Description |
-|-------|-----------|-------------|
-| Country | Select dropdown | Uses COUNTRIES constant |
-| Funnel Stage | Select dropdown | Uses dynamic stages from useClientStages |
-| Notes | Textarea | General notes about client |
-| Tags | Tag input | Add/remove tags |
-| Lead Source | LeadSourceSelect | Custom lead source selector |
-| Referral Source | Input | Who referred this client |
-| Deal Value | Number input | Estimated deal value |
-| Priority Level | Select | low/medium/high/urgent |
-| Marketing Consent | Checkbox | Marketing opt-in |
-| Follow-up Date | Date input | Next follow-up date |
-
----
-
-## Permissions & Security
-
-- All changes respect existing permission system via `useCanEditJob` hook
-- Project locking respects `useProjectStatus` context
-- RLS policies remain unchanged - client data filtered by `effectiveOwnerId`
-- Dealer restrictions via `useDealerOwnClients` hook still apply
+Add `Phone` and `MapPin` to the lucide-react import statement.
 
 ---
 
 ## Files to Modify
 
-1. `src/components/job-creation/steps/ClientSearchStep.tsx` - Main changes for all 5 issues
-2. `src/components/jobs/tabs/ProjectDetailsTab.tsx` - Lock status + enhanced display
+| File | Changes |
+|------|---------|
+| `src/components/job-creation/steps/ClientSearchStep.tsx` | Add fields to editClientData state, update openEditDialog, update handleEditClient, add tag helpers, expand Edit Dialog UI |
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Enhance Client Assignment card display, add missing icon imports |
+
+---
+
+## Technical Notes
+
+- All changes respect existing permission checks (`isLocked`, `isReadOnly`)
+- Uses existing `useClientStages` hook for dynamic funnel stages
+- Uses existing `LeadSourceSelect` component for lead source
+- Follows the same UI patterns as the Create form
+- Tags use the same add/remove pattern as newClientData
+
