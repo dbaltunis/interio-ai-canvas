@@ -1,101 +1,122 @@
 
-# ROOT CAUSE IDENTIFIED: Missing Fix for Base Price Resolution
+# Complete Fix: Add Missing `cost_price` to Saved Fabric Details
 
-## What's Actually Happening
+## Root Cause Confirmed
 
-| What Should Display | What's Displaying | Cause |
-|---------------------|-------------------|-------|
-| **Cost**: 24.08m × ₹440 = ₹10,595 | **Cost**: 24.08m × ₹924 = ₹22,249 | Using `selling_price` instead of `cost_price` |
-| **Sell**: ₹10,595 + 110% = ₹22,249 | **Sell**: ₹24,009 (same as cost) or + markup | Cost already inflated |
+The `pricePerMeter` fix was applied correctly (prioritizing `cost_price`), BUT when treatments are saved to the database, the `cost_price` field is **NOT being included** in the `fabric_details` JSONB.
 
-The COST column is showing the SELLING price value (₹924/m) instead of the COST price value (₹440/m). This is NOT a markup issue - the BASE PRICE is wrong.
+### Evidence from Database
 
----
+**Inventory Item (LELIN 231)**:
+| Field | Value |
+|-------|-------|
+| cost_price | 440 ✅ |
+| selling_price | 924 ✅ |
 
-## The Bug Location
-
-**File**: `src/components/measurements/DynamicWindowWorksheet.tsx`  
-**Lines**: 2994-2997
-
-```typescript
-// CURRENT CODE (WRONG):
-const pricePerMeter = selectedFabricItem?.price_per_meter 
-  || selectedFabricItem?.selling_price   // ← Using selling_price (₹924)!
-  || fabricCalculation?.pricePerMeter 
-  || 0;
+**Saved workshop_items.fabric_details**:
+```json
+{
+  "name": "LELIN 231",
+  "selling_price": 924,
+  "cost_price": /* MISSING! */
+}
 ```
 
-This `pricePerMeter` is then:
-- Used to calculate `fabricCost` (line 3058: `fabricCost = totalMeters * pricePerMeter`)
-- Passed to `fabricDisplayData.pricePerMeter` (line 3356)
-- Displayed in Cost column as the BASE cost
-
----
-
-## Why This Wasn't Fixed Earlier
-
-In the approved plan, I stated this should be changed to prioritize `cost_price`. However, I did NOT actually make this edit. The CostCalculationSummary.tsx changes for implied markup were made, but the fundamental pricePerMeter source fix was missed.
-
----
-
-## The Fix
-
-**File**: `src/components/measurements/DynamicWindowWorksheet.tsx`
-
-Change lines 2994-2997:
-
-```typescript
-// BEFORE (current - WRONG):
-const pricePerMeter = selectedFabricItem?.price_per_meter 
-  || selectedFabricItem?.selling_price 
-  || fabricCalculation?.pricePerMeter 
-  || 0;
-
-// AFTER (correct):
-// ✅ FIX: Use cost_price as base - markup is applied separately in CostCalculationSummary
-// This ensures Cost column shows actual cost, and Sell column shows cost + markup
-const pricePerMeter = selectedFabricItem?.cost_price
-  || selectedFabricItem?.price_per_meter 
-  || selectedFabricItem?.selling_price  // Fallback only if no cost_price
-  || fabricCalculation?.pricePerMeter 
-  || 0;
-```
-
----
-
-## Expected Result After Fix
-
-| Field | Before (Buggy) | After (Fixed) |
-|-------|----------------|---------------|
-| Price per meter (base) | ₹924 (selling_price) | ₹440 (cost_price) |
-| Cost (24.08m × price) | ₹22,249 | ₹10,595 |
-| Markup applied | 0% (settings respected now) | 110% (implied from library) |
-| Sell | ₹22,249 | ₹22,249 (₹10,595 × 2.1) |
-| GP% | 0% | 51% |
-
----
-
-## Why This Is The Only Change Needed
-
-1. **Markup settings fix (already deployed)**: Defaults are now 0%, nullish coalescing preserves user's 0% values ✓
-2. **Implied markup for curtains (already deployed)**: CostCalculationSummary now calculates implied markup from cost_price vs selling_price ✓
-3. **Base price resolution (NOT YET DONE)**: pricePerMeter must use cost_price, not selling_price ← **THIS IS THE FIX**
+When the treatment is reloaded, `selectedFabricItem.cost_price` is `undefined` (not saved), so the code falls back to `selling_price: 924`.
 
 ---
 
 ## Files to Modify
 
-| File | Line | Change |
-|------|------|--------|
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2994-2997 | Add `cost_price` as first priority in pricePerMeter resolution |
+### File 1: `src/components/measurements/DynamicWindowWorksheet.tsx`
+
+**Location 1: Lines 2123-2139** (fabric_details in summaryData)
+
+Add `cost_price` to the saved fabric details:
+
+```typescript
+fabric_details: selectedItems.fabric ? {
+  id: selectedItems.fabric.id,
+  name: selectedItems.fabric.name,
+  fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+  cost_price: selectedItems.fabric.cost_price,  // ✅ ADD THIS
+  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
+  category: selectedItems.fabric.category,
+  image_url: selectedItems.fabric.image_url,
+  color: measurements.selected_color || selectedItems.fabric.tags?.[0] || selectedItems.fabric.color || null,
+  pricing_grid_data: selectedItems.fabric.pricing_grid_data,
+  resolved_grid_name: selectedItems.fabric.resolved_grid_name,
+  resolved_grid_code: selectedItems.fabric.resolved_grid_code,
+  resolved_grid_id: selectedItems.fabric.resolved_grid_id,
+  price_group: selectedItems.fabric.price_group,
+  product_category: selectedItems.fabric.product_category
+} : null,
+```
+
+**Location 2: Lines 2409-2422** (fabric_details in treatmentData)
+
+Add `cost_price` to the treatment record:
+
+```typescript
+fabric_details: selectedItems.fabric ? {
+  id: selectedItems.fabric.id,
+  fabric_id: selectedItems.fabric.id,
+  name: selectedItems.fabric.name,
+  fabric_width: selectedItems.fabric.fabric_width,
+  cost_price: selectedItems.fabric.cost_price,  // ✅ ADD THIS
+  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
+  pricing_grid_data: selectedItems.fabric.pricing_grid_data,
+  resolved_grid_name: selectedItems.fabric.resolved_grid_name,
+  resolved_grid_code: selectedItems.fabric.resolved_grid_code,
+  resolved_grid_id: selectedItems.fabric.resolved_grid_id,
+  price_group: selectedItems.fabric.price_group,
+  product_category: selectedItems.fabric.product_category
+} : null,
+```
 
 ---
 
-## Technical Note: Why Cost vs Selling Price Matters
+## Why This Is Required
 
-- **cost_price (₹440)**: What your client PAYS the supplier - this is the BASE for calculations
-- **selling_price (₹924)**: What your client CHARGES customers - this includes their 110% markup
-- **Cost column**: Should show `meters × cost_price` = actual expense
-- **Sell column**: Should show `Cost × (1 + markup%)` = revenue
+The flow is:
+1. User selects fabric from inventory (has `cost_price: 440`)
+2. Treatment is saved to `windows_summary` and `workshop_items`
+3. **If `cost_price` isn't saved**, it's lost forever
+4. When treatment is loaded, only `selling_price: 924` is available
+5. The `pricePerMeter` fix tries `cost_price` first → gets `undefined`
+6. Falls back to `selling_price: 924` → wrong price displayed
 
-The current code treats the selling price AS the cost, then potentially applies additional markup, causing double-charging.
+---
+
+## Testing Required After Fix
+
+### New Treatments
+1. Create new project with curtain treatment
+2. Select fabric that has both `cost_price` and `selling_price`
+3. Verify Cost column shows `cost_price × meters` (not selling_price)
+4. Verify Sell column shows `cost × (1 + implied_markup%)`
+
+### Existing Treatments
+Existing treatments saved before this fix will NOT have `cost_price` in their `fabric_details`. They will continue to use `selling_price` until:
+- The user opens and re-saves the treatment (which will now include `cost_price`)
+- OR a migration script updates existing records
+
+---
+
+## Impact Assessment
+
+| Scenario | Impact |
+|----------|--------|
+| New treatments | Will work correctly after fix |
+| Existing treatments | Will need re-save to update |
+| Other accounts | No negative impact - only adds data |
+| Markup settings | Already fixed - 0% respected |
+
+---
+
+## Code Changes Summary
+
+| File | Lines | Change |
+|------|-------|--------|
+| DynamicWindowWorksheet.tsx | 2127 | Add `cost_price: selectedItems.fabric.cost_price,` |
+| DynamicWindowWorksheet.tsx | 2414 | Add `cost_price: selectedItems.fabric.cost_price,` |
