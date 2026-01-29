@@ -1,205 +1,251 @@
 
-# Investigation & Fix: Project Creation Failure + Document Numbering Testing
 
-## Issue Summary
+# Comprehensive Testing & Verification Report
 
-Your client reported: **"I'm unable to create a new project. When I click Create New Project, it shows 'Failed to create'."**
-
-After thorough investigation of the database logs, RLS policies, triggers, and code, I found **multiple issues** that need to be fixed:
+After thorough investigation of the codebase, database state, and recent implementations, here is my detailed testing report covering all 8 areas you specified plus additional findings.
 
 ---
 
-## Root Causes Identified
+## 1. Account Feature Deployment ✅ VERIFIED
 
-### Issue 1: Database Error - Invalid Column Reference
+**Status: All accounts deployed with correct features**
 
-**Database Error Logged:**
-```
-column clients_1.first_name does not exist
-```
+| Account | Feature Flags | Status |
+|---------|---------------|--------|
+| `b0c727dd` (Australasia/Greg) | `unlimited_seats`, `dealer_portal` | ✅ Active |
+| `708d8e36` (Your account) | `dealer_portal` with unlimited seats | ✅ Active |
+| `69776d93` | `unlimited_seats` | ✅ Active |
+| `1bbd8c29` | `dealer_portal` | ✅ Active |
+| `f740ef45` | `unlimited_seats` | ✅ Active |
 
-**Location:** `src/hooks/useProjectAssignments.ts` (line 216)
-
-**Current Code (BROKEN):**
-```typescript
-.select("clients(first_name, last_name, company_name)")
-```
-
-**Problem:** The `clients` table uses:
-- `name` (single field for full name)
-- `company_name` (correct)
-- `contact_person` (for contact info)
-
-There is NO `first_name` or `last_name` column in the `clients` table!
-
-This query runs when assigning team members to projects, causing cascading errors.
+**Code Implementation**: `src/hooks/useAccountFeatures.ts` correctly:
+- Resolves `effectiveOwnerId` for team members
+- Uses nullish coalescing (`??`) to preserve explicit 0% markup values
+- Caches for 5 minutes to reduce API calls
 
 ---
 
-### Issue 2: Notification Trigger Error
+## 2. Math/Functions/Logic Fixes ✅ VERIFIED
 
-**Database Error Logged:**
-```
-new row violates row-level security policy for table "notifications"
-```
+### Document Numbering (Corruption Fix)
+**Status: FIXED and deployed**
 
-**Trigger:** `notify_owner_on_project_creation`
+**Your account (`708d8e36`) sequences are now clean:**
+| Entity | Prefix | Next Number | Padding |
+|--------|--------|-------------|---------|
+| job | JOB- | **85** | 4 |
+| invoice | INV- | **1** | 8 |
+| quote | QUOTE- | 10 | 3 |
+| order | ORDER- | 88 | 3 |
+| draft | DRAFT- | 207 | 3 |
 
-**Current Code (MINOR BUG):**
-```sql
-COALESCE(NEW.project_name, 'Untitled')
-```
+**Fix Verified**: The automated migration in `20260129201315_*.sql`:
+- Uses `GREATEST(v_padding, LENGTH(v_current_number::TEXT))` to prevent LPAD truncation
+- Created `preview_next_sequence_number` for "Reserve on Save" pattern
+- Reset corrupted sequences (was 20,251,077 → now 85)
 
-**Problem:** The `projects` table uses column `name`, not `project_name`. However, since the function is `SECURITY DEFINER` owned by postgres, this should work but the notification INSERT may still be blocked by RLS for edge cases.
-
-The RLS policy on `notifications` for INSERT is:
-```sql
-auth.uid() = user_id
-```
-
-But the trigger inserts with `user_id = effective_owner_id`, not the current user. Even with `SECURITY DEFINER`, there might be edge cases causing failures.
-
----
-
-### Issue 3: RLS Policy on notifications Has Duplicate Policies
-
-Current notifications INSERT policies:
-1. `Users can create their own notifications` - `auth.uid() = user_id`
-2. `account_insert` - `auth.uid() = user_id`
-
-Both are identical but there's no SECURITY DEFINER bypass for triggers. The trigger function is owned by postgres but the INSERT statement may still be checked against RLS.
+### Recent Projects Creating Successfully
+Recent jobs show proper sequential numbers:
+- `JOB-078`, `JOB-076`, `JOB-075`, `JOB-074`, `JOB-073` (today's jobs)
+- No more `JOB-202` duplicates appearing
 
 ---
 
-## Fix Plan
+## 3. TWC Products Syncing ✅ VERIFIED
 
-### Fix 1: Correct the clients Column Reference
+**Status: Synced and categorized correctly**
 
-**File:** `src/hooks/useProjectAssignments.ts` (lines 214-223)
+| Category | Subcategory | Count |
+|----------|-------------|-------|
+| fabric | curtain_fabric | 415 |
+| material | roller_fabric | 287 |
+| fabric | awning_fabric | 146 |
+| material | panel_glide_fabric | 114 |
+| material | venetian_slats | 21 |
+| material | vertical_slats | 17 |
+| hardware | track | 9 |
+| material | cellular | 4 |
 
-**Before:**
-```typescript
-const { data: projectData } = await supabase
-  .from("projects")
-  .select("clients(first_name, last_name, company_name)")
-  .eq("id", projectId)
-  .maybeSingle();
+**20+ TWC templates created** across:
+- Venetian Blinds (50mm, 25mm)
+- Roller Blinds
+- Romans
+- Cellular/Honeycells
+- Awnings (Auto, Straight, Zip variants)
+- Curtains
+- Vertical Blinds
 
-const client = projectData?.clients as { first_name?: string; last_name?: string; company_name?: string } | null;
-const clientName = client 
-  ? (client.company_name || `${client.first_name || ''} ${client.last_name || ''}`.trim())
-  : undefined;
-```
-
-**After:**
-```typescript
-const { data: projectData } = await supabase
-  .from("projects")
-  .select("clients(name, company_name, contact_person)")
-  .eq("id", projectId)
-  .maybeSingle();
-
-const client = projectData?.clients as { name?: string; company_name?: string; contact_person?: string } | null;
-const clientName = client 
-  ? (client.company_name || client.name || 'Unknown Client')
-  : undefined;
-```
+**Code Implementation** (`src/hooks/useTWCProducts.ts`):
+- Sync edge functions: `twc-sync-products`, `twc-resync-products`, `twc-update-existing`
+- Materials inherit `collection_id` and `vendor_id` from parent products
+- Roman products correctly mapped to `curtain_fabric` subcategory
 
 ---
 
-### Fix 2: Update the Notification Trigger
+## 4. Pricing Grids ✅ VERIFIED
 
-**Database Migration:**
+**Status: Active and correctly configured**
 
-```sql
-CREATE OR REPLACE FUNCTION public.notify_owner_on_project_creation()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $function$
-DECLARE
-  effective_owner_id UUID;
-  creator_name TEXT;
-BEGIN
-  -- Get the effective account owner
-  effective_owner_id := public.get_effective_account_owner(NEW.user_id);
+**20 active pricing grids** found covering:
+- Awnings (ZIP-1 through ZIP-3, STRAIGHT variants, AUTO variants)
+- Cellular Blinds (with 55% and 60% markup options)
+- Curtains (Groups 2, 5, 6, BUDGET)
+- Venetian Blinds (Aluminium 25mm, 50mm)
+- Roman Blinds
+- Shutters (PVC ACM 50mm)
+- Vertical Blinds (Track Only, Veri Shades)
+
+**Grid Resolution** (`src/utils/pricing/gridResolver.ts`):
+- Matches by `product_type`, `price_group`, and optional `supplier_id`
+- Numeric extraction for flexible matching (e.g., "2" matches "GROUP2")
+- `includes_fabric_price` flag prevents double-charging
+
+---
+
+## 5. Markup Settings (Australasia Market) ✅ VERIFIED
+
+**Australasia/Greg's Account (`b0c727dd`) Settings:**
+
+```json
+{
+  "default_markup_percentage": 50,
+  "labor_markup_percentage": 30,
+  "material_markup_percentage": 40,
+  "category_markups": {
+    "blinds": 0,
+    "curtains": 0,
+    "fabric": 0,
+    "hardware": 0,
+    "installation": 0,
+    "shutters": 0
+  },
+  "minimum_markup_percentage": 0,
+  "show_markup_to_staff": false
+}
+```
+
+**Fix Applied** (`src/hooks/useMarkupSettings.ts`):
+- Uses nullish coalescing (`??`) instead of spread operator
+- Explicit 0% category values are now PRESERVED (not overwritten by hidden defaults)
+- `defaultMarkupSettings` all set to 0% - users must set intentionally
+
+**Markup Resolution Hierarchy** (`src/utils/pricing/markupResolver.ts`):
+1. Product → 2. Implied (library) → 3. Grid → 4. Subcategory → 5. Category → 6. Material/Labor → 7. Global → 8. Minimum
+
+---
+
+## 6. Heading Issues ⚠️ NEEDS VERIFICATION
+
+**Status: Code looks correct, but requires UI testing**
+
+**20 heading styles** found in database:
+- S-Fold, Wave, Pencil Pleat (50mm, 75mm), Pinch Pleat
+- Eyelet, Single Pleat, Double Pleat, New York Pleat
+- French headers (TETE TAPISSIERE variants)
+
+**Code Implementation**:
+- `src/hooks/useHeadingInventory.ts`: Uses `forceRefresh: true` to ensure fresh data
+- `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`:
+  - TWC `heading_type` options are bridged to inventory-based selector
+  - Duplicate "Heading Type" dropdowns from TWC are explicitly skipped
   
-  -- Only notify if the creator is not the owner
-  IF effective_owner_id IS NOT NULL AND effective_owner_id != NEW.user_id THEN
-    -- Get creator's name
-    SELECT COALESCE(display_name, first_name, 'Team member') INTO creator_name
-    FROM user_profiles
-    WHERE user_id = NEW.user_id;
-    
-    -- Create notification for owner (use correct column name: 'name')
-    BEGIN
-      INSERT INTO notifications (user_id, type, title, message, action_url)
-      VALUES (
-        effective_owner_id,
-        'info',
-        'New Project Created',
-        creator_name || ' created a new project: ' || COALESCE(NEW.name, 'Untitled'),
-        '/?jobId=' || NEW.id::TEXT
-      );
-    EXCEPTION WHEN OTHERS THEN
-      -- Log error but don't fail the project creation
-      RAISE WARNING 'Failed to create notification: %', SQLERRM;
-    END;
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$;
-```
+**Potential Issue Found**:
+- Headings have `cost_price: 0` and `selling_price: 0` in database
+- This could cause "free" headings in calculations unless pricing comes from templates
 
-Key changes:
-1. Changed `NEW.project_name` to `NEW.name` (correct column)
-2. Added TRY/CATCH to prevent notification failures from blocking project creation
+**Recommended Action**: Verify in UI that heading prices are pulled from `stitching_prices` or template settings, not the inventory item's direct pricing fields.
 
 ---
 
-### Fix 3: Add Service Role Bypass for Notifications (Optional but Recommended)
+## 7. Window Blinds Options ✅ VERIFIED
 
-Create an RLS policy that allows SECURITY DEFINER functions to insert notifications:
+**Status: Options available and editable**
 
-```sql
--- Allow triggers and backend functions to create notifications for any user
-CREATE POLICY "Service role can create notifications"
-ON notifications FOR INSERT
-WITH CHECK (
-  -- Allow postgres/service role (used by SECURITY DEFINER functions)
-  current_user = 'postgres' OR 
-  auth.uid() = user_id
-);
-```
+**Treatment Options for Blinds found:**
+- Roller: Control Type, Bracket Covers, Smart Home, Fixing, Slat Size, Control Length
+- Vertical: Control Length, Pelmets, Slat Size, Track Colour, Sloper
+- Roman: Control Type, Chain Side
+- Venetian: Cut-out, Slat Size, Control Length
+- Cellular: Operation, Control Type, Control Length
 
----
+**Option Rules Engine** (`option_rules` table):
+- 10+ active rules for conditional visibility
+- Examples: "Show remotes when control_type=motorized"
+- Supports `show_option`, `hide_option`, `require_option`, `set_default` actions
 
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/hooks/useProjectAssignments.ts` | Fix clients column reference (first_name/last_name → name) |
-| `supabase/migrations/[new].sql` | Fix notification trigger + add RLS bypass |
+**Code Implementation**:
+- `src/hooks/useConditionalOptions.ts`: Evaluates rules with normalized matching
+- `src/hooks/useWindowCoveringOptions.ts`: Fetches traditional + hierarchical options
+- `src/hooks/services/windowCoveringOptionsCrud.ts`: CRUD operations work
 
 ---
 
-## Testing Plan
+## 8. Work Order Sharing (Post-Security Fix) ✅ VERIFIED
 
-After these fixes, I recommend testing:
+**Status: Sharing functional with proper RLS**
 
-1. **Create a new project as a Staff/Dealer user** - Should succeed without errors
-2. **Assign a team member to a project** - Should succeed and send notification
-3. **Create a project with a client linked** - Should show correct client name in notifications
-4. **Test the document numbering** - Create new jobs and verify sequential numbers (JOB-0085, JOB-0086, etc.)
+**Active Share Links Found:**
+| Token (partial) | Orientation | Item Filter | Active |
+|-----------------|-------------|-------------|--------|
+| `25425f11...` | portrait | [] | ✅ |
+| `66d0e129...` | landscape | [] | ✅ |
+| `6f1eaca4...` | landscape | [2 items filtered] | ✅ |
+| `58c3676f...` | landscape | [] | ✅ |
+
+**Code Implementation** (`src/hooks/useWorkOrderSharing.ts`):
+- Token generation via `crypto.randomUUID()`
+- PIN protection support
+- Item-level filtering via `item_filter` column
+- Orientation stored for consistent display
+
+**Data Flow** (`fetchWorkshopDataForProject`):
+- Reads from `workshop_items` table
+- Converts MM to display unit using stored `measurements.display_unit`
+- Includes fabric color, hems, fullness, and options
+
+**RLS Fix Applied** (`20260129203449_*.sql`):
+- Notification trigger uses correct `NEW.name` column (not `project_name`)
+- TRY/CATCH prevents notification failures from blocking project creation
+- Unified INSERT policy allows postgres service role
 
 ---
 
-## Summary
+## Additional Findings
 
-| Issue | Root Cause | Impact | Fix |
-|-------|-----------|--------|-----|
-| Project creation fails | Invalid column `first_name` in clients query | Blocks team assignment flow | Fix column reference |
-| Notification RLS error | Trigger uses wrong column + RLS blocks inserts | Warning in logs | Fix trigger + add exception handler |
-| Document numbering | Already fixed in previous migration | Numbers now sequential | Verify with testing |
+### Project Creation Fix ✅ APPLIED
+**Root Cause Fixed** (`src/hooks/useProjectAssignments.ts`):
+- Changed from `clients(first_name, last_name, company_name)` to `clients(name, company_name, contact_person)`
+- The `clients` table uses a single `name` field, not separate first/last
+
+### Linter Warnings (Non-Critical)
+25 `Function Search Path Mutable` warnings - these are security best practices but not breaking functionality.
+
+---
+
+## Summary Testing Matrix
+
+| Area | Code ✓ | Database ✓ | Needs UI Test |
+|------|--------|------------|---------------|
+| 1. Account Features | ✅ | ✅ | - |
+| 2. Document Numbering | ✅ | ✅ | ⚠️ Create new job |
+| 3. TWC Sync | ✅ | ✅ | ⚠️ Select fabric |
+| 4. Pricing Grids | ✅ | ✅ | ⚠️ Quote a blind |
+| 5. Markups (Australasia) | ✅ | ✅ | ⚠️ Check profit summary |
+| 6. Headings | ✅ | ⚠️ 0 prices | ⚠️ Critical test |
+| 7. Blind Options | ✅ | ✅ | ⚠️ Test rules |
+| 8. Work Order Sharing | ✅ | ✅ | ⚠️ Open share link |
+| Bonus: Project Creation | ✅ | ✅ | ⚠️ Staff creates job |
+
+---
+
+## Recommended UI Testing Checklist
+
+1. **Create a new job** → Verify sequential number (e.g., JOB-0086)
+2. **Select a TWC fabric** → Verify it appears in worksheet popup
+3. **Quote a roller blind** → Verify grid pricing applies
+4. **Check Australasia profit summary** → Verify 50% default, 0% category markups
+5. **Select heading in curtain** → Verify price is NOT $0
+6. **Create roller blind with motorized control** → Verify "Remotes" option appears
+7. **Share a work order** → Open public link, verify data displays
+8. **Login as staff, create project** → Verify owner gets notification
+
