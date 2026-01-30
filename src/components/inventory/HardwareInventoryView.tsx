@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PricingCell } from "./PricingCell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
@@ -306,9 +307,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                         )}
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Price:</span>
-                          <span className="font-bold text-primary">
-                            {formatPrice(item.selling_price || 0)}
-                          </span>
+                          <PricingCell item={item} className="font-bold text-primary" />
                         </div>
                       </div>
                       
@@ -434,7 +433,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                             {!isDealer && <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>}
                             <TableCell className="px-2 py-1 text-xs hidden lg:table-cell">{(item as any).material || '-'}</TableCell>
                             <TableCell className="px-2 py-1 text-xs font-medium">
-                              {formatPrice(item.selling_price || 0)}
+                              <PricingCell item={item} />
                             </TableCell>
                             <TableCell className="px-2 py-1">
                               <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"} className="text-xs py-0 h-5">
