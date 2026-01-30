@@ -543,6 +543,14 @@ const handler = async (req: Request): Promise<Response> => {
         'panel_glide_fabric': ['panel_glide'],
         'shutter_material': ['shutters', 'plantation_shutters'],
         'blind_material': ['roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+        
+        // ✅ Hardware items are treatment-agnostic (work with all)
+        'track': ['curtains', 'roman_blinds', 'roller_blinds', 'venetian_blinds', 'vertical_blinds', 'panel_glide'],
+        'rod': ['curtains'],
+        'motor': ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 'curtains', 'roman_blinds', 'panel_glide'],
+        'bracket': ['curtains', 'roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+        'accessory': [], // Generic - no specific treatments
+        'slat': ['venetian_blinds', 'vertical_blinds'],
       };
       
       return SUBCATEGORY_TO_TREATMENTS[subcategory] || [];

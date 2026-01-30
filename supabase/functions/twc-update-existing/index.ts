@@ -43,7 +43,7 @@ serve(async (req) => {
     // Fetch all TWC inventory items with metadata - use accountId for proper tenant isolation
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
-      .select('id, name, category, metadata, tags')
+      .select('id, name, category, subcategory, metadata, tags, compatible_treatments, pricing_method')
       .eq('user_id', accountId)
       .eq('supplier', 'TWC');
 
@@ -53,9 +53,6 @@ serve(async (req) => {
     }
 
     console.log(`Found ${twcItems?.length || 0} TWC inventory items to update`);
-
-    let itemsUpdated = 0;
-    let colorsExtracted = 0;
 
     // Extract colors function
     const extractColors = (fabricsAndColours: any): string[] => {
@@ -90,7 +87,53 @@ serve(async (req) => {
       return [...new Set(colors)].slice(0, 30);
     };
 
+    // ✅ Map subcategory to compatible treatments for auto-population
+    const getCompatibleTreatmentsForSubcategory = (subcategory: string): string[] => {
+      const SUBCATEGORY_TO_TREATMENTS: Record<string, string[]> = {
+        'curtain_fabric': ['curtains', 'roman_blinds'],
+        'awning_fabric': ['awning'],
+        'lining_fabric': ['curtains', 'roman_blinds'],
+        'sheer_fabric': ['curtains'],
+        'roller_fabric': ['roller_blinds', 'zebra_blinds'],
+        'venetian_slats': ['venetian_blinds'],
+        'vertical_slats': ['vertical_blinds'],
+        'vertical_fabric': ['vertical_blinds'],
+        'cellular': ['cellular_blinds'],
+        'panel_glide_fabric': ['panel_glide'],
+        'shutter_material': ['shutters', 'plantation_shutters'],
+        'blind_material': ['roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+        // Hardware items
+        'track': ['curtains', 'roman_blinds', 'roller_blinds', 'venetian_blinds', 'vertical_blinds', 'panel_glide'],
+        'rod': ['curtains'],
+        'motor': ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 'curtains', 'roman_blinds', 'panel_glide'],
+        'bracket': ['curtains', 'roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+        'accessory': [],
+        'slat': ['venetian_blinds', 'vertical_blinds'],
+      };
+      return SUBCATEGORY_TO_TREATMENTS[subcategory] || [];
+    };
+
+    // ✅ Get pricing method based on product category
+    const getPricingMethodForCategory = (subcategory: string): string => {
+      const gridCategories = [
+        'roller_fabric', 'venetian_slats', 'vertical_slats', 'vertical_fabric',
+        'cellular', 'shutter_material', 'panel_glide_fabric', 'awning_fabric', 'blind_material',
+        'track', 'motor', 'bracket', 'accessory', 'slat'
+      ];
+      if (gridCategories.includes(subcategory)) {
+        return 'pricing_grid';
+      }
+      if (['curtain_fabric', 'lining_fabric', 'sheer_fabric'].includes(subcategory)) {
+        return 'per-linear-meter';
+      }
+      return 'pricing_grid';
+    };
+
     // Update each TWC item
+    let itemsUpdated = 0;
+    let colorsExtracted = 0;
+    let treatmentsPopulated = 0;
+
     for (const item of twcItems || []) {
       const metadata = item.metadata || {};
       const fabricsAndColours = metadata.twc_fabrics_and_colours;
@@ -98,26 +141,43 @@ serve(async (req) => {
       // Extract colors from TWC metadata
       const extractedColors = extractColors(fabricsAndColours);
       
-      // Only update if we found colors and tags are empty/different
+      // Get compatible treatments and pricing method based on subcategory
+      const treatments = getCompatibleTreatmentsForSubcategory(item.subcategory || '');
+      const pricingMethod = getPricingMethodForCategory(item.subcategory || '');
+      
+      // Check what needs updating
       const existingTags = item.tags || [];
       const needsColorUpdate = extractedColors.length > 0 && 
         (existingTags.length === 0 || !extractedColors.every(c => existingTags.includes(c)));
+      const needsTreatmentsUpdate = !item.compatible_treatments?.length && treatments.length > 0;
+      const needsPricingMethodUpdate = !item.pricing_method;
       
-      if (needsColorUpdate) {
-        // Merge existing tags with extracted colors
-        const mergedTags = [...new Set([...existingTags, ...extractedColors])].slice(0, 30);
+      if (needsColorUpdate || needsTreatmentsUpdate || needsPricingMethodUpdate) {
+        // Build update object
+        const updateData: Record<string, any> = {};
+        
+        if (needsColorUpdate) {
+          updateData.tags = [...new Set([...existingTags, ...extractedColors])].slice(0, 30);
+        }
+        if (needsTreatmentsUpdate) {
+          updateData.compatible_treatments = treatments;
+        }
+        if (needsPricingMethodUpdate) {
+          updateData.pricing_method = pricingMethod;
+        }
         
         const { error: updateError } = await supabase
           .from('enhanced_inventory_items')
-          .update({ tags: mergedTags })
+          .update(updateData)
           .eq('id', item.id);
 
         if (updateError) {
           console.error(`Error updating item ${item.id}:`, updateError);
         } else {
           itemsUpdated++;
-          colorsExtracted += extractedColors.length;
-          console.log(`Updated ${item.name} with ${extractedColors.length} colors`);
+          if (needsColorUpdate) colorsExtracted += extractedColors.length;
+          if (needsTreatmentsUpdate) treatmentsPopulated++;
+          console.log(`Updated ${item.name}: colors=${needsColorUpdate}, treatments=${needsTreatmentsUpdate}, pricing=${needsPricingMethodUpdate}`);
         }
       }
     }
@@ -126,7 +186,8 @@ serve(async (req) => {
       success: true,
       items_found: twcItems?.length || 0,
       items_updated: itemsUpdated,
-      colors_extracted: colorsExtracted
+      colors_extracted: colorsExtracted,
+      treatments_populated: treatmentsPopulated
     };
 
     console.log('Update complete:', result);
