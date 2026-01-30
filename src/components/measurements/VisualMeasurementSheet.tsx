@@ -963,7 +963,11 @@ export const VisualMeasurementSheet = ({
                   'wide_width', 'blockout', 'sunscreen', 'sheer', 'light_filtering', 
                   'dimout', 'thermal', 'to confirm', 'discontinued', 'imported', 
                   'twc', 'fabric', 'material', 'roller', 'venetian', 'vertical',
-                  'cellular', 'roman', 'curtain', 'awning', 'panel'
+                  'cellular', 'roman', 'curtain', 'awning', 'panel', 'standard',
+                  'lf', 'lf twill', 'twill', 'translucent', 'opaque', 'recycled',
+                  'fire retardant', 'fire-retardant', 'antibacterial', 'antimicrobial',
+                  'motorised', 'motorized', 'manual', 'spring', 'chain', 'cord',
+                  'indoor', 'outdoor', 'exterior', 'interior', 'commercial', 'residential'
                 ];
                 
                 // Helper to filter out non-color tags
