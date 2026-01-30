@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Package, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
 import { PixelFabricIcon } from "@/components/icons/PixelArtIcons";
+import { PricingCell } from "./PricingCell";
 import { TagFilterChips } from "./TagFilterChips";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
@@ -561,11 +562,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                             {!isDealer && <TableCell className="text-xs hidden md:table-cell">{item.vendor?.name || item.supplier || '-'}</TableCell>}
                             <TableCell className="text-xs hidden xl:table-cell">{item.fabric_width ? formatFromCM(item.fabric_width, units.length) : '-'}</TableCell>
                             <TableCell className="text-xs font-medium">
-                              {item.pricing_grid_id ? (
-                                <span className="text-primary">Grid</span>
-                              ) : (
-                                <>{formatPrice(item.price_per_meter || item.selling_price || 0)}/m</>
-                              )}
+                              <PricingCell item={item} />
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-0.5">

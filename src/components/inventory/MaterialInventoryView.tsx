@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { matchesSubcategoryGroup, LIBRARY_SUBCATEGORY_GROUPS } from "@/constants/inventorySubcategories";
+import { PricingCell } from "./PricingCell";
 
 interface MaterialInventoryViewProps {
   searchQuery: string;
@@ -444,13 +445,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                           <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{item.sku || '-'}</TableCell>
                           {!isDealer && <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{item.supplier || '-'}</TableCell>}
                           <TableCell>
-                            {item.price_group ? (
-                              <Badge variant="outline" className="text-[10px]">
-                                Group {item.price_group}
-                              </Badge>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
+                            <PricingCell item={item} className="text-[10px]" />
                           </TableCell>
                           <TableCell>
                             <Badge 
