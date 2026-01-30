@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
-  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle, Globe, Link, Tag, CalendarDays, Users
+  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle, Globe, Link, Tag, CalendarDays, Users, MessageSquare
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
@@ -31,6 +31,8 @@ import { ClientFilesManager } from "./ClientFilesManager";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { FUNNEL_STAGES } from "@/constants/clientConstants";
 import { useClientStages } from "@/hooks/useClientStages";
+import { ClientInquiriesPanel } from "./ClientInquiriesPanel";
+import { useClientInquiries } from "@/hooks/useClientInquiries";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -602,6 +604,9 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {canEditClient && (
         <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
       )}
+      {/* Inquiries Panel - Shows all form submissions */}
+      <ClientInquiriesPanel clientId={clientId} />
+
       {/* Secondary Content Tabs - Notes, Activity, Measurements only */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="h-8 w-auto bg-muted/30 p-0.5">
