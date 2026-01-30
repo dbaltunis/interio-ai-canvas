@@ -43,7 +43,7 @@ serve(async (req) => {
     // Fetch all TWC inventory items with metadata - use accountId for proper tenant isolation
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
-      .select('id, name, category, subcategory, metadata, tags, compatible_treatments, pricing_method')
+      .select('id, name, category, subcategory, metadata, tags, compatible_treatments, pricing_method, color')
       .eq('user_id', accountId)
       .eq('supplier', 'TWC');
 
@@ -85,6 +85,35 @@ serve(async (req) => {
       
       // Deduplicate and limit to 30 colors
       return [...new Set(colors)].slice(0, 30);
+    };
+
+    // ✅ NEW: Extract primary color (first valid color) for the color field
+    const extractPrimaryColor = (fabricsAndColours: any): string | null => {
+      const excludeValues = ['TO CONFIRM', 'TBC', 'N/A', 'UNKNOWN', 'VARIOUS', 'MIXED', 'CUSTOM'];
+      
+      // Handle array of fabricsAndColours
+      if (Array.isArray(fabricsAndColours)) {
+        for (const item of fabricsAndColours) {
+          if (item.fabricOrColourName && !excludeValues.includes(item.fabricOrColourName.toUpperCase().trim())) {
+            return item.fabricOrColourName;
+          }
+        }
+      }
+      
+      // Handle itemMaterials structure
+      if (fabricsAndColours?.itemMaterials && Array.isArray(fabricsAndColours.itemMaterials)) {
+        for (const material of fabricsAndColours.itemMaterials) {
+          if (material.colours && Array.isArray(material.colours)) {
+            for (const colour of material.colours) {
+              if (colour.colour && !excludeValues.includes(colour.colour.toUpperCase().trim())) {
+                return colour.colour;
+              }
+            }
+          }
+        }
+      }
+      
+      return null;
     };
 
     // ✅ Map subcategory to compatible treatments for auto-population
@@ -133,6 +162,7 @@ serve(async (req) => {
     let itemsUpdated = 0;
     let colorsExtracted = 0;
     let treatmentsPopulated = 0;
+    let primaryColorsSet = 0;
 
     for (const item of twcItems || []) {
       const metadata = item.metadata || {};
@@ -140,6 +170,9 @@ serve(async (req) => {
       
       // Extract colors from TWC metadata
       const extractedColors = extractColors(fabricsAndColours);
+      
+      // ✅ NEW: Extract primary color for items that don't have one
+      const primaryColor = extractPrimaryColor(fabricsAndColours);
       
       // Get compatible treatments and pricing method based on subcategory
       const treatments = getCompatibleTreatmentsForSubcategory(item.subcategory || '');
@@ -151,8 +184,9 @@ serve(async (req) => {
         (existingTags.length === 0 || !extractedColors.every(c => existingTags.includes(c)));
       const needsTreatmentsUpdate = !item.compatible_treatments?.length && treatments.length > 0;
       const needsPricingMethodUpdate = !item.pricing_method;
+      const needsPrimaryColorUpdate = !item.color && primaryColor; // ✅ NEW: Check if primary color needs setting
       
-      if (needsColorUpdate || needsTreatmentsUpdate || needsPricingMethodUpdate) {
+      if (needsColorUpdate || needsTreatmentsUpdate || needsPricingMethodUpdate || needsPrimaryColorUpdate) {
         // Build update object
         const updateData: Record<string, any> = {};
         
@@ -164,6 +198,9 @@ serve(async (req) => {
         }
         if (needsPricingMethodUpdate) {
           updateData.pricing_method = pricingMethod;
+        }
+        if (needsPrimaryColorUpdate) {
+          updateData.color = primaryColor; // ✅ NEW: Set primary color
         }
         
         const { error: updateError } = await supabase
@@ -177,7 +214,8 @@ serve(async (req) => {
           itemsUpdated++;
           if (needsColorUpdate) colorsExtracted += extractedColors.length;
           if (needsTreatmentsUpdate) treatmentsPopulated++;
-          console.log(`Updated ${item.name}: colors=${needsColorUpdate}, treatments=${needsTreatmentsUpdate}, pricing=${needsPricingMethodUpdate}`);
+          if (needsPrimaryColorUpdate) primaryColorsSet++;
+          console.log(`Updated ${item.name}: colors=${needsColorUpdate}, treatments=${needsTreatmentsUpdate}, pricing=${needsPricingMethodUpdate}, primaryColor=${needsPrimaryColorUpdate}`);
         }
       }
     }
@@ -187,7 +225,8 @@ serve(async (req) => {
       items_found: twcItems?.length || 0,
       items_updated: itemsUpdated,
       colors_extracted: colorsExtracted,
-      treatments_populated: treatmentsPopulated
+      treatments_populated: treatmentsPopulated,
+      primary_colors_set: primaryColorsSet
     };
 
     console.log('Update complete:', result);
