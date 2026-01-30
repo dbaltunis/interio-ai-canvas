@@ -1,209 +1,171 @@
 
-# Dynamic Price Display in Library - Fix Plan
 
-## Problem Summary
+# Complete TWC Data Quality & UI Fix Plan
 
-The Library currently shows **hardcoded price units** (`/m`, `/yd`) regardless of each item's actual `pricing_method`. This is misleading because:
+## Executive Summary
 
-- Grid-priced items show `£0.00/m` when they should show the price group
-- Fixed-price items show `£X.XX/m` when there's no per-meter calculation
-- Per-panel, per-drop, per-sqm items all incorrectly show `/m`
+I've identified the remaining issues with TWC data quality and the edit popup display. Here's the complete fix:
 
-The system already has the solution (`PRICING_METHOD_LABELS` with suffixes), but the Library views don't use it.
-
----
-
-## Current State vs Expected
-
-| Item Type | Pricing Method | Current Display | Expected Display |
-|-----------|----------------|-----------------|------------------|
-| TWC Awning | `pricing_grid` | £0.00/m | **Group 4** (badge) |
-| Curtain Fabric | `linear` | £45.00/m | £45.00/m ✓ |
-| Wallpaper | `per-roll` | £120.00/m | £120.00/roll |
-| Hardware | `fixed` | £30.00/m | £30.00 (no suffix) |
-| Blind Material | `per_sqm` | £25.00/m | £25.00/m² |
+| Issue | Root Cause | Solution |
+|-------|------------|----------|
+| 8 items still missing treatments | `track` subcategory not in mapping | Add hardware subcategories + run migration |
+| Edit popup shows "empty" treatments | Hardware items don't need treatments | Add conditional display for hardware |
+| Existing TWC users not updated | No bulk update mechanism | Create `twc-bulk-data-fix` edge function |
+| Price display in Library | Already fixed | Just needs preview refresh |
 
 ---
 
-## Solution Architecture
+## Current State (Verified from Database)
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    DYNAMIC PRICE DISPLAY PIPELINE                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ITEM FROM DATABASE                                                        │
-│   ├── pricing_method: 'pricing_grid' | 'linear' | 'per_sqm' | etc.          │
-│   ├── price_group: 'Group 4' (for grid-priced items)                        │
-│   └── selling_price: 45.00                                                  │
-│                                                                             │
-│                              │                                              │
-│                              ▼                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  <DynamicPriceCell item={item} />                                   │   │
-│   │                                                                     │   │
-│   │  IF price_group OR pricing_method='pricing_grid':                   │   │
-│   │    → Show <Badge>Group {price_group}</Badge>                        │   │
-│   │                                                                     │   │
-│   │  ELSE:                                                              │   │
-│   │    → Get suffix from getPricingMethodSuffix(pricing_method)         │   │
-│   │    → Show {formatCurrency(selling_price)}{suffix}                   │   │
-│   │                                                                     │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│   EXAMPLES:                                                                 │
-│   ├── pricing_grid + Group 4    → [Group 4] badge                           │
-│   ├── linear + £45.00           → £45.00/m                                  │
-│   ├── per_sqm + £25.00          → £25.00/m²                                 │
-│   ├── per-roll + £120.00        → £120.00/roll                              │
-│   └── fixed + £30.00            → £30.00                                    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+TWC Users & Their Data Quality:
+┌───────────────────────────────────────────────────────────────┐
+│ User ID                               │ Total │ Missing      │
+│ f740ef45-279c-44e8-bf07-1a7eefca8149  │  199  │ 3 treatments │
+│ b0c727dd-b9bf-4470-840d-1f630e8f2b26  │  281  │ 3 treatments │
+│ ec930f73-ef23-4430-921f-1b401859825d  │  267  │ 1 treatments │
+│ 1bbd8c29-f892-417e-ae5c-48d2147cb6fa  │  278  │ 1 treatments │
+└───────────────────────────────────────────────────────────────┘
+
+Missing items are ALL subcategory='track' (hardware items)
 ```
 
 ---
 
 ## Technical Implementation
 
-### 1. Create Reusable PricingCell Component
+### 1. Database Migration - Fix Remaining Track Items
 
-**File:** `src/components/inventory/PricingCell.tsx` (new)
-
-```typescript
-import { Badge } from "@/components/ui/badge";
-import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { getPricingMethodSuffix, normalizePricingMethod, PRICING_METHODS } from "@/constants/pricingMethods";
-
-interface PricingCellProps {
-  item: {
-    pricing_method?: string;
-    price_group?: string | null;
-    pricing_grid_id?: string | null;
-    selling_price?: number;
-    price_per_meter?: number;
-    cost_price?: number;
-  };
-  showCost?: boolean; // For admin views
-  className?: string;
-}
-
-export const PricingCell = ({ item, showCost = false, className }: PricingCellProps) => {
-  const { formatCurrency } = useFormattedCurrency();
-  const { isMetric } = useMeasurementUnits();
-  
-  // Normalize the pricing method
-  const normalizedMethod = normalizePricingMethod(item.pricing_method || '');
-  
-  // Grid pricing - show price group badge
-  const isGrid = item.price_group || 
-                 item.pricing_grid_id || 
-                 normalizedMethod === PRICING_METHODS.PRICING_GRID;
-  
-  if (isGrid) {
-    return (
-      <Badge variant="outline" className={className}>
-        {item.price_group ? `Group ${item.price_group}` : 'Grid'}
-      </Badge>
-    );
-  }
-  
-  // Get appropriate price and suffix
-  const price = showCost ? item.cost_price : (item.price_per_meter || item.selling_price || 0);
-  const suffix = getPricingMethodSuffix(normalizedMethod, isMetric);
-  
-  return (
-    <span className={className}>
-      {formatCurrency(price)}{suffix}
-    </span>
-  );
-};
-```
-
-### 2. Update FabricInventoryView.tsx
-
-**Location:** Lines 563-568
-
-Replace the hardcoded logic:
-
-```typescript
-// BEFORE:
-<TableCell className="text-xs font-medium">
-  {item.pricing_grid_id ? (
-    <span className="text-primary">Grid</span>
-  ) : (
-    <>{formatPrice(item.price_per_meter || item.selling_price || 0)}/m</>
-  )}
-</TableCell>
-
-// AFTER:
-<TableCell className="text-xs font-medium">
-  <PricingCell item={item} />
-</TableCell>
-```
-
-### 3. Update MaterialInventoryView.tsx
-
-**Location:** Lines 446-453
-
-The current implementation already shows price group badge - enhance to also show price for non-grid items:
-
-```typescript
-// AFTER:
-<TableCell>
-  <PricingCell item={item} className="text-xs" />
-</TableCell>
-```
-
-### 4. Normalize Existing Data
-
-Run a migration to standardize `pricing_method` values:
+Fix the 8 `track` subcategory items by setting their compatible_treatments to an empty array marker (hardware is treatment-agnostic):
 
 ```sql
--- Normalize pricing_method to canonical values
+-- Track/hardware items work with ALL treatment types
+-- Set to empty array with explicit marker in metadata
 UPDATE enhanced_inventory_items
-SET pricing_method = 'pricing_grid'
-WHERE pricing_method IN ('grid', 'price_grid', 'pricing-grid')
-  AND pricing_method != 'pricing_grid';
-
-UPDATE enhanced_inventory_items
-SET pricing_method = 'per-linear-meter'
-WHERE pricing_method = 'linear';
+SET 
+  compatible_treatments = ARRAY['curtains', 'roman_blinds', 'roller_blinds', 
+    'venetian_blinds', 'vertical_blinds', 'panel_glide'],
+  metadata = jsonb_set(
+    COALESCE(metadata, '{}'), 
+    '{is_hardware}', 
+    'true'
+  )
+WHERE subcategory = 'track' 
+  AND supplier = 'TWC'
+  AND (compatible_treatments IS NULL OR compatible_treatments = '{}');
 ```
 
-### 5. Update TWC Sync to Set Correct pricing_method
+### 2. Update TWC Sync Function - Add Hardware Subcategory Mappings
 
 **File:** `supabase/functions/twc-sync-products/index.ts`
 
-Add helper function:
+Add hardware subcategories to `getCompatibleTreatmentsForSubcategory`:
 
 ```typescript
-const getPricingMethodForCategory = (subcategory: string): string => {
-  // Blinds/materials use grid pricing from TWC
-  const gridCategories = [
-    'roller_fabric', 'venetian_slats', 'vertical_slats', 'vertical_fabric',
-    'cellular', 'shutter_material', 'panel_glide_fabric', 'awning_fabric'
-  ];
+const getCompatibleTreatmentsForSubcategory = (subcategory: string): string[] => {
+  const SUBCATEGORY_TO_TREATMENTS: Record<string, string[]> = {
+    // ... existing mappings ...
+    
+    // ✅ NEW: Hardware items are treatment-agnostic (work with all)
+    'track': ['curtains', 'roman_blinds', 'roller_blinds', 'venetian_blinds', 
+              'vertical_blinds', 'panel_glide'],
+    'rod': ['curtains'],
+    'motor': ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 
+              'curtains', 'roman_blinds', 'panel_glide'],
+    'bracket': ['curtains', 'roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+    'accessory': [], // Generic - no specific treatments
+  };
   
-  if (gridCategories.includes(subcategory)) {
-    return 'pricing_grid';
-  }
-  
-  // Curtain fabrics use linear meter pricing
-  if (['curtain_fabric', 'lining_fabric', 'sheer_fabric'].includes(subcategory)) {
-    return 'per-linear-meter';
-  }
-  
-  // Wallpaper uses per roll
-  if (subcategory.includes('wallpaper')) {
-    return 'per-roll';
-  }
-  
-  return 'pricing_grid'; // Default for TWC items
+  return SUBCATEGORY_TO_TREATMENTS[subcategory] || [];
 };
 ```
 
-Use it when creating inventory items.
+### 3. Create Bulk Update Edge Function for ALL Users
+
+**File:** `supabase/functions/twc-bulk-data-fix/index.ts` (NEW)
+
+This function will:
+1. Run with service role (admin only)
+2. Update ALL TWC items across ALL users
+3. Set `compatible_treatments` and `pricing_method` based on subcategory
+
+```typescript
+// Key logic:
+for (const item of twcItems) {
+  const treatments = getCompatibleTreatmentsForSubcategory(item.subcategory);
+  const pricingMethod = getPricingMethodForCategory(item.subcategory);
+  
+  // Only update if missing
+  if (!item.compatible_treatments?.length || !item.pricing_method) {
+    await supabase.from('enhanced_inventory_items')
+      .update({ 
+        compatible_treatments: treatments,
+        pricing_method: pricingMethod
+      })
+      .eq('id', item.id);
+  }
+}
+```
+
+### 4. Update Edit Dialog - Smart Hardware Detection
+
+**File:** `src/components/inventory/CompatibleTreatmentsSelector.tsx`
+
+For hardware items (`category === 'hardware'`), show an informational message instead of empty checkboxes:
+
+```tsx
+// If hardware category, show informational message
+if (productType === 'hardware' || category === 'hardware') {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription>
+            Hardware items work with all treatment types automatically.
+            No specific treatment selection is needed.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### 5. Update twc-update-existing Function
+
+**File:** `supabase/functions/twc-update-existing/index.ts`
+
+Enhance to also populate `compatible_treatments` and `pricing_method`:
+
+```typescript
+// Add to update logic:
+const getCompatibleTreatmentsForSubcategory = (subcategory: string): string[] => {
+  // Same mapping as twc-sync-products
+};
+
+const getPricingMethodForCategory = (subcategory: string): string => {
+  // Same logic as twc-sync-products
+};
+
+// In update loop:
+for (const item of twcItems) {
+  const needsUpdate = 
+    !item.compatible_treatments?.length || 
+    !item.pricing_method ||
+    needsColorUpdate;
+    
+  if (needsUpdate) {
+    await supabase.from('enhanced_inventory_items')
+      .update({
+        tags: mergedTags,
+        compatible_treatments: getCompatibleTreatmentsForSubcategory(item.subcategory),
+        pricing_method: getPricingMethodForCategory(item.subcategory)
+      })
+      .eq('id', item.id);
+  }
+}
+```
 
 ---
 
@@ -211,25 +173,10 @@ Use it when creating inventory items.
 
 | File | Changes |
 |------|---------|
-| `src/components/inventory/PricingCell.tsx` | **NEW** - Reusable component |
-| `src/components/inventory/FabricInventoryView.tsx` | Import and use `PricingCell` |
-| `src/components/inventory/MaterialInventoryView.tsx` | Import and use `PricingCell` |
-| `supabase/functions/twc-sync-products/index.ts` | Add `getPricingMethodForCategory` helper |
-| Database migration | Normalize existing `pricing_method` values |
-
----
-
-## Visual Result After Fix
-
-### Library List View
-
-| Item | Before | After |
-|------|--------|-------|
-| TWC Awning (Grid) | £0.00/m | `[Group 4]` badge |
-| Curtain Fabric | £45.00/m | £45.00/m ✓ |
-| Wallpaper | £120.00/m | £120.00/roll |
-| Hardware (Fixed) | £30.00/m | £30.00 |
-| Blind (per sqm) | £25.00/m | £25.00/m² |
+| Database migration | Fix 8 remaining `track` items |
+| `supabase/functions/twc-sync-products/index.ts` | Add hardware subcategory mappings |
+| `supabase/functions/twc-update-existing/index.ts` | Add `compatible_treatments` + `pricing_method` update |
+| `src/components/inventory/CompatibleTreatmentsSelector.tsx` | Add hardware-specific UI message |
 
 ---
 
@@ -237,56 +184,55 @@ Use it when creating inventory items.
 
 ### Library Price Display
 - [ ] Navigate to Library → Fabrics
-- [ ] Verify grid-priced items show "Group X" badge (not £0.00/m)
-- [ ] Verify linear-priced items show correct suffix (/m or /yd)
-- [ ] Verify wallpaper shows /roll suffix
-- [ ] Navigate to Library → Materials
-- [ ] Verify same dynamic behavior
+- [ ] Verify grid-priced items show "Group X" badge
+- [ ] Verify linear-priced items show correct suffix
 
-### Edit Dialog Consistency
-- [ ] Edit a grid-priced item → verify "Grid" selected on Pricing tab
-- [ ] Edit a linear-priced item → verify "Per m" selected
-- [ ] Save changes → verify Library display updates correctly
+### Edit Popup - Treatments Tab
+- [ ] Click Edit on a TWC fabric item
+- [ ] Go to Treatments tab
+- [ ] Verify checkboxes are pre-selected (e.g., "Curtains", "Roman Blinds")
+- [ ] Click Edit on a TWC hardware/track item
+- [ ] Verify informational message instead of empty checkboxes
 
-### TWC Sync
-- [ ] Trigger new TWC sync
-- [ ] Verify new items have correct `pricing_method` value
-- [ ] Verify display in Library matches expected format
+### Bulk Update
+- [ ] (Admin) Call `twc-update-existing` endpoint
+- [ ] Verify response shows items updated
+- [ ] Check database for populated fields
 
 ---
 
-## Prevention Standards (Memory Note)
+## Impact for ALL Users
+
+After this fix:
+
+1. **All 4 TWC users** will have complete data (1025 items total)
+2. **No re-upload required** - bulk update fixes existing data
+3. **Future syncs** will auto-populate all fields correctly
+4. **Hardware items** show appropriate UI (not empty checkboxes)
+5. **Price display** uses dynamic PricingCell component
+
+---
+
+## Memory Note (Prevention Standard)
 
 ```markdown
-# Memory: library-dynamic-price-display-standard
+# Memory: twc-complete-data-quality-standard
 
-The Library MUST display prices using the item's actual `pricing_method` field,
-NOT hardcoded units. Use the `<PricingCell>` component for all price displays:
+TWC sync and updates MUST populate these fields for ALL items:
+1. compatible_treatments - Based on SUBCATEGORY_TO_TREATMENTS
+2. pricing_method - Based on getPricingMethodForCategory
+3. price_group - From TWC material data
+4. vendor_id - TWC vendor for grid matching
+5. collection_id - From collection grouping
 
-RULES:
-1. If item.price_group OR pricing_method='pricing_grid' → Show badge with group
-2. Otherwise → Use getPricingMethodSuffix() for correct unit suffix
-3. NEVER hardcode '/m', '/yd', '/roll' in display logic
+HARDWARE ITEMS (track, motor, bracket, accessory):
+- Set compatible_treatments to ALL treatment types they support
+- Use 'pricing_grid' as default pricing method
+- Show informational UI in edit dialog (not empty checkboxes)
 
-FILES USING THIS:
-- FabricInventoryView.tsx - Uses <PricingCell>
-- MaterialInventoryView.tsx - Uses <PricingCell>
-- VirtualizedInventoryGrid.tsx - Already has dynamic logic
-- InventorySelectionPanel.tsx - Already has dynamic logic
-
-IMPORT PATH:
-import { PricingCell } from "@/components/inventory/PricingCell";
+BULK UPDATE PATTERN:
+- twc-update-existing function can be called to fix existing data
+- Uses service role for cross-account updates
+- Preserves existing customizations while filling gaps
 ```
 
----
-
-## Scope
-
-This fix:
-1. Creates a reusable component for consistent price display
-2. Updates both Library views (Fabrics + Materials)
-3. Normalizes existing database values
-4. Ensures future TWC syncs set correct `pricing_method`
-5. Documents the standard to prevent regression
-
-**Applies to ALL users, not just one account.**
