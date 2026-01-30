@@ -90,10 +90,14 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
     templateError 
   });
   
-  // Use treatment_category to query options
+  // CRITICAL FIX: Use 'template' query type instead of 'category'
+  // This ensures the Rules dropdown only shows options that are:
+  // 1. Linked to this specific template via template_option_settings
+  // 2. Marked as is_enabled: true
+  // 3. Properly filtered by hidden_value_ids
   const { data: options = [], isLoading: optionsLoading } = useTreatmentOptions(
-    template?.treatment_category, 
-    'category'
+    templateId,  // Pass template ID, not category
+    'template'   // Use template-specific query
   );
   
   console.log('🎯 Options for rules:', { 

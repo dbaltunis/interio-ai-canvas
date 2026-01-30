@@ -53,8 +53,33 @@ When a user selects a treatment template (e.g., "Honeycomb Blind"), the inventor
 ## Code Locations
 
 - **Treatment configs**: `src/utils/treatmentTypeDetection.ts` - defines `inventoryCategory` for each treatment
-- **Fabric filtering**: `src/hooks/useTreatmentSpecificFabrics.ts` - lines 38-47, defines accepted subcategories
-- **Material filtering**: `src/components/inventory/InventorySelectionPanel.tsx` - `getTreatmentMaterialSubcategories()` function
+- **Subcategory constants**: `src/constants/inventorySubcategories.ts` - **SINGLE SOURCE OF TRUTH** for all subcategory groupings
+- **Fabric filtering**: `src/hooks/useTreatmentSpecificFabrics.ts` - uses `getAcceptedSubcategories()`
+- **Material filtering**: `src/components/inventory/InventorySelectionPanel.tsx` - uses the hook above
+- **Library tabs**: `src/components/inventory/MaterialInventoryView.tsx` - uses `matchesSubcategoryGroup()`
+- **Worksheet selector**: `src/components/fabric/FabricSelector.tsx` - filters by treatment type
+
+## CRITICAL: Using Subcategory Groups
+
+**ALWAYS use the centralized helpers** from `src/constants/inventorySubcategories.ts`:
+
+```typescript
+// For Library tab filtering (shows ALL related subcategories):
+import { matchesSubcategoryGroup, LIBRARY_SUBCATEGORY_GROUPS } from '@/constants/inventorySubcategories';
+
+const matchesCategory = activeCategory === "all" || 
+  (LIBRARY_SUBCATEGORY_GROUPS[activeCategory]
+    ? matchesSubcategoryGroup(item.subcategory, activeCategory)
+    : item.subcategory === activeCategory);
+
+// For worksheet filtering (by treatment type):
+import { getAcceptedSubcategories } from '@/constants/inventorySubcategories';
+
+const acceptedSubcategories = getAcceptedSubcategories('vertical_blinds');
+// Returns: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical', 'blind_material']
+```
+
+**NEVER hardcode subcategory strings** in filter logic. This prevents items from "disappearing" due to exact-match filtering.
 
 ## Example Fix
 
@@ -64,7 +89,7 @@ If you create a cellular blind fabric but it doesn't show:
 2. If subcategory is `cellular_honeycomb` (not in accepted list)
 3. Either:
    - **Option A**: Update product to use accepted subcategory: `UPDATE enhanced_inventory_items SET subcategory = 'cellular' WHERE id = 'xxx'`
-   - **Option B**: Add `cellular_honeycomb` to the accepted list in `useTreatmentSpecificFabrics.ts` line 43
+   - **Option B**: Add `cellular_honeycomb` to the `LIBRARY_SUBCATEGORY_GROUPS.cellular` array in `inventorySubcategories.ts`
 
 ## Best Practice
 

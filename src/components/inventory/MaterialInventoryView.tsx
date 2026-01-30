@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useIsDealer } from "@/hooks/useIsDealer";
+import { matchesSubcategoryGroup, LIBRARY_SUBCATEGORY_GROUPS } from "@/constants/inventorySubcategories";
 
 interface MaterialInventoryViewProps {
   searchQuery: string;
@@ -45,14 +46,16 @@ interface MaterialInventoryViewProps {
   canManageInventory?: boolean;
 }
 
+// CRITICAL: Use group keys that match LIBRARY_SUBCATEGORY_GROUPS
+// This ensures ALL related subcategories appear under the correct tab
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
-  { key: "roller_fabric", label: "Roller Blinds" },
-  { key: "venetian_slats", label: "Venetian" },
-  { key: "vertical_slats", label: "Vertical" },
-  { key: "cellular", label: "Cellular" },
-  { key: "panel_glide_fabric", label: "Panel Glide" },
-  { key: "shutter_material", label: "Shutters" },
+  { key: "roller", label: "Roller Blinds" },      // Group key - shows roller_fabric, roller_material, etc.
+  { key: "venetian", label: "Venetian" },         // Group key - shows venetian_slats, wood_slats, etc.
+  { key: "vertical", label: "Vertical" },         // Group key - shows vertical_slats AND vertical_fabric
+  { key: "cellular", label: "Cellular" },         // Group key - shows cellular, honeycomb, etc.
+  { key: "panel_glide", label: "Panel Glide" },   // Group key - shows panel_glide_fabric, panel_fabric, etc.
+  { key: "shutter", label: "Shutters" },          // Group key - shows shutter_material, shutter_panels, etc.
 ];
 
 // Subcategories that are blind materials (manufactured products, not sewn)
@@ -112,8 +115,13 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
       item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // CRITICAL FIX: Use group-based matching instead of exact subcategory match
+    // This ensures items with variant subcategories (e.g., vertical_fabric vs vertical_slats)
+    // all appear under the correct Library tab
     const matchesCategory = activeCategory === "all" || 
-      item.subcategory === activeCategory;
+      (LIBRARY_SUBCATEGORY_GROUPS[activeCategory]
+        ? matchesSubcategoryGroup(item.subcategory, activeCategory)
+        : item.subcategory === activeCategory);
 
     // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
     const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);

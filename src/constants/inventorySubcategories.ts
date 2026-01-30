@@ -143,3 +143,62 @@ export const getRecommendedSubcategory = (treatmentCategory: TreatmentCategory):
   const subcategories = getAcceptedSubcategories(treatmentCategory);
   return subcategories[0] || 'fabric';
 };
+
+/**
+ * Library Subcategory Groups
+ * 
+ * Groups related subcategories for Library tab filtering.
+ * This ensures items with different but equivalent subcategories
+ * (e.g., vertical_slats and vertical_fabric) all appear under the same tab.
+ * 
+ * IMPORTANT: Use matchesSubcategoryGroup() for all Library filtering to prevent
+ * items from "disappearing" due to exact-match filtering.
+ */
+export const LIBRARY_SUBCATEGORY_GROUPS: Record<string, string[]> = {
+  // Vertical blinds - includes both fabric vanes and material slats
+  vertical: ['vertical_slats', 'vertical_fabric', 'vertical_vanes', 'vertical', 'blind_material'],
+  
+  // Venetian blinds - wood, aluminum, and generic slats
+  venetian: ['venetian_slats', 'venetian', 'wood_slats', 'aluminum_slats', 'blind_material'],
+  
+  // Roller blinds - fabric and material variants
+  roller: ['roller_fabric', 'roller', 'roller_material', 'roller_blind_fabric', 'blind_material'],
+  
+  // Awnings - outdoor fabric
+  awning: ['awning_fabric', 'awning'],
+  
+  // Cellular/Honeycomb blinds
+  cellular: ['cellular', 'honeycomb', 'cellular_fabric', 'honeycomb_fabric'],
+  
+  // Shutters - plantation and material variants
+  shutter: ['shutter_material', 'shutter_panels', 'shutter', 'blind_material'],
+  
+  // Panel glide/track
+  panel_glide: ['panel_glide_fabric', 'panel_fabric', 'panel', 'panel_track'],
+  
+  // Curtain fabrics (including roman)
+  curtain: ['curtain_fabric', 'curtain'],
+  
+  // Zebra/Day-Night blinds
+  zebra: ['zebra_fabric', 'roller_fabric', 'blind_material'],
+};
+
+/**
+ * Check if an item's subcategory matches a Library tab group
+ * 
+ * @example
+ * // Returns true for both vertical_slats AND vertical_fabric
+ * matchesSubcategoryGroup('vertical_fabric', 'vertical') // true
+ * matchesSubcategoryGroup('vertical_slats', 'vertical')  // true
+ */
+export const matchesSubcategoryGroup = (
+  itemSubcategory: string | undefined,
+  groupKey: string
+): boolean => {
+  const group = LIBRARY_SUBCATEGORY_GROUPS[groupKey];
+  if (!group) {
+    // Fallback to exact match if group doesn't exist
+    return itemSubcategory?.toLowerCase() === groupKey.toLowerCase();
+  }
+  return group.includes(itemSubcategory?.toLowerCase() || '');
+};
