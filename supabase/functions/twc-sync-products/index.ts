@@ -524,6 +524,56 @@ const handler = async (req: Request): Promise<Response> => {
       return '1';
     };
 
+    // ✅ NEW: Map subcategory to compatible treatments for auto-population
+    // This ensures products show correct checkboxes in Library "Treatments" tab
+    const getCompatibleTreatmentsForSubcategory = (subcategory: string): string[] => {
+      const SUBCATEGORY_TO_TREATMENTS: Record<string, string[]> = {
+        // Fabrics (soft furnishings)
+        'curtain_fabric': ['curtains', 'roman_blinds'],
+        'awning_fabric': ['awning'],
+        'lining_fabric': ['curtains', 'roman_blinds'],
+        'sheer_fabric': ['curtains'],
+        
+        // Materials (hard coverings / manufactured)
+        'roller_fabric': ['roller_blinds', 'zebra_blinds'],
+        'venetian_slats': ['venetian_blinds'],
+        'vertical_slats': ['vertical_blinds'],
+        'vertical_fabric': ['vertical_blinds'],
+        'cellular': ['cellular_blinds'],
+        'panel_glide_fabric': ['panel_glide'],
+        'shutter_material': ['shutters', 'plantation_shutters'],
+        'blind_material': ['roller_blinds', 'venetian_blinds', 'vertical_blinds'],
+      };
+      
+      return SUBCATEGORY_TO_TREATMENTS[subcategory] || [];
+    };
+
+    // ✅ NEW: Get pricing method based on product category
+    // Ensures Library price display uses correct suffix (/m, /roll, Grid badge)
+    const getPricingMethodForCategory = (subcategory: string): string => {
+      // Blinds/materials use grid pricing from TWC
+      const gridCategories = [
+        'roller_fabric', 'venetian_slats', 'vertical_slats', 'vertical_fabric',
+        'cellular', 'shutter_material', 'panel_glide_fabric', 'awning_fabric', 'blind_material'
+      ];
+      
+      if (gridCategories.includes(subcategory)) {
+        return 'pricing_grid';
+      }
+      
+      // Curtain fabrics use linear meter pricing
+      if (['curtain_fabric', 'lining_fabric', 'sheer_fabric'].includes(subcategory)) {
+        return 'per-linear-meter';
+      }
+      
+      // Wallpaper uses per roll
+      if (subcategory.includes('wallpaper')) {
+        return 'per-roll';
+      }
+      
+      return 'pricing_grid'; // Default for TWC items
+    };
+
     // ✅ NEW: Pre-process collections for all products
     console.log('📦 Extracting collections from product names...');
     let collectionsCreated = 0;
@@ -578,6 +628,8 @@ const handler = async (req: Request): Promise<Response> => {
         vendor_id: twcVendorId, // ✅ FIX: Set vendor_id for proper grid matching
         collection_id: collectionId, // ✅ NEW: Link to collection
         price_group: priceGroup, // ✅ NEW: Set price_group for automatic grid matching
+        pricing_method: getPricingMethodForCategory(categoryMapping.subcategory), // ✅ NEW: Set pricing method for Library display
+        compatible_treatments: getCompatibleTreatmentsForSubcategory(categoryMapping.subcategory), // ✅ NEW: Auto-set compatible treatments
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,
@@ -1045,6 +1097,8 @@ const handler = async (req: Request): Promise<Response> => {
                   price_group: primaryPriceGroup,
                   // Pricing method is grid-based for TWC materials
                   pricing_method: 'pricing_grid',
+                  // ✅ NEW: Auto-set compatible treatments based on subcategory
+                  compatible_treatments: getCompatibleTreatmentsForSubcategory(materialCategoryMapping.subcategory),
                   // CRITICAL: Set default fabric width for calculations
                   fabric_width: defaultWidth,
                   metadata: {
