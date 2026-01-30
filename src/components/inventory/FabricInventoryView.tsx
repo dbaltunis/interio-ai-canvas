@@ -404,13 +404,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                           <span className="text-muted-foreground">
                             {item.price_group ? 'Pricing Grid:' : 'Price:'}
                           </span>
-                          <span className="font-bold text-primary">
-                            {item.price_group ? (
-                              pricingGrids.find(g => g.grid_code === item.price_group || g.id === item.price_group)?.name || item.price_group
-                            ) : (
-                              `${formatPrice(item.price_per_meter || item.selling_price || 0)}/m`
-                            )}
-                          </span>
+                          <PricingCell item={item} className="font-bold text-primary" />
                         </div>
                       </div>
                       

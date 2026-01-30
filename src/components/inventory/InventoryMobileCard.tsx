@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Edit, Trash2, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PricingCell } from "./PricingCell";
 
 interface InventoryMobileCardProps {
   item: {
@@ -88,15 +89,7 @@ export const InventoryMobileCard = ({
           {item.supplier && <span>{item.supplier}</span>}
         </div>
         <div className="flex items-center gap-2">
-          {showPriceGroup && item.price_group ? (
-            <Badge variant="outline" className="text-[10px] h-5">
-              Group {item.price_group}
-            </Badge>
-          ) : (
-            <span className="text-xs font-medium text-primary">
-              {formatPrice(item.price_per_meter || item.selling_price || 0)}
-            </span>
-          )}
+          <PricingCell item={item} className="text-xs font-medium text-primary" />
           <Badge
             variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}
             className="text-[10px] h-5"

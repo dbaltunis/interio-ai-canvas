@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PricingCell } from "./PricingCell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -297,16 +298,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                         ) : null}
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Price:</span>
-                          <span className="font-bold text-primary">
-                            {formatPrice(item.price_per_meter || item.selling_price || 0)}
-                            {(item as any).wallpaper_sold_by && (
-                              <span className="text-xs text-muted-foreground ml-1">
-                                /{(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
-                                  (item as any).wallpaper_sold_by === 'per_unit' ? 'm' : 
-                                  (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
-                              </span>
-                            )}
-                          </span>
+                          <PricingCell item={item} className="font-bold text-primary" />
                         </div>
                       </div>
                       <div className="pt-2 border-t">
@@ -446,16 +438,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                               {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
                             </TableCell>
                             <TableCell className="px-2 py-1 text-xs font-medium">
-                              <div className="flex flex-col">
-                                <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
-                                {(item as any).wallpaper_sold_by && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
-                                         (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
-                                         (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
-                                  </span>
-                                )}
-                              </div>
+                              <PricingCell item={item} />
                             </TableCell>
                             <TableCell className="px-2 py-1">
                               {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
