@@ -64,25 +64,64 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
       const isFabricOrMaterial = category === 'fabric' || category === 'material';
       
       // If treatmentType is specified, filter materials by subcategory
-      if (treatmentType && category === 'material') {
+      // CRITICAL FIX: Include ALL variant subcategories for each treatment type
+      if (treatmentType) {
         const treatmentLower = treatmentType.toLowerCase();
+        
+        // Awning - CRITICAL: Was missing entirely, causing pricing failures
+        if (treatmentLower.includes('awning')) {
+          return subcategory === 'awning_fabric' || subcategory === 'awning';
+        }
+        
+        // Roller blinds - include all roller variants
         if (treatmentLower.includes('roller')) {
-          return subcategory === 'roller_fabric' || subcategory === 'roller_material' || subcategory === 'roller';
+          return subcategory === 'roller_fabric' || subcategory === 'roller_material' || 
+                 subcategory === 'roller' || subcategory === 'roller_blind_fabric' || 
+                 subcategory === 'blind_material';
         }
+        
+        // Zebra/Day-Night blinds
+        if (treatmentLower.includes('zebra') || treatmentLower.includes('day') || treatmentLower.includes('night')) {
+          return subcategory === 'zebra_fabric' || subcategory === 'roller_fabric' || 
+                 subcategory === 'blind_material';
+        }
+        
+        // Venetian blinds
         if (treatmentLower.includes('venetian')) {
-          return subcategory === 'venetian_slats' || subcategory === 'venetian';
+          return subcategory === 'venetian_slats' || subcategory === 'venetian' || 
+                 subcategory === 'wood_slats' || subcategory === 'aluminum_slats' || 
+                 subcategory === 'blind_material';
         }
+        
+        // Vertical blinds - CRITICAL FIX: Include vertical_fabric
         if (treatmentLower.includes('vertical')) {
-          return subcategory === 'vertical_slats' || subcategory === 'vertical';
+          return subcategory === 'vertical_slats' || subcategory === 'vertical_fabric' || 
+                 subcategory === 'vertical' || subcategory === 'vertical_vanes' || 
+                 subcategory === 'blind_material';
         }
+        
+        // Cellular/Honeycomb blinds
         if (treatmentLower.includes('cellular') || treatmentLower.includes('honeycomb')) {
-          return subcategory === 'cellular' || subcategory === 'honeycomb';
+          return subcategory === 'cellular' || subcategory === 'honeycomb' || 
+                 subcategory === 'cellular_fabric' || subcategory === 'honeycomb_fabric';
         }
+        
+        // Panel glide/track
         if (treatmentLower.includes('panel')) {
-          return subcategory === 'panel_glide' || subcategory === 'panel_track';
+          return subcategory === 'panel_glide' || subcategory === 'panel_track' || 
+                 subcategory === 'panel_glide_fabric' || subcategory === 'panel_fabric' || 
+                 subcategory === 'panel';
         }
+        
+        // Shutters
         if (treatmentLower.includes('shutter')) {
-          return subcategory === 'shutter' || subcategory === 'shutter_material';
+          return subcategory === 'shutter' || subcategory === 'shutter_material' || 
+                 subcategory === 'shutter_panels' || subcategory === 'blind_material';
+        }
+        
+        // Curtains and Roman blinds
+        if (treatmentLower.includes('curtain') || treatmentLower.includes('roman')) {
+          return category === 'fabric' && (subcategory === 'curtain_fabric' || subcategory === 'curtain');
         }
       }
       
