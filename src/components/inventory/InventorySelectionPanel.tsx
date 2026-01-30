@@ -717,8 +717,8 @@ export const InventorySelectionPanel = ({
                       
                       // Check if using pricing grid - also check metadata for TWC products
                       if (item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data) {
-                        // Has grid - show "Grid" instead of fake price
-                        return <span className="text-primary">Grid Pricing</span>;
+                        // Has grid - show clean "Group X" label
+                        return <span className="text-primary">Group {item.price_group || 'Assigned'}</span>;
                       }
                       // No grid - show actual price from database
                       return `${currencySymbol}${price.toFixed(2)}/${lengthUnit}`;
@@ -726,7 +726,7 @@ export const InventorySelectionPanel = ({
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
                     {item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data
-                      ? `${item.resolved_grid_name || item.price_group || 'Grid assigned'}` 
+                      ? 'per pricing grid' 
                       : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>
                 </div>
@@ -755,12 +755,7 @@ export const InventorySelectionPanel = ({
                 />
               )}
 
-              {/* Missing grid warning for items with price_group but no resolved grid */}
-              {item.price_group && !item.resolved_grid_id && !item.pricing_grid_id && !item.metadata?.pricing_grid_data && (
-                <div className="flex items-center gap-1 pt-1 text-[10px] text-amber-600">
-                  <span>⚠️ No pricing grid for Group {item.price_group}</span>
-                </div>
-              )}
+              {/* Note: Grid warning removed from selection cards - appears only after enrichment fails in measurements */}
             </div>
           </div>
         </CardContent>
