@@ -29,6 +29,7 @@ import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { CompatibleTreatmentsSelector } from "./CompatibleTreatmentsSelector";
 import { TagInput } from "./TagInput";
+import { SupplierBadge } from "@/components/ui/SupplierBadge";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -497,9 +498,18 @@ export const UnifiedInventoryDialog = ({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Add New Inventory Item" : "Edit Inventory Item"}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{mode === "create" ? "Add New Inventory Item" : "Edit Inventory Item"}</DialogTitle>
+            {mode === "edit" && item?.supplier === 'TWC' && (
+              <SupplierBadge supplier="TWC" className="ml-2" />
+            )}
+          </div>
           <DialogDescription>
-            {mode === "create" ? "Add a new product or service to your inventory" : "Update inventory item details"}
+            {mode === "create" 
+              ? "Add a new product or service to your inventory" 
+              : item?.supplier === 'TWC' 
+                ? "This item was imported from TWC. Some fields are auto-populated." 
+                : "Update inventory item details"}
           </DialogDescription>
         </DialogHeader>
 

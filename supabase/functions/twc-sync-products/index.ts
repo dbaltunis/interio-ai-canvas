@@ -409,6 +409,35 @@ const handler = async (req: Request): Promise<Response> => {
       return [...new Set(colors)].slice(0, 30);
     };
 
+    // ✅ NEW: Extract primary color (first valid color) for the color field
+    const extractPrimaryColor = (fabricsAndColours: any): string | null => {
+      const excludeValues = ['TO CONFIRM', 'TBC', 'N/A', 'UNKNOWN', 'VARIOUS', 'MIXED', 'CUSTOM'];
+      
+      // Handle array of fabricsAndColours
+      if (Array.isArray(fabricsAndColours)) {
+        for (const item of fabricsAndColours) {
+          if (item.fabricOrColourName && !excludeValues.includes(item.fabricOrColourName.toUpperCase().trim())) {
+            return item.fabricOrColourName;
+          }
+        }
+      }
+      
+      // Handle itemMaterials structure
+      if (fabricsAndColours?.itemMaterials && Array.isArray(fabricsAndColours.itemMaterials)) {
+        for (const material of fabricsAndColours.itemMaterials) {
+          if (material.colours && Array.isArray(material.colours)) {
+            for (const colour of material.colours) {
+              if (colour.colour && !excludeValues.includes(colour.colour.toUpperCase().trim())) {
+                return colour.colour;
+              }
+            }
+          }
+        }
+      }
+      
+      return null;
+    };
+
     // ✅ NEW: Extract collection/range name from TWC product description
     // Patterns: "Straight Drop - SKYE LIGHT FILTER" → "SKYE"
     //           "Roller Blinds - SANCTUARY BLOCKOUT" → "SANCTUARY"
@@ -638,6 +667,7 @@ const handler = async (req: Request): Promise<Response> => {
         price_group: priceGroup, // ✅ NEW: Set price_group for automatic grid matching
         pricing_method: getPricingMethodForCategory(categoryMapping.subcategory), // ✅ NEW: Set pricing method for Library display
         compatible_treatments: getCompatibleTreatmentsForSubcategory(categoryMapping.subcategory), // ✅ NEW: Auto-set compatible treatments
+        color: extractPrimaryColor(product.fabricsAndColours), // ✅ NEW: Set primary color for dropdown
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,
