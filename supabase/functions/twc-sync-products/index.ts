@@ -79,11 +79,12 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Using account_id:', accountId);
 
     // ✅ FIX: Look up or create TWC vendor for proper grid matching
+    // CRITICAL: Use accountId (not user.id) for multi-tenant consistency
     let twcVendorId: string | null = null;
     const { data: existingTwcVendor } = await supabaseClient
       .from('vendors')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', accountId)
       .ilike('name', '%TWC%')
       .limit(1)
       .single();
@@ -93,10 +94,11 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Found existing TWC vendor:', twcVendorId);
     } else {
       // Create TWC vendor if it doesn't exist
+      // CRITICAL: Use accountId for multi-tenant consistency
       const { data: newVendor, error: vendorError } = await supabaseClient
         .from('vendors')
         .insert({
-          user_id: user.id,
+          user_id: accountId,
           name: 'TWC (The Wholesale Company)',
           is_supplier: true,
           active: true
@@ -454,10 +456,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       // Check if collection already exists for this user and TWC vendor
+      // CRITICAL: Use accountId for multi-tenant consistency
       const { data: existingCollection } = await supabaseClient
         .from('collections')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', accountId)
         .eq('name', collectionName)
         .maybeSingle();
       
@@ -468,10 +471,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       // Create new collection
+      // CRITICAL: Use accountId for multi-tenant consistency
       const { data: newCollection, error: collectionError } = await supabaseClient
         .from('collections')
         .insert({
-          user_id: user.id,
+          user_id: accountId,
           name: collectionName,
           vendor_id: twcVendorId,
           description: `TWC Collection: ${collectionName}`,
