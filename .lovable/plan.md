@@ -1,342 +1,207 @@
 
-# TWC Supplier Standards & Critical Bug Fixes
+
+# Consolidated Fix Plan: Critical Bugs #4, #5, #6 + TWC Collection Ownership
 
 ## Executive Summary
 
-I've completed deep research into the codebase and identified the **exact root causes** of the recurring bugs. The core issue is **architectural inconsistency** - we have a single source of truth (`inventorySubcategories.ts`) but not all components use it. This plan fixes the three critical bugs while establishing TWC supplier standards that will prevent future issues.
+I've verified the codebase and found:
+
+1. **Code fixes are already in place** for bugs #4, #5, #6 (subcategory filtering, awning handler, rules dropdown)
+2. **TWC sync function still has a bug** causing collections to be linked to wrong vendors
+3. **Database data needs fixing** - 111 collections are linked to a vendor owned by a different user
 
 ---
 
-## Root Cause Analysis
+## Current Status
 
-### Database Reality (What's Actually in the Data)
+### ✅ Already Fixed (Code in Place)
 
-| Subcategory | Category | Count | Issue |
-|-------------|----------|-------|-------|
-| `vertical_slats` | material | 17 | ✅ Shows in Library "Vertical" tab |
-| `vertical_fabric` | material | 8 | ❌ **HIDDEN** - Tab only filters `vertical_slats` |
-| `awning_fabric` | fabric | 146 | ✅ In Fabrics view, but... |
-| `awning_fabric` | - | - | ❌ **NOT FILTERED** in FabricSelector for awning worksheets |
+| Component | Status | Lines |
+|-----------|--------|-------|
+| `inventorySubcategories.ts` | ✅ Has `LIBRARY_SUBCATEGORY_GROUPS` + `matchesSubcategoryGroup()` | 157-204 |
+| `MaterialInventoryView.tsx` | ✅ Uses group-based filtering | 38, 121-124 |
+| `FabricSelector.tsx` | ✅ Has awning handler + vertical_fabric | 72-101 |
+| `OptionRulesManager.tsx` | ✅ Uses `templateId` + `'template'` query type | 98-101 |
 
-### Bug #4: Vertical Blinds Missing from Library
+### ❌ Still Broken (Needs Fix)
 
-**Root Cause:** `MaterialInventoryView.tsx` line 52 only defines `vertical_slats` tab:
-```typescript
-// Line 52 - ONLY shows vertical_slats
-{ key: "vertical_slats", label: "Vertical" }
-```
-
-But the database has TWC items with `vertical_fabric` subcategory (8 items). The filter on line 115-116 uses **exact match**:
-```typescript
-const matchesCategory = activeCategory === "all" || 
-  item.subcategory === activeCategory;  // ← Exact match - misses vertical_fabric
-```
-
-**Additionally**, `FabricSelector.tsx` lines 75-77 also uses exact match:
-```typescript
-if (treatmentLower.includes('vertical')) {
-  return subcategory === 'vertical_slats' || subcategory === 'vertical';
-  // ❌ MISSING: 'vertical_fabric'
-}
-```
+| Issue | Root Cause |
+|-------|------------|
+| 111 collections show as "Unassigned" | Data linked to wrong vendor (RLS blocks access) |
+| TWC sync creates mislinked collections | Uses `user.id` instead of `accountId` for vendor/collection lookups |
 
 ---
 
-### Bug #5: Awnings Not Pricing
-
-**Root Cause:** `FabricSelector.tsx` has **no awning handler** at all (lines 67-87):
-```typescript
-// Lines 69-86 - NO awning case!
-if (treatmentLower.includes('roller')) { ... }
-if (treatmentLower.includes('venetian')) { ... }
-if (treatmentLower.includes('vertical')) { ... }
-if (treatmentLower.includes('cellular')) { ... }
-if (treatmentLower.includes('panel')) { ... }
-if (treatmentLower.includes('shutter')) { ... }
-// ❌ NO: if (treatmentLower.includes('awning')) { ... }
-```
-
-When creating an awning worksheet, fabrics aren't filtered properly, causing the pricing engine to fail silently.
-
----
-
-### Bug #6: Rules Dropdown Shows ALL Options
-
-**Root Cause:** `OptionRulesManager.tsx` lines 94-97 uses wrong query type:
-```typescript
-const { data: options = [] } = useTreatmentOptions(
-  template?.treatment_category,   // ← Should be templateId
-  'category'                      // ← Should be 'template'
-);
-```
-
-The `'category'` query type fetches **all visible options** for the treatment category (e.g., all roller blind options), not just the ones enabled for this specific template.
-
-The `'template'` query type (lines 60-136 of `useTreatmentOptions.ts`) correctly:
-- Joins with `template_option_settings`
-- Filters by `is_enabled: true`
-- Respects `hidden_value_ids`
-
----
-
-## Solution Architecture
+## What's Causing "Unassigned" Collections
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    SINGLE SOURCE OF TRUTH ARCHITECTURE                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   src/constants/inventorySubcategories.ts                                   │
-│   ════════════════════════════════════════                                  │
-│   TREATMENT_SUBCATEGORIES = {                                               │
-│     vertical_blinds: {                                                      │
-│       category: 'both',                                                     │
-│       subcategories: ['vertical_fabric', 'vertical_slats', ...]             │
-│     },                                                                      │
-│     awning: {                                                               │
-│       category: 'fabric',                                                   │
-│       subcategories: ['awning_fabric', 'awning']                            │
-│     },                                                                      │
-│     ...                                                                     │
-│   }                                                                         │
-│                                                                             │
-│   Helper Functions:                                                         │
-│   ├── getAcceptedSubcategories(treatmentCategory)                           │
-│   ├── getTreatmentPrimaryCategory(treatmentCategory)                        │
-│   └── isValidSubcategory(treatmentCategory, subcategory)                    │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Files that SHOULD use this (some don't currently):                        │
-│                                                                             │
-│   ✅ useTreatmentSpecificFabrics.ts - Uses it correctly                     │
-│   ❌ MaterialInventoryView.tsx - Hardcodes tab subcategories                │
-│   ❌ FabricSelector.tsx - Hardcodes treatment→subcategory mapping           │
-│   ✅ InventorySelectionPanel.tsx - Uses it correctly                        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+Database State:
+┌──────────────────────────────────────────────────────────────────┐
+│  YOUR ACCOUNT: ec930f73-ef23-4430-921f-1b401859825d              │
+│                                                                   │
+│  Collections you own:                                             │
+│  ├── 111 collections → vendor_id: 93608e2c... (OTHER user's!)    │
+│  ├──  20 collections → vendor_id: c956c497... (YOUR vendor) ✓    │
+│  └──   1 collection  → vendor_id: NULL                            │
+│                                                                   │
+│  TWC Vendors in system:                                           │
+│  ├── 93608e2c... → owner: 504dcfd2... (NOT YOU)                  │
+│  └── c956c497... → owner: ec930f73... (YOU) ✓                     │
+│                                                                   │
+│  RESULT: RLS policy blocks vendor lookup → shows "Unassigned"    │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Technical Implementation
+## Implementation Plan
 
-### 1. Create Subcategory Grouping Helper
+### Phase 1: Fix Existing Data (Database Migration)
 
-**File:** `src/constants/inventorySubcategories.ts` (extend existing)
+Reassign the 111 mislinked collections to your correct TWC vendor:
 
-Add new helper functions for Library filtering:
-
-```typescript
-// NEW: Group related subcategories for Library tabs
-export const LIBRARY_SUBCATEGORY_GROUPS = {
-  vertical: ['vertical_slats', 'vertical_fabric', 'vertical_vanes', 'vertical'],
-  venetian: ['venetian_slats', 'venetian', 'wood_slats', 'aluminum_slats'],
-  roller: ['roller_fabric', 'roller', 'roller_material', 'roller_blind_fabric'],
-  awning: ['awning_fabric', 'awning'],
-  cellular: ['cellular', 'honeycomb', 'cellular_fabric', 'honeycomb_fabric'],
-  shutter: ['shutter_material', 'shutter_panels', 'shutter'],
-  panel_glide: ['panel_glide_fabric', 'panel_fabric', 'panel'],
-};
-
-// Helper: Check if item matches a Library tab group
-export const matchesSubcategoryGroup = (
-  itemSubcategory: string | undefined,
-  groupKey: keyof typeof LIBRARY_SUBCATEGORY_GROUPS
-): boolean => {
-  const group = LIBRARY_SUBCATEGORY_GROUPS[groupKey];
-  if (!group) return false;
-  return group.includes(itemSubcategory?.toLowerCase() || '');
-};
+```sql
+-- Update collections to use YOUR TWC vendor
+UPDATE collections
+SET vendor_id = 'c956c497-153a-4c1e-9df9-314110943351'
+WHERE user_id = 'ec930f73-ef23-4430-921f-1b401859825d'
+  AND vendor_id = '93608e2c-0048-4d6c-bf29-928137fb027e'
+  AND active = true;
 ```
+
+**Expected Result:** "Unassigned" count drops from 111 to ~1, TWC shows all 131 collections.
 
 ---
 
-### 2. Fix MaterialInventoryView.tsx
+### Phase 2: Fix TWC Sync Function
 
-**Location:** Lines 48-56, 115-116
+**File:** `supabase/functions/twc-sync-products/index.ts`
 
-**Change 1:** Update MATERIAL_CATEGORIES to use group keys:
-```typescript
-const MATERIAL_CATEGORIES = [
-  { key: "all", label: "All Materials" },
-  { key: "roller", label: "Roller Blinds" },      // Group key, not exact subcategory
-  { key: "venetian", label: "Venetian" },
-  { key: "vertical", label: "Vertical" },         // This will now show BOTH slats AND fabric
-  { key: "cellular", label: "Cellular" },
-  { key: "panel_glide", label: "Panel Glide" },
-  { key: "shutter", label: "Shutters" },
-];
-```
-
-**Change 2:** Update filter logic to use group matching:
-```typescript
-import { matchesSubcategoryGroup, LIBRARY_SUBCATEGORY_GROUPS } from '@/constants/inventorySubcategories';
-
-// Line 115-116 - BEFORE:
-const matchesCategory = activeCategory === "all" || 
-  item.subcategory === activeCategory;
-
-// AFTER:
-const matchesCategory = activeCategory === "all" || 
-  (LIBRARY_SUBCATEGORY_GROUPS[activeCategory as keyof typeof LIBRARY_SUBCATEGORY_GROUPS]
-    ? matchesSubcategoryGroup(item.subcategory, activeCategory as keyof typeof LIBRARY_SUBCATEGORY_GROUPS)
-    : item.subcategory === activeCategory);
-```
-
----
-
-### 3. Fix FabricSelector.tsx
-
-**Location:** Lines 67-87
-
-**Add awning handler and fix vertical:**
-```typescript
-// Line 67-87 - Add awning and fix vertical
-if (treatmentLower.includes('awning')) {
-  return subcategory === 'awning_fabric' || subcategory === 'awning';
-}
-if (treatmentLower.includes('roller')) {
-  return subcategory === 'roller_fabric' || subcategory === 'roller_material' || subcategory === 'roller';
-}
-if (treatmentLower.includes('venetian')) {
-  return subcategory === 'venetian_slats' || subcategory === 'venetian';
-}
-if (treatmentLower.includes('vertical')) {
-  // ✅ FIX: Include vertical_fabric
-  return subcategory === 'vertical_slats' || subcategory === 'vertical_fabric' || subcategory === 'vertical';
-}
-// ... rest unchanged
-```
-
----
-
-### 4. Fix OptionRulesManager.tsx
-
-**Location:** Lines 94-97
-
-**Change query type from 'category' to 'template':**
+**Change 1: Vendor Lookup (line 86)**
 ```typescript
 // BEFORE:
-const { data: options = [] } = useTreatmentOptions(
-  template?.treatment_category, 
-  'category'
-);
+.eq('user_id', user.id)
 
 // AFTER:
-const { data: options = [] } = useTreatmentOptions(
-  templateId,    // Pass the template ID, not the category
-  'template'     // Use template-specific query
-);
+.eq('user_id', accountId)  // Use accountId for team member support
 ```
 
-This ensures the Rules dropdown only shows options that are:
-1. Linked to this specific template via `template_option_settings`
-2. Marked as `is_enabled: true`
-3. Properly filtered by `hidden_value_ids`
+**Change 2: Vendor Creation (line 99)**
+```typescript
+// BEFORE:
+user_id: user.id,
+
+// AFTER:
+user_id: accountId,  // Use accountId for consistency
+```
+
+**Change 3: Collection Lookup (line 460)**
+```typescript
+// BEFORE:
+.eq('user_id', user.id)
+
+// AFTER:
+.eq('user_id', accountId)  // Use accountId for team member support
+```
+
+**Change 4: Collection Creation (line 474)**
+```typescript
+// BEFORE:
+user_id: user.id,
+
+// AFTER:
+user_id: accountId,  // Use accountId for consistency
+```
+
+---
+
+### Phase 3: Add Memory Note for Prevention
+
+Create a memory note to document the pattern:
+
+```markdown
+# Memory: twc-sync-account-id-standard
+
+The TWC sync function MUST use `accountId` (not `user.id`) for ALL 
+tenant-scoped resources:
+- Vendor lookups and creation
+- Collection lookups and creation  
+- Inventory item creation
+
+This ensures team members using the sync function create resources 
+owned by the account owner, maintaining proper RLS access across 
+the team.
+
+Pattern:
+const accountId = userProfile?.parent_account_id || user.id;
+// Then use accountId for all .eq('user_id', ...) queries
+```
 
 ---
 
 ## Files to Modify
 
-| File | Lines | Change | Bug Fixed |
-|------|-------|--------|-----------|
-| `src/constants/inventorySubcategories.ts` | End of file | Add `LIBRARY_SUBCATEGORY_GROUPS` and `matchesSubcategoryGroup` helper | All |
-| `src/components/inventory/MaterialInventoryView.tsx` | 48-56, 115-116 | Use group-based filtering | #4 (Vertical) |
-| `src/components/fabric/FabricSelector.tsx` | 67-87 | Add awning handler, fix vertical | #4, #5 |
-| `src/components/settings/tabs/products/OptionRulesManager.tsx` | 94-97 | Change to `templateId` + `'template'` query | #6 (Rules) |
+| File | Changes | Purpose |
+|------|---------|---------|
+| Database Migration | Update 111 collections to correct vendor_id | Fix existing data |
+| `supabase/functions/twc-sync-products/index.ts` | 4 line changes (user.id → accountId) | Prevent future mislinks |
 
 ---
 
-## TWC Supplier Standards (For Future Reference)
+## Testing Checklist
 
-### Product Categorization Rules
+After implementation:
 
-| TWC Product Type | `category` | `subcategory` | Notes |
-|------------------|------------|---------------|-------|
-| Vertical Fabrics | `material` | `vertical_slats` or `vertical_fabric` | Both are valid - use grouping |
-| Roller Blinds | `material` | `roller_fabric` | Manufactured, not sewn |
-| Venetian Slats | `material` | `venetian_slats` | Wood/Aluminum |
-| Awnings | `fabric` | `awning_fabric` | SKU prefix 700-820 |
-| Curtains | `fabric` | `curtain_fabric` | Sewn products |
-| Roman | `fabric` | `curtain_fabric` | Shares curtain fabrics |
-| Cellular | `material` | `cellular` | Honeycomb structure |
-| Panel Glide | `material` | `panel_glide_fabric` | Panel tracks |
-| Shutters | `material` | `shutter_material` | Plantation panels |
-
-### Sync Function Rules (`twc-sync-products/index.ts`)
-
-The sync function already uses:
-1. **SKU prefix detection** (lines 289-312) - Most reliable for outdoor/awning products
-2. **Parent product description** (lines 314-382) - Fallback for categorization
-3. **Vendor ID inheritance** - Child materials inherit vendor_id from parent
-
-These are working correctly - the issue was downstream filtering, not sync.
-
----
-
-## Testing Checklist (Post-Implementation)
+### Library Collections
+- [ ] Navigate to Library
+- [ ] Verify "Unassigned" count drops from 111 to ~1
+- [ ] Click TWC in sidebar → verify 131 collections appear
+- [ ] Click any TWC collection → verify items display correctly
 
 ### Vertical Blinds (Bug #4)
 - [ ] Navigate to Library → Materials → Vertical tab
-- [ ] Verify count shows 25 items (17 slats + 8 fabric)
+- [ ] Verify both `vertical_slats` AND `vertical_fabric` items appear (25+ items)
 - [ ] Create a Vertical Blind worksheet
-- [ ] Verify fabric selector shows BOTH vertical_slats AND vertical_fabric
-- [ ] Select a vertical_fabric item and confirm pricing calculates
+- [ ] Verify fabric selector shows all vertical materials
 
 ### Awnings (Bug #5)
 - [ ] Navigate to Library → Fabrics → Awnings tab
 - [ ] Verify awning_fabric items appear (146 items)
 - [ ] Create an Awning worksheet
-- [ ] Verify fabric selector filters to awning fabrics ONLY
-- [ ] Select an awning fabric and confirm pricing calculates
+- [ ] Verify fabric selector filters to awning fabrics only
+- [ ] Confirm pricing calculates correctly
 
 ### Rules Dropdown (Bug #6)
 - [ ] Go to Settings → Products → Templates
-- [ ] Select a Roller Blind template that has 5 options enabled
-- [ ] Click Rules tab → Add Rule
-- [ ] Verify dropdown shows ONLY those 5 options
-- [ ] Verify NO options from other templates appear
+- [ ] Select any template → Rules tab
+- [ ] Click "Add Rule"
+- [ ] Verify dropdown shows ONLY options enabled for that template
+- [ ] Verify no options from other templates appear
+
+### New TWC Sync
+- [ ] Trigger a new TWC product sync
+- [ ] Verify new collections are linked to YOUR TWC vendor (c956c497...)
+- [ ] Check database to confirm correct user_id and vendor_id
 
 ---
 
-## Prevention Strategy
+## Impact Analysis
 
-### Memory Note to Add
-
-After implementation, I'll create a memory note:
-
-```
-# Memory: inventory-subcategory-grouping-standard
-
-When filtering inventory items in the Library or worksheets, ALWAYS use the 
-centralized helpers from `src/constants/inventorySubcategories.ts`:
-
-- For worksheet filtering: Use `getAcceptedSubcategories(treatmentCategory)`
-- For Library tabs: Use `matchesSubcategoryGroup(subcategory, groupKey)`
-
-Never hardcode subcategory strings in filter logic. This prevents the 
-"vertical_fabric vs vertical_slats" problem from recurring.
-
-Files using this pattern:
-- useTreatmentSpecificFabrics.ts ✅
-- InventorySelectionPanel.tsx ✅
-- MaterialInventoryView.tsx ✅ (after fix)
-- FabricSelector.tsx ✅ (after fix)
-```
+| Area | Status | Notes |
+|------|--------|-------|
+| Existing TWC items | ✅ Safe | Only updating collection vendor_id |
+| Pricing grids | ✅ Safe | Grid matching uses item properties, not collection |
+| Other users | ⚠️ Review | May have same issue - need diagnostic query |
+| Team members | ✅ Improved | Will now properly share account data |
 
 ---
 
-## Impact on Other Areas
+## Prevention Standards
 
-Areas that use subcategory filtering (verified safe):
+After this fix, we establish:
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `useTreatmentSpecificFabrics.ts` | ✅ Safe | Already uses `getAcceptedSubcategories` |
-| `InventorySelectionPanel.tsx` | ✅ Safe | Uses the hook above |
-| `PricingGridDiagnostic.tsx` | ⚠️ Review | Has hardcoded subcategories - minor diagnostic only |
-| `CategoryProductTypeGuide.tsx` | ⚠️ Review | Documentation component - not critical |
-| `twc-sync-products/index.ts` | ✅ Safe | Creates data with correct subcategories |
+1. **Always use `accountId`** for tenant-scoped queries in edge functions
+2. **Never use `user.id` directly** when team member support is needed
+3. **Add memory notes** for patterns that have caused recurring bugs
+4. **Test with team member accounts** before releasing multi-tenant features
 
-No breaking changes expected in other areas.
