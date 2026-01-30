@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClientFilesCount } from "@/hooks/useClientFilesCount";
 import { useClientCommunicationStats } from "@/hooks/useClientCommunicationStats";
+import { useClientsWithUnreadInquiries, INQUIRY_TYPE_CONFIG, type InquiryType } from "@/hooks/useClientInquiries";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
@@ -27,6 +28,7 @@ import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
 import { formatBulkOperationResult } from "@/utils/errorMessages";
+import { Circle } from "lucide-react";
 
 interface Client {
   id: string;
@@ -93,6 +95,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
   const { data: filesCount } = useClientFilesCount(clientIds);
   const { data: communicationStats } = useClientCommunicationStats(clientIds);
+  const { data: unreadInquiriesMap } = useClientsWithUnreadInquiries();
 
   // Convert clients for selection
   const selectableClients: SelectedClient[] = useMemo(() => 
@@ -322,6 +325,12 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                             <span className="truncate max-w-[200px]">
                               {client.client_type === 'B2B' ? client.company_name : client.name}
                             </span>
+                            {/* Unread inquiry indicator */}
+                            {unreadInquiriesMap?.[client.id] && unreadInquiriesMap[client.id] > 0 && (
+                              <span className="relative flex-shrink-0" title={`${unreadInquiriesMap[client.id]} unread inquiries`}>
+                                <Circle className="h-2.5 w-2.5 fill-red-500 text-red-500" />
+                              </span>
+                            )}
                             {(client.lead_score && client.lead_score > 0 && isHotLead(client.lead_score)) && (
                               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             )}

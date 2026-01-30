@@ -28,6 +28,33 @@ interface LeadRequest {
   apiKey: string
 }
 
+// Classify inquiry type based on message content and form data
+function classifyInquiryType(message: string, productType?: string): string {
+  const lowerMessage = (message || '').toLowerCase()
+  
+  // Check for product type first (indicates quote request)
+  if (productType) {
+    return 'quote_request'
+  }
+  
+  // Check for demo keywords
+  if (lowerMessage.includes('demo') || lowerMessage.includes('demonstration') || lowerMessage.includes('trial')) {
+    return 'demo_request'
+  }
+  
+  // Check for partnership keywords
+  if (lowerMessage.includes('partner') || lowerMessage.includes('reseller') || lowerMessage.includes('distributor') || lowerMessage.includes('wholesale')) {
+    return 'partnership'
+  }
+  
+  // Check for support keywords
+  if (lowerMessage.includes('help') || lowerMessage.includes('issue') || lowerMessage.includes('problem') || lowerMessage.includes('bug') || lowerMessage.includes('support')) {
+    return 'support'
+  }
+  
+  return 'general'
+}
+
 Deno.serve(async (req) => {
   // Get origin for CORS validation
   const origin = req.headers.get('origin') || ''
@@ -57,7 +84,8 @@ Deno.serve(async (req) => {
       name: body.name, 
       email: body.email, 
       source: body.source,
-      hasApiKey: !!body.apiKey 
+      hasApiKey: !!body.apiKey,
+      hasMessage: !!body.message
     })
 
     // Validate API key
@@ -105,76 +133,189 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Check for duplicate email (for the default user)
+    // Classify the inquiry type
+    const inquiryType = classifyInquiryType(body.message || '', body.productType)
+    console.log('[receive-external-lead] Classified inquiry type:', inquiryType)
+
+    // Prepare metadata for the inquiry
+    const inquiryMetadata: Record<string, string> = {}
+    if (body.orderVolume) inquiryMetadata.orderVolume = body.orderVolume
+    if (body.productType) inquiryMetadata.productType = body.productType
+    if (body.company) inquiryMetadata.company = body.company
+    if (body.country) inquiryMetadata.country = body.country
+    if (body.phone) inquiryMetadata.phone = body.phone
+
+    // Check for existing client with this email
     const { data: existingLead, error: checkError } = await supabase
       .from('clients')
-      .select('id')
+      .select('id, name')
       .eq('email', body.email.trim().toLowerCase())
       .eq('user_id', DEFAULT_LEADS_USER_ID)
       .maybeSingle()
 
     if (checkError) {
-      console.error('[receive-external-lead] Error checking for duplicate:', checkError)
+      console.error('[receive-external-lead] Error checking for existing client:', checkError)
       return new Response(
         JSON.stringify({ error: 'Internal server error', details: checkError.message }),
         { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // If duplicate found, return existing ID
+    let clientId: string
+    let isFollowUp = false
+
     if (existingLead) {
-      console.log('[receive-external-lead] Duplicate lead found:', existingLead.id)
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          leadId: existingLead.id, 
-          duplicate: true,
-          message: 'Lead already exists with this email'
-        }),
-        { status: 200, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
-      )
+      // EXISTING CLIENT - Create follow-up inquiry
+      clientId = existingLead.id
+      isFollowUp = true
+      console.log('[receive-external-lead] Existing client found, creating follow-up inquiry:', clientId)
+
+      // Insert the inquiry (message will be stored here, not lost!)
+      const { error: inquiryError } = await supabase
+        .from('client_inquiries')
+        .insert({
+          client_id: clientId,
+          user_id: DEFAULT_LEADS_USER_ID,
+          inquiry_type: inquiryType,
+          message: body.message?.trim() || 'No message provided',
+          source: body.source?.trim() || 'interioapp.com',
+          metadata: inquiryMetadata,
+          is_read: false,
+        })
+
+      if (inquiryError) {
+        console.error('[receive-external-lead] Error inserting follow-up inquiry:', inquiryError)
+        // Don't fail the request, but log the error
+      } else {
+        console.log('[receive-external-lead] Follow-up inquiry created successfully')
+      }
+
+      // Update client's last activity date
+      const { error: updateError } = await supabase
+        .from('clients')
+        .update({ 
+          updated_at: new Date().toISOString(),
+          // Optionally update company/country if provided and missing
+          ...(body.company && { company_name: body.company.trim() }),
+          ...(body.country && { country: body.country.trim() }),
+          ...(body.phone && { phone: body.phone.trim() }),
+        })
+        .eq('id', clientId)
+
+      if (updateError) {
+        console.error('[receive-external-lead] Error updating client:', updateError)
+      }
+
+      // Log activity for the follow-up
+      try {
+        await supabase
+          .from('client_activity_log')
+          .insert({
+            client_id: clientId,
+            user_id: DEFAULT_LEADS_USER_ID,
+            activity_type: 'note_added',
+            title: `New ${inquiryType.replace('_', ' ')} received`,
+            description: `Follow-up inquiry from ${body.name}: "${(body.message || '').substring(0, 100)}${(body.message || '').length > 100 ? '...' : ''}"`,
+            metadata: { source: body.source, inquiry_type: inquiryType },
+          })
+        console.log('[receive-external-lead] Activity log created for follow-up')
+      } catch (activityError) {
+        console.error('[receive-external-lead] Error creating activity log:', activityError)
+      }
+
+    } else {
+      // NEW CLIENT - Create client and initial inquiry
+      console.log('[receive-external-lead] Creating new client')
+
+      // Prepare lead_source_details JSON
+      const leadSourceDetails: Record<string, string> = {}
+      if (body.orderVolume) leadSourceDetails.orderVolume = body.orderVolume
+      if (body.productType) leadSourceDetails.productType = body.productType
+
+      // Insert new client
+      const { data: newLead, error: insertError } = await supabase
+        .from('clients')
+        .insert({
+          user_id: DEFAULT_LEADS_USER_ID,
+          name: body.name.trim(),
+          email: body.email.trim().toLowerCase(),
+          phone: body.phone?.trim() || null,
+          company_name: body.company?.trim() || null,
+          country: body.country?.trim() || null,
+          notes: body.message?.trim() || null, // Keep for backwards compatibility
+          source: body.source?.trim() || 'interioapp.com',
+          lead_source: 'External Website',
+          lead_source_details: Object.keys(leadSourceDetails).length > 0 ? leadSourceDetails : null,
+          funnel_stage: 'lead',
+          client_type: 'business',
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        console.error('[receive-external-lead] Error inserting client:', insertError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to create lead', details: insertError.message }),
+          { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      clientId = newLead.id
+      console.log('[receive-external-lead] New client created:', clientId)
+
+      // Insert the initial inquiry
+      const { error: inquiryError } = await supabase
+        .from('client_inquiries')
+        .insert({
+          client_id: clientId,
+          user_id: DEFAULT_LEADS_USER_ID,
+          inquiry_type: inquiryType,
+          message: body.message?.trim() || 'No message provided',
+          source: body.source?.trim() || 'interioapp.com',
+          metadata: inquiryMetadata,
+          is_read: false,
+        })
+
+      if (inquiryError) {
+        console.error('[receive-external-lead] Error inserting initial inquiry:', inquiryError)
+        // Don't fail the request, the client was created successfully
+      } else {
+        console.log('[receive-external-lead] Initial inquiry created successfully')
+      }
+
+      // Log activity for new lead
+      try {
+        await supabase
+          .from('client_activity_log')
+          .insert({
+            client_id: clientId,
+            user_id: DEFAULT_LEADS_USER_ID,
+            activity_type: 'note_added',
+            title: `New ${inquiryType.replace('_', ' ')} - Lead Created`,
+            description: `New lead from ${body.source || 'interioapp.com'}: "${(body.message || '').substring(0, 100)}${(body.message || '').length > 100 ? '...' : ''}"`,
+            metadata: { source: body.source, inquiry_type: inquiryType },
+          })
+        console.log('[receive-external-lead] Activity log created for new lead')
+      } catch (activityError) {
+        console.error('[receive-external-lead] Error creating activity log:', activityError)
+      }
     }
 
-    // Prepare lead_source_details JSON
-    const leadSourceDetails: Record<string, string> = {}
-    if (body.orderVolume) leadSourceDetails.orderVolume = body.orderVolume
-    if (body.productType) leadSourceDetails.productType = body.productType
-
-    // Insert new lead
-    const { data: newLead, error: insertError } = await supabase
-      .from('clients')
-      .insert({
-        user_id: DEFAULT_LEADS_USER_ID,
-        name: body.name.trim(),
-        email: body.email.trim().toLowerCase(),
-        phone: body.phone?.trim() || null,
-        company_name: body.company?.trim() || null,
-        country: body.country?.trim() || null,
-        notes: body.message?.trim() || null,
-        source: body.source?.trim() || 'interioapp.com',
-        lead_source: 'External Website',
-        lead_source_details: Object.keys(leadSourceDetails).length > 0 ? leadSourceDetails : null,
-        funnel_stage: 'lead',
-        client_type: 'business',
-      })
-      .select('id')
-      .single()
-
-    if (insertError) {
-      console.error('[receive-external-lead] Error inserting lead:', insertError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to create lead', details: insertError.message }),
-        { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('[receive-external-lead] Lead created successfully:', newLead.id)
+    console.log('[receive-external-lead] Request completed successfully:', { 
+      clientId, 
+      isFollowUp, 
+      inquiryType 
+    })
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        leadId: newLead.id, 
-        duplicate: false 
+        leadId: clientId, 
+        followUp: isFollowUp,
+        inquiryType: inquiryType,
+        message: isFollowUp 
+          ? 'Follow-up inquiry recorded successfully' 
+          : 'New lead created successfully'
       }),
       { status: 200, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )

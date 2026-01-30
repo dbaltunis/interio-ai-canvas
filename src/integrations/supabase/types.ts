@@ -2011,6 +2011,60 @@ export type Database = {
           },
         ]
       }
+      client_inquiries: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          inquiry_type: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          source: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          inquiry_type?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          source?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          inquiry_type?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_inquiries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_inquiries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           client_id: string
