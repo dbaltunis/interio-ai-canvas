@@ -192,7 +192,7 @@ export const BrandCollectionsSidebar = ({
                         key={collection.id}
                         variant={selectedCollection === collection.id ? "secondary" : "ghost"}
                         className={cn(
-                          "w-full justify-start h-8 px-2 text-xs",
+                          "w-full justify-between h-8 px-2 text-xs gap-2",
                           selectedCollection === collection.id && "bg-primary/10 text-primary"
                         )}
                         onClick={() => {
@@ -200,9 +200,11 @@ export const BrandCollectionsSidebar = ({
                           onSelectCollection?.(collection.id);
                         }}
                       >
-                        <Package className="h-3 w-3 mr-2 shrink-0 text-muted-foreground" />
-                        <span className="truncate">{collection.name}</span>
-                        <span className="ml-auto text-muted-foreground text-xs shrink-0">
+                        <span className="flex items-center gap-2 min-w-0 flex-1">
+                          <Package className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{collection.name}</span>
+                        </span>
+                        <span className="text-muted-foreground text-xs shrink-0 tabular-nums">
                           {collection.itemCount || 0}
                         </span>
                       </Button>
