@@ -22,6 +22,7 @@ import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { FUNNEL_STAGES, getStageByValue } from "@/constants/clientConstants";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 
 interface Client {
   id: string;
@@ -59,6 +60,9 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [activeTab, setActiveTab] = useState("activity");
+  
+  // Format date using user preferences
+  const { formattedDate: createdAtFormatted } = useFormattedDate(client?.created_at);
 
   if (!client) return null;
 
@@ -323,7 +327,7 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                 <div>
                   <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Added</p>
                   <p className="text-sm font-medium">
-                    {new Date(client.created_at).toLocaleDateString()} ({formatDistanceToNow(new Date(client.created_at), { addSuffix: true })})
+                    {createdAtFormatted || 'Loading...'} ({formatDistanceToNow(new Date(client.created_at), { addSuffix: true })})
                   </p>
                 </div>
               </div>

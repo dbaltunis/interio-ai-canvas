@@ -7,6 +7,7 @@ import { Plus, FileText, Calendar, DollarSign, Eye } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface ClientQuotesListProps {
   clientId: string;
@@ -19,6 +20,9 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
   
   // Filter quotes for this specific client
   const quotes = allQuotes?.filter(quote => quote.client_id === clientId) || [];
+  
+  // Format dates using user preferences
+  const { formattedDates } = useFormattedDates(quotes, (quote) => quote.created_at);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -99,7 +103,7 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
                     </TableCell>
                     <TableCell className="py-2">
                       <span className="text-xs text-muted-foreground">
-                        {new Date(quote.created_at).toLocaleDateString()}
+                        {formattedDates[quote.id] || 'Loading...'}
                       </span>
                     </TableCell>
                     <TableCell className="py-2">

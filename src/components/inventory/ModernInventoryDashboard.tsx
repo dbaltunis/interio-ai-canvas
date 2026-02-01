@@ -35,8 +35,16 @@ import { BrandCollectionsSidebar } from "../library/BrandCollectionsSidebar";
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [activeTab, setActiveTab] = useState("collections");
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = sessionStorage.getItem('library_active_tab');
+    return savedTab || "collections";
+  });
   const [showSearch, setShowSearch] = useState(false);
+
+  // Persist library sub-tab to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('library_active_tab', activeTab);
+  }, [activeTab]);
   
   const [showScanner, setShowScanner] = useState(false);
   const [scannedItemId, setScannedItemId] = useState<string | null>(null);
