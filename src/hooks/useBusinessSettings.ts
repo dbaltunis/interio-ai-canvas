@@ -222,6 +222,17 @@ export const useUpdateBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // ✅ CRITICAL FIX: Get effective account owner for multi-tenant support
+      // Team members should update their account owner's settings
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
+      console.log('⚙️ [useUpdateBusinessSettings] Updating settings for effectiveOwnerId:', effectiveOwnerId);
+
       const updateData: any = { ...settings };
       if (settings.features_enabled) {
         updateData.features_enabled = settings.features_enabled as any;
@@ -234,7 +245,7 @@ export const useUpdateBusinessSettings = () => {
         .from('business_settings')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId) // ✅ Use effective owner, not auth user
         .select()
         .single();
 

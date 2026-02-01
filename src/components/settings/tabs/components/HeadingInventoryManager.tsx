@@ -188,8 +188,10 @@ export const HeadingInventoryManager = () => {
         multiple_fullness_ratios: formData.use_multiple_ratios ? formData.multiple_fullness_ratios : [formData.fullness_ratio]
       };
 
+      // ✅ CRITICAL FIX: Do NOT set user_id here - let the hook determine effectiveOwnerId
+      // This ensures team members create data under their account owner's ID
       const itemData = {
-        user_id: user.id, // Explicitly set user_id for RLS
+        // user_id is now handled by useCreateEnhancedInventoryItem hook
         name: formData.name.trim(),
         fullness_ratio: formData.use_multiple_ratios ? formData.multiple_fullness_ratios[0] : formData.fullness_ratio,
         labor_hours: formData.extra_fabric,
@@ -417,8 +419,8 @@ export const HeadingInventoryManager = () => {
           fullnessRatio = 1.5;
         }
 
+        // ✅ Do NOT set user_id - let the hook determine effectiveOwnerId
         await createItem.mutateAsync({
-          user_id: user.id,
           name: headingValue,
           category: 'heading',
           subcategory: 'curtain_heading',
