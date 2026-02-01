@@ -1167,12 +1167,41 @@ const LivePreviewBlock = ({
                   // Don't render room header if all items are excluded
                   if (visibleItems.length === 0 && !isExclusionEditMode) return null;
                   
+                  // Calculate room subtotal from visible items
+                  const roomSubtotal = visibleItems.reduce((sum: number, item: any) => {
+                    return sum + (item.total_cost || item.total || item.unit_price || 0);
+                  }, 0);
+                  
                   return (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr style={{ backgroundColor: '#ffffff' }}>
-                        <td colSpan={isExclusionEditMode ? 6 : 5} style={{ padding: '8px 6px 4px 6px', fontSize: '14px', fontWeight: '500', color: '#000', borderTop: '1px solid rgba(0,0,0,0.15)', backgroundColor: '#fff' }}>
+                        <td 
+                          colSpan={isExclusionEditMode ? 5 : 4} 
+                          style={{ 
+                            padding: '8px 6px 4px 6px', 
+                            fontSize: '14px', 
+                            fontWeight: '500', 
+                            color: '#000', 
+                            borderTop: '1px solid rgba(0,0,0,0.15)', 
+                            backgroundColor: '#fff' 
+                          }}
+                        >
                           {roomName}
+                        </td>
+                        <td 
+                          style={{ 
+                            padding: '8px 6px 4px 6px', 
+                            fontSize: '14px', 
+                            fontWeight: '600', 
+                            color: '#000', 
+                            borderTop: '1px solid rgba(0,0,0,0.15)', 
+                            backgroundColor: '#fff',
+                            textAlign: 'right',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {formatCurrency(roomSubtotal, projectData?.currency || getDefaultCurrency())}
                         </td>
                       </tr>
                     )}
