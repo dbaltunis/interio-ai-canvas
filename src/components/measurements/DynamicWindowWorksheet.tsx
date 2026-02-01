@@ -260,9 +260,47 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     selectedOptions,
     units,
   });
+  // ========= TEMPLATE TYPE ANALYSIS =========
+  // Analyze what treatment types are available to determine UI behavior
+  const { data: curtainTemplates = [], isLoading: curtainTemplatesLoading } = useCurtainTemplates();
+  
+  const hasWindowTreatments = curtainTemplates.some(
+    t => detectTreatmentType(t) !== 'wallpaper'
+  );
+  const hasWallpaperTemplates = curtainTemplates.some(
+    t => detectTreatmentType(t) === 'wallpaper'
+  );
+  const hasBothTypes = hasWindowTreatments && hasWallpaperTemplates;
+  const onlyOneTypeAvailable = !hasBothTypes && (hasWindowTreatments || hasWallpaperTemplates);
+
+  // Window types for auto-selection
+  const windowTypes = [
+    { id: 'standard', name: 'Standard Window', key: 'standard', visual_key: 'standard' },
+    { id: 'room_wall', name: 'Wall', key: 'room_wall', visual_key: 'room_wall' },
+  ];
+
+  // Auto-skip to treatment tab when only one window type is available
+  useEffect(() => {
+    // Only run for new windows (not editing existing)
+    if (hasLoadedInitialData.current) return;
+    if (curtainTemplatesLoading) return;
+    
+    // If only one type available, auto-select and skip to treatment
+    if (onlyOneTypeAvailable && !selectedWindowType) {
+      const autoWindowType = hasWallpaperTemplates 
+        ? windowTypes.find(wt => wt.visual_key === 'room_wall')
+        : windowTypes.find(wt => wt.visual_key === 'standard');
+      
+      if (autoWindowType) {
+        console.log('🎯 Auto-selecting window type and skipping to treatment:', autoWindowType.name);
+        setSelectedWindowType(autoWindowType);
+        setActiveTab('treatment');
+      }
+    }
+  }, [curtainTemplatesLoading, onlyOneTypeAvailable, selectedWindowType, hasWallpaperTemplates]);
 
   // Combined loading state
-  const isInitialLoading = windowCoveringsLoading || headingInventoryLoading || headingOptionsLoading;
+  const isInitialLoading = windowCoveringsLoading || headingInventoryLoading || headingOptionsLoading || curtainTemplatesLoading;
 
   // Helper function to get heading name from ID
   const getHeadingName = (headingId: string) => {
@@ -2741,8 +2779,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       {/* Sticky Progress indicator with clickable navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-2">
         <div className="flex items-center justify-center space-x-2">
-          {["window-type", "treatment", "library", "measurements"].map((step, index) => {
-          const stepNames = ["Select Type", "Treatment", "Library", "Measurements"];
+        {["window-type", "treatment", "library", "measurements"].map((step, index) => {
+          // Dynamic first step label based on selection state and available types
+          const getFirstStepLabel = () => {
+            // If a window type is selected, show specific label
+            if (selectedWindowType?.visual_key === 'room_wall') return "Wall Selected";
+            if (selectedWindowType) return "Window Selected";
+            // If only one type exists and it's wallpaper-only
+            if (!hasBothTypes && hasWallpaperTemplates && !hasWindowTreatments) return "Wall Selected";
+            // If only window treatments exist
+            if (!hasBothTypes && hasWindowTreatments) return "Window Selected";
+            // Both types available - user must choose
+            return "Select Type";
+          };
+          const stepNames = [getFirstStepLabel(), "Treatment", "Library", "Measurements"];
           const stepIcons = [Ruler, Package, Package, Ruler];
           const StepIcon = stepIcons[index];
           const allSteps = ["window-type", "treatment", "library", "measurements"];
