@@ -211,13 +211,20 @@ const canViewJobsExplicit =
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
   // Fetch user's direct project assignments (from project_assignments table)
-  const { data: myAssignedProjectIds = [] } = useMyProjectAssignments();
+  const { data: myAssignedProjectIds = [], isLoading: assignmentsLoading } = useMyProjectAssignments();
   const myAssignedProjectIdSet = useMemo(() => new Set(myAssignedProjectIds), [myAssignedProjectIds]);
   
   const { filteredProjects, filteredQuotes } = useMemo(() => {
     console.log('[JOBS] Filtering - shouldFilterByAssignment:', shouldFilterByAssignment, 'user.id:', user?.id);
     console.log('[JOBS] Filtering - allProjects count:', allProjects.length, 'allQuotes count:', allQuotes.length, 'allClients count:', allClients.length);
-    console.log('[JOBS] Filtering - myAssignedProjectIds count:', myAssignedProjectIds.length);
+    console.log('[JOBS] Filtering - myAssignedProjectIds count:', myAssignedProjectIds.length, 'assignmentsLoading:', assignmentsLoading);
+    
+    // CRITICAL: Wait for assignment data before filtering to prevent race condition
+    // When assignments are still loading, return all data to prevent empty state flash
+    if (assignmentsLoading && shouldFilterByAssignment) {
+      console.log('[JOBS] Filtering - Waiting for assignment data to load, showing all projects temporarily');
+      return { filteredProjects: allProjects, filteredQuotes: allQuotes };
+    }
     
     if (!shouldFilterByAssignment || !user) {
       console.log('[JOBS] Filtering - No filtering needed, returning all data');
@@ -271,7 +278,7 @@ const canViewJobsExplicit =
       filteredProjects: assignedProjects,
       filteredQuotes
     };
-  }, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user, myAssignedProjectIdSet, myAssignedProjectIds.length]);
+  }, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user, myAssignedProjectIdSet, myAssignedProjectIds.length, assignmentsLoading]);
   
   // Use filtered data
   const quotes = filteredQuotes;
@@ -420,9 +427,10 @@ const canViewJobsExplicit =
   };
 
   // Check permissions - block access if user doesn't have view permissions
-  // Wait for permissions and role to load (include dealer loading state)
+  // Wait for permissions, role, and assignments to load (include dealer loading state)
   // Return null to let Suspense skeleton persist (single loading state)
-  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined) {
+  // CRITICAL: Include assignmentsLoading for staff members to prevent race condition
+  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined || (shouldFilterByAssignment && assignmentsLoading)) {
     return null;
   }
   
