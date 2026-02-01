@@ -56,9 +56,21 @@ export const autoMatchPricingGrid = async (
   const normalizedPriceGroup = priceGroup.toString().toUpperCase().trim();
   // Extract numeric part for flexible matching (e.g., "2" from "GROUP2" or just "2")
   const numericPriceGroup = normalizedPriceGroup.replace(/[^0-9]/g, '');
+  // Extract the base name (e.g., "BUDGET" from "AUTO-BUDGET", "1" from "AUTO-1")
+  const suffixPriceGroup = normalizedPriceGroup.split('-').pop() || normalizedPriceGroup;
   
   // Get all compatible product types for this treatment category
   const compatibleProductTypes = getProductTypesForTreatment(productType);
+
+  // Helper function to normalize price groups for comparison
+  const normalizePriceGroup = (group: string | null | undefined): string => {
+    if (!group) return '';
+    const upper = group.toString().toUpperCase().trim();
+    // Strip common prefixes (GROUP, AUTO, STRAIGHT, ZIP, etc.)
+    return upper
+      .replace(/^(GROUP|AUTO|STRAIGHT|ZIP|FOLDING|EXTERNAL)[-_\s]*/i, '')
+      .trim();
+  };
 
   // Helper function to find matching grid from a list using flexible price_group matching
   const findMatchingGrid = (grids: any[]): any | null => {
@@ -70,7 +82,25 @@ export const autoMatchPricingGrid = async (
     );
     if (exactMatch) return exactMatch;
     
-    // Priority 2: Match with GROUP prefix stripped (e.g., "2" matches "GROUP2" or "GROUP-2")
+    // Priority 2: Normalized match (strip prefixes like AUTO-, STRAIGHT-, GROUP-)
+    // e.g., "Auto-Budget" matches "AUTO-BUDGET" and "Budget" matches any "-BUDGET"
+    const normalizedInput = normalizePriceGroup(priceGroup);
+    const normalizedMatch = grids.find(g => {
+      const normalizedGrid = normalizePriceGroup(g.price_group);
+      return normalizedGrid === normalizedInput;
+    });
+    if (normalizedMatch) return normalizedMatch;
+    
+    // Priority 3: Match suffix only (e.g., "1" matches "AUTO-1" or "STRAIGHT-1")
+    if (suffixPriceGroup && suffixPriceGroup !== normalizedPriceGroup) {
+      const suffixMatch = grids.find(g => {
+        const gridGroup = g.price_group?.toString().toUpperCase().trim() || '';
+        return gridGroup.endsWith('-' + suffixPriceGroup) || gridGroup === suffixPriceGroup;
+      });
+      if (suffixMatch) return suffixMatch;
+    }
+    
+    // Priority 4: Match with GROUP prefix stripped (e.g., "2" matches "GROUP2" or "GROUP-2")
     if (numericPriceGroup) {
       const numericMatch = grids.find(g => {
         const gridGroup = g.price_group?.toString().toUpperCase().trim() || '';
@@ -99,7 +129,8 @@ export const autoMatchPricingGrid = async (
         console.log('📊 Grid auto-match: EXACT match found', {
           supplier: supplierId,
           productType,
-          priceGroup: normalizedPriceGroup,
+          inputPriceGroup: priceGroup,
+          normalizedInput: normalizedPriceGroup,
           matchedGridGroup: exactMatch.price_group,
           grid: exactMatch.name,
           markup: exactMatch.markup_percentage,
@@ -113,7 +144,7 @@ export const autoMatchPricingGrid = async (
           markupPercentage: exactMatch.markup_percentage,
           includesFabricPrice: exactMatch.includes_fabric_price ?? true,
           matchType: 'exact',
-          matchDetails: `Matched by supplier + ${productType} + Group ${normalizedPriceGroup}`
+          matchDetails: `Matched by supplier + ${productType} + Group ${exactMatch.price_group}`
         };
       }
     }
@@ -130,7 +161,8 @@ export const autoMatchPricingGrid = async (
     if (!fallbackError && fallbackMatch) {
       console.log('📊 Grid auto-match: FALLBACK match found', {
         productType,
-        priceGroup: normalizedPriceGroup,
+        inputPriceGroup: priceGroup,
+        normalizedInput: normalizedPriceGroup,
         matchedGridGroup: fallbackMatch.price_group,
         grid: fallbackMatch.name,
         markup: fallbackMatch.markup_percentage,
@@ -144,7 +176,7 @@ export const autoMatchPricingGrid = async (
         markupPercentage: fallbackMatch.markup_percentage,
         includesFabricPrice: fallbackMatch.includes_fabric_price ?? true,
         matchType: 'fallback',
-        matchDetails: `Matched by ${productType} + Group ${normalizedPriceGroup} (any supplier)`
+        matchDetails: `Matched by ${productType} + Group ${fallbackMatch.price_group} (any supplier)`
       };
     }
 
