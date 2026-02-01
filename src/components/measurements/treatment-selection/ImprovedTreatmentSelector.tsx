@@ -6,12 +6,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { TreatmentTypeGrid } from "./TreatmentTypeGrid";
 import { TreatmentSelectionSkeleton } from "../skeleton/TreatmentSelectionSkeleton";
 import { useCurtainTemplates, type CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
+
 interface ImprovedTreatmentSelectorProps {
   selectedCoveringId?: string;
   onCoveringSelect: (covering: CurtainTemplate | null) => void;
   disabled?: boolean;
   visualKey?: string; // 'room_wall' or other window types
 }
+
 export const ImprovedTreatmentSelector = ({
   selectedCoveringId,
   onCoveringSelect,
@@ -36,14 +39,15 @@ export const ImprovedTreatmentSelector = ({
     }
   }, [isLoading, isError, error]);
 
-  // Filter treatments based on window type
+  // Filter treatments based on window type using detectTreatmentType for robust detection
   const filteredTemplates = curtainTemplates.filter(template => {
+    const detectedType = detectTreatmentType(template);
     if (visualKey === 'room_wall') {
-      // For room wall: show only wallpapers and wall coverings
-      return template.treatment_category === 'wallpapers';
+      // For room wall: show only wallpapers (using robust detection)
+      return detectedType === 'wallpaper';
     } else {
       // For standard windows: show all window treatments (exclude wallpaper)
-      return template.treatment_category !== 'wallpapers';
+      return detectedType !== 'wallpaper';
     }
   });
 
