@@ -355,7 +355,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     }
     
     if (statusFilter === 'all') return true;
-    return group.project?.status?.toLowerCase() === statusFilter.toLowerCase();
+    
+    // Look up the actual status name via status_id (custom per-user statuses)
+    if (!group.project?.status_id) return false;
+    const projectStatus = jobStatuses.find(s => s.id === group.project.status_id);
+    return projectStatus?.name?.toLowerCase() === statusFilter.toLowerCase();
   }) as Array<{ project: any; quotes: any[]; isMatch: boolean }>;
 
   // Pagination logic  
