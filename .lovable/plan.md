@@ -1,72 +1,135 @@
 
+# Fix Storage Bucket Security for Client Files
 
-# Comprehensive Data Protection Audit: Prevent Future Data Loss
+## Problem Summary
 
-## Summary
+**CRITICAL SECURITY ISSUE**: The `client-files` bucket (17 files) and other sensitive buckets are currently set to `public: true`, meaning **anyone with the file URL can access client files without authentication**.
 
-I conducted a thorough audit of the entire codebase to identify any patterns that could cause accidental data deletion. The main fix we applied (removing auto-deletion from `handleDiscardChanges`) addressed the critical bug, but I found **one additional vulnerability** that needs to be fixed.
+### Current State
 
----
+| Bucket | Public? | Files | Risk Level |
+|--------|---------|-------|------------|
+| `client-files` | ✅ TRUE | 17 | 🔴 CRITICAL - Client documents exposed |
+| `project-documents` | ✅ TRUE | 2 | 🔴 HIGH - Project files exposed |
+| `project-images` | ✅ TRUE | 98 | 🟠 MEDIUM - Project photos exposed |
+| `email-attachments` | ❌ FALSE | - | ✅ Secure |
 
-## Current Status
-
-### FIXED (Already Applied)
-- **`WindowManagementDialog.tsx`** - `handleDiscardChanges` now only clears local drafts, never deletes database data
-
-### SAFE (No Changes Needed)
-- **`WindowManagementSection.tsx`** - Line 71 has proper `confirm()` dialog before delete
-- **`JobHandlers.tsx`** - Uses explicit `handleDeleteSurface` triggered by user action with confirmation
-- **`SimplifiedTreatmentCard.tsx`** - Line 180 has proper `confirm()` dialog before delete
-- **`useSurfaces.ts` hook** - Deletion only happens when explicitly called, includes project status check
-- **`useTreatments.ts` hook** - Same pattern, safe
-- **No `useEffect` auto-cleanup** - Previous dangerous patterns were already removed (confirmed by comment in `RoomsTab.tsx`)
-
-### VULNERABILITY FOUND
-
-**File:** `src/components/job-editor/WindowManager.tsx`, Line 115-124
-
-```typescript
-<Button
-  size="sm"
-  variant="ghost"
-  onClick={(e) => {
-    e.stopPropagation();
-    deleteSurface.mutate(surface.id);  // ⚠️ NO CONFIRMATION!
-  }}
->
-  <Trash2 className="h-3 w-3" />
-</Button>
-```
-
-**Risk:** A user can accidentally click the delete button and lose window data instantly without any confirmation dialog.
+### What "Public" Means
+- Anyone who discovers or guesses a file URL can view/download the file
+- URLs can be found via browser history, email forwarding, or network logs
+- No authentication required to access the content
 
 ---
 
-## Solution
+## Solution Overview
 
-### Part 1: Add Confirmation to WindowManager.tsx
+1. **Make buckets private** - Set `public: false` on sensitive buckets
+2. **Use signed URLs** - Generate time-limited, authenticated URLs for file access
+3. **Keep appropriate RLS policies** - Files remain owner-scoped
 
-Update the delete button handler to require explicit user confirmation:
+---
 
-```typescript
-onClick={(e) => {
-  e.stopPropagation();
-  if (confirm("Delete this window? This action cannot be undone.")) {
-    deleteSurface.mutate(surface.id);
-  }
-}}
+## Technical Implementation
+
+### Part 1: Database Migration
+
+Make the sensitive buckets private:
+
+```sql
+-- Make client-files bucket private
+UPDATE storage.buckets 
+SET public = false 
+WHERE id = 'client-files';
+
+-- Make project-documents bucket private
+UPDATE storage.buckets 
+SET public = false 
+WHERE id = 'project-documents';
+
+-- Update RLS policy to use authenticated access instead of public
+DROP POLICY IF EXISTS "Public Access for client-files" ON storage.objects;
+DROP POLICY IF EXISTS "Public can read project public buckets" ON storage.objects;
+
+-- New policy: Authenticated users can read their own client files
+CREATE POLICY "Users can read their client files"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'client-files' 
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+);
+
+-- New policy: Team members can read owner's client files
+CREATE POLICY "Team members can read owner client files"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'client-files'
+  AND (public.get_effective_account_owner(auth.uid()))::text = (storage.foldername(name))[1]
+);
+
+-- New policy: Authenticated users can read project documents
+CREATE POLICY "Users can read project documents"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'project-documents'
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+);
 ```
 
-### Part 2: Update Architecture Memory
+### Part 2: Code Changes
 
-Create/update a memory file to document the safety rules for all future development:
+**File: `src/hooks/useClientFiles.ts`**
 
-**File:** `MEMORY_data_deletion_safety_rules.md`
+Replace `getPublicUrl` with `createSignedUrl` for secure, time-limited access:
 
-This will contain:
-- List of banned patterns (auto-deletion in useEffect, RLS-dependent deletion decisions, etc.)
-- Required patterns (user confirmation for ALL delete operations)
-- Specific files/functions that have been audited
+```typescript
+export const useGetClientFileUrl = () => {
+  return useMutation({
+    mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
+      // Use signed URL for private buckets (expires in 1 hour)
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        throw error;
+      }
+
+      return data.signedUrl;
+    },
+  });
+};
+```
+
+**File: `src/hooks/useFileStorage.ts`**
+
+Same change for the general file storage hook:
+
+```typescript
+export const useGetFileUrl = () => {
+  return useMutation({
+    mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
+      console.log('Creating signed URL for:', { bucketName, filePath });
+      
+      // Use signed URL for secure access (1 hour expiry)
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(filePath, 3600);
+
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        throw error;
+      }
+
+      console.log('Generated signed URL successfully');
+      return data.signedUrl;
+    },
+  });
+};
+```
 
 ---
 
@@ -74,72 +137,49 @@ This will contain:
 
 | File | Change |
 |------|--------|
-| `src/components/job-editor/WindowManager.tsx` | Add confirmation dialog before `deleteSurface.mutate()` |
-| `MEMORY_data_deletion_safety_rules.md` | Create comprehensive safety documentation |
+| Database Migration | Make buckets private, update RLS policies |
+| `src/hooks/useClientFiles.ts` | Replace `getPublicUrl` with `createSignedUrl` |
+| `src/hooks/useFileStorage.ts` | Replace `getPublicUrl` with `createSignedUrl` |
 
 ---
 
-## Audit Summary
+## Security Benefits
 
-| Location | Delete Pattern | Confirmation | Status |
-|----------|---------------|--------------|--------|
-| `WindowManagementDialog.tsx` | `handleDiscardChanges` | N/A (removed) | ✅ FIXED |
-| `WindowManager.tsx` | Button onClick | ❌ MISSING | ⚠️ TO FIX |
-| `WindowManagementSection.tsx` | `handleDeleteSurface` | ✅ Has `confirm()` | ✅ SAFE |
-| `JobHandlers.tsx` | `handleDeleteSurface` | ✅ User-triggered | ✅ SAFE |
-| `SimplifiedTreatmentCard.tsx` | `handleDeleteTreatment` | ✅ Has `confirm()` | ✅ SAFE |
-| `JobsTableView.tsx` | Delete project | ✅ Explicit action | ✅ SAFE |
-| `JobDetailPage.tsx` | Delete job | ✅ Explicit action | ✅ SAFE |
+| Before | After |
+|--------|-------|
+| Anyone with URL can access files | Only authenticated users with permissions |
+| URLs work forever | URLs expire after 1 hour |
+| No audit trail | Access controlled by RLS |
+| Data exposure risk | Data properly isolated by user |
 
 ---
 
-## Safety Rules (To Be Documented)
+## What Stays Public (Intentionally)
 
-### BANNED Patterns
-1. **Auto-deletion in `useEffect`** - NEVER delete data in lifecycle hooks
-2. **Heuristic-based deletion** - NEVER use `length === 0` or `cost === 0` to decide if deletion is safe
-3. **RLS-dependent deletion decisions** - NEVER query database to decide if deletion is appropriate
-4. **Unconfirmed delete buttons** - EVERY delete action MUST have user confirmation
-
-### REQUIRED Patterns
-1. **Explicit user confirmation** - All delete buttons must use `confirm()` or AlertDialog
-2. **Status checks** - Verify project isn't locked before allowing deletion
-3. **Permission checks** - Verify user has edit permissions
-4. **Cascade awareness** - Warn users when deletion affects related data
-
----
-
-## Protection for All Account Types
-
-After this fix, the following are protected:
-
-| Account Type | Protection Level |
-|--------------|-----------------|
-| **System Owner** | Full protection - no auto-deletion |
-| **Owner** | Full protection - confirmation required |
-| **Admin** | Full protection - permission + confirmation |
-| **Staff** | Full protection - RLS + confirmation |
-| **Dealer** | Full protection - RLS + confirmation |
-| **Future roles** | Inherits same safety patterns |
+These buckets should remain public because their content is meant to be shared:
+- `quote-images` - Images shown on client-facing quotes
+- `product-images` - Product catalog images
+- `bug-images` - Bug report screenshots (internal tool)
+- `documentation-screenshots` - Help documentation
 
 ---
 
 ## Testing Checklist
 
-1. **WindowManager Delete Button Test**
-   - Open a window in the WindowManager
-   - Click the delete (trash) icon
-   - Verify confirmation dialog appears
-   - Click Cancel → Window should remain
-   - Click OK → Window should delete
+1. **Upload Test**
+   - Upload a new client file
+   - Verify upload succeeds
 
-2. **Cross-Account Safety Test**
-   - Test delete confirmation appears for all roles
-   - Verify staff cannot delete windows they don't have permission to
+2. **View Test**
+   - Click "View" on an existing file
+   - Verify file opens in viewer dialog
+   - Verify signed URL works
 
-3. **No Auto-Deletion Test**
-   - Open any window dialog
-   - Close without saving → Click Discard
-   - Verify window data is NOT deleted
-   - Refresh and confirm data persists
+3. **Security Test**
+   - Copy the signed URL
+   - Wait for 1+ hour
+   - Try to access the URL → Should fail (expired)
 
+4. **Multi-tenant Test**
+   - Log in as different user
+   - Verify you cannot access another user's client files
