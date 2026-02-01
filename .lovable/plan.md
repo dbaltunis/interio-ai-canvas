@@ -1,154 +1,173 @@
 
 
-# Critical Fix: Staff Cannot See Pricing Data - RLS Policy Bug
+# CRITICAL FIX: "Discard Changes" Deletes Real Data
 
-## Problem Summary
+## Executive Summary
 
-Staff members (like Daniel) who are assigned to projects via "Invite Team" can see the job in the Jobs list, but **cannot see any pricing data** inside the job. All windows show "No pricing data available."
+**BUG CONFIRMED**: When a staff member (or even an admin) clicks "Discard" in the unsaved changes dialog, the system incorrectly deletes REAL saved data from the database - not just the unsaved draft changes.
 
-## Root Cause Analysis
-
-**TWO CRITICAL ISSUES IDENTIFIED:**
-
-### Issue 1: Broken RLS Policy on `windows_summary` Table
-
-The SELECT policy on `windows_summary` contains a critical logic error:
-
-```sql
--- CURRENT (BROKEN):
-OR (has_permission('view_assigned_jobs'::text) AND (p.user_id = auth.uid()))
-```
-
-This incorrectly requires the user to **OWN** the project (`p.user_id = auth.uid()`), which defeats the entire purpose of the assignment check. Staff members never own projects - they're assigned to them.
-
-**Should be:**
-```sql
--- CORRECT:
-OR (has_permission('view_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
-```
-
-The same bug exists in the UPDATE policy (missing assignment check entirely).
-
-### Issue 2: Missing Surface from Data Restoration
-
-My earlier restoration script failed to restore one surface:
-- **Room 1 Window 1** (ID: `f1487737-0b86-4abf-addf-010b85618a43`) is MISSING
-- The `workshop_items` and `windows_summary` records exist but reference a non-existent surface
+**IMPACT**: This bug has caused data loss on both admin and staff accounts. The total project price decreased because actual pricing data was deleted.
 
 ---
 
-## Solution
+## Root Cause Analysis
 
-### Part 1: Fix `windows_summary` RLS Policies
+The bug is in `src/components/job-creation/WindowManagementDialog.tsx`, lines 357-394, in the `handleDiscardChanges` function:
 
-Drop and recreate the SELECT and UPDATE policies with correct assignment logic:
-
-```sql
--- Fix SELECT policy
-DROP POLICY IF EXISTS "Permission-based windows_summary SELECT" ON windows_summary;
-
-CREATE POLICY "Permission-based windows_summary SELECT" ON windows_summary
-FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM surfaces s
-    JOIN projects p ON s.project_id = p.id
-    WHERE s.id = windows_summary.window_id
-    AND is_same_account(p.user_id)
-    AND (
-      get_user_role(auth.uid()) = ANY (ARRAY['System Owner'::text, 'Owner'::text])
-      OR is_admin()
-      OR has_permission('view_all_jobs'::text)
-      OR p.user_id = auth.uid()
-      -- FIXED: Check assignment, not ownership
-      OR (has_permission('view_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
-    )
-  )
-);
-
--- Fix UPDATE policy
-DROP POLICY IF EXISTS "Permission-based windows_summary UPDATE" ON windows_summary;
-
-CREATE POLICY "Permission-based windows_summary UPDATE" ON windows_summary
-FOR UPDATE USING (
-  EXISTS (
-    SELECT 1 FROM surfaces s
-    JOIN projects p ON s.project_id = p.id
-    WHERE s.id = windows_summary.window_id
-    AND is_same_account(p.user_id)
-    AND (
-      get_user_role(auth.uid()) = ANY (ARRAY['System Owner'::text, 'Owner'::text])
-      OR is_admin()
-      OR has_permission('edit_all_jobs'::text)
-      OR p.user_id = auth.uid()
-      -- FIXED: Add assignment check for staff
-      OR (has_permission('edit_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
-    )
-  )
-);
+```typescript
+const handleDiscardChanges = async () => {
+  worksheetRef.current?.clearDraft();
+  setShowUnsavedDialog(false);
+  
+  // BUG #1: This checks the PROP value, not current DB state
+  const isNewWindow = existingTreatments.length === 0;  
+  
+  // BUG #2: This checks for total_cost, but a window can have 0 cost and still be valid
+  // BUG #3: For staff members, RLS may block this query entirely, returning null
+  const hasSavedData = !!(await supabase
+    .from('windows_summary')
+    .select('total_cost')
+    .eq('window_id', surface?.id)
+    .maybeSingle()
+    .then(r => r.data?.total_cost));
+  
+  // BUG #4: This is TRUE even for windows that have been saved previously
+  const shouldDeleteGhost = isNewWindow && !hasSavedData;
+  
+  // BUG #5: DELETES THE ENTIRE SURFACE AND ALL ITS DATA
+  if (shouldDeleteGhost && surface?.id) {
+    await supabase.from('windows_summary').delete().eq('window_id', surface.id);
+    await deleteSurface.mutateAsync(surface.id);  // CRITICAL DATA LOSS
+  }
+  
+  onClose();
+};
 ```
 
-### Part 2: Restore Missing Surface
+### Why This Happens
 
-Insert the missing Window 1 in Room 1:
+| Scenario | `existingTreatments.length` | `hasSavedData` | `shouldDeleteGhost` | Result |
+|----------|----------------------------|----------------|---------------------|--------|
+| Staff opens existing window | `0` (RLS may block) | `false` (RLS blocks or cost=0) | `true` | **DATA DELETED** |
+| Admin opens window with $0 cost | `0` (no legacy treatment) | `false` (cost=0) | `true` | **DATA DELETED** |
+| New unsaved window | `0` (correct) | `false` (correct) | `true` | Correct deletion |
+
+### The Fundamental Flaw
+
+The "ghost window" cleanup logic was designed to remove windows that were never saved. But it uses **unreliable heuristics** (treatment count, cost value) that fail when:
+
+1. Staff members have different RLS visibility
+2. Windows have $0 cost but valid measurements
+3. The `treatments` table has no rows but `windows_summary` has data
+4. RLS policies block the verification query
+
+---
+
+## Solution: Remove Dangerous Auto-Deletion
+
+**The safest fix is to NEVER auto-delete data on discard.** Instead:
+
+1. Only clear the local draft (localStorage)
+2. Close the dialog without modifying database
+3. If ghost cleanup is truly needed, make it a separate user-triggered action with confirmation
+
+### Code Changes
+
+**File: `src/components/job-creation/WindowManagementDialog.tsx`**
+
+Replace the current `handleDiscardChanges` function (lines 357-394):
+
+```typescript
+const handleDiscardChanges = async () => {
+  // Clear local draft only - NEVER delete database data on discard
+  worksheetRef.current?.clearDraft();
+  setShowUnsavedDialog(false);
+  
+  // CRITICAL SAFETY: Do NOT delete any database data here
+  // The "discard" action means "discard unsaved local changes" 
+  // NOT "delete the entire window from the database"
+  console.log('📌 Discarding unsaved changes for window:', surface?.id);
+  console.log('📌 No database deletion performed - only local draft cleared');
+  
+  onClose();
+};
+```
+
+This change:
+- Removes ALL automatic database deletion from the discard flow
+- Only clears the local draft (which is the correct behavior for "discard changes")
+- Completely eliminates the race condition and RLS visibility issues
+- Follows the architecture memory rule: "NEVER implement automatic data deletion"
+
+---
+
+## Data Restoration
+
+Before fixing the code, we need to restore any data that was deleted. Based on my investigation, the project still has 5 surfaces with pricing. However, if data was deleted during the user's recent testing, we should check workshop_items for restoration:
 
 ```sql
-INSERT INTO surfaces (id, name, project_id, room_id, surface_type, user_id)
-VALUES (
-  'f1487737-0b86-4abf-addf-010b85618a43',
-  'Window 1',
-  '113a5360-eb1a-42bc-bff0-909821b9305b',
-  '6ba3a29a-e702-4bc0-9a5e-c50a9904733c',
-  'window',
-  'b0c727dd-b9bf-4470-840d-1f630e8f2b26'
-) ON CONFLICT (id) DO NOTHING;
+-- Check for deleted data that can be restored from workshop_items
+SELECT wi.window_id, wi.room_id, wi.treatment_type, wi.cost_breakdown
+FROM workshop_items wi
+WHERE wi.project_id = '113a5360-eb1a-42bc-bff0-909821b9305b'
+  AND wi.window_id NOT IN (SELECT id FROM surfaces WHERE project_id = '113a5360-eb1a-42bc-bff0-909821b9305b');
 ```
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| SQL Migration | Fix windows_summary SELECT and UPDATE policies; restore missing surface |
-
----
-
-## Technical Root Cause
-
-The original policy was written with incorrect logic:
-
-```text
-INTENDED: "Staff with view_assigned_jobs can see windows_summary for projects they're ASSIGNED to"
-ACTUAL:   "Staff with view_assigned_jobs can see windows_summary for projects they OWN"
-
-Since staff never OWN projects (they're assigned), this condition ALWAYS fails.
-```
-
----
-
-## Expected Outcome After Fix
-
-| Test Case | Before | After |
-|-----------|--------|-------|
-| Daniel (Staff) views assigned project | "No pricing data" | Sees all pricing |
-| Daniel (Staff) views unassigned project | No access | No access (correct) |
-| Owner views own project | Sees pricing | Sees pricing (unchanged) |
-| Admin views any project | Sees pricing | Sees pricing (unchanged) |
+| File | Change |
+|------|--------|
+| `src/components/job-creation/WindowManagementDialog.tsx` | Remove database deletion from `handleDiscardChanges` (lines 357-394) |
 
 ---
 
 ## Testing Checklist
 
-1. **Staff Visibility Test**
-   - Log in as Daniel (Staff role)
-   - Navigate to assigned project
-   - Verify pricing data displays for ALL windows
+1. **Discard Safety Test**
+   - Open any existing window with saved pricing
+   - Make a small change (or don't)
+   - Close dialog → Click "Discard"
+   - Verify window and pricing still exist
+   - Refresh page → Confirm data persists
 
-2. **Window Count Verification**
-   - Verify Room 1 shows 3 windows (Window 1, Window 2, Window 4)
-   - Verify Room 2 shows 2 windows (Window 1, Window 2)
-   - Total: 5 windows with pricing
+2. **Staff Member Test**
+   - Log in as staff (Daniel)
+   - Open assigned project
+   - Click on a window → Discard
+   - Verify data is NOT deleted
 
-3. **Security Test**
-   - Verify Daniel CANNOT see pricing for projects he's NOT assigned to
+3. **Admin Cross-Check**
+   - After staff discards, check admin view
+   - Verify pricing totals unchanged
+
+4. **New Window Behavior**
+   - Create a new window
+   - Don't save anything
+   - Close → Discard
+   - The empty window may remain (acceptable) OR can be cleaned up later by explicit delete button
+
+---
+
+## Architecture Memory Update
+
+This fix reinforces the existing memory rule:
+
+```
+# Memory: architecture/automatic-data-deletion-safety
+
+CRITICAL RULE: NEVER implement automatic data deletion based on heuristics.
+
+SPECIFIC BAN: The "handleDiscardChanges" pattern must NEVER:
+- Check treatment counts to determine if deletion is safe
+- Check cost values to determine if data exists
+- Use async RLS-dependent queries to make deletion decisions
+- Delete surfaces or windows_summary on dialog close
+
+SAFE PATTERN: "Discard" should ONLY:
+- Clear local state (React state)
+- Clear drafts (localStorage/draftService)
+- Close dialogs/modals
+```
 
