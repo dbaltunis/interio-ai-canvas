@@ -36,7 +36,8 @@ export const useProjects = (options?: { enabled?: boolean }) => {
     enabled: enabled && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    // Auto-refresh to keep visibility in sync when user switches tabs
+    refetchOnWindowFocus: true,
     retry: 1,
   });
 };
