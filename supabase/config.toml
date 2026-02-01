@@ -187,3 +187,6 @@ verify_jwt = false
 [functions.send-assignment-notification]
 verify_jwt = true
 
+[functions.twc-admin-backfill]
+verify_jwt = true
+
