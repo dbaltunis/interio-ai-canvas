@@ -355,40 +355,16 @@ export const WindowManagementDialog = ({
   const deleteSurface = useDeleteSurface();
 
   const handleDiscardChanges = async () => {
+    // Clear local draft only - NEVER delete database data on discard
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
     
-    // CRITICAL FIX: Check both existingTreatments AND windowSummary to determine if this is truly a new window
-    // A window is "new" only if it has NO treatments AND NO saved summary data with costs
-    const isNewWindow = existingTreatments.length === 0;
-    const hasSavedData = !!(await supabase
-      .from('windows_summary')
-      .select('total_cost')
-      .eq('window_id', surface?.id)
-      .maybeSingle()
-      .then(r => r.data?.total_cost));
-    
-    const shouldDeleteGhost = isNewWindow && !hasSavedData;
-    
-    // If this was a NEW window (no treatment AND no saved data when dialog opened), 
-    // delete the ghost surface and any auto-saved windowSummary entirely
-    if (shouldDeleteGhost && surface?.id) {
-      console.log('🗑️ Deleting ghost window that was never saved:', surface.id);
-      try {
-        // First delete any auto-saved windows_summary entry
-        await supabase
-          .from('windows_summary')
-          .delete()
-          .eq('window_id', surface.id);
-        
-        // Then delete the ghost surface
-        await deleteSurface.mutateAsync(surface.id);
-      } catch (error) {
-        console.error('Failed to delete ghost surface:', error);
-      }
-    } else {
-      console.log('📌 Preserving existing window with saved data on discard');
-    }
+    // CRITICAL SAFETY: Do NOT delete any database data here
+    // The "discard" action means "discard unsaved local changes" 
+    // NOT "delete the entire window from the database"
+    // This prevents data loss from RLS visibility issues and race conditions
+    console.log('📌 Discarding unsaved changes for window:', surface?.id);
+    console.log('📌 No database deletion performed - only local draft cleared');
     
     onClose();
   };
