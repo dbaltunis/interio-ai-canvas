@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface SMSTemplate {
   id: string;
@@ -35,12 +36,12 @@ export const useCreateSMSTemplate = () => {
 
   return useMutation({
     mutationFn: async (template: Omit<SMSTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("sms_templates")
-        .insert([{ ...template, user_id: user.id }])
+        .insert([{ ...template, user_id: effectiveOwnerId }])
         .select()
         .single();
 

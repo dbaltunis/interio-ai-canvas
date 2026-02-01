@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface SMSContact {
   id: string;
@@ -43,12 +44,12 @@ export const useCreateSMSContact = () => {
 
   return useMutation({
     mutationFn: async (contact: Omit<SMSContact, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("sms_contacts")
-        .insert([{ ...contact, user_id: user.id }])
+        .insert([{ ...contact, user_id: effectiveOwnerId }])
         .select()
         .single();
 
@@ -97,9 +98,9 @@ export const useSyncClientsToSMSContacts = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-      if (!effectiveOwnerId) throw new Error("No account found");
+      // FIX: Get both currentUserId and effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId, currentUserId } = await getEffectiveOwnerForMutation();
+      // effectiveOwnerId is already validated
 
       // Get all clients with phone numbers
       const { data: clients, error: clientsError } = await supabase
@@ -124,7 +125,7 @@ export const useSyncClientsToSMSContacts = () => {
       for (const client of clients || []) {
         if (client.phone && !existingPhones.has(client.phone)) {
           newContacts.push({
-            user_id: user.id,
+            user_id: effectiveOwnerId,
             phone_number: client.phone,
             name: client.name,
             client_id: client.id,

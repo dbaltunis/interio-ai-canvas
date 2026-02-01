@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import { logProjectActivity } from "@/hooks/useProjectActivityLog";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
@@ -58,12 +58,12 @@ export const useCreateSurface = () => {
         }
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("surfaces")
-        .insert({ ...surface, user_id: user.id })
+        .insert({ ...surface, user_id: effectiveOwnerId })
         .select()
         .single();
 

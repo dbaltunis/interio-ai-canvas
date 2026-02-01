@@ -1,7 +1,7 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 // Helper function to log activity for email sent
 const logEmailActivity = async (clientId: string, subject: string, userId: string) => {
@@ -46,6 +46,9 @@ export const useSendEmail = () => {
       const user = session.user;
       console.log("Authenticated user:", user.id);
 
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+
       // Validate email content
       console.log("Validating email content...");
 
@@ -59,7 +62,7 @@ export const useSendEmail = () => {
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           recipient_email: emailData.to,
           subject: emailData.subject,
           content: emailData.content,

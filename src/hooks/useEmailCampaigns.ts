@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface EmailCampaign {
   id: string;
@@ -43,12 +43,12 @@ export const useCreateEmailCampaign = () => {
       if (!campaignData.subject?.trim()) throw new Error('Email subject is required');
       if (!campaignData.content?.trim()) throw new Error('Email content is required');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated. Please log in.');
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from('email_campaigns')
-        .insert([{ ...campaignData, user_id: user.id }])
+        .insert([{ ...campaignData, user_id: effectiveOwnerId }])
         .select()
         .single();
 

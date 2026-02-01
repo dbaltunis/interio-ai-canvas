@@ -1,7 +1,7 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { logProjectActivity } from "./useProjectActivityLog";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export type ProjectNote = {
   id: string;
@@ -78,13 +78,14 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
 
   const addNote = async (content: string, type: string = "general", mentionedUserIds: string[] = []) => {
     if (!filter) throw new Error("Missing project or quote context");
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user?.id) throw new Error("Not authenticated");
+    
+    // FIX: Use effectiveOwnerId for multi-tenant support
+    const { effectiveOwnerId, currentUserId } = await getEffectiveOwnerForMutation();
 
     const payload = {
       content: content.trim(),
       type,
-      user_id: user.id,
+      user_id: effectiveOwnerId,
       project_id: filter.column === "project_id" ? filter.value : null,
       quote_id: filter.column === "quote_id" ? filter.value : null,
     } as any;
@@ -103,7 +104,7 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
       const mentionRows = mentionedUserIds.map((uid) => ({
         note_id: inserted.id,
         mentioned_user_id: uid,
-        created_by: user.id,
+        created_by: currentUserId,
       }));
       const { error: mErr } = await sb
         .from("project_note_mentions")

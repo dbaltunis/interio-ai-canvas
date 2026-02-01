@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface UserSecuritySettings {
   id: string;
@@ -38,13 +39,13 @@ export const useUpdateUserSecuritySettings = () => {
 
   return useMutation({
     mutationFn: async (settings: Partial<UserSecuritySettings>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("user_security_settings")
         .upsert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           ...settings,
           updated_at: new Date().toISOString(),
         })

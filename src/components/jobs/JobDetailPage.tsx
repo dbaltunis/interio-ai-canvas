@@ -45,6 +45,7 @@ import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { supabase } from "@/integrations/supabase/client";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { DuplicateJobsSection } from "./DuplicateJobsSection";
@@ -336,9 +337,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         description: "Please wait while we create a complete copy of all data"
       });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
       console.log('Starting duplication for project:', jobId);
       console.log('Original project data:', project);
 
@@ -403,7 +403,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             .insert({ 
               ...quoteData, 
               project_id: newProject.id,
-              user_id: user.id,
+              user_id: effectiveOwnerId,
               // Don't copy quote_number, let it auto-generate
             })
             .select()
@@ -520,7 +520,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               ...roomData, 
               project_id: newProject.id, 
               quote_id: newQuoteId, // Use the mapped quote_id
-              user_id: user.id 
+              user_id: effectiveOwnerId 
             })
             .select()
             .single();
@@ -553,7 +553,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   ...surfaceData, 
                   room_id: newRoom.id, 
                   project_id: newProject.id,
-                  user_id: user.id 
+                  user_id: effectiveOwnerId 
                 };
               });
               
@@ -602,7 +602,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   window_id: newWindowId, // Use mapped window_id
                   room_id: newRoom.id,
                   project_id: newProject.id,
-                  user_id: user.id
+                  user_id: effectiveOwnerId
                 };
               });
               
@@ -682,7 +682,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             window_id: newWindowId, // Use mapped window_id
             room_id: firstNewRoomId, // Assign to first room or keep as null
             project_id: newProject.id,
-            user_id: user.id
+            user_id: effectiveOwnerId
           };
         });
         
@@ -721,7 +721,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       if (notes && notes.length > 0) {
         const notesToInsert = notes.map((note: any) => {
           const { id, project_id, created_at, updated_at, ...noteData } = note;
-          return { ...noteData, project_id: newProject.id, user_id: user.id };
+          return { ...noteData, project_id: newProject.id, user_id: effectiveOwnerId };
         });
         
         const { error: insertNotesError } = await supabase

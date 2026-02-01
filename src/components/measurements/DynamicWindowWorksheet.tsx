@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Ruler, Package, Calculator, Save, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { toast } from "sonner";
 import { saveQueueService } from "@/services/saveQueueService";
 import { draftService } from "@/services/draftService";
@@ -2396,9 +2397,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 category: 'material'
               });
             }
+            // FIX: Use effectiveOwnerId for multi-tenant support
+            const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
             
             const treatmentData = {
-              user_id: user.id,
+              user_id: effectiveOwnerId,
               project_id: projectId,
               window_id: surfaceId,
               treatment_type: selectedTemplate?.name || 'Unknown',

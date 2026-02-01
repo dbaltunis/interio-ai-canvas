@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface WindowCovering {
   id: string;
@@ -39,12 +39,12 @@ export const useCreateWindowCovering = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<WindowCovering, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data: result, error } = await supabase
         .from("window_coverings")
-        .insert({ ...data, user_id: user.id })
+        .insert({ ...data, user_id: effectiveOwnerId })
         .select()
         .single();
 
