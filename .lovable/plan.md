@@ -1,117 +1,72 @@
 
 
-# CRITICAL FIX: "Discard Changes" Deletes Real Data
+# Comprehensive Data Protection Audit: Prevent Future Data Loss
 
-## Executive Summary
+## Summary
 
-**BUG CONFIRMED**: When a staff member (or even an admin) clicks "Discard" in the unsaved changes dialog, the system incorrectly deletes REAL saved data from the database - not just the unsaved draft changes.
-
-**IMPACT**: This bug has caused data loss on both admin and staff accounts. The total project price decreased because actual pricing data was deleted.
+I conducted a thorough audit of the entire codebase to identify any patterns that could cause accidental data deletion. The main fix we applied (removing auto-deletion from `handleDiscardChanges`) addressed the critical bug, but I found **one additional vulnerability** that needs to be fixed.
 
 ---
 
-## Root Cause Analysis
+## Current Status
 
-The bug is in `src/components/job-creation/WindowManagementDialog.tsx`, lines 357-394, in the `handleDiscardChanges` function:
+### FIXED (Already Applied)
+- **`WindowManagementDialog.tsx`** - `handleDiscardChanges` now only clears local drafts, never deletes database data
+
+### SAFE (No Changes Needed)
+- **`WindowManagementSection.tsx`** - Line 71 has proper `confirm()` dialog before delete
+- **`JobHandlers.tsx`** - Uses explicit `handleDeleteSurface` triggered by user action with confirmation
+- **`SimplifiedTreatmentCard.tsx`** - Line 180 has proper `confirm()` dialog before delete
+- **`useSurfaces.ts` hook** - Deletion only happens when explicitly called, includes project status check
+- **`useTreatments.ts` hook** - Same pattern, safe
+- **No `useEffect` auto-cleanup** - Previous dangerous patterns were already removed (confirmed by comment in `RoomsTab.tsx`)
+
+### VULNERABILITY FOUND
+
+**File:** `src/components/job-editor/WindowManager.tsx`, Line 115-124
 
 ```typescript
-const handleDiscardChanges = async () => {
-  worksheetRef.current?.clearDraft();
-  setShowUnsavedDialog(false);
-  
-  // BUG #1: This checks the PROP value, not current DB state
-  const isNewWindow = existingTreatments.length === 0;  
-  
-  // BUG #2: This checks for total_cost, but a window can have 0 cost and still be valid
-  // BUG #3: For staff members, RLS may block this query entirely, returning null
-  const hasSavedData = !!(await supabase
-    .from('windows_summary')
-    .select('total_cost')
-    .eq('window_id', surface?.id)
-    .maybeSingle()
-    .then(r => r.data?.total_cost));
-  
-  // BUG #4: This is TRUE even for windows that have been saved previously
-  const shouldDeleteGhost = isNewWindow && !hasSavedData;
-  
-  // BUG #5: DELETES THE ENTIRE SURFACE AND ALL ITS DATA
-  if (shouldDeleteGhost && surface?.id) {
-    await supabase.from('windows_summary').delete().eq('window_id', surface.id);
-    await deleteSurface.mutateAsync(surface.id);  // CRITICAL DATA LOSS
+<Button
+  size="sm"
+  variant="ghost"
+  onClick={(e) => {
+    e.stopPropagation();
+    deleteSurface.mutate(surface.id);  // ⚠️ NO CONFIRMATION!
+  }}
+>
+  <Trash2 className="h-3 w-3" />
+</Button>
+```
+
+**Risk:** A user can accidentally click the delete button and lose window data instantly without any confirmation dialog.
+
+---
+
+## Solution
+
+### Part 1: Add Confirmation to WindowManager.tsx
+
+Update the delete button handler to require explicit user confirmation:
+
+```typescript
+onClick={(e) => {
+  e.stopPropagation();
+  if (confirm("Delete this window? This action cannot be undone.")) {
+    deleteSurface.mutate(surface.id);
   }
-  
-  onClose();
-};
+}}
 ```
 
-### Why This Happens
+### Part 2: Update Architecture Memory
 
-| Scenario | `existingTreatments.length` | `hasSavedData` | `shouldDeleteGhost` | Result |
-|----------|----------------------------|----------------|---------------------|--------|
-| Staff opens existing window | `0` (RLS may block) | `false` (RLS blocks or cost=0) | `true` | **DATA DELETED** |
-| Admin opens window with $0 cost | `0` (no legacy treatment) | `false` (cost=0) | `true` | **DATA DELETED** |
-| New unsaved window | `0` (correct) | `false` (correct) | `true` | Correct deletion |
+Create/update a memory file to document the safety rules for all future development:
 
-### The Fundamental Flaw
+**File:** `MEMORY_data_deletion_safety_rules.md`
 
-The "ghost window" cleanup logic was designed to remove windows that were never saved. But it uses **unreliable heuristics** (treatment count, cost value) that fail when:
-
-1. Staff members have different RLS visibility
-2. Windows have $0 cost but valid measurements
-3. The `treatments` table has no rows but `windows_summary` has data
-4. RLS policies block the verification query
-
----
-
-## Solution: Remove Dangerous Auto-Deletion
-
-**The safest fix is to NEVER auto-delete data on discard.** Instead:
-
-1. Only clear the local draft (localStorage)
-2. Close the dialog without modifying database
-3. If ghost cleanup is truly needed, make it a separate user-triggered action with confirmation
-
-### Code Changes
-
-**File: `src/components/job-creation/WindowManagementDialog.tsx`**
-
-Replace the current `handleDiscardChanges` function (lines 357-394):
-
-```typescript
-const handleDiscardChanges = async () => {
-  // Clear local draft only - NEVER delete database data on discard
-  worksheetRef.current?.clearDraft();
-  setShowUnsavedDialog(false);
-  
-  // CRITICAL SAFETY: Do NOT delete any database data here
-  // The "discard" action means "discard unsaved local changes" 
-  // NOT "delete the entire window from the database"
-  console.log('📌 Discarding unsaved changes for window:', surface?.id);
-  console.log('📌 No database deletion performed - only local draft cleared');
-  
-  onClose();
-};
-```
-
-This change:
-- Removes ALL automatic database deletion from the discard flow
-- Only clears the local draft (which is the correct behavior for "discard changes")
-- Completely eliminates the race condition and RLS visibility issues
-- Follows the architecture memory rule: "NEVER implement automatic data deletion"
-
----
-
-## Data Restoration
-
-Before fixing the code, we need to restore any data that was deleted. Based on my investigation, the project still has 5 surfaces with pricing. However, if data was deleted during the user's recent testing, we should check workshop_items for restoration:
-
-```sql
--- Check for deleted data that can be restored from workshop_items
-SELECT wi.window_id, wi.room_id, wi.treatment_type, wi.cost_breakdown
-FROM workshop_items wi
-WHERE wi.project_id = '113a5360-eb1a-42bc-bff0-909821b9305b'
-  AND wi.window_id NOT IN (SELECT id FROM surfaces WHERE project_id = '113a5360-eb1a-42bc-bff0-909821b9305b');
-```
+This will contain:
+- List of banned patterns (auto-deletion in useEffect, RLS-dependent deletion decisions, etc.)
+- Required patterns (user confirmation for ALL delete operations)
+- Specific files/functions that have been audited
 
 ---
 
@@ -119,55 +74,72 @@ WHERE wi.project_id = '113a5360-eb1a-42bc-bff0-909821b9305b'
 
 | File | Change |
 |------|--------|
-| `src/components/job-creation/WindowManagementDialog.tsx` | Remove database deletion from `handleDiscardChanges` (lines 357-394) |
+| `src/components/job-editor/WindowManager.tsx` | Add confirmation dialog before `deleteSurface.mutate()` |
+| `MEMORY_data_deletion_safety_rules.md` | Create comprehensive safety documentation |
+
+---
+
+## Audit Summary
+
+| Location | Delete Pattern | Confirmation | Status |
+|----------|---------------|--------------|--------|
+| `WindowManagementDialog.tsx` | `handleDiscardChanges` | N/A (removed) | ✅ FIXED |
+| `WindowManager.tsx` | Button onClick | ❌ MISSING | ⚠️ TO FIX |
+| `WindowManagementSection.tsx` | `handleDeleteSurface` | ✅ Has `confirm()` | ✅ SAFE |
+| `JobHandlers.tsx` | `handleDeleteSurface` | ✅ User-triggered | ✅ SAFE |
+| `SimplifiedTreatmentCard.tsx` | `handleDeleteTreatment` | ✅ Has `confirm()` | ✅ SAFE |
+| `JobsTableView.tsx` | Delete project | ✅ Explicit action | ✅ SAFE |
+| `JobDetailPage.tsx` | Delete job | ✅ Explicit action | ✅ SAFE |
+
+---
+
+## Safety Rules (To Be Documented)
+
+### BANNED Patterns
+1. **Auto-deletion in `useEffect`** - NEVER delete data in lifecycle hooks
+2. **Heuristic-based deletion** - NEVER use `length === 0` or `cost === 0` to decide if deletion is safe
+3. **RLS-dependent deletion decisions** - NEVER query database to decide if deletion is appropriate
+4. **Unconfirmed delete buttons** - EVERY delete action MUST have user confirmation
+
+### REQUIRED Patterns
+1. **Explicit user confirmation** - All delete buttons must use `confirm()` or AlertDialog
+2. **Status checks** - Verify project isn't locked before allowing deletion
+3. **Permission checks** - Verify user has edit permissions
+4. **Cascade awareness** - Warn users when deletion affects related data
+
+---
+
+## Protection for All Account Types
+
+After this fix, the following are protected:
+
+| Account Type | Protection Level |
+|--------------|-----------------|
+| **System Owner** | Full protection - no auto-deletion |
+| **Owner** | Full protection - confirmation required |
+| **Admin** | Full protection - permission + confirmation |
+| **Staff** | Full protection - RLS + confirmation |
+| **Dealer** | Full protection - RLS + confirmation |
+| **Future roles** | Inherits same safety patterns |
 
 ---
 
 ## Testing Checklist
 
-1. **Discard Safety Test**
-   - Open any existing window with saved pricing
-   - Make a small change (or don't)
-   - Close dialog → Click "Discard"
-   - Verify window and pricing still exist
-   - Refresh page → Confirm data persists
+1. **WindowManager Delete Button Test**
+   - Open a window in the WindowManager
+   - Click the delete (trash) icon
+   - Verify confirmation dialog appears
+   - Click Cancel → Window should remain
+   - Click OK → Window should delete
 
-2. **Staff Member Test**
-   - Log in as staff (Daniel)
-   - Open assigned project
-   - Click on a window → Discard
-   - Verify data is NOT deleted
+2. **Cross-Account Safety Test**
+   - Test delete confirmation appears for all roles
+   - Verify staff cannot delete windows they don't have permission to
 
-3. **Admin Cross-Check**
-   - After staff discards, check admin view
-   - Verify pricing totals unchanged
-
-4. **New Window Behavior**
-   - Create a new window
-   - Don't save anything
-   - Close → Discard
-   - The empty window may remain (acceptable) OR can be cleaned up later by explicit delete button
-
----
-
-## Architecture Memory Update
-
-This fix reinforces the existing memory rule:
-
-```
-# Memory: architecture/automatic-data-deletion-safety
-
-CRITICAL RULE: NEVER implement automatic data deletion based on heuristics.
-
-SPECIFIC BAN: The "handleDiscardChanges" pattern must NEVER:
-- Check treatment counts to determine if deletion is safe
-- Check cost values to determine if data exists
-- Use async RLS-dependent queries to make deletion decisions
-- Delete surfaces or windows_summary on dialog close
-
-SAFE PATTERN: "Discard" should ONLY:
-- Clear local state (React state)
-- Clear drafts (localStorage/draftService)
-- Close dialogs/modals
-```
+3. **No Auto-Deletion Test**
+   - Open any window dialog
+   - Close without saving → Click Discard
+   - Verify window data is NOT deleted
+   - Refresh and confirm data persists
 
