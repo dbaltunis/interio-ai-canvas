@@ -6,17 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DynamicWindowRenderer } from "./DynamicWindowRenderer";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
+import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
+
 interface SimpleWindowType {
   id: string;
   name: string;
   key: string;
   visual_key: string;
 }
+
 interface WindowTypeSelectorProps {
   selectedWindowType?: SimpleWindowType | null;
   onWindowTypeChange: (windowType: SimpleWindowType) => void;
   readOnly?: boolean;
 }
+
 export const WindowTypeSelector = ({
   selectedWindowType,
   onWindowTypeChange,
@@ -25,6 +30,14 @@ export const WindowTypeSelector = ({
   const [windowTypes, setWindowTypes] = useState<SimpleWindowType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch user's curtain templates to check if they have wallpaper treatments
+  const { data: curtainTemplates = [], isLoading: templatesLoading } = useCurtainTemplates();
+
+  // Check if user has any wallpaper templates
+  const hasWallpaperTemplates = curtainTemplates.some(
+    template => detectTreatmentType(template) === 'wallpaper'
+  );
 
   // Auto-selection removed - users must manually select their window type
   useEffect(() => {
@@ -123,7 +136,20 @@ export const WindowTypeSelector = ({
         return baseMeasurements;
     }
   };
-  if (loading) {
+  // Filter out "Wall" option if user has no wallpaper templates
+  const availableWindowTypes = hasWallpaperTemplates 
+    ? windowTypes 
+    : windowTypes.filter(wt => wt.visual_key !== 'room_wall');
+
+  // Auto-select when only one window type is available (skip window selection step)
+  useEffect(() => {
+    if (!loading && !templatesLoading && availableWindowTypes.length === 1 && !selectedWindowType) {
+      console.log('🎯 Only one window type available, auto-selecting:', availableWindowTypes[0].name);
+      onWindowTypeChange(availableWindowTypes[0]);
+    }
+  }, [loading, templatesLoading, availableWindowTypes, selectedWindowType, onWindowTypeChange]);
+
+  if (loading || templatesLoading) {
     return (
       <div className="grid grid-cols-1 gap-1">
         {Array.from({ length: 8 }).map((_, i) => (
@@ -132,8 +158,9 @@ export const WindowTypeSelector = ({
       </div>
     );
   }
+
   // Filter window types based on search
-  const filteredWindowTypes = windowTypes.filter(wt => 
+  const filteredWindowTypes = availableWindowTypes.filter(wt => 
     wt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     wt.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
