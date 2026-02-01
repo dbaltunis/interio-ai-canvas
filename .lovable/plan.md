@@ -1,184 +1,26 @@
 
 
-# Fix Multi-Tenant Data Saving Issue: Team Members Can't See Their Own Created Data
+# Full Multi-Tenant Fix: All Hooks & Orphaned Data Migration
 
-## Problem Summary
+## Overview
 
-**CRITICAL BUG CONFIRMED**: When team members (e.g., Padam Singvi with role "Admin") create data like headings, the data IS saved to the database but DISAPPEARS immediately because of a mismatch between:
-
-1. **INSERT operation**: Uses `user_id: user.id` (team member's own ID)
-2. **SELECT operation**: Queries with `effectiveOwnerId` (account owner's ID)
-
-**Result**: Data is created with the wrong `user_id`, making it invisible to everyone including the creator.
-
-### Evidence From Database
-
-| Team Member | Role | Orphaned Items |
-|-------------|------|----------------|
-| Padam Singvi | Admin | 10 items |
-| Padam Dealer Test | Dealer | 3 items |
-| CHRISTOS FOUNDOULIS | Owner* | 1 item |
-
-*Note: This user is marked "Owner" but has a parent_account_id, indicating a misconfiguration
-
-### Root Cause Analysis
-
-The code in `useCreateEnhancedInventoryItem` (line 243):
-```typescript
-const item: Record<string, any> = { user_id: userId, active: true };
-// userId = auth.uid() = team member's ID ❌
-// Should be: effectiveOwnerId = account owner's ID ✅
-```
+This plan fixes the "disappearing data" bug across the entire application by ensuring all data mutations use `effectiveOwnerId` instead of `user.id`. This is the same fix we already applied to `useEnhancedInventory.ts` and `useBusinessSettings.ts`, now extended to all affected files.
 
 ---
 
-## Affected Systems
+## Phase 1: Create Reusable Helper Utility
 
-### Confirmed Affected Hooks (Using Wrong user_id)
+**New File:** `src/utils/getEffectiveOwnerForMutation.ts`
 
-| Hook | Table | Impact |
-|------|-------|--------|
-| `useEnhancedInventory.ts` | enhanced_inventory_items | Headings, fabrics, hardware |
-| `useBusinessSettings.ts` | business_settings | Company settings not saving |
-| `useStitchingPrices.ts` | enhanced_inventory_items | Stitching prices |
-| `useClientFiles.ts` | client_files | Client document uploads |
-| `useBatchInventoryImport.ts` | enhanced_inventory_items | Bulk imports |
-
-### Other Affected Areas (From Client Report)
-
-1. **Heading Library** - Headings disappear after save
-2. **Business Settings** - Company name/logo not updating
-3. **Quote Settings** - Template configurations lost
-
----
-
-## Solution
-
-### Part 1: Fix useCreateEnhancedInventoryItem Hook
-
-**File:** `src/hooks/useEnhancedInventory.ts`
-
-Change the mutation to use `get_effective_account_owner()` pattern:
+Creates a single helper function that all hooks will use, avoiding code duplication:
 
 ```typescript
-export const useCreateEnhancedInventoryItem = () => {
-  const queryClient = useQueryClient();
+import { supabase } from "@/integrations/supabase/client";
 
-  return useMutation({
-    mutationFn: async (raw: any) => {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      const userId = authData?.user?.id;
-      if (authError || !userId) {
-        throw new Error('You must be logged in to add inventory items.');
-      }
-
-      // ✅ FIX: Get effective account owner for multi-tenant support
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("parent_account_id")
-        .eq("user_id", userId)
-        .single();
-      
-      // Use parent account if exists (team member), otherwise own ID (account owner)
-      const effectiveOwnerId = profile?.parent_account_id || userId;
-
-      // ... whitelist fields code stays the same ...
-
-      const item: Record<string, any> = { 
-        user_id: effectiveOwnerId, // ✅ USE EFFECTIVE OWNER, NOT AUTH USER
-        active: true 
-      };
-      
-      // ... rest of the function stays the same ...
-    },
-  });
-};
-```
-
-### Part 2: Fix useUpdateEnhancedInventoryItem Hook
-
-Same pattern - ensure updates work for team members editing account data.
-
-### Part 3: Fix HeadingInventoryManager Component
-
-**File:** `src/components/settings/tabs/components/HeadingInventoryManager.tsx`
-
-Line 192 - Remove the direct `user_id: user.id` assignment since the hook now handles it:
-
-```typescript
-const itemData = {
-  // Remove: user_id: user.id,  ← Let the hook determine this
-  name: formData.name.trim(),
-  // ... rest of fields
-};
-```
-
-### Part 4: Fix useBusinessSettings Hooks
-
-**File:** `src/hooks/useBusinessSettings.ts`
-
-Update `useUpdateBusinessSettings` to use effective owner:
-
-```typescript
-export const useUpdateBusinessSettings = () => {
-  return useMutation({
-    mutationFn: async ({ id, ...settings }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // ✅ FIX: Get effective account owner
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("parent_account_id")
-        .eq("user_id", user.id)
-        .single();
-      
-      const effectiveOwnerId = profile?.parent_account_id || user.id;
-
-      const { data, error } = await supabase
-        .from('business_settings')
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', effectiveOwnerId) // ✅ Use effective owner
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-};
-```
-
-### Part 5: Fix Orphaned Data (Database Migration)
-
-Reassign existing orphaned inventory items to their correct account owners:
-
-```sql
--- Fix orphaned inventory items created by team members
-UPDATE enhanced_inventory_items eii
-SET user_id = (
-  SELECT COALESCE(up.parent_account_id, up.user_id)
-  FROM user_profiles up
-  WHERE up.user_id = eii.user_id
-)
-WHERE eii.user_id IN (
-  SELECT up.user_id 
-  FROM user_profiles up 
-  WHERE up.parent_account_id IS NOT NULL
-);
-```
-
-### Part 6: Create Reusable Helper (Optional Enhancement)
-
-To prevent this bug pattern across all hooks:
-
-**File:** `src/hooks/useEffectiveAccountOwner.ts` (already exists, good!)
-
-Add a sync version for mutations:
-
-```typescript
-export const getEffectiveAccountOwnerSync = async (supabase: SupabaseClient) => {
+export const getEffectiveOwnerForMutation = async (): Promise<{
+  effectiveOwnerId: string;
+  currentUserId: string;
+}> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -188,65 +30,166 @@ export const getEffectiveAccountOwnerSync = async (supabase: SupabaseClient) => 
     .eq("user_id", user.id)
     .single();
 
-  return profile?.parent_account_id || user.id;
+  return {
+    effectiveOwnerId: profile?.parent_account_id || user.id,
+    currentUserId: user.id
+  };
 };
 ```
 
 ---
 
-## Files to Modify
+## Phase 2: Fix Core Business Hooks (6 files)
 
-| File | Change |
+| Hook | Change |
 |------|--------|
-| `src/hooks/useEnhancedInventory.ts` | Use effectiveOwnerId in create/update mutations |
-| `src/hooks/useBusinessSettings.ts` | Use effectiveOwnerId in update mutation |
-| `src/components/settings/tabs/components/HeadingInventoryManager.tsx` | Remove explicit user_id setting |
-| Database Migration | Reassign orphaned items to correct owners |
+| `useRooms.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
+| `useSurfaces.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
+| `useVendors.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
+| `useCollections.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
+| `useLeadSources.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
+| `useWindowCoverings.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in create mutation |
 
 ---
 
-## Testing Checklist
+## Phase 3: Fix Project & Quote Hooks (3 files)
 
-1. **Team Member Heading Test**
-   - Log in as a team member (e.g., Padam Singvi)
-   - Create a new heading style
-   - Verify it appears in the list immediately
-   - Refresh the page → Verify it persists
-
-2. **Account Owner Sees Team Data**
-   - Log in as the account owner (Homekaara)
-   - Verify you can see headings created by team members
-
-3. **Business Settings Test**
-   - Log in as team member
-   - Update company name
-   - Verify the update persists after refresh
-
-4. **Data Isolation Test**
-   - Log in as a different account
-   - Verify you cannot see the first account's headings
+| Hook | Change |
+|------|--------|
+| `useProjectNotes.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` in addNote |
+| `JobDetailPage.tsx` | Replace all `user_id: user.id` in job duplication function |
+| `DynamicWindowWorksheet.tsx` | Replace `user_id: user.id` in treatment creation |
 
 ---
 
-## Technical Notes
+## Phase 4: Fix Marketing & Communication Hooks (7 files)
 
-### Why This Happened
+| Hook | Change |
+|------|--------|
+| `useTasks.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useClientLists.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useSMSTemplates.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useSMSCampaigns.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useSMSContacts.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useEmailCampaigns.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useSendEmail.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
 
-The original code assumed all users are account owners. When team members were added, the INSERT logic wasn't updated to route data to the account owner's `user_id`.
+---
 
-### RLS Policy Analysis
+## Phase 5: Fix Settings Hooks (4 files)
 
-The table has this INSERT policy:
+| Hook | Change |
+|------|--------|
+| `useKPIConfig.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useDashboardWidgets.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useUserSecuritySettings.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+| `useCreateStore.ts` | Replace `user_id: user.id` with `user_id: effectiveOwnerId` |
+
+---
+
+## Phase 6: Database Migration - Fix Orphaned Data
+
+SQL migration to reassign all orphaned records created by team members back to their account owners:
+
 ```sql
-"Account isolation - INSERT" 
-WITH CHECK: get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
+-- Fix orphaned rooms
+UPDATE rooms r
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = r.user_id)
+WHERE r.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned surfaces
+UPDATE surfaces s
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = s.user_id)
+WHERE s.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned vendors
+UPDATE vendors v
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = v.user_id)
+WHERE v.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned collections
+UPDATE collections c
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = c.user_id)
+WHERE c.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned lead_sources
+UPDATE lead_sources ls
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = ls.user_id)
+WHERE ls.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned window_coverings
+UPDATE window_coverings wc
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = wc.user_id)
+WHERE wc.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned tasks
+UPDATE tasks t
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = t.user_id)
+WHERE t.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned client_lists
+UPDATE client_lists cl
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = cl.user_id)
+WHERE cl.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned sms_templates
+UPDATE sms_templates st
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = st.user_id)
+WHERE st.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned sms_campaigns
+UPDATE sms_campaigns sc
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = sc.user_id)
+WHERE sc.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned sms_contacts
+UPDATE sms_contacts scon
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = scon.user_id)
+WHERE scon.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned email_campaigns
+UPDATE email_campaigns ec
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = ec.user_id)
+WHERE ec.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned emails
+UPDATE emails e
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = e.user_id)
+WHERE e.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned project_notes
+UPDATE project_notes pn
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = pn.user_id)
+WHERE pn.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
+
+-- Fix orphaned online_stores
+UPDATE online_stores os
+SET user_id = (SELECT COALESCE(up.parent_account_id, up.user_id) FROM user_profiles up WHERE up.user_id = os.user_id)
+WHERE os.user_id IN (SELECT user_id FROM user_profiles WHERE parent_account_id IS NOT NULL);
 ```
 
-This policy ALLOWS inserts where the user_id maps to the same effective owner - but the code wasn't setting the right user_id in the first place!
+---
 
-### Memory Pattern to Add
+## Summary
 
-This fix should be documented in architecture memory:
-- Pattern: All tenant-scoped data MUST use `effectiveOwnerId` not `auth.uid()`
-- Tables affected: Any table with `user_id` used for RLS
+| Phase | Files | What Gets Fixed |
+|-------|-------|-----------------|
+| 1 | 1 new file | Reusable helper utility |
+| 2 | 6 files | Rooms, surfaces, vendors, collections, lead sources, window coverings |
+| 3 | 3 files | Project notes, job duplication, worksheet treatments |
+| 4 | 7 files | Tasks, client lists, SMS, email campaigns |
+| 5 | 4 files | KPI config, dashboard widgets, security settings, online stores |
+| 6 | 1 migration | All orphaned data reassigned to correct owners |
+
+**Total: 21 code files + 1 database migration**
+
+---
+
+## What This Fixes
+
+After implementation:
+- Team members can create rooms, surfaces, vendors, etc. and see them immediately
+- Account owners see all data created by their team
+- Existing orphaned data becomes visible again
+- The entire SaaS app works consistently for all users
 
