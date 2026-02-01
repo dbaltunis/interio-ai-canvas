@@ -1,138 +1,161 @@
 
 
-# Fix: Sidebar Layout Breaking When Opened
+# Implementation Plan: Fix TWC Backfill & Invitation System
 
-## Problem
-When the sidebar is open and brands are expanded, the item counts (numbers) get pushed off the visible area or cut off. This happens because:
-1. The buttons use `justify-start` which pushes content to the left
-2. The count relies on `ml-auto` without proper flex constraints
-3. Long brand/collection names expand and push the count off-screen
+## Summary
 
-## Solution
-Apply the same pattern that works for collection items to ALL sidebar buttons:
-- Use `justify-between` for proper spacing
-- Wrap the name in a flex container with `min-w-0 flex-1` (allows truncation)
-- Add `shrink-0 tabular-nums` to counts (prevents compression)
+This plan addresses three critical data/process issues:
+1. **TWC items missing color data** - causing vertical blinds and awnings not to price
+2. **Invitation resend doesn't extend expiration** - Greg's invitation is expired
+3. **No visibility of expired status** - admins can't tell which invitations need renewal
 
 ---
 
-## Files to Modify
+## Task 1: Create Admin TWC Backfill Tool
 
-### `src/components/library/BrandCollectionsSidebar.tsx`
+### Purpose
+Allow System Owner/admin to run backfill for **all accounts** at once, without requiring each user to log in.
 
-**Change 1: "All Collections" button (lines 128-141)**
+### New Edge Function: `twc-admin-backfill`
 
-```tsx
-// BEFORE (line 128-141):
-<Button
-  variant={selectedBrand === null ? "secondary" : "ghost"}
-  className={cn(
-    "w-full justify-start h-9 px-3 text-sm font-medium",
-    selectedBrand === null && "bg-primary/10 text-primary"
-  )}
-  onClick={() => onSelectBrand(null)}
->
-  <FolderOpen className="h-4 w-4 mr-2 shrink-0" />
-  All Collections
-  <span className="ml-auto text-xs text-muted-foreground">
-    {totalCollections}
-  </span>
-</Button>
+**Location**: `supabase/functions/twc-admin-backfill/index.ts`
 
-// AFTER:
-<Button
-  variant={selectedBrand === null ? "secondary" : "ghost"}
-  className={cn(
-    "w-full justify-between h-9 px-3 text-sm font-medium gap-2",
-    selectedBrand === null && "bg-primary/10 text-primary"
-  )}
-  onClick={() => onSelectBrand(null)}
->
-  <span className="flex items-center gap-2 min-w-0 flex-1">
-    <FolderOpen className="h-4 w-4 shrink-0" />
-    <span className="truncate">All Collections</span>
-  </span>
-  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
-    {totalCollections}
-  </span>
-</Button>
+**Logic**:
+```text
+1. Verify caller is System Owner role (security check)
+2. Get all unique user_ids that have TWC items
+3. For each account:
+   - Run the same color extraction logic as twc-update-existing
+   - Extract primary color from TWC metadata
+   - Populate compatible_treatments based on subcategory
+   - Set pricing_method if missing
+4. Return summary: { accounts_processed, items_updated, primary_colors_set }
 ```
 
-**Change 2: Brand header button (lines 172-185)**
-
-```tsx
-// BEFORE (line 172-185):
-<Button
-  variant={isSelected ? "secondary" : "ghost"}
-  className={cn(
-    "flex-1 justify-start h-9 px-2 text-sm font-medium",
-    isSelected && "bg-primary/10 text-primary"
-  )}
-  onClick={() => onSelectBrand(brandId)}
->
-  <Building2 className="h-3.5 w-3.5 mr-2 shrink-0 text-muted-foreground" />
-  <span className="truncate">{brandName}</span>
-  <span className="ml-auto text-xs text-muted-foreground shrink-0">
-    {collectionCount}
-  </span>
-</Button>
-
-// AFTER:
-<Button
-  variant={isSelected ? "secondary" : "ghost"}
-  className={cn(
-    "flex-1 justify-between h-9 px-2 text-sm font-medium gap-2 min-w-0",
-    isSelected && "bg-primary/10 text-primary"
-  )}
-  onClick={() => onSelectBrand(brandId)}
->
-  <span className="flex items-center gap-2 min-w-0 flex-1">
-    <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-    <span className="truncate">{brandName}</span>
-  </span>
-  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
-    {collectionCount}
-  </span>
-</Button>
+**Config Update**: Add to `supabase/config.toml`:
+```toml
+[functions.twc-admin-backfill]
+verify_jwt = true
 ```
 
 ---
 
-## Key CSS Pattern
+## Task 2: Fix Invitation Resend to Extend Expiration
 
-The consistent pattern for all sidebar items:
+### Problem
+Current resend logic just re-sends the email with the same token but **doesn't extend `expires_at`**. This means:
+- Greg's invitation expired Jan 28
+- Clicking "Resend" still sends an expired token
+- User cannot accept the invitation
 
-```tsx
-<Button className="w-full justify-between gap-2">
-  {/* Left side: icon + name (allows truncation) */}
-  <span className="flex items-center gap-2 min-w-0 flex-1">
-    <Icon className="shrink-0" />
-    <span className="truncate">{name}</span>
-  </span>
-  
-  {/* Right side: count (never shrinks) */}
-  <span className="shrink-0 tabular-nums">
-    {count}
-  </span>
-</Button>
+### Solution (SaaS Standard Pattern)
+Before sending the invitation email, update the `expires_at` to 7 days from now.
+
+**File**: `src/hooks/useUserInvitations.ts`
+
+**Change** (in `useResendInvitation` around line 285):
+
+```typescript
+// BEFORE calling send-invitation, extend the expiration
+const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+const { error: updateError } = await supabase
+  .from("user_invitations")
+  .update({ expires_at: newExpiresAt })
+  .eq("id", invitation.id);
+
+if (updateError) {
+  console.error("Failed to extend invitation expiration:", updateError);
+  // Continue anyway - email will still be sent
+}
 ```
 
-- `justify-between`: Pushes count to right edge
-- `min-w-0 flex-1`: Allows name container to shrink below content size
-- `truncate`: Shows ellipsis when name is too long
-- `shrink-0`: Prevents count from being compressed
-- `tabular-nums`: Consistent number width for alignment
+This follows SaaS standards like:
+- **Slack**: Invitation links extend expiration when resent
+- **Notion**: "Resend invite" refreshes the link
+- **Linear**: "Send again" resets the timer
 
 ---
 
-## Also: TWC Color Backfill
+## Task 3: Show Expired Status in UI
 
-Run this in your browser console (while logged in):
+### Problem
+Admins can't visually distinguish between:
+- Active invitations (can still be accepted)
+- Expired invitations (need resend to work again)
 
-```javascript
-const { data, error } = await supabase.functions.invoke('twc-update-existing');
-console.log('Result:', data, error);
+### Solution
+Add expired detection and visual indicator in `PendingInvitations.tsx`
+
+**File**: `src/components/settings/user-management/PendingInvitations.tsx`
+
+**Changes**:
+
+1. Add expired detection:
+```typescript
+const isExpired = new Date(invitation.expires_at) < new Date();
 ```
 
-This populates missing color, compatible_treatments, and pricing_method for all TWC items.
+2. Show expired badge with red styling:
+```tsx
+{isExpired && (
+  <Badge variant="destructive" className="text-xs">
+    Expired
+  </Badge>
+)}
+```
+
+3. Update resend button tooltip for expired invitations:
+```tsx
+<Button
+  variant="ghost"
+  size="sm"
+  onClick={() => resendInvitation.mutate(invitation)}
+  title={isExpired ? "Renew & resend invitation" : "Resend invitation email"}
+>
+```
+
+4. Show expiration time:
+```tsx
+<div className="text-xs text-muted-foreground">
+  {isExpired ? (
+    <span className="text-destructive">Expired {formatDistanceToNow(new Date(invitation.expires_at))} ago</span>
+  ) : (
+    <span>Expires in {formatDistanceToNow(new Date(invitation.expires_at))}</span>
+  )}
+</div>
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/twc-admin-backfill/index.ts` | **CREATE** | Admin backfill for all accounts |
+| `supabase/config.toml` | **MODIFY** | Add new function config |
+| `src/hooks/useUserInvitations.ts` | **MODIFY** | Reset expiration on resend |
+| `src/components/settings/user-management/PendingInvitations.tsx` | **MODIFY** | Show expired status + expiry time |
+
+---
+
+## Expected Results After Implementation
+
+### For TWC Pricing Issues
+1. Admin (you) runs the new backfill from browser console:
+   ```javascript
+   await supabase.functions.invoke('twc-admin-backfill')
+   ```
+2. All 1,025 TWC items across 4 accounts get color data
+3. Vertical blinds + awnings start pricing correctly in Greg's account
+
+### For Greg's Invitation
+1. You'll see his invitation marked as **Expired** (red badge)
+2. Click resend → expiration extends by 7 days
+3. Greg receives fresh email and can now accept
+
+### UI Improvements
+- Clear visual distinction: Active (green/neutral) vs Expired (red)
+- Shows time remaining or time since expiry
+- Resend button works for both active and expired invitations
 
