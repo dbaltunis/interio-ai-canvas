@@ -12,6 +12,7 @@ import { FileText, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { getEffectiveOwnerForMutation } from '@/utils/getEffectiveOwnerForMutation';
 
 interface QuickInvoiceDialogProps {
   open: boolean;
@@ -43,8 +44,7 @@ export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceD
 
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       // Generate quote number if not provided
       const finalQuoteNumber = quoteNumber.trim() || `Q-${Date.now()}`;
@@ -52,7 +52,7 @@ export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceD
       const { error } = await supabase.from('quotes').insert({
         quote_number: finalQuoteNumber,
         client_id: client.id,
-        user_id: user.id,
+        user_id: effectiveOwnerId,
         total_amount: parseFloat(amount),
         subtotal: parseFloat(amount),
         notes: description,

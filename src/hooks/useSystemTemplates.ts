@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { getEffectiveOwnerForMutation } from '@/utils/getEffectiveOwnerForMutation';
 export interface SystemTemplate {
   id: string;
   name: string;
@@ -42,8 +42,7 @@ export const useCloneSystemTemplate = () => {
     }: { 
       systemTemplateId: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
       
       // Get the full system template
       const { data: template, error: fetchError } = await supabase
@@ -60,7 +59,7 @@ export const useCloneSystemTemplate = () => {
         .insert({
           ...template,
           id: undefined, // Let database generate new ID
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: `${template.name} (Custom)`,
           unit_price: template.unit_price,
           created_at: undefined,

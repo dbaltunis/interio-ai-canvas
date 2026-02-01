@@ -1,4 +1,3 @@
-
 /**
  * @deprecated This hook returned MOCK data and caused heading display failures.
  * Use useHeadingInventory() or useEnhancedInventoryByCategory('heading') instead.
@@ -12,6 +11,7 @@ import { useHeadingInventory } from "./useHeadingInventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface HeadingOption {
   id: string;
@@ -72,13 +72,12 @@ export const useCreateHeadingOption = () => {
   
   return useMutation({
     mutationFn: async (option: Omit<HeadingOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
       
       const { data, error } = await supabase
         .from('enhanced_inventory_items')
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: option.name,
           category: 'heading',
           subcategory: option.type || 'heading',

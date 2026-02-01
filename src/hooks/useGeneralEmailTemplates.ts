@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface EmailTemplate {
   id: string;
@@ -122,13 +123,12 @@ export const useCreateGeneralEmailTemplate = () => {
 
   return useMutation({
     mutationFn: async (template: Omit<EmailTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from('email_templates')
         .insert([{
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           template_type: template.template_type,
           subject: template.subject,
           content: template.content,
@@ -195,13 +195,12 @@ export const useDuplicateGeneralEmailTemplate = () => {
 
   return useMutation({
     mutationFn: async (template: EmailTemplate) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from('email_templates')
         .insert([{
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           template_type: `${template.template_type}_copy`,
           subject: `${template.subject} (Copy)`,
           content: template.content,

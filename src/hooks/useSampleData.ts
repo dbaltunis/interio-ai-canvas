@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toast } from "@/hooks/use-toast";
-
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 export const useSampleData = () => {
   const { user } = useAuth();
   const [isSeedingData, setIsSeedingData] = useState(false);
@@ -33,11 +33,13 @@ export const useSampleData = () => {
     setIsSeedingData(true);
 
     try {
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+      
       // Sample client
       const { data: client, error: clientError } = await supabase
         .from("clients")
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: "Sample Client - Residence",
           email: "sample@example.com",
           phone: "+1234567890",
@@ -59,7 +61,7 @@ export const useSampleData = () => {
       const { data: project, error: projectError } = await supabase
         .from("projects")
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           client_id: client.id,
           name: "Sample Project - Living Room Curtains",
           job_number: "SAMPLE-001",
@@ -74,7 +76,7 @@ export const useSampleData = () => {
 
       // Sample curtain template
       await supabase.from("curtain_templates").insert({
-        user_id: user.id,
+        user_id: effectiveOwnerId,
         name: "Sample Pencil Pleat Curtains",
         description: "Standard pencil pleat curtains with 2.0x fullness",
         heading_name: "Pencil Pleat",
@@ -89,7 +91,7 @@ export const useSampleData = () => {
 
       // Sample client for B2B
       await supabase.from("clients").insert({
-        user_id: user.id,
+        user_id: effectiveOwnerId,
         name: "Sample Corporate Client",
         company_name: "ABC Corporation",
         contact_person: "John Smith",
