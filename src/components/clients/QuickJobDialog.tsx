@@ -25,9 +25,10 @@ interface QuickJobDialogProps {
     name: string;
     email?: string;
   };
+  onProjectCreated?: (projectId: string) => void;
 }
 
-export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogProps) => {
+export const QuickJobDialog = ({ open, onOpenChange, client, onProjectCreated }: QuickJobDialogProps) => {
   const { user } = useAuth();
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
@@ -83,7 +84,7 @@ export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogPro
       // Generate job number
       const jobNumber = `J-${Date.now()}`;
       
-      const { error } = await supabase.from('projects').insert({
+      const { data, error } = await supabase.from('projects').insert({
         name: projectName,
         description: description || null,
         client_id: client.id,
@@ -91,14 +92,22 @@ export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogPro
         job_number: jobNumber,
         status: 'planning',
         priority: 'medium',
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Notify parent about created project (for navigation)
+      onProjectCreated?.(data.id);
 
       // Reset form and close dialog
       setProjectName('');
       setDescription('');
       onOpenChange(false);
+      
+      toast({
+        title: "Success",
+        description: "Project created successfully",
+      });
     } catch (error: any) {
       console.error('Error creating project:', error);
       toast({
