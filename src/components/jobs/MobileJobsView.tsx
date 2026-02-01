@@ -7,6 +7,7 @@ import { Eye, MoreVertical, Trash2, StickyNote, Copy, MapPin, DollarSign } from 
 import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
   const { data: quotes = [], isLoading } = useQuotes();
   const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();
+  const { data: jobStatuses = [] } = useJobStatuses();
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
   const userCurrency = useUserCurrency();
@@ -141,7 +143,11 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     
     // Filter by status
     if (statusFilter === 'all') return true;
-    return group.project.status === statusFilter;
+    
+    // Look up the actual status name via status_id (custom per-user statuses)
+    if (!group.project?.status_id) return false;
+    const projectStatus = jobStatuses.find(s => s.id === group.project.status_id);
+    return projectStatus?.name?.toLowerCase() === statusFilter.toLowerCase();
   });
 
   if (isLoading) {
