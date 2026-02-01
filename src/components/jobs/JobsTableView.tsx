@@ -355,7 +355,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     }
     
     if (statusFilter === 'all') return true;
-    return group.project?.status === statusFilter;
+    return group.project?.status?.toLowerCase() === statusFilter.toLowerCase();
   }) as Array<{ project: any; quotes: any[]; isMatch: boolean }>;
 
   // Pagination logic  
