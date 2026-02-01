@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -136,9 +135,9 @@ export const BrandCollectionsSidebar = ({
           >
             <FolderOpen className="h-4 w-4 mr-2 shrink-0" />
             All Collections
-            <Badge variant="secondary" className="ml-auto text-xs">
+            <span className="ml-auto text-xs text-muted-foreground">
               {totalCollections}
-            </Badge>
+            </span>
           </Button>
 
           {/* Brand list */}
@@ -180,12 +179,9 @@ export const BrandCollectionsSidebar = ({
                   >
                     <Building2 className="h-3.5 w-3.5 mr-2 shrink-0 text-muted-foreground" />
                     <span className="truncate">{brandName}</span>
-                    <Badge 
-                      variant="secondary" 
-                      className="ml-auto text-xs shrink-0"
-                    >
+                    <span className="ml-auto text-xs text-muted-foreground shrink-0">
                       {collectionCount}
-                    </Badge>
+                    </span>
                   </Button>
                 </div>
 
