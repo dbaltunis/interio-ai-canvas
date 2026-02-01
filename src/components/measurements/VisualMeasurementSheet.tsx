@@ -967,7 +967,15 @@ export const VisualMeasurementSheet = ({
                   'lf', 'lf twill', 'twill', 'translucent', 'opaque', 'recycled',
                   'fire retardant', 'fire-retardant', 'antibacterial', 'antimicrobial',
                   'motorised', 'motorized', 'manual', 'spring', 'chain', 'cord',
-                  'indoor', 'outdoor', 'exterior', 'interior', 'commercial', 'residential'
+                  'indoor', 'outdoor', 'exterior', 'interior', 'commercial', 'residential',
+                  // TWC-specific marketing/functional tags
+                  'budget', 'premium', 'economy', 'luxury', 'sale', 'clearance',
+                  'new', 'bestseller', 'featured', 'exclusive', 'limited',
+                  'sample', 'swatch', 'showroom', 'display', 'demo',
+                  'made to measure', 'custom', 'bespoke', 'tailored',
+                  'group', 'group 1', 'group 2', 'group 3', 'group 4', 'group 5', 'group 6',
+                  'pvc free', 'pvc-free', 'eco', 'sustainable', 'greenguard',
+                  'double', 'single', 'lined', 'unlined', 'heading', 'track'
                 ];
                 
                 // Helper to filter out non-color tags
