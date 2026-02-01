@@ -1,97 +1,110 @@
 
-# Fix Status Filtering - Use status_id for Custom Statuses
+# Wall/Wallpaper Investigation & Improvement Plan
 
-## Problem Identified
+## Investigation Results
 
-The filtering compares the **wrong fields**:
+### How Wallpaper Currently Works
 
-| Component | What it sends | What table compares against |
-|-----------|---------------|----------------------------|
-| `JobsFilter.tsx` | `status.name.toLowerCase()` → `"lead"` | `project.status` → `"planning"` (legacy) |
+The wallpaper flow is designed around these components:
 
-### Database Evidence
+1. **Window Type Selection** (`WindowTypeSelector.tsx`)
+   - User chooses between "Standard Window" or "Wall"
+   - Wall selection sets `visual_key = 'room_wall'`
+
+2. **Treatment Filtering** (`ImprovedTreatmentSelector.tsx`)
+   - When "Wall" is selected → show ONLY wallpaper templates
+   - When "Standard Window" → show all treatments EXCEPT wallpapers
+
+3. **Detection Logic** (`treatmentTypeDetection.ts`)
+   - Checks `curtain_type` and `treatment_category` fields
+   - Returns `'wallpaper'` for wallpaper templates
+
+### Critical Bug Found
+
+There's a filtering mismatch causing wallpapers to potentially not appear:
 
 ```text
-projects table:
-- status (legacy): "planning", "Approved", "CLOSED"  ← OLD field, inconsistent
-- status_id: "c2751aaa-..."                          ← NEW field, links to job_statuses
-
-job_statuses table:
-- id: "c2751aaa-..."
-- name: "Draft", "Lead", "Quote Sent"               ← Per-user custom names
+Code checks for:     treatment_category === 'wallpapers' (plural)
+Database contains:   treatment_category = 'wallpaper' (singular)
+Detection returns:   'wallpaper' (singular)
 ```
 
-The `project.status` is a legacy text field with old values. The **real status** is in `project.status_id`, which links to the user's custom `job_statuses.name`.
+This means when a user selects "Wall", the treatment list may show empty because the comparison fails.
 
 ---
 
-## Root Cause
+## Proposed Changes
 
-1. **Filter dropdown** uses custom status names from `job_statuses` table (e.g., "Lead")
-2. **Table filtering** compares against legacy `project.status` field (e.g., "planning")
-3. These values **never match** → empty results
+### 1. Fix Wallpaper Filtering Bug
 
-The archived filter already works correctly because it uses `status_id` lookup (lines 351-354). The regular status filter doesn't.
+**File:** `src/components/measurements/treatment-selection/ImprovedTreatmentSelector.tsx`
 
----
+Update the filter to use `detectTreatmentType` function which properly handles all wallpaper variants:
 
-## Solution
-
-Change the filtering logic to look up the status name via `status_id`, just like the archived filter does:
-
-### File 1: `src/components/jobs/JobsTableView.tsx`
-
-**Line 358 - Current (broken):**
 ```typescript
-return group.project?.status?.toLowerCase() === statusFilter.toLowerCase();
+// Before
+if (visualKey === 'room_wall') {
+  return template.treatment_category === 'wallpapers'; // Wrong!
+}
+
+// After  
+if (visualKey === 'room_wall') {
+  return detectTreatmentType(template) === 'wallpaper'; // Correct
+}
 ```
 
-**Fixed:**
+### 2. Hide "Wall" When No Wallpaper Templates Exist
+
+**File:** `src/components/window-types/WindowTypeSelector.tsx`
+
+- Fetch user's curtain templates
+- Check if ANY template is detected as wallpaper using `detectTreatmentType`
+- If no wallpaper templates exist, filter out the "Wall" (`room_wall`) window type from the display
+
 ```typescript
-// Look up the actual status name via status_id (custom per-user statuses)
-if (!group.project?.status_id) return false;
-const projectStatus = jobStatuses.find(s => s.id === group.project.status_id);
-return projectStatus?.name?.toLowerCase() === statusFilter.toLowerCase();
+// Filter out room_wall if user has no wallpaper templates
+const hasWallpaperTemplates = curtainTemplates.some(
+  t => detectTreatmentType(t) === 'wallpaper'
+);
+
+const displayedWindowTypes = hasWallpaperTemplates 
+  ? windowTypes 
+  : windowTypes.filter(wt => wt.visual_key !== 'room_wall');
 ```
 
-### File 2: `src/components/jobs/MobileJobsView.tsx`
+### 3. Auto-Select Window When Only One Option
 
-**Line 144 - Current (broken):**
+**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`
+
+When only one window type is available (Standard Window only):
+- Auto-select it immediately
+- Skip to the "Treatment" tab automatically
+
 ```typescript
-return group.project.status === statusFilter;
+// After fetching window types, if only one exists:
+if (filteredWindowTypes.length === 1 && !selectedWindowType) {
+  setSelectedWindowType(filteredWindowTypes[0]);
+  setActiveTab('treatment'); // Skip window selection step
+}
 ```
-
-**Fixed:**
-```typescript
-// Look up the actual status name via status_id (custom per-user statuses)
-if (!group.project?.status_id) return false;
-const projectStatus = jobStatuses.find(s => s.id === group.project.status_id);
-return projectStatus?.name?.toLowerCase() === statusFilter.toLowerCase();
-```
-
----
-
-## Why This Works with Custom Statuses
-
-| User Action | Filter Value | status_id Lookup | Match? |
-|-------------|-------------|------------------|--------|
-| Select "Lead" | `"lead"` | Finds `job_statuses.name = "Lead"` via `status_id` | ✅ Yes |
-| Select "Draft" | `"draft"` | Finds `job_statuses.name = "Draft"` via `status_id` | ✅ Yes |
-| Select custom status | `"custom name"` | Finds matching custom status | ✅ Yes |
-
-The `useJobStatuses()` hook already fetches only the current user's custom statuses, so the lookup will correctly match their defined workflow.
 
 ---
 
 ## Files to Modify
 
-| File | Line | Change |
-|------|------|--------|
-| `src/components/jobs/JobsTableView.tsx` | 358 | Use `status_id` lookup instead of legacy `status` field |
-| `src/components/jobs/MobileJobsView.tsx` | 144 | Use `status_id` lookup instead of legacy `status` field |
+| File | Change |
+|------|--------|
+| `src/components/measurements/treatment-selection/ImprovedTreatmentSelector.tsx` | Fix wallpaper filtering to use detection function |
+| `src/components/window-types/WindowTypeSelector.tsx` | Hide "Wall" option when no wallpaper templates exist |
+| `src/components/measurements/DynamicWindowWorksheet.tsx` | Auto-select single window type and skip to treatments |
 
 ---
 
-## Edge Case: Projects Without status_id
+## Technical Notes
 
-Some older projects may not have a `status_id` set. The fix handles this by returning `false` (no match) for those projects when filtering by a specific status. They will still appear when "All Statuses" is selected.
+- The `detectTreatmentType()` function handles multiple detection methods:
+  - `curtain_type === 'wallpaper'`
+  - `treatment_category === 'wallpaper'` 
+  - Template name containing "wallpaper"
+- This ensures robust detection regardless of how the template was configured
+- Existing user data and preferences will not be affected
