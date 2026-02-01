@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
+import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare, Loader2 } from "lucide-react";
 import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useNavigate } from "react-router-dom";
@@ -160,12 +160,8 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
       const targetUrl = `/?tab=projects&jobId=${newProject.id}`;
       console.log('[CLIENT] Navigating to:', targetUrl);
       navigate(targetUrl);
-      console.log('[CLIENT] Navigate called, checking if onTabChange exists:', !!onTabChange);
-      
-      if (onTabChange) {
-        console.log('[CLIENT] Calling onTabChange with projects');
-        onTabChange('projects');
-      }
+      // Note: Don't call onTabChange here - navigate() already handles URL params
+      // Calling onTabChange would overwrite the URL and remove the jobId param
 
       toast({
         title: "Success",
@@ -202,7 +198,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
             <p className="text-xs text-muted-foreground mb-2">No projects yet</p>
             {hasCreateJobsPermission && (
               <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="h-6 text-[10px] px-2">
-                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" /> : <Plus className="h-2.5 w-2.5 mr-1" />}
                 {isCreating ? "..." : "New"}
               </Button>
             )}
@@ -257,7 +253,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
             )}
             {hasCreateJobsPermission && (
               <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="w-full h-6 text-[10px] mt-1">
-                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" /> : <Plus className="h-2.5 w-2.5 mr-1" />}
                 {isCreating ? "Creating..." : "New Project"}
               </Button>
             )}
@@ -282,7 +278,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
           </div>
           {hasCreateJobsPermission && (
             <Button size="sm" onClick={handleCreateProject} disabled={isCreating} className="h-7 text-xs">
-              <Plus className="h-3.5 w-3.5 mr-1" />
+              {isCreating ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
               {isCreating ? "Creating..." : "New"}
             </Button>
           )}
@@ -296,7 +292,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
             <p className="empty-state-text text-xs">Start your first project with this client</p>
             {hasCreateJobsPermission && (
               <Button className="mt-3" variant="outline" size="sm" onClick={handleCreateProject} disabled={isCreating}>
-                <Plus className="h-3.5 w-3.5 mr-1" />
+                {isCreating ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
                 {isCreating ? "Creating..." : "Create First Project"}
               </Button>
             )}
