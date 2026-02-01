@@ -79,13 +79,19 @@ const ITEMS_PER_PAGE = 20;
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleColumns, filteredQuotes, filteredProjects, canDeleteJobs: canDeleteJobsProp }: JobsTableViewProps) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const { data: allQuotes = [], isLoading, refetch } = useQuotes();
-  const { data: allProjects = [] } = useProjects();
+  // CRITICAL: Only fetch data locally if parent does NOT provide filtered data
+  // When parent provides filtered data, it means permission-based filtering is active
+  // Re-fetching here would bypass permission filtering and show wrong data
+  const { data: allQuotes = [], isLoading, refetch } = useQuotes(undefined, {
+    enabled: filteredQuotes === undefined
+  });
+  const { data: allProjectsData = [] } = useProjects({
+    enabled: filteredProjects === undefined
+  });
   
-  // Use filtered data if provided, otherwise use all data
-  // IMPORTANT: If filtered data is provided, it means permissions require filtering
+  // Use filtered data if provided (permission-based), otherwise use locally fetched data
   const quotes = filteredQuotes !== undefined ? filteredQuotes : allQuotes;
-  const projects = filteredProjects !== undefined ? filteredProjects : allProjects;
+  const projects = filteredProjects !== undefined ? filteredProjects : allProjectsData;
   
   // Debug logging
   useEffect(() => {
