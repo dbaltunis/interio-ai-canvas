@@ -1,89 +1,106 @@
 
-# Fix: Team Assignment Job Visibility for Staff Members
+
+# Critical Fix: Staff Cannot See Pricing Data - RLS Policy Bug
 
 ## Problem Summary
 
-Staff members (like Daniel) who are assigned to projects via "Invite Team" cannot see their assigned jobs in the Jobs list, even though:
-- ✅ Database correctly stores `is_active: true` in `project_assignments`
-- ✅ RLS policies allow staff to see projects they're assigned to
-- ✅ The `useMyProjectAssignments` hook returns correct data
+Staff members (like Daniel) who are assigned to projects via "Invite Team" can see the job in the Jobs list, but **cannot see any pricing data** inside the job. All windows show "No pricing data available."
 
 ## Root Cause Analysis
 
-The issue is a **frontend race condition** in `JobsPage.tsx`:
+**TWO CRITICAL ISSUES IDENTIFIED:**
 
-```typescript
-// Line 214 - Assignment data defaults to empty array
-const { data: myAssignedProjectIds = [] } = useMyProjectAssignments();
+### Issue 1: Broken RLS Policy on `windows_summary` Table
 
-// Line 217-274 - Filtering happens immediately, even before assignments load
-const { filteredProjects, filteredQuotes } = useMemo(() => {
-  if (!shouldFilterByAssignment || !user) {
-    return { filteredProjects: allProjects, filteredQuotes: allQuotes };
-  }
-  
-  // When myAssignedProjectIdSet is empty (still loading), ALL projects get filtered out!
-  const isDirectlyAssigned = myAssignedProjectIdSet.has(project.id); // Always false
-  // ...
-}, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user, myAssignedProjectIdSet, myAssignedProjectIds.length]);
+The SELECT policy on `windows_summary` contains a critical logic error:
+
+```sql
+-- CURRENT (BROKEN):
+OR (has_permission('view_assigned_jobs'::text) AND (p.user_id = auth.uid()))
 ```
 
-**Timeline of the bug:**
-1. User navigates to Jobs page
-2. `myAssignedProjectIds = []` (default empty array)
-3. `shouldFilterByAssignment = true` (for staff with `view_assigned_jobs`)
-4. Filtering runs → `myAssignedProjectIdSet` is empty → ALL projects filtered OUT
-5. Even when `myAssignedProjectIds` loads with data, the user already sees "No jobs"
-6. The `useMemo` SHOULD recalculate, but there may be a React state update issue
+This incorrectly requires the user to **OWN** the project (`p.user_id = auth.uid()`), which defeats the entire purpose of the assignment check. Staff members never own projects - they're assigned to them.
+
+**Should be:**
+```sql
+-- CORRECT:
+OR (has_permission('view_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
+```
+
+The same bug exists in the UPDATE policy (missing assignment check entirely).
+
+### Issue 2: Missing Surface from Data Restoration
+
+My earlier restoration script failed to restore one surface:
+- **Room 1 Window 1** (ID: `f1487737-0b86-4abf-addf-010b85618a43`) is MISSING
+- The `workshop_items` and `windows_summary` records exist but reference a non-existent surface
+
+---
 
 ## Solution
 
-### Part 1: Add Loading State Guard to Filtering Logic
+### Part 1: Fix `windows_summary` RLS Policies
 
-Extract `isLoading` from `useMyProjectAssignments` and prevent filtering until data is ready:
+Drop and recreate the SELECT and UPDATE policies with correct assignment logic:
 
-**File:** `src/components/jobs/JobsPage.tsx`
+```sql
+-- Fix SELECT policy
+DROP POLICY IF EXISTS "Permission-based windows_summary SELECT" ON windows_summary;
 
-```typescript
-// BEFORE:
-const { data: myAssignedProjectIds = [] } = useMyProjectAssignments();
+CREATE POLICY "Permission-based windows_summary SELECT" ON windows_summary
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM surfaces s
+    JOIN projects p ON s.project_id = p.id
+    WHERE s.id = windows_summary.window_id
+    AND is_same_account(p.user_id)
+    AND (
+      get_user_role(auth.uid()) = ANY (ARRAY['System Owner'::text, 'Owner'::text])
+      OR is_admin()
+      OR has_permission('view_all_jobs'::text)
+      OR p.user_id = auth.uid()
+      -- FIXED: Check assignment, not ownership
+      OR (has_permission('view_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
+    )
+  )
+);
 
-// AFTER:
-const { data: myAssignedProjectIds = [], isLoading: assignmentsLoading } = useMyProjectAssignments();
+-- Fix UPDATE policy
+DROP POLICY IF EXISTS "Permission-based windows_summary UPDATE" ON windows_summary;
 
-// In the filtering useMemo:
-const { filteredProjects, filteredQuotes } = useMemo(() => {
-  // CRITICAL: Wait for assignment data before filtering
-  // Return all data while loading to prevent flash of empty state
-  if (assignmentsLoading && shouldFilterByAssignment) {
-    console.log('[JOBS] Filtering - Waiting for assignment data to load');
-    return { filteredProjects: allProjects, filteredQuotes: allQuotes };
-  }
-  
-  // ... rest of filtering logic
-}, [..., assignmentsLoading]);
+CREATE POLICY "Permission-based windows_summary UPDATE" ON windows_summary
+FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM surfaces s
+    JOIN projects p ON s.project_id = p.id
+    WHERE s.id = windows_summary.window_id
+    AND is_same_account(p.user_id)
+    AND (
+      get_user_role(auth.uid()) = ANY (ARRAY['System Owner'::text, 'Owner'::text])
+      OR is_admin()
+      OR has_permission('edit_all_jobs'::text)
+      OR p.user_id = auth.uid()
+      -- FIXED: Add assignment check for staff
+      OR (has_permission('edit_assigned_jobs'::text) AND user_is_assigned_to_project(p.id))
+    )
+  )
+);
 ```
 
-### Part 2: Add Loading Indicator for Better UX
+### Part 2: Restore Missing Surface
 
-Show a loading skeleton while assignments are being fetched for staff members:
+Insert the missing Window 1 in Room 1:
 
-```typescript
-// Add to loading conditions at line 282
-if (quotesLoading || roleLoading || isDealerLoading || permissionsLoading || (shouldFilterByAssignment && assignmentsLoading)) {
-  return <JobsPageSkeleton />;
-}
-```
-
-### Part 3: Add refetchOnWindowFocus to useQuotes (Consistency)
-
-Ensure quotes also refresh when user returns to the tab:
-
-**File:** `src/hooks/useQuotes.ts`
-
-```typescript
-// Line 58-60 - Change from false to true
-refetchOnWindowFocus: true,  // CHANGED: Keep sync with assignments
+```sql
+INSERT INTO surfaces (id, name, project_id, room_id, surface_type, user_id)
+VALUES (
+  'f1487737-0b86-4abf-addf-010b85618a43',
+  'Window 1',
+  '113a5360-eb1a-42bc-bff0-909821b9305b',
+  '6ba3a29a-e702-4bc0-9a5e-c50a9904733c',
+  'window',
+  'b0c727dd-b9bf-4470-840d-1f630e8f2b26'
+) ON CONFLICT (id) DO NOTHING;
 ```
 
 ---
@@ -92,70 +109,46 @@ refetchOnWindowFocus: true,  // CHANGED: Keep sync with assignments
 
 | File | Changes |
 |------|---------|
-| `src/components/jobs/JobsPage.tsx` | Extract `isLoading` from `useMyProjectAssignments`; add loading guard to filtering logic; add to loading conditions |
-| `src/hooks/useQuotes.ts` | Change `refetchOnWindowFocus` from `false` to `true` |
+| SQL Migration | Fix windows_summary SELECT and UPDATE policies; restore missing surface |
 
 ---
 
-## Technical Details
+## Technical Root Cause
 
-### Why This Fixes the Issue
+The original policy was written with incorrect logic:
 
-**Before Fix:**
 ```text
-Page load → myAssignedProjectIds = [] → Filter runs immediately
-  → All projects filtered OUT → Empty UI
-  → Data loads (but damage already done)
+INTENDED: "Staff with view_assigned_jobs can see windows_summary for projects they're ASSIGNED to"
+ACTUAL:   "Staff with view_assigned_jobs can see windows_summary for projects they OWN"
+
+Since staff never OWN projects (they're assigned), this condition ALWAYS fails.
 ```
 
-**After Fix:**
-```text
-Page load → myAssignedProjectIds = [] → assignmentsLoading = true
-  → Filter skips filtering, returns ALL projects
-  → Data loads → assignmentsLoading = false
-  → Filter runs with correct data → Staff sees assigned jobs
-```
+---
 
-### Loading State Flow
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Page Load                                               │
-├─────────────────────────────────────────────────────────┤
-│ 1. assignmentsLoading = true                            │
-│ 2. shouldFilterByAssignment = true (for staff)         │
-│ 3. Filtering logic: Show loading OR show all projects  │
-│ 4. Assignment data loads                                │
-│ 5. assignmentsLoading = false                           │
-│ 6. Filtering runs correctly with full data              │
-│ 7. Staff sees only their assigned jobs                  │
-└─────────────────────────────────────────────────────────┘
-```
+## Expected Outcome After Fix
+
+| Test Case | Before | After |
+|-----------|--------|-------|
+| Daniel (Staff) views assigned project | "No pricing data" | Sees all pricing |
+| Daniel (Staff) views unassigned project | No access | No access (correct) |
+| Owner views own project | Sees pricing | Sees pricing (unchanged) |
+| Admin views any project | Sees pricing | Sees pricing (unchanged) |
 
 ---
 
 ## Testing Checklist
 
-1. **Staff Login Test**
+1. **Staff Visibility Test**
    - Log in as Daniel (Staff role)
-   - Navigate to Jobs page
-   - Verify assigned jobs appear in the list (e.g., "New Job 1/20/2026")
+   - Navigate to assigned project
+   - Verify pricing data displays for ALL windows
 
-2. **Assignment Update Test**
-   - As Admin: Assign Daniel to a new project
-   - As Daniel: Switch to Jobs tab or refresh
-   - Verify new project appears
+2. **Window Count Verification**
+   - Verify Room 1 shows 3 windows (Window 1, Window 2, Window 4)
+   - Verify Room 2 shows 2 windows (Window 1, Window 2)
+   - Total: 5 windows with pricing
 
-3. **Removal Test**
-   - As Admin: Remove Daniel from a project via "Limit Access"
-   - As Daniel: Switch to Jobs tab or refresh
-   - Verify removed project no longer appears
-
-4. **Owner/Admin Test (No Regression)**
-   - Log in as Owner/Admin
-   - Verify ALL jobs are visible (no filtering applied)
-   - Verify no performance regression
-
-5. **Page Refresh Test**
-   - As Staff: Hard refresh the Jobs page
-   - Verify jobs appear immediately (no empty flash)
+3. **Security Test**
+   - Verify Daniel CANNOT see pricing for projects he's NOT assigned to
 
