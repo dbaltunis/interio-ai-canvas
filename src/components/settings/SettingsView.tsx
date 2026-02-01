@@ -47,32 +47,7 @@ export const SettingsView = () => {
   const { user } = useAuth();
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
-  const [isRunningBackfill, setIsRunningBackfill] = useState(false);
-  const [backfillResult, setBackfillResult] = useState<any>(null);
 
-  const runTwcBackfill = async () => {
-    setIsRunningBackfill(true);
-    setBackfillResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('twc-admin-backfill');
-      if (error) throw error;
-      setBackfillResult(data);
-      toast({ 
-        title: "Backfill Complete", 
-        description: `Processed ${data?.accounts_processed || 0} accounts`,
-        importance: 'important'
-      });
-    } catch (err: any) {
-      console.error('[TWC Backfill] Error:', err);
-      toast({ 
-        title: "Backfill Error", 
-        description: err.message || 'Unknown error occurred', 
-        variant: "destructive" 
-      });
-    } finally {
-      setIsRunningBackfill(false);
-    }
-  };
   const location = useLocation();
   const navigate = useNavigate();
   const locationState = location.state as LocationState | null;
@@ -340,40 +315,6 @@ export const SettingsView = () => {
   }
 
   return <div className="space-y-6 animate-fade-in">
-      {/* Admin Tools - System Owner Only */}
-      {userRoleData?.isSystemOwner && (
-        <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-orange-800 dark:text-orange-300 flex items-center gap-2">
-              🔧 Admin Tools
-            </CardTitle>
-            <CardDescription>System Owner administrative actions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button 
-                onClick={runTwcBackfill}
-                disabled={isRunningBackfill}
-                variant="warning"
-              >
-                {isRunningBackfill ? "Running Backfill..." : "Run TWC Color Backfill"}
-              </Button>
-              {isRunningBackfill && (
-                <span className="text-sm text-muted-foreground">Processing all accounts...</span>
-              )}
-            </div>
-            {backfillResult && (
-              <div className="mt-4 p-4 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="font-medium text-green-800 dark:text-green-300 mb-2">✅ Backfill Complete</p>
-                <pre className="text-xs text-green-700 dark:text-green-400 overflow-auto max-h-64">
-                  {JSON.stringify(backfillResult, null, 2)}
-                </pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <SettingsGroupedNavigation
           activeTab={activeTab}
