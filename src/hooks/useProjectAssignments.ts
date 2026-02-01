@@ -246,6 +246,9 @@ export const useAssignUserToProject = () => {
       queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.project_id] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      // Invalidate assignment-based visibility queries for all users
+      queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast({
         title: "Success",
         description: "Team member assigned to project",
@@ -332,6 +335,9 @@ export const useRemoveUserFromProject = () => {
       queryClient.invalidateQueries({ queryKey: ["project-assignments", data.projectId] });
       queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.projectId] });
+      // Invalidate assignment-based visibility queries for all users
+      queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast({
         title: "Success",
         description: "Team member removed from project",

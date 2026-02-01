@@ -29,5 +29,8 @@ export const useMyProjectAssignments = () => {
     },
     enabled: !!user,
     staleTime: 30 * 1000, // 30 seconds
+    // Auto-refresh to keep visibility in sync when user switches tabs
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
