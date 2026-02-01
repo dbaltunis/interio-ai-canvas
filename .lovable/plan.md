@@ -1,89 +1,64 @@
 
 
-# Simple Fix: Add TWC Backfill Button to Settings
+# Plan: Remove Admin Button + End-to-End Testing
 
-## What I'll Do
+## Summary
 
-Add a visible button in your Settings page that runs the TWC backfill with **one click**. No console commands needed.
+The TWC backfill ran successfully and updated data across all 4 Australian client accounts. Now I'll remove the temporary admin button and verify the calculation fixes are working correctly.
 
 ---
 
-## Implementation
+## Verified Backfill Results
 
-### Add Admin Tools Section to Settings
+| Metric | Value |
+|--------|-------|
+| Accounts processed | 4 |
+| Total TWC items | 1,025 |
+| Items with color | 152 (14.8%) |
+| Items updated | 54 |
+| Compatible treatments set | All 1,025 |
+| Pricing methods set | All 1,025 |
+
+**Note**: The 873 items without color don't have color data in TWC's source system - this is expected and correct.
+
+---
+
+## Step 1: Remove Admin Tools Button
 
 **File**: `src/components/settings/SettingsView.tsx`
 
-I'll add a new admin section that only appears for System Owners with a button to run the backfill:
+Remove the temporary Admin Tools section (lines 49-72 and 343-376):
 
-```tsx
-// New component at the top of Settings for System Owners
-{userRoleData?.isSystemOwner && (
-  <Card className="border-orange-200 bg-orange-50">
-    <CardHeader>
-      <CardTitle className="text-orange-800">🔧 Admin Tools</CardTitle>
-      <CardDescription>System Owner administrative actions</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <Button 
-        onClick={runTwcBackfill}
-        disabled={isRunningBackfill}
-      >
-        {isRunningBackfill ? "Running..." : "Run TWC Color Backfill"}
-      </Button>
-      {backfillResult && (
-        <div className="mt-4 p-3 bg-green-100 rounded">
-          <pre>{JSON.stringify(backfillResult, null, 2)}</pre>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-)}
-```
-
-The button handler:
-```tsx
-const [isRunningBackfill, setIsRunningBackfill] = useState(false);
-const [backfillResult, setBackfillResult] = useState(null);
-
-const runTwcBackfill = async () => {
-  setIsRunningBackfill(true);
-  try {
-    const { data, error } = await supabase.functions.invoke('twc-admin-backfill');
-    if (error) throw error;
-    setBackfillResult(data);
-    toast({ title: "Backfill Complete", description: `Processed ${data.accounts_processed} accounts` });
-  } catch (err) {
-    toast({ title: "Error", description: err.message, variant: "destructive" });
-  } finally {
-    setIsRunningBackfill(false);
-  }
-};
-```
+- Remove state variables: `isRunningBackfill`, `backfillResult`
+- Remove `runTwcBackfill` function
+- Remove the Admin Tools Card component
 
 ---
 
-## What Happens When You Click
+## Step 2: Verify Calculations Work End-to-End
 
-1. Button sends authenticated request to `twc-admin-backfill`
-2. Edge function processes all 4 accounts (~1,000 TWC items)
-3. Results display in the UI showing items updated
-4. No console needed!
+After removing the button, I'll run browser automation to test the calculation system is working correctly for your Australian clients:
+
+1. Open the app and navigate to the worksheets/calculator
+2. Test fabric cost calculations with TWC products
+3. Verify the pricing grid system is working
+4. Confirm compatible treatments are filtering correctly
 
 ---
 
 ## Files to Modify
 
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/components/settings/SettingsView.tsx` | Add admin tools section with backfill button |
+| `src/components/settings/SettingsView.tsx` | Remove admin tools section (temporary code) |
 
 ---
 
-## After This
+## Expected Outcome
 
-1. Go to Settings in the preview or your production app
-2. You'll see an orange **"Admin Tools"** card at the top
-3. Click **"Run TWC Color Backfill"**
-4. See results directly in the UI
+1. Settings page returns to normal (no admin button)
+2. TWC products work correctly in worksheets with:
+   - Proper color filtering
+   - Correct treatment associations
+   - Working pricing calculations
 
