@@ -1,136 +1,63 @@
 
+# Plan: Fix React Hooks Violation in JobDetailPage.tsx
 
-# Plan: Fix Team Assignment Visibility Bug
+## Problem Identified
 
-## Problem Summary
-
-Team members assigned to projects via the "Invite team" workflow are **not seeing the jobs** in their Jobs list, even though:
-- The assignment is correctly saved to `project_assignments` table
-- RLS policy correctly includes `user_is_assigned_to_project(id)` check
-- User has `view_assigned_jobs` permission
+The app is crashing with **React Error #310: "Rendered fewer hooks than expected"**. This is a critical Rules of Hooks violation.
 
 ## Root Cause
 
-**Frontend filtering ignores `project_assignments` table entirely.** 
-
-Both `JobsPage.tsx` and `JobDetailPage.tsx` have a filtering mechanism that removes projects from view unless:
-1. User created the project (`project.user_id === user.id`), OR
-2. User is assigned to the client (`client.assigned_to === user.id`)
-
-The team assignment system uses `project_assignments` table, but this table is **never checked** in the frontend filtering logic.
-
-## Technical Details
-
-### Current (Broken) Logic in JobsPage.tsx
+In `src/components/jobs/JobDetailPage.tsx`, the `useIsUserAssigned` hook (line 246) is being called **after** conditional returns:
 
 ```typescript
-// Lines 229-244 - WRONG
-const assignedProjects = allProjects.filter((project) => {
-  const isCreatedByUser = project.user_id === user.id;
-  const isClientAssignedToUser = project.client_id && assignedClientIds.has(project.client_id);
-  return isCreatedByUser || isClientAssignedToUser; // ❌ Missing project_assignments check!
-});
-```
+// Line 221: Early return for loading
+if (projectLoading || permissionsLoading || ...) {
+  return <JobSkeleton />;  // ❌ Hook below this is skipped!
+}
 
-### Same Issue in JobDetailPage.tsx
+// Line 226: Early return for no permission  
+if (!canViewJobsExplicit) {
+  return <div>Access Denied</div>;  // ❌ Hook below this is skipped!
+}
 
-```typescript
-// Lines 248-255 - WRONG
-const isCreatedByUser = project.user_id === user.id;
-const isClientAssignedToUser = client?.assigned_to === user.id;
-const isAssigned = isCreatedByUser || isClientAssignedToUser; // ❌ Missing project_assignments check!
-```
-
-## Solution
-
-### Step 1: Add hook to fetch user's project assignments
-
-Create a new hook that fetches all projects the current user is assigned to:
-
-```typescript
-// src/hooks/useMyProjectAssignments.ts
-export const useMyProjectAssignments = () => {
-  const { user } = useAuth();
-  
-  return useQuery({
-    queryKey: ["my-project-assignments", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      const { data, error } = await supabase
-        .from("project_assignments")
-        .select("project_id")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-      
-      if (error) throw error;
-      return data?.map(a => a.project_id) || [];
-    },
-    enabled: !!user,
-  });
-};
-```
-
-### Step 2: Update JobsPage.tsx filtering
-
-Modify the filtering logic to include project assignments:
-
-```typescript
-// Add import
-import { useMyProjectAssignments } from "@/hooks/useMyProjectAssignments";
-
-// Fetch assigned project IDs
-const { data: myAssignedProjectIds = [] } = useMyProjectAssignments();
-const assignedProjectIdSet = new Set(myAssignedProjectIds);
-
-// Update filtering logic (lines 229-244)
-const assignedProjects = allProjects.filter((project) => {
-  const isCreatedByUser = project.user_id === user.id;
-  const isClientAssignedToUser = project.client_id && assignedClientIds.has(project.client_id);
-  const isDirectlyAssigned = assignedProjectIdSet.has(project.id); // ✅ NEW CHECK
-  return isCreatedByUser || isClientAssignedToUser || isDirectlyAssigned;
-});
-```
-
-### Step 3: Update JobDetailPage.tsx access check
-
-Modify the access check to include project assignments:
-
-```typescript
-// Add import
-import { useIsUserAssigned } from "@/hooks/useProjectAssignments";
-
-// Check if user is directly assigned to this project
+// Line 246: Hook called AFTER conditional returns - VIOLATION!
 const { data: isDirectlyAssigned = false } = useIsUserAssigned(project?.id, user?.id);
+```
 
-// Update access check (lines 248-255)
-const isCreatedByUser = project.user_id === user.id;
-const isClientAssignedToUser = client?.assigned_to === user.id;
-const isAssigned = isCreatedByUser || isClientAssignedToUser || isDirectlyAssigned; // ✅ NEW CHECK
+This causes:
+- First render: Loading is true → Returns early → `useIsUserAssigned` NOT called
+- Second render: Loading is false → Passes checks → `useIsUserAssigned` IS called
+
+React sees different number of hooks between renders = Error #310.
+
+## Fix
+
+Move the `useIsUserAssigned` hook call to **before any conditional returns**, alongside other hooks at the top of the component:
+
+```
+Line 62: import { useIsUserAssigned } from "@/hooks/useProjectAssignments";
+...
+Line ~183-191: Other hooks (useProject, useClients, etc.)
+Line ~192: ADD: const { data: isDirectlyAssigned = false } = useIsUserAssigned(jobId, user?.id);
+...
+Line 221: Loading check (now safe - hook already called)
+Line 226: Permission check (now safe - hook already called)
+Line 253: Assignment check (uses isDirectlyAssigned from hook above)
 ```
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useMyProjectAssignments.ts` | NEW FILE - Hook to get current user's project assignments |
-| `src/components/jobs/JobsPage.tsx` | Add project_assignments check to filtering logic |
-| `src/components/jobs/JobDetailPage.tsx` | Add project_assignments check to access validation |
+| `src/components/jobs/JobDetailPage.tsx` | Move `useIsUserAssigned` hook call to line ~192 (before any conditional returns) |
 
-## Testing Checklist
+## Technical Details
 
-1. **Assignment Flow**
-   - As Owner, go to Jobs > select a job > Actions > Invite Team
-   - Assign a Staff user to the project
-   - Verify notification appears for Staff user
+The hook should be called with `jobId` instead of `project?.id` since `jobId` is always available as a prop, while `project` may not be loaded yet:
 
-2. **Staff Visibility**
-   - Log in as Staff user with `view_assigned_jobs` permission
-   - Verify assigned project appears in Jobs list
-   - Click on the project - verify it opens (not "Access Denied")
+```typescript
+// Move from line 246 to line ~192 (before the loading check)
+const { data: isDirectlyAssigned = false } = useIsUserAssigned(jobId, user?.id);
+```
 
-3. **Edge Cases**
-   - Staff should NOT see projects they're not assigned to
-   - Removing assignment should hide project from Staff
-   - Re-assigning should restore visibility
-
+Then remove line 246 entirely and use the moved declaration at line 260 where `isDirectlyAssigned` is used.
