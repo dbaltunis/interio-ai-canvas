@@ -49,6 +49,7 @@ export const MeasurementInputs = ({
                 type="number"
                 value={measurements[key] || ""}
                 onChange={(e) => handleInputChange(key, e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 readOnly={readOnly}
                 className="pr-12"
@@ -78,6 +79,7 @@ export const MeasurementInputs = ({
                 type="number"
                 value={measurements[key] || ""}
                 onChange={(e) => handleInputChange(key, e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 readOnly={readOnly}
                 className="pr-12"

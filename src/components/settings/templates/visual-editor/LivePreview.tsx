@@ -1461,7 +1461,7 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827 !important' }}>
-                        Deposit Required ({projectData.payment.percentage || 50}%):
+                        Deposit Required{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
                       </span>
                       <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginLeft: '8px' }}>
                         {formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}
@@ -1510,7 +1510,7 @@ const LivePreviewBlock = ({
                       >
                         <CreditCard className="h-5 w-5" />
                         {projectData.payment.type === 'deposit' 
-                          ? `Pay Deposit (${projectData.payment.percentage || 50}%) - ${formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}`
+                          ? `Pay Deposit${projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''} - ${formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}`
                           : `Pay Full Amount - ${renderTokenValue('total')}`
                         }
                       </Button>

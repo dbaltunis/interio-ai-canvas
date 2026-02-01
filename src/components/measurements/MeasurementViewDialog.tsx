@@ -66,6 +66,7 @@ export const MeasurementViewDialog = ({
             ...prev,
             [key]: e.target.value ? parseFloat(e.target.value) : null
           }))}
+          onWheel={(e) => e.currentTarget.blur()}
           className="h-8"
         />
       );

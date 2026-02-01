@@ -698,7 +698,7 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
           <div className="py-2 border-t mt-2" style={{ borderColor: '#e5e7eb' }}>
             <div className="flex justify-between py-1">
               <span style={{ color: '#374151', fontSize: '14px', fontWeight: '600' }}>
-                Deposit ({projectData.payment.percentage || 50}%):
+                Deposit{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
               </span>
               <span style={{ fontWeight: '600', color: '#2563eb', fontSize: '14px' }}>
                 {formatCurrency(projectData.payment.amount, currency)}
