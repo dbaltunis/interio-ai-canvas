@@ -10,6 +10,7 @@ import { useClientFiles, useUploadClientFile, useDeleteClientFile, useGetClientF
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { toast } from "sonner";
 import { FileViewerDialog } from "./FileViewerDialog";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface ClientFilesManagerProps {
   clientId: string;
@@ -34,6 +35,9 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const uploadFile = useUploadClientFile();
   const deleteFile = useDeleteClientFile();
   const getFileUrl = useGetClientFileUrl();
+  
+  // Format dates using user preferences
+  const { formattedDates } = useFormattedDates(files, (file) => file.created_at);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(event.target.files);
@@ -542,7 +546,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
                           </TableCell>
                           <TableCell>{formatFileSize(file.file_size)}</TableCell>
                           <TableCell>
-                            {new Date(file.created_at).toLocaleDateString()}
+                            {formattedDates[file.id] || 'Loading...'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">

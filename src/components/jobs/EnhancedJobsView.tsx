@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Edit3, Calculator, FileText, Calendar, DollarSign } from "lucide-react";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 
 interface EnhancedJobsViewProps {
   job: any;
@@ -15,6 +15,12 @@ interface EnhancedJobsViewProps {
 
 export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsViewProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Format dates using user preferences
+  const { formattedDate: startDateFormatted } = useFormattedDate(job.start_date);
+  const { formattedDate: dueDateFormatted } = useFormattedDate(job.due_date);
+  const { formattedDate: completionDateFormatted } = useFormattedDate(job.completion_date);
+  const { formattedDate: createdAtFormatted } = useFormattedDate(job.created_at);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -36,7 +42,6 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
   };
 
   const formatCurrency = (amount: number) => `$${(amount || 0).toFixed(2)}`;
-  const formatDate = (date: string) => date ? new Date(date).toLocaleDateString() : 'Not set';
 
   return (
     <Card className="w-full">
@@ -104,10 +109,10 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
                 <div className="p-3 bg-primary/5 rounded-lg">
                   <h4 className="font-medium text-primary mb-2">Key Dates</h4>
                   <div className="space-y-1 text-sm text-primary/70">
-                    <p>Start: {formatDate(job.start_date)}</p>
-                    <p>Due: {formatDate(job.due_date)}</p>
+                    <p>Start: {startDateFormatted || 'Not set'}</p>
+                    <p>Due: {dueDateFormatted || 'Not set'}</p>
                     {job.completion_date && (
-                      <p>Completed: {formatDate(job.completion_date)}</p>
+                      <p>Completed: {completionDateFormatted}</p>
                     )}
                   </div>
                 </div>
@@ -131,7 +136,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm">Project Created</span>
                     <span className="text-xs text-muted-foreground ml-auto">
-                      {formatDate(job.created_at)}
+                      {createdAtFormatted || 'Loading...'}
                     </span>
                   </div>
                   
@@ -140,7 +145,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <span className="text-sm">Project Started</span>
                       <span className="text-xs text-muted-foreground ml-auto">
-                        {formatDate(job.start_date)}
+                        {startDateFormatted}
                       </span>
                     </div>
                   )}
@@ -150,7 +155,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
                       <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                       <span className="text-sm">Due Date</span>
                       <span className="text-xs text-muted-foreground ml-auto">
-                        {formatDate(job.due_date)}
+                        {dueDateFormatted}
                       </span>
                     </div>
                   )}
@@ -160,7 +165,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
                       <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                       <span className="text-sm">Project Completed</span>
                       <span className="text-xs text-muted-foreground ml-auto">
-                        {formatDate(job.completion_date)}
+                        {completionDateFormatted}
                       </span>
                     </div>
                   )}

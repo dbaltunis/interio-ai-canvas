@@ -1223,7 +1223,7 @@ const LivePreviewBlock = ({
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
-                          <tr style={{ 
+                          <tr className="avoid-page-break" style={{ 
                             borderBottom: (breakdown.length > 0 && effectiveShowDetailed) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: isItemExcluded ? '#fef2f2' : '#fff',
                             opacity: isItemExcluded ? 0.6 : 1,
@@ -1285,7 +1285,7 @@ const LivePreviewBlock = ({
                               // Hardware Group - render summary row + sub-items
                               <React.Fragment key={`hw-group-${bidx}`}>
                                 {/* Hardware Group Summary Row - with option image (NOT hardcoded emoji) */}
-                                <tr style={{ 
+                                <tr className="avoid-page-break" style={{ 
                                   backgroundColor: '#f8fafc',
                                   borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0'
                                 }}>
@@ -1315,7 +1315,7 @@ const LivePreviewBlock = ({
                                 </tr>
                                 {/* Hardware Sub-items */}
                                 {breakdownItem.hardwareItems?.map((hwItem: any, hIdx: number) => (
-                                  <tr key={`hw-item-${hIdx}`} style={{ 
+                                  <tr key={`hw-item-${hIdx}`} className="avoid-page-break" style={{ 
                                     backgroundColor: '#fff',
                                     borderBottom: isPrintMode ? 'none' : (hIdx === breakdownItem.hardwareItems.length - 1 && bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #f1f5f9')
                                   }}>
@@ -1339,7 +1339,7 @@ const LivePreviewBlock = ({
                               </React.Fragment>
                             ) : (
                               // Regular breakdown row
-                              <tr key={bidx} style={{ 
+                              <tr key={bidx} className="avoid-page-break" style={{ 
                                 backgroundColor: '#fff',
                                 borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                               }}>

@@ -9,6 +9,7 @@ import { useProjectNotes } from "@/hooks/useProjectNotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { StickyNote, Trash2, Save, X, AtSign, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { PixelNoteIcon } from "@/components/icons/PixelArtIcons";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 
 interface ProjectNotesCardProps {
   projectId: string;
@@ -23,6 +24,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
+  
+  // Format dates using user preferences
+  const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
 
   const handleAdd = async () => {
     if (!note.trim()) {
@@ -68,7 +72,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
               <div className="flex items-center gap-2">
                 {!isOpen && notes.length > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    Last updated {new Date(notes[0].created_at).toLocaleDateString()}
+                    Last updated {formattedDates[notes[0].id] || 'Loading...'}
                   </span>
                 )}
                 {isOpen ? (
@@ -111,7 +115,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
                           {n.content}
                         </p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(n.created_at).toLocaleString()}
+                          {formattedDates[n.id] || 'Loading...'}
                         </p>
                       </div>
                       <Button 
