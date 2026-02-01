@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+// useEffect removed - no longer needed for auto-cleanup
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
@@ -80,60 +80,9 @@ export const RoomsTab = ({
     enabled: roomIds.length > 0,
   });
 
-  // Auto-cleanup: Remove orphaned treatments and surfaces (those with no/invalid parent room)
-  useEffect(() => {
-    const cleanupOrphanedData = async () => {
-      if (!rooms || !treatments || !surfaces || !projectId) return;
-      console.log('RoomsTab: Checking for orphaned data...', {
-        rooms: rooms.length,
-        treatments: treatments.length,
-        surfaces: surfaces.length
-      });
-      const roomIds = new Set(rooms.map(r => r.id));
-
-      // Find and delete orphaned surfaces (no room_id OR invalid room_id)
-      const orphanedSurfaces = surfaces.filter(s => !s.room_id || !roomIds.has(s.room_id));
-      if (orphanedSurfaces.length > 0) {
-        console.log('Cleaning up orphaned surfaces:', orphanedSurfaces.length);
-        for (const surface of orphanedSurfaces) {
-          await supabase.from('surfaces').delete().eq('id', surface.id);
-        }
-        // Force refetch after cleanup
-        await refetchSurfaces();
-        await refetchSummaries();
-      }
-
-      // Find and delete orphaned treatments (no room_id OR invalid room_id)
-      const orphanedTreatments = treatments.filter(t => !t.room_id || !roomIds.has(t.room_id));
-      if (orphanedTreatments.length > 0) {
-        console.log('Cleaning up orphaned treatments:', orphanedTreatments.length);
-        for (const treatment of orphanedTreatments) {
-          await supabase.from('treatments').delete().eq('id', treatment.id);
-        }
-        // Force refetch after cleanup
-        await refetchTreatments();
-        await refetchSummaries();
-      }
-
-      // If no rooms but we have data showing, force a complete cache clear
-      if (rooms.length === 0 && (treatments.length > 0 || surfaces.length > 0)) {
-        console.log('No rooms but data exists - forcing cache clear');
-        queryClient.removeQueries({
-          queryKey: ["treatments", projectId]
-        });
-        queryClient.removeQueries({
-          queryKey: ["surfaces", projectId]
-        });
-        queryClient.removeQueries({
-          queryKey: ["project-window-summaries", projectId]
-        });
-        await refetchTreatments();
-        await refetchSurfaces();
-        await refetchSummaries();
-      }
-    };
-    cleanupOrphanedData();
-  }, [rooms, treatments, surfaces, projectId, refetchTreatments, refetchSurfaces, refetchSummaries, queryClient]);
+  // REMOVED: Auto-cleanup useEffect that caused race condition data loss
+  // See memory: architecture/automatic-data-deletion-safety
+  // Orphaned data cleanup is now handled via explicit admin actions only
 
   // Auto-sync room and treatment data to quotations and workroom
   const quotationSync = useQuotationSync({
