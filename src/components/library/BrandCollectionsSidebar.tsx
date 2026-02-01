@@ -128,14 +128,16 @@ export const BrandCollectionsSidebar = ({
           <Button
             variant={selectedBrand === null ? "secondary" : "ghost"}
             className={cn(
-              "w-full justify-start h-9 px-3 text-sm font-medium",
+              "w-full justify-between h-9 px-3 text-sm font-medium gap-2",
               selectedBrand === null && "bg-primary/10 text-primary"
             )}
             onClick={() => onSelectBrand(null)}
           >
-            <FolderOpen className="h-4 w-4 mr-2 shrink-0" />
-            All Collections
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="flex items-center gap-2 min-w-0 flex-1">
+              <FolderOpen className="h-4 w-4 shrink-0" />
+              <span className="truncate">All Collections</span>
+            </span>
+            <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
               {totalCollections}
             </span>
           </Button>
@@ -172,14 +174,16 @@ export const BrandCollectionsSidebar = ({
                   <Button
                     variant={isSelected ? "secondary" : "ghost"}
                     className={cn(
-                      "flex-1 justify-start h-9 px-2 text-sm font-medium",
+                      "flex-1 justify-between h-9 px-2 text-sm font-medium gap-2 min-w-0",
                       isSelected && "bg-primary/10 text-primary"
                     )}
                     onClick={() => onSelectBrand(brandId)}
                   >
-                    <Building2 className="h-3.5 w-3.5 mr-2 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{brandName}</span>
-                    <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                    <span className="flex items-center gap-2 min-w-0 flex-1">
+                      <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{brandName}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
                       {collectionCount}
                     </span>
                   </Button>
