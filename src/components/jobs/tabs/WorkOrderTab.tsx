@@ -18,6 +18,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 interface WorkOrderTabProps {
   projectId: string;
@@ -32,6 +33,10 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
   const [selectedRoom, setSelectedRoom] = useState<string>('all');
   const [selectedTreatmentType, setSelectedTreatmentType] = useState<string>('all');
   const [templateWarningDismissed, setTemplateWarningDismissed] = useState(false);
+  
+  // Get user preferences for date formatting
+  const { data: userPreferences } = useUserPreferences();
+  const userDateFormat = userPreferences?.date_format || 'MM/dd/yyyy';
   
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -133,9 +138,10 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
       { ...project, client: project?.clients },
       treatments || [],
       rooms || [],
-      templateSettings
+      templateSettings,
+      userDateFormat
     );
-  }, [project, treatments, rooms, templateSettings]);
+  }, [project, treatments, rooms, templateSettings, userDateFormat]);
 
   // Filter items by room and treatment type
   const filteredItems = useMemo(() => {

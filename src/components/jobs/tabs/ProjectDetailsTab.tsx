@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,23 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useProjectStatus } from "@/contexts/ProjectStatusContext";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 interface ProjectDetailsTabProps {
   project: any;
   onUpdate?: (projectData: any) => Promise<void>;
 }
+
+// Helper to convert user format to date-fns format
+const convertToDateFnsFormat = (userFormat: string): string => {
+  const formatMap: Record<string, string> = {
+    'MM/dd/yyyy': 'MM/dd/yyyy',
+    'dd/MM/yyyy': 'dd/MM/yyyy', 
+    'yyyy-MM-dd': 'yyyy-MM-dd',
+    'dd-MMM-yyyy': 'dd-MMM-yyyy',
+  };
+  return formatMap[userFormat] || 'MM/dd/yyyy';
+};
 
 export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps) => {
   const { user } = useAuth();
@@ -60,6 +72,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     start_date: project.start_date || "",
     due_date: project.due_date || "",
   });
+
+  // Get user preferences for date formatting
+  const { data: userPreferences } = useUserPreferences();
+  const userDateFormat = useMemo(() => 
+    convertToDateFnsFormat(userPreferences?.date_format || 'MM/dd/yyyy'), 
+    [userPreferences?.date_format]
+  );
 
   const { formatCurrency } = useFormattedCurrency();
   const { data: clients, refetch: refetchClients } = useClients();
@@ -462,7 +481,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   disabled={isReadOnly}
                 >
                   <CalendarIcon className="h-3 w-3 mr-1" />
-                  {project.start_date ? format(new Date(project.start_date), "PPP") : 'Set start date'}
+                  {project.start_date ? format(new Date(project.start_date), userDateFormat) : 'Set start date'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -522,7 +541,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   disabled={isReadOnly}
                 >
                   <CalendarIcon className="h-3 w-3 mr-1" />
-                  {project.due_date ? format(new Date(project.due_date), "PPP") : 'Set due date'}
+                  {project.due_date ? format(new Date(project.due_date), userDateFormat) : 'Set due date'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
