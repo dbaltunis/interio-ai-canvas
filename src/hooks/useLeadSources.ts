@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface LeadSource {
   id: string;
@@ -52,12 +53,12 @@ export const useCreateLeadSource = () => {
 
   return useMutation({
     mutationFn: async (source: Omit<LeadSource, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("lead_sources")
-        .insert({ ...source, user_id: user.id })
+        .insert({ ...source, user_id: effectiveOwnerId })
         .select()
         .single();
 

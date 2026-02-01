@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface WidgetConfig {
   id: string;
@@ -284,11 +285,14 @@ export const useDashboardWidgets = () => {
     if (!user?.id) return;
 
     try {
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+
       // First check if record exists
       const { data: existing } = await supabase
         .from('dashboard_preferences')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .maybeSingle();
 
       if (existing) {
@@ -296,12 +300,12 @@ export const useDashboardWidgets = () => {
         await supabase
           .from('dashboard_preferences')
           .update({ widget_configs: updatedWidgets as unknown as any })
-          .eq('user_id', user.id);
+          .eq('user_id', effectiveOwnerId);
       } else {
         // Insert new record
         await supabase
           .from('dashboard_preferences')
-          .insert({ user_id: user.id, widget_configs: updatedWidgets as unknown as any });
+          .insert({ user_id: effectiveOwnerId, widget_configs: updatedWidgets as unknown as any });
       }
     } catch (error) {
       console.error('Error saving widget preferences:', error);

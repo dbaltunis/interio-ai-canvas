@@ -1,6 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export const useCollections = () => {
   return useQuery({
@@ -52,12 +52,12 @@ export const useCreateCollection = () => {
 
   return useMutation({
     mutationFn: async (collection: any) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("collections")
-        .insert([{ ...collection, user_id: user.id }])
+        .insert([{ ...collection, user_id: effectiveOwnerId }])
         .select()
         .single();
 
