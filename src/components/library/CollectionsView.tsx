@@ -230,9 +230,9 @@ export const CollectionsView = ({ onSelectCollection, selectedVendor: externalVe
                         {collection.name}
                       </CardTitle>
                       <div className="flex items-center gap-1">
-                        <Badge variant="secondary" className="shrink-0">
-                          {collection.itemCount} items
-                        </Badge>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {collection.itemCount === 1 ? '1 item' : `${collection.itemCount} items`}
+                        </span>
                         <Button 
                           variant="ghost" 
                           size="icon"

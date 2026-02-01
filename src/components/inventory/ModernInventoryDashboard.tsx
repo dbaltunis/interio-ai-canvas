@@ -30,6 +30,7 @@ import { FilterButton } from "../library/FilterButton";
 import { InventoryAdminPanel } from "./InventoryAdminPanel";
 import { CollectionsView } from "../library/CollectionsView";
 import { useCollectionsWithCounts } from "@/hooks/useCollections";
+import { BrandCollectionsSidebar } from "../library/BrandCollectionsSidebar";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -314,18 +315,37 @@ export const ModernInventoryDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Flex layout for persistent sidebar */}
+      <div className="flex gap-4">
+        {/* Persistent sidebar when collection is selected (Fabrics tab) */}
+        {selectedCollection && activeTab === "fabrics" && !isMobile && (
+          <div className="w-64 shrink-0">
+            <BrandCollectionsSidebar
+              selectedBrand={null}
+              onSelectBrand={() => {}}
+              selectedCollection={selectedCollection}
+              onSelectCollection={(collectionId) => {
+                if (collectionId === selectedCollection) {
+                  // Clicking same collection = clear filter and go back
+                  setSelectedCollection(undefined);
+                  setActiveTab("collections");
+                } else {
+                  setSelectedCollection(collectionId);
+                }
+              }}
+              className="h-[calc(100vh-200px)] rounded-lg"
+            />
+          </div>
+        )}
+
+        {/* Main tabs content */}
+        <div className="flex-1 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
               {/* Collections Tab - Primary entry point for browsing by brand */}
               <TabsTrigger value="collections" className="flex items-center gap-2">
                 <FolderOpen className="h-4 w-4" />
                 Collections
-                {collections.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs h-5 px-1.5">
-                    {collections.length}
-                  </Badge>
-                )}
               </TabsTrigger>
               <TabsTrigger value="fabrics" className="flex items-center gap-2">
                 <PixelFabricIcon size={18} />
@@ -364,8 +384,8 @@ export const ModernInventoryDashboard = () => {
             </TabsList>
 
         <TabsContent value="fabrics" className="space-y-6">
-          {/* Back to Collections navigation when viewing filtered collection */}
-          {selectedCollection && (
+          {/* Show collection name header when filtering - simplified since sidebar shows context */}
+          {selectedCollection && isMobile && (
             <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
               <Button 
                 variant="ghost" 
@@ -380,16 +400,8 @@ export const ModernInventoryDashboard = () => {
               </Button>
               <span className="text-sm text-muted-foreground">|</span>
               <span className="text-sm font-medium">
-                Viewing: {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
+                {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-auto"
-                onClick={() => setSelectedCollection(undefined)}
-              >
-                Clear Filter
-              </Button>
             </div>
           )}
           <FabricInventoryView 
@@ -457,7 +469,9 @@ export const ModernInventoryDashboard = () => {
             <InventoryAdminPanel />
           </TabsContent>
         )}
-      </Tabs>
+          </Tabs>
+        </div>
+      </div>
 
       <QRCodeScanner
         open={showScanner}
