@@ -27,6 +27,7 @@ import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 import { JobNotFound } from "./JobNotFound";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { format } from "date-fns";
+import { useMyProjectAssignments } from "@/hooks/useMyProjectAssignments";
 
 
 // Helper to convert user format to date-fns format
@@ -209,9 +210,14 @@ const canViewJobsExplicit =
   
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
+  // Fetch user's direct project assignments (from project_assignments table)
+  const { data: myAssignedProjectIds = [] } = useMyProjectAssignments();
+  const myAssignedProjectIdSet = useMemo(() => new Set(myAssignedProjectIds), [myAssignedProjectIds]);
+  
   const { filteredProjects, filteredQuotes } = useMemo(() => {
     console.log('[JOBS] Filtering - shouldFilterByAssignment:', shouldFilterByAssignment, 'user.id:', user?.id);
     console.log('[JOBS] Filtering - allProjects count:', allProjects.length, 'allQuotes count:', allQuotes.length, 'allClients count:', allClients.length);
+    console.log('[JOBS] Filtering - myAssignedProjectIds count:', myAssignedProjectIds.length);
     
     if (!shouldFilterByAssignment || !user) {
       console.log('[JOBS] Filtering - No filtering needed, returning all data');
@@ -228,17 +234,20 @@ const canViewJobsExplicit =
     
     // Filter projects where:
     // 1. project.user_id matches current user (created by user), OR
-    // 2. project.client_id is in assignedClientIds (client assigned to user)
+    // 2. project.client_id is in assignedClientIds (client assigned to user), OR
+    // 3. project.id is in myAssignedProjectIdSet (directly assigned via project_assignments)
     const assignedProjects = allProjects.filter((project: any) => {
       const isCreatedByUser = project.user_id === user.id;
       const isClientAssignedToUser = project.client_id && assignedClientIds.has(project.client_id);
-      const isAssigned = isCreatedByUser || isClientAssignedToUser;
+      const isDirectlyAssigned = myAssignedProjectIdSet.has(project.id);
+      const isAssigned = isCreatedByUser || isClientAssignedToUser || isDirectlyAssigned;
       
       console.log('[JOBS] Filtering - Project:', project.id, 
         'user_id:', project.user_id, 
         'client_id:', project.client_id,
         'isCreatedByUser:', isCreatedByUser,
         'isClientAssignedToUser:', isClientAssignedToUser,
+        'isDirectlyAssigned:', isDirectlyAssigned,
         'isAssigned:', isAssigned);
       
       return isAssigned;
@@ -262,7 +271,7 @@ const canViewJobsExplicit =
       filteredProjects: assignedProjects,
       filteredQuotes
     };
-  }, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user]);
+  }, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user, myAssignedProjectIdSet, myAssignedProjectIds.length]);
   
   // Use filtered data
   const quotes = filteredQuotes;

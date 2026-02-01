@@ -59,6 +59,7 @@ import { ContactClientDialog } from "@/components/messaging/ContactClientDialog"
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { SupplierOrderingDropdown } from "./SupplierOrderingDropdown";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
+import { useIsUserAssigned } from "@/hooks/useProjectAssignments";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -241,18 +242,22 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     );
   }
   
+  // Check if user is directly assigned to this project via project_assignments table
+  const { data: isDirectlyAssigned = false } = useIsUserAssigned(project?.id, user?.id);
+  
   // If user only has view_assigned_jobs permission, check if this job is assigned to them
   // Job is assigned if:
   // 1. project.user_id === current_user.id (created by user), OR
-  // 2. project.client_id has a client with assigned_to === current_user.id (client assigned to user)
+  // 2. project.client_id has a client with assigned_to === current_user.id (client assigned to user), OR
+  // 3. user is directly assigned via project_assignments table
   if (shouldFilterByAssignment && project && user) {
     const isCreatedByUser = project.user_id === user.id;
     
     // Check if client is assigned to user
-    const client = project.client_id ? clients?.find((c: any) => c.id === project.client_id) : null;
-    const isClientAssignedToUser = client?.assigned_to === user.id;
+    const clientForCheck = project.client_id ? clients?.find((c: any) => c.id === project.client_id) : null;
+    const isClientAssignedToUser = clientForCheck?.assigned_to === user.id;
     
-    const isAssigned = isCreatedByUser || isClientAssignedToUser;
+    const isAssigned = isCreatedByUser || isClientAssignedToUser || isDirectlyAssigned;
     
     if (!isAssigned) {
       return (
