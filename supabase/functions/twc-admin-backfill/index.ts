@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error('Could not verify user role');
     }
 
-    if (profile.role !== 'super_admin') {
+    if (profile.role !== 'System Owner') {
       throw new Error('Only System Owner can run admin backfill. Current role: ' + profile.role);
     }
 
