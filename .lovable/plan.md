@@ -1,111 +1,86 @@
 
-# Plan: Fix Team Assignment Job Visibility for Staff Members
+
+# Plan: Fix Team Assignment Cache Invalidation + Document for Future Prevention
 
 ## Problem Summary
 
-Staff members assigned to jobs via the "Invite team" workflow cannot see their assigned jobs in the Jobs list, despite:
-- Correct database assignment in `project_assignments` table
-- Correct RLS policies that include `user_is_assigned_to_project()` check
-- `view_assigned_jobs` permission properly granted
+When an admin removes a staff member from a project via "Limit Access":
+1. ✅ Database correctly updates `is_active = false` in `project_assignments`
+2. ✅ RLS correctly filters projects for assigned staff
+3. ❌ Staff member's browser cache still shows the old assignment data
+4. ❌ Project stays visible because cached `my-project-assignments` is stale
 
-## Root Cause Analysis
-
-After comprehensive investigation, I identified **TWO issues**:
-
-### Issue 1: Redundant Project Fetching in JobsTableView
-
-In `src/components/jobs/JobsTableView.tsx` (line 83), the component fetches its own projects:
-```typescript
-const { data: allProjects = [] } = useProjects();
-```
-
-This creates a redundant query and potential data inconsistency with the filtered data passed from parent (`JobsPage`).
-
-### Issue 2: Missing `isSystemOwner` Check in shouldFilterByAssignment
-
-In `src/components/jobs/JobsPage.tsx` (line 147):
-```typescript
-const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
-```
-
-This is missing the `!userRoleData?.isSystemOwner` check that exists in `JobDetailPage.tsx` (line 147), leading to inconsistent behavior between the list and detail views.
-
-### Issue 3: Race Condition with Dealer Loading State
-
-When `isDealerLoading` is true, `allProjects` returns an empty array even if projects are already loaded, causing temporary visibility issues.
+This is why you see the team count decrease (admin's view updates) but the staff member still sees the job.
 
 ---
 
-## Solution
+## Solution: 4 File Changes
 
-### Fix 1: Add Missing `isSystemOwner` Check
+### 1. Add Cache Invalidation to `useAssignUserToProject`
 
-Update `JobsPage.tsx` line 147 to match `JobDetailPage.tsx`:
+**File:** `src/hooks/useProjectAssignments.ts` (lines 244-253)
 
-**Before:**
+Add two new invalidation calls so that when a team member is assigned, all visibility queries refresh:
+
 ```typescript
-const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+onSuccess: (data) => {
+  queryClient.invalidateQueries({ queryKey: ["project-assignments", data.project_id] });
+  queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
+  queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.project_id] });
+  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  // NEW: Invalidate assignment-based visibility queries
+  queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
+  queryClient.invalidateQueries({ queryKey: ["projects"] });
+  toast({ title: "Success", description: "Team member assigned to project" });
+},
 ```
 
-**After:**
+### 2. Add Cache Invalidation to `useRemoveUserFromProject`
+
+**File:** `src/hooks/useProjectAssignments.ts` (lines 331-339)
+
+Add the same invalidations for removal:
+
 ```typescript
-const shouldFilterByAssignment = !userRoleData?.isSystemOwner && (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+onSuccess: (data) => {
+  queryClient.invalidateQueries({ queryKey: ["project-assignments", data.projectId] });
+  queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
+  queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.projectId] });
+  // NEW: Invalidate assignment-based visibility queries
+  queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
+  queryClient.invalidateQueries({ queryKey: ["projects"] });
+  toast({ title: "Success", description: "Team member removed from project" });
+},
 ```
 
-### Fix 2: Remove Redundant Project Fetching in JobsTableView
+### 3. Enable Auto-Refresh for Assignment Data
 
-Remove the local `useProjects()` call in `JobsTableView.tsx` since the parent already provides filtered data:
+**File:** `src/hooks/useMyProjectAssignments.ts` (lines 29-32)
 
-**Before (lines 82-88):**
+Enable automatic refresh when user returns to the app tab:
+
 ```typescript
-const { data: allQuotes = [], isLoading, refetch } = useQuotes();
-const { data: allProjects = [] } = useProjects();
-
-// Use filtered data if provided, otherwise use all data
-const quotes = filteredQuotes !== undefined ? filteredQuotes : allQuotes;
-const projects = filteredProjects !== undefined ? filteredProjects : allProjects;
+return data?.map(a => a.project_id) || [];
+},
+enabled: !!user,
+staleTime: 30 * 1000,
+// NEW: Auto-refresh to keep visibility in sync
+refetchOnWindowFocus: true,
+refetchOnMount: true,
 ```
 
-**After:**
+### 4. Enable Auto-Refresh for Projects List
+
+**File:** `src/hooks/useProjects.ts` (line 39)
+
+Change `refetchOnWindowFocus: false` to `true`:
+
 ```typescript
-// CRITICAL: Parent component handles permission-based filtering
-// When filteredProjects/filteredQuotes are undefined, fetch all data
-// When defined, use the filtered data to respect permissions
-const { data: allQuotes = [], isLoading, refetch } = useQuotes(undefined, {
-  enabled: filteredQuotes === undefined
-});
-const { data: allProjectsData = [] } = useProjects({
-  enabled: filteredProjects === undefined
-});
-
-// Use filtered data if provided (permission-based), otherwise use fetched data
-const quotes = filteredQuotes !== undefined ? filteredQuotes : allQuotes;
-const projects = filteredProjects !== undefined ? filteredProjects : allProjectsData;
-```
-
-### Fix 3: Handle Race Condition with Dealer Loading
-
-Update the `allProjects` useMemo to not return empty during loading if data is available:
-
-**Before (lines 202-209):**
-```typescript
-const allProjects = useMemo(() => {
-  if (isDealerLoading) return [];
-  if (isDealer === true) return dealerProjects;
-  return regularProjects;
-}, [isDealerLoading, isDealer, dealerProjects, regularProjects]);
-```
-
-**After:**
-```typescript
-const allProjects = useMemo(() => {
-  // If still loading dealer status AND we have no projects yet, return empty
-  // But if we already have regularProjects data, use it while loading finishes
-  if (isDealer === true) return dealerProjects;
-  // For non-dealers (including while loading), use regularProjects
-  // This prevents flash of empty state when dealer check is slow
-  return regularProjects;
-}, [isDealer, dealerProjects, regularProjects]);
+enabled: enabled && !!effectiveOwnerId,
+staleTime: 2 * 60 * 1000,
+gcTime: 5 * 60 * 1000,
+refetchOnWindowFocus: true,  // CHANGED from false
+retry: 1,
 ```
 
 ---
@@ -114,75 +89,66 @@ const allProjects = useMemo(() => {
 
 | File | Change |
 |------|--------|
-| `src/components/jobs/JobsPage.tsx` | Add `!userRoleData?.isSystemOwner` to `shouldFilterByAssignment` and fix dealer loading race condition |
-| `src/components/jobs/JobsTableView.tsx` | Conditionally fetch projects only when filtered data not provided |
+| `src/hooks/useProjectAssignments.ts` | Add cache invalidations in both `useAssignUserToProject` and `useRemoveUserFromProject` |
+| `src/hooks/useMyProjectAssignments.ts` | Add `refetchOnWindowFocus: true` and `refetchOnMount: true` |
+| `src/hooks/useProjects.ts` | Change `refetchOnWindowFocus` from `false` to `true` |
 
 ---
 
-## Technical Details
+## Technical Details: How This Fixes the Issue
 
-### Why the Current Code Fails
-
-1. **JobsPage** fetches projects via `useProjects()` which correctly respects RLS
-2. **JobsPage** also fetches `myAssignedProjectIds` via `useMyProjectAssignments()`
-3. For staff users with `shouldFilterByAssignment=true`, both are used to filter the list
-4. The filtered list is passed to **JobsTableView** as `filteredProjects`
-5. **BUT** JobsTableView ALSO fetches its own `useProjects()`, potentially getting different data
-6. The conditional `projects = filteredProjects !== undefined ? filteredProjects : allProjects` uses parent data when provided
-7. However, the redundant fetch wastes resources and can cause confusion during debugging
-
-### Why RLS Works but Frontend Doesn't Show Data
-
-The RLS correctly returns projects for assigned users. The issue is:
-1. The frontend filtering logic runs AFTER RLS
-2. If `myAssignedProjectIds` is empty (query not yet complete), `isDirectlyAssigned` is false for all projects
-3. Combined with the race condition in dealer loading, this causes an empty list
-
----
-
-## Documentation Requirement
-
-**CRITICAL**: This is the third time this visibility issue has occurred. After implementing this fix, create a memory architecture document to prevent recurrence:
-
+### Current Flow (Broken)
+```text
+Admin removes Daniel from Project
+  → Admin's cache updates (team count -1)
+  → Daniel's cache is STALE (still shows access)
+  → Daniel sees project in list
+  → Daniel clicks → sees content
+  → Only page refresh removes it
 ```
-# Memory: architecture/team-assignment-job-visibility-complete
 
-The team assignment visibility system involves THREE layers that MUST all work together:
+### Fixed Flow
+```text
+Admin removes Daniel from Project
+  → Admin's cache updates (team count -1)
+  → Daniel switches to tab or navigates
+  → refetchOnWindowFocus triggers my-project-assignments refetch
+  → Fresh data shows is_active=false
+  → Project filtered from view
+```
 
-1. **RLS Layer (Database)**: 
-   - `projects_select_policy` includes `user_is_assigned_to_project(id)` check
-   - Staff with `view_assigned_jobs` permission can SELECT projects they're assigned to
+---
 
-2. **Hook Layer (Frontend Data)**:
-   - `useProjects()` respects RLS and returns correct data
-   - `useMyProjectAssignments()` fetches assigned project IDs for frontend filtering
+## Documentation (Memory Update)
 
-3. **Component Layer (UI Logic)**:
-   - `shouldFilterByAssignment` MUST include `!userRoleData?.isSystemOwner` check
-   - Filtering uses `myAssignedProjectIdSet.has(project.id)` for `isDirectlyAssigned`
-   - Child components should NOT re-fetch data that parent already provides
+After implementation, the existing memory `architecture/team-assignment-job-visibility-logic` will be updated to include:
 
-COMMON BUG PATTERNS TO AVOID:
-- Inconsistent `shouldFilterByAssignment` logic between JobsPage and JobDetailPage
-- Redundant data fetching in child components overriding parent's filtered data
+```text
+Common bug patterns to avoid:
+- Missing cache invalidation for ["my-project-assignments"] when assignments change
+- refetchOnWindowFocus: false on visibility-critical queries
 - Race conditions with loading states causing empty arrays
+- Child components re-fetching data that parent already provides filtered
 ```
 
 ---
 
 ## Testing Checklist
 
-After implementation:
+1. **Remove Assignment Test**
+   - Log in as Admin in one browser
+   - Log in as Staff (Daniel) in another browser
+   - Admin: Remove Daniel via "Limit Access"
+   - Verify: Admin sees team count decrease
+   - Daniel: Switch tabs or refresh
+   - Verify: Project disappears from Daniel's Jobs list
 
-1. **Staff Visibility Test**:
-   - Log in as a Staff user with `view_assigned_jobs` permission
-   - Have an Owner assign the Staff to a project via "Invite team"
-   - Verify the project appears in the Staff's Jobs list immediately
-   - Click on the project - verify it opens without "Access Denied"
+2. **Add Assignment Test**
+   - Admin: Add Daniel to a project via "Invite Team"
+   - Daniel: Switch tabs or refresh
+   - Verify: Project appears in Daniel's Jobs list
 
-2. **No Regression for Owners**:
-   - Log in as Owner - verify they see all projects
-   - Verify no duplicate projects appear
+3. **No Regression**
+   - Owner still sees all projects
+   - Admin still sees all projects
 
-3. **No Regression for Admins**:
-   - Log in as Admin - verify they see all projects in their account
