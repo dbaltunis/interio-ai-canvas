@@ -384,8 +384,8 @@ export const ModernInventoryDashboard = () => {
             </TabsList>
 
         <TabsContent value="fabrics" className="space-y-6">
-          {/* Show collection name header when filtering - simplified since sidebar shows context */}
-          {selectedCollection && isMobile && (
+          {/* Show collection name header when filtering - shows on ALL devices */}
+          {selectedCollection && (
             <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
               <Button 
                 variant="ghost" 
@@ -400,8 +400,16 @@ export const ModernInventoryDashboard = () => {
               </Button>
               <span className="text-sm text-muted-foreground">|</span>
               <span className="text-sm font-medium">
-                {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
+                Viewing: {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => setSelectedCollection(undefined)}
+              >
+                Clear Filter
+              </Button>
             </div>
           )}
           <FabricInventoryView 
