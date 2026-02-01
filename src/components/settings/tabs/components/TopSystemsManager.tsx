@@ -139,7 +139,6 @@ export const TopSystemsManager = () => {
       };
 
       const itemData = {
-        user_id: user.id,
         name: formData.name.trim(),
         price_per_meter: formData.price,
         image_url: formData.image_url,

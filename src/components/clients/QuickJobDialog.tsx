@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserPermissions } from '@/hooks/usePermissions';
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from '@/components/auth/AuthProvider';
+import { getEffectiveOwnerForMutation } from '@/utils/getEffectiveOwnerForMutation';
 
 interface QuickJobDialogProps {
   open: boolean;
@@ -77,8 +78,7 @@ export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogPro
 
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       // Generate job number
       const jobNumber = `J-${Date.now()}`;
@@ -87,7 +87,7 @@ export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogPro
         name: projectName,
         description: description || null,
         client_id: client.id,
-        user_id: user.id,
+        user_id: effectiveOwnerId,
         job_number: jobNumber,
         status: 'planning',
         priority: 'medium',

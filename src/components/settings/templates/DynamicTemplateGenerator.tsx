@@ -10,6 +10,7 @@ import { Sparkles, Wand2, Palette, FileText, DollarSign, Eye } from 'lucide-reac
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TemplatePreviewModal } from './TemplatePreviewModal';
+import { getEffectiveOwnerForMutation } from '@/utils/getEffectiveOwnerForMutation';
 
 interface DynamicTemplateGeneratorProps {
   onTemplateGenerated: (template: any) => void;
@@ -170,13 +171,12 @@ Please generate a template with appropriate blocks, styling, and content that re
 
   const saveTemplateToDatabase = async (template: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { error } = await supabase
         .from('quote_templates')
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: template.name,
           description: template.description,
           template_style: 'enhanced',
