@@ -117,7 +117,9 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
                         variant="ghost"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteSurface.mutate(surface.id);
+                          if (confirm("Delete this window? This action cannot be undone.")) {
+                            deleteSurface.mutate(surface.id);
+                          }
                         }}
                       >
                         <Trash2 className="h-3 w-3" />
