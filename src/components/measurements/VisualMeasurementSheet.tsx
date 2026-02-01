@@ -1191,6 +1191,7 @@ export const VisualMeasurementSheet = ({
                         <Input id="rail_width" type="number" inputMode="decimal" step="0.25" 
                       value={measurements.rail_width || ""} 
                       onChange={e => handleInputChange("rail_width", e.target.value)} 
+                      onWheel={(e) => e.currentTarget.blur()}
                       onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
@@ -1216,6 +1217,7 @@ export const VisualMeasurementSheet = ({
                         <Input id="drop" type="number" inputMode="decimal" step="0.25" 
                       value={measurements.drop || ""} 
                       onChange={e => handleInputChange("drop", e.target.value)} 
+                      onWheel={(e) => e.currentTarget.blur()}
                       onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">

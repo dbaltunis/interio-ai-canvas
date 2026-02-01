@@ -28,6 +28,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
             step="0.25"
             value={formData.rail_width}
             onChange={(e) => onInputChange("rail_width", e.target.value)}
+            onWheel={(e) => e.currentTarget.blur()}
             placeholder="0.00"
           />
         </div>
@@ -39,6 +40,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
             step="0.25"
             value={formData.drop}
             onChange={(e) => onInputChange("drop", e.target.value)}
+            onWheel={(e) => e.currentTarget.blur()}
             placeholder="0.00"
           />
         </div>
@@ -50,6 +52,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
             step="0.25"
             value={formData.pooling}
             onChange={(e) => onInputChange("pooling", e.target.value)}
+            onWheel={(e) => e.currentTarget.blur()}
             placeholder="0.00"
           />
         </div>
@@ -70,6 +73,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 step="0.5"
                 value={formData.header_hem || ""}
                 onChange={(e) => onInputChange("header_hem", e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="From template"
               />
             </div>
@@ -81,6 +85,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 step="0.5"
                 value={formData.bottom_hem || ""}
                 onChange={(e) => onInputChange("bottom_hem", e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="From template"
               />
             </div>
@@ -92,6 +97,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 step="0.5"
                 value={formData.side_hem || ""}
                 onChange={(e) => onInputChange("side_hem", e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="From template"
               />
             </div>
@@ -103,6 +109,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 step="0.5"
                 value={formData.seam_hem || ""}
                 onChange={(e) => onInputChange("seam_hem", e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="From template"
               />
             </div>
@@ -123,6 +130,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
               step="0.50"
               value={formData.custom_labor_rate || ""}
               onChange={(e) => onInputChange("custom_labor_rate", e.target.value)}
+              onWheel={(e) => e.currentTarget.blur()}
               placeholder="Leave empty to use default"
             />
           </div>
