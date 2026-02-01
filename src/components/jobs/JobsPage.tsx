@@ -144,7 +144,8 @@ const canViewJobsExplicit =
         ? !hasAnyExplicitPermissions || hasViewAllJobsPermission || hasViewAssignedJobsPermission
         : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
 
-  const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+  // CRITICAL: Must include isSystemOwner check to match JobDetailPage.tsx - prevents visibility issues
+  const shouldFilterByAssignment = !userRoleData?.isSystemOwner && (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
   
   // Check if create_jobs is explicitly in user_permissions table (enabled)
   const hasCreateJobsPermission = explicitPermissions?.some(
@@ -198,15 +199,14 @@ const canViewJobsExplicit =
   const { data: dealerProjects = [] } = useDealerOwnProjects();
   
   // Use dealer projects if user is a dealer, otherwise use regular projects
-  // Wait for dealer check to complete to avoid showing wrong data
+  // FIX: Don't return empty during loading if we have data - prevents visibility flash
   const allProjects = useMemo(() => {
-    // If still loading dealer status, return empty array to prevent flash of wrong data
-    if (isDealerLoading) return [];
     // If dealer, use dealer projects
     if (isDealer === true) return dealerProjects;
-    // Otherwise use regular projects
+    // For non-dealers (including while loading), use regularProjects
+    // This prevents flash of empty state when dealer check is slow
     return regularProjects;
-  }, [isDealerLoading, isDealer, dealerProjects, regularProjects]);
+  }, [isDealer, dealerProjects, regularProjects]);
   
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
