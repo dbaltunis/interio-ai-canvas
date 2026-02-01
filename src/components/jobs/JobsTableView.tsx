@@ -867,6 +867,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
           </div>
         );
       
+      case 'area':
+        // Show client suburb/city
+        const clientSuburb = client?.suburb || client?.city || '';
+        return (
+          <span className="text-sm text-muted-foreground">
+            {clientSuburb || '—'}
+          </span>
+        );
+      
       case 'total':
         // Show the project's quote total
         const convertedQuote = quotes.find(q => q.status && q.status.toLowerCase() !== 'draft');
@@ -875,6 +884,46 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         return (
           <span className="font-medium">
             {formatCurrency(totalAmount, userCurrency)}
+          </span>
+        );
+      
+      case 'advance':
+        // Show amount paid (advance received)
+        const advanceQuote = quotes.find(q => (q.amount_paid || 0) > 0) || quotes[0];
+        const amountPaid = advanceQuote?.amount_paid || 0;
+        return (
+          <span className={amountPaid > 0 ? "font-medium text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+            {amountPaid > 0 ? formatCurrency(amountPaid, userCurrency) : '—'}
+          </span>
+        );
+      
+      case 'balance':
+        // Calculate balance = total - paid
+        const balanceQuote = quotes.find(q => q.status !== 'draft') || quotes[0];
+        const balanceTotal = balanceQuote?.total_amount || 0;
+        const balancePaid = balanceQuote?.amount_paid || 0;
+        const balanceAmount = balanceTotal - balancePaid;
+        return (
+          <span className={balanceAmount > 0 ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
+            {balanceAmount > 0 ? formatCurrency(balanceAmount, userCurrency) : '—'}
+          </span>
+        );
+      
+      case 'start_date':
+        return (
+          <span className="text-sm">
+            {project.start_date 
+              ? new Date(project.start_date).toLocaleDateString() 
+              : '—'}
+          </span>
+        );
+      
+      case 'due_date':
+        const dueDateValue = project.due_date ? new Date(project.due_date) : null;
+        const isOverdue = dueDateValue && dueDateValue < new Date();
+        return (
+          <span className={isOverdue ? "text-destructive font-medium" : "text-sm"}>
+            {dueDateValue ? dueDateValue.toLocaleDateString() : '—'}
           </span>
         );
       
