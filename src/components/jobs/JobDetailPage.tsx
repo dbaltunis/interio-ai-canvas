@@ -195,6 +195,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: clientData } = useClientForJobDisplay(project?.client_id || null);
   const client = clientData || null;
   
+  // Check if user is directly assigned to this project via project_assignments table
+  // IMPORTANT: This hook MUST be called before any conditional returns to follow Rules of Hooks
+  const { data: isDirectlyAssigned = false } = useIsUserAssigned(jobId, user?.id);
+  
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
@@ -241,9 +245,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       </div>
     );
   }
-  
-  // Check if user is directly assigned to this project via project_assignments table
-  const { data: isDirectlyAssigned = false } = useIsUserAssigned(project?.id, user?.id);
   
   // If user only has view_assigned_jobs permission, check if this job is assigned to them
   // Job is assigned if:
