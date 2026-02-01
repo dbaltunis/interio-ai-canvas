@@ -56,7 +56,7 @@ export const useQuotes = (projectId?: string, options?: { enabled?: boolean }) =
     enabled: (options?.enabled !== false) && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Keep sync with assignments when user returns to tab
     retry: 1,
     retryDelay: 1000,
   });
