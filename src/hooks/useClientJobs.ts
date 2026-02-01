@@ -1,16 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const useClientStats = () => {
-  const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
   return useQuery({
-    queryKey: ["client-stats", effectiveOwnerId],
+    queryKey: ["client-stats"],
     queryFn: async () => {
-      if (!effectiveOwnerId) return [];
-
-      // Get all clients with their associated projects
+      // RLS handles account-level filtering automatically
       const { data: clients, error } = await supabase
         .from("clients")
         .select(`
@@ -28,8 +23,7 @@ export const useClientStats = () => {
               status
             )
           )
-        `)
-        .eq("user_id", effectiveOwnerId);
+        `);
 
       if (error) throw error;
 
@@ -74,19 +68,17 @@ export const useClientStats = () => {
 
       return clientStats;
     },
-    enabled: !!effectiveOwnerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientJobs = (clientId: string) => {
-  const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
   return useQuery({
-    queryKey: ["client-jobs", effectiveOwnerId, clientId],
+    queryKey: ["client-jobs", clientId],
     queryFn: async () => {
-      if (!effectiveOwnerId) return [];
+      if (!clientId) return [];
 
+      // RLS handles account-level filtering automatically
       const { data: projects, error } = await supabase
         .from("projects")
         .select(`
@@ -97,54 +89,48 @@ export const useClientJobs = (clientId: string) => {
             status
           )
         `)
-        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return projects || [];
     },
-    enabled: !!effectiveOwnerId && !!clientId,
+    enabled: !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientEmails = (clientId: string) => {
-  const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
   return useQuery({
-    queryKey: ["client-emails", effectiveOwnerId, clientId],
+    queryKey: ["client-emails", clientId],
     queryFn: async () => {
-      if (!effectiveOwnerId) return [];
+      if (!clientId) return [];
 
+      // RLS handles account-level filtering automatically
       const { data: emails, error } = await supabase
         .from("emails")
         .select("*")
-        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return emails || [];
     },
-    enabled: !!effectiveOwnerId && !!clientId,
+    enabled: !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientQuotes = (clientId: string) => {
-  const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
   return useQuery({
-    queryKey: ["client-quotes", effectiveOwnerId, clientId],
+    queryKey: ["client-quotes", clientId],
     queryFn: async () => {
-      if (!effectiveOwnerId || !clientId) return [];
+      if (!clientId) return [];
 
-      // First, get all projects for this client
+      // First, get all projects for this client (RLS handles filtering)
       const { data: projects, error: projectsError } = await supabase
         .from("projects")
         .select("id")
-        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId);
 
       if (projectsError) throw projectsError;
@@ -152,18 +138,17 @@ export const useClientQuotes = (clientId: string) => {
 
       const projectIds = projects.map(p => p.id);
 
-      // Then get quotes for those projects (quotes may have NULL client_id)
+      // Then get quotes for those projects (RLS handles filtering)
       const { data: quotes, error } = await supabase
         .from("quotes")
         .select("*")
-        .eq("user_id", effectiveOwnerId)
         .in("project_id", projectIds)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return quotes || [];
     },
-    enabled: !!effectiveOwnerId && !!clientId,
+    enabled: !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
