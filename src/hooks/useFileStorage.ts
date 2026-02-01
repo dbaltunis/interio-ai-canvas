@@ -96,26 +96,20 @@ export const useDeleteFile = () => {
 export const useGetFileUrl = () => {
   return useMutation({
     mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
-      console.log('Getting public URL for:', { bucketName, filePath });
+      console.log('Creating signed URL for:', { bucketName, filePath });
       
-      const { data } = supabase.storage
+      // Use signed URL for secure access (1 hour expiry)
+      const { data, error } = await supabase.storage
         .from(bucketName)
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600);
 
-      console.log('Generated public URL:', data.publicUrl);
-      
-      // Test if the URL is accessible
-      try {
-        const response = await fetch(data.publicUrl, { method: 'HEAD' });
-        console.log('URL accessibility test:', response.status);
-        if (!response.ok) {
-          console.error('URL not accessible:', response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('Error testing URL accessibility:', error);
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        throw error;
       }
 
-      return data.publicUrl;
+      console.log('Generated signed URL successfully');
+      return data.signedUrl;
     },
   });
 };
