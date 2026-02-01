@@ -155,11 +155,17 @@ export const useDeleteClientFile = () => {
 export const useGetClientFileUrl = () => {
   return useMutation({
     mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
-      const { data } = supabase.storage
+      // Use signed URL for private buckets (expires in 1 hour)
+      const { data, error } = await supabase.storage
         .from(bucketName)
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600);
 
-      return data.publicUrl;
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        throw error;
+      }
+
+      return data.signedUrl;
     },
   });
 };
