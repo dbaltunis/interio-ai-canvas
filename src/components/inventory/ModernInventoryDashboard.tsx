@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw, FolderOpen } from "lucide-react";
+import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw, FolderOpen, ArrowLeft } from "lucide-react";
 import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { QRCodeScanner } from "./QRCodeScanner";
@@ -364,6 +364,34 @@ export const ModernInventoryDashboard = () => {
             </TabsList>
 
         <TabsContent value="fabrics" className="space-y-6">
+          {/* Back to Collections navigation when viewing filtered collection */}
+          {selectedCollection && (
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSelectedCollection(undefined);
+                  setActiveTab("collections");
+                }}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Collections
+              </Button>
+              <span className="text-sm text-muted-foreground">|</span>
+              <span className="text-sm font-medium">
+                Viewing: {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => setSelectedCollection(undefined)}
+              >
+                Clear Filter
+              </Button>
+            </div>
+          )}
           <FabricInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}

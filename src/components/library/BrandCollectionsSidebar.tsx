@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,19 @@ export const BrandCollectionsSidebar = ({
   const { data: vendorsWithCollections = [], isLoading } = useVendorsWithCollections();
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
+
+  // Auto-expand first brand with collections on initial load
+  useEffect(() => {
+    if (!isLoading && vendorsWithCollections.length > 0 && !hasAutoExpanded) {
+      const firstBrandWithCollections = vendorsWithCollections.find(v => v.collections.length > 0);
+      if (firstBrandWithCollections) {
+        const brandId = firstBrandWithCollections.vendor?.id || "unassigned";
+        setExpandedBrands(new Set([brandId]));
+      }
+      setHasAutoExpanded(true);
+    }
+  }, [isLoading, vendorsWithCollections, hasAutoExpanded]);
 
   // Filter brands by search term
   const filteredBrands = useMemo(() => {
