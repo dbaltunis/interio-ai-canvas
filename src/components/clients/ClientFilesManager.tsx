@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,8 +36,9 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const deleteFile = useDeleteClientFile();
   const getFileUrl = useGetClientFileUrl();
   
-  // Format dates using user preferences
-  const { formattedDates } = useFormattedDates(files, (file) => file.created_at);
+  // Format dates using user preferences - memoize callback to prevent infinite loop
+  const getFileDate = useCallback((file: any) => file.created_at, []);
+  const { formattedDates } = useFormattedDates(files, getFileDate);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(event.target.files);
