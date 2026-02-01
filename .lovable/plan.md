@@ -158,4 +158,3 @@ const isExpired = new Date(invitation.expires_at) < new Date();
 - Clear visual distinction: Active (green/neutral) vs Expired (red)
 - Shows time remaining or time since expiry
 - Resend button works for both active and expired invitations
-

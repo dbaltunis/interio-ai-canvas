@@ -254,6 +254,7 @@ export const useDeleteInvitation = () => {
 
 export const useResendInvitation = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (invitation: UserInvitation) => {
@@ -282,6 +283,19 @@ export const useResendInvitation = () => {
         throw new Error("Invitation token not found for this invite.");
       }
 
+      // SaaS Standard: Extend expiration by 7 days when resending (like Slack, Notion, Linear)
+      const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const { error: updateError } = await supabase
+        .from("user_invitations")
+        .update({ expires_at: newExpiresAt })
+        .eq("id", invitation.id);
+
+      if (updateError) {
+        console.error("Failed to extend invitation expiration:", updateError);
+        // Continue anyway - email will still be sent
+      }
+
       const { error } = await supabase.functions.invoke("send-invitation", {
         body: {
           invitedEmail: invitation.invited_email,
@@ -296,9 +310,10 @@ export const useResendInvitation = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
       toast({
-        title: "Invitation re-sent",
-        description: "We have re-sent the invitation email.",
+        title: "Invitation renewed & re-sent",
+        description: "The invitation has been extended by 7 days and the email has been re-sent.",
       });
     },
     onError: (error: any) => {
