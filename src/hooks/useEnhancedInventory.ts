@@ -225,6 +225,18 @@ export const useCreateEnhancedInventoryItem = () => {
         throw new Error('You must be logged in to add inventory items.');
       }
 
+      // ✅ CRITICAL FIX: Get effective account owner for multi-tenant support
+      // Team members should create data under their account owner's ID
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", userId)
+        .single();
+      
+      // Use parent account if exists (team member), otherwise own ID (account owner)
+      const effectiveOwnerId = profile?.parent_account_id || userId;
+      console.log('📦 [useCreateEnhancedInventoryItem] Creating item with effectiveOwnerId:', effectiveOwnerId, '(auth user:', userId, ')');
+
       // Whitelist fields to match enhanced_inventory_items schema
       const allowedKeys = [
         'name','description','sku','category','subcategory','quantity','unit','cost_price','selling_price','supplier','vendor_id','collection_id','location','reorder_point','active',
@@ -240,7 +252,8 @@ export const useCreateEnhancedInventoryItem = () => {
       // UUID fields that should be explicitly set to null if not provided
       const uuidFields = ['vendor_id', 'collection_id', 'product_category', 'price_group', 'pricing_grid_id'];
 
-      const item: Record<string, any> = { user_id: userId, active: true };
+      // ✅ Use effectiveOwnerId instead of userId for multi-tenant support
+      const item: Record<string, any> = { user_id: effectiveOwnerId, active: true };
       for (const key of allowedKeys) {
         const val = raw[key as typeof allowedKeys[number]];
         // For UUID fields, explicitly include null values (don't filter them out)
