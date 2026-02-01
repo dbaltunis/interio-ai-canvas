@@ -1,199 +1,184 @@
 
 
-# Plan: Fix Reported Bugs
+# Plan: Fix Remaining Reported Bugs
 
 ## Overview
 
-This plan addresses two specific bugs that have been reported and verified in the codebase:
+This plan addresses the verified bugs that are still pending based on code investigation:
 
-1. **Deposit Display Bug** - Shows percentage even when fixed amount is configured
-2. **Measurement Input Scrolling Bug** - Mouse wheel accidentally changes values
+| Bug | Status | Priority |
+|-----|--------|----------|
+| ✅ Deposit display shows % for fixed amount | ALREADY FIXED | - |
+| ✅ Measurement fields scroll with mouse wheel | ALREADY FIXED | - |
+| ⏳ Sub-tabs close when browser tab switched | NOT FIXED | High |
+| ⏳ US date format inconsistent | NOT FIXED | Medium |
+| ⏳ Quote PDF page break on text line | NEEDS VERIFICATION | Medium |
 
 ---
 
-## Bug #1: Deposit Display Bug
+## Bug #1: Library Sub-Tab Persistence
 
 ### Problem
 
-When a deposit is configured as a "Fixed Amount" (not percentage-based), the quote still displays it as a percentage:
-
-```
-Current (WRONG):     "Deposit Required (50%):"  ← Shows percentage when fixed amount used
-Expected (CORRECT):  "Deposit (Fixed Amount):"  ← Should indicate fixed amount mode
-```
+When user is in Library > Hardware, then clicks away to another browser tab, upon returning the Library page resets to the first tab (Collections/Fabrics) instead of staying on Hardware.
 
 ### Root Cause
 
-The code in 3 locations hardcodes `{projectData.payment.percentage || 50}%`:
+In `src/components/inventory/ModernInventoryDashboard.tsx` (line 38):
 
-| File | Line | Current Code |
-|------|------|--------------|
-| `LivePreview.tsx` | 1464 | `Deposit Required ({projectData.payment.percentage \|\| 50}%):` |
-| `LivePreview.tsx` | 1513 | `Pay Deposit ({projectData.payment.percentage \|\| 50}%)` |
-| `BlockRenderer.tsx` | 701 | `Deposit ({projectData.payment.percentage \|\| 50}%):` |
-
-### Fix Logic
-
-```text
-IF payment.percentage exists AND payment.percentage > 0:
-    → Display: "Deposit (XX%)"
-ELSE (fixed amount mode):
-    → Display: "Deposit (Fixed Amount)" or just "Deposit Required"
-```
-
-### Implementation
-
-**File: `src/components/settings/templates/visual-editor/LivePreview.tsx`**
-
-Line 1464 - Change from:
 ```typescript
-Deposit Required ({projectData.payment.percentage || 50}%):
-```
-To:
-```typescript
-Deposit Required{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
+const [activeTab, setActiveTab] = useState("collections");
 ```
 
-Line 1513 - Change from:
+The sub-tab state is stored only in React's useState - it doesn't persist to sessionStorage like the main navigation tabs do. When the component re-renders (which can happen on tab focus), the state resets.
+
+### Fix
+
+Add sessionStorage persistence for the Library sub-tab, similar to how main tabs work in `Index.tsx`:
+
 ```typescript
-Pay Deposit ({projectData.payment.percentage || 50}%)
-```
-To:
-```typescript
-Pay Deposit{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}
+// Line 38: Initialize from sessionStorage
+const [activeTab, setActiveTab] = useState(() => {
+  const savedTab = sessionStorage.getItem('library_active_tab');
+  return savedTab || "collections";
+});
+
+// Add useEffect to persist changes
+useEffect(() => {
+  sessionStorage.setItem('library_active_tab', activeTab);
+}, [activeTab]);
 ```
 
-**File: `src/components/settings/templates/visual-editor/shared/BlockRenderer.tsx`**
+### Files to Modify
 
-Line 701 - Change from:
-```typescript
-Deposit ({projectData.payment.percentage || 50}%):
-```
-To:
-```typescript
-Deposit{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
-```
+| File | Change |
+|------|--------|
+| `src/components/inventory/ModernInventoryDashboard.tsx` | Add sessionStorage persistence for activeTab |
 
 ---
 
-## Bug #2: Measurement Input Scrolling Bug
+## Bug #2: Inconsistent Date Formats
 
 ### Problem
 
-When a user scrolls their mouse wheel while hovering over a number input field, the value accidentally changes. This is a common UX issue with HTML number inputs.
+Many places use `new Date(...).toLocaleDateString()` which uses browser locale instead of user's configured date format preference. This causes US date format (MM/DD/YYYY) to appear even when users have configured different formats.
 
-### Affected Files
+### Affected Areas
 
-| File | Number Input Count |
-|------|-------------------|
-| `MeasurementInputs.tsx` | 6 inputs (rail_width, drop, stackback, etc.) |
-| `VisualMeasurementSheet.tsx` | 2+ inputs (rail_width, drop) |
-| `MeasurementViewDialog.tsx` | Dynamic inputs |
-| `TreatmentMeasurementsCard.tsx` | 7+ inputs |
+Found 835 instances across 110 files. Key areas include:
+
+- **Clients page**: `ClientDetailDrawer.tsx`, `ClientFilesManager.tsx`, `ClientQuotesList.tsx`
+- **Jobs page**: `EnhancedJobsView.tsx`, `ProjectNotesCard.tsx`
+- **Quotes**: `QuoteViewer.tsx`, `QuotePreview.tsx`
+- **Workroom**: Various share link timestamps
 
 ### Fix Strategy
 
-Add `onWheel` event handler to prevent scroll-based value changes:
+Replace `toLocaleDateString()` calls with the existing `formatUserDate()` utility from `src/utils/dateFormatUtils.ts` or use the user's date format preference.
+
+**Priority files** (most user-visible):
+
+1. `src/components/clients/ClientDetailDrawer.tsx` - Line 326
+2. `src/components/clients/ClientQuotesList.tsx` - Line 102
+3. `src/components/jobs/EnhancedJobsView.tsx` - Line 39
+4. `src/components/jobs/ProjectNotesCard.tsx` - Lines 71, 114
+
+### Implementation Pattern
+
+The codebase has a utility but it's async. For sync contexts, we can:
+
+1. Use the user preferences from context/hook
+2. Apply `date-fns` `format()` with the user's format string
 
 ```typescript
-onWheel={(e) => e.currentTarget.blur()}
+// Before
+{new Date(client.created_at).toLocaleDateString()}
+
+// After (using existing formatUserDate)
+import { formatUserDate } from "@/utils/dateFormatUtils";
+// In component, using useEffect + state:
+const [formattedDate, setFormattedDate] = useState('');
+useEffect(() => {
+  formatUserDate(client.created_at).then(setFormattedDate);
+}, [client.created_at]);
 ```
 
-This blurs the input when scrolling, preventing the value change without interfering with intentional scrolling on the page.
+Or simpler: use the sync `formatDateSync` function that already exists but update it to check localStorage for cached preferences.
 
-### Implementation
+### Files to Modify (Phase 1 - High Priority)
 
-**File: `src/components/shared/measurement-visual/MeasurementInputs.tsx`**
-
-Add `onWheel` handler to both Input components (lines 47 and 76):
-
-```typescript
-<Input
-  id={key}
-  type="number"
-  value={measurements[key] || ""}
-  onChange={(e) => handleInputChange(key, e.target.value)}
-  onWheel={(e) => e.currentTarget.blur()}  // ← ADD THIS
-  placeholder="0"
-  readOnly={readOnly}
-  className="pr-12"
-/>
-```
-
-**File: `src/components/measurements/VisualMeasurementSheet.tsx`**
-
-Add `onWheel` handler to inputs at lines 1191 and 1216:
-
-```typescript
-<Input 
-  id="rail_width" 
-  type="number" 
-  inputMode="decimal" 
-  step="0.25" 
-  value={measurements.rail_width || ""} 
-  onChange={e => handleInputChange("rail_width", e.target.value)} 
-  onWheel={(e) => e.currentTarget.blur()}  // ← ADD THIS
-  onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
-  ...
-/>
-```
-
-**File: `src/components/measurements/MeasurementViewDialog.tsx`**
-
-Add `onWheel` handler at line 62:
-
-```typescript
-<Input
-  type="number"
-  value={editedMeasurements[key] || ''}
-  onChange={(e) => setEditedMeasurements(prev => ({...}))}
-  onWheel={(e) => e.currentTarget.blur()}  // ← ADD THIS
-/>
-```
-
-**File: `src/components/job-creation/treatment-pricing/TreatmentMeasurementsCard.tsx`**
-
-Add `onWheel` handler to all 7 number inputs (lines 25, 36, 47, 67, 78, 89, 100, 120):
-
-```typescript
-<Input
-  id="rail_width"
-  type="number"
-  step="0.25"
-  value={formData.rail_width}
-  onWheel={(e) => e.currentTarget.blur()}  // ← ADD THIS
-/>
-```
+| File | Lines | Current Issue |
+|------|-------|---------------|
+| `ClientDetailDrawer.tsx` | 326 | `toLocaleDateString()` |
+| `ClientQuotesList.tsx` | 102 | `toLocaleDateString()` |
+| `EnhancedJobsView.tsx` | 39 | `formatDate` uses `toLocaleDateString()` |
+| `ProjectNotesCard.tsx` | 71, 114 | `toLocaleDateString()`, `toLocaleString()` |
+| `ClientFilesManager.tsx` | 545 | `toLocaleDateString()` |
 
 ---
 
-## Files to Modify
+## Bug #3: Quote PDF Page Breaks
 
-| File | Bug Fixed | Changes |
-|------|-----------|---------|
-| `LivePreview.tsx` | Deposit Display | 2 lines (1464, 1513) |
-| `BlockRenderer.tsx` | Deposit Display | 1 line (701) |
-| `MeasurementInputs.tsx` | Scroll Prevention | 2 inputs |
-| `VisualMeasurementSheet.tsx` | Scroll Prevention | 2 inputs |
-| `MeasurementViewDialog.tsx` | Scroll Prevention | 1 input |
-| `TreatmentMeasurementsCard.tsx` | Scroll Prevention | 7 inputs |
+### Current Implementation
+
+The PDF generation in `src/utils/generateQuotePDF.ts` already has page break configuration:
+
+```typescript
+pagebreak: {
+  mode: ['css', 'legacy'],
+  before: '.page-break-before, .force-page-break',
+  after: '.page-break-after',
+  avoid: ['.avoid-page-break', '.quote-header', '.client-details-block', 'img']
+},
+```
+
+### Potential Issue
+
+The page break might be cutting through text because:
+1. Table rows aren't marked with `avoid-page-break`
+2. Text blocks might be missing the CSS class
+
+### Fix
+
+Add `avoid-page-break` class to quote line items and text blocks in the template:
+
+```typescript
+// In LivePreview.tsx - add class to quote item rows
+<tr className="avoid-page-break" style={{...}}>
+```
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/settings/templates/visual-editor/LivePreview.tsx` | Add `avoid-page-break` class to quote item rows |
 
 ---
 
-## Testing After Implementation
+## Implementation Order
 
-### Deposit Display Bug
-1. Create or open a project with a quote
-2. Go to Payment config → Select "Deposit" → Select "Fixed Amount"
-3. Set a specific amount (e.g., $500)
-4. Save the payment config
-5. View the quote preview
-6. **Verify**: Label should NOT show "(50%)" but just "Deposit Required:" or similar
+1. **Library Sub-Tab Persistence** (Quick fix - 1 file, 2 changes)
+2. **Date Format Priority Files** (5 files, highest user visibility)
+3. **PDF Page Break** (1 file, add CSS class)
 
-### Measurement Scroll Bug
-1. Open any job with a measurement worksheet
-2. Enter a value in a measurement field (e.g., Width = 100)
-3. Hover over the input field
-4. Scroll the mouse wheel up/down
-5. **Verify**: The value should NOT change when scrolling
+---
+
+## Testing Checklist
+
+### Library Sub-Tab Persistence
+1. Go to Library > Hardware tab
+2. Click away to another browser tab
+3. Return to the app
+4. **Verify**: Still on Hardware tab (not reset to Collections/Fabrics)
+
+### Date Format
+1. Go to Settings > Personal > Date Format
+2. Set to "DD/MM/YYYY" (European format)
+3. Go to Clients > View any client
+4. **Verify**: "Added" date shows DD/MM/YYYY format
+
+### PDF Page Break
+1. Create a quote with many line items (enough for 2+ pages)
+2. Export to PDF
+3. **Verify**: Text doesn't split across page boundaries
 
