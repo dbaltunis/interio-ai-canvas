@@ -25,13 +25,30 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 import { JobNotFound } from "./JobNotFound";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { format } from "date-fns";
 
+
+// Helper to convert user format to date-fns format
+const convertToDateFnsFormat = (userFormat: string): string => {
+  const formatMap: Record<string, string> = {
+    'MM/dd/yyyy': 'MM/dd/yyyy',
+    'dd/MM/yyyy': 'dd/MM/yyyy', 
+    'yyyy-MM-dd': 'yyyy-MM-dd',
+    'dd-MMM-yyyy': 'dd-MMM-yyyy',
+  };
+  return formatMap[userFormat] || 'MM/dd/yyyy';
+};
 
 const JobsPage = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = searchParams.get('jobId');
   const createClientParam = searchParams.get('createClient');
+  
+  // Get user preferences for date formatting
+  const { data: userPreferences } = useUserPreferences();
+  const userDateFormat = convertToDateFnsFormat(userPreferences?.date_format || 'MM/dd/yyyy');
   
   console.log('[JOBS] JobsPage render - selectedJobId:', selectedJobId, 'createClientParam:', createClientParam);
   
@@ -280,7 +297,7 @@ const canViewJobsExplicit =
       
       // Create the project - useCreateProject will handle job number generation
       const newProject = await createProject.mutateAsync({
-        name: `New Job ${new Date().toLocaleDateString()}`,
+        name: `New Job ${format(new Date(), userDateFormat)}`,
         description: "",
         status: "planning",
         client_id: clientId || null
@@ -348,7 +365,7 @@ const canViewJobsExplicit =
       console.log("Creating project for CRM quote:", quote);
       
       const newProject = await createProject.mutateAsync({
-        name: `Job ${quote.quote_number || new Date().toLocaleDateString()}`,
+        name: `Job ${quote.quote_number || format(new Date(), userDateFormat)}`,
         description: `Project created from quote ${quote.quote_number}`,
         status: "planning",
         job_number: quote.quote_number,

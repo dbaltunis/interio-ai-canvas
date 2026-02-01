@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { 
   Building2,
   MapPin,
@@ -46,6 +47,18 @@ import { cn } from "@/lib/utils";
 import { DocumentHeaderBlock } from './shared/BlockRenderer';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { getAvailableBlocks, getDocumentTypeConfig } from '@/utils/documentTypeConfig';
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+
+// Helper to convert user format to date-fns format
+const convertToDateFnsFormat = (userFormat: string): string => {
+  const formatMap: Record<string, string> = {
+    'MM/dd/yyyy': 'MM/dd/yyyy',
+    'dd/MM/yyyy': 'dd/MM/yyyy', 
+    'yyyy-MM-dd': 'yyyy-MM-dd',
+    'dd-MMM-yyyy': 'dd-MMM-yyyy',
+  };
+  return formatMap[userFormat] || 'MM/dd/yyyy';
+};
 
 interface EditableTextProps {
   value: string;
@@ -346,8 +359,26 @@ interface EditableLivePreviewBlockProps {
 
 const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove, documentType = 'quote' }: EditableLivePreviewBlockProps) => {
   const { data: userBusinessSettings } = useBusinessSettings();
+  const { data: userPreferences } = useUserPreferences();
   const content = block.content || {};
   const style = content.style || {};
+
+  // Get user's date format
+  const userTimezone = userPreferences?.timezone || 'UTC';
+  const userDateFormat = useMemo(() => 
+    convertToDateFnsFormat(userPreferences?.date_format || 'MM/dd/yyyy'),
+    [userPreferences?.date_format]
+  );
+
+  // Helper to format dates using user's preference
+  const formatDate = useCallback((dateStr: string | null | undefined): string => {
+    if (!dateStr) return format(new Date(), userDateFormat);
+    try {
+      return formatInTimeZone(new Date(dateStr), userTimezone, userDateFormat);
+    } catch {
+      return format(new Date(), userDateFormat);
+    }
+  }, [userDateFormat, userTimezone]);
 
   const updateBlockContent = (updates: any) => {
     console.log('updateBlockContent called for block:', block.id, 'with updates:', updates);
@@ -474,9 +505,9 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
       quote_number: project.quote_number || project.job_number || 'QT-2024-001',
       invoice_number: project.invoice_number || `INV-${project.job_number || '001'}`,
       project_name: project.name || 'Project',
-      date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
-      valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      due_date: project.due_date ? new Date(project.due_date).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      date: formatDate(project.created_at),
+      valid_until: formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()),
+      due_date: formatDate(project.due_date) || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()),
       subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
       tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',

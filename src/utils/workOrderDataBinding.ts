@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 export interface WorkOrderItem {
   id: string;
   name: string;
@@ -40,12 +42,34 @@ export interface WorkOrderData {
   };
 }
 
+// Helper to convert user format to date-fns format
+const convertToDateFnsFormat = (userFormat: string): string => {
+  const formatMap: Record<string, string> = {
+    'MM/dd/yyyy': 'MM/dd/yyyy',
+    'dd/MM/yyyy': 'dd/MM/yyyy', 
+    'yyyy-MM-dd': 'yyyy-MM-dd',
+    'dd-MMM-yyyy': 'dd-MMM-yyyy',
+  };
+  return formatMap[userFormat] || 'MM/dd/yyyy';
+};
+
 export const buildWorkOrderData = (
   project: any,
   treatments: any[],
   rooms: any[],
-  templateSettings: any
+  templateSettings: any,
+  userDateFormat: string = 'MM/dd/yyyy'
 ): WorkOrderData => {
+  // Helper to format dates using user's preference
+  const formatDate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      return format(new Date(dateStr), convertToDateFnsFormat(userDateFormat));
+    } catch {
+      return '';
+    }
+  };
+
   // Convert treatments to work order items
   const items: WorkOrderItem[] = treatments.map((treatment) => ({
     id: treatment.id,
@@ -73,8 +97,8 @@ export const buildWorkOrderData = (
       orderNumber: project?.job_number || 'WO-001',
       clientName: project?.client?.name || '',
       projectName: project?.name || '',
-      createdDate: project?.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
-      dueDate: project?.due_date ? new Date(project.due_date).toLocaleDateString() : '',
+      createdDate: formatDate(project?.created_at) || format(new Date(), convertToDateFnsFormat(userDateFormat)),
+      dueDate: formatDate(project?.due_date),
       assignedTo: project?.assigned_to || '',
       status: project?.status || 'pending',
     },
@@ -93,3 +117,4 @@ export const buildWorkOrderData = (
     },
   };
 };
+
