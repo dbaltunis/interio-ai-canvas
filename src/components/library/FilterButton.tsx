@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { colorNameToHex } from "@/utils/colorNameToHex";
 import { useUnifiedSuppliers } from "@/hooks/useUnifiedSuppliers";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 // Popular/common tags to show as quick-select buttons
 const POPULAR_TAGS = ["blockout", "wide_width", "sheer", "textured", "light_filtering", "thermal"];
@@ -177,6 +178,9 @@ export const FilterButton = ({
   const tagInputRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
+  // Check if user is a dealer (dealers should not see supplier filter)
+  const { data: isDealer } = useIsDealer();
+  
   // Use unified suppliers hook (combines vendor_id and supplier text fields)
   const { suppliers: unifiedSuppliers, isLoading: suppliersLoading } = useUnifiedSuppliers();
   const { data: allCollections = [] } = useCollectionsWithCounts();
@@ -303,38 +307,40 @@ export const FilterButton = ({
           </div>
 
           <div className="space-y-4">
-            {/* Supplier/Vendor Filter (Unified) */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                Supplier
-              </label>
-              <Select
-                value={selectedVendor || "all"}
-                onValueChange={(val) => onVendorChange(val === "all" ? undefined : val)}
-                disabled={suppliersLoading}
-              >
-                <SelectTrigger className="w-full h-9">
-                  <SelectValue placeholder="All Suppliers" />
-                </SelectTrigger>
-                <SelectContent className="z-[10002]">
-                  <SelectItem value="all">All Suppliers</SelectItem>
-                  {unifiedSuppliers.filter(s => s.itemCount > 0).map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      <div className="flex items-center gap-2 w-full">
-                        <span className="flex-1">{supplier.name}</span>
-                        {supplier.type === 'supplier_text' && (
-                          <span className="text-warning text-[10px]" title="Not linked to vendor">⚠</span>
-                        )}
-                        <Badge variant="secondary" className="text-[10px] ml-1 shrink-0">
-                          {supplier.itemCount}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Supplier/Vendor Filter (Unified) - Hidden for dealers */}
+            {!isDealer && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  Supplier
+                </label>
+                <Select
+                  value={selectedVendor || "all"}
+                  onValueChange={(val) => onVendorChange(val === "all" ? undefined : val)}
+                  disabled={suppliersLoading}
+                >
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue placeholder="All Suppliers" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10002]">
+                    <SelectItem value="all">All Suppliers</SelectItem>
+                    {unifiedSuppliers.filter(s => s.itemCount > 0).map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="flex-1">{supplier.name}</span>
+                          {supplier.type === 'supplier_text' && (
+                            <span className="text-warning text-[10px]" title="Not linked to vendor">⚠</span>
+                          )}
+                          <Badge variant="secondary" className="text-[10px] ml-1 shrink-0">
+                            {supplier.itemCount}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Collection Filter */}
             <div className="space-y-2">
