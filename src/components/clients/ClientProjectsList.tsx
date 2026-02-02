@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,9 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   const [isCreating, setIsCreating] = useState(false);
   const { isLoading: permissionsLoading } = useUserPermissions();
   const { formatCurrency } = useFormattedCurrency();
-  const { formattedDates: dueDates } = useFormattedDates(projects, (p) => p.due_date, false);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getProjectDueDate = useCallback((p: any) => p.due_date, []);
+  const { formattedDates: dueDates } = useFormattedDates(projects, getProjectDueDate, false);
 
   // Calculate project value from quotes
   const getProjectValue = (project: any): number => {

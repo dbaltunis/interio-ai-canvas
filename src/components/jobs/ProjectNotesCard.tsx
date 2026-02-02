@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +25,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
   
-  // Format dates using user preferences
-  const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getNotesDate = useCallback((n: any) => n.created_at, []);
+  const { formattedDates } = useFormattedDates(notes, getNotesDate, true);
 
   const handleAdd = async () => {
     if (!note.trim()) {
