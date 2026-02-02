@@ -216,8 +216,8 @@ export const FabricSelectionSection = ({
                 )}
                 <div className="border-t pt-1 mt-1">
                   <div>• Drop measurement: {fabricCalculation.drop ? formatFromCM(fabricCalculation.drop, units.length) : 'Not set'}</div>
-                  <div>• Header hem allowance: {formatFromCM(fabricCalculation.headerHem || 8, units.length)}</div>
-                  <div>• Bottom hem allowance: {formatFromCM(fabricCalculation.bottomHem || 8, units.length)}</div>
+                  <div>• Header hem allowance: {formatFromCM(fabricCalculation.headerHem ?? 0, units.length)}</div>
+                  <div>• Bottom hem allowance: {formatFromCM(fabricCalculation.bottomHem ?? 0, units.length)}</div>
                   {fabricCalculation.pooling && fabricCalculation.pooling > 0 && (
                     <div>• Pooling amount: {formatFromCM(fabricCalculation.pooling, units.length)}</div>
                   )}
