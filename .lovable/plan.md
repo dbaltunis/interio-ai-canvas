@@ -1,202 +1,221 @@
 
-
-# Fix Plan: Greg's Login Issue - Edge Function & Trigger Bug
+# Fix Plan: Vertical Blinds TWC Templates Not Working
 
 ## Executive Summary
 
-Greg (greg@cccone.com.au) cannot login because the `create-invited-user` edge function fails with a **database trigger error**. The root cause is a broken trigger that references non-existent columns in `auth.users`.
+After comprehensive investigation of CCCO account (Daniel/Greg), I've identified **5 distinct issues** causing vertical blinds templates "NORMAN SmartDrape" and "Verticals (Slats Only)" to not work properly:
+
+1. **No Options Linked** (0 options) - Templates missing product-specific TWC options
+2. **Configuration Mismatch** - `inventoryCategory: 'none'` vs `primaryCategory: 'material'/'both'` conflict
+3. **Missing Parent Product Link** - NORMAN SmartDrape has `inventory_item_id: null`
+4. **TWC Sync Skip Logic** - "Slats Only" products are classified as `hardware` and skip template option creation
+5. **$0 Pricing Persistence** - Some windows show $0 despite having pricing grids
+
+---
+
+## Database Findings
+
+### Templates Status
+
+| Template | Options | inventory_item_id | Status |
+|----------|---------|-------------------|--------|
+| Verticals | 11 ✅ | linked ✅ | Working |
+| NORMAN SmartDrape | 0 ❌ | **null** ❌ | Not configured |
+| Verticals (Slats Only) | 0 ❌ | linked ✅ | Not configured |
+
+### Child Materials Exist
+
+"Verticals (Slats Only)" has 7 child materials correctly linked via `parent_product_id`:
+- BALMORAL BLOCKOUT (price_group: 2)
+- FOCUS (price_group: 1)
+- KARMA (price_group: 2)
+- QUBE (price_group: Budget)
+- SOLITAIRE (price_group: 1)
+- VIBE (price_group: 1)
+- VIBE METALLIC (price_group: 2)
+
+### Pricing Grids Exist
+
+CCCO has 4 vertical blinds pricing grids with correct price groups:
+- Group 1 (price_group: "1")
+- Group 2 (price_group: "2")
+- Group Budget (price_group: "BUDGET")
+- Group 0_LF_Air (price_group: "0_LF_AIR")
 
 ---
 
 ## Root Cause Analysis
 
-### Issue #1: Broken Database Trigger
+### Issue #1: TWC Sync Skips "Slats Only" Products
 
-**Error from logs:**
+**Location:** `supabase/functions/twc-sync-products/index.ts` (Lines 158-161)
+
+```typescript
+if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
+  return 'hardware'; // Replacement parts, not full product
+}
 ```
-record "new" has no field "parent_account_id"
+
+When `treatmentCategory === 'hardware'`:
+- Line 717-720: Template creation is SKIPPED
+- Options are NEVER created for these products
+
+**Impact:** "Verticals (Slats Only)" exists as a template BUT has no options because TWC sync treated it as hardware and skipped the option creation phase.
+
+### Issue #2: `inventoryCategory: 'none'` Conflict
+
+**Location:** `src/utils/treatmentTypeDetection.ts` (Line 164)
+
+```typescript
+vertical_blinds: {
+  inventoryCategory: 'none', // ❌ Wrong for vertical blinds!
+}
 ```
 
-**Location:** Trigger `on_auth_user_created_shopify_statuses` on `auth.users` table
+**However**, `inventorySubcategories.ts` (Line 78-84) correctly defines:
 
-**Problem:** The trigger function `create_default_shopify_statuses()` tries to access:
-- `NEW.role` - Exists in `auth.users` but contains "authenticated", not "Owner/Manager"
-- `NEW.parent_account_id` - **DOES NOT EXIST** in `auth.users` table
+```typescript
+vertical_blinds: {
+  category: 'both', // ✅ Correct - supports fabric vanes AND material slats
+  fabricSubcategories: ['vertical_fabric'],
+  materialSubcategories: ['vertical_slats', 'vertical_vanes', 'vertical', 'blind_material'],
+}
+```
 
-This crashes user creation for ALL invited users.
+**Impact:** When `useTreatmentSpecificFabrics.ts` runs:
+1. It checks `treatmentConfig.inventoryCategory` → gets `'none'`
+2. It then checks `primaryCategory` → gets `'material'` from inventorySubcategories
+3. Line 192-218: The code handles this special case BUT only when `parentProductId` is not set
 
-### Issue #2: Missing Edge Function Configuration
-
-The `create-invited-user` edge function exists in code but is **NOT listed in `supabase/config.toml`**. While it appears to be deployed, proper configuration should be added.
-
----
-
-## Fix #1: Correct the Database Trigger (SQL Migration)
-
-The trigger should only run on the `user_profiles` table (where `role` and `parent_account_id` exist), not on `auth.users`.
-
-### Option A: Drop and recreate trigger on correct table
+### Issue #3: NORMAN SmartDrape Has No Linked Inventory Item
 
 ```sql
--- Drop the broken trigger from auth.users
-DROP TRIGGER IF EXISTS on_auth_user_created_shopify_statuses ON auth.users;
-
--- Recreate trigger on user_profiles table instead
-CREATE TRIGGER on_user_profile_created_shopify_statuses
-  AFTER INSERT ON public.user_profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION create_default_shopify_statuses();
+id: d9053931-fbac-4fb8-95ec-89fc780a9a02
+inventory_item_id: null  -- ❌ No link!
 ```
 
-### Option B: Fix the function to not depend on non-existent columns
+This template was likely created manually, not through TWC sync, so it:
+- Has no parent product to pull child materials from
+- Has no TWC questions to create options from
 
-If we need to keep it on `auth.users`, update the function to not reference `parent_account_id`:
+### Issue #4: $0 Pricing on Some Windows
+
+Windows with working "Verticals" template show:
+- Some records: `total_selling: 266.47` ✅
+- Some records: `total_selling: 0` ❌
+
+The $0 records happen when:
+1. `liveBlindCalcResult` is not yet populated when save triggers
+2. Fabric cost = 0 because no fabric was selected
+3. The fallback logic doesn't have pricing grid data
+
+---
+
+## Fix Plan
+
+### Phase 1: Fix TWC Sync Logic (Edge Function)
+
+**File:** `supabase/functions/twc-sync-products/index.ts`
+
+**Change 1:** Don't skip template creation for "Slats Only" - treat as `vertical_blinds`
+
+```typescript
+// Lines 158-161: REMOVE or MODIFY this
+if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
+  return 'hardware'; // ❌ Remove this
+}
+
+// Instead, add BEFORE the "vertical" check:
+if (lowerDesc.includes('slats only') && lowerDesc.includes('vertical')) {
+  return 'vertical_blinds'; // ✅ Keep as vertical blinds
+}
+```
+
+**Change 2:** Ensure options are created even when product was synced without questions
+
+Add a fallback to copy options from an existing working template with the same treatment_category when no TWC questions exist.
+
+### Phase 2: Fix Detection Configuration
+
+**File:** `src/utils/treatmentTypeDetection.ts`
+
+**Change:** Update `vertical_blinds` inventoryCategory from `'none'` to `'both'`
+
+```typescript
+vertical_blinds: {
+  requiresFullness: false,
+  requiresHardwareType: false,
+  requiresFabricOrientation: false,
+  requiresHeading: false,
+  requiresLining: false,
+  showPooling: false,
+  inventoryCategory: 'both', // ✅ Changed from 'none'
+  specificFields: ['louvre_width', 'headrail_type', 'control_type'],
+  visualComponent: 'BlindVisualizer',
+},
+```
+
+### Phase 3: SQL Migration - Fix Existing Templates
+
+Run SQL to:
+1. Copy options from working "Verticals" template to "Verticals (Slats Only)"
+2. Link "NORMAN SmartDrape" to its inventory item (if one exists)
 
 ```sql
-CREATE OR REPLACE FUNCTION public.create_default_shopify_statuses()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-DECLARE
-  profile_role text;
-  profile_parent uuid;
-BEGIN
-  -- Get role and parent from user_profiles (not NEW which is auth.users)
-  SELECT role, parent_account_id 
-  INTO profile_role, profile_parent
-  FROM user_profiles 
-  WHERE user_id = NEW.id;
-  
-  -- Only create for account owners (not team members)
-  IF profile_role IN ('Owner', 'System Owner') 
-     AND (profile_parent IS NULL OR profile_role = 'System Owner') THEN
-    
-    -- Check if statuses already exist
-    IF NOT EXISTS (SELECT 1 FROM shopify_sync_statuses WHERE user_id = NEW.id) THEN
-      INSERT INTO shopify_sync_statuses (user_id, job_status, quote_status, is_active, created_at, updated_at)
-      VALUES 
-        (NEW.id, 'quote-pending', 'pending', true, NOW(), NOW()),
-        (NEW.id, 'quote-draft', 'draft', true, NOW(), NOW()),
-        (NEW.id, 'quote-sent', 'accepted', true, NOW(), NOW()),
-        (NEW.id, 'order-confirmed', 'accepted', true, NOW(), NOW()),
-        (NEW.id, 'completed', 'accepted', true, NOW(), NOW());
-    END IF;
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$;
+-- Copy options from working template to broken template
+INSERT INTO template_option_settings (template_id, treatment_option_id, is_enabled, order_index)
+SELECT 
+  'a6ab02d7-cac3-4f31-87d8-6046eb65f597', -- Verticals (Slats Only)
+  treatment_option_id,
+  is_enabled,
+  order_index
+FROM template_option_settings
+WHERE template_id = 'ccc26823-36ae-4dfe-9c22-6bb9851e45ca' -- Working Verticals
+ON CONFLICT DO NOTHING;
 ```
 
-**Recommendation:** Option A is cleaner - move the trigger to user_profiles where the data actually exists.
+### Phase 4: Price Group Case Sensitivity
+
+The pricing grid has `price_group: "BUDGET"` (uppercase) but some items have `price_group: "Budget"` (mixed case). 
+
+**File:** `src/utils/pricing/gridAutoMatcher.ts`
+
+Verify the existing normalization handles this (looks like it does with `normalizedSearch.toLowerCase()`).
 
 ---
 
-## Fix #2: Add Edge Function Configuration
+## Files to Modify
 
-Add the missing entry to `supabase/config.toml`:
-
-```toml
-[functions.create-invited-user]
-verify_jwt = false  # Must be false - called before user is authenticated
-```
-
----
-
-## Fix #3: Verify Invitation Flow
-
-Once the trigger is fixed:
-1. Greg's invitation is still **pending** and **valid** (expires 2026-02-08)
-2. The invitation link should work immediately after the fix
-3. No need to resend the invitation
+| File | Changes |
+|------|---------|
+| `supabase/functions/twc-sync-products/index.ts` | Fix "Slats Only" categorization |
+| `src/utils/treatmentTypeDetection.ts` | Change `inventoryCategory: 'none'` → `'both'` |
+| SQL Migration | Copy options to broken templates |
 
 ---
 
-## Affected Files
+## Expected Results After Fix
 
-| File | Change |
-|------|--------|
-| `supabase/config.toml` | Add `create-invited-user` function entry |
-| SQL Migration (via Supabase dashboard) | Fix `create_default_shopify_statuses` trigger |
-
----
-
-## Manager Permissions Verification
-
-Greg's invitation includes these Manager permissions (all correctly configured):
-- `view_all_jobs`, `create_jobs`, `edit_all_jobs`
-- `view_all_clients`, `create_clients`, `edit_all_clients`
-- `view_all_calendar`, `view_inventory`, `manage_inventory`
-- `view_templates`, `view_window_treatments`
-- `view_team_members`, `view_team_performance`
-- `send_emails`, `view_emails`, `view_workroom`
-
-These match the Manager role in `src/constants/permissions.ts`. Permissions are NOT the issue.
+| Test | Before | After |
+|------|--------|-------|
+| Verticals (Slats Only) options | 0 options ❌ | 11 options ✅ |
+| NORMAN SmartDrape options | 0 options ❌ | 11 options ✅ (if linked) |
+| Materials appear in Library | Missing for some | All visible ✅ |
+| Pricing grid resolution | Sometimes fails | Consistent ✅ |
+| Saved window total_selling | $0 on some | Correct price ✅ |
 
 ---
 
-## Implementation Steps
+## Technical Details
 
-### Step 1: Fix the broken trigger (SQL - run in Supabase Dashboard)
+### Why "Slats Only" Was Treated as Hardware
 
-```sql
--- Option A: Move trigger to user_profiles table
-DROP TRIGGER IF EXISTS on_auth_user_created_shopify_statuses ON auth.users;
+The TWC sync logic was designed to skip creating templates for replacement parts (like individual slats sold without the headrail system). However, TWC sells "Verticals (Slats Only)" as a full product with its own set of options - it just uses replacement slats from other collections.
 
--- The function needs to reference user_profiles table data, not NEW from auth.users
-CREATE OR REPLACE FUNCTION public.create_default_shopify_statuses()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-BEGIN
-  -- Only create for account owners (not team members)
-  IF NEW.role IN ('Owner', 'System Owner') 
-     AND (NEW.parent_account_id IS NULL OR NEW.role = 'System Owner') THEN
-    
-    -- Check if statuses already exist
-    IF NOT EXISTS (SELECT 1 FROM shopify_sync_statuses WHERE user_id = NEW.user_id) THEN
-      INSERT INTO shopify_sync_statuses (user_id, job_status, quote_status, is_active, created_at, updated_at)
-      VALUES 
-        (NEW.user_id, 'quote-pending', 'pending', true, NOW(), NOW()),
-        (NEW.user_id, 'quote-draft', 'draft', true, NOW(), NOW()),
-        (NEW.user_id, 'quote-sent', 'accepted', true, NOW(), NOW()),
-        (NEW.user_id, 'order-confirmed', 'accepted', true, NOW(), NOW()),
-        (NEW.user_id, 'completed', 'accepted', true, NOW(), NOW());
-    END IF;
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$;
+The fix allows these products to create templates and options while still routing true hardware items (brackets, motors, remotes) correctly.
 
--- Create trigger on user_profiles instead
-CREATE TRIGGER on_user_profile_created_shopify_statuses
-  AFTER INSERT ON public.user_profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION create_default_shopify_statuses();
-```
+### Why `inventoryCategory: 'none'` Was Wrong
 
-### Step 2: Update config.toml
+This was set because venetian blinds (wood/aluminum slats) don't need fabric inventory - they use pre-cut slats from manufacturers. However, vertical blinds use FABRIC vanes that need to be tracked in inventory, priced via grids, and displayed in the material selection panel.
 
-Add missing edge function configuration.
-
-### Step 3: Test
-
-Have Greg click the invitation link again - it should work immediately.
-
----
-
-## Testing Checklist
-
-| Test | Expected Result |
-|------|-----------------|
-| Greg accepts invitation | No "Edge Function returned non-2xx" error |
-| Greg signs in | Redirects to dashboard |
-| Greg views projects | Can see Daniel's CCCO projects |
-| Greg creates job | Job created successfully |
-| New user signup (any) | Works without trigger error |
-
+Setting this to `'both'` aligns with the already-correct `inventorySubcategories.ts` configuration and enables proper material display.
