@@ -35,6 +35,7 @@ import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
 import { WelcomeTour } from "./components/teaching/WelcomeTour";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
+import { BookingPageSkeleton } from "./components/booking/BookingPageSkeleton";
 import { UpdateAnnouncementModal } from "./components/version/UpdateAnnouncementModal";
 import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
@@ -210,7 +211,9 @@ const App = () => {
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
-                    <PublicBookingPage />
+                    <Suspense fallback={<BookingPageSkeleton />}>
+                      <PublicBookingPage />
+                    </Suspense>
                   </ErrorBoundary>
                 } />
                 <Route path="/book" element={<NotFound />} />
