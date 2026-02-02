@@ -39,7 +39,7 @@ export const BookingBrandingPanel = ({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground p-8 lg:p-10 rounded-none lg:rounded-l-2xl flex flex-col justify-between min-h-[300px] lg:min-h-full"
+      className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 text-white p-8 lg:p-10 rounded-none lg:rounded-l-2xl flex flex-col justify-between min-h-[300px] lg:min-h-full"
     >
       {/* Company Branding */}
       <div className="space-y-6">
@@ -51,24 +51,24 @@ export const BookingBrandingPanel = ({
               transition={{ delay: 0.2 }}
               src={scheduler.company_logo_url} 
               alt={scheduler.company_name || "Company"}
-              className="w-16 h-16 rounded-xl object-contain bg-white/10 backdrop-blur-sm p-2"
+              className="w-20 h-20 rounded-xl object-contain bg-white/20 backdrop-blur-sm p-2 shadow-lg"
             />
           ) : (
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="w-16 h-16 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center"
+              className="w-20 h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg"
             >
-              <Building2 className="w-8 h-8 text-primary-foreground/80" />
+              <Building2 className="w-10 h-10 text-white/80" />
             </motion.div>
           )}
           <div>
-            <h2 className="text-lg font-semibold text-primary-foreground/90">
+            <h2 className="text-lg font-semibold text-white/90">
               {scheduler.company_name || "Schedule with us"}
             </h2>
             {scheduler.company_phone && (
-              <p className="text-sm text-primary-foreground/70">{scheduler.company_phone}</p>
+              <p className="text-sm text-white/70">{scheduler.company_phone}</p>
             )}
           </div>
         </div>
@@ -87,7 +87,7 @@ export const BookingBrandingPanel = ({
           )}
           <h1 className="text-2xl lg:text-3xl font-bold mb-2">{scheduler.name}</h1>
           {scheduler.description && (
-            <p className="text-primary-foreground/80 text-sm leading-relaxed">
+            <p className="text-white/80 text-sm leading-relaxed">
               {scheduler.description}
             </p>
           )}
@@ -99,13 +99,13 @@ export const BookingBrandingPanel = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center gap-3 text-primary-foreground/90"
+            className="flex items-center gap-3 text-white/90"
           >
             <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-primary-foreground/70">Duration</p>
+              <p className="text-sm text-white/70">Duration</p>
               <p className="font-medium">{scheduler.duration} minutes</p>
             </div>
           </motion.div>
@@ -115,13 +115,13 @@ export const BookingBrandingPanel = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex items-center gap-3 text-primary-foreground/90"
+              className="flex items-center gap-3 text-white/90"
             >
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <location.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-primary-foreground/70">Location</p>
+                <p className="text-sm text-white/70">Location</p>
                 <p className="font-medium">{location.text}</p>
               </div>
             </motion.div>
@@ -131,13 +131,13 @@ export const BookingBrandingPanel = ({
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-3 text-primary-foreground/90 bg-white/10 rounded-lg p-3"
+              className="flex items-center gap-3 text-white/90 bg-white/10 rounded-lg p-3"
             >
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-primary-foreground/70">Selected Time</p>
+                <p className="text-sm text-white/70">Selected Time</p>
                 <p className="font-medium">
                   {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {selectedTime}
                 </p>
@@ -152,7 +152,7 @@ export const BookingBrandingPanel = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="flex items-center gap-2 text-primary-foreground/60 text-sm mt-8 pt-4 border-t border-white/10"
+        className="flex items-center gap-2 text-white/60 text-sm mt-8 pt-4 border-t border-white/10"
       >
         <Shield className="w-4 h-4" />
         <span>Secure booking powered by InterioApp</span>
