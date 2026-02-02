@@ -1,111 +1,128 @@
 
 
-## UI Polish: Improve Booking Page Styling
+## Fix Collections Not Displaying in Filters
 
-### Issues Identified
+### Problem Summary
 
-Based on the screenshot:
-1. **Logo too small**: Currently 64px (w-16 h-16), needs to be larger (80-96px)
-2. **Time slots barely visible**: Buttons are small with low contrast, text size is `text-sm`
-3. **Inputs need cleaner look**: Need softer borders, better spacing, and subtle backgrounds
-4. **Color scheme**: Gradient is good but needs slight refinement for professionalism
+The collections dropdown in the filter panel shows "All Collections" but no actual collections appear in the list. The root cause is that the collection-related hooks are missing the multi-tenant support pattern that other hooks (like `useVendors`) correctly implement.
 
----
+### Root Cause Analysis
 
-### Changes Overview
+Comparing `useCollections.ts` with `useVendors.ts`:
 
-#### 1. Larger Logo in BookingBrandingPanel
+| Aspect | useVendors (correct) | useCollections (broken) |
+|--------|---------------------|------------------------|
+| Uses `useEffectiveAccountOwner` | Yes | No |
+| Includes `effectiveOwnerId` in queryKey | Yes | No |
+| Filters by `user_id` explicitly | Yes | No |
+| Has `enabled` condition | Yes, waits for `effectiveOwnerId` | No |
 
-**File**: `src/components/booking/BookingBrandingPanel.tsx`
+The RLS policies on the `collections` table DO use `get_effective_account_owner`, but the React Query cache behavior causes issues because:
+1. The query fires before the effective owner context is established
+2. The cache key doesn't differentiate between users/accounts
+3. This leads to stale empty arrays being cached
 
-- Increase logo size from `w-16 h-16` to `w-20 h-20` (80px)
-- Increase fallback icon size from `w-8 h-8` to `w-10 h-10`
-- Add slight shadow for better visibility
+### Solution
 
-#### 2. Bigger, More Visible Time Slots
+Update all collection and inventory filter hooks to follow the same multi-tenant pattern as `useVendors`:
 
-**File**: `src/components/booking/DateTimeSelector.tsx`
+**Files to modify:**
+1. `src/hooks/useCollections.ts` - Add multi-tenant support to all hooks
+2. `src/hooks/useInventoryTags.ts` - Add multi-tenant support to all three hooks
 
-- Change button height from `h-11` to `h-12` 
-- Increase font size from `text-sm` to `text-base`
-- Improve button styling with better borders and shadow
-- Add slight background tint for unselected buttons for better visibility
-- Make selected state more prominent with deeper color
+### Technical Changes
 
-#### 3. Cleaner Input Styling
+#### 1. useCollections.ts
 
-**File**: `src/components/booking/ClientInfoForm.tsx`
+**Add import for `useEffectiveAccountOwner`:**
+```typescript
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+```
 
-- Add subtle background to inputs (`bg-muted/30`)
-- Increase input height from `h-11` to `h-12`
-- Softer border colors
-- Better focus states with ring
-- Add rounded-xl for modern feel
+**Update `useCollections` hook:**
+- Add `const { effectiveOwnerId } = useEffectiveAccountOwner();`
+- Update queryKey to include `effectiveOwnerId`
+- Add `.eq("user_id", effectiveOwnerId)` filter to query
+- Add `enabled: !!effectiveOwnerId` to prevent premature execution
 
-#### 4. Refined Color Scheme
+**Update `useCollectionsByVendor` hook:**
+- Same pattern as above
 
-**File**: `src/components/booking/BookingBrandingPanel.tsx`
+**Update `useCollectionsWithCounts` hook:**
+- Same pattern for both the collections query and the inventory items count query
+- This is the hook used by `FilterButton.tsx` for the collection dropdown
 
-- Use a more professional, muted gradient (slate-based)
-- Better contrast for text elements
-- Softer white overlays
+**Update `useVendorsWithCollections` hook:**
+- Same pattern
 
----
+#### 2. useInventoryTags.ts
 
-### Detailed Changes
+Apply the same pattern to:
+- `useInventoryTags`
+- `useInventoryLocations`
+- `useInventoryColors`
 
-#### BookingBrandingPanel.tsx
+### Before/After Code Example
 
-| Element | Before | After |
-|---------|--------|-------|
-| Logo size | `w-16 h-16` | `w-20 h-20` |
-| Fallback icon | `w-8 h-8` | `w-10 h-10` |
-| Gradient | `from-primary via-primary/90 to-primary/80` | `from-slate-800 via-slate-700 to-slate-600` (darker, more professional) |
-| Logo bg | `bg-white/10` | `bg-white/20` |
+**Before (useCollectionsWithCounts):**
+```typescript
+export const useCollectionsWithCounts = () => {
+  return useQuery({
+    queryKey: ["collections", "with-counts"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
+      const { data: collections } = await supabase
+        .from("collections")
+        .select(...)
+        .eq("active", true);  // Missing user_id filter!
+      ...
+    },
+  });
+};
+```
 
-#### DateTimeSelector.tsx
-
-| Element | Before | After |
-|---------|--------|-------|
-| Time button height | `h-11` | `h-12` |
-| Text size | `text-sm` | `text-base` |
-| Unselected style | Plain outline | `bg-slate-50 border-slate-200 hover:bg-primary/5` |
-| Selected style | Basic primary | `bg-primary shadow-md font-semibold` |
-| Grid columns | `grid-cols-3 sm:grid-cols-4` | `grid-cols-2 sm:grid-cols-3 md:grid-cols-4` |
-| Gap | `gap-2` | `gap-3` |
-
-#### ClientInfoForm.tsx
-
-| Element | Before | After |
-|---------|--------|-------|
-| Input height | `h-11` | `h-12` |
-| Input style | Plain border | `bg-slate-50/50 border-slate-200 rounded-xl` |
-| Focus state | Ring only | `focus:bg-white focus:border-primary focus:ring-2` |
-| Label icons | `text-muted-foreground` | `text-primary/70` |
-
----
+**After (useCollectionsWithCounts):**
+```typescript
+export const useCollectionsWithCounts = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
+  return useQuery({
+    queryKey: ["collections", "with-counts", effectiveOwnerId],
+    queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
+      const { data: collections } = await supabase
+        .from("collections")
+        .select(...)
+        .eq("user_id", effectiveOwnerId)  // Explicit filter
+        .eq("active", true);
+      
+      const { data: inventoryItems } = await supabase
+        .from("enhanced_inventory_items")
+        .select("collection_id")
+        .eq("user_id", effectiveOwnerId)  // Also filter inventory
+        .not("collection_id", "is", null);
+      ...
+    },
+    enabled: !!effectiveOwnerId,  // Wait for context
+  });
+};
+```
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/booking/BookingBrandingPanel.tsx` | Larger logo, refined gradient |
-| `src/components/booking/DateTimeSelector.tsx` | Bigger time buttons, better visibility |
-| `src/components/booking/ClientInfoForm.tsx` | Cleaner inputs with subtle background |
+| `src/hooks/useCollections.ts` | Add multi-tenant support to `useCollections`, `useCollectionsByVendor`, `useCollectionsWithCounts`, `useVendorsWithCollections` |
+| `src/hooks/useInventoryTags.ts` | Add multi-tenant support to `useInventoryTags`, `useInventoryLocations`, `useInventoryColors` |
 
----
+### Expected Outcome
 
-### Visual Improvements Summary
-
-**Before**:
-- Small 64px logo
-- Thin, hard-to-see time slot buttons
-- Plain white inputs
-- Strong purple gradient
-
-**After**:
-- Larger 80px logo with better presence
-- Bigger, more visible time buttons with soft backgrounds
-- Clean inputs with subtle gray background
-- Professional slate/dark gradient that works with any brand
+After implementation:
+- Collections will appear in the filter dropdown
+- Tags, locations, and colors will display correctly
+- Team members will see the same data as account owners
+- Query caching will work correctly across account switches
 
