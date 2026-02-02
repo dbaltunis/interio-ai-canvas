@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,9 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
   // Filter quotes for this specific client
   const quotes = allQuotes?.filter(quote => quote.client_id === clientId) || [];
   
-  // Format dates using user preferences
-  const { formattedDates } = useFormattedDates(quotes, (quote) => quote.created_at);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getQuoteDate = useCallback((quote: any) => quote.created_at, []);
+  const { formattedDates } = useFormattedDates(quotes, getQuoteDate);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {

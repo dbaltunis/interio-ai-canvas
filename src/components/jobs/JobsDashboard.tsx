@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +15,11 @@ export const JobsDashboard = () => {
   const { data: quotes } = useQuotes();
   const { data: stats } = useDashboardStats();
   
-  // Format dates using user preferences
-  const { formattedDates: projectDates } = useFormattedDates(projects, (p) => p.created_at, false);
-  const { formattedDates: quoteDates } = useFormattedDates(quotes, (q) => q.created_at, false);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getProjectDate = useCallback((p: any) => p.created_at, []);
+  const getQuoteDate = useCallback((q: any) => q.created_at, []);
+  const { formattedDates: projectDates } = useFormattedDates(projects, getProjectDate, false);
+  const { formattedDates: quoteDates } = useFormattedDates(quotes, getQuoteDate, false);
 
   // Calculate job metrics
   const totalJobs = projects?.length || 0;

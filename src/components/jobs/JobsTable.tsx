@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +36,9 @@ export const JobsTable = ({
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   
-  // Format dates using user preferences
-  const { formattedDates } = useFormattedDates(quotes, (q) => q.created_at, false);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getQuoteDate = useCallback((q: any) => q.created_at, []);
+  const { formattedDates } = useFormattedDates(quotes, getQuoteDate, false);
 
   // Filter quotes based on search and filter criteria
   const filteredQuotes = quotes?.filter(quote => {

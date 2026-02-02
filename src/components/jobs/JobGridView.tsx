@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { User, Calendar, DollarSign, FileText } from "lucide-react";
@@ -18,7 +19,9 @@ interface JobGridViewProps {
 
 export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridViewProps) => {
   const { data: jobStatuses = [] } = useJobStatuses();
-  const { formattedDates } = useFormattedDates(jobs, (j) => j.created_at, false);
+  // Format dates using user preferences - useCallback prevents infinite re-render
+  const getJobDate = useCallback((j: any) => j.created_at, []);
+  const { formattedDates } = useFormattedDates(jobs, getJobDate, false);
   
   // Count duplicates for each job
   const duplicateCounts = jobs.reduce((acc, job) => {
