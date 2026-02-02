@@ -80,7 +80,7 @@ export const FabricUsageDisplay = ({ fabricUsage, formData, costs }: FabricUsage
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3">
             <FabricCuttingDiagram
-              fabricWidth={costs.fabricWidthCm || parseFloat(formData.fabric_width) || 140}
+              fabricWidth={costs.fabricWidthCm ?? parseFloat(formData.fabric_width) ?? 140}
               dropLength={costs.dropPerWidth || 274}
               widthsRequired={costs.widthsRequired || 1}
               seamsRequired={costs.seamsRequired || 0}

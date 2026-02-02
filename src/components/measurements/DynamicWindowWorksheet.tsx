@@ -1405,8 +1405,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
               const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
-              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1; // ✅ FIX: Use 1 if no fullness
-              const sideHemCm = fabricCalculation?.sideHems || parseFloat(String(measurements.side_hem || selectedTemplate?.side_hem || 4));
+              // ✅ FIX: Use ?? to respect explicit 0 values - fullness 0 makes no sense, so keep || for it
+              const fullness = fabricCalculation?.fullnessRatio ?? (parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1);
+              // ✅ FIX: Use ?? to respect user's explicit 0 for side_hem
+              const sideHemCm = fabricCalculation?.sideHems ?? parseFloat(String(measurements.side_hem ?? (selectedTemplate?.side_hem ?? 0)));
               const returnLeftCm = parseFloat(measurements.return_left || '0');
               const returnRightCm = parseFloat(measurements.return_right || '0');
               const returnsCm = fabricCalculation?.returns || (returnLeftCm + returnRightCm);

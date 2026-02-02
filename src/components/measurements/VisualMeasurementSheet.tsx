@@ -342,14 +342,15 @@ export const VisualMeasurementSheet = ({
     }
     try {
       // ✅ FIX: Enrich measurements with template settings and selected fabric data
+      // Use ?? instead of || to respect explicit 0 values from user
       const enrichedMeasurements = {
         ...measurements,
         treatment_type_id: selectedTemplate.id,
-        // Add template hems if not in measurements
-        header_hem: measurements.header_hem || selectedTemplate.header_allowance || selectedTemplate.header_hem,
-        bottom_hem: measurements.bottom_hem || selectedTemplate.bottom_hem || selectedTemplate.bottom_allowance,
-        side_hem: measurements.side_hem || selectedTemplate.side_hem || selectedTemplate.side_hems,
-        seam_hem: measurements.seam_hem || selectedTemplate.seam_allowance,
+        // Add template hems if not in measurements - ?? respects 0, || does not
+        header_hem: measurements.header_hem ?? selectedTemplate.header_allowance ?? selectedTemplate.header_hem ?? null,
+        bottom_hem: measurements.bottom_hem ?? selectedTemplate.bottom_hem ?? selectedTemplate.bottom_allowance ?? null,
+        side_hem: measurements.side_hem ?? selectedTemplate.side_hem ?? selectedTemplate.side_hems ?? null,
+        seam_hem: measurements.seam_hem ?? selectedTemplate.seam_allowance ?? null,
         // Add fabric properties
         fabric_width: selectedFabricItem.fabric_width,
         // Add pattern repeats from selected fabric

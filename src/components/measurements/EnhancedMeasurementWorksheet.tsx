@@ -142,7 +142,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         window_height: savedSummary.measurements_details.window_height || "",
         pooling_amount: savedSummary.measurements_details.pooling_amount_cm || "",
         selected_fabric: savedSummary.fabric_details?.fabric_id || savedSummary.measurements_details.selected_fabric,
-        fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm || 140,
+        fabric_width: savedSummary.fabric_details?.fabric_width ?? savedSummary.fabric_details?.width_cm ?? 140,
         price_per_meter: savedSummary.price_per_meter || 0,
         surface_id: surfaceId,
         surface_name: surfaceData?.name,
@@ -816,10 +816,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       fabricItem = {
         id: null,
         name: "Fabric (default)",
-        fabric_width: (measurements as any)?.fabric_width || 140,
-        price_per_meter: (measurements as any)?.fabric_price_per_meter || 45,
-        unit_price: (measurements as any)?.fabric_price_per_meter || 45,
-        selling_price: (measurements as any)?.fabric_price_per_meter || 45,
+        fabric_width: (measurements as any)?.fabric_width ?? 140,
+        price_per_meter: (measurements as any)?.fabric_price_per_meter ?? 45,
+        unit_price: (measurements as any)?.fabric_price_per_meter ?? 45,
+        selling_price: (measurements as any)?.fabric_price_per_meter ?? 45,
       } as any;
       console.log("Using fallback fabric pricing:", {
         fabricId: (fabricItem as any).id,
