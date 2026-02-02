@@ -18,6 +18,25 @@ interface BookingConfirmationRequest {
   duration?: number;
 }
 
+// Universal variable replacement function - supports both dot notation and snake_case
+const replaceVariable = (content: string, variable: string, value: string): string => {
+  // Replace dot notation: {{category.property}}
+  const dotPattern = new RegExp(`\\{\\{${variable.replace('.', '\\.')}\\}\\}`, 'g');
+  // Replace snake_case: {{category_property}}
+  const snakePattern = new RegExp(`\\{\\{${variable.replace('.', '_')}\\}\\}`, 'g');
+  
+  return content.replace(dotPattern, value).replace(snakePattern, value);
+};
+
+// Apply all variable replacements to content
+const applyReplacements = (content: string, replacements: Record<string, string>): string => {
+  let result = content;
+  for (const [variable, value] of Object.entries(replacements)) {
+    result = replaceVariable(result, variable, value);
+  }
+  return result;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -62,6 +81,23 @@ serve(async (req) => {
 
     console.log('Scheduler user_id for email settings:', scheduler.user_id);
 
+    // Fetch business settings for company info
+    const { data: businessSettings } = await supabase
+      .from('business_settings')
+      .select('*')
+      .eq('user_id', scheduler.user_id)
+      .maybeSingle();
+
+    // Fetch email settings for signature and from name
+    const { data: emailSettings } = await supabase
+      .from('email_settings')
+      .select('*')
+      .eq('user_id', scheduler.user_id)
+      .maybeSingle();
+
+    console.log('Business settings found:', !!businessSettings);
+    console.log('Email settings found:', !!emailSettings);
+
     // Get email template for booking confirmation if exists
     const { data: template } = await supabase
       .from('email_templates')
@@ -69,10 +105,44 @@ serve(async (req) => {
       .eq('template_type', 'booking_confirmation')
       .eq('user_id', scheduler.user_id)
       .eq('active', true)
-      .single();
+      .maybeSingle();
 
     const appointmentDuration = duration || scheduler.duration || 60;
     
+    // Build comprehensive replacements map supporting both dot notation and snake_case
+    const replacements: Record<string, string> = {
+      // Client/Customer variables
+      'client.name': customer_name || '',
+      'client.email': customer_email || '',
+      'customer.name': customer_name || '',
+      'customer.email': customer_email || '',
+      
+      // Appointment variables
+      'appointment.date': appointment_date || '',
+      'appointment.time': appointment_time || '',
+      'appointment.location': businessSettings?.address || scheduler?.locations?.[0]?.address || 'To be confirmed',
+      'appointment.type': scheduler?.name || 'Appointment',
+      'appointment.duration': appointmentDuration.toString(),
+      
+      // Duration as standalone
+      'duration': appointmentDuration.toString(),
+      
+      // Company variables
+      'company.name': businessSettings?.company_name || scheduler?.name || '',
+      'company.phone': businessSettings?.business_phone || '',
+      'company.email': businessSettings?.business_email || scheduler?.user_email || '',
+      'company.address': businessSettings?.address || '',
+      'company.website': businessSettings?.website || '',
+      
+      // Sender variables
+      'sender.name': emailSettings?.from_name || businessSettings?.company_name || '',
+      'sender.signature': emailSettings?.signature || `Best regards,\n${businessSettings?.company_name || scheduler?.name || ''}`,
+      
+      // Video call link
+      'video.link': video_call_link || '',
+      'meeting.link': video_call_link || '',
+    };
+
     let subject = `Booking Confirmed: ${scheduler.name}`;
     let content = `
       <h2>Your appointment has been confirmed!</h2>
@@ -91,19 +161,13 @@ serve(async (req) => {
     `;
 
     if (template) {
-      subject = template.subject
-        .replace('{{customer_name}}', customer_name)
-        .replace('{{appointment_date}}', appointment_date)
-        .replace('{{appointment_time}}', appointment_time)
-        .replace('{{duration}}', scheduler.duration?.toString() || '60')
-        .replace('{{company_name}}', scheduler.name);
+      console.log('Using custom email template:', template.id);
       
-      content = template.content
-        .replace(/{{customer_name}}/g, customer_name)
-        .replace(/{{appointment_date}}/g, appointment_date)
-        .replace(/{{appointment_time}}/g, appointment_time)
-        .replace(/{{duration}}/g, scheduler.duration?.toString() || '60')
-        .replace(/{{company_name}}/g, scheduler.name);
+      // Apply comprehensive variable replacements to template
+      subject = applyReplacements(template.subject || subject, replacements);
+      content = applyReplacements(template.content || content, replacements);
+      
+      console.log('Template variables replaced successfully');
     }
 
     // Send email using existing send-email function with user_id for proper email settings
@@ -121,6 +185,8 @@ serve(async (req) => {
       console.error('Failed to send confirmation email:', emailError);
       throw emailError;
     }
+
+    console.log('Booking confirmation email sent successfully to:', customer_email);
 
     // Send notification to scheduler owner
     if (scheduler.user_email) {
