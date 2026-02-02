@@ -155,9 +155,11 @@ const handler = async (req: Request): Promise<Response> => {
       if (lowerDesc.includes('tracks only') || lowerDesc.includes('track only')) {
         return 'hardware';
       }
-      // Pattern 2: "Slats Only" - replacement slats without blind system
-      if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
-        return 'hardware'; // Replacement parts, not full product
+      // Pattern 2: "Slats Only" - BUT NOT vertical blinds with slats (TWC sells these as full products)
+      // "Verticals (Slats Only)" is a full product, not replacement parts
+      if ((lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) && 
+          !lowerDesc.includes('vertical')) {
+        return 'hardware'; // Replacement parts for non-vertical blinds
       }
       // Pattern 3: Curtain tracks (but not panel track systems)
       if (lowerDesc.includes('curtain track') || 

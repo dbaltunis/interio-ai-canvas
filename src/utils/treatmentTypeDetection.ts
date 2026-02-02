@@ -161,7 +161,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'none', // Vertical blinds don't use fabric inventory
+      inventoryCategory: 'both', // Vertical blinds use fabric vanes AND material slats
       specificFields: ['louvre_width', 'headrail_type', 'control_type'],
       visualComponent: 'BlindVisualizer',
     },
