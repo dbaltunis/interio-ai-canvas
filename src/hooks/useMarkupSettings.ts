@@ -104,11 +104,22 @@ export const useUpdateMarkupSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Fetch fresh business settings to avoid stale closure
+      // ✅ FIX: Get effective account owner for multi-tenant support
+      // Team members (admins) must save to account owner's record, not their own
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
+      console.log('[MARKUP SAVE] Effective owner:', effectiveOwnerId, 'Current user:', user.id);
+
+      // Fetch fresh business settings using effective owner ID
       const { data: freshBusinessSettings } = await supabase
         .from('business_settings')
         .select('id, pricing_settings')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .maybeSingle();
 
       const currentSettings = freshBusinessSettings?.pricing_settings 
@@ -161,11 +172,11 @@ export const useUpdateMarkupSettings = () => {
         console.log('[MARKUP SAVE] ✅ Successfully updated in DB');
         return data;
       } else {
-        console.log('[MARKUP SAVE] Creating new record for user');
+        console.log('[MARKUP SAVE] Creating new record for effective owner:', effectiveOwnerId);
         const { data, error } = await supabase
           .from('business_settings')
           .insert({
-            user_id: user.id,
+            user_id: effectiveOwnerId,  // ✅ FIX: Use effective owner, not current user
             pricing_settings: updatedSettings
           })
           .select()

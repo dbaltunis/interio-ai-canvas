@@ -94,8 +94,9 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     const totalFabricWidth = fabricWidthNeeded + returnAllowance + overlapAllowance + extraFabric;
 
     // Calculate drop with header and bottom hem allowances
-    const headerAllowance = template.header_allowance || 8;
-    const bottomHemAllowance = template.bottom_hem || 15;
+    // ✅ FIX: Use nullish coalescing to respect user's 0 values - || treats 0 as falsy
+    const headerAllowance = template.header_allowance ?? 0;
+    const bottomHemAllowance = template.bottom_hem ?? 0;
     
     let totalDrop = drop + headerAllowance + bottomHemAllowance;
     

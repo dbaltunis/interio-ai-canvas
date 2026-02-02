@@ -763,10 +763,11 @@ export const AdaptiveFabricPricingDisplay = ({
                 <span>Pooling:</span>
                 <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.pooling, 'cm')}</span>
               </div>}
-            {(fabricCalculation.totalSeamAllowance || 0) > 0 && <div className="flex justify-between">
-                <span>Seam Allowance:</span>
-                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0, 'cm')}</span>
-              </div>}
+            {/* REMOVED: Seam Allowance from Height Breakdown - it's a WIDTH calculation, not HEIGHT
+               * Seam allowance is added to linear meters (width-based), not to Total Drop (height-based)
+               * Displaying it here with a "+" made the math appear incorrect (108.5 + 5 + 5 + 1.4 ≠ 118.5)
+               * The actual calculation correctly adds seams to linear meters in calculateTreatmentPricing.ts
+               */}
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Total Drop:</span>
               <span className="font-medium text-foreground">
