@@ -1,189 +1,202 @@
 
-# Fix Plan: Remaining Hardcoded Fallbacks
 
-## Overview
+# Fix Plan: Greg's Login Issue - Edge Function & Trigger Bug
 
-Testing revealed **12 additional locations** where hardcoded fallbacks still override user's explicit `0` values. This causes Sadath's account (and all users) to see incorrect hem values, wrong fabric calculations, and inaccurate pricing.
+## Executive Summary
 
-## Issues Summary
-
-| Priority | Files | Count | Impact |
-|----------|-------|-------|--------|
-| P0 - Critical | TreatmentSpecificFields.tsx | 4 | Shows wrong values in UI inputs |
-| P0 - Critical | VisualMeasurementSheet.tsx | 4 | Wrong values in fabric calculations |
-| P1 - High | DynamicWindowWorksheet.tsx | 2 | Calculation errors |
-| P1 - High | AddCurtainToProject.tsx | 2 | Wrong waste/pooling defaults |
-| P2 - Medium | EnhancedMeasurementWorksheet.tsx | 2 | Forces 140cm fabric width |
-| P2 - Medium | FabricUsageDisplay.tsx | 1 | Forces 140cm fabric width |
-| P2 - Medium | FabricSelector.tsx | 1 | Forces 137cm fabric width |
+Greg (greg@cccone.com.au) cannot login because the `create-invited-user` edge function fails with a **database trigger error**. The root cause is a broken trigger that references non-existent columns in `auth.users`.
 
 ---
 
-## Fix Details
+## Root Cause Analysis
 
-### Fix 1: TreatmentSpecificFields.tsx (Lines 145, 156, 169, 180)
+### Issue #1: Broken Database Trigger
 
-Change `||` to `??` for all hem input values:
-
-```text
-BEFORE:
-- Line 145: value={treatmentData.header_hem || 4}
-- Line 156: value={treatmentData.bottom_hem || 4}
-- Line 169: value={treatmentData.side_hem || 1.5}
-- Line 180: value={treatmentData.seam_allowance || 0.5}
-
-AFTER:
-- Line 145: value={treatmentData.header_hem ?? ""}
-- Line 156: value={treatmentData.bottom_hem ?? ""}
-- Line 169: value={treatmentData.side_hem ?? ""}
-- Line 180: value={treatmentData.seam_allowance ?? ""}
+**Error from logs:**
+```
+record "new" has no field "parent_account_id"
 ```
 
-Use empty string fallback for form inputs so the placeholder shows the expected value, but `0` is respected when explicitly set.
+**Location:** Trigger `on_auth_user_created_shopify_statuses` on `auth.users` table
+
+**Problem:** The trigger function `create_default_shopify_statuses()` tries to access:
+- `NEW.role` - Exists in `auth.users` but contains "authenticated", not "Owner/Manager"
+- `NEW.parent_account_id` - **DOES NOT EXIST** in `auth.users` table
+
+This crashes user creation for ALL invited users.
+
+### Issue #2: Missing Edge Function Configuration
+
+The `create-invited-user` edge function exists in code but is **NOT listed in `supabase/config.toml`**. While it appears to be deployed, proper configuration should be added.
 
 ---
 
-### Fix 2: VisualMeasurementSheet.tsx (Lines 349-352)
+## Fix #1: Correct the Database Trigger (SQL Migration)
 
-Change `||` to `??` for enriched measurements:
+The trigger should only run on the `user_profiles` table (where `role` and `parent_account_id` exist), not on `auth.users`.
 
-```text
-BEFORE:
-header_hem: measurements.header_hem || selectedTemplate.header_allowance || ...
-bottom_hem: measurements.bottom_hem || selectedTemplate.bottom_hem || ...
-side_hem: measurements.side_hem || selectedTemplate.side_hem || ...
-seam_hem: measurements.seam_hem || selectedTemplate.seam_allowance
+### Option A: Drop and recreate trigger on correct table
 
-AFTER:
-header_hem: measurements.header_hem ?? selectedTemplate.header_allowance ?? ...
-bottom_hem: measurements.bottom_hem ?? selectedTemplate.bottom_hem ?? ...
-side_hem: measurements.side_hem ?? selectedTemplate.side_hem ?? ...
-seam_hem: measurements.seam_hem ?? selectedTemplate.seam_allowance ?? null
+```sql
+-- Drop the broken trigger from auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created_shopify_statuses ON auth.users;
+
+-- Recreate trigger on user_profiles table instead
+CREATE TRIGGER on_user_profile_created_shopify_statuses
+  AFTER INSERT ON public.user_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION create_default_shopify_statuses();
+```
+
+### Option B: Fix the function to not depend on non-existent columns
+
+If we need to keep it on `auth.users`, update the function to not reference `parent_account_id`:
+
+```sql
+CREATE OR REPLACE FUNCTION public.create_default_shopify_statuses()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  profile_role text;
+  profile_parent uuid;
+BEGIN
+  -- Get role and parent from user_profiles (not NEW which is auth.users)
+  SELECT role, parent_account_id 
+  INTO profile_role, profile_parent
+  FROM user_profiles 
+  WHERE user_id = NEW.id;
+  
+  -- Only create for account owners (not team members)
+  IF profile_role IN ('Owner', 'System Owner') 
+     AND (profile_parent IS NULL OR profile_role = 'System Owner') THEN
+    
+    -- Check if statuses already exist
+    IF NOT EXISTS (SELECT 1 FROM shopify_sync_statuses WHERE user_id = NEW.id) THEN
+      INSERT INTO shopify_sync_statuses (user_id, job_status, quote_status, is_active, created_at, updated_at)
+      VALUES 
+        (NEW.id, 'quote-pending', 'pending', true, NOW(), NOW()),
+        (NEW.id, 'quote-draft', 'draft', true, NOW(), NOW()),
+        (NEW.id, 'quote-sent', 'accepted', true, NOW(), NOW()),
+        (NEW.id, 'order-confirmed', 'accepted', true, NOW(), NOW()),
+        (NEW.id, 'completed', 'accepted', true, NOW(), NOW());
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+```
+
+**Recommendation:** Option A is cleaner - move the trigger to user_profiles where the data actually exists.
+
+---
+
+## Fix #2: Add Edge Function Configuration
+
+Add the missing entry to `supabase/config.toml`:
+
+```toml
+[functions.create-invited-user]
+verify_jwt = false  # Must be false - called before user is authenticated
 ```
 
 ---
 
-### Fix 3: DynamicWindowWorksheet.tsx (Lines 1408-1409)
+## Fix #3: Verify Invitation Flow
 
-Change fallbacks in manufacturing calculation:
-
-```text
-BEFORE:
-- Line 1408: fullness_ratio || 1
-- Line 1409: side_hem || 4
-
-AFTER:
-- Line 1408: fullness_ratio ?? 1 (keep 1 as default for fullness - 0 fullness makes no sense)
-- Line 1409: side_hem ?? 0 (respect user's 0)
-```
+Once the trigger is fixed:
+1. Greg's invitation is still **pending** and **valid** (expires 2026-02-08)
+2. The invitation link should work immediately after the fix
+3. No need to resend the invitation
 
 ---
 
-### Fix 4: AddCurtainToProject.tsx (Lines 104-105, 142)
+## Affected Files
 
-Lines 104-105 are already using `??` which is correct - they maintain fallback values for templates that don't define these.
-
-Line 142 needs fix:
-
-```text
-BEFORE:
-const wastePercent = template.waste_percent || 5;
-
-AFTER:
-const wastePercent = template.waste_percent ?? 0;
-```
+| File | Change |
+|------|--------|
+| `supabase/config.toml` | Add `create-invited-user` function entry |
+| SQL Migration (via Supabase dashboard) | Fix `create_default_shopify_statuses` trigger |
 
 ---
 
-### Fix 5: EnhancedMeasurementWorksheet.tsx (Lines 145, 819)
+## Manager Permissions Verification
 
-```text
-BEFORE:
-fabric_width: ... || 140
+Greg's invitation includes these Manager permissions (all correctly configured):
+- `view_all_jobs`, `create_jobs`, `edit_all_jobs`
+- `view_all_clients`, `create_clients`, `edit_all_clients`
+- `view_all_calendar`, `view_inventory`, `manage_inventory`
+- `view_templates`, `view_window_treatments`
+- `view_team_members`, `view_team_performance`
+- `send_emails`, `view_emails`, `view_workroom`
 
-AFTER:
-fabric_width: ... ?? null
-```
-
-Show an error/warning if fabric width is missing instead of silently assuming 140cm.
-
----
-
-### Fix 6: FabricUsageDisplay.tsx (Line 83)
-
-```text
-BEFORE:
-fabricWidth={costs.fabricWidthCm || parseFloat(formData.fabric_width) || 140}
-
-AFTER:
-fabricWidth={costs.fabricWidthCm ?? parseFloat(formData.fabric_width) ?? 140}
-```
-
-This file can keep the 140 fallback as it's just for the visual diagram display.
+These match the Manager role in `src/constants/permissions.ts`. Permissions are NOT the issue.
 
 ---
 
-### Fix 7: FabricSelector.tsx (Line 136)
+## Implementation Steps
 
-```text
-BEFORE:
-width: item.fabric_width || 137
+### Step 1: Fix the broken trigger (SQL - run in Supabase Dashboard)
 
-AFTER:
-width: item.fabric_width ?? 137
+```sql
+-- Option A: Move trigger to user_profiles table
+DROP TRIGGER IF EXISTS on_auth_user_created_shopify_statuses ON auth.users;
+
+-- The function needs to reference user_profiles table data, not NEW from auth.users
+CREATE OR REPLACE FUNCTION public.create_default_shopify_statuses()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Only create for account owners (not team members)
+  IF NEW.role IN ('Owner', 'System Owner') 
+     AND (NEW.parent_account_id IS NULL OR NEW.role = 'System Owner') THEN
+    
+    -- Check if statuses already exist
+    IF NOT EXISTS (SELECT 1 FROM shopify_sync_statuses WHERE user_id = NEW.user_id) THEN
+      INSERT INTO shopify_sync_statuses (user_id, job_status, quote_status, is_active, created_at, updated_at)
+      VALUES 
+        (NEW.user_id, 'quote-pending', 'pending', true, NOW(), NOW()),
+        (NEW.user_id, 'quote-draft', 'draft', true, NOW(), NOW()),
+        (NEW.user_id, 'quote-sent', 'accepted', true, NOW(), NOW()),
+        (NEW.user_id, 'order-confirmed', 'accepted', true, NOW(), NOW()),
+        (NEW.user_id, 'completed', 'accepted', true, NOW(), NOW());
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+
+-- Create trigger on user_profiles instead
+CREATE TRIGGER on_user_profile_created_shopify_statuses
+  AFTER INSERT ON public.user_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION create_default_shopify_statuses();
 ```
 
-Keep fallback since this is for inventory items that may not have width defined.
+### Step 2: Update config.toml
+
+Add missing edge function configuration.
+
+### Step 3: Test
+
+Have Greg click the invitation link again - it should work immediately.
 
 ---
 
-## Files to Modify
+## Testing Checklist
 
-| File | Changes |
-|------|---------|
-| `src/components/measurements/TreatmentSpecificFields.tsx` | 4 lines |
-| `src/components/measurements/VisualMeasurementSheet.tsx` | 4 lines |
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2 lines |
-| `src/components/projects/AddCurtainToProject.tsx` | 1 line |
-| `src/components/measurements/EnhancedMeasurementWorksheet.tsx` | 2 lines |
-| `src/components/job-creation/treatment-pricing/fabric-details/FabricUsageDisplay.tsx` | 1 line |
-| `src/components/fabric/FabricSelector.tsx` | 1 line |
+| Test | Expected Result |
+|------|-----------------|
+| Greg accepts invitation | No "Edge Function returned non-2xx" error |
+| Greg signs in | Redirects to dashboard |
+| Greg views projects | Can see Daniel's CCCO projects |
+| Greg creates job | Job created successfully |
+| New user signup (any) | Works without trigger error |
 
----
-
-## Expected Results After Fix
-
-| Test | Before | After |
-|------|--------|-------|
-| Sadath sets header_hem = 0 | Shows 4cm in UI | Shows 0 |
-| Sadath sets bottom_hem = 0 | Shows 4cm in UI | Shows 0 |
-| Sadath's Curtains template | Uses blind_*_hem_cm = 8 | Uses header_allowance = 0 |
-| Fabric calculation with 0 hems | Adds 8cm extra | Adds 0cm extra |
-| Waste percentage = 0 | Forces 5% | Respects 0% |
-| Saved windows_summary | header_hem: null | header_hem: 0 |
-
----
-
-## Technical Notes
-
-### Why `||` vs `??` Matters
-
-```javascript
-// || treats 0 as falsy
-const value = 0 || 8;  // Returns 8! ❌
-
-// ?? only treats null/undefined as falsy  
-const value = 0 ?? 8;  // Returns 0! ✅
-```
-
-### For Input Fields
-
-For form inputs, use empty string as fallback so placeholder shows:
-```javascript
-value={treatmentData.header_hem ?? ""}
-placeholder="4"
-```
-This way:
-- If header_hem = undefined → shows placeholder "4"
-- If header_hem = 0 → shows "0"
-- If header_hem = 8 → shows "8"
