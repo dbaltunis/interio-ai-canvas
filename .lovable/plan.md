@@ -1,116 +1,125 @@
 
 
-## Enable Options for Daniel/Greg's Templates
+## Fix Broken Booking Confirmation Emails
 
-This plan will enable the essential options for manual roller blind and vertical blind templates, making them work in the calculator immediately.
-
----
-
-### Current Status
-
-| Category | Template | Status |
-|----------|----------|--------|
-| **Roller Blinds** | Roller Blinds (TWC) | ✅ 23 enabled |
-| | Roller Blinds (Manual) | ❌ 23 disabled |
-| | Roller Blind - Blockout (Custom) | ❌ 23 disabled |
-| | Roller Blinds (duplicate) | ❌ 23 disabled |
-| **Vertical Blinds** | Verticals | ✅ 10 enabled |
-| | Veri Shades Easi | ❌ 17 disabled |
-| | Veri Shades Easi Track Only | ❌ 10 disabled |
-| | Vertical Blinds (Custom) | ❌ 10 disabled |
-| | Verticals (Track Only) | ❌ 10 disabled |
+### Problem Summary
+The booking confirmation email shows raw template variables (like `{{client.name}}`, `{{appointment.date}}`) instead of actual values because:
+1. **Variable name mismatch**: Templates use dot notation (`{{appointment.date}}`), but the edge function only replaces snake_case (`{{appointment_date}}`)
+2. **Missing variables**: Business settings (phone, email, location, signature) are never fetched or replaced
 
 ---
 
-### Step 1: Enable Essential Roller Blind Options
+### Solution Overview
 
-Run this SQL to enable the most commonly used options for all manual roller blind templates:
+Update the `send-booking-confirmation` edge function to:
+1. Support BOTH dot notation AND snake_case variable formats
+2. Fetch business settings to fill company information
+3. Add all missing variable replacements
 
-```sql
--- Enable essential roller blind options for Daniel/Greg's manual templates
-UPDATE template_option_settings tos
-SET is_enabled = true
-FROM treatment_options topt, curtain_templates ct
-WHERE tos.treatment_option_id = topt.id
-AND tos.template_id = ct.id
-AND ct.user_id = 'b0c727dd-b9bf-4470-840d-1f630e8f2b26'
-AND topt.treatment_category = 'roller_blinds'
-AND topt.label IN (
-  'Motor',
-  'Control Type', 
-  'Control Length',
-  'Fitting',
-  'Roll Direction',
-  'Component Colour',
-  'Remote',
-  'Brackets',
-  'Bracket Covers'
-);
+---
+
+### Technical Implementation
+
+#### Step 1: Update the Edge Function
+
+**File**: `supabase/functions/send-booking-confirmation/index.ts`
+
+Add comprehensive variable replacement that supports both formats:
+
+```text
+Changes needed:
+1. Fetch business_settings for the scheduler owner
+2. Replace ALL variables in both formats:
+   - {{client.name}} AND {{customer_name}}
+   - {{appointment.date}} AND {{appointment_date}}
+   - {{appointment.time}} AND {{appointment_time}}
+   - {{appointment.location}} (from scheduler or business settings)
+   - {{appointment.type}} (from scheduler name)
+   - {{company.name}} (from business_settings)
+   - {{company.phone}} (from business_settings)
+   - {{company.email}} (from business_settings)
+   - {{sender.name}} (from email_settings or business_settings)
+   - {{sender.signature}} (from email_settings)
+```
+
+#### Step 2: Add Business Settings Fetch
+
+```typescript
+// Fetch business settings for company info
+const { data: businessSettings } = await supabase
+  .from('business_settings')
+  .select('*')
+  .eq('user_id', scheduler.user_id)
+  .single();
+
+// Fetch email settings for signature
+const { data: emailSettings } = await supabase
+  .from('email_settings')
+  .select('*')
+  .eq('user_id', scheduler.user_id)
+  .single();
+```
+
+#### Step 3: Create Universal Replace Function
+
+```typescript
+const replaceVariable = (content: string, variable: string, value: string) => {
+  // Replace dot notation: {{category.property}}
+  const dotPattern = new RegExp(`{{${variable}}}`, 'g');
+  // Replace snake_case: {{category_property}}
+  const snakePattern = new RegExp(`{{${variable.replace('.', '_')}}}`, 'g');
+  
+  return content.replace(dotPattern, value).replace(snakePattern, value);
+};
+```
+
+#### Step 4: Apply All Replacements
+
+```typescript
+// Build data object with all available values
+const replacements = {
+  'client.name': customer_name,
+  'appointment.date': appointment_date,
+  'appointment.time': appointment_time,
+  'appointment.location': businessSettings?.address || 'To be confirmed',
+  'appointment.type': scheduler.name,
+  'company.name': businessSettings?.company_name || scheduler.name,
+  'company.phone': businessSettings?.business_phone || '',
+  'company.email': businessSettings?.business_email || scheduler.user_email || '',
+  'sender.name': emailSettings?.from_name || businessSettings?.company_name || '',
+  'sender.signature': emailSettings?.signature || `Best regards,\n${businessSettings?.company_name || ''}`,
+  'duration': appointmentDuration.toString(),
+};
+
+// Apply all replacements
+for (const [variable, value] of Object.entries(replacements)) {
+  subject = replaceVariable(subject, variable, value);
+  content = replaceVariable(content, variable, value);
+}
 ```
 
 ---
 
-### Step 2: Enable All Vertical Blind Options
+### Files to Modify
 
-Run this SQL to enable all vertical blind options for all templates:
-
-```sql
--- Enable all vertical blind options for Daniel/Greg's templates
-UPDATE template_option_settings tos
-SET is_enabled = true
-FROM treatment_options topt, curtain_templates ct
-WHERE tos.treatment_option_id = topt.id
-AND tos.template_id = ct.id
-AND ct.user_id = 'b0c727dd-b9bf-4470-840d-1f630e8f2b26'
-AND topt.treatment_category = 'vertical_blinds';
-```
+| File | Change |
+|------|--------|
+| `supabase/functions/send-booking-confirmation/index.ts` | Add business settings fetch, universal variable replacement supporting both formats |
 
 ---
 
-### What This Enables
+### After Fix
 
-After running these queries, the calculator will show:
-
-**Roller Blinds (all manual templates):**
-- Motor
-- Control Type
-- Control Length  
-- Fitting
-- Roll Direction
-- Component Colour
-- Remote
-- Brackets
-- Bracket Covers
-
-**Vertical Blinds (all templates):**
-- All 10-17 options enabled
+The email will correctly display:
+- **Hello John Smith** (instead of `{{client.name}}`)
+- **Date: February 1, 2026** (instead of `{{appointment.date}}`)
+- **Location: 123 Business St** (instead of `{{appointment.location}}`)
+- **Contact us at (555) 123-4567** (instead of `{{company.phone}}`)
+- And all other variables properly filled in
 
 ---
 
-### Step 3: Test in Calculator
+### Optional Enhancement
 
-After enabling, test by:
-1. Creating a quote with a manual "Roller Blinds" template
-2. Opening the calculator 
-3. Verifying Motor, Control Type, and other options appear
-4. Selecting motorised to verify Remote option becomes visible
-
----
-
-### Optional: Enable ALL Options
-
-If Daniel/Greg want access to every option (not just essentials), run:
-
-```sql
--- Enable ALL roller blind options for all templates
-UPDATE template_option_settings tos
-SET is_enabled = true
-FROM treatment_options topt, curtain_templates ct
-WHERE tos.treatment_option_id = topt.id
-AND tos.template_id = ct.id
-AND ct.user_id = 'b0c727dd-b9bf-4470-840d-1f630e8f2b26'
-AND topt.treatment_category IN ('roller_blinds', 'vertical_blinds');
-```
-
-This enables all 23 roller blind options + all vertical blind options for every template.
+Also consider updating `src/utils/emailTemplateVariables.ts` to show users BOTH formats are supported, or migrating all templates to use consistent naming.
 
