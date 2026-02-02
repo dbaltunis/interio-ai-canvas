@@ -1,102 +1,188 @@
 
+# Deep Code Investigation: Root Causes of Persistent Issues
 
-# Hide Supplier Filter for Dealers & Add Permission-Based Visibility
+## Executive Summary
 
-## Investigation Findings
-
-### What the Warning Icon (⚠️) Means
-
-The warning icon indicates **"orphan" suppliers** - inventory items that have a text `supplier` field but are NOT linked to a formal vendor record via `vendor_id`. 
-
-| Supplier Type | Icon | Meaning |
-|--------------|------|---------|
-| `vendor` | (none) | Properly linked to vendors table |
-| `supplier_text` | ⚠️ | Text-only, not in vendors table |
-
-This is a **data quality indicator** - these suppliers should ideally be migrated to proper vendor records for better management.
+After thorough code investigation, I've identified **5 distinct root causes** affecting calculations, display, and settings across all accounts. These are **NOT configuration issues** - they are **code bugs** that need fixing.
 
 ---
 
-## Proposed Changes
+## Issue #1: Math Display Error (1.4in Not Added to Total)
 
-### 1. Hide Supplier Section in FilterButton for Dealers
+### Evidence Found
 
-The `FilterButton.tsx` component (used in Library and Inventory Selection Panel) currently shows the supplier filter to everyone. We need to hide it for dealers.
-
-**File:** `src/components/library/FilterButton.tsx`
+**File:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 766-777)
 
 ```typescript
-// Add import
-import { useIsDealer } from "@/hooks/useIsDealer";
-
-// Inside FilterButton component
-const { data: isDealer } = useIsDealer();
-
-// Wrap the Supplier filter section (lines 305-337) with condition
-{!isDealer && (
-  <div className="space-y-2">
-    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-      <Building2 className="h-3 w-3" />
-      Supplier
-    </label>
-    {/* ... rest of supplier select ... */}
+// UI DISPLAYS this breakdown:
+{(fabricCalculation.totalSeamAllowance || 0) > 0 && (
+  <div className="flex justify-between">
+    <span>Seam Allowance:</span>
+    <span>+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0, 'cm')}</span>  // ❌ Shows "+" but NOT added
   </div>
 )}
+<div className="flex justify-between border-t">
+  <span>Total Drop:</span>
+  <span>{formatMeasurement(displayTotalDropMm ?? fabricCalculation.totalDrop || 0)}</span>  // ❌ Doesn't include seam
+</div>
 ```
 
-### 2. Permission-Based Visibility (Optional Enhancement)
+**File:** `src/utils/pricing/calculateTreatmentPricing.ts` (Line 144)
 
-For more granular control, we could use the `view_vendors` permission instead of just `isDealer`:
-
-| Role | Has `view_vendors` | Should See Suppliers? |
-|------|-------------------|----------------------|
-| System Owner | ✅ | Yes |
-| Owner | ✅ | Yes |
-| Admin | ✅ | Yes |
-| Manager | ❌ | No (by default) |
-| Staff | ❌ | No |
-| User | ❌ | No |
-| Dealer | ❌ | No |
-
-**Alternative approach using permission:**
 ```typescript
-import { useHasPermission } from "@/hooks/usePermissions";
-
-const canViewVendors = useHasPermission('view_vendors');
-
-{canViewVendors && (
-  // Supplier filter section
-)}
+// CALCULATION excludes seam from drop:
+const totalDropUnrounded = heightCm + headerHem + bottomHem + pooling;  // ❌ No seam here
+const totalSeamAllowance = seamsRequired > 0 ? seamsRequired * seamHems * 2 : 0;  // Calculated separately
+const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired;  // Added to linear meters, not drop
 ```
 
-This gives more flexibility - account owners can grant `view_vendors` to specific staff if needed.
+### Root Cause
+The UI lists "Seam Allowance" with a `+` sign in the **Height Breakdown** section, but the actual calculation adds seams to **linear meters** (width calculation), not to **Total Drop**. This creates the illusion that `108.5 + 5 + 5 + 1.4 = 118.5` when seam is NOT part of the vertical sum.
+
+### Fix Required
+**Option A (Recommended):** Remove "Seam Allowance" from Height Breakdown UI - it's a width/linear calculation, not height
+**Option B:** Change the math to actually add seam to Total Drop (would change pricing)
 
 ---
 
-## Files to Modify
+## Issue #2: Hardcoded 8cm Hems Ignoring User Settings
 
-| File | Change |
-|------|--------|
-| `src/components/library/FilterButton.tsx` | Add dealer/permission check to hide Supplier section |
+### Evidence Found (3 Locations)
+
+**Location 1:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 840-841)
+```typescript
+const headerHem = template?.blind_header_hem_cm ?? template?.header_allowance ?? 8;  // ❌ Falls back to 8
+const bottomHem = template?.blind_bottom_hem_cm ?? template?.bottom_hem ?? 8;        // ❌ Falls back to 8
+```
+
+**Location 2:** `src/components/measurements/dynamic-options/FabricSelectionSection.tsx` (Lines 219-220)
+```typescript
+<div>• Header hem allowance: {formatFromCM(fabricCalculation.headerHem || 8, units.length)}</div>  // ❌ Displays 8 if 0
+<div>• Bottom hem allowance: {formatFromCM(fabricCalculation.bottomHem || 8, units.length)}</div>  // ❌ Displays 8 if 0
+```
+
+**Location 3:** `src/components/projects/AddCurtainToProject.tsx` (Lines 97-98)
+```typescript
+const headerAllowance = template.header_allowance || 8;   // ❌ Overrides user's 0
+const bottomHemAllowance = template.bottom_hem || 15;     // ❌ Hardcoded 15 fallback
+```
+
+### Root Cause
+JavaScript's `||` and `??` operators treat `0` as falsy/null, so when a user intentionally sets hems to `0`, the code falls back to `8cm` (≈3.15in ≈ the "5 inches" you're seeing).
+
+### Fix Required
+Replace all `|| 8`, `|| 15`, `?? 8` with `|| 0` or explicit null checks.
 
 ---
 
-## Recommendation
+## Issue #3: Saved Blinds Show $0 in Room Cards
 
-I recommend using the **`useIsDealer` approach** for now since:
-1. `InventorySupplierFilter.tsx` already uses this pattern
-2. It maintains consistency across the codebase
-3. Dealers are the primary role needing this restriction
+### Evidence Found
 
-The permission-based approach (`view_vendors`) would be a future enhancement if you want finer control for staff/managers.
+**Database Query Results:** 20 records with `total_selling = 0` despite having templates and materials:
+- System 2000 Pivot Arm (awning) - $0
+- Roller Blinds - $0  
+- Verticals - $0
+- Auto Awning with fabric - $0
+- Zip Screen with fabric - $0
+
+**File:** `src/components/job-creation/RoomCardLogic.tsx` (Lines 56-72)
+```typescript
+const storedSelling = Number(w.summary.total_selling || 0);
+if (storedSelling > 0) {
+  totalSelling += storedSelling;  // ✅ Uses stored value
+} else {
+  // Fallback for old data - NEEDS RE-SAVE  // ❌ But many records ARE being saved with 0!
+  const markupResult = resolveMarkup(...);
+  const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+  totalSelling += sellingPrice;
+}
+```
+
+### Root Cause
+The Room Card correctly reads `total_selling` from database, but **the worksheet is saving $0** for these products. The problem is in the pricing calculation for:
+1. **Awnings** - Pricing grid not matching
+2. **Verticals** - Material `compatible_treatments` misconfigured  
+3. **Blinds** - Template-based materials failing to resolve price
 
 ---
 
-## About the Warning Icons
+## Issue #4: Admins Cannot Save Business Settings (Multi-Tenant Bug)
 
-No code changes needed for the warning icons - they are **intentional data quality indicators**. To remove them, you would need to:
+### Evidence Found
 
-1. Create proper vendor records for each orphan supplier
-2. Update inventory items to use `vendor_id` instead of text `supplier`
-3. This is a data migration task, not a code change
+**File:** `src/hooks/useMarkupSettings.ts` (Lines 108-112)
+```typescript
+const { data: freshBusinessSettings } = await supabase
+  .from('business_settings')
+  .select('id, pricing_settings')
+  .eq('user_id', user.id)  // ❌ BUG: Should use effectiveOwnerId!
+  .maybeSingle();
+```
 
+**Comparison - Correct Pattern in `useBusinessSettings.ts` (Lines 153-161):**
+```typescript
+const { data: accountOwnerId } = await supabase
+  .rpc('get_account_owner', { user_id_param: user.id });  // ✅ Gets account owner
+
+if (accountOwnerId && accountOwnerId !== user.id) {
+  const { data: ownerSettings } = await supabase
+    .from('business_settings')
+    .select('*')
+    .eq('user_id', accountOwnerId)  // ✅ Uses owner ID
+    .maybeSingle();
+}
+```
+
+### Root Cause
+`useMarkupSettings` mutation uses `user.id` directly instead of `effectiveOwnerId`. When an Admin (not the account owner) tries to save:
+1. Query finds no record (wrong user_id)
+2. Creates a **phantom record** under Admin's ID
+3. Other users/queries never see this phantom record
+4. Changes appear to save but never persist
+
+---
+
+## Issue #5: Wrong Property Paths in Display Components
+
+### Evidence Found
+
+**File:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 970-973)
+```typescript
+const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;  // ❌ Wrong path
+const bottomHem = fabricCalculation.details?.bottomHem || template?.bottom_hem || 0;        // ❌ Wrong path
+const poolingMm = parseFloat(measurements.pooling) || 0;  // ❌ Wrong property name
+```
+
+**Correct properties are:**
+- `fabricCalculation.headerHem` (NOT `fabricCalculation.details?.headerHem`)
+- `fabricCalculation.bottomHem` (NOT `fabricCalculation.details?.bottomHem`)
+- `measurements.pooling_amount` (NOT `measurements.pooling`)
+
+### Root Cause
+The code attempts to access nested `.details?.` properties that don't exist, then falls back to template defaults (which may have hardcoded values).
+
+---
+
+## Summary of Code Fixes Required
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `AdaptiveFabricPricingDisplay.tsx` L766-769 | Seam shown in height list but not added | Remove seam from height breakdown display |
+| `AdaptiveFabricPricingDisplay.tsx` L840-841 | `?? 8` hardcoded fallback | Change to `?? 0` |
+| `AdaptiveFabricPricingDisplay.tsx` L970-973 | Wrong property paths | Use `fabricCalculation.headerHem` directly |
+| `FabricSelectionSection.tsx` L219-220 | `\|\| 8` hardcoded fallback | Change to `\|\| 0` |
+| `AddCurtainToProject.tsx` L97-98 | `\|\| 8` and `\|\| 15` hardcoded | Change to `\|\| 0` |
+| `useMarkupSettings.ts` L111 | Uses `user.id` instead of owner | Use `effectiveOwnerId` pattern |
+
+---
+
+## Verification Checklist After Fixes
+
+| Test Case | Expected Result |
+|-----------|-----------------|
+| Set hems to 0 in template, check display | Shows 0, not 5 inches |
+| Math breakdown total matches sum of parts | 108.5 + 5 + 5 = 118.5 (no seam in list) |
+| Save blind, check room card | Shows calculated price, not $0 |
+| Admin saves markup settings | Changes persist for all team members |
+| Awnings/Verticals calculate price | Non-zero total saved to database |
