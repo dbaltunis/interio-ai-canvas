@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, isSameDay } from "date-fns";
-import { usePublicScheduler } from "@/hooks/useAppointmentSchedulers";
-import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
+import { format } from "date-fns";
+import { useAppointmentBooking } from "@/hooks/useAppointmentBooking";
 import { useCreateBooking } from "@/hooks/useAppointmentBookings";
 import { 
   BookingHeader, 
@@ -24,10 +23,7 @@ interface ClientInfo {
 }
 
 export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
-  const { data: scheduler, isLoading: schedulerLoading } = usePublicScheduler(slug);
-  // Refetch slots every 5 seconds to show real-time availability
-  // Pass undefined to generate slots for the next 30 days (not just current week)
-  const { data: allSlots, refetch: refetchSlots, isLoading: slotsLoading } = useSchedulerSlots(undefined, 5000);
+  const { scheduler, isLoading, generateAvailableSlots } = useAppointmentBooking(slug);
   const createBooking = useCreateBooking();
   const { toast } = useToast();
 
@@ -43,14 +39,18 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   });
 
   // Helper function to get available slots for a specific date
+  // Transforms from useAppointmentBooking format to DateTimeSelector format
   const getAvailableSlotsForDate = (date: Date) => {
-    if (!allSlots) return [];
-    
-    return allSlots.filter(slot => 
-      isSameDay(slot.date, date) && 
-      slot.schedulerId === scheduler?.id &&
-      !slot.isBooked // Only return slots that are not booked
-    );
+    const slots = generateAvailableSlots(date);
+    // Filter only available slots and transform to expected format
+    return slots
+      .filter(slot => slot.available)
+      .map(slot => ({
+        id: `${format(date, 'yyyy-MM-dd')}-${slot.time}`,
+        startTime: slot.time,
+        endTime: '', // Not used by DateTimeSelector
+        isBooked: false // Already filtered to only available
+      }));
   };
 
   // Submit booking
@@ -79,8 +79,6 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
       });
 
       setStep(2);
-      // Refetch slots immediately after successful booking
-      refetchSlots();
       toast({
         title: "Booking Confirmed! 🎉",
         description: "You will receive a confirmation email shortly.",
@@ -97,7 +95,7 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   };
 
   // Loading state
-  if (schedulerLoading || slotsLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

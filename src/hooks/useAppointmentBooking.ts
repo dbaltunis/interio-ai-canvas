@@ -85,9 +85,10 @@ export const useAppointmentBooking = (slug: string) => {
           const slotDate = format(date, 'yyyy-MM-dd');
           
           // Check if this slot is already booked
-          const isBooked = bookedAppointments.some(
-            apt => apt.appointment_date === slotDate && apt.appointment_time === slotTime
-          );
+          const isBooked = bookedAppointments.some(apt => {
+            const aptTime = apt.appointment_time.substring(0, 5); // "10:15:00" -> "10:15"
+            return apt.appointment_date === slotDate && aptTime === slotTime;
+          });
           
           slots.push({
             time: slotTime,
