@@ -1,127 +1,233 @@
 
 
-## Fix Calendar Not Hiding Unavailable Dates and Times
+## Modern Booking Page with Company Branding
 
 ### Problem Summary
-The public booking calendar shows all time slots and dates instead of hiding unavailable ones. There are two issues:
-
-1. **Wrong hook being used**: `BookingConfirmation` uses `useSchedulerSlots` which depends on `useAppointmentSchedulers` - this requires authentication and returns no data for public users
-2. **Time format mismatch**: When checking if a slot is booked, the code compares `"10:15:00"` (database) with `"10:15"` (generated), which never matches
+The booking confirmation page currently:
+1. Does not display the company logo
+2. Has a basic design that doesn't follow modern UX standards
+3. Uses a simple gradient background without visual hierarchy
+4. Missing important trust signals and branding elements
 
 ---
 
 ### Solution Overview
 
-Switch `BookingConfirmation` to use the existing `useAppointmentBooking` hook which was specifically designed for public booking pages. This hook:
-- Uses the `get_public_scheduler` RPC function (no authentication required)
-- Generates available slots based on the scheduler's availability configuration
-- Properly checks against booked appointments with correct time normalization
+Create a modern, Calendly/Cal.com inspired booking experience with:
+1. **Company branding** - Logo, company name, and professional styling
+2. **Modern visual hierarchy** - Split-panel layout on desktop, stacked on mobile
+3. **Trust signals** - Company info, security badges, professional design
+4. **Smooth animations** - Subtle transitions and micro-interactions
+5. **Better UX patterns** - Step indicators, visual feedback, clear CTAs
 
 ---
 
 ### Technical Implementation
 
-#### Step 1: Fix Time Format Comparison in useAppointmentBooking
+#### Step 1: Update the RPC Function to Include Business Settings
 
-**File**: `src/hooks/useAppointmentBooking.ts`
+Create a new migration to update `get_public_scheduler` to also return company branding:
 
-The database stores times as `"10:15:00"` but the generated slot time is `"10:15"`. Normalize the database time before comparison:
-
-```text
-Line 88-90:
-Before:
-const isBooked = bookedAppointments.some(
-  apt => apt.appointment_date === slotDate && apt.appointment_time === slotTime
-);
-
-After:
-const isBooked = bookedAppointments.some(apt => {
-  const aptTime = apt.appointment_time.substring(0, 5); // "10:15:00" -> "10:15"
-  return apt.appointment_date === slotDate && aptTime === slotTime;
-});
+```sql
+CREATE OR REPLACE FUNCTION public.get_public_scheduler(slug_param text)
+RETURNS TABLE (
+  id uuid,
+  slug text,
+  name text,
+  description text,
+  duration integer,
+  buffer_time integer,
+  max_advance_booking integer,
+  min_advance_notice integer,
+  image_url text,
+  availability jsonb,
+  locations jsonb,
+  -- New: Business branding fields
+  company_name text,
+  company_logo_url text,
+  company_phone text,
+  company_address text
+) LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    s.id, s.slug, s.name, s.description, s.duration, s.buffer_time,
+    s.max_advance_booking, s.min_advance_notice, s.image_url, 
+    s.availability, s.locations,
+    bs.company_name,
+    bs.company_logo_url,
+    bs.business_phone AS company_phone,
+    bs.address AS company_address
+  FROM public.appointment_schedulers s
+  LEFT JOIN public.business_settings bs ON bs.user_id = s.user_id
+  WHERE s.slug = slug_param AND s.active = true
+  LIMIT 1;
+END;
+$$;
 ```
 
-#### Step 2: Update BookingConfirmation to Use Correct Hook
+#### Step 2: Update PublicScheduler Interface
+
+**File**: `src/hooks/useAppointmentSchedulers.ts`
+
+Add new fields to the interface:
+
+```typescript
+export interface PublicScheduler {
+  // Existing fields...
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  duration: number;
+  buffer_time: number;
+  max_advance_booking: number;
+  min_advance_notice: number;
+  image_url?: string;
+  availability: any;
+  locations: any;
+  // NEW: Business branding
+  company_name?: string;
+  company_logo_url?: string;
+  company_phone?: string;
+  company_address?: string;
+}
+```
+
+#### Step 3: Redesign BookingConfirmation with Modern UI
 
 **File**: `src/components/calendar/BookingConfirmation.tsx`
 
-Replace `useSchedulerSlots` with `useAppointmentBooking`:
+Transform into a modern split-panel design:
 
 ```text
-Before (lines 4-6, 30):
-import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
-...
-const { data: allSlots, refetch: refetchSlots, isLoading: slotsLoading } = useSchedulerSlots(undefined, 5000);
-
-After:
-import { useAppointmentBooking } from "@/hooks/useAppointmentBooking";
-...
-const { 
-  scheduler, 
-  isLoading, 
-  generateAvailableSlots, 
-  getAvailableDates 
-} = useAppointmentBooking(slug);
+Layout Structure:
+┌─────────────────────────────────────────────────────────────┐
+│  ┌─────────────────────┐  ┌───────────────────────────────┐ │
+│  │                     │  │                               │ │
+│  │   BRANDING PANEL    │  │      BOOKING PANEL           │ │
+│  │   • Company Logo    │  │      • Date Selection         │ │
+│  │   • Appointment     │  │      • Time Slots             │ │
+│  │     Details         │  │      • Contact Form           │ │
+│  │   • Duration        │  │      • Submit Button          │ │
+│  │   • Trust Signals   │  │                               │ │
+│  │                     │  │                               │ │
+│  └─────────────────────┘  └───────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+     Fixed/Sticky               Scrollable
 ```
 
-Replace the `getAvailableSlotsForDate` helper function to use the hook's function and transform the output to match the expected interface.
+Key design elements:
+- **Left panel (40%)**: Gradient background, company logo, appointment info, stays fixed
+- **Right panel (60%)**: White background, calendar/form, scrollable
+- **Mobile**: Stack vertically with collapsible header
 
-#### Step 3: Update DateTimeSelector Integration
+#### Step 4: Create Modern Component Structure
 
-Transform the slot format from `useAppointmentBooking` to match `DateTimeSelector` expectations:
+New/Updated components:
 
-```typescript
-// In BookingConfirmation.tsx
-const getAvailableSlotsForDate = (date: Date) => {
-  const slots = generateAvailableSlots(date);
-  // Filter only available slots and transform to expected format
-  return slots
-    .filter(slot => slot.available)
-    .map(slot => ({
-      id: `${format(date, 'yyyy-MM-dd')}-${slot.time}`,
-      startTime: slot.time,
-      endTime: '', // Not used by DateTimeSelector
-      isBooked: false // Already filtered to only available
-    }));
-};
+| Component | Purpose |
+|-----------|---------|
+| `BookingBrandingPanel.tsx` | Left side with logo, company info, trust signals |
+| `BookingHeader.tsx` (update) | Simplified header with just scheduler image |
+| `DateTimeSelector.tsx` (update) | Inline calendar with improved time grid |
+| `ClientInfoForm.tsx` (update) | Modern form with floating labels |
+| `BookingSuccessScreen.tsx` (update) | Confetti animation, add to calendar button |
+
+#### Step 5: Visual Design Specifications
+
+**Color Scheme**:
+```css
+/* Branding Panel */
+background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+
+/* Or use company's brand color if available */
+/* Fallback to professional blue/purple gradient */
 ```
 
-#### Step 4: Update Calendar Date Disabling Logic
+**Typography**:
+- Headings: Inter/System font, bold
+- Body: Inter/System font, regular
+- Time slots: Monospace for alignment
 
-The `DateTimeSelector` already disables dates with no available slots (line 70-71), but we need to ensure the function now properly returns empty arrays for dates that are:
-- Fully booked
-- Not in the scheduler's availability
-- Past the `min_advance_notice` threshold
+**Micro-interactions**:
+- Time slot hover: Scale 1.02, shadow lift
+- Date selection: Smooth background color transition
+- Form inputs: Focus ring animation
+- Submit button: Loading state with subtle pulse
 
----
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/hooks/useAppointmentBooking.ts` | Fix time format comparison (substring to normalize) |
-| `src/components/calendar/BookingConfirmation.tsx` | Replace `useSchedulerSlots` with `useAppointmentBooking`, update slot transformation |
-
----
-
-### Why This Fixes the Issue
-
-| Before | After |
-|--------|-------|
-| `useSchedulerSlots` returns empty because it requires auth | `useAppointmentBooking` uses public RPC function |
-| Time comparison `"10:15:00" === "10:15"` fails | Normalized comparison `"10:15" === "10:15"` works |
-| All dates shown as available | Only dates with actual available slots shown |
-| All time slots shown | Only non-booked slots shown |
+**Trust signals to add**:
+- "🔒 Secure booking" indicator
+- Company contact info
+- "Powered by InterioApp" subtle footer
 
 ---
 
-### Testing Checklist
+### Files to Create/Modify
 
-After implementation, verify:
-1. Open a public booking link (not logged in)
-2. Calendar shows only weekdays with availability enabled
-3. Dates with no available slots are grayed out/disabled
-4. Clicking a date shows only unbooked time slots
-5. Past time slots for today are hidden
-6. Time slots within `min_advance_notice` are hidden
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/migrations/xxx_update_public_scheduler.sql` | Create | Add business settings to RPC |
+| `src/hooks/useAppointmentSchedulers.ts` | Update | Add new interface fields |
+| `src/components/booking/BookingBrandingPanel.tsx` | Create | New left panel component |
+| `src/components/calendar/BookingConfirmation.tsx` | Update | New split-panel layout |
+| `src/components/booking/DateTimeSelector.tsx` | Update | Inline calendar, improved UX |
+| `src/components/booking/ClientInfoForm.tsx` | Update | Modern styling |
+| `src/components/booking/BookingSuccessScreen.tsx` | Update | Confetti, calendar add |
+
+---
+
+### Visual Mockup (Mobile)
+
+```text
+┌──────────────────────────┐
+│ ┌──────────────────────┐ │
+│ │     Company Logo     │ │
+│ │    Company Name      │ │
+│ │   ─────────────────  │ │
+│ │   📅 Consultation    │ │
+│ │   ⏱  60 minutes      │ │
+│ │   📍 Video Call      │ │
+│ └──────────────────────┘ │
+│                          │
+│   Select Date & Time     │
+│ ┌──────────────────────┐ │
+│ │    February 2026     │ │
+│ │  Su Mo Tu We Th Fr Sa│ │
+│ │       1  2  3  4  5  │ │
+│ │  6  7  8  9 10 11 12 │ │
+│ └──────────────────────┘ │
+│                          │
+│   Available Times        │
+│ ┌──────┐ ┌──────┐ ┌────┐ │
+│ │ 9:00 │ │10:00 │ │11:0│ │
+│ └──────┘ └──────┘ └────┘ │
+│                          │
+│   Your Details           │
+│ ┌──────────────────────┐ │
+│ │ Full Name            │ │
+│ │ Email                │ │
+│ │ Phone                │ │
+│ └──────────────────────┘ │
+│                          │
+│ ┌──────────────────────┐ │
+│ │   Confirm Booking    │ │
+│ └──────────────────────┘ │
+│                          │
+│  🔒 Secure • InterioApp  │
+└──────────────────────────┘
+```
+
+---
+
+### Expected Outcome
+
+After implementation:
+- ✅ Company logo prominently displayed
+- ✅ Professional, modern design matching Calendly/Cal.com standards
+- ✅ Mobile-first responsive layout
+- ✅ Trust signals for user confidence
+- ✅ Smooth animations and micro-interactions
+- ✅ Clear visual hierarchy and booking flow
+- ✅ Better conversion rates through improved UX
 
