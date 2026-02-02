@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const useCollections = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["collections"],
+    queryKey: ["collections", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("collections")
@@ -15,27 +17,29 @@ export const useCollections = () => {
           *,
           vendor:vendors(id, name, email, phone)
         `)
+        .eq("user_id", effectiveOwnerId)
         .eq("active", true)
         .order("name");
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 export const useCollectionsByVendor = (vendorId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["collections", "by-vendor", vendorId],
+    queryKey: ["collections", "by-vendor", vendorId, effectiveOwnerId],
     queryFn: async () => {
-      if (!vendorId) return [];
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!vendorId || !effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("collections")
         .select("*")
+        .eq("user_id", effectiveOwnerId)
         .eq("vendor_id", vendorId)
         .eq("active", true)
         .order("name");
@@ -43,7 +47,7 @@ export const useCollectionsByVendor = (vendorId?: string) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!vendorId,
+    enabled: !!vendorId && !!effectiveOwnerId,
   });
 };
 
@@ -111,11 +115,12 @@ export const useDeleteCollection = () => {
 
 // Hook to get collections with item counts for filter displays
 export const useCollectionsWithCounts = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["collections", "with-counts"],
+    queryKey: ["collections", "with-counts", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!effectiveOwnerId) return [];
 
       // Get collections with their item counts
       const { data: collections, error: collectionsError } = await supabase
@@ -124,6 +129,7 @@ export const useCollectionsWithCounts = () => {
           *,
           vendor:vendors(id, name)
         `)
+        .eq("user_id", effectiveOwnerId)
         .eq("active", true)
         .order("name");
 
@@ -133,6 +139,7 @@ export const useCollectionsWithCounts = () => {
       const { data: inventoryItems, error: itemsError } = await supabase
         .from("enhanced_inventory_items")
         .select("collection_id")
+        .eq("user_id", effectiveOwnerId)
         .not("collection_id", "is", null);
 
       if (itemsError) throw itemsError;
@@ -151,16 +158,18 @@ export const useCollectionsWithCounts = () => {
         itemCount: itemCountMap[collection.id] || 0,
       }));
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 // Hook to get vendors with their collections grouped
 export const useVendorsWithCollections = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["vendors", "with-collections"],
+    queryKey: ["vendors", "with-collections", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!effectiveOwnerId) return [];
 
       // Get all collections with vendor info
       const { data: collections, error: collectionsError } = await supabase
@@ -169,6 +178,7 @@ export const useVendorsWithCollections = () => {
           *,
           vendor:vendors(id, name)
         `)
+        .eq("user_id", effectiveOwnerId)
         .eq("active", true)
         .order("name");
 
@@ -178,6 +188,7 @@ export const useVendorsWithCollections = () => {
       const { data: inventoryItems, error: itemsError } = await supabase
         .from("enhanced_inventory_items")
         .select("collection_id")
+        .eq("user_id", effectiveOwnerId)
         .not("collection_id", "is", null);
 
       if (itemsError) throw itemsError;
@@ -227,5 +238,6 @@ export const useVendorsWithCollections = () => {
         return (a.vendor.name || "").localeCompare(b.vendor.name || "");
       });
     },
+    enabled: !!effectiveOwnerId,
   });
 };
