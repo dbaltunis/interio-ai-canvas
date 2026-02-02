@@ -14,11 +14,11 @@ export const SimplifiedTemplateFormManufacturing = ({
   const treatmentCategory = formData.treatment_category || formData.curtain_type;
   const isCurtain = treatmentCategory === 'curtains' || treatmentCategory === 'curtain';
   const isRoman = treatmentCategory === 'roman_blinds' || treatmentCategory === 'roman_blind';
+  const isBlind = treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter') || treatmentCategory?.includes('awning');
   
-  // Only show manufacturing for curtains/romans - not for blinds
-  if (!isCurtain && !isRoman) {
-    return null;
-  }
+  // ✅ FIX: Show manufacturing settings for ALL treatment types
+  // Users need to be able to set hem values for blinds, not just curtains/romans
+  // Previously this was hidden for blinds, forcing them to use hardcoded 8cm defaults
   
   return (
     <Card>

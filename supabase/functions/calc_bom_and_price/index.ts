@@ -160,20 +160,22 @@ serve(async (req) => {
 
     // Build calculation context
     const context: CalculationContext = {
-      // Default measurements
-      rail_width_mm: state.rail_width_mm || 1000,
-      drop_mm: state.drop_mm || 2000,
-      ceiling_to_floor_mm: state.ceiling_to_floor_mm || 2400,
-      wall_to_wall_mm: state.wall_to_wall_mm || 1200,
-      recess_depth_mm: state.recess_depth_mm || 0,
+      // ✅ FIX: Use ?? to respect user's 0 values - || treats 0 as falsy
+      // These should fail explicitly if not provided rather than use hidden defaults
+      rail_width_mm: state.rail_width_mm ?? 0,
+      drop_mm: state.drop_mm ?? 0,
+      ceiling_to_floor_mm: state.ceiling_to_floor_mm ?? 0,
+      wall_to_wall_mm: state.wall_to_wall_mm ?? 0,
+      recess_depth_mm: state.recess_depth_mm ?? 0,
       
       // Panel configuration
       panel_count: state.panel_setup === 'single' ? 1 : 2,
-      puddle_mm: state.puddle_length || 0,
-      overlap_mm: state.overlap || 0,
-      returns_mm: state.returns || 0,
-      header_mm: state.header_allowance || 80,
-      hem_mm: state.hem_allowance || 150,
+      // ✅ FIX: Use ?? to respect user's 0 values - || treats 0 as falsy
+      puddle_mm: state.puddle_length ?? 0,
+      overlap_mm: state.overlap ?? 0,
+      returns_mm: state.returns ?? 0,
+      header_mm: state.header_allowance ?? 0, // NO hardcoded 80 fallback - use template value
+      hem_mm: state.hem_allowance ?? 0, // NO hardcoded 150 fallback - use template value
       
       // Fabric attributes from selected fabric
       fabric_width_mm: state.selected_fabric?.attributes?.width_mm || 1400,

@@ -837,11 +837,11 @@ export const AdaptiveFabricPricingDisplay = ({
                 // ✅ CRITICAL: measurements.rail_width and drop are stored in MM, convert to CM
                 const widthCm = (parseFloat(measurements.rail_width || '0')) / 10;
                 const heightCm = (parseFloat(measurements.drop || '0')) / 10;
-                // Use template values - only fall back to defaults if truly undefined
-                const headerHem = template?.blind_header_hem_cm ?? template?.header_allowance ?? 8;
-                const bottomHem = template?.blind_bottom_hem_cm ?? template?.bottom_hem ?? 8;
+                // ✅ FIX: Use ?? 0 - NO hardcoded 8cm fallback! User's 0 must be respected
+                const headerHem = template?.blind_header_hem_cm ?? template?.header_allowance ?? 0;
+                const bottomHem = template?.blind_bottom_hem_cm ?? template?.bottom_hem ?? 0;
                 const sideHem = template?.blind_side_hem_cm ?? 0;
-                const wastePercent = template?.waste_percent || 0;
+                const wastePercent = template?.waste_percent ?? 0;
                 const effectiveWidth = widthCm + sideHem * 2;
                 const effectiveHeight = heightCm + headerHem + bottomHem;
                 const sqmRaw = effectiveWidth * effectiveHeight / 10000;
@@ -968,12 +968,14 @@ export const AdaptiveFabricPricingDisplay = ({
                 // Get all values needed for calculation (same as before)
                 const rawDropMm = parseFloat(measurements.drop) || 0;
                 const rawDrop = fabricCalculation.drop || (rawDropMm / 10); // MM → CM
-                const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
-                const bottomHem = fabricCalculation.details?.bottomHem || template?.bottom_hem || 0;
-                const poolingMm = parseFloat(measurements.pooling) || 0;
-                const pooling = fabricCalculation.details?.pooling || (poolingMm / 10); // MM → CM
-                const patternRepeat = fabricCalculation.details?.patternRepeat || 0;
-                const totalSeamAllowance = fabricCalculation.details?.totalSeamAllowance || 0;
+                // ✅ FIX: Use root-level properties, NOT nested .details paths which don't exist
+                const headerHem = fabricCalculation.headerHem ?? template?.header_allowance ?? 0;
+                const bottomHem = fabricCalculation.bottomHem ?? template?.bottom_hem ?? 0;
+                // ✅ FIX: Use correct property name: pooling_amount, NOT pooling
+                const poolingMm = parseFloat(measurements.pooling_amount) || 0;
+                const pooling = fabricCalculation.pooling || (poolingMm / 10); // MM → CM
+                const patternRepeat = fabricCalculation.patternRepeat || 0;
+                const totalSeamAllowance = fabricCalculation.totalSeamAllowance || 0;
                 const widthsRequired = fabricCalculation.widthsRequired || 0;
                 
                 // Calculate drop with all allowances
