@@ -142,7 +142,7 @@ export const TreatmentSpecificFields = ({
               <Label>Header Hem ({units.length})</Label>
               <Input
                 type="number"
-                value={treatmentData.header_hem || 4}
+                value={treatmentData.header_hem ?? ""}
                 onChange={(e) => onTreatmentDataChange("header_hem", parseFloat(e.target.value) || 0)}
                 placeholder="4"
                 readOnly={readOnly}
@@ -153,7 +153,7 @@ export const TreatmentSpecificFields = ({
               <Label>Bottom Hem ({units.length})</Label>
               <Input
                 type="number"
-                value={treatmentData.bottom_hem || 4}
+                value={treatmentData.bottom_hem ?? ""}
                 onChange={(e) => onTreatmentDataChange("bottom_hem", parseFloat(e.target.value) || 0)}
                 placeholder="4"
                 readOnly={readOnly}
@@ -166,7 +166,7 @@ export const TreatmentSpecificFields = ({
               <Label>Side Hem ({units.length})</Label>
               <Input
                 type="number"
-                value={treatmentData.side_hem || 1.5}
+                value={treatmentData.side_hem ?? ""}
                 onChange={(e) => onTreatmentDataChange("side_hem", parseFloat(e.target.value) || 0)}
                 placeholder="1.5"
                 readOnly={readOnly}
@@ -177,7 +177,7 @@ export const TreatmentSpecificFields = ({
               <Label>Seam Allowance ({units.length})</Label>
               <Input
                 type="number"
-                value={treatmentData.seam_allowance || 0.5}
+                value={treatmentData.seam_allowance ?? ""}
                 onChange={(e) => onTreatmentDataChange("seam_allowance", parseFloat(e.target.value) || 0)}
                 placeholder="0.5"
                 readOnly={readOnly}

@@ -133,7 +133,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
         color: item.color || (item.metadata as any)?.twc_colour || '',
         pattern: item.description?.includes('pattern:') ? item.description.split('pattern:')[1]?.split(',')[0]?.trim() : '',
         type: item.subcategory || item.category || 'fabric',
-        width: item.fabric_width || 137, // Use fabric_width from inventory, fallback to default
+        width: item.fabric_width ?? 137, // Use fabric_width from inventory, fallback to default
         cost_per_unit: item.price_per_meter || item.selling_price || 0,
         unit: 'meter',
         metadata: item.metadata || {}, // Preserve metadata including maxLength

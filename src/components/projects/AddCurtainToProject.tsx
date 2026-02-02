@@ -138,8 +138,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       totalFabricRequired = 0;
     }
 
-    // Apply waste percentage at the very end
-    const wastePercent = template.waste_percent || 5;
+    // Apply waste percentage at the very end - use ?? to respect explicit 0
+    const wastePercent = template.waste_percent ?? 0;
     totalFabricRequired = totalFabricRequired * (1 + (wastePercent / 100));
 
     // Calculate lining (typically same as main fabric)
