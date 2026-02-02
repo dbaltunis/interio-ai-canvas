@@ -377,11 +377,12 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       // Must match treatment category
       if (opt.treatment_category !== treatmentCategory) return false;
       
-      // For TWC options: only show if explicitly linked OR key matches this template's ID
+      // For TWC options: show all options matching the treatment_category
+      // This allows manual templates to see and enable TWC-synced options
+      // Options are disabled by default until user explicitly enables them
       if ((opt as any).source === 'twc') {
-        const isLinked = linkedOptionIds.has(opt.id);
-        const keyMatchesTemplate = templateIdPrefix && opt.key?.endsWith(`_${templateIdPrefix}`);
-        return isLinked || keyMatchesTemplate;
+        // Show all TWC options for this category - user toggles which to enable
+        return true;
       }
       
       // System/custom options: show all matching category
