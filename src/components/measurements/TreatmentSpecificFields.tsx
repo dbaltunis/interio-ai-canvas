@@ -352,7 +352,7 @@ export const TreatmentSpecificFields = ({
               <Label>Fold Spacing ({units.length})</Label>
               <Input
                 type="number"
-                value={treatmentData.fold_spacing || 8}
+                value={treatmentData.fold_spacing ?? 8}
                 onChange={(e) => onTreatmentDataChange("fold_spacing", parseFloat(e.target.value) || 0)}
                 placeholder="8"
                 readOnly={readOnly}

@@ -23,9 +23,11 @@ export const getBlindHemValues = (template: any): BlindHemValues => {
     throw new Error('[getBlindHemValues] Template is required - cannot calculate without manufacturing settings');
   }
   
-  const headerRaw = template.blind_header_hem_cm ?? template.header_allowance ?? template.header_hem_cm;
-  const bottomRaw = template.blind_bottom_hem_cm ?? template.bottom_hem ?? template.bottom_hem_cm;
-  const sideRaw = template.blind_side_hem_cm ?? template.side_hem ?? template.side_hem_cm;
+  // PRIORITY FIX: User-editable fields (header_allowance, bottom_hem, side_hem) take priority
+  // over legacy blind_*_hem_cm fields which are often hidden from UI
+  const headerRaw = template.header_allowance ?? template.header_hem_cm ?? template.blind_header_hem_cm;
+  const bottomRaw = template.bottom_hem ?? template.bottom_allowance ?? template.bottom_hem_cm ?? template.blind_bottom_hem_cm;
+  const sideRaw = template.side_hem ?? template.side_hems ?? template.side_hem_cm ?? template.blind_side_hem_cm;
   const wasteRaw = template.waste_percent ?? template.waste_percentage ?? 0;
   
   const missing: string[] = [];

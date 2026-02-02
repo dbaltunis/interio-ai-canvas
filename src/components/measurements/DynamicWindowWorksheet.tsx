@@ -794,7 +794,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             fullnessRatio: fullness,
             totalWidthWithAllowances: totalWidthWithAllowances, // ✅ Now calculated/restored
             railWidth: railWidthCm,
-            wastePercent: md.waste_percent || 5
+            wastePercent: md.waste_percent ?? 0
           });
         }
         return;
@@ -1666,6 +1666,28 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               });
             }
             
+            // ✅ CRITICAL FIX: Use correct options cost for ALL treatment types
+            // For blinds/shutters, get options cost from liveBlindCalcResult or blindOptionsCost
+            // For curtains, use curtainOptionsCost
+            let effectiveOptionsCost = curtainOptionsCost;
+            if (displayCategory === 'blinds' || displayCategory === 'shutters') {
+              effectiveOptionsCost = liveBlindCalcResult?.optionsCost ?? blindOptionsCost ?? 0;
+            }
+            
+            // ✅ CRITICAL FIX: Use correct component costs for each treatment type
+            // For blinds/shutters, fabric/manufacturing costs come from liveBlindCalcResult
+            let effectiveFabricCost = fabricCost;
+            let effectiveManufacturingCost = manufacturingCost;
+            let effectiveLiningCost = finalLiningCost;
+            let effectiveHeadingCost = finalHeadingCost;
+            
+            if (displayCategory === 'blinds' || displayCategory === 'shutters') {
+              effectiveFabricCost = liveBlindCalcResult?.fabricCost ?? fabricCost;
+              effectiveManufacturingCost = liveBlindCalcResult?.manufacturingCost ?? manufacturingCost;
+              effectiveLiningCost = 0; // Blinds don't have lining
+              effectiveHeadingCost = 0; // Blinds don't have heading
+            }
+            
             // Calculate selling prices for each component with their specific category markup
             const fabricMarkupResult = resolveMarkup({
               productMarkup, // ✅ Pass explicit product-level markup from inventory item
@@ -1674,36 +1696,36 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               category: treatmentCat,
               markupSettings: markupSettings || undefined
             });
-            const fabricSelling = applyMarkup(fabricCost, fabricMarkupResult.percentage);
+            const fabricSelling = applyMarkup(effectiveFabricCost, fabricMarkupResult.percentage);
             
             const liningMarkupResult = resolveMarkup({
               category: 'lining',
               markupSettings: markupSettings || undefined
             });
-            const liningSelling = applyMarkup(finalLiningCost, liningMarkupResult.percentage);
+            const liningSelling = applyMarkup(effectiveLiningCost, liningMarkupResult.percentage);
             
             const headingMarkupResult = resolveMarkup({
               category: 'heading',
               markupSettings: markupSettings || undefined
             });
-            const headingSelling = applyMarkup(finalHeadingCost, headingMarkupResult.percentage);
+            const headingSelling = applyMarkup(effectiveHeadingCost, headingMarkupResult.percentage);
             
             const manufacturingMarkupResult = resolveMarkup({
               category: makingCategory,
               markupSettings: markupSettings || undefined
             });
-            const manufacturingSelling = applyMarkup(manufacturingCost, manufacturingMarkupResult.percentage);
+            const manufacturingSelling = applyMarkup(effectiveManufacturingCost, manufacturingMarkupResult.percentage);
             
             const optionsMarkupResult = resolveMarkup({
               category: 'options',
               markupSettings: markupSettings || undefined
             });
-            const optionsSelling = applyMarkup(curtainOptionsCost, optionsMarkupResult.percentage);
+            const optionsSelling = applyMarkup(effectiveOptionsCost, optionsMarkupResult.percentage);
             
             const totalSelling = fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
             
             // ✅ Calculate overall effective markup percentage: (selling - cost) / cost * 100
-            const totalCostForMarkup = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost + curtainOptionsCost;
+            const totalCostForMarkup = effectiveFabricCost + effectiveLiningCost + effectiveHeadingCost + effectiveManufacturingCost + effectiveOptionsCost;
             const effectiveMarkupPercent = totalCostForMarkup > 0 
               ? ((totalSelling - totalCostForMarkup) / totalCostForMarkup) * 100 
               : 0;
@@ -1714,14 +1736,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               : 0;
             
             console.log('💰 [PER-ITEM MARKUP] Calculating total_selling:', {
-              fabricCost, fabricSelling,
+              treatmentType: displayCategory,
+              effectiveFabricCost, fabricSelling,
               fabricMarkupSource: fabricMarkupResult.source,
               fabricMarkupPercent: fabricMarkupResult.percentage,
               productMarkup, gridMarkup,
-              liningCost: finalLiningCost, liningSelling,
-              headingCost: finalHeadingCost, headingSelling,
-              manufacturingCost, manufacturingSelling,
-              optionsCost: curtainOptionsCost, optionsSelling,
+              effectiveLiningCost, liningSelling,
+              effectiveHeadingCost, headingSelling,
+              effectiveManufacturingCost, manufacturingSelling,
+              effectiveOptionsCost, optionsSelling,
               makingCategory,
               effectiveMarkupPercent: effectiveMarkupPercent.toFixed(2),
               profitMarginPercent: profitMarginPercent.toFixed(2)
@@ -2130,13 +2153,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               ];})(),
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
-            waste_percent: selectedTemplate?.waste_percent || 5,
+            waste_percent: selectedTemplate?.waste_percent ?? 0,
             currency: units?.currency || 'USD',
             
             // STEP 1: Window Type Selection
             window_type: selectedWindowType?.name || 'Standard Window',
             window_type_key: selectedWindowType?.key || 'standard',
-            window_type_id: selectedWindowType?.id,
+            // CRITICAL FIX: Only save UUID if it's a valid UUID, not a string literal like 'standard'
+            window_type_id: selectedWindowType?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedWindowType.id) 
+              ? selectedWindowType.id 
+              : null,
             
             // STEP 2: Treatment/Template Selection - SIMPLIFIED
             // CRITICAL: Preserve custom template_name if it exists, don't overwrite with template name
@@ -2162,7 +2188,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             fabric_details: selectedItems.fabric ? {
               id: selectedItems.fabric.id,
               name: selectedItems.fabric.name,
-              fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+              fabric_width: selectedItems.fabric.fabric_width ?? selectedItems.fabric.wallpaper_roll_width ?? null,
               cost_price: selectedItems.fabric.cost_price, // ✅ FIX: Save cost_price for accurate Cost column display
               selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
               category: selectedItems.fabric.category,
@@ -2230,14 +2256,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               horizontal_pieces_needed: fabricCalculation?.horizontalPiecesNeeded || 1,
               fabric_orientation: fabricCalculation?.fabricOrientation || 'vertical',
               
-              // CRITICAL: Store ALL template-specific values - NO hardcoded fallbacks, must come from template
-              header_hem: measurements.header_hem || selectedTemplate?.header_allowance || selectedTemplate?.header_hem || null,
-              bottom_hem: measurements.bottom_hem || selectedTemplate?.bottom_hem || selectedTemplate?.bottom_allowance || null,
-              side_hems: measurements.side_hem || selectedTemplate?.side_hem || selectedTemplate?.side_hems || null,
-              seam_hems: measurements.seam_hem || selectedTemplate?.seam_allowance || selectedTemplate?.seam_hems || null,
-              return_left: measurements.return_left || selectedTemplate?.return_left || 0,
-              return_right: measurements.return_right || selectedTemplate?.return_right || 0,
-              waste_percent: measurements.waste_percent || selectedTemplate?.waste_percent || 0,
+              // CRITICAL FIX: Use ?? instead of || to respect explicit 0 values from user/template
+              header_hem: measurements.header_hem ?? selectedTemplate?.header_allowance ?? selectedTemplate?.header_hem ?? null,
+              bottom_hem: measurements.bottom_hem ?? selectedTemplate?.bottom_hem ?? selectedTemplate?.bottom_allowance ?? null,
+              side_hems: measurements.side_hem ?? selectedTemplate?.side_hem ?? selectedTemplate?.side_hems ?? null,
+              seam_hems: measurements.seam_hem ?? selectedTemplate?.seam_allowance ?? selectedTemplate?.seam_hems ?? null,
+              return_left: measurements.return_left ?? selectedTemplate?.return_left ?? 0,
+              return_right: measurements.return_right ?? selectedTemplate?.return_right ?? 0,
+              waste_percent: measurements.waste_percent ?? selectedTemplate?.waste_percent ?? 0,
               
               // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
@@ -2277,13 +2303,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               // ✅ FIX: No hardcoded fallback - use 1 (no multiplication) if not set
               fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
               heading_fullness: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
-              fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
+              fabric_width_cm: selectedItems.fabric?.fabric_width ?? selectedItems.fabric?.wallpaper_roll_width ?? null,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
               selected_lining: selectedLining,
               // CRITICAL: Save totalWidthWithAllowances for manufacturing calculation restoration
               total_width_with_allowances_cm: fabricCalculation?.totalWidthWithAllowances || 0,
-              waste_percent_saved: fabricCalculation?.wastePercent || measurements.waste_percent || selectedTemplate?.waste_percent || 5
+              waste_percent_saved: fabricCalculation?.wastePercent ?? measurements.waste_percent ?? selectedTemplate?.waste_percent ?? 0
             }
           };
 

@@ -62,7 +62,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={settings.header_cm || 10}
+                  value={settings.header_cm ?? 10}
                   onChange={(e) => handleChange('header_cm', parseFloat(e.target.value) || 0)}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -78,7 +78,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={settings.bottom_hem_cm || 15}
+                  value={settings.bottom_hem_cm ?? 15}
                   onChange={(e) => handleChange('bottom_hem_cm', parseFloat(e.target.value) || 0)}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -94,7 +94,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={settings.side_hems_cm || 3}
+                  value={settings.side_hems_cm ?? 3}
                   onChange={(e) => handleChange('side_hems_cm', parseFloat(e.target.value) || 0)}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -157,7 +157,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
                 min="0"
                 max="50"
                 step="1"
-                value={settings.waste_percentage || 10}
+                value={settings.waste_percentage ?? 10}
                 onChange={(e) => handleChange('waste_percentage', parseFloat(e.target.value) || 0)}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
