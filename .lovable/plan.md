@@ -1,183 +1,102 @@
 
-# Dynamic Window Type Selection & Auto-Skip Enhancement
 
-## Current Behavior
-- The first step always shows "Select Type"
-- When only one window type is available, it auto-selects but still shows the "Select Type" tab content
-- User sees the window type panel before moving to Treatment tab
+# Hide Supplier Filter for Dealers & Add Permission-Based Visibility
 
-## Desired Behavior
+## Investigation Findings
 
-| Available Templates | First Step Label | Behavior |
-|---------------------|------------------|----------|
-| Only window treatments (no wallpapers) | "Window Selected" | Auto-select Standard Window, skip to Treatment tab |
-| Only wallpapers (no window treatments) | "Wall Selected" | Auto-select Wall, skip to Treatment tab |
-| Both window treatments AND wallpapers | "Select Type" | User chooses, then moves to Treatment |
+### What the Warning Icon (⚠️) Means
+
+The warning icon indicates **"orphan" suppliers** - inventory items that have a text `supplier` field but are NOT linked to a formal vendor record via `vendor_id`. 
+
+| Supplier Type | Icon | Meaning |
+|--------------|------|---------|
+| `vendor` | (none) | Properly linked to vendors table |
+| `supplier_text` | ⚠️ | Text-only, not in vendors table |
+
+This is a **data quality indicator** - these suppliers should ideally be migrated to proper vendor records for better management.
 
 ---
 
-## Implementation Approach
+## Proposed Changes
 
-### Step 1: Add Template Analysis Hook
-Create a helper function in `DynamicWindowWorksheet.tsx` to analyze available templates:
+### 1. Hide Supplier Section in FilterButton for Dealers
 
-```typescript
-// Analyze what treatment types are available
-const hasWindowTreatments = curtainTemplates.some(
-  t => detectTreatmentType(t) !== 'wallpaper'
-);
-const hasWallpaperTemplates = curtainTemplates.some(
-  t => detectTreatmentType(t) === 'wallpaper'
-);
-const hasBothTypes = hasWindowTreatments && hasWallpaperTemplates;
-```
+The `FilterButton.tsx` component (used in Library and Inventory Selection Panel) currently shows the supplier filter to everyone. We need to hide it for dealers.
 
-### Step 2: Dynamic Step Label
-Update the step names array to be conditional:
+**File:** `src/components/library/FilterButton.tsx`
 
 ```typescript
-const getFirstStepLabel = () => {
-  if (hasBothTypes) return "Select Type";
-  if (hasWallpaperTemplates && !hasWindowTreatments) return "Wall Selected";
-  return "Window Selected"; // Default: only window treatments
-};
+// Add import
+import { useIsDealer } from "@/hooks/useIsDealer";
 
-const stepNames = [getFirstStepLabel(), "Treatment", "Library", "Measurements"];
+// Inside FilterButton component
+const { data: isDealer } = useIsDealer();
+
+// Wrap the Supplier filter section (lines 305-337) with condition
+{!isDealer && (
+  <div className="space-y-2">
+    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+      <Building2 className="h-3 w-3" />
+      Supplier
+    </label>
+    {/* ... rest of supplier select ... */}
+  </div>
+)}
 ```
 
-### Step 3: Auto-Skip to Treatment Tab
-When only one window type exists, start directly on "treatment" tab instead of "window-type":
+### 2. Permission-Based Visibility (Optional Enhancement)
 
+For more granular control, we could use the `view_vendors` permission instead of just `isDealer`:
+
+| Role | Has `view_vendors` | Should See Suppliers? |
+|------|-------------------|----------------------|
+| System Owner | ✅ | Yes |
+| Owner | ✅ | Yes |
+| Admin | ✅ | Yes |
+| Manager | ❌ | No (by default) |
+| Staff | ❌ | No |
+| User | ❌ | No |
+| Dealer | ❌ | No |
+
+**Alternative approach using permission:**
 ```typescript
-// Initialize activeTab based on available types
-const [activeTab, setActiveTab] = useState(() => {
-  // Will be updated after templates load
-  return "window-type";
-});
+import { useHasPermission } from "@/hooks/usePermissions";
 
-// Effect to handle auto-navigation when only one type exists
-useEffect(() => {
-  if (!templatesLoading && !hasBothTypes && availableWindowTypes.length === 1) {
-    // Auto-select the only available window type
-    setSelectedWindowType(availableWindowTypes[0]);
-    // Skip directly to treatment tab
-    setActiveTab('treatment');
-  }
-}, [templatesLoading, hasBothTypes, availableWindowTypes.length]);
+const canViewVendors = useHasPermission('view_vendors');
+
+{canViewVendors && (
+  // Supplier filter section
+)}
 ```
 
-### Step 4: Update WindowTypeSelector Communication
-Modify `WindowTypeSelector` to communicate whether it auto-selected:
-
-```typescript
-interface WindowTypeSelectorProps {
-  // ... existing props
-  onAutoSelect?: (windowType: SimpleWindowType) => void;
-}
-```
+This gives more flexibility - account owners can grant `view_vendors` to specific staff if needed.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | Add template analysis, dynamic step labels, auto-skip logic |
-| `src/components/window-types/WindowTypeSelector.tsx` | Add callback for auto-selection scenario |
+| File | Change |
+|------|--------|
+| `src/components/library/FilterButton.tsx` | Add dealer/permission check to hide Supplier section |
 
 ---
 
-## Technical Details
+## Recommendation
 
-### DynamicWindowWorksheet.tsx Changes
+I recommend using the **`useIsDealer` approach** for now since:
+1. `InventorySupplierFilter.tsx` already uses this pattern
+2. It maintains consistency across the codebase
+3. Dealers are the primary role needing this restriction
 
-1. **Import `useCurtainTemplates`** - Already imported (line 20)
-
-2. **Add template analysis** (near line 265):
-```typescript
-const { data: curtainTemplates = [], isLoading: templatesLoading } = useCurtainTemplates();
-
-const hasWindowTreatments = curtainTemplates.some(
-  t => detectTreatmentType(t) !== 'wallpaper'
-);
-const hasWallpaperTemplates = curtainTemplates.some(
-  t => detectTreatmentType(t) === 'wallpaper'
-);
-const hasBothTypes = hasWindowTreatments && hasWallpaperTemplates;
-const onlyOneTypeAvailable = !hasBothTypes && (hasWindowTreatments || hasWallpaperTemplates);
-```
-
-3. **Dynamic first step label** (line 2745):
-```typescript
-const getFirstStepLabel = () => {
-  if (selectedWindowType?.visual_key === 'room_wall') return "Wall Selected";
-  if (selectedWindowType) return "Window Selected";
-  if (hasBothTypes) return "Select Type";
-  if (hasWallpaperTemplates) return "Wall Selected";
-  return "Window Selected";
-};
-const stepNames = [getFirstStepLabel(), "Treatment", "Library", "Measurements"];
-```
-
-4. **Auto-skip effect** (new effect after line 265):
-```typescript
-useEffect(() => {
-  // Only run for new windows (not editing existing)
-  if (hasLoadedInitialData.current) return;
-  if (templatesLoading) return;
-  
-  // If only one type available, auto-select and skip to treatment
-  if (onlyOneTypeAvailable && !selectedWindowType) {
-    const windowType = hasWallpaperTemplates 
-      ? windowTypes.find(wt => wt.visual_key === 'room_wall')
-      : windowTypes.find(wt => wt.visual_key === 'standard');
-    
-    if (windowType) {
-      setSelectedWindowType(windowType);
-      setActiveTab('treatment');
-    }
-  }
-}, [templatesLoading, onlyOneTypeAvailable, selectedWindowType, windowTypes]);
-```
-
-### WindowTypeSelector.tsx Changes
-
-1. **Enhance auto-select to call parent immediately** (line 144-150):
-```typescript
-useEffect(() => {
-  if (!loading && !templatesLoading && availableWindowTypes.length === 1 && !selectedWindowType) {
-    console.log('🎯 Only one window type available, auto-selecting:', availableWindowTypes[0].name);
-    // Parent will handle navigation - just call the callback
-    onWindowTypeChange(availableWindowTypes[0]);
-  }
-}, [loading, templatesLoading, availableWindowTypes, selectedWindowType, onWindowTypeChange]);
-```
+The permission-based approach (`view_vendors`) would be a future enhancement if you want finer control for staff/managers.
 
 ---
 
-## User Experience Flow
+## About the Warning Icons
 
-### Scenario 1: Account with only Window Treatments
-1. User opens measurement worksheet
-2. System detects: only window treatments exist
-3. First step shows: **"Window Selected" ✓**
-4. Standard Window auto-selected
-5. User lands directly on **Treatment** tab
-6. User picks their blind/curtain treatment
+No code changes needed for the warning icons - they are **intentional data quality indicators**. To remove them, you would need to:
 
-### Scenario 2: Account with only Wallpapers  
-1. User opens measurement worksheet
-2. System detects: only wallpaper templates exist
-3. First step shows: **"Wall Selected" ✓**
-4. Wall auto-selected
-5. User lands directly on **Treatment** tab
-6. User picks their wallpaper
+1. Create proper vendor records for each orphan supplier
+2. Update inventory items to use `vendor_id` instead of text `supplier`
+3. This is a data migration task, not a code change
 
-### Scenario 3: Account with Both Types
-1. User opens measurement worksheet
-2. System detects: both types available
-3. First step shows: **"Select Type"**
-4. User sees Window and Wall options
-5. User picks one (e.g., Wall)
-6. Step updates to: **"Wall Selected" ✓**
-7. User moves to Treatment tab
