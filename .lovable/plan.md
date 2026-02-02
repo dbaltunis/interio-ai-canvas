@@ -1,188 +1,252 @@
 
-# Fix Plan: Infinite Re-render Bug & Calculation Display Mismatches
+# Deep Testing Report: Sadath's Account & Global Calculation Issues
 
-## Problem Summary
+## Executive Summary
 
-### Issue #1: Maximum Update Depth Exceeded Error
-The console shows a "Maximum update depth exceeded" error originating from `useFormattedDate.ts` inside `ProjectNotesCard.tsx`. This causes the page to crash or become unresponsive.
-
-### Issue #2: Calculation Formula Mismatches in Room Window View
-Previously addressed seam allowance display issue, but need to verify complete fix and check for remaining formula display inconsistencies.
-
----
-
-## Root Cause Analysis
-
-### Issue #1: Infinite Re-render Loop
-
-**Location:** `src/hooks/useFormattedDate.ts` (line 78)
-
-```typescript
-useEffect(() => {
-  formatDates();
-}, [items, getDate, includeTime]);  // ← getDate causes infinite loop!
-```
-
-**Problem:** The `getDate` function is passed as a dependency to `useEffect`. When components pass an **inline arrow function** like:
-
-```typescript
-// ProjectNotesCard.tsx line 29
-const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
-```
-
-This creates a **new function reference on every render**, causing the `useEffect` to run again, which calls `setFormattedDates`, triggering another render, creating an **infinite loop**.
-
-**Affected Components:**
-| File | Line | Code |
-|------|------|------|
-| `ProjectNotesCard.tsx` | 29 | `(n) => n.created_at` |
-| `JobsTable.tsx` | 39 | `(q) => q.created_at` |
-| `JobsDashboard.tsx` | 18-19 | `(p) => p.created_at`, `(q) => q.created_at` |
-| `JobGridView.tsx` | 21 | `(j) => j.created_at` |
-| `ClientQuotesList.tsx` | 25 | `(quote) => quote.created_at` |
-| `ClientProjectsList.tsx` | 40 | `(p) => p.due_date` |
-| `ClientManagement.tsx` | 23 | `(client) => client.created_at` |
-
-**Correct Pattern (already exists in codebase):**
-```typescript
-// ClientFilesManager.tsx lines 39-41 - CORRECT
-const getFileDate = useCallback((file: any) => file.created_at, []);
-const { formattedDates } = useFormattedDates(files, getFileDate);
-```
-
-### Issue #2: Seam Allowance Display
-
-This was already fixed in the previous approved plan. The seam allowance was removed from the Height Breakdown display (lines 766-770 show the removal comment). The fix is in place.
+After comprehensive testing of Sadath's Homekaara account and tracing through the codebase, I've identified **11 distinct bugs** affecting calculations, displays, data persistence, and form saving across ALL accounts. These issues explain:
+1. **"Save Failed" error** - Caused by passing string "standard" to a UUID field
+2. **Formula/calculation mismatches** - Different values shown in worksheet vs saved data
+3. **Hardcoded values overriding user settings** - 8cm/15cm hems appearing despite user setting 0
+4. **$0 pricing on saved blinds** - Calculation results not persisting correctly
 
 ---
 
-## Fix Plan
+## Issue #1: CRITICAL - "Save Failed" Error
 
-### Phase 1: Fix Infinite Re-render Bug
+### Root Cause
+The error `invalid input syntax for type uuid: "standard"` occurs in the database logs.
 
-**Fix all 7 affected components** by wrapping the `getDate` function in `useCallback`:
+**Location:** `DynamicWindowWorksheet.tsx` (Lines 277-280)
 
-#### 1. `src/components/jobs/ProjectNotesCard.tsx`
 ```typescript
-// BEFORE (line 29):
-const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
-
-// AFTER:
-const getNotesDate = useCallback((n: any) => n.created_at, []);
-const { formattedDates } = useFormattedDates(notes, getNotesDate, true);
+const windowTypes = [
+  { id: 'standard', name: 'Standard Window', key: 'standard', visual_key: 'standard' },
+  { id: 'room_wall', name: 'Wall', key: 'room_wall', visual_key: 'room_wall' },
+];
 ```
 
-#### 2. `src/components/jobs/JobsTable.tsx`
-```typescript
-// BEFORE (line 39):
-const { formattedDates } = useFormattedDates(quotes, (q) => q.created_at, false);
+When auto-selecting window types, the code sets `selectedWindowType.id` to the **string** `'standard'` instead of a valid **UUID**.
 
-// AFTER:
-const getQuoteDate = useCallback((q: any) => q.created_at, []);
-const { formattedDates } = useFormattedDates(quotes, getQuoteDate, false);
+Then at line 2139:
+```typescript
+window_type_id: selectedWindowType?.id, // Saves 'standard' instead of UUID!
 ```
 
-#### 3. `src/components/jobs/JobsDashboard.tsx`
+This causes the database upsert to fail because `window_type_id` is a UUID column.
+
+### Fix Required
+Replace hardcoded string IDs with `null` or fetch actual UUIDs from the `window_types` table:
 ```typescript
-// BEFORE (lines 18-19):
-const { formattedDates: projectDates } = useFormattedDates(projects, (p) => p.created_at, false);
-const { formattedDates: quoteDates } = useFormattedDates(quotes, (q) => q.created_at, false);
-
-// AFTER:
-const getProjectDate = useCallback((p: any) => p.created_at, []);
-const getQuoteDate = useCallback((q: any) => q.created_at, []);
-const { formattedDates: projectDates } = useFormattedDates(projects, getProjectDate, false);
-const { formattedDates: quoteDates } = useFormattedDates(quotes, getQuoteDate, false);
-```
-
-#### 4. `src/components/jobs/JobGridView.tsx`
-```typescript
-// BEFORE (line 21):
-const { formattedDates } = useFormattedDates(jobs, (j) => j.created_at, false);
-
-// AFTER:
-const getJobDate = useCallback((j: any) => j.created_at, []);
-const { formattedDates } = useFormattedDates(jobs, getJobDate, false);
-```
-
-#### 5. `src/components/clients/ClientQuotesList.tsx`
-```typescript
-// BEFORE (line 25):
-const { formattedDates } = useFormattedDates(quotes, (quote) => quote.created_at);
-
-// AFTER:
-const getQuoteDate = useCallback((quote: any) => quote.created_at, []);
-const { formattedDates } = useFormattedDates(quotes, getQuoteDate);
-```
-
-#### 6. `src/components/clients/ClientProjectsList.tsx`
-```typescript
-// BEFORE (line 40):
-const { formattedDates: dueDates } = useFormattedDates(projects, (p) => p.due_date, false);
-
-// AFTER:
-const getProjectDueDate = useCallback((p: any) => p.due_date, []);
-const { formattedDates: dueDates } = useFormattedDates(projects, getProjectDueDate, false);
-```
-
-#### 7. `src/components/clients/ClientManagement.tsx`
-```typescript
-// BEFORE (lines 21-25):
-const { formattedDates } = useFormattedDates(
-  clients,
-  (client) => client.created_at,
-  false
-);
-
-// AFTER:
-const getClientDate = useCallback((client: any) => client.created_at, []);
-const { formattedDates } = useFormattedDates(clients, getClientDate, false);
+window_type_id: selectedWindowType?.id && isValidUUID(selectedWindowType.id) ? selectedWindowType.id : null,
 ```
 
 ---
 
-## Files to Modify
+## Issue #2: Hardcoded Hem Fallbacks STILL EXIST
 
-| File | Change |
-|------|--------|
-| `src/components/jobs/ProjectNotesCard.tsx` | Add `useCallback` import and wrap getDate |
-| `src/components/jobs/JobsTable.tsx` | Add `useCallback` import and wrap getDate |
-| `src/components/jobs/JobsDashboard.tsx` | Add `useCallback` import and wrap both getDate functions |
-| `src/components/jobs/JobGridView.tsx` | Add `useCallback` import and wrap getDate |
-| `src/components/clients/ClientQuotesList.tsx` | Add `useCallback` import and wrap getDate |
-| `src/components/clients/ClientProjectsList.tsx` | Add `useCallback` import and wrap getDate |
-| `src/components/clients/ClientManagement.tsx` | Add `useCallback` import and wrap getDate |
+### Evidence
+Despite previous fixes, I found **5 MORE locations** with hardcoded fallbacks:
+
+| File | Line | Code | Impact |
+|------|------|------|--------|
+| `ManufacturingStep.tsx` | 81 | `value={settings.bottom_hem_cm \|\| 15}` | Shows 15cm in onboarding |
+| `ManufacturingStep.tsx` | 97 | `value={settings.side_hems_cm \|\| 3}` | Shows 3cm for side hems |
+| `TreatmentSpecificFields.tsx` | 355 | `value={treatmentData.fold_spacing \|\| 8}` | Shows 8cm for fold spacing |
+| `DynamicWindowWorksheet.tsx` | 2286 | `waste_percent_saved: ... \|\| 5` | Forces 5% waste |
+| `DynamicWindowWorksheet.tsx` | 2280 | `fabric_width_cm: ... \|\| 140` | Forces 140cm width |
 
 ---
 
-## Verification Checklist
+## Issue #3: Sadath's Template Settings vs Database Reality
+
+### His Database Values:
+
+| Template | header_allowance | bottom_hem | blind_header_hem_cm | blind_bottom_hem_cm |
+|----------|------------------|------------|---------------------|---------------------|
+| Curtains | **0** | **0** | **8** | **8** |
+| Roller Blinds | 8 | 0 | 8 | 8 |
+| Zebra Blinds | 8 | 0 | 8 | 8 |
+
+### Problem
+For Curtains, Sadath set hems to **0**, but `blind_header_hem_cm = 8` overrides this because of the priority chain in `blindCalculationDefaults.ts`:
+```typescript
+const headerRaw = template.blind_header_hem_cm ?? template.header_allowance;
+// Returns 8 even when header_allowance = 0!
+```
+
+---
+
+## Issue #4: Saved Windows Show $0 Selling Price
+
+### Database Evidence
+From Sadath's `windows_summary` records:
+
+| Window | total_cost | total_selling | markup_applied |
+|--------|------------|---------------|----------------|
+| Window 3 (Curtains) | 220.28 | **0** | 0 |
+| test (Curtains) | 208.85 | **0** | 0 |
+| Window 1 (Curtains) | null | **0** | 0 |
+
+### Root Cause
+The worksheet calculates `total_cost` correctly but fails to calculate/save `total_selling` due to:
+1. Missing markup settings resolution during save
+2. Markup percentage = 0 when it should use category defaults
+
+---
+
+## Issue #5: CalculationBreakdown Displays Misleading Formulas
+
+### Problem
+The `CalculationBreakdown.tsx` component shows a "Final calculation" formula:
+```
+Total drop × Widths + Seam allowances = Linear meters
+```
+
+But the displayed values don't add up correctly because:
+1. **Seam allowances** are calculated for width (horizontal) but displayed after drop (vertical) items
+2. **Header/bottom hems** shown as `0` when user sets them, but template defaults still applied in calculation
+
+### Evidence from Database
+For window `2f82fd00` (Curtains):
+- `measurements_details.header_hem: 8` (from template)
+- `measurements_details.bottom_hem: 15` (from template)
+
+But Sadath's template has `header_allowance: 0` and `bottom_hem: 0`.
+
+---
+
+## Issue #6: measurements_details Saves Template Defaults Instead of User Values
+
+### Location: `DynamicWindowWorksheet.tsx` (Lines 2234-2237)
+```typescript
+header_hem: measurements.header_hem || selectedTemplate?.header_allowance || selectedTemplate?.header_hem || null,
+bottom_hem: measurements.bottom_hem || selectedTemplate?.bottom_hem || selectedTemplate?.bottom_allowance || null,
+side_hems: measurements.side_hem || selectedTemplate?.side_hem || selectedTemplate?.side_hems || null,
+seam_hems: measurements.seam_hem || selectedTemplate?.seam_allowance || selectedTemplate?.seam_hems || null,
+```
+
+**Problem:** Uses `||` operator which treats `0` as falsy, so template defaults override user's explicit `0` values.
+
+---
+
+## Issue #7: fabric_details Missing cost_price
+
+### Database Evidence
+From Sadath's windows:
+```json
+fabric_details: {
+  "name": "ADARA",
+  "selling_price": 26.5,  // ← Only selling_price saved
+  // cost_price: MISSING
+}
+```
+
+This causes profit margin calculations to fail because there's no base cost to compare against.
+
+---
+
+## Issue #8: Room Card Totals Use Fallback Calculations
+
+### Code: `RoomCardLogic.tsx` (Lines 56-71)
+```typescript
+const storedSelling = Number(w.summary.total_selling || 0);
+if (storedSelling > 0) {
+  totalSelling += storedSelling;  // Uses stored value
+} else {
+  // Fallback - recalculates with current markup settings
+  const markupResult = resolveMarkup(...);
+  const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+  totalSelling += sellingPrice;
+}
+```
+
+**Problem:** When `total_selling = 0` in database, the fallback kicks in with potentially different markup values than what was used during worksheet calculation.
+
+---
+
+## Issue #9: Quote List/Work Orders Read Stale Data
+
+### Verification Needed
+The quote generation and work order components likely read from `windows_summary` which contains:
+- Outdated `measurements_details` with template defaults
+- Missing `total_selling` values
+- Incorrect hem/allowance values
+
+---
+
+## Issue #10: Unit Conversion Inconsistencies
+
+### Sadath's Configuration:
+- Length unit: **inches**
+- Fabric unit: **meters**
+- Currency: **INR**
+
+### Database Storage Standard:
+- All measurements stored in **MM**
+
+### Problem
+The `extractWindowMetrics` utility in `windowSummaryExtractors.ts` attempts to normalize units but has edge cases where:
+- Values stored as CM are treated as MM
+- Values without unit hints default incorrectly
+
+---
+
+## Issue #11: Missing Calculation Logging for Debugging
+
+The calculation flow between:
+1. `AdaptiveFabricPricingDisplay.tsx` (live calculation)
+2. `DynamicWindowWorksheet.tsx` (save calculation)
+3. `CalculationBreakdown.tsx` (display saved data)
+
+...lacks consistent logging to trace where values diverge.
+
+---
+
+## Files Requiring Fixes
+
+| Priority | File | Issues |
+|----------|------|--------|
+| P0 | `DynamicWindowWorksheet.tsx` | UUID validation (#1), hem fallbacks (#6), fabric cost (#7) |
+| P0 | `ManufacturingStep.tsx` | Hardcoded `\|\| 15`, `\|\| 3` (#2) |
+| P0 | `TreatmentSpecificFields.tsx` | Hardcoded `\|\| 8` (#2) |
+| P1 | `blindCalculationDefaults.ts` | Priority chain ordering (#3) |
+| P1 | `RoomCardLogic.tsx` | Fallback calculation consistency (#8) |
+| P1 | `CalculationBreakdown.tsx` | Formula display clarity (#5) |
+| P2 | `windowSummaryExtractors.ts` | Unit conversion edge cases (#10) |
+
+---
+
+## Recommended Fix Sequence
+
+### Phase 1: Critical - Fix Save Failures
+1. Add UUID validation before saving `window_type_id`
+2. Set `window_type_id: null` when ID is a string literal
+
+### Phase 2: Remove All Hardcoded Fallbacks
+1. Replace `|| 15`, `|| 3`, `|| 8`, `|| 5`, `|| 140` with `?? 0` or explicit null handling
+2. Change `||` to `?? 0` for all hem/allowance values in save logic
+
+### Phase 3: Fix Template Priority Chain
+1. Invert priority: `header_allowance ?? blind_header_hem_cm` instead of reverse
+2. Run SQL migration to sync `blind_*_hem_cm` with user-editable columns
+
+### Phase 4: Ensure total_selling Persistence
+1. Always calculate and save `total_selling` during worksheet save
+2. Include `cost_price` in `fabric_details` alongside `selling_price`
+
+### Phase 5: Improve Formula Display
+1. Clarify seam allowance placement in CalculationBreakdown
+2. Add visual equation that actually sums correctly
+
+---
+
+## Verification Checklist After Fixes
 
 | Test | Expected Result |
 |------|-----------------|
-| Open a project with notes | No "Maximum update depth" error |
-| View Jobs table | Page loads without freezing |
-| View Jobs dashboard | Dates display correctly |
-| View Jobs grid view | No console errors |
-| Check Client Quotes list | Loads without infinite loop |
-| Check Client Projects list | Loads without infinite loop |
-| Check Client Management | Loads without infinite loop |
+| Save any window configuration | No "Save Failed" error |
+| Set hems to 0 in template | Display shows 0, not 5in/8cm |
+| Check Room Card total | Shows non-zero selling price |
+| Check Quote/Work Order | Values match worksheet |
+| Imperial user saves | Units stored as MM, displayed as inches |
 
----
-
-## Technical Notes
-
-### Why `useCallback` Fixes This
-
-React's `useCallback` hook memoizes a function, returning the **same function reference** across re-renders (unless dependencies change). This prevents the `useEffect` in `useFormattedDates` from re-running on every render.
-
-```typescript
-// Without useCallback - new function reference every render
-(n) => n.created_at  // Different reference each time
-
-// With useCallback - stable function reference
-const fn = useCallback((n) => n.created_at, []);  // Same reference unless deps change
-```
-
-### Alternative Fix (Not Recommended)
-
-We could also fix this in `useFormattedDate.ts` by using a ref for `getDate`, but fixing at the call sites is cleaner and more explicit about the contract of the hook.
