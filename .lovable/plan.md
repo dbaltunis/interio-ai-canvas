@@ -1,126 +1,111 @@
 
 
-## Fix Booking Page Design and Improve Loading Experience
+## UI Polish: Improve Booking Page Styling
 
-### Problem Summary
-1. **Booking page design not showing**: The `PublicBookingPage` imports `PublicBookingForm` (old design) instead of `BookingConfirmation` (new modern design with company branding)
-2. **Poor loading experience**: The generic `PageSkeleton` with random card boxes doesn't match the booking page context and confuses users
+### Issues Identified
 
----
-
-### Solution Overview
-
-1. Update `PublicBookingPage` to use the new `BookingConfirmation` component
-2. Create a dedicated `BookingPageSkeleton` that matches the booking page layout
-3. Update the lazy loading to use the appropriate skeleton for public booking
+Based on the screenshot:
+1. **Logo too small**: Currently 64px (w-16 h-16), needs to be larger (80-96px)
+2. **Time slots barely visible**: Buttons are small with low contrast, text size is `text-sm`
+3. **Inputs need cleaner look**: Need softer borders, better spacing, and subtle backgrounds
+4. **Color scheme**: Gradient is good but needs slight refinement for professionalism
 
 ---
 
-### Technical Implementation
+### Changes Overview
 
-#### Step 1: Fix PublicBookingPage to Use New Design
+#### 1. Larger Logo in BookingBrandingPanel
 
-**File**: `src/components/calendar/PublicBookingPage.tsx`
+**File**: `src/components/booking/BookingBrandingPanel.tsx`
 
-Change the import and component usage:
+- Increase logo size from `w-16 h-16` to `w-20 h-20` (80px)
+- Increase fallback icon size from `w-8 h-8` to `w-10 h-10`
+- Add slight shadow for better visibility
 
-```typescript
-// Before
-import { PublicBookingForm } from "../booking/PublicBookingForm";
-// ...
-<PublicBookingForm slug={slug} />
+#### 2. Bigger, More Visible Time Slots
 
-// After
-import { BookingConfirmation } from "./BookingConfirmation";
-// ...
-<BookingConfirmation slug={slug} />
-```
+**File**: `src/components/booking/DateTimeSelector.tsx`
 
-Also remove the extra wrapper divs since `BookingConfirmation` already has its own full-page layout.
+- Change button height from `h-11` to `h-12` 
+- Increase font size from `text-sm` to `text-base`
+- Improve button styling with better borders and shadow
+- Add slight background tint for unselected buttons for better visibility
+- Make selected state more prominent with deeper color
 
-#### Step 2: Create Booking-Specific Loading Skeleton
+#### 3. Cleaner Input Styling
 
-**File**: `src/components/booking/BookingPageSkeleton.tsx`
+**File**: `src/components/booking/ClientInfoForm.tsx`
 
-Create a new skeleton that matches the modern split-panel booking layout:
+- Add subtle background to inputs (`bg-muted/30`)
+- Increase input height from `h-11` to `h-12`
+- Softer border colors
+- Better focus states with ring
+- Add rounded-xl for modern feel
 
-```text
-Layout:
-┌─────────────────────────────────────────────────────────────┐
-│  ┌─────────────────────┐  ┌───────────────────────────────┐ │
-│  │     [Gradient]       │  │   [Calendar Skeleton]        │ │
-│  │  □ Logo placeholder  │  │   ┌───────────────────┐      │ │
-│  │  ─ Company name      │  │   │  Month Navigation │      │ │
-│  │  ─ Description       │  │   │  Day Grid         │      │ │
-│  │                      │  │   └───────────────────┘      │ │
-│  │  ⏱ Duration          │  │   ─ Time slots row          │ │
-│  │  📍 Location          │  │   ─ Time slots row          │ │
-│  │                      │  │   ─ Form fields              │ │
-│  │                      │  │   [ Submit Button ]         │ │
-│  └─────────────────────┘  └───────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+#### 4. Refined Color Scheme
 
-Features:
-- Matches the actual booking page layout
-- Uses shimmer animation for smooth loading indication
-- Centered with max-width container like the real page
-- Gradient left panel placeholder
-- Calendar and form skeleton on the right
+**File**: `src/components/booking/BookingBrandingPanel.tsx`
 
-#### Step 3: Update App.tsx to Use Booking Skeleton
-
-**File**: `src/App.tsx`
-
-Wrap the public booking route with a booking-specific Suspense:
-
-```typescript
-// Public booking routes
-<Route path="/book/:slug" element={
-  <ErrorBoundary>
-    <Suspense fallback={<BookingPageSkeleton />}>
-      <PublicBookingPage />
-    </Suspense>
-  </ErrorBoundary>
-} />
-```
-
-Or alternatively, handle the loading state within `PublicBookingPage` itself using the skeleton.
+- Use a more professional, muted gradient (slate-based)
+- Better contrast for text elements
+- Softer white overlays
 
 ---
 
-### Files to Modify/Create
+### Detailed Changes
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/components/calendar/PublicBookingPage.tsx` | Update | Import and use `BookingConfirmation` instead of `PublicBookingForm` |
-| `src/components/booking/BookingPageSkeleton.tsx` | Create | New contextual skeleton matching booking layout |
-| `src/App.tsx` | Update | Use `BookingPageSkeleton` for booking route Suspense fallback |
-| `src/components/booking/index.ts` | Update | Export the new `BookingPageSkeleton` |
+#### BookingBrandingPanel.tsx
+
+| Element | Before | After |
+|---------|--------|-------|
+| Logo size | `w-16 h-16` | `w-20 h-20` |
+| Fallback icon | `w-8 h-8` | `w-10 h-10` |
+| Gradient | `from-primary via-primary/90 to-primary/80` | `from-slate-800 via-slate-700 to-slate-600` (darker, more professional) |
+| Logo bg | `bg-white/10` | `bg-white/20` |
+
+#### DateTimeSelector.tsx
+
+| Element | Before | After |
+|---------|--------|-------|
+| Time button height | `h-11` | `h-12` |
+| Text size | `text-sm` | `text-base` |
+| Unselected style | Plain outline | `bg-slate-50 border-slate-200 hover:bg-primary/5` |
+| Selected style | Basic primary | `bg-primary shadow-md font-semibold` |
+| Grid columns | `grid-cols-3 sm:grid-cols-4` | `grid-cols-2 sm:grid-cols-3 md:grid-cols-4` |
+| Gap | `gap-2` | `gap-3` |
+
+#### ClientInfoForm.tsx
+
+| Element | Before | After |
+|---------|--------|-------|
+| Input height | `h-11` | `h-12` |
+| Input style | Plain border | `bg-slate-50/50 border-slate-200 rounded-xl` |
+| Focus state | Ring only | `focus:bg-white focus:border-primary focus:ring-2` |
+| Label icons | `text-muted-foreground` | `text-primary/70` |
 
 ---
 
-### Visual Comparison
+### Files to Modify
 
-**Before (Generic PageSkeleton)**:
-- Header with random icons
-- 6 card placeholders in a grid
-- Doesn't match booking context
-- Confusing for users
-
-**After (BookingPageSkeleton)**:
-- Matches split-panel booking layout
-- Gradient left panel (company branding area)
-- Calendar placeholder on right
-- Form field placeholders
-- Users can anticipate what they're loading
+| File | Changes |
+|------|---------|
+| `src/components/booking/BookingBrandingPanel.tsx` | Larger logo, refined gradient |
+| `src/components/booking/DateTimeSelector.tsx` | Bigger time buttons, better visibility |
+| `src/components/booking/ClientInfoForm.tsx` | Cleaner inputs with subtle background |
 
 ---
 
-### Expected Outcome
+### Visual Improvements Summary
 
-1. ✅ Booking page now shows the new modern design with company branding
-2. ✅ Loading state matches the actual booking page layout
-3. ✅ Smoother user experience - users see a preview of the page structure
-4. ✅ Professional appearance during loading
+**Before**:
+- Small 64px logo
+- Thin, hard-to-see time slot buttons
+- Plain white inputs
+- Strong purple gradient
+
+**After**:
+- Larger 80px logo with better presence
+- Bigger, more visible time buttons with soft backgrounds
+- Clean inputs with subtle gray background
+- Professional slate/dark gradient that works with any brand
 
