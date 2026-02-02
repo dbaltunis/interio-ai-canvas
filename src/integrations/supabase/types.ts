@@ -11039,6 +11039,10 @@ export type Database = {
         Returns: {
           availability: Json
           buffer_time: number
+          company_address: string
+          company_logo_url: string
+          company_name: string
+          company_phone: string
           description: string
           duration: number
           id: string

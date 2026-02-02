@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 import { useAppointmentBooking } from "@/hooks/useAppointmentBooking";
 import { useCreateBooking } from "@/hooks/useAppointmentBookings";
 import { 
-  BookingHeader, 
+  BookingBrandingPanel,
   DateTimeSelector, 
   ClientInfoForm, 
   BookingSuccessScreen 
@@ -28,8 +29,8 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   const { toast } = useToast();
 
   const [step, setStep] = useState(1); // 1: booking, 2: confirmation
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [clientInfo, setClientInfo] = useState<ClientInfo>({
     name: "",
     email: "",
@@ -39,17 +40,15 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   });
 
   // Helper function to get available slots for a specific date
-  // Transforms from useAppointmentBooking format to DateTimeSelector format
   const getAvailableSlotsForDate = (date: Date) => {
     const slots = generateAvailableSlots(date);
-    // Filter only available slots and transform to expected format
     return slots
       .filter(slot => slot.available)
       .map(slot => ({
         id: `${format(date, 'yyyy-MM-dd')}-${slot.time}`,
         startTime: slot.time,
-        endTime: '', // Not used by DateTimeSelector
-        isBooked: false // Already filtered to only available
+        endTime: '',
+        isBooked: false
       }));
   };
 
@@ -97,11 +96,15 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading booking information...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading booking information...</p>
+        </motion.div>
       </div>
     );
   }
@@ -109,11 +112,18 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   // Error state
   if (!scheduler) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="p-8 text-center max-w-md">
-          <h1 className="text-2xl font-bold text-destructive mb-4">Booking Not Available</h1>
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-8 text-center max-w-md bg-background rounded-2xl shadow-lg"
+        >
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">😕</span>
+          </div>
+          <h1 className="text-2xl font-bold text-destructive mb-2">Booking Not Available</h1>
           <p className="text-muted-foreground">This booking link is not valid or has been disabled.</p>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -130,32 +140,57 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
     );
   }
 
-  // Main booking form
+  // Main booking form - Modern split-panel layout
   const isFormValid = clientInfo.name && clientInfo.email && selectedDate && selectedTime;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        <BookingHeader scheduler={scheduler} />
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          <DateTimeSelector
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4 lg:p-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-5xl bg-background rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="grid lg:grid-cols-[2fr_3fr]">
+          {/* Left Panel - Branding */}
+          <BookingBrandingPanel 
+            scheduler={scheduler}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            onDateSelect={setSelectedDate}
-            onTimeSelect={setSelectedTime}
-            getAvailableSlotsForDate={getAvailableSlotsForDate}
           />
           
-          <ClientInfoForm
-            clientInfo={clientInfo}
-            onClientInfoChange={setClientInfo}
-            onSubmit={handleSubmitBooking}
-            isSubmitting={createBooking.isPending}
-            isValid={!!isFormValid}
-          />
+          {/* Right Panel - Booking Form */}
+          <div className="p-6 lg:p-8 space-y-6 max-h-[85vh] overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <DateTimeSelector
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onDateSelect={setSelectedDate}
+                onTimeSelect={setSelectedTime}
+                getAvailableSlotsForDate={getAvailableSlotsForDate}
+              />
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <ClientInfoForm
+                clientInfo={clientInfo}
+                onClientInfoChange={setClientInfo}
+                onSubmit={handleSubmitBooking}
+                isSubmitting={createBooking.isPending}
+                isValid={!!isFormValid}
+              />
+            </motion.div>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

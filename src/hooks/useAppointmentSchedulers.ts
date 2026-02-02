@@ -50,6 +50,11 @@ export interface PublicScheduler {
   image_url?: string;
   availability: any;
   locations: any;
+  // Business branding
+  company_name?: string;
+  company_logo_url?: string;
+  company_phone?: string;
+  company_address?: string;
 }
 
 export const usePublicScheduler = (slug: string) => {
