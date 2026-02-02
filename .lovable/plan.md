@@ -1,186 +1,188 @@
 
+# Fix Plan: Infinite Re-render Bug & Calculation Display Mismatches
 
-# Deep Investigation Report: Hardcoded Values & Display Discrepancies
+## Problem Summary
 
-## Investigation Summary
+### Issue #1: Maximum Update Depth Exceeded Error
+The console shows a "Maximum update depth exceeded" error originating from `useFormattedDate.ts` inside `ProjectNotesCard.tsx`. This causes the page to crash or become unresponsive.
 
-I've conducted a thorough investigation of Sadath's account (Homekaara) and traced through the codebase to identify **WHY** user settings are not being respected and **WHERE** the display discrepancies originate.
-
----
-
-## Sadath's Account - Database Analysis
-
-### His Configuration:
-| Setting | Value |
-|---------|-------|
-| **Measurement Unit** | `inches` (imperial user) |
-| **Fabric Unit** | `m` (meters) |
-| **Currency** | `INR` |
-
-### His Template Settings (From Database):
-
-| Template | header_allowance | bottom_hem | blind_header_hem_cm | blind_bottom_hem_cm |
-|----------|------------------|------------|---------------------|---------------------|
-| **Curtains** | **0** | **0** | 8 | 8 |
-| **Roller Blinds** | 8 | **0** | **8** | **8** |
-| **Zebra Blinds** | 8 | **0** | **8** | **8** |
-| **Roman Blinds** | 8 | 8 | **8** | **8** |
+### Issue #2: Calculation Formula Mismatches in Room Window View
+Previously addressed seam allowance display issue, but need to verify complete fix and check for remaining formula display inconsistencies.
 
 ---
 
 ## Root Cause Analysis
 
-### Problem #1: Two Competing Database Columns
+### Issue #1: Infinite Re-render Loop
 
-The database has **BOTH** `header_allowance`/`bottom_hem` AND `blind_header_hem_cm`/`blind_bottom_hem_cm`.
+**Location:** `src/hooks/useFormattedDate.ts` (line 78)
 
-**Code Priority Chain** (from `blindCalculationDefaults.ts` line 26-27):
 ```typescript
-const headerRaw = template.blind_header_hem_cm ?? template.header_allowance;
-const bottomRaw = template.blind_bottom_hem_cm ?? template.bottom_hem;
+useEffect(() => {
+  formatDates();
+}, [items, getDate, includeTime]);  // ← getDate causes infinite loop!
 ```
 
-**What This Means:**
-- For Sadath's Curtains template where `header_allowance = 0`
-- The code checks `blind_header_hem_cm` FIRST (value: 8)
-- It uses **8** instead of his configured **0**!
+**Problem:** The `getDate` function is passed as a dependency to `useEffect`. When components pass an **inline arrow function** like:
 
-### Problem #2: Blind Hem Settings Are LOCKED (Cannot Be Edited)
-
-**File:** `SimplifiedTemplateFormManufacturing.tsx` lines 18-21:
 ```typescript
-// Only show manufacturing for curtains/romans - not for blinds
-if (!isCurtain && !isRoman) {
-  return null;  // ❌ HIDES ENTIRE FORM FOR BLINDS!
-}
+// ProjectNotesCard.tsx line 29
+const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
 ```
 
-**Impact:** Sadath **CANNOT edit** the `blind_header_hem_cm` or `blind_bottom_hem_cm` values through the UI. They're stuck at their default **8cm**.
+This creates a **new function reference on every render**, causing the `useEffect` to run again, which calls `setFormattedDates`, triggering another render, creating an **infinite loop**.
 
-### Problem #3: Backend Edge Function Has Hardcoded Fallbacks
+**Affected Components:**
+| File | Line | Code |
+|------|------|------|
+| `ProjectNotesCard.tsx` | 29 | `(n) => n.created_at` |
+| `JobsTable.tsx` | 39 | `(q) => q.created_at` |
+| `JobsDashboard.tsx` | 18-19 | `(p) => p.created_at`, `(q) => q.created_at` |
+| `JobGridView.tsx` | 21 | `(j) => j.created_at` |
+| `ClientQuotesList.tsx` | 25 | `(quote) => quote.created_at` |
+| `ClientProjectsList.tsx` | 40 | `(p) => p.due_date` |
+| `ClientManagement.tsx` | 23 | `(client) => client.created_at` |
 
-**File:** `supabase/functions/calc_bom_and_price/index.ts` lines 175-176:
+**Correct Pattern (already exists in codebase):**
 ```typescript
-header_mm: state.header_allowance || 80,   // Hardcoded 80mm = 8cm
-hem_mm: state.hem_allowance || 150,         // Hardcoded 150mm = 15cm
+// ClientFilesManager.tsx lines 39-41 - CORRECT
+const getFileDate = useCallback((file: any) => file.created_at, []);
+const { formattedDates } = useFormattedDates(files, getFileDate);
 ```
 
-**Also lines 164-168:**
-```typescript
-rail_width_mm: state.rail_width_mm || 1000,       // Hardcoded defaults
-drop_mm: state.drop_mm || 2000,
-ceiling_to_floor_mm: state.ceiling_to_floor_mm || 2400,
-wall_to_wall_mm: state.wall_to_wall_mm || 1200,
-```
+### Issue #2: Seam Allowance Display
 
-### Problem #4: Frontend Still Has Hardcoded Fallbacks
-
-Despite previous fixes, I found these **STILL EXIST**:
-
-| File | Line | Code | Impact |
-|------|------|------|--------|
-| `AdaptiveFabricPricingDisplay.tsx` | 841-842 | `?? 8` | Falls back to 8cm if template value missing |
-| `ManufacturingStep.tsx` | 81 | `|| 15` | Shows 15cm in onboarding |
-| `ManufacturingStep.tsx` | 97 | `|| 3` | Shows 3cm for side hems |
-| `TreatmentSpecificFields.tsx` | 355 | `|| 8` | Shows 8 for fold spacing |
-| `AddCurtainToProject.tsx` | 106-109 | Hardcoded `15`/`2` | Puddle always adds 15cm, break always adds 2cm |
-
-### Problem #5: Wrong Property Paths in Display Components
-
-**File:** `AdaptiveFabricPricingDisplay.tsx` lines 971-973:
-```typescript
-const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
-const poolingMm = parseFloat(measurements.pooling) || 0;  // ❌ Wrong property!
-```
-
-The code tries to access:
-- `fabricCalculation.details?.headerHem` - but the value is at `fabricCalculation.headerHem`
-- `measurements.pooling` - but the property is `measurements.pooling_amount`
-
-When these paths fail, it falls back to template defaults (which have the 8cm issue).
+This was already fixed in the previous approved plan. The seam allowance was removed from the Height Breakdown display (lines 766-770 show the removal comment). The fix is in place.
 
 ---
 
-## Complete List of Bugs Found
+## Fix Plan
 
-### Backend (Edge Functions)
-| Location | Issue | Fix Needed |
-|----------|-------|------------|
-| `calc_bom_and_price/index.ts:175` | `|| 80` hardcoded header | Change to `?? 0` |
-| `calc_bom_and_price/index.ts:176` | `|| 150` hardcoded hem | Change to `?? 0` |
-| `calc_bom_and_price/index.ts:164-168` | Hardcoded dimension defaults | Change `||` to `??` |
+### Phase 1: Fix Infinite Re-render Bug
 
-### Frontend Components
-| Location | Issue | Fix Needed |
-|----------|-------|------------|
-| `AdaptiveFabricPricingDisplay.tsx:841-842` | `?? 8` hardcoded hems | Change to `?? 0` |
-| `AdaptiveFabricPricingDisplay.tsx:971-973` | Wrong property paths | Use correct paths |
-| `ManufacturingStep.tsx:81` | `|| 15` hardcoded bottom hem | Change to `?? 0` |
-| `ManufacturingStep.tsx:97` | `|| 3` hardcoded side hems | Change to `?? 0` |
-| `TreatmentSpecificFields.tsx:355` | `|| 8` hardcoded fold spacing | Change to `?? 0` |
-| `AddCurtainToProject.tsx:106-109` | Hardcoded 15cm/2cm puddle/break | Use template or measurements value |
-| `SimplifiedTemplateFormManufacturing.tsx:18-21` | Hides hem settings for blinds | Allow editing for all treatments |
+**Fix all 7 affected components** by wrapping the `getDate` function in `useCallback`:
 
-### Database/Configuration
-| Issue | Impact |
-|-------|--------|
-| `blind_header_hem_cm` column stuck at 8 | Overrides user-editable `header_allowance` |
-| Template form hides blind hems | Users can't fix the stuck values |
+#### 1. `src/components/jobs/ProjectNotesCard.tsx`
+```typescript
+// BEFORE (line 29):
+const { formattedDates } = useFormattedDates(notes, (n) => n.created_at, true);
+
+// AFTER:
+const getNotesDate = useCallback((n: any) => n.created_at, []);
+const { formattedDates } = useFormattedDates(notes, getNotesDate, true);
+```
+
+#### 2. `src/components/jobs/JobsTable.tsx`
+```typescript
+// BEFORE (line 39):
+const { formattedDates } = useFormattedDates(quotes, (q) => q.created_at, false);
+
+// AFTER:
+const getQuoteDate = useCallback((q: any) => q.created_at, []);
+const { formattedDates } = useFormattedDates(quotes, getQuoteDate, false);
+```
+
+#### 3. `src/components/jobs/JobsDashboard.tsx`
+```typescript
+// BEFORE (lines 18-19):
+const { formattedDates: projectDates } = useFormattedDates(projects, (p) => p.created_at, false);
+const { formattedDates: quoteDates } = useFormattedDates(quotes, (q) => q.created_at, false);
+
+// AFTER:
+const getProjectDate = useCallback((p: any) => p.created_at, []);
+const getQuoteDate = useCallback((q: any) => q.created_at, []);
+const { formattedDates: projectDates } = useFormattedDates(projects, getProjectDate, false);
+const { formattedDates: quoteDates } = useFormattedDates(quotes, getQuoteDate, false);
+```
+
+#### 4. `src/components/jobs/JobGridView.tsx`
+```typescript
+// BEFORE (line 21):
+const { formattedDates } = useFormattedDates(jobs, (j) => j.created_at, false);
+
+// AFTER:
+const getJobDate = useCallback((j: any) => j.created_at, []);
+const { formattedDates } = useFormattedDates(jobs, getJobDate, false);
+```
+
+#### 5. `src/components/clients/ClientQuotesList.tsx`
+```typescript
+// BEFORE (line 25):
+const { formattedDates } = useFormattedDates(quotes, (quote) => quote.created_at);
+
+// AFTER:
+const getQuoteDate = useCallback((quote: any) => quote.created_at, []);
+const { formattedDates } = useFormattedDates(quotes, getQuoteDate);
+```
+
+#### 6. `src/components/clients/ClientProjectsList.tsx`
+```typescript
+// BEFORE (line 40):
+const { formattedDates: dueDates } = useFormattedDates(projects, (p) => p.due_date, false);
+
+// AFTER:
+const getProjectDueDate = useCallback((p: any) => p.due_date, []);
+const { formattedDates: dueDates } = useFormattedDates(projects, getProjectDueDate, false);
+```
+
+#### 7. `src/components/clients/ClientManagement.tsx`
+```typescript
+// BEFORE (lines 21-25):
+const { formattedDates } = useFormattedDates(
+  clients,
+  (client) => client.created_at,
+  false
+);
+
+// AFTER:
+const getClientDate = useCallback((client: any) => client.created_at, []);
+const { formattedDates } = useFormattedDates(clients, getClientDate, false);
+```
 
 ---
 
-## Why the Totals Are Correct But Display Is Wrong
+## Files to Modify
 
-Sadath reported: *"totals correct but visually it wasn't"*
-
-**Explanation:**
-1. The **calculation engine** may use one set of values (e.g., correctly from `header_allowance = 0`)
-2. The **display component** uses a different path that hits the `blind_header_hem_cm = 8` fallback
-3. Result: **Total is calculated correctly** but the **breakdown shows wrong values**
-
-This is exactly what you're seeing: the math adds up wrong visually (108.5 + 5 + 5 + 1.4 ≠ 118.5) but the actual stored total is correct.
-
----
-
-## Proposed Fix Plan
-
-### Phase 1: Remove All Hardcoded Fallbacks
-
-**Files to modify:**
-1. `supabase/functions/calc_bom_and_price/index.ts` - Replace `|| 80`, `|| 150`, `|| 1000`, etc. with `?? 0`
-2. `AdaptiveFabricPricingDisplay.tsx` (lines 841-842) - Change `?? 8` to `?? 0`
-3. `ManufacturingStep.tsx` (lines 81, 97) - Change `|| 15`, `|| 3` to `?? 0`
-4. `TreatmentSpecificFields.tsx` (line 355) - Change `|| 8` to `?? 0`
-5. `AddCurtainToProject.tsx` (lines 106-109) - Use `measurements.pooling_amount` instead of hardcoded 15/2
-
-### Phase 2: Fix Property Path Mismatches
-
-**File:** `AdaptiveFabricPricingDisplay.tsx` (lines 971-973)
-- Change `fabricCalculation.details?.headerHem` to `fabricCalculation.headerHem`
-- Change `fabricCalculation.details?.bottomHem` to `fabricCalculation.bottomHem`
-- Change `measurements.pooling` to `measurements.pooling_amount`
-
-### Phase 3: Unlock Blind Hem Editing
-
-**File:** `SimplifiedTemplateFormManufacturing.tsx` (lines 18-21)
-- Remove the condition that hides the form for blinds
-- OR add separate blind hem inputs to the general template form
-
-### Phase 4: Data Migration for Existing Templates
-
-Run a SQL update to sync `blind_*_hem_cm` columns with `header_allowance`/`bottom_hem` for all existing templates, ensuring consistency.
+| File | Change |
+|------|--------|
+| `src/components/jobs/ProjectNotesCard.tsx` | Add `useCallback` import and wrap getDate |
+| `src/components/jobs/JobsTable.tsx` | Add `useCallback` import and wrap getDate |
+| `src/components/jobs/JobsDashboard.tsx` | Add `useCallback` import and wrap both getDate functions |
+| `src/components/jobs/JobGridView.tsx` | Add `useCallback` import and wrap getDate |
+| `src/components/clients/ClientQuotesList.tsx` | Add `useCallback` import and wrap getDate |
+| `src/components/clients/ClientProjectsList.tsx` | Add `useCallback` import and wrap getDate |
+| `src/components/clients/ClientManagement.tsx` | Add `useCallback` import and wrap getDate |
 
 ---
 
 ## Verification Checklist
 
-After fixes:
-
 | Test | Expected Result |
 |------|-----------------|
-| Set hems to 0 in template settings | Display shows 0, not 8cm/5in |
-| Check fabric calculation breakdown | All visible values add up to the total |
-| Save a blind and check room card | Shows correct price, not $0 |
-| Check Sadath's account specifically | His 0 values are respected everywhere |
-| Check Greg's CCCO account | Same fixes apply |
+| Open a project with notes | No "Maximum update depth" error |
+| View Jobs table | Page loads without freezing |
+| View Jobs dashboard | Dates display correctly |
+| View Jobs grid view | No console errors |
+| Check Client Quotes list | Loads without infinite loop |
+| Check Client Projects list | Loads without infinite loop |
+| Check Client Management | Loads without infinite loop |
 
+---
+
+## Technical Notes
+
+### Why `useCallback` Fixes This
+
+React's `useCallback` hook memoizes a function, returning the **same function reference** across re-renders (unless dependencies change). This prevents the `useEffect` in `useFormattedDates` from re-running on every render.
+
+```typescript
+// Without useCallback - new function reference every render
+(n) => n.created_at  // Different reference each time
+
+// With useCallback - stable function reference
+const fn = useCallback((n) => n.created_at, []);  // Same reference unless deps change
+```
+
+### Alternative Fix (Not Recommended)
+
+We could also fix this in `useFormattedDate.ts` by using a ref for `getDate`, but fixing at the call sites is cleaner and more explicit about the contract of the hook.
