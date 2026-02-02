@@ -1,188 +1,186 @@
 
-# Deep Code Investigation: Root Causes of Persistent Issues
 
-## Executive Summary
+# Deep Investigation Report: Hardcoded Values & Display Discrepancies
 
-After thorough code investigation, I've identified **5 distinct root causes** affecting calculations, display, and settings across all accounts. These are **NOT configuration issues** - they are **code bugs** that need fixing.
+## Investigation Summary
 
----
-
-## Issue #1: Math Display Error (1.4in Not Added to Total)
-
-### Evidence Found
-
-**File:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 766-777)
-
-```typescript
-// UI DISPLAYS this breakdown:
-{(fabricCalculation.totalSeamAllowance || 0) > 0 && (
-  <div className="flex justify-between">
-    <span>Seam Allowance:</span>
-    <span>+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0, 'cm')}</span>  // ❌ Shows "+" but NOT added
-  </div>
-)}
-<div className="flex justify-between border-t">
-  <span>Total Drop:</span>
-  <span>{formatMeasurement(displayTotalDropMm ?? fabricCalculation.totalDrop || 0)}</span>  // ❌ Doesn't include seam
-</div>
-```
-
-**File:** `src/utils/pricing/calculateTreatmentPricing.ts` (Line 144)
-
-```typescript
-// CALCULATION excludes seam from drop:
-const totalDropUnrounded = heightCm + headerHem + bottomHem + pooling;  // ❌ No seam here
-const totalSeamAllowance = seamsRequired > 0 ? seamsRequired * seamHems * 2 : 0;  // Calculated separately
-const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired;  // Added to linear meters, not drop
-```
-
-### Root Cause
-The UI lists "Seam Allowance" with a `+` sign in the **Height Breakdown** section, but the actual calculation adds seams to **linear meters** (width calculation), not to **Total Drop**. This creates the illusion that `108.5 + 5 + 5 + 1.4 = 118.5` when seam is NOT part of the vertical sum.
-
-### Fix Required
-**Option A (Recommended):** Remove "Seam Allowance" from Height Breakdown UI - it's a width/linear calculation, not height
-**Option B:** Change the math to actually add seam to Total Drop (would change pricing)
+I've conducted a thorough investigation of Sadath's account (Homekaara) and traced through the codebase to identify **WHY** user settings are not being respected and **WHERE** the display discrepancies originate.
 
 ---
 
-## Issue #2: Hardcoded 8cm Hems Ignoring User Settings
+## Sadath's Account - Database Analysis
 
-### Evidence Found (3 Locations)
+### His Configuration:
+| Setting | Value |
+|---------|-------|
+| **Measurement Unit** | `inches` (imperial user) |
+| **Fabric Unit** | `m` (meters) |
+| **Currency** | `INR` |
 
-**Location 1:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 840-841)
-```typescript
-const headerHem = template?.blind_header_hem_cm ?? template?.header_allowance ?? 8;  // ❌ Falls back to 8
-const bottomHem = template?.blind_bottom_hem_cm ?? template?.bottom_hem ?? 8;        // ❌ Falls back to 8
-```
+### His Template Settings (From Database):
 
-**Location 2:** `src/components/measurements/dynamic-options/FabricSelectionSection.tsx` (Lines 219-220)
-```typescript
-<div>• Header hem allowance: {formatFromCM(fabricCalculation.headerHem || 8, units.length)}</div>  // ❌ Displays 8 if 0
-<div>• Bottom hem allowance: {formatFromCM(fabricCalculation.bottomHem || 8, units.length)}</div>  // ❌ Displays 8 if 0
-```
-
-**Location 3:** `src/components/projects/AddCurtainToProject.tsx` (Lines 97-98)
-```typescript
-const headerAllowance = template.header_allowance || 8;   // ❌ Overrides user's 0
-const bottomHemAllowance = template.bottom_hem || 15;     // ❌ Hardcoded 15 fallback
-```
-
-### Root Cause
-JavaScript's `||` and `??` operators treat `0` as falsy/null, so when a user intentionally sets hems to `0`, the code falls back to `8cm` (≈3.15in ≈ the "5 inches" you're seeing).
-
-### Fix Required
-Replace all `|| 8`, `|| 15`, `?? 8` with `|| 0` or explicit null checks.
+| Template | header_allowance | bottom_hem | blind_header_hem_cm | blind_bottom_hem_cm |
+|----------|------------------|------------|---------------------|---------------------|
+| **Curtains** | **0** | **0** | 8 | 8 |
+| **Roller Blinds** | 8 | **0** | **8** | **8** |
+| **Zebra Blinds** | 8 | **0** | **8** | **8** |
+| **Roman Blinds** | 8 | 8 | **8** | **8** |
 
 ---
 
-## Issue #3: Saved Blinds Show $0 in Room Cards
+## Root Cause Analysis
 
-### Evidence Found
+### Problem #1: Two Competing Database Columns
 
-**Database Query Results:** 20 records with `total_selling = 0` despite having templates and materials:
-- System 2000 Pivot Arm (awning) - $0
-- Roller Blinds - $0  
-- Verticals - $0
-- Auto Awning with fabric - $0
-- Zip Screen with fabric - $0
+The database has **BOTH** `header_allowance`/`bottom_hem` AND `blind_header_hem_cm`/`blind_bottom_hem_cm`.
 
-**File:** `src/components/job-creation/RoomCardLogic.tsx` (Lines 56-72)
+**Code Priority Chain** (from `blindCalculationDefaults.ts` line 26-27):
 ```typescript
-const storedSelling = Number(w.summary.total_selling || 0);
-if (storedSelling > 0) {
-  totalSelling += storedSelling;  // ✅ Uses stored value
-} else {
-  // Fallback for old data - NEEDS RE-SAVE  // ❌ But many records ARE being saved with 0!
-  const markupResult = resolveMarkup(...);
-  const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
-  totalSelling += sellingPrice;
+const headerRaw = template.blind_header_hem_cm ?? template.header_allowance;
+const bottomRaw = template.blind_bottom_hem_cm ?? template.bottom_hem;
+```
+
+**What This Means:**
+- For Sadath's Curtains template where `header_allowance = 0`
+- The code checks `blind_header_hem_cm` FIRST (value: 8)
+- It uses **8** instead of his configured **0**!
+
+### Problem #2: Blind Hem Settings Are LOCKED (Cannot Be Edited)
+
+**File:** `SimplifiedTemplateFormManufacturing.tsx` lines 18-21:
+```typescript
+// Only show manufacturing for curtains/romans - not for blinds
+if (!isCurtain && !isRoman) {
+  return null;  // ❌ HIDES ENTIRE FORM FOR BLINDS!
 }
 ```
 
-### Root Cause
-The Room Card correctly reads `total_selling` from database, but **the worksheet is saving $0** for these products. The problem is in the pricing calculation for:
-1. **Awnings** - Pricing grid not matching
-2. **Verticals** - Material `compatible_treatments` misconfigured  
-3. **Blinds** - Template-based materials failing to resolve price
+**Impact:** Sadath **CANNOT edit** the `blind_header_hem_cm` or `blind_bottom_hem_cm` values through the UI. They're stuck at their default **8cm**.
 
----
+### Problem #3: Backend Edge Function Has Hardcoded Fallbacks
 
-## Issue #4: Admins Cannot Save Business Settings (Multi-Tenant Bug)
-
-### Evidence Found
-
-**File:** `src/hooks/useMarkupSettings.ts` (Lines 108-112)
+**File:** `supabase/functions/calc_bom_and_price/index.ts` lines 175-176:
 ```typescript
-const { data: freshBusinessSettings } = await supabase
-  .from('business_settings')
-  .select('id, pricing_settings')
-  .eq('user_id', user.id)  // ❌ BUG: Should use effectiveOwnerId!
-  .maybeSingle();
+header_mm: state.header_allowance || 80,   // Hardcoded 80mm = 8cm
+hem_mm: state.hem_allowance || 150,         // Hardcoded 150mm = 15cm
 ```
 
-**Comparison - Correct Pattern in `useBusinessSettings.ts` (Lines 153-161):**
+**Also lines 164-168:**
 ```typescript
-const { data: accountOwnerId } = await supabase
-  .rpc('get_account_owner', { user_id_param: user.id });  // ✅ Gets account owner
-
-if (accountOwnerId && accountOwnerId !== user.id) {
-  const { data: ownerSettings } = await supabase
-    .from('business_settings')
-    .select('*')
-    .eq('user_id', accountOwnerId)  // ✅ Uses owner ID
-    .maybeSingle();
-}
+rail_width_mm: state.rail_width_mm || 1000,       // Hardcoded defaults
+drop_mm: state.drop_mm || 2000,
+ceiling_to_floor_mm: state.ceiling_to_floor_mm || 2400,
+wall_to_wall_mm: state.wall_to_wall_mm || 1200,
 ```
 
-### Root Cause
-`useMarkupSettings` mutation uses `user.id` directly instead of `effectiveOwnerId`. When an Admin (not the account owner) tries to save:
-1. Query finds no record (wrong user_id)
-2. Creates a **phantom record** under Admin's ID
-3. Other users/queries never see this phantom record
-4. Changes appear to save but never persist
+### Problem #4: Frontend Still Has Hardcoded Fallbacks
 
----
+Despite previous fixes, I found these **STILL EXIST**:
 
-## Issue #5: Wrong Property Paths in Display Components
+| File | Line | Code | Impact |
+|------|------|------|--------|
+| `AdaptiveFabricPricingDisplay.tsx` | 841-842 | `?? 8` | Falls back to 8cm if template value missing |
+| `ManufacturingStep.tsx` | 81 | `|| 15` | Shows 15cm in onboarding |
+| `ManufacturingStep.tsx` | 97 | `|| 3` | Shows 3cm for side hems |
+| `TreatmentSpecificFields.tsx` | 355 | `|| 8` | Shows 8 for fold spacing |
+| `AddCurtainToProject.tsx` | 106-109 | Hardcoded `15`/`2` | Puddle always adds 15cm, break always adds 2cm |
 
-### Evidence Found
+### Problem #5: Wrong Property Paths in Display Components
 
-**File:** `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` (Lines 970-973)
+**File:** `AdaptiveFabricPricingDisplay.tsx` lines 971-973:
 ```typescript
-const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;  // ❌ Wrong path
-const bottomHem = fabricCalculation.details?.bottomHem || template?.bottom_hem || 0;        // ❌ Wrong path
-const poolingMm = parseFloat(measurements.pooling) || 0;  // ❌ Wrong property name
+const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
+const poolingMm = parseFloat(measurements.pooling) || 0;  // ❌ Wrong property!
 ```
 
-**Correct properties are:**
-- `fabricCalculation.headerHem` (NOT `fabricCalculation.details?.headerHem`)
-- `fabricCalculation.bottomHem` (NOT `fabricCalculation.details?.bottomHem`)
-- `measurements.pooling_amount` (NOT `measurements.pooling`)
+The code tries to access:
+- `fabricCalculation.details?.headerHem` - but the value is at `fabricCalculation.headerHem`
+- `measurements.pooling` - but the property is `measurements.pooling_amount`
 
-### Root Cause
-The code attempts to access nested `.details?.` properties that don't exist, then falls back to template defaults (which may have hardcoded values).
+When these paths fail, it falls back to template defaults (which have the 8cm issue).
 
 ---
 
-## Summary of Code Fixes Required
+## Complete List of Bugs Found
 
-| File | Issue | Fix |
-|------|-------|-----|
-| `AdaptiveFabricPricingDisplay.tsx` L766-769 | Seam shown in height list but not added | Remove seam from height breakdown display |
-| `AdaptiveFabricPricingDisplay.tsx` L840-841 | `?? 8` hardcoded fallback | Change to `?? 0` |
-| `AdaptiveFabricPricingDisplay.tsx` L970-973 | Wrong property paths | Use `fabricCalculation.headerHem` directly |
-| `FabricSelectionSection.tsx` L219-220 | `\|\| 8` hardcoded fallback | Change to `\|\| 0` |
-| `AddCurtainToProject.tsx` L97-98 | `\|\| 8` and `\|\| 15` hardcoded | Change to `\|\| 0` |
-| `useMarkupSettings.ts` L111 | Uses `user.id` instead of owner | Use `effectiveOwnerId` pattern |
+### Backend (Edge Functions)
+| Location | Issue | Fix Needed |
+|----------|-------|------------|
+| `calc_bom_and_price/index.ts:175` | `|| 80` hardcoded header | Change to `?? 0` |
+| `calc_bom_and_price/index.ts:176` | `|| 150` hardcoded hem | Change to `?? 0` |
+| `calc_bom_and_price/index.ts:164-168` | Hardcoded dimension defaults | Change `||` to `??` |
+
+### Frontend Components
+| Location | Issue | Fix Needed |
+|----------|-------|------------|
+| `AdaptiveFabricPricingDisplay.tsx:841-842` | `?? 8` hardcoded hems | Change to `?? 0` |
+| `AdaptiveFabricPricingDisplay.tsx:971-973` | Wrong property paths | Use correct paths |
+| `ManufacturingStep.tsx:81` | `|| 15` hardcoded bottom hem | Change to `?? 0` |
+| `ManufacturingStep.tsx:97` | `|| 3` hardcoded side hems | Change to `?? 0` |
+| `TreatmentSpecificFields.tsx:355` | `|| 8` hardcoded fold spacing | Change to `?? 0` |
+| `AddCurtainToProject.tsx:106-109` | Hardcoded 15cm/2cm puddle/break | Use template or measurements value |
+| `SimplifiedTemplateFormManufacturing.tsx:18-21` | Hides hem settings for blinds | Allow editing for all treatments |
+
+### Database/Configuration
+| Issue | Impact |
+|-------|--------|
+| `blind_header_hem_cm` column stuck at 8 | Overrides user-editable `header_allowance` |
+| Template form hides blind hems | Users can't fix the stuck values |
 
 ---
 
-## Verification Checklist After Fixes
+## Why the Totals Are Correct But Display Is Wrong
 
-| Test Case | Expected Result |
-|-----------|-----------------|
-| Set hems to 0 in template, check display | Shows 0, not 5 inches |
-| Math breakdown total matches sum of parts | 108.5 + 5 + 5 = 118.5 (no seam in list) |
-| Save blind, check room card | Shows calculated price, not $0 |
-| Admin saves markup settings | Changes persist for all team members |
-| Awnings/Verticals calculate price | Non-zero total saved to database |
+Sadath reported: *"totals correct but visually it wasn't"*
+
+**Explanation:**
+1. The **calculation engine** may use one set of values (e.g., correctly from `header_allowance = 0`)
+2. The **display component** uses a different path that hits the `blind_header_hem_cm = 8` fallback
+3. Result: **Total is calculated correctly** but the **breakdown shows wrong values**
+
+This is exactly what you're seeing: the math adds up wrong visually (108.5 + 5 + 5 + 1.4 ≠ 118.5) but the actual stored total is correct.
+
+---
+
+## Proposed Fix Plan
+
+### Phase 1: Remove All Hardcoded Fallbacks
+
+**Files to modify:**
+1. `supabase/functions/calc_bom_and_price/index.ts` - Replace `|| 80`, `|| 150`, `|| 1000`, etc. with `?? 0`
+2. `AdaptiveFabricPricingDisplay.tsx` (lines 841-842) - Change `?? 8` to `?? 0`
+3. `ManufacturingStep.tsx` (lines 81, 97) - Change `|| 15`, `|| 3` to `?? 0`
+4. `TreatmentSpecificFields.tsx` (line 355) - Change `|| 8` to `?? 0`
+5. `AddCurtainToProject.tsx` (lines 106-109) - Use `measurements.pooling_amount` instead of hardcoded 15/2
+
+### Phase 2: Fix Property Path Mismatches
+
+**File:** `AdaptiveFabricPricingDisplay.tsx` (lines 971-973)
+- Change `fabricCalculation.details?.headerHem` to `fabricCalculation.headerHem`
+- Change `fabricCalculation.details?.bottomHem` to `fabricCalculation.bottomHem`
+- Change `measurements.pooling` to `measurements.pooling_amount`
+
+### Phase 3: Unlock Blind Hem Editing
+
+**File:** `SimplifiedTemplateFormManufacturing.tsx` (lines 18-21)
+- Remove the condition that hides the form for blinds
+- OR add separate blind hem inputs to the general template form
+
+### Phase 4: Data Migration for Existing Templates
+
+Run a SQL update to sync `blind_*_hem_cm` columns with `header_allowance`/`bottom_hem` for all existing templates, ensuring consistency.
+
+---
+
+## Verification Checklist
+
+After fixes:
+
+| Test | Expected Result |
+|------|-----------------|
+| Set hems to 0 in template settings | Display shows 0, not 8cm/5in |
+| Check fabric calculation breakdown | All visible values add up to the total |
+| Save a blind and check room card | Shows correct price, not $0 |
+| Check Sadath's account specifically | His 0 values are respected everywhere |
+| Check Greg's CCCO account | Same fixes apply |
+
