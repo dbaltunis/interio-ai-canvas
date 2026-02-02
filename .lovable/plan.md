@@ -1,221 +1,166 @@
 
-# Fix Plan: Vertical Blinds TWC Templates Not Working
+# Fix Plan: Template Options Not Appearing - VERIFIED Root Cause
 
 ## Executive Summary
 
-After comprehensive investigation of CCCO account (Daniel/Greg), I've identified **5 distinct issues** causing vertical blinds templates "NORMAN SmartDrape" and "Verticals (Slats Only)" to not work properly:
-
-1. **No Options Linked** (0 options) - Templates missing product-specific TWC options
-2. **Configuration Mismatch** - `inventoryCategory: 'none'` vs `primaryCategory: 'material'/'both'` conflict
-3. **Missing Parent Product Link** - NORMAN SmartDrape has `inventory_item_id: null`
-4. **TWC Sync Skip Logic** - "Slats Only" products are classified as `hardware` and skip template option creation
-5. **$0 Pricing Persistence** - Some windows show $0 despite having pricing grids
+After thorough investigation with database verification, I've confirmed **two distinct root causes** for why options don't appear on manual templates:
 
 ---
 
-## Database Findings
+## Verified Root Causes
 
-### Templates Status
+### Root Cause #1: TWC Option Isolation Filter (Lines 380-385)
 
-| Template | Options | inventory_item_id | Status |
-|----------|---------|-------------------|--------|
-| Verticals | 11 ✅ | linked ✅ | Working |
-| NORMAN SmartDrape | 0 ❌ | **null** ❌ | Not configured |
-| Verticals (Slats Only) | 0 ❌ | linked ✅ | Not configured |
+**Location:** `src/components/settings/tabs/products/TemplateOptionsManager.tsx`
 
-### Child Materials Exist
+```typescript
+// Lines 380-385 - The problematic filter
+if ((opt as any).source === 'twc') {
+  const isLinked = linkedOptionIds.has(opt.id);  // FALSE for new templates
+  const keyMatchesTemplate = templateIdPrefix && opt.key?.endsWith(`_${templateIdPrefix}`);  // FALSE - wrong suffix
+  return isLinked || keyMatchesTemplate;  // Both FALSE = option hidden
+}
+```
 
-"Verticals (Slats Only)" has 7 child materials correctly linked via `parent_product_id`:
-- BALMORAL BLOCKOUT (price_group: 2)
-- FOCUS (price_group: 1)
-- KARMA (price_group: 2)
-- QUBE (price_group: Budget)
-- SOLITAIRE (price_group: 1)
-- VIBE (price_group: 1)
-- VIBE METALLIC (price_group: 2)
+**Evidence from database:**
 
-### Pricing Grids Exist
+| Template | template_option_settings | Key Suffix | Filter Result |
+|----------|-------------------------|------------|---------------|
+| `af6eed75` (TWC) | 23 entries ✅ | `_af6eed75` ✅ | 23 options shown |
+| `76e4d232` (Manual) | 0 entries ❌ | Needs `_76e4d232` but all are `_af6eed75` ❌ | 0 options shown |
 
-CCCO has 4 vertical blinds pricing grids with correct price groups:
-- Group 1 (price_group: "1")
-- Group 2 (price_group: "2")
-- Group Budget (price_group: "BUDGET")
-- Group 0_LF_Air (price_group: "0_LF_AIR")
+### Root Cause #2: No System Options for roller_blinds
+
+**Evidence:**
+
+```text
+treatment_category  | source  | option_count | account_count
+--------------------|---------|--------------|---------------
+roller_blinds       | twc     | 213          | 4 accounts
+roller_blinds       | manual  | 20           | 2 accounts
+roller_blinds       | system  | 0            | 0 accounts  ← MISSING!
+vertical_blinds     | system  | 7            | 1 account   ← EXISTS
+```
+
+When the TWC filter fails AND there are no system options, **nothing shows**.
 
 ---
 
-## Root Cause Analysis
+## Why This Only Affects Some Templates
 
-### Issue #1: TWC Sync Skips "Slats Only" Products
+The filter on line 387-388 says: "For system/custom options: show all matching category" - but:
+- roller_blinds has **NO** system options in the database
+- vertical_blinds has 7 system options, so manual verticals show 7 options
 
-**Location:** `supabase/functions/twc-sync-products/index.ts` (Lines 158-161)
+---
+
+## Proposed Fix
+
+### Option A: Make TWC Options Shareable Within Category (Recommended)
+
+**File:** `src/components/settings/tabs/products/TemplateOptionsManager.tsx`
+
+**Change lines 380-385:**
 
 ```typescript
-if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
-  return 'hardware'; // Replacement parts, not full product
+// BEFORE: Only show TWC options if linked OR key matches this template
+if ((opt as any).source === 'twc') {
+  const isLinked = linkedOptionIds.has(opt.id);
+  const keyMatchesTemplate = templateIdPrefix && opt.key?.endsWith(`_${templateIdPrefix}`);
+  return isLinked || keyMatchesTemplate;
+}
+
+// AFTER: Show all TWC options for the category - let user toggle them on/off
+if ((opt as any).source === 'twc') {
+  // Show TWC options for any template in the same category
+  // Options start disabled; user enables what they need
+  return true;
 }
 ```
 
-When `treatmentCategory === 'hardware'`:
-- Line 717-720: Template creation is SKIPPED
-- Options are NEVER created for these products
+**Why this is safe:**
+- The filter already checks `treatment_category` on line 378
+- TWC options for "roller_blinds" only show on roller blind templates
+- Options are disabled by default until user enables them
+- This preserves existing `template_option_settings` (nothing breaks for working templates)
+- Users can now configure manual templates with the same options
 
-**Impact:** "Verticals (Slats Only)" exists as a template BUT has no options because TWC sync treated it as hardware and skipped the option creation phase.
+### Option B: Auto-Link Options on Template Creation
 
-### Issue #2: `inventoryCategory: 'none'` Conflict
+Modify `curtain_templates` creation to copy `template_option_settings` from an existing template of the same category.
 
-**Location:** `src/utils/treatmentTypeDetection.ts` (Line 164)
+**Pros:** Automatic setup for new templates
+**Cons:** More complex, may copy unwanted options
 
-```typescript
-vertical_blinds: {
-  inventoryCategory: 'none', // ❌ Wrong for vertical blinds!
-}
-```
+### Option C: Create System Options for roller_blinds
 
-**However**, `inventorySubcategories.ts` (Line 78-84) correctly defines:
+Add default system options for roller_blinds (Motor, Control Type, etc.) similar to vertical_blinds.
 
-```typescript
-vertical_blinds: {
-  category: 'both', // ✅ Correct - supports fabric vanes AND material slats
-  fabricSubcategories: ['vertical_fabric'],
-  materialSubcategories: ['vertical_slats', 'vertical_vanes', 'vertical', 'blind_material'],
-}
-```
+**Pros:** Provides fallback options
+**Cons:** Duplicates existing TWC options; doesn't solve the core issue
 
-**Impact:** When `useTreatmentSpecificFabrics.ts` runs:
-1. It checks `treatmentConfig.inventoryCategory` → gets `'none'`
-2. It then checks `primaryCategory` → gets `'material'` from inventorySubcategories
-3. Line 192-218: The code handles this special case BUT only when `parentProductId` is not set
+---
 
-### Issue #3: NORMAN SmartDrape Has No Linked Inventory Item
+## Recommended Approach: Option A + Database Migration
+
+### Step 1: Update Filter Logic (Code Change)
+
+Change the TWC filter from "exclusive" to "inclusive" - show all category-matching TWC options.
+
+### Step 2: Link Existing Options (SQL Migration)
+
+For accounts with manual templates that have 0 options, create `template_option_settings` entries (disabled by default):
 
 ```sql
-id: d9053931-fbac-4fb8-95ec-89fc780a9a02
-inventory_item_id: null  -- ❌ No link!
-```
-
-This template was likely created manually, not through TWC sync, so it:
-- Has no parent product to pull child materials from
-- Has no TWC questions to create options from
-
-### Issue #4: $0 Pricing on Some Windows
-
-Windows with working "Verticals" template show:
-- Some records: `total_selling: 266.47` ✅
-- Some records: `total_selling: 0` ❌
-
-The $0 records happen when:
-1. `liveBlindCalcResult` is not yet populated when save triggers
-2. Fabric cost = 0 because no fabric was selected
-3. The fallback logic doesn't have pricing grid data
-
----
-
-## Fix Plan
-
-### Phase 1: Fix TWC Sync Logic (Edge Function)
-
-**File:** `supabase/functions/twc-sync-products/index.ts`
-
-**Change 1:** Don't skip template creation for "Slats Only" - treat as `vertical_blinds`
-
-```typescript
-// Lines 158-161: REMOVE or MODIFY this
-if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
-  return 'hardware'; // ❌ Remove this
-}
-
-// Instead, add BEFORE the "vertical" check:
-if (lowerDesc.includes('slats only') && lowerDesc.includes('vertical')) {
-  return 'vertical_blinds'; // ✅ Keep as vertical blinds
-}
-```
-
-**Change 2:** Ensure options are created even when product was synced without questions
-
-Add a fallback to copy options from an existing working template with the same treatment_category when no TWC questions exist.
-
-### Phase 2: Fix Detection Configuration
-
-**File:** `src/utils/treatmentTypeDetection.ts`
-
-**Change:** Update `vertical_blinds` inventoryCategory from `'none'` to `'both'`
-
-```typescript
-vertical_blinds: {
-  requiresFullness: false,
-  requiresHardwareType: false,
-  requiresFabricOrientation: false,
-  requiresHeading: false,
-  requiresLining: false,
-  showPooling: false,
-  inventoryCategory: 'both', // ✅ Changed from 'none'
-  specificFields: ['louvre_width', 'headrail_type', 'control_type'],
-  visualComponent: 'BlindVisualizer',
-},
-```
-
-### Phase 3: SQL Migration - Fix Existing Templates
-
-Run SQL to:
-1. Copy options from working "Verticals" template to "Verticals (Slats Only)"
-2. Link "NORMAN SmartDrape" to its inventory item (if one exists)
-
-```sql
--- Copy options from working template to broken template
+-- Link TWC options to all templates in the same category
 INSERT INTO template_option_settings (template_id, treatment_option_id, is_enabled, order_index)
-SELECT 
-  'a6ab02d7-cac3-4f31-87d8-6046eb65f597', -- Verticals (Slats Only)
-  treatment_option_id,
-  is_enabled,
-  order_index
-FROM template_option_settings
-WHERE template_id = 'ccc26823-36ae-4dfe-9c22-6bb9851e45ca' -- Working Verticals
-ON CONFLICT DO NOTHING;
+SELECT DISTINCT
+  ct.id as template_id,
+  topt.id as treatment_option_id,
+  false as is_enabled,  -- Start disabled
+  topt.order_index
+FROM curtain_templates ct
+CROSS JOIN treatment_options topt
+WHERE ct.treatment_category = topt.treatment_category
+AND ct.user_id = topt.account_id
+AND topt.source = 'twc'
+AND NOT EXISTS (
+  SELECT 1 FROM template_option_settings tos 
+  WHERE tos.template_id = ct.id 
+  AND tos.treatment_option_id = topt.id
+)
+ON CONFLICT (template_id, treatment_option_id) DO NOTHING;
 ```
 
-### Phase 4: Price Group Case Sensitivity
+---
 
-The pricing grid has `price_group: "BUDGET"` (uppercase) but some items have `price_group: "Budget"` (mixed case). 
+## Impact Analysis
 
-**File:** `src/utils/pricing/gridAutoMatcher.ts`
+### What Will Improve
+- Manual roller blind templates will show all 23 TWC options (disabled by default)
+- Users can enable the options they need for each template
+- No more "No options configured" for valid categories
 
-Verify the existing normalization handles this (looks like it does with `normalizedSearch.toLowerCase()`).
+### What Won't Break
+- Existing TWC templates (`af6eed75`) keep their 23 enabled options
+- Existing `template_option_settings` are preserved
+- The worksheet flow remains unchanged (only reads enabled options)
+
+### Risk Assessment
+- **Low risk:** Filter change only affects Settings page visibility
+- **No impact on quotes:** Quote/worksheet uses `useTreatmentOptions` with template query which reads from `template_option_settings.is_enabled`
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/twc-sync-products/index.ts` | Fix "Slats Only" categorization |
-| `src/utils/treatmentTypeDetection.ts` | Change `inventoryCategory: 'none'` → `'both'` |
-| SQL Migration | Copy options to broken templates |
+| File | Change | Risk |
+|------|--------|------|
+| `src/components/settings/tabs/products/TemplateOptionsManager.tsx` | Lines 380-385: Remove TWC isolation filter | Low |
+| SQL Migration | Link TWC options to all same-category templates | Low |
 
 ---
 
-## Expected Results After Fix
+## Alternative: "Enable All Available Options" Button
 
-| Test | Before | After |
-|------|--------|-------|
-| Verticals (Slats Only) options | 0 options ❌ | 11 options ✅ |
-| NORMAN SmartDrape options | 0 options ❌ | 11 options ✅ (if linked) |
-| Materials appear in Library | Missing for some | All visible ✅ |
-| Pricing grid resolution | Sometimes fails | Consistent ✅ |
-| Saved window total_selling | $0 on some | Correct price ✅ |
-
----
-
-## Technical Details
-
-### Why "Slats Only" Was Treated as Hardware
-
-The TWC sync logic was designed to skip creating templates for replacement parts (like individual slats sold without the headrail system). However, TWC sells "Verticals (Slats Only)" as a full product with its own set of options - it just uses replacement slats from other collections.
-
-The fix allows these products to create templates and options while still routing true hardware items (brackets, motors, remotes) correctly.
-
-### Why `inventoryCategory: 'none'` Was Wrong
-
-This was set because venetian blinds (wood/aluminum slats) don't need fabric inventory - they use pre-cut slats from manufacturers. However, vertical blinds use FABRIC vanes that need to be tracked in inventory, priced via grids, and displayed in the material selection panel.
-
-Setting this to `'both'` aligns with the already-correct `inventorySubcategories.ts` configuration and enables proper material display.
+If you prefer not changing the filter logic, I can add a button "Copy Options from [Working Template]" that copies `template_option_settings` from a working template to the empty one. This is a per-template fix rather than a systemic fix.
