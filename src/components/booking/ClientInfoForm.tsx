@@ -45,7 +45,7 @@ export const ClientInfoForm = ({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
+            <User className="h-4 w-4 text-primary/70" />
             Full Name <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -54,8 +54,8 @@ export const ClientInfoForm = ({
             onChange={(e) => updateClientInfo('name', e.target.value)}
             placeholder="John Smith"
             className={cn(
-              "h-11 transition-all duration-200",
-              "focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              "h-12 rounded-xl bg-slate-50/50 border-slate-200 transition-all duration-200",
+              "focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
             )}
             required
           />
@@ -63,7 +63,7 @@ export const ClientInfoForm = ({
         
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <Mail className="h-4 w-4 text-primary/70" />
             Email Address <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -73,8 +73,8 @@ export const ClientInfoForm = ({
             onChange={(e) => updateClientInfo('email', e.target.value)}
             placeholder="john@example.com"
             className={cn(
-              "h-11 transition-all duration-200",
-              "focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              "h-12 rounded-xl bg-slate-50/50 border-slate-200 transition-all duration-200",
+              "focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
             )}
             required
           />
@@ -82,7 +82,7 @@ export const ClientInfoForm = ({
         
         <div className="space-y-2">
           <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
-            <Phone className="h-4 w-4 text-muted-foreground" />
+            <Phone className="h-4 w-4 text-primary/70" />
             Phone Number <span className="text-muted-foreground text-xs">(optional)</span>
           </Label>
           <Input
@@ -92,15 +92,15 @@ export const ClientInfoForm = ({
             onChange={(e) => updateClientInfo('phone', e.target.value)}
             placeholder="+1 (555) 123-4567"
             className={cn(
-              "h-11 transition-all duration-200",
-              "focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              "h-12 rounded-xl bg-slate-50/50 border-slate-200 transition-all duration-200",
+              "focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
             )}
           />
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="notes" className="text-sm font-medium flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-primary/70" />
             Additional Notes <span className="text-muted-foreground text-xs">(optional)</span>
           </Label>
           <Textarea
@@ -110,8 +110,8 @@ export const ClientInfoForm = ({
             placeholder="Any specific topics you'd like to discuss or questions you have..."
             rows={3}
             className={cn(
-              "resize-none transition-all duration-200",
-              "focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              "resize-none rounded-xl bg-slate-50/50 border-slate-200 transition-all duration-200",
+              "focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
             )}
           />
         </div>

@@ -133,7 +133,7 @@ export const DateTimeSelector = ({
                 <p className="text-sm text-muted-foreground/70 mt-1">Please select another date</p>
               </motion.div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {availableSlots.map((slot, index) => (
                   <motion.div
                     key={slot.startTime}
@@ -146,10 +146,10 @@ export const DateTimeSelector = ({
                       size="sm"
                       onClick={() => onTimeSelect(slot.startTime)}
                       className={cn(
-                        "w-full h-11 text-sm font-medium transition-all duration-200",
+                        "w-full h-12 text-base font-medium transition-all duration-200",
                         selectedTime === slot.startTime 
-                          ? "shadow-md scale-105" 
-                          : "hover:border-primary hover:text-primary hover:scale-102"
+                          ? "shadow-md scale-105 font-semibold" 
+                          : "bg-slate-50 border-slate-200 hover:bg-primary/5 hover:border-primary hover:text-primary"
                       )}
                     >
                       {slot.startTime}
