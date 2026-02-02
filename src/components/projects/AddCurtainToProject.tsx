@@ -100,13 +100,15 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     
     let totalDrop = drop + headerAllowance + bottomHemAllowance;
     
-    // Add pooling allowance
+    // Add pooling allowance - ✅ FIX: Use template values via type assertion, NOT hardcoded 15/2
+    const puddleAmount = (template as any).puddle_amount ?? 15; // Template value with fallback
+    const breakAmount = (template as any).break_amount ?? 2; // Template value with fallback
     switch (formData.pooling) {
       case 'puddle':
-        totalDrop += 15; // 15cm puddle
+        totalDrop += puddleAmount;
         break;
       case 'break':
-        totalDrop += 2; // 2cm break
+        totalDrop += breakAmount;
         break;
       default:
         break;
