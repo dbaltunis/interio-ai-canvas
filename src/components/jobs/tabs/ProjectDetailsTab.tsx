@@ -59,7 +59,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
-  const [notesOpen, setNotesOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: project.name || "",
     description: project.description || "",
@@ -68,6 +67,18 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     start_date: project.start_date || "",
     due_date: project.due_date || "",
   });
+
+  // Sync formData when project prop changes (for multi-user sync)
+  useEffect(() => {
+    setFormData({
+      name: project.name || "",
+      description: project.description || "",
+      priority: project.priority || "medium",
+      client_id: project.client_id || null,
+      start_date: project.start_date || "",
+      due_date: project.due_date || "",
+    });
+  }, [project.id, project.start_date, project.due_date, project.client_id, project.name, project.description, project.priority]);
 
   // Get user preferences for date formatting
   const { data: userPreferences } = useUserPreferences();
@@ -441,6 +452,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               onClick={() => setShowClientSearch(true)}
               disabled={isReadOnly}
               className="shrink-0 h-8 w-8 p-0"
+              data-teaching="add-client-action"
             >
               {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
             </Button>
@@ -474,8 +486,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-7 px-2 font-medium hover:bg-accent",
-                    !project.start_date && "text-muted-foreground"
+                    "h-7 px-2 font-medium transition-colors",
+                    project.start_date 
+                      ? "text-foreground hover:bg-accent hover:text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20"
                   )}
                   disabled={isReadOnly}
                 >
@@ -534,8 +548,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-7 px-2 font-medium hover:bg-accent",
-                    !project.due_date && "text-muted-foreground"
+                    "h-7 px-2 font-medium transition-colors",
+                    project.due_date 
+                      ? "text-foreground hover:bg-accent hover:text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20"
                   )}
                   disabled={isReadOnly}
                 >

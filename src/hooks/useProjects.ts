@@ -289,6 +289,8 @@ export const useUpdateProject = () => {
     },
     onSuccess: ({ project, statusChanged, newStatusName }) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Also invalidate the specific project query for multi-user sync
+      queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
       // Invalidate dashboard stats when project status changes (affects revenue/active projects)
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats-critical"] });
       queryClient.invalidateQueries({ queryKey: ["revenue-history"] });
