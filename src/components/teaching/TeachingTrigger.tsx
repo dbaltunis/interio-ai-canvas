@@ -34,8 +34,8 @@ export const TeachingTrigger = ({
 }: TeachingTriggerProps) => {
   const { 
     activeTeaching, 
-    hasSeenTeaching, 
     isDismissedForever, 
+    isSessionDismissed,
     completeTeaching, 
     dismissForever,
     showTeaching,
@@ -50,7 +50,8 @@ export const TeachingTrigger = ({
   // Auto-show on mount if conditions are met - only trigger once
   useEffect(() => {
     if (!autoShow || !isTeachingEnabled || !teachingPoint || hasTriggered) return;
-    if (hasSeenTeaching(teachingId) || isDismissedForever(teachingId)) return;
+    // Check both permanent and session dismissals
+    if (isDismissedForever(teachingId) || isSessionDismissed(teachingId)) return;
     
     // Immediate show if delay is 0
     if (autoShowDelay === 0) {
@@ -65,7 +66,7 @@ export const TeachingTrigger = ({
     }, autoShowDelay);
     
     return () => clearTimeout(timer);
-  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint, hasTriggered, hasSeenTeaching, isDismissedForever, showTeaching]);
+  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint, hasTriggered, isDismissedForever, isSessionDismissed, showTeaching]);
   
   // Sync with context's active teaching
   useEffect(() => {
@@ -109,7 +110,7 @@ export const TeachingTrigger = ({
       onDismiss={handleDismiss}
       onDismissForever={handleDismissForever}
       open={isOpen}
-      showDontShowAgain={false}
+      showDontShowAgain={true}
       primaryAction={{
         label: getStepInfo() && getStepInfo()!.current < getStepInfo()!.total ? 'Next' : 'Got it',
         onClick: handleDismiss,

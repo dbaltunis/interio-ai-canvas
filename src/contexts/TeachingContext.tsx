@@ -38,6 +38,7 @@ interface TeachingContextValue {
   // Queries
   hasSeenTeaching: (id: string) => boolean;
   isDismissedForever: (id: string) => boolean;
+  isSessionDismissed: (id: string) => boolean;
   hasClickedHelpButton: (sectionId: string) => boolean;
   markHelpButtonClicked: (sectionId: string) => void;
   getAvailableTeachings: (page: string, section?: string) => TeachingPoint[];
@@ -65,6 +66,8 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
   const [isTeachingEnabled, setIsTeachingEnabled] = useState(true);
   const [currentPage, setCurrentPageState] = useState<{ page: string; section?: string } | null>(null);
   const [initialized, setInitialized] = useState(false);
+  // Session-only dismissed teachings (not persisted to localStorage)
+  const [sessionDismissed, setSessionDismissed] = useState<string[]>([]);
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -100,6 +103,11 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
   const isDismissedForever = useCallback((id: string): boolean => {
     return progress.dismissedForever.includes(id);
   }, [progress.dismissedForever]);
+
+  // Check if dismissed for this session only (not persisted)
+  const isSessionDismissed = useCallback((id: string): boolean => {
+    return sessionDismissed.includes(id);
+  }, [sessionDismissed]);
 
   // Get available teachings for current page/section
   const getAvailableTeachings = useCallback((page: string, section?: string): TeachingPoint[] => {
@@ -185,14 +193,12 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     setActiveSpotlight(null);
   }, []);
 
-  // Dismiss current teaching (mark as seen)
+  // Dismiss current teaching for this session only (will show again next session)
   const dismissTeaching = useCallback((id: string) => {
-    setProgress(prev => ({
-      ...prev,
-      seenTeachingPoints: prev.seenTeachingPoints.includes(id) 
-        ? prev.seenTeachingPoints 
-        : [...prev.seenTeachingPoints, id],
-    }));
+    // Only add to session dismissed, NOT to persistent seenTeachingPoints
+    setSessionDismissed(prev => 
+      prev.includes(id) ? prev : [...prev, id]
+    );
     
     if (activeTeaching?.id === id) {
       setActiveTeaching(null);
@@ -321,6 +327,7 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     dismissSpotlight,
     hasSeenTeaching,
     isDismissedForever,
+    isSessionDismissed,
     hasClickedHelpButton,
     markHelpButtonClicked,
     getAvailableTeachings,
