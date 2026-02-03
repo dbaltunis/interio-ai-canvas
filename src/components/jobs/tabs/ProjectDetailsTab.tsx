@@ -1,17 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { PixelUserIcon } from "@/components/icons/PixelArtIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash, Phone, Tag } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Calendar as CalendarIcon, Hash, Phone, Tag, Plus } from "lucide-react";
 import { syncSequenceCounter, getEntityTypeFromStatus, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
 import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -428,23 +424,26 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
       {/* Compact Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        {/* Client Status - Primary Focus */}
+        {/* Client Status - With Inline Action */}
         <div className="sm:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground mb-1">Client</p>
               {selectedClient ? (
-                <>
-                  <span className="text-lg font-semibold truncate block">{getClientDisplayName(selectedClient)}</span>
-                  {selectedClient.email && (
-                    <p className="text-xs text-muted-foreground truncate">{selectedClient.email}</p>
-                  )}
-                </>
+                <span className="text-lg font-semibold truncate block">{getClientDisplayName(selectedClient)}</span>
               ) : (
-                <span className="text-sm text-muted-foreground">No client assigned</span>
+                <span className="text-sm text-muted-foreground">No client</span>
               )}
             </div>
-            <User className="h-8 w-8 text-primary/60 shrink-0 ml-2" />
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowClientSearch(true)}
+              disabled={isReadOnly}
+              className="shrink-0 h-8 w-8 p-0"
+            >
+              {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
         
@@ -629,126 +628,68 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </CardContent>
       </Card>
 
-      {/* Client Assignment - Primary Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Client Assignment
-            </CardTitle>
-            {selectedClient && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowClientSearch(true)}
-                disabled={isReadOnly}
-              >
-                <Search className="h-3 w-3 mr-1" />
-                Change Client
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {selectedClient ? (
-            <div className="space-y-3">
-              {/* Name with Type Badge */}
+      {/* Compact Client Details - Only shown when client is assigned */}
+      {selectedClient && (
+        <div className="bg-card/50 border rounded-lg p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+              {/* Type & Stage Badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-lg font-semibold text-foreground">
-                  {getClientDisplayName(selectedClient)}
-                </p>
                 <Badge variant="outline" className="text-xs">
                   {selectedClient.client_type === "B2B" ? "Business" : "Individual"}
                 </Badge>
-              </div>
-
-              {/* Company name contact for B2B */}
-              {selectedClient.client_type === 'B2B' && selectedClient.name && (
-                <p className="text-sm text-muted-foreground">
-                  Contact: {selectedClient.name}
-                </p>
-              )}
-
-              {/* Funnel Stage Badge */}
-              {selectedClient.funnel_stage && (
-                <Badge variant="secondary" className="text-xs">
-                  {selectedClient.funnel_stage}
-                </Badge>
-              )}
-
-              {/* Contact Info - Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                {selectedClient.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs truncate">{selectedClient.email}</span>
-                  </div>
-                )}
-                {selectedClient.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs">{selectedClient.phone}</span>
-                  </div>
+                {selectedClient.funnel_stage && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedClient.funnel_stage}
+                  </Badge>
                 )}
               </div>
-
+              
+              {/* Email */}
+              {selectedClient.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs truncate">{selectedClient.email}</span>
+                </div>
+              )}
+              
+              {/* Phone */}
+              {selectedClient.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs">{selectedClient.phone}</span>
+                </div>
+              )}
+              
               {/* Address */}
               {(selectedClient.address || selectedClient.city) && (
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span className="text-xs">
-                    {[selectedClient.address, selectedClient.city, selectedClient.state, selectedClient.zip_code]
-                      .filter(Boolean).join(", ")}
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs truncate">
+                    {[selectedClient.city, selectedClient.state].filter(Boolean).join(", ")}
                   </span>
                 </div>
               )}
-
-              {/* Tags */}
-              {selectedClient.tags && selectedClient.tags.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Tag className="h-3 w-3 text-muted-foreground" />
-                  {selectedClient.tags.map((tag: string) => (
-                    <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Deal Value & Priority */}
-              {(selectedClient.deal_value || selectedClient.priority_level) && (
-                <div className="flex items-center gap-3 text-sm">
-                  {selectedClient.deal_value && selectedClient.deal_value > 0 && (
-                    <span className="text-green-600 dark:text-green-400 font-medium text-xs">
-                      {formatCurrency(selectedClient.deal_value)}
-                    </span>
-                  )}
-                  {selectedClient.priority_level && (
-                    <Badge variant="outline" className="text-xs capitalize">
-                      {selectedClient.priority_level} priority
-                    </Badge>
-                  )}
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <PixelUserIcon className="mx-auto mb-4" size={56} />
-              <h4 className="font-medium text-foreground mb-1">No client assigned</h4>
-              <p className="text-sm text-muted-foreground mb-4">Connect a client to track this project</p>
-              <Button onClick={() => setShowClientSearch(true)} disabled={isReadOnly}>
-                <Search className="h-4 w-4 mr-2" />
-                Assign Client
-              </Button>
+          </div>
+          
+          {/* Tags row - only if present */}
+          {selectedClient.tags && selectedClient.tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap mt-3 pt-3 border-t">
+              <Tag className="h-3 w-3 text-muted-foreground" />
+              {selectedClient.tags.map((tag: string) => (
+                <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+              ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Project Notes */}
-      <ProjectNotesCard projectId={project.id} />
-
-      {/* Project Activity */}
-      <ProjectActivityCard projectId={project.id} maxItems={5} />
+      {/* Project Notes & Activity - Side by Side on Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ProjectNotesCard projectId={project.id} />
+        <ProjectActivityCard projectId={project.id} maxItems={5} />
+      </div>
 
       {/* Client Search Modal */}
       {showClientSearch && (
