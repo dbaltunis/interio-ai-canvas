@@ -420,6 +420,18 @@ export const PersonalSettingsTab = () => {
     }
     setIsPasswordSaving(true);
     try {
+      // Verify session is valid before attempting password update
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again to change your password.",
+          variant: "destructive"
+        });
+        setIsPasswordSaving(false);
+        return;
+      }
+
       const {
         error
       } = await supabase.auth.updateUser({
@@ -438,11 +450,26 @@ export const PersonalSettingsTab = () => {
         title: "Success",
         description: "Password updated successfully."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating password:", error);
+      
+      // Extract meaningful error message from Supabase
+      let errorMessage = "Failed to update password. Please try again.";
+      if (error?.message) {
+        // Common Supabase password errors - show them directly
+        if (error.message.includes("password") || error.message.includes("Password")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("session") || error.message.includes("Session")) {
+          errorMessage = "Your session has expired. Please log in again.";
+        } else {
+          // Show the actual error message for debugging
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update password. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
