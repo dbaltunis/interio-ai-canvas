@@ -151,11 +151,6 @@ export const TeachingOverlay = () => {
     return null;
   }
 
-  // Skip rendering if this teaching is handled by component-level TeachingTrigger
-  if (activeTeaching.skipAutoShow) {
-    return null;
-  }
-
   // Get step info if part of a sequence
   const getStepInfo = (): { current: number; total: number } | undefined => {
     if (!activeTeaching.sequence || !activeTeaching.sequenceOrder) return undefined;

@@ -31,7 +31,6 @@ import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useProjectStatus } from "@/contexts/ProjectStatusContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { ClientCard } from "@/components/jobs/ClientCard";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -437,12 +436,28 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       {/* Compact Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         {/* Client Status - With Inline Action */}
-        <ClientCard 
-          selectedClient={selectedClient}
-          getClientDisplayName={getClientDisplayName}
-          isReadOnly={isReadOnly}
-          onAddClient={() => setShowClientSearch(true)}
-        />
+        <div className="sm:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground mb-1">Client</p>
+              {selectedClient ? (
+                <span className="text-lg font-semibold truncate block">{getClientDisplayName(selectedClient)}</span>
+              ) : (
+                <span className="text-sm text-muted-foreground">No client</span>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowClientSearch(true)}
+              disabled={isReadOnly}
+              className="shrink-0 h-8 w-8 p-0"
+              data-teaching="add-client-action"
+            >
+              {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
         
         {/* Rooms Count */}
         <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">

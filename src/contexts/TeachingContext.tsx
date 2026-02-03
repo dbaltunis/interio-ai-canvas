@@ -38,7 +38,6 @@ interface TeachingContextValue {
   // Queries
   hasSeenTeaching: (id: string) => boolean;
   isDismissedForever: (id: string) => boolean;
-  isSessionDismissed: (id: string) => boolean;
   hasClickedHelpButton: (sectionId: string) => boolean;
   markHelpButtonClicked: (sectionId: string) => void;
   getAvailableTeachings: (page: string, section?: string) => TeachingPoint[];
@@ -66,8 +65,6 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
   const [isTeachingEnabled, setIsTeachingEnabled] = useState(true);
   const [currentPage, setCurrentPageState] = useState<{ page: string; section?: string } | null>(null);
   const [initialized, setInitialized] = useState(false);
-  // Session-only dismissed teachings (not persisted to localStorage)
-  const [sessionDismissed, setSessionDismissed] = useState<string[]>([]);
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -104,24 +101,13 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     return progress.dismissedForever.includes(id);
   }, [progress.dismissedForever]);
 
-  // Check if dismissed for this session only (not persisted)
-  const isSessionDismissed = useCallback((id: string): boolean => {
-    return sessionDismissed.includes(id);
-  }, [sessionDismissed]);
-
   // Get available teachings for current page/section
   const getAvailableTeachings = useCallback((page: string, section?: string): TeachingPoint[] => {
     if (!isTeachingEnabled) return [];
     
     return getTeachingPointsForPage(page, section).filter(tp => {
-      // Skip if this teaching is controlled by component-level TeachingTrigger
-      if (tp.skipAutoShow) return false;
-      
       // Skip if dismissed forever
       if (isDismissedForever(tp.id)) return false;
-      
-      // Skip if dismissed this session
-      if (isSessionDismissed(tp.id)) return false;
       
       // Check maxShows limit if defined
       if (tp.maxShows) {
@@ -152,7 +138,7 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
           return true;
       }
     });
-  }, [isTeachingEnabled, hasSeenTeaching, isDismissedForever, isSessionDismissed, progress.showCounts]);
+  }, [isTeachingEnabled, hasSeenTeaching, isDismissedForever, progress.showCounts]);
 
   // Get next teaching point for current context
   const getNextTeaching = useCallback((page: string, section?: string): TeachingPoint | null => {
@@ -199,12 +185,14 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     setActiveSpotlight(null);
   }, []);
 
-  // Dismiss current teaching for this session only (will show again next session)
+  // Dismiss current teaching (mark as seen)
   const dismissTeaching = useCallback((id: string) => {
-    // Only add to session dismissed, NOT to persistent seenTeachingPoints
-    setSessionDismissed(prev => 
-      prev.includes(id) ? prev : [...prev, id]
-    );
+    setProgress(prev => ({
+      ...prev,
+      seenTeachingPoints: prev.seenTeachingPoints.includes(id) 
+        ? prev.seenTeachingPoints 
+        : [...prev.seenTeachingPoints, id],
+    }));
     
     if (activeTeaching?.id === id) {
       setActiveTeaching(null);
@@ -333,7 +321,6 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     dismissSpotlight,
     hasSeenTeaching,
     isDismissedForever,
-    isSessionDismissed,
     hasClickedHelpButton,
     markHelpButtonClicked,
     getAvailableTeachings,

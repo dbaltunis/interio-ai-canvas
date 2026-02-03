@@ -99,37 +99,39 @@ export const TeachingPopover = ({
             </p>
           </div>
 
-        {/* Actions */}
-        <div className="flex flex-col border-t border-primary-foreground/20 px-4 py-3 gap-2">
-          <div className="flex items-center justify-end gap-2">
-            {secondaryAction && (
+          {/* Actions */}
+          <div className="flex items-center justify-between border-t border-primary-foreground/20 px-4 py-3">
+            <div className="flex items-center gap-2">
+              {showDontShowAgain && onDismissForever && (
+                <button
+                  onClick={onDismissForever}
+                  className="text-xs text-primary-foreground/60 hover:text-primary-foreground/80 transition-colors"
+                >
+                  Don't show again
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {secondaryAction && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={secondaryAction.onClick}
+                  className="text-primary-foreground hover:bg-primary-foreground/20 h-8"
+                >
+                  {secondaryAction.label}
+                </Button>
+              )}
               <Button
-                variant="ghost"
                 size="sm"
-                onClick={secondaryAction.onClick}
-                className="text-primary-foreground hover:bg-primary-foreground/20 h-8"
+                onClick={primaryAction?.onClick || onDismiss}
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 h-8"
               >
-                {secondaryAction.label}
+                {primaryAction?.label || 'Got it'}
+                {step && step.current < step.total && <ChevronRight className="h-3 w-3 ml-1" />}
               </Button>
-            )}
-            <Button
-              size="sm"
-              onClick={primaryAction?.onClick || onDismiss}
-              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 h-8"
-            >
-              {primaryAction?.label || 'Got it'}
-              {step && step.current < step.total && <ChevronRight className="h-3 w-3 ml-1" />}
-            </Button>
+            </div>
           </div>
-          {showDontShowAgain && onDismissForever && (
-            <button
-              onClick={onDismissForever}
-              className="text-xs text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors text-center"
-            >
-              Don't show this tip again
-            </button>
-          )}
-        </div>
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>

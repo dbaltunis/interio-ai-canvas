@@ -30,12 +30,12 @@ export const TeachingTrigger = ({
   children,
   position,
   autoShow = true,
-  autoShowDelay = 100,
+  autoShowDelay = 500,
 }: TeachingTriggerProps) => {
   const { 
     activeTeaching, 
+    hasSeenTeaching, 
     isDismissedForever, 
-    isSessionDismissed,
     completeTeaching, 
     dismissForever,
     showTeaching,
@@ -43,30 +43,24 @@ export const TeachingTrigger = ({
   } = useTeaching();
   
   const [isOpen, setIsOpen] = useState(false);
-  const [hasTriggered, setHasTriggered] = useState(false);
   
   const teachingPoint = allTeachingPoints.find(tp => tp.id === teachingId);
   
-  // Auto-show on mount if conditions are met - only trigger once
+  // Auto-show on mount if conditions are met
   useEffect(() => {
-    if (!autoShow || !isTeachingEnabled || !teachingPoint || hasTriggered) return;
-    // Check both permanent and session dismissals
-    if (isDismissedForever(teachingId) || isSessionDismissed(teachingId)) return;
-    
-    // Immediate show if delay is 0
-    if (autoShowDelay === 0) {
-      setHasTriggered(true);
-      showTeaching(teachingId);
-      return;
-    }
+    if (!autoShow || !isTeachingEnabled || !teachingPoint) return;
+    if (hasSeenTeaching(teachingId) || isDismissedForever(teachingId)) return;
     
     const timer = setTimeout(() => {
-      setHasTriggered(true);
-      showTeaching(teachingId);
+      // Only show if no active teaching (don't compete)
+      if (!activeTeaching) {
+        showTeaching(teachingId);
+      }
     }, autoShowDelay);
     
     return () => clearTimeout(timer);
-  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint, hasTriggered, isDismissedForever, isSessionDismissed, showTeaching]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint]);
   
   // Sync with context's active teaching
   useEffect(() => {
@@ -110,7 +104,7 @@ export const TeachingTrigger = ({
       onDismiss={handleDismiss}
       onDismissForever={handleDismissForever}
       open={isOpen}
-      showDontShowAgain={true}
+      showDontShowAgain={false}
       primaryAction={{
         label: getStepInfo() && getStepInfo()!.current < getStepInfo()!.total ? 'Next' : 'Got it',
         onClick: handleDismiss,
