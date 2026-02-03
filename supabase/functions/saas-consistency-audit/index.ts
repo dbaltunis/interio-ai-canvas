@@ -121,13 +121,13 @@ Deno.serve(async (req) => {
     }
 
     // Check if user is System Owner
-    const { data: userProfile } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
-      .select('is_system_owner, role')
+      .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (!userProfile?.is_system_owner && userProfile?.role !== 'System Owner') {
+    if (profileError || userProfile?.role !== 'System Owner') {
       return new Response(
         JSON.stringify({ error: 'Access denied. System Owner required.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
