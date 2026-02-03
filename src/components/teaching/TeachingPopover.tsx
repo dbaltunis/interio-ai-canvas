@@ -90,13 +90,6 @@ export const TeachingPopover = ({
                 )}
               </div>
             </div>
-            <button
-              onClick={onDismiss}
-              className="rounded-full p-1 hover:bg-primary-foreground/20 transition-colors"
-              aria-label="Dismiss"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
 
           {/* Content */}
