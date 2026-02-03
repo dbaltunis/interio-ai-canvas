@@ -1,209 +1,145 @@
 
-## Make Client Tab More Compact & User-Friendly
 
-### Current Issues (From Screenshots)
+## Fix Project Details Tab UI Issues
 
-| Issue | Impact |
-|-------|--------|
-| Client info shown **3 times**: header, summary bar, AND large Client Assignment card | Redundant, wastes space |
-| "No client assigned" empty state is ~200px tall | Pushes content below the fold |
-| Single-column layout with `space-y-6` gaps | Lots of vertical scrolling needed |
-| Client details displayed vertically when assigned | Takes more height than necessary |
+This plan addresses four issues you identified:
 
----
-
-### Solution: Consolidated, Compact Layout
-
-#### Key Changes
-
-1. **Remove the Large "Client Assignment" Card** - The summary bar already shows client info. Merge the "Assign Client" / "Change Client" action into the summary bar.
-
-2. **Compact Empty State** - Replace the tall centered empty state with a slim inline prompt inside the summary bar.
-
-3. **Optimize Summary Bar** - Make it the single source of truth for client display with a small action button.
-
-4. **Two-Column Layout for Project Notes & Activity** - On larger screens, display notes and activity side-by-side to reduce height.
+1. **Project Notes closed by default** - Should open automatically
+2. **Add Client button needs onboarding focus** - Help users find the new compact button
+3. **Set start/due date buttons barely visible** - Poor color contrast on hover
+4. **Timeline not saving/displaying** - Data sync issues for other users
 
 ---
 
-### Visual Comparison
+### Issue 1: Project Notes Open by Default
 
-**Before (Current):**
-```text
-┌─────────────────────────────────────────────────────────┐
-│ [Summary Bar: Client, Rooms, Quote]                     │
-├─────────────────────────────────────────────────────────┤
-│ [Timeline Row]                                          │
-├─────────────────────────────────────────────────────────┤
-│ [Draft Number Card - Full Width]                        │
-├─────────────────────────────────────────────────────────┤
-│ ╔═══════════════════════════════════════════════════╗   │
-│ ║ CLIENT ASSIGNMENT (HUGE CARD)                     ║   │
-│ ║                                                   ║   │
-│ ║           [Big Pixel Icon]                        ║   │
-│ ║         No client assigned                        ║   │
-│ ║     Connect a client to track this project        ║   │
-│ ║           [Assign Client Button]                  ║   │
-│ ║                                                   ║   │
-│ ╚═══════════════════════════════════════════════════╝   │
-├─────────────────────────────────────────────────────────┤
-│ [Project Notes - Collapsed]                             │
-├─────────────────────────────────────────────────────────┤
-│ [Project Activity]                                      │
-└─────────────────────────────────────────────────────────┘
-```
+**Current State:** The notes section collapses by default because `isOpen` is initialized to `false` in the component state. *Wait - I see it's actually already `true` on line 25!* However, there's a separate `notesOpen` state in `ProjectDetailsTab.tsx` (line 62) that is set to `false`.
 
-**After (Proposed):**
-```text
-┌─────────────────────────────────────────────────────────┐
-│ [Summary Bar with inline client action]                 │
-│  Client: No client | [+ Assign]   Rooms: 2   Quote: £X  │
-├─────────────────────────────────────────────────────────┤
-│ [Timeline Row]                                          │
-├─────────────────────────────────────────────────────────┤
-│ [Draft Number Card - Compact]                           │
-├─────────────────────────────────────────────────────────┤
-│ [Client Details - ONLY if client assigned, compact]     │
-├──────────────────────────┬──────────────────────────────┤
-│ [Project Notes]          │ [Project Activity]           │
-│                          │                              │
-└──────────────────────────┴──────────────────────────────┘
+**The Fix:**
+Looking at the code, `ProjectNotesCard` already defaults to open (`isOpen = true`). The issue might be the `notesOpen` state in `ProjectDetailsTab.tsx` is not being used correctly or there's a conflicting state. I'll verify `ProjectNotesCard` is being rendered with its own internal state (which is `true`) and remove any conflicting external state control.
+
+**File:** `src/components/jobs/tabs/ProjectDetailsTab.tsx`
+- Remove the unused `notesOpen` state variable if it's not controlling the notes card
+- Verify `ProjectNotesCard` uses its internal `isOpen = true` default
+
+---
+
+### Issue 2: Add Client Onboarding Focus Point
+
+**Goal:** Show a spotlight tooltip pointing to the client "+" button for first-time users. This should appear 3 times when someone creates a new project without a client assigned.
+
+**Implementation:**
+1. Add `data-teaching="add-client-action"` attribute to the Plus button in the client summary bar
+2. Create a new teaching point in the configuration that triggers when:
+   - User is on the job details page
+   - No client is assigned
+   - Show maximum 3 times (tracked in localStorage)
+
+**Files:**
+- `src/components/jobs/tabs/ProjectDetailsTab.tsx` - Add data-teaching attribute
+- `src/config/teachingPoints.ts` - Add new teaching point for client assignment
+
+**Teaching Point Configuration:**
+```typescript
+{
+  id: 'app-job-add-client',
+  title: 'Add or Create a Client',
+  description: 'Click here to assign an existing client or create a new one for this project.',
+  targetSelector: '[data-teaching="add-client-action"]',
+  position: 'bottom',
+  trigger: { type: 'empty_state', page: '/app', section: 'projects' },
+  priority: 'high',
+  category: 'app',
+  maxShows: 3,  // Show maximum 3 times
+}
 ```
 
 ---
 
-### Technical Implementation
+### Issue 3: Date Buttons Visibility (Contrast Fix)
 
-#### File: `src/components/jobs/tabs/ProjectDetailsTab.tsx`
+**Current State:** The "Set start date" and "Set due date" buttons use `text-muted-foreground` when no date is set. On hover, the background changes but the text color doesn't provide enough contrast.
 
-**Change 1: Enhanced Summary Bar with Inline Actions**
+**The Fix:** Update the button styling to ensure visible text on hover:
 
-The client cell in the summary bar will include:
-- If no client: "No client" + **small "Assign" button**
-- If client assigned: Client name + **small "Change" button**
-
+**Current (line 476-479):**
 ```tsx
-{/* Client Status - With Inline Action */}
-<div className="sm:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
-  <div className="flex items-center justify-between gap-2">
-    <div className="min-w-0 flex-1">
-      <p className="text-xs text-muted-foreground mb-1">Client</p>
-      {selectedClient ? (
-        <span className="text-lg font-semibold truncate block">
-          {getClientDisplayName(selectedClient)}
-        </span>
-      ) : (
-        <span className="text-sm text-muted-foreground">No client</span>
-      )}
-    </div>
-    <Button 
-      variant="ghost" 
-      size="sm"
-      onClick={() => setShowClientSearch(true)}
-      disabled={isReadOnly}
-      className="shrink-0"
-    >
-      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-    </Button>
-  </div>
-</div>
-```
-
-**Change 2: Remove or Condense the Large Client Assignment Card**
-
-- **Option A (Recommended)**: Remove the card entirely - summary bar handles it
-- **Option B**: Keep a minimal collapsible details section when client IS assigned
-
-For this plan, I'll go with **Option A** for no-client state (summary bar handles it), and a **compact inline section** for showing client details when assigned (no tall card).
-
-**Change 3: Compact Client Details (Only When Assigned)**
-
-Replace the large card with a slim, horizontal details row:
-
-```tsx
-{selectedClient && (
-  <div className="bg-card/50 border rounded-lg p-4">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-        {/* Type Badge */}
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {selectedClient.client_type === "B2B" ? "Business" : "Individual"}
-          </Badge>
-          {selectedClient.funnel_stage && (
-            <Badge variant="secondary" className="text-xs">
-              {selectedClient.funnel_stage}
-            </Badge>
-          )}
-        </div>
-        
-        {/* Email */}
-        {selectedClient.email && (
-          <div className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs truncate">{selectedClient.email}</span>
-          </div>
-        )}
-        
-        {/* Phone */}
-        {selectedClient.phone && (
-          <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs">{selectedClient.phone}</span>
-          </div>
-        )}
-        
-        {/* Address */}
-        {(selectedClient.address || selectedClient.city) && (
-          <div className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs truncate">
-              {[selectedClient.city, selectedClient.state].filter(Boolean).join(", ")}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
+className={cn(
+  "h-7 px-2 font-medium hover:bg-primary/10 hover:text-primary transition-colors",
+  !project.start_date && "text-muted-foreground"
 )}
 ```
 
-**Change 4: Two-Column Layout for Notes & Activity**
-
+**Updated:**
 ```tsx
-{/* Project Notes & Activity - Side by Side on Desktop */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  <ProjectNotesCard projectId={project.id} />
-  <ProjectActivityCard projectId={project.id} maxItems={5} />
-</div>
+className={cn(
+  "h-7 px-2 font-medium transition-colors",
+  project.start_date 
+    ? "text-foreground hover:bg-accent hover:text-accent-foreground" 
+    : "text-muted-foreground hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20"
+)}
+```
+
+This ensures:
+- Text becomes clearly visible on hover (uses `text-primary` which has good contrast)
+- Adds a subtle border on hover for better definition
+- Works in both light and dark modes
+
+**File:** `src/components/jobs/tabs/ProjectDetailsTab.tsx` (lines 476-479 and 536-539)
+
+---
+
+### Issue 4: Timeline Not Saving/Displaying for Other Users
+
+**Root Cause Analysis:**
+1. **Query Invalidation Issue:** When a user updates the project's `start_date` or `due_date`, the `useUpdateProject` hook only invalidates `["projects"]` (the list query), but NOT `["projects", id]` (the single project query). This means other users or the same user on a different tab won't see the updated dates until they fully refresh.
+
+2. **State Sync Issue:** The `formData` state in `ProjectDetailsTab.tsx` is initialized once from `project` props but doesn't update when the `project` prop changes (e.g., from a refetch).
+
+**The Fix:**
+
+**File 1:** `src/hooks/useProjects.ts`
+- Update `onSuccess` callback in `useUpdateProject` to also invalidate the specific project query:
+```tsx
+onSuccess: ({ project, ... }) => {
+  queryClient.invalidateQueries({ queryKey: ["projects"] });
+  queryClient.invalidateQueries({ queryKey: ["projects", project.id] }); // Add this!
+  ...
+}
+```
+
+**File 2:** `src/components/jobs/tabs/ProjectDetailsTab.tsx`
+- Add a `useEffect` to sync `formData` with the `project` prop when it changes:
+```tsx
+useEffect(() => {
+  setFormData({
+    name: project.name || "",
+    description: project.description || "",
+    priority: project.priority || "medium",
+    client_id: project.client_id || null,
+    start_date: project.start_date || "",
+    due_date: project.due_date || "",
+  });
+}, [project.id, project.start_date, project.due_date, project.client_id, project.name, project.description, project.priority]);
 ```
 
 ---
 
-### Files to Modify
+### Summary of Changes
 
-| File | Changes |
-|------|---------|
-| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Add inline action to summary bar, remove/condense Client Assignment card, two-column layout for notes/activity |
-
----
-
-### Space Savings
-
-| Section | Before | After | Savings |
-|---------|--------|-------|---------|
-| Client empty state | ~200px | ~0px (handled in summary bar) | **~200px** |
-| Client assigned state | ~180px (card) | ~60px (compact row) | **~120px** |
-| Notes + Activity | Stacked (space-y-6) | Side-by-side on desktop | **~50% height reduction** |
-
-**Total estimated reduction: 200-300px less vertical scrolling**
+| File | Change |
+|------|--------|
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | 1. Add `data-teaching` to client + button 2. Fix date button hover contrast 3. Add useEffect for formData sync 4. Remove unused `notesOpen` state |
+| `src/hooks/useProjects.ts` | Invalidate specific project query on update |
+| `src/config/teachingPoints.ts` | Add "Add Client" teaching point with 3-show limit |
 
 ---
 
-### Expected Outcome
+### Expected Results
 
-- **Less scrolling** - More content visible above the fold
-- **No redundancy** - Client shown once in a meaningful way
-- **Clean empty state** - Small inline "Assign" button, not a huge empty card
-- **Efficient details** - When client is assigned, info is compact and scannable
-- **Better desktop usage** - Notes and activity side-by-side
+After these changes:
+- **Notes Section:** Opens by default when viewing a project
+- **Client Button:** New users see a helpful spotlight 3 times pointing them to add a client
+- **Date Buttons:** Text is clearly visible on hover with better contrast
+- **Timeline Sync:** Dates save and display correctly for all users viewing the job
+
