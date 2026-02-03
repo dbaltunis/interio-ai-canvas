@@ -52,14 +52,15 @@ export const TeachingTrigger = ({
     if (hasSeenTeaching(teachingId) || isDismissedForever(teachingId)) return;
     
     const timer = setTimeout(() => {
-      // Only show if this teaching is the active one or no active teaching
-      if (!activeTeaching || activeTeaching.id === teachingId) {
+      // Only show if no active teaching (don't compete)
+      if (!activeTeaching) {
         showTeaching(teachingId);
       }
     }, autoShowDelay);
     
     return () => clearTimeout(timer);
-  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint, hasSeenTeaching, isDismissedForever, activeTeaching, showTeaching]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint]);
   
   // Sync with context's active teaching
   useEffect(() => {
@@ -103,6 +104,7 @@ export const TeachingTrigger = ({
       onDismiss={handleDismiss}
       onDismissForever={handleDismissForever}
       open={isOpen}
+      showDontShowAgain={false}
       primaryAction={{
         label: getStepInfo() && getStepInfo()!.current < getStepInfo()!.total ? 'Next' : 'Got it',
         onClick: handleDismiss,
