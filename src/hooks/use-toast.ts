@@ -16,6 +16,11 @@ type ToasterToast = ToastProps & {
   description?: React.ReactNode
   action?: ToastActionElement
   importance?: 'silent' | 'normal' | 'important' // Control notification visibility
+  persistent?: boolean // If true, toast stays until manually dismissed
+  icon?: string // Icon type for friendly errors
+  showLoginButton?: boolean // Show login button for session errors
+  onLoginClick?: () => void // Handler for login button
+  autoDismissMs?: number // Custom auto-dismiss time
 }
 
 const actionTypes = {
@@ -147,6 +152,7 @@ function toast({ ...props }: Toast) {
 
   // Determine if this is an error toast
   const isError = props.variant === "destructive" || 
+                  props.variant === "warning" ||
                   props.title?.toString().toLowerCase().includes("error") ||
                   props.title?.toString().toLowerCase().includes("failed");
   
@@ -169,10 +175,22 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
   
-  // Error toasts show longer (15s), important success toasts show 4s
-  const delay = isError ? ERROR_TOAST_REMOVE_DELAY : 
-                effectiveImportance === 'important' ? 4000 : 
-                TOAST_REMOVE_DELAY;
+  // Check if this toast should be persistent (no auto-dismiss)
+  const isPersistent = props.persistent === true;
+  
+  // Determine delay: persistent = no auto-dismiss, custom autoDismissMs, or defaults
+  let delay: number;
+  if (isPersistent) {
+    delay = Infinity; // Never auto-dismiss
+  } else if (props.autoDismissMs) {
+    delay = props.autoDismissMs;
+  } else if (isError) {
+    delay = ERROR_TOAST_REMOVE_DELAY;
+  } else if (effectiveImportance === 'important') {
+    delay = 4000;
+  } else {
+    delay = TOAST_REMOVE_DELAY;
+  }
   
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
