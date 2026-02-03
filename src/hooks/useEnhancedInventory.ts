@@ -237,6 +237,46 @@ export const useCreateEnhancedInventoryItem = () => {
       const effectiveOwnerId = profile?.parent_account_id || userId;
       console.log('📦 [useCreateEnhancedInventoryItem] Creating item with effectiveOwnerId:', effectiveOwnerId, '(auth user:', userId, ')');
 
+      // ✅ AUTO-CREATE COLLECTION: If collection_name is provided but no collection_id, create/link collection
+      let resolvedCollectionId = raw.collection_id || null;
+      const collectionName = raw.collection_name?.trim();
+      
+      if (collectionName && !resolvedCollectionId) {
+        console.log('📦 [useCreateEnhancedInventoryItem] Auto-creating/linking collection:', collectionName);
+        
+        // First, try to find existing collection with this name for this account
+        const { data: existingCollection } = await supabase
+          .from("collections")
+          .select("id")
+          .eq("user_id", effectiveOwnerId)
+          .eq("name", collectionName)
+          .maybeSingle();
+        
+        if (existingCollection) {
+          resolvedCollectionId = existingCollection.id;
+          console.log('📦 [useCreateEnhancedInventoryItem] Found existing collection:', resolvedCollectionId);
+        } else {
+          // Create new collection
+          const { data: newCollection, error: collError } = await supabase
+            .from("collections")
+            .insert({
+              name: collectionName,
+              user_id: effectiveOwnerId,
+              active: true,
+              vendor_id: raw.vendor_id || null, // Link to vendor if provided
+            })
+            .select("id")
+            .single();
+          
+          if (!collError && newCollection) {
+            resolvedCollectionId = newCollection.id;
+            console.log('📦 [useCreateEnhancedInventoryItem] Created new collection:', resolvedCollectionId);
+          } else {
+            console.warn('📦 [useCreateEnhancedInventoryItem] Failed to create collection:', collError?.message);
+          }
+        }
+      }
+
       // Whitelist fields to match enhanced_inventory_items schema
       const allowedKeys = [
         'name','description','sku','category','subcategory','quantity','unit','cost_price','selling_price','supplier','vendor_id','collection_id','location','reorder_point','active',
@@ -263,6 +303,9 @@ export const useCreateEnhancedInventoryItem = () => {
           item[key] = val;
         }
       }
+
+      // ✅ Override collection_id with resolved value (from auto-creation)
+      item.collection_id = resolvedCollectionId;
 
       // Ensure required pricing fields have defaults
       if (item.cost_price == null || isNaN(item.cost_price)) item.cost_price = 0;
