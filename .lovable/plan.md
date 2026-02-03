@@ -1,92 +1,105 @@
 
 
-## Fix: Backfill Collections from CSV Import Data
+## Fix Account Health Dashboard - Edge Functions Failing
 
-### Problem Identified
+### Root Cause Identified
 
-When fabrics/materials/hardware were imported via CSV, the `collection_name` column was saved as **plain text** in the `enhanced_inventory_items` table, but no actual **collection records** were created in the `collections` table.
+The Account Health Dashboard is not working because the edge functions are trying to query a column `is_system_owner` that **does not exist** in the `user_profiles` table.
+
+**Database Schema Analysis:**
+- The `user_profiles` table has a `role` column (values: 'Owner', 'System Owner', 'Admin', 'Staff', etc.)
+- There is **no** `is_system_owner` boolean column
+- The edge functions query for `is_system_owner, role` which causes a SQL error
+- The SQL error is caught and returned as 403 "Access denied"
 
 **Current State:**
-| Account | Items with collection_name | Linked to collections table |
-|---------|---------------------------|----------------------------|
-| Homekaara | 711 items | 0 items |
-| Interioapp Admin | 1,356 items | 1,351 linked |
-| InterioApp_Australasia | 71 items | 0 items |
-| CCCO Admin | 74 items | 56 linked |
-
-**Homekaara's top collection names (from CSV):**
-- Contract (75 items)
-- Celestial (64 items)
-- Curtain Bible - 2 (62 items)
-- Flair (45 items)
-- Eloise (40 items)
-- And 50+ more collections...
+| Account Type | Count |
+|--------------|-------|
+| Owner | 14 |
+| Admin | 9 |
+| Staff | 7 |
+| Dealer | 2 |
+| System Owner | 1 (Darius B.) |
 
 ---
 
-### Solution: Two-Part Fix
+### Solution: Fix Edge Functions
 
-#### Part 1: Manual Database Backfill (Immediate)
+Update both edge functions to only check the `role` column (which exists and works correctly):
 
-Run these SQL commands in **Supabase SQL Editor** to create collection records and link items:
+**Files to modify:**
+1. `supabase/functions/get-account-health/index.ts`
+2. `supabase/functions/saas-consistency-audit/index.ts`
 
-```sql
--- Step 1: Create collection records from unique collection_name values
-INSERT INTO collections (name, user_id, active, created_at, updated_at)
-SELECT DISTINCT 
-  collection_name as name, 
-  user_id, 
-  true as active, 
-  now() as created_at, 
-  now() as updated_at
-FROM enhanced_inventory_items
-WHERE collection_name IS NOT NULL 
-  AND collection_name != ''
-  AND collection_id IS NULL
-ON CONFLICT (name, user_id) DO NOTHING;
+---
 
--- Step 2: Link inventory items to their collections
-UPDATE enhanced_inventory_items ei
-SET collection_id = c.id,
-    updated_at = now()
-FROM collections c
-WHERE ei.collection_name = c.name
-  AND ei.user_id = c.user_id
-  AND ei.collection_id IS NULL;
+### Technical Changes
+
+#### 1. get-account-health/index.ts
+
+**Before (lines 71-82):**
+```typescript
+const { data: userProfile, error: profileError } = await supabaseAdmin
+  .from('user_profiles')
+  .select('is_system_owner, role')  // ❌ is_system_owner doesn't exist
+  .eq('user_id', user.id)
+  .single();
+
+if (profileError || (!userProfile?.is_system_owner && userProfile?.role !== 'System Owner')) {
 ```
 
-#### Part 2: Fix Import Logic (Permanent)
+**After:**
+```typescript
+const { data: userProfile, error: profileError } = await supabaseAdmin
+  .from('user_profiles')
+  .select('role')  // ✅ Only select role
+  .eq('user_id', user.id)
+  .single();
 
-Update the CSV import process to automatically create/link collections during import, preventing this from happening again.
+if (profileError || userProfile?.role !== 'System Owner') {
+```
 
-**File to modify:** `src/hooks/useEnhancedInventory.ts`
+#### 2. saas-consistency-audit/index.ts
 
-In the `useCreateEnhancedInventoryItem` mutation:
-1. Check if `collection_name` is provided
-2. Look up existing collection by name + user_id
-3. If not found, create new collection record
-4. Set `collection_id` on the inventory item
+**Before (lines 124-130):**
+```typescript
+const { data: userProfile } = await supabaseAdmin
+  .from('user_profiles')
+  .select('is_system_owner, role')  // ❌ is_system_owner doesn't exist
+  .eq('user_id', user.id)
+  .single();
+
+if (!userProfile?.is_system_owner && userProfile?.role !== 'System Owner') {
+```
+
+**After:**
+```typescript
+const { data: userProfile, error: profileError } = await supabaseAdmin
+  .from('user_profiles')
+  .select('role')  // ✅ Only select role
+  .eq('user_id', user.id)
+  .single();
+
+if (profileError || userProfile?.role !== 'System Owner') {
+```
 
 ---
 
-### Affected Accounts
+### Additional Enhancement: Show All Account Types
 
-This backfill will fix collections for all accounts with unlinked data:
+The current `get-account-health` function only fetches accounts with `role = 'Owner'`. We should include 'System Owner' accounts as well.
 
-| Account | Collections to Create | Items to Link |
-|---------|----------------------|---------------|
-| Homekaara | ~60 new collections | 711 items |
-| InterioApp_Australasia | ~30 new collections | 71 items |
-| CCCO Admin | ~20 new collections | 18 items |
-| Others | Various | Various |
+**Current (line 90):**
+```typescript
+.eq('role', 'Owner')
+```
 
----
+**After:**
+```typescript
+.in('role', ['Owner', 'System Owner'])
+```
 
-### Implementation Steps
-
-1. **Run SQL backfill** - Creates collections and links existing inventory items
-2. **Update import hook** - Ensures future CSV imports automatically create/link collections
-3. **Add vendor linking** - When vendor_name is provided in CSV, also link collection to that vendor
+This matches the `saas-consistency-audit` function which already uses `.in('role', ['Owner', 'System Owner'])`.
 
 ---
 
@@ -94,15 +107,32 @@ This backfill will fix collections for all accounts with unlinked data:
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useEnhancedInventory.ts` | Add collection auto-creation logic in create mutation |
-| `src/utils/categoryImportExport.ts` | Ensure collection_name is properly mapped during import |
+| `supabase/functions/get-account-health/index.ts` | Remove `is_system_owner` from SELECT, fix role check, include System Owner accounts |
+| `supabase/functions/saas-consistency-audit/index.ts` | Remove `is_system_owner` from SELECT, fix role check |
 
 ---
 
 ### Expected Outcome
 
-After running the backfill:
-- Homekaara will see 60+ collections in their filter dropdown
-- All 711 items will be properly categorized
-- Future CSV imports will automatically create and link collections
+After implementation:
+- Account Health Dashboard will load correctly with all 15 Owner/System Owner accounts
+- "Run Full Audit" button will work and return comprehensive audit data
+- Health scores, permissions, settings, and subscription status will display correctly
+- The user (Darius B. - System Owner) will have full access to the dashboard
+
+---
+
+### Account Health Summary (Expected After Fix)
+
+Based on database analysis, here's what the dashboard should show:
+
+| Account | Permission Count | Business Settings | Subscription |
+|---------|-----------------|-------------------|--------------|
+| InterioApp DEMO | 64/77 | ✅ | ✅ |
+| CHRISTOS FOUNDOULIS | 77/77 | ❌ | ❌ |
+| InterioApp support | 77/77 | ✅ | ✅ |
+| Homekaara | 77/77 | ✅ | ✅ |
+| Interioapp Admin | 77/77 | ✅ | ❌ |
+| Darius B. (System Owner) | 77/77 | ✅ | ❌ |
+| ... and 9 more accounts |
 
