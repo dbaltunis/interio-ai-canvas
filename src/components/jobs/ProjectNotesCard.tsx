@@ -22,7 +22,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   
   // Format dates using user preferences - useCallback prevents infinite re-render
