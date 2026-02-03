@@ -114,8 +114,14 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     if (!isTeachingEnabled) return [];
     
     return getTeachingPointsForPage(page, section).filter(tp => {
+      // Skip if this teaching is controlled by component-level TeachingTrigger
+      if (tp.skipAutoShow) return false;
+      
       // Skip if dismissed forever
       if (isDismissedForever(tp.id)) return false;
+      
+      // Skip if dismissed this session
+      if (isSessionDismissed(tp.id)) return false;
       
       // Check maxShows limit if defined
       if (tp.maxShows) {
@@ -146,7 +152,7 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
           return true;
       }
     });
-  }, [isTeachingEnabled, hasSeenTeaching, isDismissedForever, progress.showCounts]);
+  }, [isTeachingEnabled, hasSeenTeaching, isDismissedForever, isSessionDismissed, progress.showCounts]);
 
   // Get next teaching point for current context
   const getNextTeaching = useCallback((page: string, section?: string): TeachingPoint | null => {

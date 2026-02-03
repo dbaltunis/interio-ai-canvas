@@ -30,6 +30,7 @@ export interface TeachingPoint {
   sequence?: string;
   sequenceOrder?: number;
   maxShows?: number;  // Maximum times to show this teaching point
+  skipAutoShow?: boolean;  // If true, this teaching is controlled by component-level TeachingTrigger only
 }
 
 // ============================================
@@ -328,17 +329,17 @@ export const settingsTeachingPoints: TeachingPoint[] = [
 
 export const appTeachingPoints: TeachingPoint[] = [
   // ========== JOB DETAILS - Add Client (1 tip) ==========
-  // NOTE: This teaching is controlled directly by TeachingTrigger in ProjectDetailsTab
+  // NOTE: This teaching is controlled directly by TeachingTrigger in ClientCard
   // It does NOT use the page-level auto-show system to avoid conflicts
   {
     id: 'app-job-add-client',
     title: 'Add or Create a Client',
     description: 'Click here to assign an existing client or create a new one for this project.',
-    targetSelector: '[data-teaching="add-client-action"]',
     position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app/projects' },  // Different page to avoid conflict
+    trigger: { type: 'empty_state' },  // No page - component-controlled only
     priority: 'high',
     category: 'app',
+    skipAutoShow: true,  // Controlled by TeachingTrigger in ClientCard.tsx
   },
 
   // ========== DASHBOARD (2 tips) ==========
