@@ -67,14 +67,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is System Owner (check both boolean flag AND role)
+    // Check if user is System Owner
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
-      .select('is_system_owner, role')
+      .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || (!userProfile?.is_system_owner && userProfile?.role !== 'System Owner')) {
+    if (profileError || userProfile?.role !== 'System Owner') {
       return new Response(
         JSON.stringify({ error: 'Access denied. System Owner required.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -83,11 +83,11 @@ Deno.serve(async (req) => {
 
     console.log('[get-account-health] Fetching health data for all Owner accounts...');
 
-    // Fetch all Owner accounts
+    // Fetch all Owner and System Owner accounts
     const { data: ownerAccounts, error: accountsError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_id, display_name, role, created_at')
-      .eq('role', 'Owner')
+      .in('role', ['Owner', 'System Owner'])
       .order('created_at', { ascending: false });
 
     if (accountsError) {
