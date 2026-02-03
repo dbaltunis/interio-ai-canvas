@@ -334,7 +334,7 @@ export const appTeachingPoints: TeachingPoint[] = [
     description: 'Click here to assign an existing client or create a new one for this project.',
     targetSelector: '[data-teaching="add-client-action"]',
     position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app', section: 'projects' },
+    trigger: { type: 'empty_state', page: '/app' },  // Removed section requirement so it triggers on any /app page
     priority: 'high',
     category: 'app',
     maxShows: 3,
