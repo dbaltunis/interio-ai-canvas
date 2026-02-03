@@ -1,122 +1,112 @@
 
-## Fix Account Health "Fix Settings" Button - Missing RLS Policies
 
-### Problem Summary
+## Fix Password Update Functionality
 
-The "Fix" button in the Account Health Dashboard fails with "Failed to fix settings" because the `account_settings` table is missing INSERT and UPDATE RLS policies. Only SELECT policies exist, which blocks the System Owner from creating missing settings records.
+### Problem Identified
 
-### Root Cause Analysis
+The password update fails with a **422 Unprocessable Entity** error from Supabase, but the UI only shows a generic "Failed to update password" message. The auth logs confirm this:
 
-**Current RLS Policies on `account_settings`:**
+```
+status: 422, method: PUT, path: /user (password update)
+```
 
-| Operation | Policy? | Result |
-|-----------|---------|--------|
-| SELECT | ✅ Yes | System Owner can view |
-| INSERT | ❌ Missing | **RLS BLOCKS INSERT** |
-| UPDATE | ❌ Missing | **RLS BLOCKS UPDATE** |
-| DELETE | ❌ Missing | **RLS BLOCKS DELETE** |
-
-When the System Owner clicks "Fix" → code calls `supabase.from('account_settings').insert(...)` → RLS denies because no INSERT policy matches.
-
-### Affected Accounts
-
-8 accounts currently missing `account_settings`:
-- CHRISTOS FOUNDOULIS
-- InterioApp Free Trial
-- Auguste Klimaite
-- CCCO Admin
-- 1 client
-- Angely-Paris
-- InterioApp_Australasia
-- Holly's dad
+**Possible 422 causes:**
+1. Password too similar to email address
+2. Password was recently used (if password history is enabled)
+3. Password doesn't meet Supabase project requirements (check Supabase dashboard > Auth > Providers > Email)
 
 ---
 
-### Solution: Add Missing RLS Policies
+### Solution: Better Error Messages + Validation
 
-Create a database migration to add INSERT, UPDATE, and DELETE policies for the `account_settings` table.
-
-**Policies to Add:**
-
-1. **INSERT Policy** - Allow:
-   - Account owners to create their own settings (`auth.uid() = account_owner_id`)
-   - System Owners to create settings for any account (`is_system_owner(auth.uid())`)
-
-2. **UPDATE Policy** - Allow:
-   - Account members to update their account's settings
-   - System Owners to update any account's settings
-
-3. **DELETE Policy** - Allow:
-   - System Owners only (cleanup orphaned records)
+Improve the error handling to show the **actual error message** from Supabase instead of a generic message, so users know exactly what's wrong.
 
 ---
 
-### Technical Implementation
+### Technical Changes
 
-**SQL Migration:**
+**File:** `src/components/settings/tabs/PersonalSettingsTab.tsx`
 
-```sql
--- Add INSERT policy for account_settings
-CREATE POLICY "account_settings_insert_policy" ON public.account_settings
-FOR INSERT
-WITH CHECK (
-  auth.uid() = account_owner_id
-  OR is_system_owner(auth.uid())
-);
+**Before (lines 441-447):**
+```typescript
+} catch (error) {
+  console.error("Error updating password:", error);
+  toast({
+    title: "Error",
+    description: "Failed to update password. Please try again.",
+    variant: "destructive"
+  });
+}
+```
 
--- Add UPDATE policy for account_settings
-CREATE POLICY "account_settings_update_policy" ON public.account_settings
-FOR UPDATE
-USING (
-  get_account_owner(auth.uid()) = account_owner_id
-  OR is_system_owner(auth.uid())
-)
-WITH CHECK (
-  get_account_owner(auth.uid()) = account_owner_id
-  OR is_system_owner(auth.uid())
-);
-
--- Add DELETE policy for account_settings (System Owner only)
-CREATE POLICY "account_settings_delete_policy" ON public.account_settings
-FOR DELETE
-USING (
-  is_system_owner(auth.uid())
-);
+**After:**
+```typescript
+} catch (error: any) {
+  console.error("Error updating password:", error);
+  
+  // Extract meaningful error message from Supabase
+  let errorMessage = "Failed to update password. Please try again.";
+  if (error?.message) {
+    // Common Supabase password errors
+    if (error.message.includes("password") || error.message.includes("Password")) {
+      errorMessage = error.message;
+    } else if (error.message.includes("session")) {
+      errorMessage = "Your session has expired. Please log in again.";
+    } else {
+      errorMessage = error.message;
+    }
+  }
+  
+  toast({
+    title: "Error",
+    description: errorMessage,
+    variant: "destructive"
+  });
+}
 ```
 
 ---
 
-### What Each Status Means (Reference)
+### Additional Improvement: Verify Session Before Update
 
-| Status | Condition | User Impact |
-|--------|-----------|-------------|
-| **Critical** 🔴 | Missing permissions OR business settings | Features hidden, calculator broken |
-| **Warning** ⚠️ | Missing account settings, sequences, or statuses | Some features may not work correctly |
-| **Healthy** ✅ | All 6 checks pass | Fully functional account |
+Add a session check before attempting to update the password to catch expired sessions early:
 
-| Check | Expected | Purpose |
-|-------|----------|---------|
-| Permissions | 77/77 | Controls feature access (view/edit/delete) |
-| Business Settings | ✅ | Tax rates, units, company info for calculator |
-| Account Settings | ✅ | Currency, language, integrations |
-| Sequences | 5/5 | Auto-numbering for quotes, jobs, invoices |
-| Job Statuses | >0 | Workflow states (New → Completed) |
-| Subscription | ✅ | Billing and trial management |
+```typescript
+// Before calling updateUser, verify session is valid
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+  toast({
+    title: "Session Expired",
+    description: "Please log in again to change your password.",
+    variant: "destructive"
+  });
+  return;
+}
+```
 
 ---
 
 ### Files to Modify
 
-| Location | Change |
-|----------|--------|
-| New migration | Add 3 RLS policies to `account_settings` table |
+| File | Changes |
+|------|---------|
+| `src/components/settings/tabs/PersonalSettingsTab.tsx` | Show actual Supabase error message, add session check |
 
 ---
 
 ### Expected Outcome
 
 After implementation:
-- "Fix" button will successfully create missing `account_settings` records
-- All 8 accounts with warnings will become fixable
-- Health scores will improve after fixes are applied
-- The System Owner can repair any account from the dashboard
+- Users will see the **actual reason** why password update failed (e.g., "Password is too weak", "Password has been used recently")
+- Expired sessions are detected before the API call
+- Better debugging for future password issues
+
+---
+
+### Immediate Workaround
+
+If you need to update the password right now:
+1. Go to **Settings > Account > Personal** (not Security tab)
+2. Or use the **"Forgot Password"** flow from the login page
+3. Or update directly in **Supabase Dashboard > Authentication > Users**
+
