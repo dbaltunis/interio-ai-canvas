@@ -30,7 +30,7 @@ export const TeachingTrigger = ({
   children,
   position,
   autoShow = true,
-  autoShowDelay = 500,
+  autoShowDelay = 100,
 }: TeachingTriggerProps) => {
   const { 
     activeTeaching, 
@@ -43,24 +43,29 @@ export const TeachingTrigger = ({
   } = useTeaching();
   
   const [isOpen, setIsOpen] = useState(false);
+  const [hasTriggered, setHasTriggered] = useState(false);
   
   const teachingPoint = allTeachingPoints.find(tp => tp.id === teachingId);
   
-  // Auto-show on mount if conditions are met
+  // Auto-show on mount if conditions are met - only trigger once
   useEffect(() => {
-    if (!autoShow || !isTeachingEnabled || !teachingPoint) return;
+    if (!autoShow || !isTeachingEnabled || !teachingPoint || hasTriggered) return;
     if (hasSeenTeaching(teachingId) || isDismissedForever(teachingId)) return;
     
+    // Immediate show if delay is 0
+    if (autoShowDelay === 0) {
+      setHasTriggered(true);
+      showTeaching(teachingId);
+      return;
+    }
+    
     const timer = setTimeout(() => {
-      // Only show if no active teaching (don't compete)
-      if (!activeTeaching) {
-        showTeaching(teachingId);
-      }
+      setHasTriggered(true);
+      showTeaching(teachingId);
     }, autoShowDelay);
     
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint]);
+  }, [teachingId, autoShow, autoShowDelay, isTeachingEnabled, teachingPoint, hasTriggered, hasSeenTeaching, isDismissedForever, showTeaching]);
   
   // Sync with context's active teaching
   useEffect(() => {
