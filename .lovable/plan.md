@@ -1,128 +1,108 @@
 
 
-## Fix Collections Not Displaying in Filters
+## Fix: Backfill Collections from CSV Import Data
 
-### Problem Summary
+### Problem Identified
 
-The collections dropdown in the filter panel shows "All Collections" but no actual collections appear in the list. The root cause is that the collection-related hooks are missing the multi-tenant support pattern that other hooks (like `useVendors`) correctly implement.
+When fabrics/materials/hardware were imported via CSV, the `collection_name` column was saved as **plain text** in the `enhanced_inventory_items` table, but no actual **collection records** were created in the `collections` table.
 
-### Root Cause Analysis
+**Current State:**
+| Account | Items with collection_name | Linked to collections table |
+|---------|---------------------------|----------------------------|
+| Homekaara | 711 items | 0 items |
+| Interioapp Admin | 1,356 items | 1,351 linked |
+| InterioApp_Australasia | 71 items | 0 items |
+| CCCO Admin | 74 items | 56 linked |
 
-Comparing `useCollections.ts` with `useVendors.ts`:
+**Homekaara's top collection names (from CSV):**
+- Contract (75 items)
+- Celestial (64 items)
+- Curtain Bible - 2 (62 items)
+- Flair (45 items)
+- Eloise (40 items)
+- And 50+ more collections...
 
-| Aspect | useVendors (correct) | useCollections (broken) |
-|--------|---------------------|------------------------|
-| Uses `useEffectiveAccountOwner` | Yes | No |
-| Includes `effectiveOwnerId` in queryKey | Yes | No |
-| Filters by `user_id` explicitly | Yes | No |
-| Has `enabled` condition | Yes, waits for `effectiveOwnerId` | No |
+---
 
-The RLS policies on the `collections` table DO use `get_effective_account_owner`, but the React Query cache behavior causes issues because:
-1. The query fires before the effective owner context is established
-2. The cache key doesn't differentiate between users/accounts
-3. This leads to stale empty arrays being cached
+### Solution: Two-Part Fix
 
-### Solution
+#### Part 1: Manual Database Backfill (Immediate)
 
-Update all collection and inventory filter hooks to follow the same multi-tenant pattern as `useVendors`:
+Run these SQL commands in **Supabase SQL Editor** to create collection records and link items:
 
-**Files to modify:**
-1. `src/hooks/useCollections.ts` - Add multi-tenant support to all hooks
-2. `src/hooks/useInventoryTags.ts` - Add multi-tenant support to all three hooks
+```sql
+-- Step 1: Create collection records from unique collection_name values
+INSERT INTO collections (name, user_id, active, created_at, updated_at)
+SELECT DISTINCT 
+  collection_name as name, 
+  user_id, 
+  true as active, 
+  now() as created_at, 
+  now() as updated_at
+FROM enhanced_inventory_items
+WHERE collection_name IS NOT NULL 
+  AND collection_name != ''
+  AND collection_id IS NULL
+ON CONFLICT (name, user_id) DO NOTHING;
 
-### Technical Changes
-
-#### 1. useCollections.ts
-
-**Add import for `useEffectiveAccountOwner`:**
-```typescript
-import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+-- Step 2: Link inventory items to their collections
+UPDATE enhanced_inventory_items ei
+SET collection_id = c.id,
+    updated_at = now()
+FROM collections c
+WHERE ei.collection_name = c.name
+  AND ei.user_id = c.user_id
+  AND ei.collection_id IS NULL;
 ```
 
-**Update `useCollections` hook:**
-- Add `const { effectiveOwnerId } = useEffectiveAccountOwner();`
-- Update queryKey to include `effectiveOwnerId`
-- Add `.eq("user_id", effectiveOwnerId)` filter to query
-- Add `enabled: !!effectiveOwnerId` to prevent premature execution
+#### Part 2: Fix Import Logic (Permanent)
 
-**Update `useCollectionsByVendor` hook:**
-- Same pattern as above
+Update the CSV import process to automatically create/link collections during import, preventing this from happening again.
 
-**Update `useCollectionsWithCounts` hook:**
-- Same pattern for both the collections query and the inventory items count query
-- This is the hook used by `FilterButton.tsx` for the collection dropdown
+**File to modify:** `src/hooks/useEnhancedInventory.ts`
 
-**Update `useVendorsWithCollections` hook:**
-- Same pattern
+In the `useCreateEnhancedInventoryItem` mutation:
+1. Check if `collection_name` is provided
+2. Look up existing collection by name + user_id
+3. If not found, create new collection record
+4. Set `collection_id` on the inventory item
 
-#### 2. useInventoryTags.ts
+---
 
-Apply the same pattern to:
-- `useInventoryTags`
-- `useInventoryLocations`
-- `useInventoryColors`
+### Affected Accounts
 
-### Before/After Code Example
+This backfill will fix collections for all accounts with unlinked data:
 
-**Before (useCollectionsWithCounts):**
-```typescript
-export const useCollectionsWithCounts = () => {
-  return useQuery({
-    queryKey: ["collections", "with-counts"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      
-      const { data: collections } = await supabase
-        .from("collections")
-        .select(...)
-        .eq("active", true);  // Missing user_id filter!
-      ...
-    },
-  });
-};
-```
+| Account | Collections to Create | Items to Link |
+|---------|----------------------|---------------|
+| Homekaara | ~60 new collections | 711 items |
+| InterioApp_Australasia | ~30 new collections | 71 items |
+| CCCO Admin | ~20 new collections | 18 items |
+| Others | Various | Various |
 
-**After (useCollectionsWithCounts):**
-```typescript
-export const useCollectionsWithCounts = () => {
-  const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
-  return useQuery({
-    queryKey: ["collections", "with-counts", effectiveOwnerId],
-    queryFn: async () => {
-      if (!effectiveOwnerId) return [];
-      
-      const { data: collections } = await supabase
-        .from("collections")
-        .select(...)
-        .eq("user_id", effectiveOwnerId)  // Explicit filter
-        .eq("active", true);
-      
-      const { data: inventoryItems } = await supabase
-        .from("enhanced_inventory_items")
-        .select("collection_id")
-        .eq("user_id", effectiveOwnerId)  // Also filter inventory
-        .not("collection_id", "is", null);
-      ...
-    },
-    enabled: !!effectiveOwnerId,  // Wait for context
-  });
-};
-```
+---
+
+### Implementation Steps
+
+1. **Run SQL backfill** - Creates collections and links existing inventory items
+2. **Update import hook** - Ensures future CSV imports automatically create/link collections
+3. **Add vendor linking** - When vendor_name is provided in CSV, also link collection to that vendor
+
+---
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useCollections.ts` | Add multi-tenant support to `useCollections`, `useCollectionsByVendor`, `useCollectionsWithCounts`, `useVendorsWithCollections` |
-| `src/hooks/useInventoryTags.ts` | Add multi-tenant support to `useInventoryTags`, `useInventoryLocations`, `useInventoryColors` |
+| `src/hooks/useEnhancedInventory.ts` | Add collection auto-creation logic in create mutation |
+| `src/utils/categoryImportExport.ts` | Ensure collection_name is properly mapped during import |
+
+---
 
 ### Expected Outcome
 
-After implementation:
-- Collections will appear in the filter dropdown
-- Tags, locations, and colors will display correctly
-- Team members will see the same data as account owners
-- Query caching will work correctly across account switches
+After running the backfill:
+- Homekaara will see 60+ collections in their filter dropdown
+- All 711 items will be properly categorized
+- Future CSV imports will automatically create and link collections
 
