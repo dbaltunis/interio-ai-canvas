@@ -1,243 +1,209 @@
 
+## Make Client Tab More Compact & User-Friendly
 
-## User-Friendly Notification System - Minimal Buttons, Maximum Clarity
+### Current Issues (From Screenshots)
 
-### Overview
-
-Transform error notifications from scary technical alerts into calm, helpful guidance. Focus on **clear explanations and next steps in text** rather than action buttons. Action buttons will only appear for **session expiry** (critical) since that's the one case where the user truly needs to navigate.
-
----
-
-### Design Principles
-
-| Principle | Implementation |
-|-----------|----------------|
-| **No scary red** | Use softer amber/orange for errors, friendly icons |
-| **Plain language** | No technical jargon - explain what happened simply |
-| **Next steps as text** | Tell users what to do in the message itself |
-| **Minimal buttons** | Only "Log In Again" for session expiry - everything else is text guidance |
-| **Stay visible** | Critical errors remain until user clicks X to dismiss |
+| Issue | Impact |
+|-------|--------|
+| Client info shown **3 times**: header, summary bar, AND large Client Assignment card | Redundant, wastes space |
+| "No client assigned" empty state is ~200px tall | Pushes content below the fold |
+| Single-column layout with `space-y-6` gaps | Lots of vertical scrolling needed |
+| Client details displayed vertically when assigned | Takes more height than necessary |
 
 ---
 
-### Error Categories & Messages
+### Solution: Consolidated, Compact Layout
 
-#### 1. Connection Issues
-```
-Icon: 📡 (wifi icon)
-Title: Connection issue
-Message: We couldn't reach the server. Check your internet connection and try again.
-[No button - auto-dismisses after 8 seconds]
-```
+#### Key Changes
 
-#### 2. Permission Errors
-```
-Icon: 🔒 (lock icon)
-Title: Permission needed
-Message: You don't have access to this action. If you need access, ask your account administrator.
-[Stays visible until dismissed - no button]
-```
+1. **Remove the Large "Client Assignment" Card** - The summary bar already shows client info. Merge the "Assign Client" / "Change Client" action into the summary bar.
 
-#### 3. Validation Errors
-```
-Icon: ℹ️ (info icon)
-Title: Please complete the form
-Message: Some required fields are missing. Check the highlighted fields and try again.
-[Auto-dismisses after 6 seconds]
-```
+2. **Compact Empty State** - Replace the tall centered empty state with a slim inline prompt inside the summary bar.
 
-#### 4. Session Expired (ONLY case with a button)
-```
-Icon: 🔐 (key icon)
-Title: Session expired
-Message: For security, you've been logged out. Please log in again to continue.
-[Log In Again] ← This button works and navigates to /auth
-[Stays visible until action taken]
-```
+3. **Optimize Summary Bar** - Make it the single source of truth for client display with a small action button.
 
-#### 5. Configuration/Setup Errors
-```
-Icon: ⚙️ (settings icon)  
-Title: Setup needed
-Message: This feature needs some configuration first. Go to Settings > Business to complete setup.
-[Stays visible until dismissed - no button, just clear text instructions]
-```
-
-#### 6. Calculator/Pricing Errors
-```
-Icon: 📐 (ruler icon)
-Title: Measurement outside range
-Message: The entered dimensions are outside the available pricing range. Try smaller measurements, or contact your supplier for custom pricing.
-[Stays visible until dismissed]
-```
+4. **Two-Column Layout for Project Notes & Activity** - On larger screens, display notes and activity side-by-side to reduce height.
 
 ---
 
-### Visual Design Changes
+### Visual Comparison
 
-**Current (scary):**
-- Bright red background
-- Generic "Error" title
-- Technical error message
-- Auto-dismisses too fast for errors
+**Before (Current):**
+```text
+┌─────────────────────────────────────────────────────────┐
+│ [Summary Bar: Client, Rooms, Quote]                     │
+├─────────────────────────────────────────────────────────┤
+│ [Timeline Row]                                          │
+├─────────────────────────────────────────────────────────┤
+│ [Draft Number Card - Full Width]                        │
+├─────────────────────────────────────────────────────────┤
+│ ╔═══════════════════════════════════════════════════╗   │
+│ ║ CLIENT ASSIGNMENT (HUGE CARD)                     ║   │
+│ ║                                                   ║   │
+│ ║           [Big Pixel Icon]                        ║   │
+│ ║         No client assigned                        ║   │
+│ ║     Connect a client to track this project        ║   │
+│ ║           [Assign Client Button]                  ║   │
+│ ║                                                   ║   │
+│ ╚═══════════════════════════════════════════════════╝   │
+├─────────────────────────────────────────────────────────┤
+│ [Project Notes - Collapsed]                             │
+├─────────────────────────────────────────────────────────┤
+│ [Project Activity]                                      │
+└─────────────────────────────────────────────────────────┘
+```
 
-**New (friendly):**
-- Soft amber/warm background for errors
-- Specific, helpful title
-- Plain language with next steps built into the message
-- Stays visible for important errors until user dismisses
-- Friendly icons that match the error type
+**After (Proposed):**
+```text
+┌─────────────────────────────────────────────────────────┐
+│ [Summary Bar with inline client action]                 │
+│  Client: No client | [+ Assign]   Rooms: 2   Quote: £X  │
+├─────────────────────────────────────────────────────────┤
+│ [Timeline Row]                                          │
+├─────────────────────────────────────────────────────────┤
+│ [Draft Number Card - Compact]                           │
+├─────────────────────────────────────────────────────────┤
+│ [Client Details - ONLY if client assigned, compact]     │
+├──────────────────────────┬──────────────────────────────┤
+│ [Project Notes]          │ [Project Activity]           │
+│                          │                              │
+└──────────────────────────┴──────────────────────────────┘
+```
 
 ---
 
 ### Technical Implementation
 
-#### File 1: `src/utils/friendlyErrors.ts` (NEW)
+#### File: `src/components/jobs/tabs/ProjectDetailsTab.tsx`
 
-Central catalog mapping error patterns to friendly messages:
+**Change 1: Enhanced Summary Bar with Inline Actions**
 
-```typescript
-export interface FriendlyError {
-  title: string;
-  message: string;  // Includes next steps as part of the message
-  icon: 'network' | 'permission' | 'validation' | 'session' | 'config' | 'calculator' | 'general';
-  persistent: boolean;  // true = stays until dismissed
-  showLoginButton?: boolean;  // Only true for session errors
-}
+The client cell in the summary bar will include:
+- If no client: "No client" + **small "Assign" button**
+- If client assigned: Client name + **small "Change" button**
 
-// Error pattern matching
-const ERROR_PATTERNS = [
-  {
-    patterns: ['network', 'fetch', 'connection', 'timeout', 'failed to fetch'],
-    error: {
-      title: "Connection issue",
-      message: "We couldn't reach the server. Check your internet connection and try again.",
-      icon: 'network',
-      persistent: false,
-    }
-  },
-  {
-    patterns: ['row-level security', 'permission denied', 'rls', 'not authorized'],
-    error: {
-      title: "Permission needed", 
-      message: "You don't have access to this action. If you need access, ask your account administrator.",
-      icon: 'permission',
-      persistent: true,
-    }
-  },
-  {
-    patterns: ['session', 'expired', 'log in again', 'not authenticated'],
-    error: {
-      title: "Session expired",
-      message: "For security, you've been logged out. Please log in again to continue.",
-      icon: 'session',
-      persistent: true,
-      showLoginButton: true,  // ONLY case with a button
-    }
-  },
-  // ... more patterns
-];
-
-export function getFriendlyError(error: unknown, context?: string): FriendlyError
+```tsx
+{/* Client Status - With Inline Action */}
+<div className="sm:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
+  <div className="flex items-center justify-between gap-2">
+    <div className="min-w-0 flex-1">
+      <p className="text-xs text-muted-foreground mb-1">Client</p>
+      {selectedClient ? (
+        <span className="text-lg font-semibold truncate block">
+          {getClientDisplayName(selectedClient)}
+        </span>
+      ) : (
+        <span className="text-sm text-muted-foreground">No client</span>
+      )}
+    </div>
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={() => setShowClientSearch(true)}
+      disabled={isReadOnly}
+      className="shrink-0"
+    >
+      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+    </Button>
+  </div>
+</div>
 ```
 
-#### File 2: `src/components/ui/friendly-toast.tsx` (NEW)
+**Change 2: Remove or Condense the Large Client Assignment Card**
 
-Enhanced toast variant with:
-- Softer amber styling for errors (not scary red)
-- Icon display based on error type
-- Persistent mode support
-- Login button ONLY for session expiry
+- **Option A (Recommended)**: Remove the card entirely - summary bar handles it
+- **Option B**: Keep a minimal collapsible details section when client IS assigned
 
-#### File 3: `src/hooks/use-friendly-toast.ts` (NEW)
+For this plan, I'll go with **Option A** for no-client state (summary bar handles it), and a **compact inline section** for showing client details when assigned (no tall card).
 
-Simple hook for showing friendly errors:
+**Change 3: Compact Client Details (Only When Assigned)**
 
-```typescript
-import { useNavigate } from 'react-router-dom';
+Replace the large card with a slim, horizontal details row:
 
-export function useFriendlyToast() {
-  const navigate = useNavigate();
-  
-  const showError = (error: unknown, context?: string) => {
-    const friendly = getFriendlyError(error, context);
-    
-    // Only session errors get a working navigation button
-    const action = friendly.showLoginButton ? {
-      label: "Log In Again",
-      onClick: () => navigate('/auth')
-    } : undefined;
-    
-    // Show the toast with friendly message
-    toast({
-      title: friendly.title,
-      description: friendly.message,
-      variant: friendly.persistent ? "warning" : "destructive",
-      persistent: friendly.persistent,
-      action,
-    });
-  };
-  
-  return { showError };
-}
+```tsx
+{selectedClient && (
+  <div className="bg-card/50 border rounded-lg p-4">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+        {/* Type Badge */}
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {selectedClient.client_type === "B2B" ? "Business" : "Individual"}
+          </Badge>
+          {selectedClient.funnel_stage && (
+            <Badge variant="secondary" className="text-xs">
+              {selectedClient.funnel_stage}
+            </Badge>
+          )}
+        </div>
+        
+        {/* Email */}
+        {selectedClient.email && (
+          <div className="flex items-center gap-2">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs truncate">{selectedClient.email}</span>
+          </div>
+        )}
+        
+        {/* Phone */}
+        {selectedClient.phone && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs">{selectedClient.phone}</span>
+          </div>
+        )}
+        
+        {/* Address */}
+        {(selectedClient.address || selectedClient.city) && (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs truncate">
+              {[selectedClient.city, selectedClient.state].filter(Boolean).join(", ")}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 ```
 
-#### File 4: Update `src/components/ui/toast.tsx`
+**Change 4: Two-Column Layout for Notes & Activity**
 
-Add new "warning" variant with softer amber styling:
-
-```typescript
-variants: {
-  variant: {
-    default: "...",
-    destructive: "...",  // Keep for backwards compatibility
-    success: "...",
-    warning: "border-amber-400/50 bg-gradient-to-br from-amber-500/15 to-orange-500/10 text-amber-800 dark:text-amber-200",
-  },
-}
+```tsx
+{/* Project Notes & Activity - Side by Side on Desktop */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <ProjectNotesCard projectId={project.id} />
+  <ProjectActivityCard projectId={project.id} maxItems={5} />
+</div>
 ```
-
-#### File 5: Update `src/hooks/use-toast.ts`
-
-Add persistent mode support:
-- When `persistent: true`, the toast does NOT auto-dismiss
-- User must click X or take the action to dismiss
 
 ---
 
-### Files Summary
+### Files to Modify
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/utils/friendlyErrors.ts` | Create | Error pattern matching catalog |
-| `src/components/ui/friendly-toast.tsx` | Create | Enhanced toast with icons |
-| `src/hooks/use-friendly-toast.ts` | Create | Simple hook for friendly errors |
-| `src/components/ui/toast.tsx` | Modify | Add "warning" variant styling |
-| `src/hooks/use-toast.ts` | Modify | Add persistent mode support |
-| `src/components/ui/toaster.tsx` | Modify | Render icons and handle persistence |
+| File | Changes |
+|------|---------|
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Add inline action to summary bar, remove/condense Client Assignment card, two-column layout for notes/activity |
 
 ---
 
-### Button Philosophy
+### Space Savings
 
-| Error Type | Has Button? | Reason |
-|------------|-------------|--------|
-| Connection issue | ❌ No | User knows to check wifi and retry |
-| Permission denied | ❌ No | Text says "ask your administrator" |
-| Validation error | ❌ No | Text says "check highlighted fields" |
-| Configuration needed | ❌ No | Text gives path: "Go to Settings > Business" |
-| Calculator error | ❌ No | Text explains the issue and alternatives |
-| **Session expired** | ✅ Yes | **Critical - must navigate to login** |
+| Section | Before | After | Savings |
+|---------|--------|-------|---------|
+| Client empty state | ~200px | ~0px (handled in summary bar) | **~200px** |
+| Client assigned state | ~180px (card) | ~60px (compact row) | **~120px** |
+| Notes + Activity | Stacked (space-y-6) | Side-by-side on desktop | **~50% height reduction** |
+
+**Total estimated reduction: 200-300px less vertical scrolling**
 
 ---
 
 ### Expected Outcome
 
-After implementation:
-- Errors feel helpful, not scary
-- Users understand what happened and what to do next
-- Text-based guidance keeps UI clean (minimal buttons)
-- Session expiry is the only navigation button - and it works
-- Critical errors stay visible until acknowledged
-- Consistent, professional error experience throughout the app
-
+- **Less scrolling** - More content visible above the fold
+- **No redundancy** - Client shown once in a meaningful way
+- **Clean empty state** - Small inline "Assign" button, not a huge empty card
+- **Efficient details** - When client is assigned, info is compact and scannable
+- **Better desktop usage** - Notes and activity side-by-side
