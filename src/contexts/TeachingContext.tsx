@@ -8,6 +8,7 @@ interface TeachingProgress {
   dismissedForever: string[];
   completedSequences: string[];
   clickedHelpButtons: string[];
+  showCounts: Record<string, number>;  // Track how many times each teaching has been shown
   lastActivity: {
     page: string;
     section?: string;
@@ -51,6 +52,7 @@ const defaultProgress: TeachingProgress = {
   dismissedForever: [],
   completedSequences: [],
   clickedHelpButtons: [],
+  showCounts: {},
   lastActivity: null,
 };
 
@@ -269,17 +271,31 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
       const next = getNextTeaching(page, section);
       console.log('[Teaching] Page changed:', { page, section, next: next?.id, isTeachingEnabled, initialized });
       
-      if (next && next.trigger.type === 'first_visit') {
+      // Support first_visit and empty_state triggers for auto-show
+      if (next && (next.trigger.type === 'first_visit' || next.trigger.type === 'empty_state')) {
         // Small delay to let page render
         setTimeout(() => {
-          if (!hasSeenTeaching(next.id) && !isDismissedForever(next.id)) {
-            console.log('[Teaching] Showing teaching:', next.id);
+          // Check maxShows limit if defined
+          const showCount = progress.showCounts[next.id] || 0;
+          const maxShows = next.maxShows;
+          const withinMaxShows = !maxShows || showCount < maxShows;
+          
+          if (!hasSeenTeaching(next.id) && !isDismissedForever(next.id) && withinMaxShows) {
+            console.log('[Teaching] Showing teaching:', next.id, { showCount, maxShows });
+            // Increment show count
+            setProgress(prev => ({
+              ...prev,
+              showCounts: {
+                ...prev.showCounts,
+                [next.id]: (prev.showCounts[next.id] || 0) + 1,
+              },
+            }));
             setActiveTeaching(next);
           }
         }, 500);
       }
     }
-  }, [isTeachingEnabled, initialized, getNextTeaching, hasSeenTeaching, isDismissedForever]);
+  }, [isTeachingEnabled, initialized, getNextTeaching, hasSeenTeaching, isDismissedForever, progress.showCounts]);
 
   const value: TeachingContextValue = {
     activeTeaching,
