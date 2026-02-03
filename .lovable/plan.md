@@ -1,101 +1,103 @@
 
-## Fix "Add Client" Focus Group - Complete Overhaul
 
-The current implementation has several issues causing the inconsistent, delayed, and disappearing tooltip behavior. This plan completely redesigns the approach for reliability.
+## Fix Teaching Tooltip Behavior - "Got It" vs "Don't Show Again"
 
----
-
-### Root Cause Analysis
-
-1. **Priority Conflict**: The `app-jobs-column-customize` teaching point has `trigger: { type: 'first_visit', page: '/app', section: 'projects' }` and gets selected first by the teaching system, blocking `app-job-add-client` from showing.
-
-2. **Missing TeachingTrigger Wrapper**: The Plus button only has `data-teaching="add-client-action"` attribute but is NOT wrapped in the `<TeachingTrigger>` component. The auto-show only works when the teaching system picks it as the "next" teaching - but another teaching keeps winning.
-
-3. **Competing Delays**: There are 500ms delays in both `TeachingContext.tsx` and `TeachingTrigger.tsx`.
-
-4. **No Visual Feedback**: When the tooltip shows, the Plus icon doesn't blink or pulse to draw attention.
+Currently, clicking "Got it" permanently hides a teaching tooltip. This plan changes the behavior so tooltips continue appearing until explicitly dismissed with "Don't show again."
 
 ---
 
-### Solution
+### Current Behavior vs. Desired Behavior
 
-**Approach**: Wrap the Plus button directly in a `<TeachingTrigger>` component with immediate display (no delay), and add a pulsing animation to the button while the tooltip is active.
+| Button | Current | Desired |
+|--------|---------|---------|
+| **Got it** | Permanently hidden | Just closes for this session, shows again on next page visit |
+| **Don't show again** | Permanently hidden | Permanently hidden (forever) |
 
 ---
 
 ### File Changes
 
-**1. `src/components/jobs/tabs/ProjectDetailsTab.tsx`**
-- Import `TeachingTrigger` and `useTeaching`
-- Wrap the Plus button in `<TeachingTrigger teachingId="app-job-add-client" autoShowDelay={0}>`
-- Add conditional CSS class for pulsing animation when teaching is active:
+**1. `src/contexts/TeachingContext.tsx`**
+- Modify `dismissTeaching()` to NOT add to `seenTeachingPoints` - just close the popover
+- Add a new `sessionDismissed` state (not persisted to localStorage) to track tooltips dismissed this session
+- Keep `dismissForever()` as-is for permanent dismissal
 
-```tsx
-// Get teaching state
-const { activeTeaching } = useTeaching();
-const isAddClientTeachingActive = activeTeaching?.id === 'app-job-add-client';
+**2. `src/components/teaching/TeachingPopover.tsx`**  
+- Restore the "Don't show again" button (currently hidden with `showDontShowAgain={false}`)
+- Style it as a small, subtle link or text button below "Got it"
+- Make it clearly secondary to "Got it"
 
-// Apply pulsing class to button when tooltip is showing
-<TeachingTrigger teachingId="app-job-add-client" autoShowDelay={0}>
-  <Button 
-    className={cn(
-      "shrink-0 h-8 w-8 p-0",
-      isAddClientTeachingActive && "animate-pulse ring-2 ring-primary ring-offset-2"
-    )}
-    ...
-  >
-    <Plus className="h-4 w-4" />
-  </Button>
-</TeachingTrigger>
-```
-
-- Only render the TeachingTrigger when there's no client assigned (empty state condition)
-
-**2. `src/components/teaching/TeachingTrigger.tsx`**
-- Reduce default `autoShowDelay` from 500ms to 100ms for snappier response
-- Add logic to show immediately when autoShowDelay is 0
-- Remove dependency on context's active teaching check in useEffect (let it show independently)
-
-**3. `src/config/teachingPoints.ts`**
-- Update `app-job-add-client` trigger to use `first_visit` type (simpler, doesn't need contextual checking)
-- Give it `priority: 'critical'` or handle it separately to avoid conflicts
-
-**4. Optional: Update `tailwind.config.ts`**
-- Add a subtle "teaching-pulse" animation that's more distinctive than the standard pulse
+**3. `src/components/teaching/TeachingTrigger.tsx`**
+- Update to check `sessionDismissed` instead of `hasSeenTeaching` for determining if tooltip should show
+- Keep permanent dismiss check for `dismissedForever`
 
 ---
 
-### Animation Design
+### Implementation Details
 
-When the tooltip appears, the Plus button will:
-1. Have a pulsing ring effect (`ring-2 ring-primary ring-offset-2`)
-2. Use `animate-pulse` for subtle size/opacity pulsing
-3. This draws the user's eye to the button location
+**TeachingContext changes:**
 
-When user clicks "Got it":
-1. The tooltip dismisses
-2. The pulsing stops immediately
-3. User understands where to click
+```typescript
+// Add session-only tracking (not persisted)
+const [sessionDismissed, setSessionDismissed] = useState<string[]>([]);
+
+// dismissTeaching - just close for this session
+const dismissTeaching = useCallback((id: string) => {
+  setSessionDismissed(prev => 
+    prev.includes(id) ? prev : [...prev, id]
+  );
+  
+  if (activeTeaching?.id === id) {
+    setActiveTeaching(null);
+  }
+}, [activeTeaching]);
+
+// Add query for session dismissed
+const isSessionDismissed = useCallback((id: string): boolean => {
+  return sessionDismissed.includes(id);
+}, [sessionDismissed]);
+```
+
+**TeachingTrigger check updates:**
+
+```typescript
+// Before showing, check:
+// 1. Not dismissed forever (permanent)
+// 2. Not dismissed this session
+if (isDismissedForever(teachingId) || isSessionDismissed(teachingId)) return;
+```
+
+**TeachingPopover UI:**
+
+```tsx
+{/* Primary action */}
+<Button onClick={onDismiss}>Got it</Button>
+
+{/* Small secondary action */}
+<button 
+  onClick={onDismissForever}
+  className="text-xs text-muted-foreground hover:text-foreground mt-1"
+>
+  Don't show again
+</button>
+```
 
 ---
 
 ### Expected Behavior After Fix
 
-| Scenario | Behavior |
-|----------|----------|
-| New project created, no client | Tooltip appears immediately (no delay) |
-| Tooltip visible | Plus button pulses with ring effect |
-| User clicks "Got it" | Tooltip closes, pulsing stops, marked as seen |
-| Project has client assigned | No tooltip, no pulsing |
-| User already saw this teaching | No tooltip shown |
+| Scenario | What Happens |
+|----------|--------------|
+| User clicks "Got it" | Tooltip closes, will show again on next page/project |
+| User clicks "Don't show again" | Tooltip never shows for this user again |
+| User logs out and back in | "Got it" dismissals reset, permanent ones persist |
+| Different user on same browser | Gets fresh teaching experience (localStorage per user auth would be ideal future enhancement) |
 
 ---
 
-### Technical Details
+### Files to Modify
 
-**Files to modify:**
-1. `src/components/jobs/tabs/ProjectDetailsTab.tsx` - Add TeachingTrigger wrapper and pulse animation
-2. `src/components/teaching/TeachingTrigger.tsx` - Reduce delay, improve reliability
-3. `src/config/teachingPoints.ts` - Change trigger type to avoid conflict with column customize tooltip
+1. `src/contexts/TeachingContext.tsx` - Add session-only dismissal tracking
+2. `src/components/teaching/TeachingPopover.tsx` - Show small "Don't show again" button
+3. `src/components/teaching/TeachingTrigger.tsx` - Use session-dismissed check instead of seen check
 
-This approach makes the Add Client teaching completely independent of the page-level teaching system, ensuring it always shows when conditions are met.
