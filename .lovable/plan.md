@@ -1,103 +1,72 @@
 
+## Fix Duplicate Tooltips Issue
 
-## Fix Teaching Tooltip Behavior - "Got It" vs "Don't Show Again"
+The "Add Client" tooltip is appearing twice because two different systems are rendering it:
 
-Currently, clicking "Got it" permanently hides a teaching tooltip. This plan changes the behavior so tooltips continue appearing until explicitly dismissed with "Don't show again."
+1. **TeachingOverlay** (global) - Renders a portal-based bubble in `document.body` for ANY `activeTeaching`
+2. **TeachingTrigger** (local) - Renders an anchored popover for its specific teaching ID
+
+Both listen to the same `activeTeaching` context state, causing duplicate rendering.
 
 ---
 
-### Current Behavior vs. Desired Behavior
+### Root Cause
 
-| Button | Current | Desired |
-|--------|---------|---------|
-| **Got it** | Permanently hidden | Just closes for this session, shows again on next page visit |
-| **Don't show again** | Permanently hidden | Permanently hidden (forever) |
+When `showTeaching('app-job-add-client')` is called:
+1. `TeachingContext` sets `activeTeaching` to this teaching point
+2. `ClientCard` → `TeachingTrigger` sees `activeTeaching?.id === 'app-job-add-client'` → renders anchored popover
+3. `TeachingOverlay` sees `activeTeaching` is not null → renders floating bubble in portal
+
+Result: **TWO identical tooltips appear simultaneously**
+
+---
+
+### Solution
+
+Modify `TeachingOverlay.tsx` to skip rendering for teaching points that have `skipAutoShow: true` since those are handled by component-level `TeachingTrigger` wrappers.
 
 ---
 
 ### File Changes
 
-**1. `src/contexts/TeachingContext.tsx`**
-- Modify `dismissTeaching()` to NOT add to `seenTeachingPoints` - just close the popover
-- Add a new `sessionDismissed` state (not persisted to localStorage) to track tooltips dismissed this session
-- Keep `dismissForever()` as-is for permanent dismissal
+**`src/components/teaching/TeachingOverlay.tsx`**
 
-**2. `src/components/teaching/TeachingPopover.tsx`**  
-- Restore the "Don't show again" button (currently hidden with `showDontShowAgain={false}`)
-- Style it as a small, subtle link or text button below "Got it"
-- Make it clearly secondary to "Got it"
-
-**3. `src/components/teaching/TeachingTrigger.tsx`**
-- Update to check `sessionDismissed` instead of `hasSeenTeaching` for determining if tooltip should show
-- Keep permanent dismiss check for `dismissedForever`
-
----
-
-### Implementation Details
-
-**TeachingContext changes:**
+Add a check at render time to skip teaching points with `skipAutoShow: true`:
 
 ```typescript
-// Add session-only tracking (not persisted)
-const [sessionDismissed, setSessionDismissed] = useState<string[]>([]);
+// Line ~150, update the early return condition
+if (!mounted || !activeTeaching || !position || !isTeachingEnabled || !user) {
+  return null;
+}
 
-// dismissTeaching - just close for this session
-const dismissTeaching = useCallback((id: string) => {
-  setSessionDismissed(prev => 
-    prev.includes(id) ? prev : [...prev, id]
-  );
-  
-  if (activeTeaching?.id === id) {
-    setActiveTeaching(null);
-  }
-}, [activeTeaching]);
-
-// Add query for session dismissed
-const isSessionDismissed = useCallback((id: string): boolean => {
-  return sessionDismissed.includes(id);
-}, [sessionDismissed]);
+// NEW: Skip rendering if this teaching is handled by component-level trigger
+if (activeTeaching.skipAutoShow) {
+  return null;
+}
 ```
 
-**TeachingTrigger check updates:**
-
-```typescript
-// Before showing, check:
-// 1. Not dismissed forever (permanent)
-// 2. Not dismissed this session
-if (isDismissedForever(teachingId) || isSessionDismissed(teachingId)) return;
-```
-
-**TeachingPopover UI:**
-
-```tsx
-{/* Primary action */}
-<Button onClick={onDismiss}>Got it</Button>
-
-{/* Small secondary action */}
-<button 
-  onClick={onDismissForever}
-  className="text-xs text-muted-foreground hover:text-foreground mt-1"
->
-  Don't show again
-</button>
-```
+This ensures:
+- Teaching points with `skipAutoShow: true` (like `app-job-add-client`) are ONLY rendered by their `TeachingTrigger` wrapper
+- Teaching points without `skipAutoShow` continue to be rendered by the global overlay as before
 
 ---
 
 ### Expected Behavior After Fix
 
-| Scenario | What Happens |
-|----------|--------------|
-| User clicks "Got it" | Tooltip closes, will show again on next page/project |
-| User clicks "Don't show again" | Tooltip never shows for this user again |
-| User logs out and back in | "Got it" dismissals reset, permanent ones persist |
-| Different user on same browser | Gets fresh teaching experience (localStorage per user auth would be ideal future enhancement) |
+| Scenario | Before | After |
+|----------|--------|-------|
+| "Add Client" teaching active | 2 tooltips appear | 1 tooltip (anchored to button) |
+| Page-level teaching active | 1 overlay tooltip | 1 overlay tooltip (no change) |
+| User clicks "Got it" | Both disappear | Single tooltip dismisses cleanly |
 
 ---
 
 ### Files to Modify
 
-1. `src/contexts/TeachingContext.tsx` - Add session-only dismissal tracking
-2. `src/components/teaching/TeachingPopover.tsx` - Show small "Don't show again" button
-3. `src/components/teaching/TeachingTrigger.tsx` - Use session-dismissed check instead of seen check
+1. `src/components/teaching/TeachingOverlay.tsx` - Add `skipAutoShow` check to prevent duplicate rendering
 
+---
+
+### Technical Note
+
+This is a single-line fix that prevents the race condition between the two rendering systems. The `skipAutoShow` flag was added earlier specifically to mark teachings that should not participate in the global auto-show system - this extends that intent to also exclude them from the global overlay rendering.
