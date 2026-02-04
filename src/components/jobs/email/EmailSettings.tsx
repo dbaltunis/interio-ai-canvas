@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Check, Loader2, MessageSquare, Phone } from "lucide-react";
+import { Mail, Check, Loader2, MessageSquare, Phone, AlertCircle } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
@@ -323,9 +323,24 @@ const WhatsAppSenderCard = () => {
             <MessageSquare className="h-5 w-5 text-green-600" />
             WhatsApp Sender
           </CardTitle>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <Check className="h-3 w-3 mr-1" />
-            Ready
+          <Badge 
+            variant="outline" 
+            className={hasCustomTwilio 
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-amber-50 text-amber-700 border-amber-200"
+            }
+          >
+            {hasCustomTwilio ? (
+              <>
+                <Check className="h-3 w-3 mr-1" />
+                Ready
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Sandbox Mode
+              </>
+            )}
           </Badge>
         </div>
       </CardHeader>
