@@ -5,28 +5,41 @@ import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/constants/version";
 import { WelcomeVideoPlayer, VideoStep, VideoChapter } from "@/components/showcase/WelcomeVideoPlayer";
 import {
+  Scene0Welcome,
   Scene1IntroLogo,
   Scene2Dashboard,
   Scene3ThemeToggle,
   Scene4JobsNotes,
   Scene5ProjectDeepDive,
   Scene6Closing,
+  Scene7Calendar,
 } from "@/components/help/tutorial-steps/WelcomeVideoSteps";
 
 const STORAGE_KEY = "showcase_last_seen_version";
 
-// 6 Cinematic chapters for the product showcase
+// 8 Cinematic chapters for the product showcase
 const welcomeChapters: VideoChapter[] = [
-  { id: "intro", label: "Welcome", shortLabel: "Intro" },
+  { id: "welcome", label: "Welcome", shortLabel: "Hi" },
+  { id: "intro", label: "InterioApp", shortLabel: "Intro" },
   { id: "dashboard", label: "Dashboard", shortLabel: "Dashboard" },
   { id: "theme", label: "Customize", shortLabel: "Theme" },
   { id: "jobs", label: "Jobs & Notes", shortLabel: "Jobs" },
   { id: "project", label: "Project Details", shortLabel: "Project" },
+  { id: "calendar", label: "Calendar", shortLabel: "Calendar" },
   { id: "closing", label: "Get Started", shortLabel: "Ready" },
 ];
 
-// 6 Story-driven scenes following the real InterioApp workflow
+// 8 Story-driven scenes following the real InterioApp workflow
 const welcomeSteps: VideoStep[] = [
+  // Scene 0: Welcome greeting
+  { 
+    title: "Welcome", 
+    description: "We're excited to have you here!", 
+    Visual: Scene0Welcome, 
+    duration: 4000, 
+    chapter: "welcome" 
+  },
+  
   // Scene 1: Opening branding with logo and tagline
   { 
     title: "InterioApp", 
@@ -72,6 +85,15 @@ const welcomeSteps: VideoStep[] = [
     chapter: "project" 
   },
   
+  // Scene 7: Calendar integration & booking system
+  { 
+    title: "Calendar & Bookings", 
+    description: "Google Calendar sync, booking templates, and client scheduling", 
+    Visual: Scene7Calendar, 
+    duration: 12000, 
+    chapter: "calendar" 
+  },
+  
   // Scene 6: Closing branding
   { 
     title: "Get Started", 
@@ -99,6 +121,12 @@ export const ShowcaseLightbulb = ({ size = "md" }: ShowcaseLightbulbProps) => {
     // Show glow if version changed or never seen
     if (!lastSeen || lastSeen !== APP_VERSION) {
       setHasNewContent(true);
+    }
+    // Auto-open for first-time users (never seen any version)
+    if (!lastSeen) {
+      setIsOpen(true);
+      localStorage.setItem(STORAGE_KEY, APP_VERSION);
+      setHasNewContent(false);
     }
   }, []);
 
