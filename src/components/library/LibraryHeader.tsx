@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Search, FolderTree, ShoppingBag, Upload, Download, Settings, Zap, ArrowRight, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
 interface LibraryHeaderProps {
   onAddNew: (type: "vendor" | "fabric" | "hardware" | "collection") => void;
@@ -51,7 +51,10 @@ export const LibraryHeader = ({
       <div className="modern-card-elevated company-gradient text-primary-foreground p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Inventory Management</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl font-bold">Inventory Management</h1>
+              <SectionHelpButton sectionId="library" className="text-primary-foreground/80 hover:text-primary-foreground" />
+            </div>
             <p className="text-primary-foreground/90 text-lg">Manage your products, sync with Shopify, and track inventory</p>
           </div>
           <div className="flex items-center gap-4">
