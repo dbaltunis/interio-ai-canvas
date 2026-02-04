@@ -18,14 +18,21 @@ export const useEffectiveAccountOwner = () => {
       }
 
       // Get user profile to check for parent_account_id
+      // Using maybeSingle() to gracefully handle missing profiles for new users
       const { data: profile, error } = await supabase
         .from("user_profiles")
         .select("parent_account_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.warn('[useEffectiveAccountOwner] Error fetching profile, using user.id as fallback:', error);
+        return { effectiveOwnerId: user.id, currentUserId: user.id };
+      }
+
+      // Handle case where profile doesn't exist yet (new user, trigger may be pending)
+      if (!profile) {
+        console.warn('[useEffectiveAccountOwner] No profile found for user, using user.id as fallback');
         return { effectiveOwnerId: user.id, currentUserId: user.id };
       }
 

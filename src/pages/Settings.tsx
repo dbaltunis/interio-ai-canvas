@@ -55,9 +55,13 @@ const Settings = () => {
   // - Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
   //   If ANY explicit permissions exist, respect ALL settings (missing = disabled)
   // - Staff/Regular users: Always check explicit permissions
+  // 
+  // DEFENSIVE: If user is Owner but profile is missing (trigger failure), still grant access
+  const isDefinitelyOwner = isOwner || (user?.id && !userRoleData?.parentAccountId && userRoleData?.role === 'Owner');
+  
   const canViewSettings = userRoleData?.isSystemOwner
     ? true
-    : (isOwner || isAdmin)
+    : (isDefinitelyOwner || isAdmin)
         ? !hasAnyExplicitPermissions || hasViewSettingsPermission
         : hasViewSettingsPermission;
   
