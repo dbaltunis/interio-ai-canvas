@@ -18,7 +18,16 @@ interface TargetRect {
  * Shows a dark overlay with a "hole" around the target, pulsing ring animation, and tooltip.
  */
 export const TeachingActiveSpotlight = () => {
-  const { activeSpotlight, dismissSpotlight, completeTeaching } = useTeaching();
+  // Safe access to context - handle HMR edge cases
+  let contextValue;
+  try {
+    contextValue = useTeaching();
+  } catch (e) {
+    // Context not available during HMR, return null gracefully
+    return null;
+  }
+  
+  const { activeSpotlight, dismissSpotlight, completeTeaching } = contextValue;
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom' | 'left' | 'right'>('bottom');
   const [isVisible, setIsVisible] = useState(false);
@@ -238,15 +247,6 @@ export const TeachingActiveSpotlight = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 {activeSpotlight.description}
               </p>
-              
-              <Button 
-                onClick={handleComplete}
-                className="w-full gap-2"
-                size="sm"
-              >
-                <Check className="h-3.5 w-3.5" />
-                Got it
-              </Button>
               
               <Button 
                 onClick={handleComplete}
