@@ -430,7 +430,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     if (quoteItems.length > 0) return quoteItems.length;
     return treatments.length;
   };
-  // Simple Add Client Button (no teaching wrapper)
+  // Simple Add Client Button with subtle attention indicator
   const AddClientButton = () => (
     <Button 
       variant="ghost" 
@@ -439,7 +439,11 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       disabled={isReadOnly}
       className="shrink-0 h-8 w-8 p-0"
     >
-      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+      {selectedClient ? (
+        <Edit className="h-3.5 w-3.5" />
+      ) : (
+        <Plus className="h-4 w-4 animate-subtle-pulse text-primary" />
+      )}
     </Button>
   );
   
