@@ -1,108 +1,132 @@
 
-## Fix Teaching Spotlight Performance & Functionality
 
-This plan addresses the critical issues causing app slowness and the Add Client spotlight not appearing correctly.
+## Remove Teaching Spotlight from Jobs Page
 
----
-
-### Issues Found
-
-| Problem | Root Cause |
-|---------|------------|
-| App extremely slow | Teaching system creating infinite state update loop - `showCount` incrementing thousands of times |
-| Tooltip not appearing | Wrong section detection ("projects" vs "job-details") |
-| Two "Got it" buttons | Copy-paste bug in TeachingActiveSpotlight.tsx |
-| React context error on hot reload | Component accessing context before provider ready |
-| AddClientButton not found | Component defined after first use during hot reload |
+Clean surgical removal of the teaching spotlight system from the Jobs page to restore performance. Infrastructure files remain intact for future use.
 
 ---
 
-### Technical Changes
+### Changes Overview
 
-#### 1. Fix Infinite Loop in TeachingContext.tsx
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Modify | Remove all teaching imports, hooks, and wrapper components |
+| `src/config/teachingPoints.ts` | Modify | Remove `app-job-add-client` teaching point config |
+| `src/index.css` | Modify | Remove teaching animation CSS (optional cleanup) |
 
-The `setCurrentPage` function is causing infinite re-renders because:
-- It updates `progress.showCounts` state
-- This changes the dependency array of `setCurrentPage` 
-- Which triggers more calls to `setCurrentPage`
+---
 
-**Fix**: Add a guard to prevent duplicate teaching activations:
+### Technical Details
 
-```typescript
-// Add a ref to track last shown teaching
-const lastShownRef = useRef<string | null>(null);
+#### 1. ProjectDetailsTab.tsx
 
-// In setCurrentPage, before showing teaching:
-if (lastShownRef.current === next.id) {
-  return; // Already showing this one
-}
-lastShownRef.current = next.id;
+**Remove import (line 34):**
+```tsx
+// DELETE THIS LINE:
+import { TeachingTrigger, useTeachingTrigger } from "@/components/teaching";
 ```
 
-Also remove `progress.showCounts` from the dependency array of `setCurrentPage`.
+**Remove hook usage (lines 433-435):**
+```tsx
+// DELETE THESE LINES:
+const { isActive: isAddClientTeachingActive } = useTeachingTrigger('app-job-add-client');
+const showAddClientTeaching = !selectedClient && !isReadOnly;
+```
 
-#### 2. Remove Duplicate "Got it" Button
+**Replace AddClientButton component (lines 437-458):**
 
-In `TeachingActiveSpotlight.tsx`, remove the duplicate button (lines 251-258):
+Before:
+```tsx
+const AddClientButton = () => (
+  <TeachingTrigger 
+    teachingId="app-job-add-client" 
+    autoShow={showAddClientTeaching}
+    autoShowDelay={800}
+  >
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={() => setShowClientSearch(true)}
+      disabled={isReadOnly}
+      className={cn(
+        "shrink-0 h-8 w-8 p-0",
+        isAddClientTeachingActive && !selectedClient && "teaching-pulse-ring ring-2 ring-primary ring-offset-2 ring-offset-background"
+      )}
+      data-teaching="add-client-action"
+    >
+      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+    </Button>
+  </TeachingTrigger>
+);
+```
+
+After (simple button, no teaching wrapper):
+```tsx
+const AddClientButton = () => (
+  <Button 
+    variant="ghost" 
+    size="sm"
+    onClick={() => setShowClientSearch(true)}
+    disabled={isReadOnly}
+    className="shrink-0 h-8 w-8 p-0"
+  >
+    {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+  </Button>
+);
+```
+
+---
+
+#### 2. teachingPoints.ts
+
+Remove the `app-job-add-client` entry from the teaching points array (around lines 333-341):
 
 ```tsx
-// REMOVE this duplicate:
-<Button 
-  onClick={handleComplete}
-  className="w-full gap-2"
-  size="sm"
->
-  <Check className="h-3.5 w-3.5" />
-  Got it
-</Button>
+// DELETE THIS ENTIRE BLOCK:
+{
+  id: 'app-job-add-client',
+  title: 'Add or Create a Client',
+  description: 'Click here to assign an existing client or create a new one for this project.',
+  targetSelector: '[data-teaching="add-client-action"]',
+  position: 'bottom',
+  trigger: { type: 'empty_state', page: '/app', section: 'job-details' },
+  priority: 'high',
+  category: 'app',
+},
 ```
-
-#### 3. Add Error Boundary to Teaching Components
-
-Wrap `useTeaching()` calls in a try-catch for hot reload safety:
-
-```typescript
-// In TeachingActiveSpotlight.tsx
-let teaching;
-try {
-  teaching = useTeaching();
-} catch (e) {
-  return null; // Gracefully handle missing provider during HMR
-}
-```
-
-Alternatively, use a safe hook pattern with null check.
-
-#### 4. Move AddClientButton Definition Earlier
-
-In `ProjectDetailsTab.tsx`, move the `AddClientButton` component definition **before** any hooks that might cause early returns, ensuring it's always defined when referenced.
-
-#### 5. Unify Tooltip Styling
-
-The `TeachingTrigger` + `TeachingPopover` combination should be removed for the Add Client button. Instead, rely only on the global `TeachingOverlay` for the floating bubble. The `TeachingTrigger` should only handle the pulse animation, not render its own popover.
-
-**Option A (Recommended)**: Change `TeachingTrigger` to NOT render a popover, just apply animation classes.
-
-**Option B**: Keep `TeachingTrigger` but pass a prop to disable its popover when using global overlay.
 
 ---
 
-### Files to Modify
+#### 3. index.css (Optional Cleanup)
 
-| File | Changes |
-|------|---------|
-| `src/contexts/TeachingContext.tsx` | Add guard to prevent duplicate/infinite teaching shows, fix dependency array |
-| `src/components/teaching/TeachingActiveSpotlight.tsx` | Remove duplicate button, add HMR error protection |
-| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Move `AddClientButton` definition earlier in component |
-| `src/components/teaching/TeachingTrigger.tsx` | Add option to disable popover when using global overlay |
+Remove teaching animation CSS (lines 1079-1102):
+
+```css
+/* DELETE THESE LINES: */
+@keyframes teaching-blink { ... }
+.teaching-blink { ... }
+@keyframes teaching-pulse-ring { ... }
+.teaching-pulse-ring { ... }
+```
+
+Note: Keep these if other pages still use the teaching system.
+
+---
+
+### What Gets Preserved
+
+The following infrastructure files remain untouched for future use:
+- `src/components/teaching/` folder (all components)
+- `src/contexts/TeachingContext.tsx`
+- `src/config/teachingPoints.ts` (other teaching points remain)
 
 ---
 
 ### Expected Results
 
 After these changes:
-- App will no longer be slow (no more infinite state loops)
-- Teaching tooltip will appear correctly when viewing job details
-- Only one "Got it" button will show
-- No more React context errors during development
-- Clean, consistent tooltip styling
+- Jobs page performance returns to normal immediately
+- No more infinite render loops from teaching hooks
+- "Add Client" button works as a standard button
+- Teaching system infrastructure remains available for future features
+
