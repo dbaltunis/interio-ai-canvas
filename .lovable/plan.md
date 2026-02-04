@@ -1,226 +1,150 @@
 
-## Notes Enhancement Plan
 
-This plan addresses three improvements to the notes and team collaboration system:
+## Comprehensive Notes & Notifications Fix Plan
 
-1. **Make notes editable** - Users can modify existing notes
-2. **Show team assignment in notes** - Automatic note created when team member is added
-3. **Team Hub notification** - Assigned team members receive a message with a job link
+Three major issues need to be addressed to get notes, team visibility, and notifications working properly:
 
 ---
 
-### Changes Overview
+### Issues Found
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/hooks/useProjectNotes.ts` | Modify | Add `updateNote` function |
-| `src/components/jobs/ProjectNotesCard.tsx` | Modify | Add inline edit UI for notes |
-| `src/components/jobs/JobNotesDialog.tsx` | Modify | Add edit capability to dialog notes |
-| `src/hooks/useProjectAssignments.ts` | Modify | Auto-create note + Team Hub message on assignment |
+| Issue | Root Cause | Impact |
+|-------|-----------|--------|
+| 1. Ugly technical error toasts | Notes/assignment code uses `useToast` instead of `useFriendlyToast` | User sees raw "row-level security policy" errors |
+| 2. RLS violation on notes INSERT | `useProjectNotes.ts` uses `effectiveOwnerId` but RLS requires `auth.uid() = user_id` | Notes fail to save for team members |
+| 3. Notes edit not saving | Update works but UI shows old `useToast` error handling | Minor issue - edit actually works |
+| 4. Team assignment note fails silently | RLS policy blocks insert when user_id is set to current user but project belongs to account owner | Assignment note not created |
+| 5. Wrong column name | `useClientProjectNotes.ts` uses `note_type` but column is `type` | Notes fail from client profile |
 
 ---
 
-### 1. Make Notes Editable
+### Fix 1: Update RLS Policy for Multi-Tenant Notes
 
-#### Hook Enhancement (`useProjectNotes.ts`)
+The current INSERT policy is too restrictive:
+```sql
+-- Current (broken for team members):
+auth.uid() = user_id
 
-Add new `updateNote` function to the hook:
+-- Fixed (allows team members to create notes for their account):
+user_id = public.get_effective_account_owner(auth.uid())
+```
 
+This allows team members to create notes under the account owner's ID, which is the correct multi-tenant pattern used throughout the app.
+
+**SQL Migration:**
+```sql
+-- Drop the problematic policies
+DROP POLICY IF EXISTS "Users can create their own project notes" ON public.project_notes;
+DROP POLICY IF EXISTS "account_insert" ON public.project_notes;
+
+-- Create unified insert policy for multi-tenant support
+CREATE POLICY "project_notes_insert" ON public.project_notes
+FOR INSERT TO authenticated
+WITH CHECK (
+  user_id = public.get_effective_account_owner(auth.uid())
+);
+```
+
+---
+
+### Fix 2: Apply Friendly Toast System to Notes Components
+
+Replace raw `useToast` with `useFriendlyToast` in error handlers:
+
+**ProjectNotesCard.tsx:**
 ```tsx
-const updateNote = async (noteId: string, newContent: string, mentionedUserIds: string[] = []) => {
-  const { error } = await supabase
-    .from("project_notes")
-    .update({ 
-      content: newContent.trim(),
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", noteId);
+// Before
+import { useToast } from "@/hooks/use-toast";
+const { toast } = useToast();
+toast({ title: "Error", description: e?.message || "Unable to add note", variant: "destructive" });
 
-  if (error) throw error;
+// After
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
+const { showError, showSuccess } = useFriendlyToast();
+showError(e, { context: 'save note' });
+```
 
-  // Handle mentions update (delete old, insert new)
-  await supabase.from("project_note_mentions").delete().eq("note_id", noteId);
-  
-  if (mentionedUserIds.length > 0) {
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("project_note_mentions").insert(
-      mentionedUserIds.map(uid => ({
-        note_id: noteId,
-        mentioned_user_id: uid,
-        created_by: userData.user?.id
-      }))
-    );
+**JobNotesDialog.tsx:**
+Same pattern - replace destructive toasts with friendly error handling.
+
+**useProjectAssignments.ts:**
+Replace the `onError` handler with friendly errors:
+```tsx
+onError: (error: any) => {
+  if (error.message === "ALREADY_ASSIGNED" || error.code === "23505") {
+    showInfo("Already Assigned", "This team member is already assigned to this project");
+  } else {
+    showError(error, { context: 'assign team member' });
   }
-
-  // Update local state
-  setNotes(prev => prev.map(n => 
-    n.id === noteId 
-      ? { ...n, content: newContent.trim(), mentions: mentionedUserIds.map(uid => ({ mentioned_user_id: uid })) }
-      : n
-  ));
-};
+}
 ```
-
-#### UI Updates (`ProjectNotesCard.tsx`)
-
-Add edit state and inline editing:
-
-```tsx
-// New state
-const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-const [editContent, setEditContent] = useState("");
-
-// Note display with edit mode
-{editingNoteId === n.id ? (
-  <div className="space-y-2">
-    <Textarea
-      value={editContent}
-      onChange={(e) => setEditContent(e.target.value)}
-      className="min-h-[60px]"
-    />
-    <div className="flex gap-2 justify-end">
-      <Button variant="ghost" size="sm" onClick={() => setEditingNoteId(null)}>
-        Cancel
-      </Button>
-      <Button size="sm" onClick={() => handleSaveEdit(n.id)}>
-        Save
-      </Button>
-    </div>
-  </div>
-) : (
-  <p className="text-sm">{n.content}</p>
-)}
-
-// Edit button (appears on hover next to delete)
-<Button 
-  variant="ghost" 
-  size="icon" 
-  onClick={() => {
-    setEditingNoteId(n.id);
-    setEditContent(n.content);
-  }}
->
-  <Edit className="h-3.5 w-3.5" />
-</Button>
-```
-
-#### Dialog Updates (`JobNotesDialog.tsx`)
-
-Similar inline edit capability for the dialog view of notes.
 
 ---
 
-### 2. Show Team Assignment in Notes
-
-When a team member is assigned to a project, automatically create a project note to provide audit trail visibility.
-
-#### Assignment Hook (`useProjectAssignments.ts`)
-
-Add note creation after successful assignment (after line 199):
+### Fix 3: Fix Column Name in useClientProjectNotes
 
 ```tsx
-// After activity log insert, add a project note
-await supabase
-  .from("project_notes")
-  .insert({
-    project_id: projectId,
-    user_id: user.id,
-    content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
-    type: 'system_assignment'
-  });
-```
+// Line 71 - Change:
+note_type: "general",
 
-This creates a visible record in the Project Notes section showing when and who added a team member.
+// To:
+type: "general",
+```
 
 ---
 
-### 3. Team Hub Notification for Assigned Members
+### Fix 4: Make Assignment Side-Effects Resilient
 
-When a team member is added to a project, send them a direct message in the Team Hub so they see a notification with a link to the job.
-
-#### Assignment Hook (`useProjectAssignments.ts`)
-
-Add direct message after notification insert (after line 211):
+The team assignment flow should not fail completely if a secondary operation fails (like sending the DM or creating the note). Wrap non-critical operations in try-catch:
 
 ```tsx
-// Send Team Hub direct message for better visibility
-await supabase
-  .from("direct_messages")
-  .insert({
-    sender_id: user.id,
-    recipient_id: userId,
-    content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
-  });
-```
+// After main assignment succeeds, wrap side effects:
+try {
+  await supabase.from("project_notes").insert({...});
+} catch (noteErr) {
+  console.warn("Failed to create assignment note:", noteErr);
+  // Don't throw - assignment already succeeded
+}
 
-This ensures:
-- The red badge appears on the Team Hub showing unread messages
-- When the team member opens Team Hub, they see the message with the job link
-- Clicking the link navigates them directly to the assigned project
+try {
+  await supabase.from("direct_messages").insert({...});
+} catch (dmErr) {
+  console.warn("Failed to send team hub message:", dmErr);
+  // Don't throw - assignment already succeeded
+}
+```
 
 ---
 
-### Data Flow Summary
+### Files to Modify
 
-```text
-Team Member Assignment Flow:
-┌──────────────────────┐
-│ Admin assigns user   │
-│ to project           │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ 1. project_assignments │ (existing)
-│ 2. project_activity_log │ (existing)
-│ 3. notifications        │ (existing)
-│ 4. project_notes        │ NEW - visible in notes
-│ 5. direct_messages      │ NEW - Team Hub notification
-│ 6. Email notification   │ (existing)
-└──────────────────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Assigned user sees:  │
-│ - Team Hub badge     │
-│ - Direct message     │
-│ - Note in project    │
-│ - Email notification │
-└──────────────────────┘
-```
+| File | Changes |
+|------|---------|
+| `src/hooks/useProjectNotes.ts` | Keep using `effectiveOwnerId` for multi-tenant support (RLS will be fixed) |
+| `src/hooks/useClientProjectNotes.ts` | Fix `note_type` → `type` typo |
+| `src/components/jobs/ProjectNotesCard.tsx` | Switch to `useFriendlyToast` |
+| `src/components/jobs/JobNotesDialog.tsx` | Switch to `useFriendlyToast` |
+| `src/hooks/useProjectAssignments.ts` | Switch to `useFriendlyToast`, wrap side-effects in try-catch |
+| **Database Migration** | Fix INSERT RLS policy for `project_notes` table |
 
 ---
 
 ### Expected Results
 
-1. **Editable Notes**: 
-   - Edit button appears on hover next to delete
-   - Click to enter inline edit mode with textarea
-   - Save/Cancel buttons to confirm or discard changes
-
-2. **Assignment Visibility in Notes**:
-   - Automatic note: "John Smith was assigned to this project by Jane Doe"
-   - Type marked as `system_assignment` to distinguish from user notes if needed
-   - Shows in Project Notes section for full audit trail
-
-3. **Team Hub Notification**:
-   - Red badge appears on assigned user's Team Hub
-   - Message includes project name and clickable link
-   - Friendly emoji for positive notification experience
+1. **Friendly Errors**: Users see helpful messages like "Permission needed - Ask your account administrator" instead of raw RLS errors
+2. **Notes Save Properly**: Team members can create/edit notes without RLS violations
+3. **Team Assignment Notes Work**: When a team member is assigned, a visible note appears in Project Notes
+4. **Team Hub Messages Work**: Assigned users receive a direct message with the job link
+5. **No Silent Failures**: If secondary operations fail, the primary action (assignment) still succeeds
 
 ---
 
-### Technical Details
+### Technical Summary
 
-**Database operations required:**
-- `UPDATE` on `project_notes` table (for edit functionality)
-- `INSERT` into `project_notes` table (for assignment notes)
-- `INSERT` into `direct_messages` table (for Team Hub messages)
-- `DELETE` + `INSERT` on `project_note_mentions` (for updating mentions on edit)
+The root issue is a mismatch between:
+- Multi-tenant data model (notes owned by account owner, not individual user)
+- RLS policies (requiring `user_id = auth.uid()`)
+- Error handling (raw technical errors instead of friendly messages)
 
-**Query invalidations needed:**
-- `["project-notes", projectId]` - after note edit
-- `["conversations"]` - after direct message sent
-- Already existing invalidations for assignments remain
+This fix aligns all three layers to work together properly.
 
-**No new database tables or columns required** - all functionality uses existing schema.
