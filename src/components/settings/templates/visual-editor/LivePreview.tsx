@@ -43,6 +43,7 @@ import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
+import { t, getLocalizedTableHeaders, getLocalizedSectionTitles, getLocalizedTotalColumnHeader, getLocalizedTotalsLabels, type DocumentLanguage } from '@/utils/documentTranslations';
 import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock, TaxBreakdownBlock } from './shared/BlockRenderer';
 // Chunk rebuild: 2026-01-11T14:25
 import { groupHardwareItems, filterMeaningfulHardwareItems } from '@/utils/quotes/groupHardwareItems';
@@ -1095,35 +1096,31 @@ const LivePreviewBlock = ({
         }, {}) : 
         { 'All Items': projectItems };
 
+      // Get localization settings
+      const docBusinessSettings = projectData?.businessSettings || {};
+      const lang = (docBusinessSettings?.document_language as DocumentLanguage) || 'en';
+      const pricingSettings = docBusinessSettings.pricing_settings || {};
+      const taxInclusive = pricingSettings.tax_inclusive || false;
+      const taxType = (docBusinessSettings.tax_type || 'VAT').toUpperCase();
+      const tableHeaders = getLocalizedTableHeaders(lang);
+      const sectionTitle = getLocalizedSectionTitles(documentType, lang);
+      const totalColumnHeader = getLocalizedTotalColumnHeader(taxType, taxInclusive, lang);
+
       return (
         <div className="mb-4 products-section" style={{ backgroundColor: '#ffffff', padding: '8px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', backgroundColor: '#ffffff' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#000', backgroundColor: '#ffffff', padding: '4px 0' }}>
-              {content.title || (documentType === 'invoice' ? 'Invoice Items' : 
-                documentType === 'work-order' ? 'Work Order Items' : 'Quote Items')}
+              {content.title || sectionTitle}
             </h3>
           </div>
 
           {!hasRealData && (
             <div style={{ backgroundColor: '#f3f4f6', borderLeft: '4px solid #9ca3af', padding: '12px', marginBottom: '12px' }}>
               <p style={{ color: '#1f2937', fontSize: '14px', fontWeight: '500' }}>
-                No project data available. Add treatments to your project to see itemized breakdown.
+                {t('No project data available', lang)}. {t('Add treatments to your project to see itemized breakdown', lang)}.
               </p>
             </div>
           )}
-
-          {/* Get tax settings for dynamic headers */}
-          {(() => {
-            const businessSettings = projectData?.businessSettings || {};
-            const pricingSettings = businessSettings.pricing_settings || {};
-            const taxInclusive = pricingSettings.tax_inclusive || false;
-            const taxType = (businessSettings.tax_type || 'VAT').toUpperCase();
-            const totalColumnHeader = taxInclusive 
-              ? `Total (incl. ${taxType})` 
-              : `Total (excl. ${taxType})`;
-            
-            return null;
-          })()}
 
           <div style={{ overflow: 'visible', width: '100%', backgroundColor: '#ffffff' }}>
             <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%', backgroundColor: '#ffffff' }}>
@@ -1142,18 +1139,12 @@ const LivePreviewBlock = ({
                       <SquareCheck className="h-4 w-4 mx-auto text-muted-foreground" />
                     </th>
                   )}
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Product/Service</th>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Quantity</th>
-                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>Unit Price</th>
+                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>{tableHeaders.productService}</th>
+                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>{tableHeaders.description}</th>
+                  <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>{tableHeaders.quantity}</th>
+                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>{tableHeaders.unitPrice}</th>
                   <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#ffffff' }}>
-                    {(() => {
-                      const businessSettings = projectData?.businessSettings || {};
-                      const pricingSettings = businessSettings.pricing_settings || {};
-                      const taxInclusive = pricingSettings.tax_inclusive || false;
-                      const taxType = (businessSettings.tax_type || 'VAT').toUpperCase();
-                      return taxInclusive ? `Total (incl. ${taxType})` : `Total (excl. ${taxType})`;
-                    })()}
+                    {totalColumnHeader}
                   </th>
                 </tr>
               </thead>
@@ -1390,6 +1381,11 @@ const LivePreviewBlock = ({
     case 'pricing-summary':
     case 'pricing-totals':
     case 'summary':
+      // Get localization settings for totals
+      const totalsBusinessSettings = projectData?.businessSettings || {};
+      const totalsLang = (totalsBusinessSettings?.document_language as DocumentLanguage) || 'en';
+      const totalsLabels = getLocalizedTotalsLabels(totalsLang);
+      
       return (
         <div style={{ marginBottom: '32px', backgroundColor: '#ffffff !important' }}>
           <div className="flex justify-end">
@@ -1410,14 +1406,14 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', color: '#111827 !important' }}>
-                        Subtotal (before discount): {renderTokenValue('basetotal')}
+                        {t('Subtotal (before discount)', totalsLang)}: {renderTokenValue('basetotal')}
                       </span>
                     </div>
                   </div>
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                        Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): - {renderTokenValue('discount')}
+                        {t('Discount', totalsLang)} ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): - {renderTokenValue('discount')}
                       </span>
                     </div>
                   </div>
@@ -1429,7 +1425,7 @@ const LivePreviewBlock = ({
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
-                      Subtotal: {renderTokenValue('subtotal')}
+                      {totalsLabels.subtotal}: {renderTokenValue('subtotal')}
                     </span>
                   </div>
                 </div>
@@ -1441,8 +1437,8 @@ const LivePreviewBlock = ({
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
                       {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
-                        ? userBusinessSettings.tax_type.toUpperCase() 
-                        : 'Tax'} ({renderTokenValue('tax_rate')}): {renderTokenValue('tax_amount')}
+                        ? t(userBusinessSettings.tax_type.toUpperCase(), totalsLang) 
+                        : totalsLabels.tax} ({renderTokenValue('tax_rate')}): {renderTokenValue('tax_amount')}
                     </span>
                   </div>
                 </div>
@@ -1451,7 +1447,7 @@ const LivePreviewBlock = ({
               {/* Grand total */}
               <div className="flex justify-end py-3 mt-2 border-t" style={{ backgroundColor: '#ffffff !important', borderColor: '#e5e7eb !important' }}>
                 <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>{totalsLabels.total}: {renderTokenValue('total')}</span>
                 </div>
               </div>
 
@@ -1461,7 +1457,7 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827 !important' }}>
-                        Deposit Required{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
+                        {t('Deposit Required', totalsLang)}{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
                       </span>
                       <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginLeft: '8px' }}>
                         {formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}
@@ -1471,7 +1467,7 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                        Balance Due After Deposit:
+                        {t('Balance Due After Deposit', totalsLang)}:
                       </span>
                       <span style={{ fontSize: '14px', color: '#6b7280', marginLeft: '8px' }}>
                         {formatCurrency((projectData.total || 0) - projectData.payment.amount, projectData?.currency || getDefaultCurrency())}
