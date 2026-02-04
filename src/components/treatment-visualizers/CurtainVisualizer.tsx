@@ -154,7 +154,7 @@ export const CurtainVisualizer = ({
             {/* Measurement line */}
             <div className="flex-1 border-r-2 border-green-600 relative">
               <span className="absolute top-1/2 -right-12 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap z-20">
-                Drop: {measurements.drop}cm
+                Drop: {formatFromMM(parseFloat(measurements.drop) || 0, units.length)}
               </span>
             </div>
             {/* Bottom arrow */}
@@ -182,7 +182,7 @@ export const CurtainVisualizer = ({
   };
 
   return (
-    <div className={`relative min-h-[400px] bg-gradient-to-b from-sky-50 to-sky-100 border-2 border-border rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative min-h-[400px] bg-gradient-to-b from-sky-50 to-sky-100 border-2 border-border rounded-lg overflow-visible ${className}`}>
       {/* Hardware */}
       {renderHardware()}
       

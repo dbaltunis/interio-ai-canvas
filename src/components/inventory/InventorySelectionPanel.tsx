@@ -730,8 +730,8 @@ export const InventorySelectionPanel = ({
                       : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>
                 </div>
-              {/* Stock indicator with color coding - only show for tracked inventory */}
-                {item.track_inventory !== false && item.quantity !== undefined && (
+              {/* Stock indicator with color coding - only show for explicitly tracked inventory */}
+                {item.track_inventory === true && item.quantity !== undefined && (
                   <Badge 
                     variant={item.quantity <= 0 ? "destructive" : item.quantity < 10 ? "outline" : "secondary"}
                     className={cn(
