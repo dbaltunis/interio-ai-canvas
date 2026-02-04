@@ -34,6 +34,7 @@ import { SyncIndicator } from "./components/system/SyncIndicator";
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
 import { WelcomeTour } from "./components/teaching/WelcomeTour";
+import { WelcomeVideoAutoTrigger } from "./components/showcase/WelcomeVideoAutoTrigger";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import { BookingPageSkeleton } from "./components/booking/BookingPageSkeleton";
 import { UpdateAnnouncementModal } from "./components/version/UpdateAnnouncementModal";
@@ -191,6 +192,7 @@ const App = () => {
                       <TeachingOverlay />
                       <TeachingActiveSpotlight />
                       <WelcomeTour />
+                      <WelcomeVideoAutoTrigger />
                       <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
                   <Routes>
