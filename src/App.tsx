@@ -37,7 +37,7 @@ import { WelcomeTour } from "./components/teaching/WelcomeTour";
 import { WelcomeVideoAutoTrigger } from "./components/showcase/WelcomeVideoAutoTrigger";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import { BookingPageSkeleton } from "./components/booking/BookingPageSkeleton";
-import { UpdateAnnouncementModal } from "./components/version/UpdateAnnouncementModal";
+
 import { setSentryContext, captureException } from "./lib/sentry";
 import "@/styles/theme.css";
 
@@ -179,7 +179,7 @@ const App = () => {
               <Toaster />
               <BrowserRouter>
                 <NavObserver />
-                <UpdateAnnouncementModal />
+                
                 <AuthProvider>
                   
                   <AccountStatusGuard>
