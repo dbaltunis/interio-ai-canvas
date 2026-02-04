@@ -13,7 +13,7 @@ import {
   ShoppingBag, Package, UserPlus, Copy, ExternalLink, CalendarDays,
   DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Mail,
   CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList, Sparkles,
-  Link, QrCode, Smartphone, Camera, Search, FolderOpen, Grid, ScanLine
+  Link, QrCode, Smartphone, Camera, Search, FolderOpen, Grid, ScanLine, Tag, Star
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -521,24 +521,65 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 5: PROJECT DEEP DIVE - Dummy data, no cursor
+// SCENE 5: PROJECT DEEP DIVE - With Window Creation Workflow
 export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
-  const showClientTab = inPhase(phase, 0, 0.10);
-  const showProjectTab = inPhase(phase, 0.10, 0.20);
-  const showQuoteTab = inPhase(phase, 0.20, 0.65);
-  const focusOnPayment = inPhase(phase, 0.38, 0.42);
-  const showPaymentDropdown = inPhase(phase, 0.42, 0.48);
-  const showPaymentConfig = inPhase(phase, 0.48, 0.52);
-  const showEmailDialog = inPhase(phase, 0.52, 0.62);
-  const showEmailSuccess = inPhase(phase, 0.60, 0.65);
-  const showWorkroomTab = inPhase(phase, 0.65, 0.80);
-  const showInstallationTab = inPhase(phase, 0.80, 0.90);
-  const focusOnShare = inPhase(phase, 0.86, 0.90);
-  const showSharePopover = inPhase(phase, 0.90, 1);
+  // Restructured phases to include window creation workflow
+  const showClientTab = inPhase(phase, 0, 0.08);
+  const showProjectTab = inPhase(phase, 0.08, 0.18);
+  const focusAddWindow = inPhase(phase, 0.14, 0.18);
   
-  const activeTab = showInstallationTab || showSharePopover ? "installation" : showWorkroomTab ? "workroom" : showQuoteTab ? "quote" : showProjectTab ? "project" : "client";
+  // Window Creation Popup phases (34% of scene)
+  const showWindowPopup = inPhase(phase, 0.18, 0.52);
+  const showTreatmentStep = inPhase(phase, 0.20, 0.36);
+  const selectCurtains = inPhase(phase, 0.30, 0.36);
+  const showLibraryStep = inPhase(phase, 0.36, 0.46);
+  const selectFabric = inPhase(phase, 0.40, 0.46);
+  const showMeasurementsStep = inPhase(phase, 0.46, 0.52);
+  const widthValue = typingProgress(phase, 0.48, 0.50, "200");
+  const dropValue = typingProgress(phase, 0.50, 0.52, "240");
+  
+  // Quote and remaining tabs
+  const showQuoteTab = inPhase(phase, 0.52, 0.70);
+  const showWorkroomTab = inPhase(phase, 0.70, 0.82);
+  const showInstallationTab = inPhase(phase, 0.82, 0.92);
+  const focusOnShare = inPhase(phase, 0.88, 0.92);
+  const showSharePopover = inPhase(phase, 0.92, 1);
+  
+  // Determine stepper status
+  const getTreatmentStatus = () => {
+    if (phase >= 0.36) return "complete";
+    if (phase >= 0.20) return "active";
+    return "pending";
+  };
+  const getLibraryStatus = () => {
+    if (phase >= 0.46) return "complete";
+    if (phase >= 0.36) return "active";
+    return "pending";
+  };
+  const getMeasurementsStatus = () => {
+    if (phase >= 0.52) return "complete";
+    if (phase >= 0.46) return "active";
+    return "pending";
+  };
+  
+  const activeTab = showInstallationTab || showSharePopover ? "installation" : showWorkroomTab ? "workroom" : showQuoteTab ? "quote" : (showProjectTab || showWindowPopup) ? "project" : "client";
   
   const tabs = [{ id: "client", label: "Client", icon: Users }, { id: "project", label: "Project", icon: Layers }, { id: "quote", label: "Quote", icon: Receipt }, { id: "workroom", label: "Workroom", icon: FileText }, { id: "installation", label: "Install", icon: Wrench }];
+  
+  // Treatment cards data
+  const treatments = [
+    { id: "curtains", name: "Curtains", selected: selectCurtains },
+    { id: "blinds", name: "Roller Blinds", selected: false },
+    { id: "shutters", name: "Shutters", selected: false },
+  ];
+  
+  // Fabric cards data
+  const fabrics = [
+    { id: "adara", name: "ADARA", price: "£26.50/m", width: "290cm", selected: selectFabric },
+    { id: "velvet", name: "Velvet Drapery", price: "£45.00/m", width: "140cm", selected: false },
+    { id: "linen", name: "Pure Linen", price: "£38.00/m", width: "300cm", selected: false },
+    { id: "silk", name: "Silk Blend", price: "£65.00/m", width: "140cm", selected: false },
+  ];
   
   return (
     <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
@@ -565,10 +606,37 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
               </div>
             </motion.div>
           )}
-          {showProjectTab && (
+          {(showProjectTab || showWindowPopup) && (
             <motion.div key="project" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-              {[{ room: "Master Bedroom", amount: "£2,200", icon: Bed }, { room: "Living Room", amount: "£1,450", icon: Home }, { room: "Kitchen", amount: "£612", icon: ChefHat }, { room: "Bathroom", amount: "£404", icon: Bath }].map((item) => (
-                <div key={item.room} className="bg-card rounded-lg border p-3 flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded bg-muted flex items-center justify-center"><item.icon className="h-5 w-5 text-muted-foreground" /></div><span className="text-sm font-medium">{item.room}</span></div><span className="text-sm font-bold text-primary">{item.amount}</span></div>
+              {/* Rooms list */}
+              {[{ room: "Master Bedroom", amount: "£2,200", icon: Bed, windows: 2 }, { room: "Living Room", amount: "£1,450", icon: Home, windows: 1 }].map((item, i) => (
+                <div key={item.room} className="bg-card rounded-lg border p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded bg-muted flex items-center justify-center"><item.icon className="h-5 w-5 text-muted-foreground" /></div>
+                      <div>
+                        <span className="text-sm font-medium">{item.room}</span>
+                        <div className="text-xs text-muted-foreground">{item.windows} windows</div>
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-primary">{item.amount}</span>
+                  </div>
+                  {i === 0 && (
+                    <motion.button 
+                      className="w-full py-2 mt-2 rounded-lg border-2 border-dashed border-primary/30 text-xs font-medium text-primary flex items-center justify-center gap-1.5 relative"
+                      animate={{ backgroundColor: focusAddWindow ? "hsl(var(--primary)/0.05)" : "transparent" }}
+                    >
+                      {focusAddWindow && (
+                        <motion.div
+                          className="absolute inset-0 rounded-lg ring-2 ring-primary/60"
+                          animate={{ scale: [1, 1.02, 1], opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                        />
+                      )}
+                      <Plus className="h-3.5 w-3.5" />Add Window
+                    </motion.button>
+                  )}
+                </div>
               ))}
             </motion.div>
           )}
@@ -579,54 +647,38 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                 <div className="flex items-center gap-1.5">
                   <button className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-muted rounded border"><Download className="h-3.5 w-3.5" />PDF</button>
                   <button className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-muted rounded border"><Mail className="h-3.5 w-3.5" />Email</button>
-                  <div className="relative">
-                    <motion.button className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-muted rounded border relative" animate={{ backgroundColor: showPaymentDropdown || showPaymentConfig ? "hsl(var(--primary)/0.1)" : "hsl(var(--muted))" }}><FocusRing active={focusOnPayment} /><CreditCard className="h-3.5 w-3.5" />Payment<ChevronDown className="h-3 w-3" /></motion.button>
-                    <AnimatePresence>{showPaymentDropdown && !showPaymentConfig && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-xl z-30 py-1"><div className="px-4 py-2.5 text-sm hover:bg-primary/10 flex items-center gap-2"><Settings className="h-4 w-4" /><span className="font-medium">Configure Payment</span></div></motion.div>}</AnimatePresence>
-                  </div>
+                  <button className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded"><CreditCard className="h-3.5 w-3.5" />Payment</button>
                 </div>
               </div>
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm">
-                <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex items-start justify-between"><div><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-6 w-auto mb-2" /><div className="text-xs text-muted-foreground">Demo Interiors Ltd</div></div><div className="text-right"><div className="text-base font-bold text-primary">Quotation</div><div className="text-sm text-muted-foreground"># QUOTE-001</div></div></div>
+                <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex items-start justify-between">
+                  <div><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-6 w-auto mb-2" /><div className="text-xs text-muted-foreground">Demo Interiors Ltd</div></div>
+                  <div className="text-right"><div className="text-base font-bold text-primary">Quotation</div><div className="text-sm text-muted-foreground"># QUOTE-001</div></div>
+                </div>
                 <div className="p-3 border-b bg-muted/30"><div className="text-xs font-medium text-muted-foreground uppercase mb-1">👤 Bill To</div><div className="text-sm font-medium">Smith Family</div></div>
                 <div className="divide-y">
+                  {/* New line item from window creation */}
+                  <motion.div 
+                    className="p-3 flex items-start gap-3 bg-green-50/50 dark:bg-green-900/10"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <div className="w-11 h-11 rounded bg-green-100 flex items-center justify-center"><Check className="h-5 w-5 text-green-500" /></div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium flex items-center gap-2">S-Fold Curtains <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-600 rounded">NEW</span></div>
+                      <div className="text-xs text-muted-foreground">ADARA • 2000×2400mm</div>
+                    </div>
+                    <div className="text-sm font-semibold">£1,450</div>
+                  </motion.div>
                   <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-indigo-100 flex items-center justify-center"><Scissors className="h-5 w-5 text-indigo-400" /></div><div className="flex-1"><div className="text-sm font-medium">Lined Curtains</div><div className="text-xs text-muted-foreground">1800×2000mm</div></div><div className="text-sm font-semibold">£1,200</div></div>
                   <div className="p-3 flex items-start gap-3"><div className="w-11 h-11 rounded bg-gray-100 flex items-center justify-center"><Ruler className="h-5 w-5 text-gray-400" /></div><div className="flex-1"><div className="text-sm font-medium">Curtain Track</div><div className="text-xs text-muted-foreground">2400mm</div></div><div className="text-sm font-semibold">£250</div></div>
                 </div>
-                <div className="p-3 bg-muted/30 border-t"><div className="flex justify-between text-base font-bold"><span>Total</span><span className="text-primary">£1,740</span></div></div>
+                <div className="p-3 bg-muted/30 border-t"><div className="flex justify-between text-base font-bold"><span>Total</span><span className="text-primary">£2,900</span></div></div>
               </div>
-              <AnimatePresence>
-                {showPaymentConfig && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
-                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-background rounded-xl border shadow-xl w-full max-w-[300px]">
-                      <div className="flex items-center justify-between px-4 py-3 border-b"><div className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Configure Payment</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
-                      <div className="p-4 space-y-3">
-                        <motion.label className="flex items-center gap-3 p-3 rounded-lg border border-primary bg-primary/5"><div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center"><div className="w-2.5 h-2.5 rounded-full bg-primary" /></div><div><div className="text-sm font-medium text-primary">50% Deposit</div><div className="text-xs text-muted-foreground">£870 now, rest later</div></div></motion.label>
-                        <button className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5"><Check className="h-4 w-4" />Save</button>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-                {showEmailDialog && !showPaymentConfig && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
-                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-background rounded-xl border shadow-xl w-full max-w-[320px]">
-                      <div className="flex items-center justify-between px-4 py-3 border-b"><div className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /><span className="text-base font-semibold">Email Quote</span></div><X className="h-5 w-5 text-muted-foreground" /></div>
-                      <div className="p-4 space-y-3">
-                        <div><label className="text-xs font-medium text-muted-foreground">To</label><input type="text" value="smith@example.com" readOnly className="w-full px-3 py-2 text-sm border rounded bg-muted/50" /></div>
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200"><div className="text-sm text-blue-600 flex items-center gap-1.5"><FileText className="h-4 w-4" /><span>Quote PDF attached</span></div></div>
-                        <div className="flex gap-2">
-                          <button className="flex-1 py-2.5 rounded-lg border text-sm font-medium">Cancel</button>
-                          <motion.button className="flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5" animate={{ backgroundColor: showEmailSuccess ? "hsl(142.1 76.2% 36.3%)" : "hsl(var(--primary))", color: "white" }}>{showEmailSuccess ? <><CheckCircle2 className="h-4 w-4" />Sent!</> : <><Send className="h-4 w-4" />Send</>}</motion.button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           )}
           {showWorkroomTab && (
             <motion.div key="workroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 h-full">
-              {/* Header toolbar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-muted rounded border"><FileText className="h-3.5 w-3.5" />Workshop Details<ChevronDown className="h-3 w-3" /></button>
@@ -636,124 +688,33 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                   <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-muted rounded border"><Download className="h-3.5 w-3.5" />PDF</button>
                 </div>
               </div>
-              
-              {/* Scrollable Work Order Document */}
               <div className="bg-white dark:bg-card rounded-lg border shadow-sm overflow-hidden" style={{ height: 'calc(100% - 40px)' }}>
                 <motion.div 
                   className="h-full"
-                  animate={{ y: [0, -180, -180, 0] }}
-                  transition={{ duration: 4, times: [0, 0.4, 0.8, 1], ease: "easeInOut" }}
+                  animate={{ y: [0, -100, -100, 0] }}
+                  transition={{ duration: 3, times: [0, 0.4, 0.8, 1], ease: "easeInOut" }}
                 >
-                  {/* Document header */}
                   <div className="p-3 border-b">
                     <div className="text-lg font-bold">WORK ORDER</div>
                     <div className="text-xs text-muted-foreground">Manufacturing Instructions</div>
                   </div>
-                  
-                  {/* Metadata grid */}
                   <div className="grid grid-cols-4 gap-2 p-3 border-b text-[10px]">
                     <div><div className="text-muted-foreground uppercase">Project</div><div className="font-medium">Smith Family</div></div>
                     <div><div className="text-muted-foreground uppercase">Order #</div><div className="font-medium">JOB-065</div></div>
                     <div><div className="text-muted-foreground uppercase">Client</div><div className="font-medium">Smith</div></div>
                     <div><div className="text-muted-foreground uppercase">Due Date</div><div className="font-medium">—</div></div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-[10px] border-b border-primary">
-                    <div><div className="text-muted-foreground uppercase">Created</div><div className="font-medium">2026-01-14</div></div>
-                    <div><div className="text-muted-foreground uppercase">Assigned Maker</div><div className="font-medium">—</div></div>
-                    <div><div className="text-muted-foreground uppercase">Shipping</div><div className="font-medium">—</div></div>
-                  </div>
-                  
-                  {/* Room 1: Bedroom */}
                   <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b">
-                    <span className="text-sm font-semibold text-primary">Bedroom</span>
+                    <span className="text-sm font-semibold text-primary">Master Bedroom</span>
                   </div>
-                  
-                  {/* Table header */}
                   <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
-                    <span>Item</span>
-                    <span>Fabric & Details</span>
-                    <span>Measurements</span>
-                    <span>Sewing Details</span>
+                    <span>Item</span><span>Fabric</span><span>Measurements</span><span>Details</span>
                   </div>
-                  
-                  {/* Window 1 */}
                   <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
                     <div className="font-medium">Window 1</div>
-                    <div>
-                      <div className="text-primary font-medium">Fabric to Test</div>
-                      <div className="text-muted-foreground">Width: 55.1", ↔️ Horiz</div>
-                      <div className="text-primary">Usage: 11.10m (4 widths)</div>
-                      <div className="text-orange-500 text-[9px]">⚠️ 3 vertical seam(s)</div>
-                    </div>
-                    <div>
-                      <div><span className="font-medium">Width:</span> 78.74in</div>
-                      <div><span className="font-medium">Drop:</span> 98.43in</div>
-                      <div className="text-muted-foreground">Curtains to Test</div>
-                    </div>
-                    <div>
-                      <div className="text-primary">Fullness: 2.5x</div>
-                      <div className="text-muted-foreground">Hem Allowances:</div>
-                      <div className="text-muted-foreground">• Header: 3.1"</div>
-                      <div className="text-muted-foreground">• Bottom: 5.9"</div>
-                    </div>
-                  </div>
-                  
-                  {/* Window 2 */}
-                  <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
-                    <div>
-                      <div className="font-medium">Window 2</div>
-                      <div className="w-8 h-8 mt-1 rounded bg-amber-100 border border-amber-200" />
-                    </div>
-                    <div>
-                      <div className="text-primary font-medium">ADARA</div>
-                      <div className="text-muted-foreground">Color: shifting sand 24</div>
-                      <div className="text-muted-foreground">Width: 114.2", ↔️ Horiz</div>
-                      <div className="text-primary">Usage: 4.10m (1 width)</div>
-                    </div>
-                    <div>
-                      <div><span className="font-medium">Width:</span> 86.61in</div>
-                      <div><span className="font-medium">Drop:</span> 90.55in</div>
-                      <div className="text-muted-foreground">Curtain testing</div>
-                    </div>
-                    <div>
-                      <div className="text-primary">Fullness: 1.8x</div>
-                      <div className="text-muted-foreground">Hem Allowances:</div>
-                      <div className="text-muted-foreground">• Header: 5.9"</div>
-                      <div className="text-muted-foreground">• Bottom: 5.9"</div>
-                    </div>
-                  </div>
-                  
-                  {/* Room 2: Living Room */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 border-b mt-2">
-                    <span className="text-sm font-semibold text-primary">Living Room</span>
-                  </div>
-                  
-                  {/* Table header for Room 2 */}
-                  <div className="grid grid-cols-4 gap-1 px-3 py-1.5 text-[9px] font-medium text-muted-foreground uppercase bg-muted/30 border-b">
-                    <span>Item</span>
-                    <span>Fabric & Details</span>
-                    <span>Measurements</span>
-                    <span>Sewing Details</span>
-                  </div>
-                  
-                  {/* Window 1 - Living Room */}
-                  <div className="grid grid-cols-4 gap-1 px-3 py-2 text-[10px] border-b">
-                    <div className="font-medium">Window 1</div>
-                    <div>
-                      <div className="text-primary font-medium">Pure Wool (50mm)</div>
-                      <div className="text-muted-foreground">Width: 60", ↔️ Horiz</div>
-                      <div className="text-primary">Usage: 8.5m (3 widths)</div>
-                    </div>
-                    <div>
-                      <div><span className="font-medium">Width:</span> 72.44in</div>
-                      <div><span className="font-medium">Drop:</span> 84.25in</div>
-                      <div className="text-muted-foreground">Roman Blind</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Manufacturing:</div>
-                      <div className="text-muted-foreground">• Chain control</div>
-                      <div className="text-muted-foreground">• Standard lining</div>
-                    </div>
+                    <div><div className="text-primary font-medium">ADARA</div><div className="text-muted-foreground">290cm width</div></div>
+                    <div><div><span className="font-medium">W:</span> 200cm</div><div><span className="font-medium">D:</span> 240cm</div></div>
+                    <div><div className="text-primary">S-Fold 2.2x</div><div className="text-muted-foreground">Blackout lining</div></div>
                   </div>
                 </motion.div>
               </div>
@@ -776,6 +737,273 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
           )}
         </AnimatePresence>
       </div>
+      
+      {/* Window Creation Popup Overlay */}
+      <AnimatePresence>
+        {showWindowPopup && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-2"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} 
+              animate={{ scale: 1, y: 0 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-background w-full h-full rounded-xl border shadow-xl overflow-hidden flex flex-col"
+            >
+              {/* Header: Design | Treatment | Description */}
+              <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-card">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Design: <strong>Window 1</strong></span>
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="text-sm text-muted-foreground">
+                  Treatment: <strong className="text-foreground">{selectCurtains ? "Curtains" : "—"}</strong>
+                </div>
+                <div className="ml-auto">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              
+              {/* Stepper */}
+              <div className="flex items-center justify-center gap-2 py-3 px-4 border-b bg-muted/20">
+                {/* Window Selected - always complete */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+                  <Check className="h-3 w-3" />
+                  <span className="text-[10px] font-medium">Window Selected</span>
+                </div>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                
+                {/* Treatment */}
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                  getTreatmentStatus() === "complete" ? "bg-green-100 text-green-700" :
+                  getTreatmentStatus() === "active" ? "bg-blue-100 text-blue-700" :
+                  "bg-muted text-muted-foreground"
+                }`}>
+                  {getTreatmentStatus() === "complete" ? <Check className="h-3 w-3" /> : <Layers className="h-3 w-3" />}
+                  <span className="text-[10px] font-medium">Treatment</span>
+                </div>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                
+                {/* Library */}
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                  getLibraryStatus() === "complete" ? "bg-green-100 text-green-700" :
+                  getLibraryStatus() === "active" ? "bg-blue-100 text-blue-700" :
+                  "bg-muted text-muted-foreground"
+                }`}>
+                  {getLibraryStatus() === "complete" ? <Check className="h-3 w-3" /> : <Grid className="h-3 w-3" />}
+                  <span className="text-[10px] font-medium">Library</span>
+                </div>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                
+                {/* Measurements */}
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                  getMeasurementsStatus() === "complete" ? "bg-green-100 text-green-700" :
+                  getMeasurementsStatus() === "active" ? "bg-blue-100 text-blue-700" :
+                  "bg-muted text-muted-foreground"
+                }`}>
+                  {getMeasurementsStatus() === "complete" ? <Check className="h-3 w-3" /> : <Ruler className="h-3 w-3" />}
+                  <span className="text-[10px] font-medium">Measurements</span>
+                </div>
+              </div>
+              
+              {/* Step Content */}
+              <div className="flex-1 overflow-hidden p-4">
+                <AnimatePresence mode="wait">
+                  {/* Treatment Step */}
+                  {showTreatmentStep && (
+                    <motion.div 
+                      key="treatment"
+                      initial={{ opacity: 0, x: 20 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      exit={{ opacity: 0, x: -20 }}
+                      className="h-full"
+                    >
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold mb-1">Select Treatment Type</div>
+                        <div className="text-xs text-muted-foreground">Choose the type of window treatment</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {treatments.map((treatment, i) => (
+                          <motion.div
+                            key={treatment.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              treatment.selected 
+                                ? "border-primary bg-primary/5 shadow-sm" 
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <div className="w-full aspect-square rounded bg-muted mb-2 flex items-center justify-center">
+                              <Layers className={`h-8 w-8 ${treatment.selected ? "text-primary" : "text-muted-foreground"}`} />
+                            </div>
+                            <div className="text-center">
+                              <div className={`text-sm font-medium ${treatment.selected ? "text-primary" : ""}`}>{treatment.name}</div>
+                            </div>
+                            {treatment.selected && (
+                              <motion.div 
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                              >
+                                <Check className="h-3 w-3 text-primary-foreground" />
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Library Step */}
+                  {showLibraryStep && (
+                    <motion.div 
+                      key="library"
+                      initial={{ opacity: 0, x: 20 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      exit={{ opacity: 0, x: -20 }}
+                      className="h-full"
+                    >
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold mb-1">Select Fabric</div>
+                        <div className="text-xs text-muted-foreground">Browse your fabric library</div>
+                      </div>
+                      <div className="flex gap-2 mb-3">
+                        <span className="px-2 py-1 text-[10px] rounded-full bg-primary/10 text-primary font-medium">Blockout</span>
+                        <span className="px-2 py-1 text-[10px] rounded-full bg-muted text-muted-foreground">Light Filter</span>
+                        <span className="px-2 py-1 text-[10px] rounded-full bg-muted text-muted-foreground">Wide (300cm+)</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {fabrics.map((fabric, i) => (
+                          <motion.div
+                            key={fabric.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className={`p-2 rounded-lg border-2 cursor-pointer transition-all relative ${
+                              fabric.selected 
+                                ? "border-primary bg-primary/5 shadow-sm" 
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <div className="absolute top-1.5 left-1.5">
+                              <Star className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                            <div className="w-full aspect-square rounded bg-gradient-to-br from-amber-100 to-amber-200 mb-1.5" />
+                            <div className="text-[11px] font-medium truncate">{fabric.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{fabric.width}</div>
+                            <div className="text-[10px] text-primary font-semibold">{fabric.price}</div>
+                            {fabric.selected && (
+                              <motion.div 
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center"
+                              >
+                                <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Measurements Step */}
+                  {showMeasurementsStep && (
+                    <motion.div 
+                      key="measurements"
+                      initial={{ opacity: 0, x: 20 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      exit={{ opacity: 0, x: -20 }}
+                      className="h-full"
+                    >
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold mb-1">Window Measurements</div>
+                        <div className="text-xs text-muted-foreground">Enter dimensions and options</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Curtain Diagram */}
+                        <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center">
+                          <div className="relative">
+                            {/* Simple curtain visualization */}
+                            <div className="w-32 h-40 border-2 border-dashed border-primary/40 rounded relative">
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] text-primary font-medium px-1 bg-background">Rail Width</div>
+                              <div className="absolute top-1/2 -right-8 -translate-y-1/2 text-[10px] text-primary font-medium rotate-90">Drop</div>
+                              {/* Curtain shapes */}
+                              <div className="absolute inset-2 flex">
+                                <div className="flex-1 bg-primary/10 rounded-t border-t-4 border-primary/30" />
+                                <div className="flex-1 bg-primary/10 rounded-t border-t-4 border-primary/30 ml-1" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Form */}
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Rail Width</label>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-9 px-3 border rounded-lg bg-background flex items-center text-sm">
+                                {widthValue}
+                                {widthValue && widthValue.length < 3 && (
+                                  <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-4 bg-primary ml-0.5" />
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">cm</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Curtain Drop</label>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-9 px-3 border rounded-lg bg-background flex items-center text-sm">
+                                {dropValue}
+                                {widthValue.length >= 3 && dropValue.length < 3 && (
+                                  <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-4 bg-primary ml-0.5" />
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">cm</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Heading Type</label>
+                            <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
+                              <span>S-Fold 2.2x</span>
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Lining</label>
+                            <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
+                              <span>Blockout</span>
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Save button */}
+                      <div className="mt-4 flex justify-end">
+                        <motion.button 
+                          className="px-6 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2"
+                          animate={{ scale: phase >= 0.51 ? [1, 0.95, 1] : 1 }}
+                        >
+                          <Check className="h-4 w-4" />
+                          Save Window
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
