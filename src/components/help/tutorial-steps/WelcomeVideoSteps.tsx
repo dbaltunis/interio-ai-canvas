@@ -1240,12 +1240,50 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
 };
 
 // SCENE 6: CLOSING - Help System Demonstration
+// YouTube-style karaoke text component
+const KaraokeText = ({ 
+  text, 
+  startPhase, 
+  endPhase, 
+  phase,
+  className = ""
+}: { 
+  text: string; 
+  startPhase: number; 
+  endPhase: number; 
+  phase: number;
+  className?: string;
+}) => {
+  const words = text.split(" ");
+  const progress = phaseProgress(phase, startPhase, endPhase);
+  const wordsRevealed = Math.ceil(progress * words.length);
+  
+  return (
+    <span className={className}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0.25 }}
+          animate={{ 
+            opacity: i < wordsRevealed ? 1 : 0.25,
+            scale: i < wordsRevealed ? 1 : 0.98,
+          }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className={`inline-block ${i < wordsRevealed ? 'text-foreground' : 'text-muted-foreground/40'}`}
+        >
+          {word}{i < words.length - 1 ? "\u00A0" : ""}
+        </motion.span>
+      ))}
+    </span>
+  );
+};
+
 export const Scene6Closing = ({ phase = 0 }: StepProps) => {
   const showPageIcons = inPhase(phase, 0.05, 1);
-  const showHelpClick = inPhase(phase, 0.25, 0.45);
-  const showHelpPanel = inPhase(phase, 0.35, 0.65);
-  const showSupport = inPhase(phase, 0.55, 1);
-  const showFinalMessage = inPhase(phase, 0.75, 1);
+  const showHelpClick = inPhase(phase, 0.20, 0.45);
+  const showHelpPanel = inPhase(phase, 0.32, 0.58);
+  const showSupport = inPhase(phase, 0.48, 1);
+  const showFinalMessage = inPhase(phase, 0.72, 1);
   
   const pages = [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -1255,7 +1293,7 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
   ];
   
   return (
-    <div className="h-full flex flex-col items-center justify-center p-4 bg-background relative overflow-hidden">
+    <div className="h-full flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
       {/* Subtle background gradient */}
       <motion.div 
         className="absolute inset-0 opacity-20"
@@ -1269,79 +1307,85 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         transition={{ duration: 4, repeat: Infinity }}
       />
       
-      {/* Page icons with question marks */}
+      {/* Page icons with question marks - LARGER */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: showPageIcons ? 1 : 0, y: showPageIcons ? 0 : 20 }}
-        className="flex gap-3 mb-4"
+        className="flex gap-5 mb-5"
       >
         {pages.map((page, i) => (
           <motion.div 
             key={page.name}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.08 }}
+            transition={{ delay: i * 0.1 }}
             className="relative flex flex-col items-center"
           >
-            <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-colors ${
-              showHelpClick && i === 0 ? 'border-primary bg-primary/10' : 'border-border bg-card'
+            {/* Larger icon box - w-14 h-14 */}
+            <div className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${
+              showHelpClick && i === 0 ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'border-border bg-card'
             }`}>
-              <page.icon className="h-4 w-4 text-muted-foreground" />
+              <page.icon className="h-6 w-6 text-muted-foreground" />
             </div>
-            <span className="text-[9px] text-muted-foreground mt-1">{page.name}</span>
+            <span className="text-xs text-muted-foreground mt-1.5 font-medium">{page.name}</span>
             
-            {/* Question mark badge */}
+            {/* Larger, clearer question mark badge - w-6 h-6 */}
             <motion.div 
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-md"
               animate={showHelpClick && i === 0 ? { 
-                scale: [1, 1.3, 1],
-                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 6px rgba(59, 130, 246, 0.3)', '0 0 0 0 rgba(59, 130, 246, 0)']
+                scale: [1, 1.25, 1],
+                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 10px rgba(59, 130, 246, 0.35)', '0 0 0 0 rgba(59, 130, 246, 0)']
               } : {}}
-              transition={{ duration: 1, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
+              transition={{ duration: 1.2, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
             >
-              <HelpCircle className="h-2.5 w-2.5 text-white" />
+              <HelpCircle className="h-4 w-4 text-white" strokeWidth={2.5} />
             </motion.div>
           </motion.div>
         ))}
       </motion.div>
       
-      {/* Guidance message */}
-      <motion.p 
+      {/* Guidance message - KARAOKE STYLE */}
+      <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: showPageIcons ? 1 : 0 }}
-        className="text-xs text-center text-muted-foreground mb-3"
+        className="text-base font-medium text-center mb-4"
       >
-        Every page has step-by-step guidance
-      </motion.p>
+        <KaraokeText 
+          text="Every page has step-by-step guidance"
+          startPhase={0.08}
+          endPhase={0.25}
+          phase={phase}
+        />
+      </motion.div>
       
-      {/* Help panel preview */}
+      {/* Help panel preview - LARGER */}
       <AnimatePresence>
         {showHelpPanel && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-card border rounded-lg shadow-lg p-3 mb-3 max-w-[240px]"
+            className="bg-card border-2 rounded-xl shadow-xl p-4 mb-4 max-w-[280px]"
           >
-            <div className="flex items-center gap-1.5 mb-2">
-              <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs font-semibold">Quick Guide</span>
+            <div className="flex items-center gap-2 mb-3">
+              <Lightbulb className="h-5 w-5 text-amber-500" />
+              <span className="text-sm font-semibold">Quick Guide</span>
             </div>
-            <div className="space-y-1.5 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">1</div>
+            <div className="space-y-2.5 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">1</div>
                 <span>Create your first project</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">2</div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">2</div>
                 <span>Add rooms and windows</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">3</div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">3</div>
                 <span>Select fabrics and hardware</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">4</div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">4</div>
                 <span>Generate quote and send</span>
               </div>
             </div>
@@ -1349,40 +1393,85 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         )}
       </AnimatePresence>
       
-      {/* Support section */}
+      {/* Support section - LARGER FLAGS + KARAOKE TEXT */}
       <AnimatePresence>
         {showSupport && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-center max-w-xs"
+            className="text-center max-w-sm"
           >
-            <div className="flex justify-center gap-2 mb-2">
-              <span className="text-base">🇳🇿</span>
-              <span className="text-base">🇬🇧</span>
-              <span className="text-base">🇪🇺</span>
-              <span className="text-base">🇺🇸</span>
+            {/* Larger flags - text-2xl */}
+            <div className="flex justify-center gap-4 mb-3">
+              <motion.span 
+                className="text-2xl"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0 }}
+              >🇳🇿</motion.span>
+              <motion.span 
+                className="text-2xl"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >🇬🇧</motion.span>
+              <motion.span 
+                className="text-2xl"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >🇪🇺</motion.span>
+              <motion.span 
+                className="text-2xl"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >🇺🇸</motion.span>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">
-              Need help? Contact your sales administrator.
+            
+            {/* Karaoke support text */}
+            <p className="text-sm mb-2">
+              <KaraokeText 
+                text="Need help? Contact your sales administrator."
+                startPhase={0.52}
+                endPhase={0.65}
+                phase={phase}
+              />
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              We're here to support your business every step of the way.
+            <p className="text-sm text-muted-foreground">
+              <KaraokeText 
+                text="We're here to support your business every step of the way."
+                startPhase={0.60}
+                endPhase={0.75}
+                phase={phase}
+              />
             </p>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Final encouraging message */}
+      {/* Final encouraging message - LARGER + KARAOKE */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: showFinalMessage ? 1 : 0 }}
-        className="mt-4 text-center"
+        className="mt-5 text-center"
       >
-        <h2 className="text-base font-bold text-foreground mb-1">You're all set!</h2>
-        <p className="text-xs text-muted-foreground">
-          Start creating beautiful window treatments
+        <h2 className="text-xl font-bold mb-2">
+          <KaraokeText 
+            text="You're all set!"
+            startPhase={0.74}
+            endPhase={0.82}
+            phase={phase}
+          />
+        </h2>
+        <p className="text-base">
+          <KaraokeText 
+            text="Start creating beautiful window treatments"
+            startPhase={0.80}
+            endPhase={0.95}
+            phase={phase}
+          />
         </p>
       </motion.div>
     </div>
