@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface RoomProduct {
   id: string;
@@ -74,14 +75,14 @@ export const useCreateRoomProduct = () => {
 
   return useMutation({
     mutationFn: async (product: RoomProductInsert) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("room_products")
         .insert({
           ...product,
-          user_id: user.id,
+          user_id: effectiveOwnerId,
         })
         .select()
         .single();
@@ -111,12 +112,12 @@ export const useCreateRoomProducts = () => {
     mutationFn: async (products: RoomProductInsert[]) => {
       if (products.length === 0) return [];
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const productsWithUser = products.map(p => ({
         ...p,
-        user_id: user.id,
+        user_id: effectiveOwnerId,
       }));
 
       const { data, error } = await supabase
