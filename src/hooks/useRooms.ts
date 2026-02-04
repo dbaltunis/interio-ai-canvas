@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import { logProjectActivity } from "@/hooks/useProjectActivityLog";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Room = Tables<"rooms">;
@@ -50,7 +50,6 @@ export const useRooms = (projectId?: string, quoteId?: string) => {
 
 export const useCreateRoom = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (room: Omit<RoomInsert, "user_id">) => {
@@ -111,21 +110,13 @@ export const useCreateRoom = () => {
     },
     onError: (error) => {
       console.error("Failed to create room:", error);
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message || "Failed to create room. Please try again.",
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'create room');
     },
   });
 };
 
 export const useUpdateRoom = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Room> & { id: string }) => {
@@ -158,21 +149,13 @@ export const useUpdateRoom = () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
     onError: (error) => {
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message,
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'update room');
     },
   });
 };
 
 export const useDeleteRoom = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -229,20 +212,9 @@ export const useDeleteRoom = () => {
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
-      toast({
-        title: "Success",
-        description: "Room deleted successfully",
-      });
     },
     onError: (error) => {
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message,
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'delete room');
     },
   });
 };

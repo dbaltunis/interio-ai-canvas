@@ -3,14 +3,12 @@ import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/u
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
 import { useClientMeasurements, useCreateClientMeasurement } from "@/hooks/useClientMeasurements";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useHasPermission } from "@/hooks/usePermissions";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 export const useJobHandlers = (project: any) => {
-  const { toast } = useToast();
+  const { showError, showSuccess, showInfo } = useFriendlyToast();
   const queryClient = useQueryClient();
   const projectId = project?.project_id || project?.id;
   const clientId = project?.client_id;
@@ -35,11 +33,7 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateRoom = async () => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
@@ -53,74 +47,44 @@ export const useJobHandlers = (project: any) => {
         room_type: "living_room"
       });
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to create room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create room. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleRenameRoom = async (roomId: string, newName: string) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
     try {
       await updateRoom.mutateAsync({ id: roomId, name: newName });
-      toast({
-        title: "Success",
-        description: "Room name updated successfully",
-      });
+      showSuccess("Room updated", "Room name updated successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to rename room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update room name. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleChangeRoomType = async (roomId: string, roomType: string) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
     try {
       await updateRoom.mutateAsync({ id: roomId, room_type: roomType });
-      toast({
-        title: "Success",
-        description: "Room type updated successfully",
-      });
+      showSuccess("Room updated", "Room type updated successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to change room type:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update room type. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
@@ -161,82 +125,49 @@ export const useJobHandlers = (project: any) => {
         });
       }
 
-      toast({
-        title: "Success",
-        description: `Window added successfully`,
-      });
+      showSuccess("Window added", "Window added successfully");
 
       return surface; // Return the created surface
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to create window:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create window. Please try again.",
-        variant: "destructive",
-      });
       throw error; // Re-throw so calling code can handle the error
     }
   };
 
   const handleUpdateSurface = async (surfaceId: string, updates: any) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
     try {
       await updateSurface.mutateAsync({ id: surfaceId, ...updates });
-      toast({
-        title: "Success",
-        description: "Surface updated successfully",
-      });
+      showSuccess("Surface updated", "Surface updated successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to update surface:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update surface. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleDeleteSurface = async (surfaceId: string) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
     try {
       await deleteSurface.mutateAsync(surfaceId);
-      toast({
-        title: "Success",
-        description: "Surface deleted successfully",
-      });
+      showSuccess("Surface deleted", "Surface deleted successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to delete surface:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete surface. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleCopyRoom = async (room: any) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
@@ -250,10 +181,7 @@ export const useJobHandlers = (project: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      toast({
-        title: "Copying room...",
-        description: "Please wait while we duplicate the room and its contents",
-      });
+      showInfo("Copying room...", "Please wait while we duplicate the room and its contents");
 
       const newRoom = await createRoom.mutateAsync({
         project_id: projectId,
@@ -376,53 +304,31 @@ export const useJobHandlers = (project: any) => {
         queryClient.invalidateQueries({ queryKey: ["window-summary", newSurfaceId] });
       }
 
-      toast({
-        title: "Success",
-        description: "Room copied successfully",
-      });
+      showSuccess("Room copied", "Room copied successfully");
     } catch (error) {
       console.error("Failed to copy room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to copy room. Please try again.",
-        variant: "destructive",
-      });
+      showError(error, { context: 'copy room' });
     }
   };
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
     try {
       await deleteRoom.mutateAsync(roomId);
-      toast({
-        title: "Success",
-        description: "Room deleted successfully",
-      });
+      showSuccess("Room deleted", "Room deleted successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to delete room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete room. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
     
@@ -448,17 +354,10 @@ export const useJobHandlers = (project: any) => {
 
       await createTreatment.mutateAsync(payload);
 
-      toast({
-        title: "Success",
-        description: "Treatment created successfully",
-      });
+      showSuccess("Treatment created", "Treatment created successfully");
     } catch (error) {
+      // Error already handled in mutation onError
       console.error("Failed to create treatment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create treatment. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 

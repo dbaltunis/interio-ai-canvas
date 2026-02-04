@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import { logProjectActivity } from "@/hooks/useProjectActivityLog";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
@@ -43,7 +43,6 @@ export const useSurfaces = (projectId?: string) => {
 
 export const useCreateSurface = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (surface: Omit<SurfaceInsert, "user_id">) => {
@@ -101,21 +100,13 @@ export const useCreateSurface = () => {
     onError: (error) => {
       console.error("=== SURFACE CREATION ERROR ===");
       console.error("Create surface error:", error);
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message,
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'add window');
     },
   });
 };
 
 export const useUpdateSurface = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Surface> & { id: string }) => {
@@ -145,28 +136,15 @@ export const useUpdateSurface = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
-      
-      toast({
-        title: "Success",
-        description: "Surface updated successfully",
-      });
     },
     onError: (error) => {
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message,
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'update window');
     },
   });
 };
 
 export const useDeleteSurface = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -252,21 +230,9 @@ export const useDeleteSurface = () => {
       
       // Reset query cache to force fresh data
       queryClient.resetQueries({ queryKey: ["quotes"] });
-      
-      toast({
-        title: "Success",
-        description: "Surface deleted successfully",
-      });
     },
     onError: (error) => {
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message,
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'delete window');
     },
   });
 };

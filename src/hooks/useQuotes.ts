@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
-import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
-import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber, syncSequenceCounter } from "./useNumberSequenceGeneration";
+import { syncSequenceCounter } from "./useNumberSequenceGeneration";
 import { logProjectActivity } from "./useProjectActivityLog";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Quote = Tables<"quotes">;
@@ -65,7 +64,6 @@ export const useQuotes = (projectId?: string, options?: { enabled?: boolean }) =
 
 export const useCreateQuote = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (quote: Omit<QuoteInsert, "user_id" | "quote_number"> & { quote_number?: string }) => {
@@ -197,11 +195,7 @@ export const useCreateQuote = () => {
         queryClient.setQueryData(["quotes"], context.previousQuotes);
       }
       console.error("Failed to create quote:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create quote. Please try again.",
-        variant: "destructive"
-      });
+      showFriendlyError(error, 'create quote');
     },
     onSuccess: (data) => {
       // Invalidate both quotes and projects to ensure fresh data
@@ -213,7 +207,6 @@ export const useCreateQuote = () => {
 
 export const useUpdateQuote = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<QuoteUpdate>) => {
@@ -249,11 +242,7 @@ export const useUpdateQuote = () => {
         queryClient.setQueryData(["quotes"], context.previousQuotes);
       }
       console.error("Failed to update quote:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update quote. Please try again.",
-        variant: "destructive"
-      });
+      showFriendlyError(error, 'update quote');
     },
     onSuccess: (data) => {
       // Invalidate all quote-related queries to ensure UI updates
@@ -268,7 +257,6 @@ export const useUpdateQuote = () => {
 
 export const useDeleteQuote = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -342,11 +330,7 @@ export const useDeleteQuote = () => {
         queryClient.setQueryData(["quotes"], context.previousQuotes);
       }
       console.error("Failed to delete quote:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete quote. Please try again.",
-        variant: "destructive"
-      });
+      showFriendlyError(error, 'delete quote');
     },
     onSuccess: () => {
       // Invalidate all related queries
@@ -355,11 +339,6 @@ export const useDeleteQuote = () => {
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
-      
-      toast({
-        title: "Success",
-        description: "Quote deleted successfully",
-      });
     }
   });
 };

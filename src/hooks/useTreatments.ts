@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Treatment = Tables<"treatments">;
@@ -325,14 +326,7 @@ export const useCreateTreatment = () => {
     },
     onError: (error) => {
       console.error("Create treatment mutation error:", error);
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message || "Failed to create treatment",
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'create treatment');
     },
   });
 };
@@ -402,14 +396,7 @@ export const useUpdateTreatment = () => {
     },
     onError: (error) => {
       console.error("Update treatment mutation error:", error);
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message || "Failed to update treatment",
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'update treatment');
     },
   });
 };
@@ -513,14 +500,7 @@ export const useDeleteTreatment = () => {
     },
     onError: (error) => {
       console.error("Delete treatment mutation error:", error);
-      const isStatusBlock = error.message?.includes('Project is in');
-      toast({
-        title: isStatusBlock ? "Project Locked" : "Error",
-        description: isStatusBlock 
-          ? "This project's status prevents editing. Change the status to make modifications."
-          : error.message || "Failed to delete treatment",
-        variant: isStatusBlock ? "default" : "destructive",
-      });
+      showFriendlyError(error, 'delete treatment');
     },
   });
 };

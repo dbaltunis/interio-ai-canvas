@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
@@ -42,7 +42,6 @@ export const useWindows = (projectId?: string) => {
 
 export const useCreateWindow = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (surface: Omit<SurfaceInsert, "user_id">) => {
@@ -63,18 +62,13 @@ export const useCreateWindow = () => {
     },
     onError: (error) => {
       console.error("Create surface error:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      showFriendlyError(error, 'create window');
     },
   });
 };
 
 export const useUpdateWindow = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Surface> & { id: string }) => {
@@ -92,18 +86,13 @@ export const useUpdateWindow = () => {
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.room_id] });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      showFriendlyError(error, 'update window');
     },
   });
 };
 
 export const useDeleteWindow = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -117,17 +106,9 @@ export const useDeleteWindow = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      toast({
-        title: "Success",
-        description: "Surface deleted successfully",
-      });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      showFriendlyError(error, 'delete window');
     },
   });
 };

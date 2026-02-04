@@ -20,6 +20,17 @@ interface ErrorPattern {
 }
 
 const ERROR_PATTERNS: ErrorPattern[] = [
+  // Project lock/status errors - persistent with clear guidance
+  {
+    patterns: ['project is in', 'project locked', 'status prevents', 'cannot add room', 'cannot add window', 'cannot add treatment', 'cannot update room', 'cannot update window', 'cannot update treatment', 'cannot delete room', 'cannot delete window', 'cannot delete treatment'],
+    error: {
+      title: "Project is locked",
+      message: "This project is in a status that prevents changes. To make edits, change the status back to 'Draft' or 'In Progress'.",
+      icon: 'permission',
+      persistent: true,
+    }
+  },
+  
   // Network/Connection errors - auto-dismiss after 8 seconds
   {
     patterns: ['network', 'failed to fetch', 'connection', 'timeout', 'net::err', 'networkerror', 'cors'],
