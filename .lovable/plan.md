@@ -1,112 +1,89 @@
 
-# Minor UI Fixes - 4 Items
+# Fix Pricing for Awnings & Norman SmartDrapes (Greg Shave / CCCO)
 
-## Overview
+## Root Cause Identified
 
-Four small UI improvements for the measurement popup and curtain visualization:
+The pricing grid resolution in `useFabricEnrichment.ts` has incomplete subcategory-to-product-type mappings:
 
-| # | Issue | Fix |
-|---|-------|-----|
-| 1 | "Window added successfully" notification is too noisy | Remove the toast |
-| 2 | Treatment cards are larger than fabric cards | Match grid layout to inventory panel |
-| 3 | "Out" stock badge shows for non-tracked fabrics | Only show stock badge when `track_inventory` is true |
-| 4 | Curtain drop arrow is cut off/hidden | Fix CSS positioning to prevent clipping |
+```typescript
+// CURRENT (lines 48-53) - Only handles venetian and roller
+const productTypeForGrid = fabricItem.subcategory?.includes('venetian') 
+  ? 'venetian_blinds' 
+  : fabricItem.subcategory?.includes('roller')
+  ? 'roller_blinds'
+  : productCategory;  // ← awning_fabric and vertical_fabric fall through here incorrectly
+```
+
+**Missing mappings:**
+- `awning_fabric` → should map to `awning`
+- `vertical_fabric` / `vertical_slats` → should map to `vertical_blinds`
+
+The grids exist in CCCO's account and materials have correct price groups, but the code doesn't map them properly during enrichment.
 
 ---
 
-## 1. Remove "Window Added" Notification
+## Fix #1: Update Fabric Enrichment Mapping
 
-**File:** `src/components/job-creation/JobHandlers.tsx`
+**File:** `src/hooks/pricing/useFabricEnrichment.ts`
 
-**Line 128:** Delete this line:
-```tsx
-showSuccess("Window added", "Window added successfully");
+Replace lines 48-53 with comprehensive mapping:
+
+```typescript
+// Map subcategory to product_type for grid lookup
+const subcategory = fabricItem.subcategory?.toLowerCase() || '';
+let productTypeForGrid = productCategory;
+
+if (subcategory.includes('venetian')) {
+  productTypeForGrid = 'venetian_blinds';
+} else if (subcategory.includes('roller')) {
+  productTypeForGrid = 'roller_blinds';
+} else if (subcategory.includes('vertical') || subcategory.includes('smartdrape')) {
+  productTypeForGrid = 'vertical_blinds';
+} else if (subcategory.includes('awning')) {
+  productTypeForGrid = 'awning';
+} else if (subcategory.includes('cellular') || subcategory.includes('honeycomb')) {
+  productTypeForGrid = 'cellular_blinds';
+} else if (subcategory.includes('roman')) {
+  productTypeForGrid = 'roman_blinds';
+}
 ```
-
-The notification for adding a window is unnecessary - save important notifications for meaningful actions like project status changes, errors, or saved data.
 
 ---
 
-## 2. Match Treatment Card Size to Fabric Cards
+## Fix #2: Update isBlindTreatment Detection
 
-**File:** `src/components/measurements/treatment-selection/TreatmentTypeGrid.tsx`
+**File:** `src/utils/pricing/calculateTreatmentPricing.ts`
 
-**Line 129:** Change grid from:
-```tsx
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+Add missing categories to `isBlindTreatment` check (lines 167-176):
+
+```typescript
+const isBlindTreatment = treatmentCategory.includes('blind') || 
+                         treatmentCategory === 'shutters' ||
+                         treatmentCategory.includes('awning') ||  // ADD
+                         treatmentCategory.includes('drape') ||   // ADD (SmartDrape)
+                         templateName.includes('blind') ||
+                         templateName.includes('roman') ||
+                         templateName.includes('roller') ||
+                         templateName.includes('venetian') ||
+                         templateName.includes('vertical') ||
+                         templateName.includes('cellular') ||
+                         templateName.includes('honeycomb') ||
+                         templateName.includes('shutter') ||
+                         templateName.includes('awning') ||       // ADD
+                         templateName.includes('smartdrape');     // ADD
 ```
-To match the fabric inventory layout:
-```tsx
-<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-```
-
-**Line 46:** Reduce card padding from `p-2` to `p-1.5` for more compact appearance.
 
 ---
 
-## 3. Hide Stock Badge for Non-Tracked Fabrics
+## Verification Data
 
-**File:** `src/components/inventory/InventorySelectionPanel.tsx`
+CCCO account already has:
+- **12 awning pricing grids** (AUTO-1, AUTO-2, STRAIGHT-1, ZIP-1, etc.)
+- **4 vertical blinds grids** (including Norman 0_LF_AIR)
+- **Awning fabrics with matching price groups** (e.g., "Auto - DAYSCREEN 95" → Auto-Budget)
+- **Vertical materials with matching price groups** (e.g., "Lakeshore Stripe LF" → 0_LF_AIR)
 
-**Lines 734-746:** Wrap the stock badge in a check for `track_inventory`:
-
-Before:
-```tsx
-{item.quantity !== undefined && (
-  <Badge ...>
-    {item.quantity <= 0 ? 'Out' : `${item.quantity} ${units.fabric || 'm'}`}
-  </Badge>
-)}
-```
-
-After:
-```tsx
-{item.track_inventory !== false && item.quantity !== undefined && (
-  <Badge ...>
-    {item.quantity <= 0 ? 'Out' : `${item.quantity} ${units.fabric || 'm'}`}
-  </Badge>
-)}
-```
-
-This ensures:
-- Fabrics with `track_inventory: true` or `undefined` (legacy) show stock
-- Fabrics with `track_inventory: false` hide the stock badge entirely
-- No confusing "Out" for non-stocked fabrics
-
----
-
-## 4. Fix Curtain Drop Arrow Visibility
-
-**File:** `src/components/shared/measurement-visual/MeasurementVisualCore.tsx`
-
-**Lines 239-251:** The drop measurement indicator is being clipped because:
-- The container uses `right-0` (flush with parent edge)
-- The label uses `-right-16` (64px outside container)
-- Parent likely has `overflow-hidden`
-
-**Fix:** Adjust positioning to keep the drop label inside the visible area:
-
-Before:
-```tsx
-<div className={`absolute right-0 ...`}>
-  ...
-  <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 ...">
-    Drop: {displayValue(measurements.drop)}
-  </span>
-```
-
-After:
-```tsx
-<div className={`absolute right-4 ...`}>
-  ...
-  <span className="absolute top-1/2 -right-12 transform -translate-y-1/2 ...">
-    Drop: {displayValue(measurements.drop)}
-  </span>
-```
-
-Also apply the same fix to **CurtainVisualizer.tsx** (lines 150-162) which has identical CSS:
-- Change `right-2` to `right-4`
-- Change `-right-20` to `-right-12`
+The data is correct - only the code mapping is missing.
 
 ---
 
@@ -114,20 +91,14 @@ Also apply the same fix to **CurtainVisualizer.tsx** (lines 150-162) which has i
 
 | File | Change |
 |------|--------|
-| `src/components/job-creation/JobHandlers.tsx` | Remove line 128 (showSuccess toast) |
-| `src/components/measurements/treatment-selection/TreatmentTypeGrid.tsx` | Update grid classes and card padding |
-| `src/components/inventory/InventorySelectionPanel.tsx` | Add `track_inventory !== false` check |
-| `src/components/shared/measurement-visual/MeasurementVisualCore.tsx` | Fix drop arrow positioning |
-| `src/components/treatment-visualizers/CurtainVisualizer.tsx` | Fix drop arrow positioning |
+| `src/hooks/pricing/useFabricEnrichment.ts` | Add awning, vertical, smartdrape subcategory mappings |
+| `src/utils/pricing/calculateTreatmentPricing.ts` | Add awning/drape to isBlindTreatment detection |
 
 ---
 
-## Visual Result
+## Expected Result
 
-**Treatment Cards:** Will match the compact 6-column fabric library layout
-
-**Stock Badge:**
-- Tracked fabrics: Shows "Out" or "15m" as before
-- Non-tracked fabrics: No badge at all (cleaner)
-
-**Drop Arrow:** The green arrow and "Drop: 230cm" label will be fully visible alongside the curtain, not cut off at the edge
+After these fixes:
+- Awning fabrics will resolve to awning pricing grids
+- Norman SmartDrape materials will resolve to vertical_blinds pricing grids
+- Grid prices will calculate correctly for Greg's quotes
