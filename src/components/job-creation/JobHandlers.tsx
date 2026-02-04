@@ -125,8 +125,6 @@ export const useJobHandlers = (project: any) => {
         });
       }
 
-      showSuccess("Window added", "Window added successfully");
-
       return surface; // Return the created surface
     } catch (error) {
       // Error already handled in mutation onError

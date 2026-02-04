@@ -43,7 +43,7 @@ const TreatmentCard = ({ treatment, isSelected, selectedCardRef }: {
           : 'border-border hover:border-primary/30'
       }`}
     >
-      <CardContent className="p-2">
+      <CardContent className="p-1.5">
         <div className="flex flex-col items-center space-y-2">
           {/* Image preview with resolved image from multiple sources */}
           <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden">
@@ -126,7 +126,7 @@ export const TreatmentTypeGrid = ({
           <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground px-1">
             {category}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {categoryTreatments.map((treatment) => {
               const isSelected = selectedId === treatment.id;
               

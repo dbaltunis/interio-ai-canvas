@@ -237,12 +237,12 @@ export const MeasurementVisualCore = ({
 
       {/* Drop Measurement - Height of curtain */}
       {hasValue(measurements.drop) && (
-        <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
+        <div className={`absolute right-4 ${hardwareType === "track" ? "top-6" : "top-18"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
           {/* Top arrow */}
           <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
           {/* Measurement line */}
           <div className="flex-1 border-r-2 border-green-600 relative">
-            <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
+            <span className="absolute top-1/2 -right-12 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
               Drop: {displayValue(measurements.drop)}
             </span>
           </div>
