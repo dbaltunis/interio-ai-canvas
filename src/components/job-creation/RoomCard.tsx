@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, RectangleHorizontal, Package } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
+import { cn } from "@/lib/utils";
 import { SurfaceList } from "./SurfaceList";
 import { RoomProductsList } from "./RoomProductsList";
 import { ProductServiceDialog, SelectedProduct } from "./ProductServiceDialog";
@@ -34,6 +35,7 @@ interface RoomCardProps {
   onChangeRoomType: (roomId: string, roomType: string) => void;
   isCopyingRoom?: boolean;
   isReadOnly?: boolean;
+  isFirstRoom?: boolean;
 }
 
 export const RoomCard = ({ 
@@ -54,7 +56,8 @@ export const RoomCard = ({
   onRenameRoom,
   onChangeRoomType,
   isCopyingRoom = false,
-  isReadOnly = false
+  isReadOnly = false,
+  isFirstRoom = false
 }: RoomCardProps) => {
   const {
     surfacesLoading,
@@ -202,7 +205,10 @@ export const RoomCard = ({
                 disabled={isCreatingSurface}
                 variant="outline"
                 size={compact ? "sm" : "sm"}
-                className="flex-1 animate-attention-ring"
+                className={cn(
+                  "flex-1",
+                  isFirstRoom && roomSurfaces.length === 0 && "animate-attention-ring"
+                )}
               >
                 <RectangleHorizontal className="h-4 w-4 mr-2" />
                 Add Measurement Worksheet

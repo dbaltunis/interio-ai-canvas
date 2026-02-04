@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
-import { Badge } from "@/components/ui/badge";
 import { RecentSelection } from "@/hooks/useRecentMaterialSelections";
 import { cn } from "@/lib/utils";
 
@@ -25,28 +24,25 @@ export const RecentSelectionsRow = ({
   if (items.length === 0) return null;
 
   return (
-    <div className={cn("py-2", className)}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Recently Used</span>
-          <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-            {items.length}
-          </Badge>
+    <div className={cn("py-1.5", className)}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground">Recent</span>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+          className="h-5 px-1.5 text-[9px] text-muted-foreground hover:text-destructive"
           onClick={onClear}
         >
-          <X className="h-3 w-3 mr-1" />
+          <X className="h-2.5 w-2.5 mr-0.5" />
           Clear
         </Button>
       </div>
       
       <ScrollArea className="w-full">
-        <div className="flex gap-2 pb-2">
+        <div className="flex gap-1.5 pb-1">
           {items.map((item) => (
             <Card 
               key={item.itemId}

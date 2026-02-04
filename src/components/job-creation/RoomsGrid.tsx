@@ -68,7 +68,7 @@ export const RoomsGrid = ({
             <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} isReadOnly={isReadOnly} />
           </div>
         ) : (
-          rooms.map((room) => (
+          rooms.map((room, index) => (
             <RoomCard 
               key={room.id} 
               room={room} 
@@ -89,6 +89,7 @@ export const RoomsGrid = ({
               onChangeRoomType={onChangeRoomType}
               isCopyingRoom={isCopyingRoom}
               isReadOnly={isReadOnly}
+              isFirstRoom={index === 0}
             />
           ))
         )}

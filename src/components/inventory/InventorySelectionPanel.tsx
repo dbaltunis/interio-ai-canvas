@@ -942,11 +942,11 @@ export const InventorySelectionPanel = ({
       
       {/* TWC Linked Materials Indicator - shows when filtering by parent product */}
       {parentProductId && (
-        <div className="flex items-center gap-2 py-1.5 px-3 border border-primary/30 bg-primary/10 rounded-md">
-          <Building2 className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-medium text-primary">TWC Linked Materials</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">
-            {treatmentFabrics.length} items
+        <div className="flex items-center gap-1.5 mt-2 py-1 px-2 bg-muted/50 rounded text-muted-foreground">
+          <Building2 className="h-3 w-3" />
+          <span className="text-[10px] font-medium">TWC Linked</span>
+          <Badge variant="outline" className="ml-auto text-[9px] h-4 px-1">
+            {treatmentFabrics.length}
           </Badge>
         </div>
       )}
@@ -1182,8 +1182,8 @@ export const InventorySelectionPanel = ({
                 {/* Skeleton loading state */}
                 {key === 'fabric' && isFabricsLoading && displayItems.length === 0 && (
                   <ScrollArea className="h-full">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 p-2">
-                      <InventoryCardSkeleton count={8} />
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 p-2">
+                      <InventoryCardSkeleton count={12} />
                     </div>
                   </ScrollArea>
                 )}
@@ -1191,7 +1191,7 @@ export const InventorySelectionPanel = ({
                 {/* Items grid */}
                 {(!isFabricsLoading || displayItems.length > 0) && (
                   <ScrollArea className="h-full">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 p-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 p-2">
                       {displayItems.map(item => renderInventoryItem(item, key))}
                     </div>
                     
