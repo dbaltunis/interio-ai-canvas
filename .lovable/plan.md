@@ -1,138 +1,263 @@
 
+# Lithuanian Documents + Fix Hardcoded Category Markups
 
-# Multi-Tenant Audit: Fix Team Member Creation Bugs
+## Overview
 
-## Summary
-
-I audited all mutation hooks in the codebase and found **12 hooks** with the same bug that was just fixed in `useBusinessSettings.ts`. When team members (Admin/Staff) try to create records, the system uses their own `user.id` instead of the account owner's ID, causing:
-
-- **RLS policy violations** (permission denied errors)
-- **Data siloed to the wrong user** (invisible to team and account owner)
-- **"This doesn't work" reports from clients**
+This plan addresses two issues:
+1. **Add Lithuanian document language** - A dropdown in Settings that translates customer-facing documents (quotes, invoices) to Lithuanian while keeping the app UI in English
+2. **Fix hardcoded category markups** - The markup categories are hardcoded in `PricingRulesTab.tsx` instead of using the dynamic `UNIFIED_CATEGORIES` from `treatmentCategories.ts`
 
 ---
 
-## Affected Hooks (Priority Order)
+## Part 1: Lithuanian Document Language
 
-### Critical - Core Workflow
+### What You'll Get
+- A new "Document Language" dropdown in Business Settings
+- When set to Lithuanian, all generated documents (quotes, invoices, work orders) will use Lithuanian labels
+- The app interface stays in English - only the PDF/email documents your clients see will be translated
 
-| File | Hook | Impact |
-|------|------|--------|
-| `src/hooks/useQuotes.ts` | `useCreateQuote` | Team members can't create quotes |
-| `src/hooks/useTreatments.ts` | `useCreateTreatment` | Team members can't add treatments to projects |
-| `src/hooks/useWindows.ts` | `useCreateWindow` | Team members can't add surfaces/windows |
-| `src/hooks/useRoomProducts.ts` | `useCreateRoomProduct`, `useCreateRoomProducts` | Team members can't add products to rooms |
+### Lithuanian Translations for Documents
 
-### High - Account Configuration
-
-| File | Hook | Impact |
-|------|------|--------|
-| `src/hooks/useJobStatuses.ts` | `useCreateJobStatus` | Team members can't configure job statuses |
-| `src/hooks/useNumberSequences.ts` | `useCreateNumberSequence` | Team members can't set up document numbering |
-| `src/hooks/useSuppliers.ts` | `useCreateSupplier` | Team members can't add suppliers |
-| `src/hooks/useInventoryManagement.ts` | `useCreateInventoryItem` | Team members can't add inventory |
-
-### Medium - Exceptions to Review
-
-| File | Hook | Decision Needed |
-|------|------|-----------------|
-| `src/hooks/useAppointments.ts` | `useCreateAppointment` | **Keep per-user** - Calendar events should be owned by the individual who creates them |
+| English | Lithuanian |
+|---------|------------|
+| Quote # | Pasiūlymas Nr. |
+| Invoice # | Sąskaita-faktūra Nr. |
+| Estimate # | Sąmata Nr. |
+| Work Order # | Darbo užsakymas Nr. |
+| Date | Data |
+| Valid Until | Galioja iki |
+| Due Date | Mokėjimo terminas |
+| Subtotal | Tarpinė suma |
+| Tax (VAT) | PVM |
+| Total | Iš viso |
+| Balance Due | Mokėtina suma |
+| Bill To / Sold to | Pirkėjas |
+| Description | Aprašymas |
+| Quantity | Kiekis |
+| Unit Price | Vieneto kaina |
+| Amount | Suma |
+| Bank | Bankas |
+| Account | Sąskaita |
+| IBAN | IBAN |
+| Payment Terms | Mokėjimo sąlygos |
+| Terms & Conditions | Sąlygos |
+| Signature | Parašas |
+| PAID | APMOKĖTA |
+| UNPAID | NEAPMOKĖTA |
+| OVERDUE | VĖLUOJAMA |
 
 ---
 
-## The Fix Pattern
+## Part 2: Fix Hardcoded Category Markups
 
-Each affected hook needs the same 5-line addition before the insert:
+### The Problem
+In `PricingRulesTab.tsx`, lines 557-604 have hardcoded arrays:
 
-```tsx
-// BEFORE (buggy):
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) throw new Error("User not authenticated");
+```text
+CURRENT (HARDCODED):
+┌────────────────────────────────┐
+│ Product Categories             │
+│ • Curtains & Drapes            │
+│ • Blinds                       │  ← Missing: Roller, Zebra, Venetian, etc.
+│ • Shutters                     │
+│ • Hardware                     │
+│ • Fabrics                      │
+│ • Installation                 │
+└────────────────────────────────┘
+```
 
-const { data, error } = await supabase
-  .from("table_name")
-  .insert({
-    ...data,
-    user_id: user.id,  // ❌ Uses team member's ID
-  })
+### The Fix
+Import `UNIFIED_CATEGORIES` from `treatmentCategories.ts` and dynamically generate markup inputs:
 
-// AFTER (fixed):
-import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
-
-// In mutation function:
-const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
-
-const { data, error } = await supabase
-  .from("table_name")
-  .insert({
-    ...data,
-    user_id: effectiveOwnerId,  // ✅ Uses account owner's ID
-  })
+```text
+AFTER FIX (DYNAMIC):
+┌────────────────────────────────────────────┐
+│ Treatment Categories                       │
+│ • Curtains          • Roman Blinds         │
+│ • Roller Blinds     • Zebra Blinds         │
+│ • Venetian Blinds   • Vertical Blinds      │
+│ • Cellular Shades   • Panel Glides         │
+│ • Shutters          • Plantation Shutters  │
+│ • Awnings           • Wallpaper            │
+├────────────────────────────────────────────┤
+│ Other Categories                           │
+│ • Hardware          • Fabrics              │
+│ • Installation                             │
+├────────────────────────────────────────────┤
+│ Manufacturing / Sewing                     │
+│ • Curtain Making    • Roman Making         │
+│ • Blind Making      • Shutter Making       │
+└────────────────────────────────────────────┘
 ```
 
 ---
 
-## Files to Modify
+## Technical Implementation
 
-| File | Change |
-|------|--------|
-| `src/hooks/useQuotes.ts` | Add `getEffectiveOwnerForMutation` to `useCreateQuote` |
-| `src/hooks/useTreatments.ts` | Add `getEffectiveOwnerForMutation` to `useCreateTreatment` |
-| `src/hooks/useWindows.ts` | Add `getEffectiveOwnerForMutation` to `useCreateWindow` |
-| `src/hooks/useRoomProducts.ts` | Add `getEffectiveOwnerForMutation` to `useCreateRoomProduct` and `useCreateRoomProducts` |
-| `src/hooks/useJobStatuses.ts` | Add `getEffectiveOwnerForMutation` to `useCreateJobStatus` |
-| `src/hooks/useNumberSequences.ts` | Add `getEffectiveOwnerForMutation` to `useCreateNumberSequence` |
-| `src/hooks/useSuppliers.ts` | Add `getEffectiveOwnerForMutation` to `useCreateSupplier` |
-| `src/hooks/useInventoryManagement.ts` | Add `getEffectiveOwnerForMutation` to `useCreateInventoryItem` |
+### Files to Create
 
----
+| File | Purpose |
+|------|---------|
+| `src/utils/documentTranslations.ts` | Central translation map for document labels (EN + LT) |
 
-## Already Fixed ✅
+### Files to Modify
 
-These hooks already use the correct pattern:
-
-| File | Status |
-|------|--------|
-| `src/hooks/useBusinessSettings.ts` | ✅ Fixed (just now) |
-| `src/hooks/useSMSTemplates.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
-| `src/hooks/useVendors.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
-| `src/hooks/useSystemTemplates.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
-| `src/hooks/useSurfaces.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
-| `src/hooks/useRooms.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
-| `src/hooks/useClients.ts` | ✅ Uses `effectiveOwnerId` pattern |
+| File | Changes |
+|------|---------|
+| `src/hooks/useBusinessSettings.ts` | Add `document_language` to `BusinessSettings` interface |
+| `src/components/settings/tabs/BusinessSettingsTab.tsx` | Add "Document Language" dropdown in Company section |
+| `src/utils/documentTypeConfig.ts` | Add `getLocalizedConfig()` that returns translated labels |
+| `src/components/settings/templates/visual-editor/shared/BlockRenderer.tsx` | Use translation helper for bank details, totals labels, status badges |
+| `src/components/settings/tabs/PricingRulesTab.tsx` | Replace hardcoded category arrays with dynamic generation from `UNIFIED_CATEGORIES` |
+| `src/hooks/useMarkupSettings.ts` | Ensure `category_markups` supports all treatment types dynamically |
 
 ---
 
-## Intentionally Per-User (No Fix Needed)
+## Detailed Changes
 
-| File | Reason |
-|------|--------|
-| `src/hooks/useAppointments.ts` | Calendar events are personal - each team member manages their own schedule |
-| `src/hooks/useUserPreferences.ts` | UI preferences are per-user (theme, sidebar state, etc.) |
+### 1. Create Translation Helper
+
+Create `src/utils/documentTranslations.ts`:
+
+```tsx
+export type DocumentLanguage = 'en' | 'lt';
+
+export const DOCUMENT_TRANSLATIONS: Record<string, Record<DocumentLanguage, string>> = {
+  // Document titles
+  'Quote': { en: 'Quote', lt: 'Pasiūlymas' },
+  'Invoice': { en: 'Invoice', lt: 'Sąskaita-faktūra' },
+  'Estimate': { en: 'Estimate', lt: 'Sąmata' },
+  'Work Order': { en: 'Work Order', lt: 'Darbo užsakymas' },
+  
+  // Labels
+  'Quote #': { en: 'Quote #', lt: 'Pasiūlymas Nr.' },
+  'Invoice #': { en: 'Invoice #', lt: 'Sąskaita-faktūra Nr.' },
+  'Date': { en: 'Date', lt: 'Data' },
+  'Valid Until': { en: 'Valid Until', lt: 'Galioja iki' },
+  'Due Date': { en: 'Due Date', lt: 'Mokėjimo terminas' },
+  
+  // Totals
+  'Subtotal': { en: 'Subtotal', lt: 'Tarpinė suma' },
+  'Tax': { en: 'Tax', lt: 'PVM' },
+  'Total': { en: 'Total', lt: 'Iš viso' },
+  'Balance Due': { en: 'Balance Due', lt: 'Mokėtina suma' },
+  
+  // Table headers
+  'Description': { en: 'Description', lt: 'Aprašymas' },
+  'Quantity': { en: 'Quantity', lt: 'Kiekis' },
+  'Unit Price': { en: 'Unit Price', lt: 'Vieneto kaina' },
+  'Amount': { en: 'Amount', lt: 'Suma' },
+  
+  // Client
+  'Bill To': { en: 'Bill To', lt: 'Pirkėjas' },
+  'Sold to': { en: 'Sold to', lt: 'Pirkėjas' },
+  
+  // Bank details
+  'Bank': { en: 'Bank', lt: 'Bankas' },
+  'Account Name': { en: 'Account Name', lt: 'Sąskaitos savininkas' },
+  'Account': { en: 'Account', lt: 'Sąskaita' },
+  'IBAN': { en: 'IBAN', lt: 'IBAN' },
+  'BIC/SWIFT': { en: 'BIC/SWIFT', lt: 'BIC/SWIFT' },
+  
+  // Status
+  'PAID': { en: 'PAID', lt: 'APMOKĖTA' },
+  'UNPAID': { en: 'UNPAID', lt: 'NEAPMOKĖTA' },
+  'OVERDUE': { en: 'OVERDUE', lt: 'VĖLUOJAMA' },
+  
+  // Footer
+  'Terms & Conditions': { en: 'Terms & Conditions', lt: 'Sąlygos' },
+  'Payment Terms': { en: 'Payment Terms', lt: 'Mokėjimo sąlygos' },
+  'Signature': { en: 'Signature', lt: 'Parašas' },
+};
+
+export function t(key: string, lang: DocumentLanguage = 'en'): string {
+  return DOCUMENT_TRANSLATIONS[key]?.[lang] || key;
+}
+```
+
+### 2. Add Document Language Setting
+
+In `BusinessSettingsTab.tsx`, add a dropdown near the Company section:
+
+```tsx
+<Select 
+  value={formData.document_language || 'en'} 
+  onValueChange={(value) => handleInputChange('document_language', value)}
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select language" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="en">English</SelectItem>
+    <SelectItem value="lt">Lietuvių (Lithuanian) - Documents only</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+### 3. Fix PricingRulesTab Categories
+
+Replace the hardcoded arrays in `PricingRulesTab.tsx`:
+
+```tsx
+import { UNIFIED_CATEGORIES } from '@/types/treatmentCategories';
+
+// Generate treatment category markups dynamically
+const treatmentCategories = Object.entries(UNIFIED_CATEGORIES).map(([key, config]) => ({
+  id: `${key}Markup`,
+  label: config.display_name,
+  key: key  // This is what gets saved to category_markups
+}));
+
+// Keep static categories for non-treatments
+const otherCategories = [
+  { id: 'hardwareMarkup', label: 'Hardware', key: 'hardware' },
+  { id: 'fabricMarkup', label: 'Fabrics', key: 'fabric' },
+  { id: 'installationMarkup', label: 'Installation', key: 'installation' }
+];
+```
 
 ---
 
-## Verification After Fix
+## Settings UI Preview
 
-Test each scenario with a Staff/Admin team member:
+The Document Language dropdown will appear in Business Settings:
 
-1. **Create a new quote** → Should save successfully and be visible to owner
-2. **Add a treatment to a project** → Should work without RLS errors
-3. **Add a surface/window** → Should work for team members
-4. **Add products to a room** → Should work in the room designer
-5. **Configure job statuses** → Team members can help set up the account
-6. **Add suppliers** → Team members can add vendors
-7. **Add inventory items** → Team members can manage fabric library
+```text
+┌─ Company Details ──────────────────────────┐
+│ Company Name: [Your Company Name      ]    │
+│ ...                                        │
+├────────────────────────────────────────────┤
+│ Document Language                          │
+│ ┌────────────────────────────────────────┐ │
+│ │ 🇱🇹 Lietuvių (Lithuanian) - Documents  ▼│ │
+│ └────────────────────────────────────────┘ │
+│ ℹ️ Only affects quotes & invoices your     │
+│   clients see. App interface stays English │
+└────────────────────────────────────────────┘
+```
 
 ---
 
 ## Summary
 
-| Category | Count |
-|----------|-------|
-| Hooks to fix | 8 |
-| Already correct | 7 |
-| Intentionally per-user | 2 |
+| Task | Complexity | Impact |
+|------|------------|--------|
+| Create translation helper | Low | Enables all document translation |
+| Add language dropdown | Low | User can select Lithuanian |
+| Update BlockRenderer labels | Medium | Translates 20+ document labels |
+| Update documentTypeConfig | Low | Translates document titles |
+| Fix category markups | Medium | Shows all 12+ treatment types in markup settings |
 
-This fix will enable the workflow you want: **give a team member permission to set up and manage the app on your behalf**.
+**Estimated Changes:** 6 files, ~300 lines of code
 
+---
+
+## Verification Steps
+
+After implementation:
+1. Go to Settings → Business Details
+2. Change "Document Language" to Lithuanian
+3. Open any quote in preview mode
+4. Verify labels show: "Pasiūlymas Nr.", "Tarpinė suma", "Iš viso", etc.
+5. Go to Settings → Pricing & Tax → Tax & Markup tab
+6. Verify all treatment types (Roller Blinds, Zebra Blinds, etc.) now appear in Category Markup section
