@@ -51,8 +51,12 @@ export const DOCUMENT_TRANSLATIONS: Record<string, Record<DocumentLanguage, stri
   'Balance Due': { en: 'Balance Due', lt: 'Mokėtina suma' },
   'Amount Paid': { en: 'Amount Paid', lt: 'Sumokėta' },
   'Discount': { en: 'Discount', lt: 'Nuolaida' },
+  'Subtotal (before discount)': { en: 'Subtotal (before discount)', lt: 'Tarpinė suma (be nuolaidos)' },
+  'Deposit Required': { en: 'Deposit Required', lt: 'Reikalingas avansas' },
+  'Balance Due After Deposit': { en: 'Balance Due After Deposit', lt: 'Likutis po avanso' },
   
-  // Table headers
+  // Table headers - Product/Service view
+  'Product/Service': { en: 'Product/Service', lt: 'Produktas/Paslauga' },
   'Description': { en: 'Description', lt: 'Aprašymas' },
   'Quantity': { en: 'Quantity', lt: 'Kiekis' },
   'Qty': { en: 'Qty', lt: 'Kiekis' },
@@ -63,6 +67,21 @@ export const DOCUMENT_TRANSLATIONS: Record<string, Record<DocumentLanguage, stri
   'Width': { en: 'Width', lt: 'Plotis' },
   'Height': { en: 'Height', lt: 'Aukštis' },
   'Drop': { en: 'Drop', lt: 'Ilgis' },
+  'Rate': { en: 'Rate', lt: 'Kaina' },
+  
+  // Dynamic total column headers
+  'Total (incl. VAT)': { en: 'Total (incl. VAT)', lt: 'Iš viso (su PVM)' },
+  'Total (excl. VAT)': { en: 'Total (excl. VAT)', lt: 'Iš viso (be PVM)' },
+  'Total (incl. GST)': { en: 'Total (incl. GST)', lt: 'Iš viso (su PVM)' },
+  'Total (excl. GST)': { en: 'Total (excl. GST)', lt: 'Iš viso (be PVM)' },
+  'Total (incl. Tax)': { en: 'Total (incl. Tax)', lt: 'Iš viso (su mokesčiais)' },
+  'Total (excl. Tax)': { en: 'Total (excl. Tax)', lt: 'Iš viso (be mokesčių)' },
+  
+  // Section titles
+  'Quote Items': { en: 'Quote Items', lt: 'Pasiūlymo eilutės' },
+  'Invoice Items': { en: 'Invoice Items', lt: 'Sąskaitos eilutės' },
+  'Work Order Items': { en: 'Work Order Items', lt: 'Darbo užsakymo eilutės' },
+  'Line Items': { en: 'Line Items', lt: 'Eilutės' },
   
   // Client section
   'Bill To': { en: 'Bill To', lt: 'Pirkėjas' },
@@ -117,6 +136,10 @@ export const DOCUMENT_TRANSLATIONS: Record<string, Record<DocumentLanguage, stri
   'Payment Reference': { en: 'Payment Reference', lt: 'Mokėjimo nuoroda' },
   'Page': { en: 'Page', lt: 'Puslapis' },
   'of': { en: 'of', lt: 'iš' },
+  
+  // Empty states and messages
+  'No project data available': { en: 'No project data available', lt: 'Nėra projekto duomenų' },
+  'Add treatments to your project to see itemized breakdown': { en: 'Add treatments to your project to see itemized breakdown', lt: 'Pridėkite apdailas prie projekto, kad matytumėte detalią sąmatą' },
 };
 
 /**
@@ -208,6 +231,7 @@ export function getLocalizedTotalsLabels(lang: DocumentLanguage = 'en') {
  */
 export function getLocalizedTableHeaders(lang: DocumentLanguage = 'en') {
   return {
+    productService: t('Product/Service', lang),
     description: t('Description', lang),
     quantity: t('Quantity', lang),
     qty: t('Qty', lang),
@@ -217,7 +241,45 @@ export function getLocalizedTableHeaders(lang: DocumentLanguage = 'en') {
     room: t('Room', lang),
     width: t('Width', lang),
     height: t('Height', lang),
+    rate: t('Rate', lang),
   };
+}
+
+/**
+ * Get translated section titles for line items
+ */
+export function getLocalizedSectionTitles(documentType: string, lang: DocumentLanguage = 'en') {
+  const titles: Record<string, string> = {
+    quote: t('Quote Items', lang),
+    proposal: t('Quote Items', lang),
+    estimate: t('Quote Items', lang),
+    invoice: t('Invoice Items', lang),
+    'work-order': t('Work Order Items', lang),
+    measurement: t('Line Items', lang),
+  };
+  const normalizedType = (documentType || 'quote').toLowerCase().replace(/_/g, '-');
+  return titles[normalizedType] || t('Line Items', lang);
+}
+
+/**
+ * Get translated dynamic total column header (with tax type)
+ */
+export function getLocalizedTotalColumnHeader(taxType: string, taxInclusive: boolean, lang: DocumentLanguage = 'en'): string {
+  const normalizedTax = (taxType || 'VAT').toUpperCase();
+  const key = taxInclusive ? `Total (incl. ${normalizedTax})` : `Total (excl. ${normalizedTax})`;
+  
+  // Try direct translation first
+  const directTranslation = DOCUMENT_TRANSLATIONS[key];
+  if (directTranslation) {
+    return directTranslation[lang] || directTranslation['en'] || key;
+  }
+  
+  // Fallback: build from parts
+  const totalWord = t('Total', lang);
+  if (lang === 'lt') {
+    return taxInclusive ? `${totalWord} (su ${normalizedTax})` : `${totalWord} (be ${normalizedTax})`;
+  }
+  return key;
 }
 
 /**
