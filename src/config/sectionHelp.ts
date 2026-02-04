@@ -1,4 +1,4 @@
-import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings, UserCircle, FolderOpen } from "lucide-react";
+import { LucideIcon, User, Building2, CreditCard, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Zap, Layers, Truck, Sliders, Settings, UserCircle, FolderOpen, LayoutDashboard, Calendar } from "lucide-react";
 
 export interface SectionHelpContent {
   id: string;
@@ -10,6 +10,37 @@ export interface SectionHelpContent {
 }
 
 export const sectionHelpContent: Record<string, SectionHelpContent> = {
+  // ===== MAIN PAGES =====
+
+  dashboard: {
+    id: "dashboard",
+    title: "Dashboard",
+    icon: LayoutDashboard,
+    briefDescription: "Your command center - see pending quotes, upcoming appointments, and key business metrics at a glance.",
+    keyPoints: [
+      "View today's appointments and tasks",
+      "Track pending quotes and their values",
+      "See client activity and recent updates",
+      "Quick actions to create jobs or add clients"
+    ],
+    relatedSections: ["Jobs", "Clients", "Calendar"]
+  },
+
+  calendar: {
+    id: "calendar",
+    title: "Calendar & Scheduling",
+    icon: Calendar,
+    briefDescription: "Manage appointments, installations, and team schedules. Sync with Google Calendar for seamless coordination.",
+    keyPoints: [
+      "Create appointments for consultations and installations",
+      "Drag and drop to reschedule events",
+      "Filter by team member, event type, or status",
+      "Set up booking templates for client self-scheduling",
+      "Sync bidirectionally with Google Calendar"
+    ],
+    relatedSections: ["Jobs", "Team"]
+  },
+
   // ===== MAIN SETTINGS TABS =====
   
   personal: {

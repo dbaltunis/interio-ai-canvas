@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { DashboardDateFilter } from "./DashboardDateFilter";
 import { ShowcaseLightbulb } from "../showcase/ShowcaseLightbulb";
+import { SectionHelpButton } from "../help/SectionHelpButton";
 
 interface WelcomeHeaderProps {
   onCustomizeClick?: () => void;
@@ -103,6 +104,9 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
 
         {/* Product Tour Lightbulb */}
         <ShowcaseLightbulb />
+
+        {/* Dashboard Help */}
+        <SectionHelpButton sectionId="dashboard" />
 
         {/* Theme toggle - hidden on mobile */}
         <Button
