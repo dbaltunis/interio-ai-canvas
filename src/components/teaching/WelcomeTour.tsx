@@ -73,10 +73,11 @@ export const WelcomeTour = ({ onComplete }: WelcomeTourProps) => {
         .eq('flag', 'has_seen_product_tour')
         .single();
 
-      if (error || !data?.enabled) {
-        // User hasn't seen the tour - show it after a small delay
-        setTimeout(() => setIsOpen(true), 1500);
-      }
+      // Auto-open disabled - cinematic WelcomeVideoAutoTrigger handles first-time users
+      // Users can still access this tour from Tips & Guidance
+      // if (error || !data?.enabled) {
+      //   setTimeout(() => setIsOpen(true), 1500);
+      // }
       setHasCheckedFlag(true);
     };
 
