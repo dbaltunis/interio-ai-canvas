@@ -13,7 +13,8 @@ import {
   ShoppingBag, Package, UserPlus, Copy, ExternalLink, CalendarDays,
   DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Mail,
   CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList, Sparkles,
-  Link, QrCode, Smartphone, Camera, Search, FolderOpen, Grid, ScanLine, Tag, Star
+  Link, QrCode, Smartphone, Camera, Search, FolderOpen, Grid, ScanLine, Tag, Star,
+  Calculator, HelpCircle, LayoutDashboard
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -542,8 +543,11 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   const showLibraryStep = inPhase(phase, 0.32, 0.42);
   const selectFabric = inPhase(phase, 0.37, 0.42);
   const showMeasurementsStep = inPhase(phase, 0.42, 0.55);
-  const widthValue = typingProgress(phase, 0.46, 0.49, "200");
-  const dropValue = typingProgress(phase, 0.49, 0.52, "240");
+  const showMeasurementsForm = inPhase(phase, 0.42, 0.47);
+  const showHardwareSection = inPhase(phase, 0.47, 0.52);
+  const showPriceSummary = inPhase(phase, 0.50, 0.55);
+  const widthValue = typingProgress(phase, 0.43, 0.45, "200");
+  const dropValue = typingProgress(phase, 0.45, 0.47, "240");
   
   // Quote and remaining tabs
   const showQuoteTab = inPhase(phase, 0.55, 0.70);
@@ -580,13 +584,53 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
     { id: "shutters", name: "Shutters", selected: false, type: "shutters" },
   ];
   
-  // Fabric cards data
+  // Fabric cards data with realistic names and patterns
   const fabrics = [
-    { id: "adara", name: "ADARA", price: "£26.50/m", width: "290cm", selected: selectFabric },
-    { id: "velvet", name: "Velvet Drapery", price: "£45.00/m", width: "140cm", selected: false },
-    { id: "linen", name: "Pure Linen", price: "£38.00/m", width: "300cm", selected: false },
-    { id: "silk", name: "Silk Blend", price: "£65.00/m", width: "140cm", selected: false },
+    { id: "cotton-plain", name: "Cotton Plain", price: "£26.50/m", width: "290cm", pattern: "solid", selected: selectFabric },
+    { id: "herringbone", name: "Herringbone", price: "£42.00/m", width: "140cm", pattern: "texture", selected: false },
+    { id: "belgian-linen", name: "Belgian Linen", price: "£38.00/m", width: "300cm", pattern: "sheer", selected: false },
+    { id: "damask", name: "Damask", price: "£58.00/m", width: "140cm", pattern: "damask", selected: false },
   ];
+  
+  // Fabric pattern component for visual distinction
+  const FabricPatternSwatch = ({ pattern, selected }: { pattern: string; selected: boolean }) => {
+    const baseOpacity = selected ? 1 : 0.7;
+    switch (pattern) {
+      case 'solid':
+        return (
+          <div className="w-full h-full rounded bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-600 dark:to-stone-700" />
+        );
+      case 'texture':
+        return (
+          <div className="w-full h-full rounded bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-500 dark:to-slate-600 relative overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 24 24" style={{ opacity: 0.4 }}>
+              <pattern id="herringbone-pattern" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="4" height="8" fill="currentColor" opacity="0.3"/>
+              </pattern>
+              <rect width="24" height="24" fill="url(#herringbone-pattern)"/>
+            </svg>
+          </div>
+        );
+      case 'sheer':
+        return (
+          <div className="w-full h-full rounded bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-800/30 relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
+          </div>
+        );
+      case 'damask':
+        return (
+          <div className="w-full h-full rounded bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-700 dark:to-amber-600 relative overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0.25 }}>
+              <div className="w-6 h-6 border-2 border-current rounded-full" />
+            </div>
+            <div className="absolute top-1 left-1 w-2 h-2 border border-current rounded-full" style={{ opacity: 0.2 }} />
+            <div className="absolute bottom-1 right-1 w-2 h-2 border border-current rounded-full" style={{ opacity: 0.2 }} />
+          </div>
+        );
+      default:
+        return <div className="w-full h-full rounded bg-muted" />;
+    }
+  };
   
   // SVG Sketch Components for treatments
   const CurtainSketch = ({ selected }: { selected: boolean }) => (
@@ -981,7 +1025,9 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                             <div className="absolute top-1.5 left-1.5">
                               <Star className="h-3 w-3 text-muted-foreground" />
                             </div>
-                            <div className="w-full aspect-square rounded bg-gradient-to-br from-amber-100 to-amber-200 mb-1.5" />
+                            <div className="w-full aspect-square mb-1.5">
+                              <FabricPatternSwatch pattern={(fabric as any).pattern || 'solid'} selected={fabric.selected} />
+                            </div>
                             <div className="text-[11px] font-medium truncate">{fabric.name}</div>
                             <div className="text-[10px] text-muted-foreground">{fabric.width}</div>
                             <div className="text-[10px] text-primary font-semibold">{fabric.price}</div>
@@ -1000,130 +1046,187 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                     </motion.div>
                   )}
                   
-                  {/* Measurements Step */}
+                  {/* Measurements Step with Hardware & Pricing */}
                   {showMeasurementsStep && (
                     <motion.div 
                       key="measurements"
                       initial={{ opacity: 0, x: 20 }} 
                       animate={{ opacity: 1, x: 0 }} 
                       exit={{ opacity: 0, x: -20 }}
-                      className="h-full"
+                      className="h-full overflow-hidden"
                     >
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <div className="text-sm font-semibold mb-1">Window Measurements</div>
-                        <div className="text-xs text-muted-foreground">Enter dimensions and options</div>
+                        <div className="text-xs text-muted-foreground">Enter dimensions and select options</div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Improved Curtain Diagram with elegant visualization */}
-                        <div className="bg-gradient-to-b from-sky-50/50 to-muted/30 dark:from-sky-950/20 dark:to-muted/20 rounded-lg p-3 flex items-center justify-center relative">
-                          <div className="relative w-36 h-44">
-                            {/* Window frame background */}
-                            <div className="absolute inset-x-6 top-10 bottom-4 border-2 border-muted-foreground/20 bg-sky-100/30 dark:bg-sky-900/20 rounded">
-                              {/* Window panes */}
-                              <div className="absolute inset-1 grid grid-cols-2 gap-0.5">
-                                <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
-                                <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
+                      
+                      {/* Scrollable container that animates upward to reveal hardware/pricing */}
+                      <motion.div 
+                        className="space-y-3"
+                        animate={{ y: showHardwareSection ? -85 : 0 }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                      >
+                        {/* Measurement Form */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Curtain Diagram */}
+                          <div className="bg-gradient-to-b from-sky-50/50 to-muted/30 dark:from-sky-950/20 dark:to-muted/20 rounded-lg p-2 flex items-center justify-center relative">
+                            <div className="relative w-28 h-36">
+                              {/* Window frame */}
+                              <div className="absolute inset-x-4 top-8 bottom-3 border-2 border-muted-foreground/20 bg-sky-100/30 dark:bg-sky-900/20 rounded">
+                                <div className="absolute inset-0.5 grid grid-cols-2 gap-0.5">
+                                  <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
+                                  <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
+                                </div>
+                              </div>
+                              {/* Rail */}
+                              <div className="absolute top-5 left-0 right-0 h-1.5 bg-muted-foreground/50 rounded-full"/>
+                              {/* Left curtain */}
+                              <div className="absolute left-0 top-6 w-8 bottom-0 overflow-hidden rounded-b">
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/15 to-primary/25"/>
+                                <div className="absolute top-0 bottom-0 left-2 w-px bg-primary/25"/>
+                                <div className="absolute top-0 bottom-0 left-5 w-px bg-primary/20"/>
+                              </div>
+                              {/* Right curtain */}
+                              <div className="absolute right-0 top-6 w-8 bottom-0 overflow-hidden rounded-b">
+                                <div className="absolute inset-0 bg-gradient-to-l from-primary/30 via-primary/15 to-primary/25"/>
+                                <div className="absolute top-0 bottom-0 right-2 w-px bg-primary/25"/>
+                                <div className="absolute top-0 bottom-0 right-5 w-px bg-primary/20"/>
+                              </div>
+                              {/* Width line */}
+                              <div className="absolute top-1 left-0 right-0 flex items-center">
+                                <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-r-[4px] border-transparent border-r-blue-500"/>
+                                <div className="flex-1 border-t border-dashed border-blue-500/70"/>
+                                <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-l-[4px] border-transparent border-l-blue-500"/>
+                              </div>
+                              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-[8px] text-blue-600 font-semibold bg-background px-0.5 rounded">200cm</span>
+                              {/* Drop line */}
+                              <div className="absolute top-6 -right-2 bottom-0 flex flex-col items-center">
+                                <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-b-[4px] border-transparent border-b-green-500"/>
+                                <div className="flex-1 border-r border-dashed border-green-500/70"/>
+                                <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-t-[4px] border-transparent border-t-green-500"/>
+                              </div>
+                              <span className="absolute top-1/2 -right-5 -translate-y-1/2 text-[8px] text-green-600 font-semibold rotate-90 bg-background px-0.5 rounded whitespace-nowrap">240cm</span>
+                            </div>
+                          </div>
+                          
+                          {/* Form inputs */}
+                          <div className="space-y-2">
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground uppercase mb-0.5 block">Rail Width</label>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 h-7 px-2 border rounded bg-background flex items-center text-xs">
+                                  {widthValue}
+                                  {widthValue && widthValue.length < 3 && (
+                                    <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-3 bg-primary ml-0.5" />
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">cm</span>
                               </div>
                             </div>
-                            
-                            {/* Curtain rail */}
-                            <div className="absolute top-6 left-1 right-1 h-2 bg-muted-foreground/50 rounded-full shadow-sm"/>
-                            {/* Rail finials */}
-                            <div className="absolute top-5 left-0 w-2 h-4 bg-muted-foreground/40 rounded-full"/>
-                            <div className="absolute top-5 right-0 w-2 h-4 bg-muted-foreground/40 rounded-full"/>
-                            
-                            {/* Left curtain with S-fold draping */}
-                            <div className="absolute left-1 top-8 w-11 bottom-0 overflow-hidden rounded-b">
-                              <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/15 to-primary/25"/>
-                              {/* Fold lines */}
-                              <div className="absolute top-0 bottom-0 left-2 w-px bg-primary/25"/>
-                              <div className="absolute top-0 bottom-0 left-5 w-px bg-primary/20"/>
-                              <div className="absolute top-0 bottom-0 left-8 w-px bg-primary/15"/>
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground uppercase mb-0.5 block">Drop</label>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 h-7 px-2 border rounded bg-background flex items-center text-xs">
+                                  {dropValue}
+                                  {widthValue.length >= 3 && dropValue.length < 3 && (
+                                    <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-3 bg-primary ml-0.5" />
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">cm</span>
+                              </div>
                             </div>
-                            
-                            {/* Right curtain with S-fold draping */}
-                            <div className="absolute right-1 top-8 w-11 bottom-0 overflow-hidden rounded-b">
-                              <div className="absolute inset-0 bg-gradient-to-l from-primary/30 via-primary/15 to-primary/25"/>
-                              {/* Fold lines */}
-                              <div className="absolute top-0 bottom-0 right-2 w-px bg-primary/25"/>
-                              <div className="absolute top-0 bottom-0 right-5 w-px bg-primary/20"/>
-                              <div className="absolute top-0 bottom-0 right-8 w-px bg-primary/15"/>
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground uppercase mb-0.5 block">Heading</label>
+                              <div className="h-7 px-2 border rounded bg-background flex items-center justify-between text-xs">
+                                <span>S-Fold 2.2x</span>
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </div>
                             </div>
-                            
-                            {/* Width dimension line at top */}
-                            <div className="absolute top-1 left-1 right-1 flex items-center">
-                              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-500"/>
-                              <div className="flex-1 border-t-2 border-dashed border-blue-500/70"/>
-                              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-500"/>
-                            </div>
-                            <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[9px] text-blue-600 font-semibold bg-background px-1 rounded">Rail Width</span>
-                            
-                            {/* Drop dimension line on right */}
-                            <div className="absolute top-8 -right-3 bottom-0 flex flex-col items-center">
-                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-500"/>
-                              <div className="flex-1 border-r-2 border-dashed border-green-500/70"/>
-                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-500"/>
-                            </div>
-                            <span className="absolute top-1/2 -right-6 -translate-y-1/2 text-[9px] text-green-600 font-semibold rotate-90 bg-background px-1 rounded whitespace-nowrap">Drop</span>
-                            
-                            {/* Pair label */}
-                            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground font-medium bg-background/80 px-1.5 py-0.5 rounded">PAIR</span>
                           </div>
                         </div>
                         
-                        {/* Form */}
-                        <div className="space-y-3">
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Rail Width</label>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-9 px-3 border rounded-lg bg-background flex items-center text-sm">
-                                {widthValue}
-                                {widthValue && widthValue.length < 3 && (
-                                  <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-4 bg-primary ml-0.5" />
-                                )}
-                              </div>
-                              <span className="text-xs text-muted-foreground">cm</span>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Curtain Drop</label>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-9 px-3 border rounded-lg bg-background flex items-center text-sm">
-                                {dropValue}
-                                {widthValue.length >= 3 && dropValue.length < 3 && (
-                                  <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-0.5 h-4 bg-primary ml-0.5" />
-                                )}
-                              </div>
-                              <span className="text-xs text-muted-foreground">cm</span>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Heading Type</label>
-                            <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
-                              <span>S-Fold 2.2x</span>
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Lining</label>
-                            <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
-                              <span>Blockout</span>
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Save button */}
-                      <div className="mt-4 flex justify-end">
-                        <motion.button 
-                          className="px-6 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2"
-                          animate={{ scale: phase >= 0.53 ? [1, 0.95, 1] : 1 }}
+                        {/* Hardware Selection - appears when scrolling */}
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: showHardwareSection ? 1 : 0.3 }}
+                          className="space-y-2 pt-2 border-t"
                         >
-                          <Check className="h-4 w-4" />
-                          Save Window
-                        </motion.button>
-                      </div>
+                          <div className="text-xs font-semibold flex items-center gap-1.5">
+                            <Wrench className="h-3 w-3 text-primary" />
+                            Hardware & Accessories
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground uppercase mb-0.5 block">Curtain Track</label>
+                              <div className="h-7 px-2 border rounded bg-background flex items-center justify-between text-xs">
+                                <span>Ceiling Track</span>
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground uppercase mb-0.5 block">Lining</label>
+                              <div className="h-7 px-2 border rounded bg-background flex items-center justify-between text-xs">
+                                <span>Blockout</span>
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                        
+                        {/* Price Summary */}
+                        <AnimatePresence>
+                          {showPriceSummary && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-3 space-y-2 border border-primary/20"
+                            >
+                              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                                <Calculator className="h-3.5 w-3.5 text-primary" />
+                                <span>Price Summary</span>
+                              </div>
+                              
+                              <div className="text-[10px] space-y-1">
+                                <div className="flex justify-between items-center pb-1 border-b border-primary/10">
+                                  <span className="text-muted-foreground">Fabric Required:</span>
+                                  <span className="font-medium">8.4m <span className="text-muted-foreground">(3 widths)</span></span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Cotton Plain × 8.4m</span>
+                                  <span>£222.60</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Ceiling Track</span>
+                                  <span>£145.00</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Blockout Lining</span>
+                                  <span>£67.20</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Making & Install</span>
+                                  <span>£280.00</span>
+                                </div>
+                                <div className="border-t border-primary/20 pt-1 flex justify-between font-semibold text-sm">
+                                  <span>Total</span>
+                                  <span className="text-primary">£714.80</span>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        
+                        {/* Save button */}
+                        <div className="flex justify-end pt-1">
+                          <motion.button 
+                            className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1.5"
+                            animate={{ scale: phase >= 0.53 ? [1, 0.95, 1] : 1 }}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Save Window
+                          </motion.button>
+                        </div>
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1136,18 +1239,152 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   );
 };
 
-// SCENE 6: CLOSING
+// SCENE 6: CLOSING - Help System Demonstration
 export const Scene6Closing = ({ phase = 0 }: StepProps) => {
-  const showLogo = inPhase(phase, 0.1, 1);
-  const showMessage = inPhase(phase, 0.3, 1);
-  const showCTA = inPhase(phase, 0.5, 1);
+  const showPageIcons = inPhase(phase, 0.05, 1);
+  const showHelpClick = inPhase(phase, 0.25, 0.45);
+  const showHelpPanel = inPhase(phase, 0.35, 0.65);
+  const showSupport = inPhase(phase, 0.55, 1);
+  const showFinalMessage = inPhase(phase, 0.75, 1);
+  
+  const pages = [
+    { name: "Dashboard", icon: LayoutDashboard },
+    { name: "Jobs", icon: FileText },
+    { name: "Library", icon: Package },
+    { name: "Settings", icon: Settings },
+  ];
   
   return (
-    <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-background relative overflow-hidden">
-      <motion.div className="absolute inset-0 opacity-30" animate={{ background: ["radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)", "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.3) 0%, transparent 60%)", "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)"] }} transition={{ duration: 3, repeat: Infinity }} />
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: showLogo ? 1 : 0, scale: showLogo ? 1 : 0.9 }} className="mb-6"><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="InterioApp" className="h-16 w-auto" /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: showMessage ? 1 : 0, y: showMessage ? 0 : 20 }} className="mb-8"><h2 className="text-xl font-bold mb-2">Ready to get started?</h2><p className="text-sm text-muted-foreground max-w-sm">Your complete platform for made-to-measure window treatments</p></motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: showCTA ? 1 : 0 }} className="flex flex-wrap justify-center gap-2 max-w-xs">{["Quote Builder", "Team Notes", "Work Orders", "Payments", "Installation", "Bookings"].map((feature, i) => (<motion.span key={feature} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 * i }} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-full font-medium">{feature}</motion.span>))}</motion.div>
+    <div className="h-full flex flex-col items-center justify-center p-4 bg-background relative overflow-hidden">
+      {/* Subtle background gradient */}
+      <motion.div 
+        className="absolute inset-0 opacity-20"
+        animate={{ 
+          background: [
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.15) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.25) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.15) 0%, transparent 70%)"
+          ] 
+        }}
+        transition={{ duration: 4, repeat: Infinity }}
+      />
+      
+      {/* Page icons with question marks */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: showPageIcons ? 1 : 0, y: showPageIcons ? 0 : 20 }}
+        className="flex gap-3 mb-4"
+      >
+        {pages.map((page, i) => (
+          <motion.div 
+            key={page.name}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.08 }}
+            className="relative flex flex-col items-center"
+          >
+            <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-colors ${
+              showHelpClick && i === 0 ? 'border-primary bg-primary/10' : 'border-border bg-card'
+            }`}>
+              <page.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <span className="text-[9px] text-muted-foreground mt-1">{page.name}</span>
+            
+            {/* Question mark badge */}
+            <motion.div 
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"
+              animate={showHelpClick && i === 0 ? { 
+                scale: [1, 1.3, 1],
+                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 6px rgba(59, 130, 246, 0.3)', '0 0 0 0 rgba(59, 130, 246, 0)']
+              } : {}}
+              transition={{ duration: 1, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
+            >
+              <HelpCircle className="h-2.5 w-2.5 text-white" />
+            </motion.div>
+          </motion.div>
+        ))}
+      </motion.div>
+      
+      {/* Guidance message */}
+      <motion.p 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showPageIcons ? 1 : 0 }}
+        className="text-xs text-center text-muted-foreground mb-3"
+      >
+        Every page has step-by-step guidance
+      </motion.p>
+      
+      {/* Help panel preview */}
+      <AnimatePresence>
+        {showHelpPanel && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-card border rounded-lg shadow-lg p-3 mb-3 max-w-[240px]"
+          >
+            <div className="flex items-center gap-1.5 mb-2">
+              <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-xs font-semibold">Quick Guide</span>
+            </div>
+            <div className="space-y-1.5 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">1</div>
+                <span>Create your first project</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">2</div>
+                <span>Add rooms and windows</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">3</div>
+                <span>Select fabrics and hardware</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">4</div>
+                <span>Generate quote and send</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Support section */}
+      <AnimatePresence>
+        {showSupport && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center max-w-xs"
+          >
+            <div className="flex justify-center gap-2 mb-2">
+              <span className="text-base">🇳🇿</span>
+              <span className="text-base">🇬🇧</span>
+              <span className="text-base">🇪🇺</span>
+              <span className="text-base">🇺🇸</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">
+              Need help? Contact your sales administrator.
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              We're here to support your business every step of the way.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Final encouraging message */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showFinalMessage ? 1 : 0 }}
+        className="mt-4 text-center"
+      >
+        <h2 className="text-base font-bold text-foreground mb-1">You're all set!</h2>
+        <p className="text-xs text-muted-foreground">
+          Start creating beautiful window treatments
+        </p>
+      </motion.div>
     </div>
   );
 };
