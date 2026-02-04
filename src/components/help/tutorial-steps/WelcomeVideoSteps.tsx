@@ -523,23 +523,30 @@ export const Scene4JobsNotes = ({ phase = 0 }: StepProps) => {
 
 // SCENE 5: PROJECT DEEP DIVE - With Window Creation Workflow
 export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
-  // Restructured phases to include window creation workflow
-  const showClientTab = inPhase(phase, 0, 0.08);
-  const showProjectTab = inPhase(phase, 0.08, 0.18);
-  const focusAddWindow = inPhase(phase, 0.14, 0.18);
+  // Extended timing phases (18 seconds total)
+  // Phase 0.00-0.06: Client tab (1.1s)
+  // Phase 0.06-0.14: Project tab (1.4s)
+  // Phase 0.14-0.55: Window popup (7.4s) - MORE TIME to understand
+  // Phase 0.55-0.70: Quote tab (2.7s)
+  // Phase 0.70-0.82: Workroom (2.2s)
+  // Phase 0.82-1.00: Installation (3.2s)
   
-  // Window Creation Popup phases (34% of scene)
-  const showWindowPopup = inPhase(phase, 0.18, 0.52);
-  const showTreatmentStep = inPhase(phase, 0.20, 0.36);
-  const selectCurtains = inPhase(phase, 0.30, 0.36);
-  const showLibraryStep = inPhase(phase, 0.36, 0.46);
-  const selectFabric = inPhase(phase, 0.40, 0.46);
-  const showMeasurementsStep = inPhase(phase, 0.46, 0.52);
-  const widthValue = typingProgress(phase, 0.48, 0.50, "200");
-  const dropValue = typingProgress(phase, 0.50, 0.52, "240");
+  const showClientTab = inPhase(phase, 0, 0.06);
+  const showProjectTab = inPhase(phase, 0.06, 0.14);
+  const focusAddWindow = inPhase(phase, 0.11, 0.14);
+  
+  // Window Creation Popup phases (41% of scene - 7.4 seconds)
+  const showWindowPopup = inPhase(phase, 0.14, 0.55);
+  const showTreatmentStep = inPhase(phase, 0.16, 0.32);
+  const selectCurtains = inPhase(phase, 0.26, 0.32);
+  const showLibraryStep = inPhase(phase, 0.32, 0.42);
+  const selectFabric = inPhase(phase, 0.37, 0.42);
+  const showMeasurementsStep = inPhase(phase, 0.42, 0.55);
+  const widthValue = typingProgress(phase, 0.46, 0.49, "200");
+  const dropValue = typingProgress(phase, 0.49, 0.52, "240");
   
   // Quote and remaining tabs
-  const showQuoteTab = inPhase(phase, 0.52, 0.70);
+  const showQuoteTab = inPhase(phase, 0.55, 0.70);
   const showWorkroomTab = inPhase(phase, 0.70, 0.82);
   const showInstallationTab = inPhase(phase, 0.82, 0.92);
   const focusOnShare = inPhase(phase, 0.88, 0.92);
@@ -547,18 +554,18 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   
   // Determine stepper status
   const getTreatmentStatus = () => {
-    if (phase >= 0.36) return "complete";
-    if (phase >= 0.20) return "active";
+    if (phase >= 0.32) return "complete";
+    if (phase >= 0.16) return "active";
     return "pending";
   };
   const getLibraryStatus = () => {
-    if (phase >= 0.46) return "complete";
-    if (phase >= 0.36) return "active";
+    if (phase >= 0.42) return "complete";
+    if (phase >= 0.32) return "active";
     return "pending";
   };
   const getMeasurementsStatus = () => {
-    if (phase >= 0.52) return "complete";
-    if (phase >= 0.46) return "active";
+    if (phase >= 0.55) return "complete";
+    if (phase >= 0.42) return "active";
     return "pending";
   };
   
@@ -566,11 +573,11 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
   
   const tabs = [{ id: "client", label: "Client", icon: Users }, { id: "project", label: "Project", icon: Layers }, { id: "quote", label: "Quote", icon: Receipt }, { id: "workroom", label: "Workroom", icon: FileText }, { id: "installation", label: "Install", icon: Wrench }];
   
-  // Treatment cards data
+  // Treatment cards data with sketch types
   const treatments = [
-    { id: "curtains", name: "Curtains", selected: selectCurtains },
-    { id: "blinds", name: "Roller Blinds", selected: false },
-    { id: "shutters", name: "Shutters", selected: false },
+    { id: "curtains", name: "Curtains", selected: selectCurtains, type: "curtains" },
+    { id: "blinds", name: "Roller Blinds", selected: false, type: "blinds" },
+    { id: "shutters", name: "Shutters", selected: false, type: "shutters" },
   ];
   
   // Fabric cards data
@@ -581,6 +588,84 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
     { id: "silk", name: "Silk Blend", price: "£65.00/m", width: "140cm", selected: false },
   ];
   
+  // SVG Sketch Components for treatments
+  const CurtainSketch = ({ selected }: { selected: boolean }) => (
+    <svg viewBox="0 0 60 60" className="w-full h-full">
+      {/* Rail */}
+      <rect x="5" y="8" width="50" height="3" rx="1" fill="currentColor" opacity={selected ? 0.8 : 0.5}/>
+      {/* Rings */}
+      <circle cx="12" cy="9.5" r="1.5" stroke="currentColor" fill="none" opacity={selected ? 0.7 : 0.4} strokeWidth="0.8"/>
+      <circle cx="20" cy="9.5" r="1.5" stroke="currentColor" fill="none" opacity={selected ? 0.7 : 0.4} strokeWidth="0.8"/>
+      <circle cx="40" cy="9.5" r="1.5" stroke="currentColor" fill="none" opacity={selected ? 0.7 : 0.4} strokeWidth="0.8"/>
+      <circle cx="48" cy="9.5" r="1.5" stroke="currentColor" fill="none" opacity={selected ? 0.7 : 0.4} strokeWidth="0.8"/>
+      {/* Left curtain panel with elegant folds */}
+      <path d="M8 11 C8 25 10 40 14 55 L24 55 C20 40 21 25 22 11 Z" fill="currentColor" opacity={selected ? 0.35 : 0.2}/>
+      <path d="M13 11 C13 30 15 45 18 55" stroke="currentColor" opacity={selected ? 0.4 : 0.2} strokeWidth="0.5" fill="none"/>
+      <path d="M18 11 C17 28 19 42 21 55" stroke="currentColor" opacity={selected ? 0.3 : 0.15} strokeWidth="0.5" fill="none"/>
+      {/* Right curtain panel with elegant folds */}
+      <path d="M52 11 C52 25 50 40 46 55 L36 55 C40 40 39 25 38 11 Z" fill="currentColor" opacity={selected ? 0.35 : 0.2}/>
+      <path d="M47 11 C47 30 45 45 42 55" stroke="currentColor" opacity={selected ? 0.4 : 0.2} strokeWidth="0.5" fill="none"/>
+      <path d="M42 11 C43 28 41 42 39 55" stroke="currentColor" opacity={selected ? 0.3 : 0.15} strokeWidth="0.5" fill="none"/>
+      {/* Tie-back hints */}
+      <ellipse cx="18" cy="32" rx="3" ry="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+      <ellipse cx="42" cy="32" rx="3" ry="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+    </svg>
+  );
+  
+  const RollerBlindSketch = ({ selected }: { selected: boolean }) => (
+    <svg viewBox="0 0 60 60" className="w-full h-full">
+      {/* Roller mechanism */}
+      <rect x="8" y="6" width="44" height="6" rx="3" fill="currentColor" opacity={selected ? 0.7 : 0.5}/>
+      {/* Brackets */}
+      <rect x="5" y="5" width="4" height="8" rx="1" fill="currentColor" opacity={selected ? 0.6 : 0.4}/>
+      <rect x="51" y="5" width="4" height="8" rx="1" fill="currentColor" opacity={selected ? 0.6 : 0.4}/>
+      {/* Blind fabric */}
+      <rect x="10" y="12" width="40" height="38" fill="currentColor" opacity={selected ? 0.25 : 0.15}/>
+      {/* Fabric texture lines */}
+      <line x1="10" y1="20" x2="50" y2="20" stroke="currentColor" opacity={selected ? 0.15 : 0.08} strokeWidth="0.5"/>
+      <line x1="10" y1="28" x2="50" y2="28" stroke="currentColor" opacity={selected ? 0.15 : 0.08} strokeWidth="0.5"/>
+      <line x1="10" y1="36" x2="50" y2="36" stroke="currentColor" opacity={selected ? 0.15 : 0.08} strokeWidth="0.5"/>
+      <line x1="10" y1="44" x2="50" y2="44" stroke="currentColor" opacity={selected ? 0.15 : 0.08} strokeWidth="0.5"/>
+      {/* Bottom bar */}
+      <rect x="10" y="50" width="40" height="4" rx="1" fill="currentColor" opacity={selected ? 0.5 : 0.35}/>
+      {/* Control chain */}
+      <circle cx="48" cy="18" r="1" fill="currentColor" opacity={selected ? 0.5 : 0.35}/>
+      <circle cx="48" cy="22" r="1" fill="currentColor" opacity={selected ? 0.5 : 0.35}/>
+      <circle cx="48" cy="26" r="1" fill="currentColor" opacity={selected ? 0.5 : 0.35}/>
+      <circle cx="52" cy="28" r="2" fill="currentColor" opacity={selected ? 0.5 : 0.35}/>
+    </svg>
+  );
+  
+  const ShutterSketch = ({ selected }: { selected: boolean }) => (
+    <svg viewBox="0 0 60 60" className="w-full h-full">
+      {/* Frame */}
+      <rect x="6" y="6" width="48" height="48" rx="1" stroke="currentColor" opacity={selected ? 0.6 : 0.4} strokeWidth="2" fill="none"/>
+      {/* Center divider */}
+      <line x1="30" y1="6" x2="30" y2="54" stroke="currentColor" opacity={selected ? 0.6 : 0.4} strokeWidth="2"/>
+      {/* Left panel louvers */}
+      {[0, 1, 2, 3, 4, 5].map(i => (
+        <rect key={`left-${i}`} x="9" y={11 + i * 7} width="18" height="4" rx="0.5" fill="currentColor" opacity={selected ? 0.35 : 0.2}/>
+      ))}
+      {/* Right panel louvers */}
+      {[0, 1, 2, 3, 4, 5].map(i => (
+        <rect key={`right-${i}`} x="33" y={11 + i * 7} width="18" height="4" rx="0.5" fill="currentColor" opacity={selected ? 0.35 : 0.2}/>
+      ))}
+      {/* Hinge dots */}
+      <circle cx="6" cy="20" r="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+      <circle cx="6" cy="40" r="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+      <circle cx="54" cy="20" r="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+      <circle cx="54" cy="40" r="1.5" fill="currentColor" opacity={selected ? 0.5 : 0.3}/>
+    </svg>
+  );
+  
+  const getTreatmentSketch = (type: string, selected: boolean) => {
+    switch (type) {
+      case "curtains": return <CurtainSketch selected={selected} />;
+      case "blinds": return <RollerBlindSketch selected={selected} />;
+      case "shutters": return <ShutterSketch selected={selected} />;
+      default: return <CurtainSketch selected={selected} />;
+    }
+  };
   return (
     <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
       <div className="h-11 border-b border-border bg-card flex items-center px-3 gap-2">
@@ -832,15 +917,17 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                             key={treatment.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            transition={{ delay: i * 0.08 }}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all relative ${
                               treatment.selected 
-                                ? "border-primary bg-primary/5 shadow-sm" 
+                                ? "border-primary bg-primary/5 shadow-md" 
                                 : "border-border hover:border-primary/30"
                             }`}
                           >
-                            <div className="w-full aspect-square rounded bg-muted mb-2 flex items-center justify-center">
-                              <Layers className={`h-8 w-8 ${treatment.selected ? "text-primary" : "text-muted-foreground"}`} />
+                            <div className={`w-full aspect-square rounded-lg mb-2 flex items-center justify-center p-2 ${
+                              treatment.selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                            }`}>
+                              {getTreatmentSketch(treatment.type, treatment.selected)}
                             </div>
                             <div className="text-center">
                               <div className={`text-sm font-medium ${treatment.selected ? "text-primary" : ""}`}>{treatment.name}</div>
@@ -849,7 +936,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                               <motion.div 
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm"
                               >
                                 <Check className="h-3 w-3 text-primary-foreground" />
                               </motion.div>
@@ -927,19 +1014,60 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                         <div className="text-xs text-muted-foreground">Enter dimensions and options</div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Curtain Diagram */}
-                        <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center">
-                          <div className="relative">
-                            {/* Simple curtain visualization */}
-                            <div className="w-32 h-40 border-2 border-dashed border-primary/40 rounded relative">
-                              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] text-primary font-medium px-1 bg-background">Rail Width</div>
-                              <div className="absolute top-1/2 -right-8 -translate-y-1/2 text-[10px] text-primary font-medium rotate-90">Drop</div>
-                              {/* Curtain shapes */}
-                              <div className="absolute inset-2 flex">
-                                <div className="flex-1 bg-primary/10 rounded-t border-t-4 border-primary/30" />
-                                <div className="flex-1 bg-primary/10 rounded-t border-t-4 border-primary/30 ml-1" />
+                        {/* Improved Curtain Diagram with elegant visualization */}
+                        <div className="bg-gradient-to-b from-sky-50/50 to-muted/30 dark:from-sky-950/20 dark:to-muted/20 rounded-lg p-3 flex items-center justify-center relative">
+                          <div className="relative w-36 h-44">
+                            {/* Window frame background */}
+                            <div className="absolute inset-x-6 top-10 bottom-4 border-2 border-muted-foreground/20 bg-sky-100/30 dark:bg-sky-900/20 rounded">
+                              {/* Window panes */}
+                              <div className="absolute inset-1 grid grid-cols-2 gap-0.5">
+                                <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
+                                <div className="bg-sky-200/30 dark:bg-sky-800/20 border border-muted-foreground/10 rounded-sm"/>
                               </div>
                             </div>
+                            
+                            {/* Curtain rail */}
+                            <div className="absolute top-6 left-1 right-1 h-2 bg-muted-foreground/50 rounded-full shadow-sm"/>
+                            {/* Rail finials */}
+                            <div className="absolute top-5 left-0 w-2 h-4 bg-muted-foreground/40 rounded-full"/>
+                            <div className="absolute top-5 right-0 w-2 h-4 bg-muted-foreground/40 rounded-full"/>
+                            
+                            {/* Left curtain with S-fold draping */}
+                            <div className="absolute left-1 top-8 w-11 bottom-0 overflow-hidden rounded-b">
+                              <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/15 to-primary/25"/>
+                              {/* Fold lines */}
+                              <div className="absolute top-0 bottom-0 left-2 w-px bg-primary/25"/>
+                              <div className="absolute top-0 bottom-0 left-5 w-px bg-primary/20"/>
+                              <div className="absolute top-0 bottom-0 left-8 w-px bg-primary/15"/>
+                            </div>
+                            
+                            {/* Right curtain with S-fold draping */}
+                            <div className="absolute right-1 top-8 w-11 bottom-0 overflow-hidden rounded-b">
+                              <div className="absolute inset-0 bg-gradient-to-l from-primary/30 via-primary/15 to-primary/25"/>
+                              {/* Fold lines */}
+                              <div className="absolute top-0 bottom-0 right-2 w-px bg-primary/25"/>
+                              <div className="absolute top-0 bottom-0 right-5 w-px bg-primary/20"/>
+                              <div className="absolute top-0 bottom-0 right-8 w-px bg-primary/15"/>
+                            </div>
+                            
+                            {/* Width dimension line at top */}
+                            <div className="absolute top-1 left-1 right-1 flex items-center">
+                              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-500"/>
+                              <div className="flex-1 border-t-2 border-dashed border-blue-500/70"/>
+                              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-500"/>
+                            </div>
+                            <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[9px] text-blue-600 font-semibold bg-background px-1 rounded">Rail Width</span>
+                            
+                            {/* Drop dimension line on right */}
+                            <div className="absolute top-8 -right-3 bottom-0 flex flex-col items-center">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-500"/>
+                              <div className="flex-1 border-r-2 border-dashed border-green-500/70"/>
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-500"/>
+                            </div>
+                            <span className="absolute top-1/2 -right-6 -translate-y-1/2 text-[9px] text-green-600 font-semibold rotate-90 bg-background px-1 rounded whitespace-nowrap">Drop</span>
+                            
+                            {/* Pair label */}
+                            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground font-medium bg-background/80 px-1.5 py-0.5 rounded">PAIR</span>
                           </div>
                         </div>
                         
@@ -990,7 +1118,7 @@ export const Scene5ProjectDeepDive = ({ phase = 0 }: StepProps) => {
                       <div className="mt-4 flex justify-end">
                         <motion.button 
                           className="px-6 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2"
-                          animate={{ scale: phase >= 0.51 ? [1, 0.95, 1] : 1 }}
+                          animate={{ scale: phase >= 0.53 ? [1, 0.95, 1] : 1 }}
                         >
                           <Check className="h-4 w-4" />
                           Save Window
