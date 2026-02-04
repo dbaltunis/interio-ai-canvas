@@ -1,227 +1,116 @@
 
 
-# Show Welcome Video to Every New User - Database-Backed Approach
+# Fix Team Members Cannot Save Business Settings
 
-## Overview
+## Problem Identified
 
-Currently, the welcome video tutorial uses `localStorage` to track if a user has seen it. This has two problems:
-1. **Not persistent across devices** - A user who signs up on mobile won't see the video when they log in on desktop
-2. **Can be cleared** - If browser storage is cleared, the video shows again
+When you give a team member (Admin, Staff) access to settings, they can VIEW business details but **cannot SAVE** them. This happens because:
 
-The solution is to use the existing `app_user_flags` database table (already used by `WelcomeTour`) to track this at the account level, ensuring **every single new user** sees the video exactly once, on any device.
+1. The **UPDATE** mutation correctly uses `effectiveOwnerId` (the account owner)
+2. The **CREATE** mutation incorrectly uses `user.id` (the team member)
+
+This means:
+- If owner already has settings → team member can update ✅
+- If owner has no settings yet → team member cannot create ❌
+
+You want to delegate setup to team members, but they get errors when trying to save!
 
 ---
 
-## Current State
+## Root Cause
 
-| Component | Storage Method | Issue |
-|-----------|---------------|-------|
-| `ShowcaseLightbulb.tsx` | `localStorage` (`showcase_last_seen_version`) | Per-browser only |
-| `WelcomeTour.tsx` | `app_user_flags` table (`has_seen_product_tour`) | Already database-backed |
+**File:** `src/hooks/useBusinessSettings.ts`
+
+**Line 195 (CREATE):**
+```tsx
+user_id: user.id,  // ❌ Uses team member's ID
+```
+
+**Lines 227-233 (UPDATE):**
+```tsx
+const { data: profile } = await supabase
+  .from("user_profiles")
+  .select("parent_account_id")
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+const effectiveOwnerId = profile?.parent_account_id || user.id;
+// ✅ Correctly uses owner's ID
+```
 
 ---
 
 ## Solution
 
-### 1. Create a Database Flag for the Welcome Video
+Add the same `effectiveOwnerId` logic to `useCreateBusinessSettings` so team members can create settings on behalf of the account owner.
 
-Use the existing `app_user_flags` table with a new flag: `has_seen_welcome_video`
-
-This table already exists and works well for `WelcomeTour` - we simply add another flag.
-
----
-
-### 2. Create a Global Auto-Trigger Component
-
-Create a new component `WelcomeVideoAutoTrigger.tsx` that:
-- Runs for all authenticated users
-- Checks if `has_seen_welcome_video` flag exists and is `true`
-- If not, automatically opens the video player
-- Once opened, marks the flag as `true` in the database
-
-This component will be mounted in `App.tsx` (inside the authenticated route) so it runs regardless of which page the user lands on.
-
----
-
-### 3. Keep ShowcaseLightbulb as Manual Re-watch Button
-
-The lightbulb button stays in the dashboard header for users who want to re-watch the video manually. Remove only the auto-open logic from it.
-
----
-
-### 4. Disable WelcomeTour Auto-Open (Optional)
-
-Since the cinematic video is more comprehensive, we can disable the auto-open of the older 4-step `WelcomeTour` to avoid overwhelming new users with two tours. Users can still access it from Tips & Guidance if needed.
-
----
-
-## Implementation Details
-
-### A. New Component: `WelcomeVideoAutoTrigger.tsx`
-
+**Before (broken):**
 ```tsx
-// src/components/showcase/WelcomeVideoAutoTrigger.tsx
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { WelcomeVideoPlayer } from "./WelcomeVideoPlayer";
-import { welcomeSteps, welcomeChapters } from "./ShowcaseLightbulb";
-
-export const WelcomeVideoAutoTrigger = () => {
-  const { user } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [hasChecked, setHasChecked] = useState(false);
-
-  // Check database flag on mount
-  useEffect(() => {
-    if (!user || hasChecked) return;
-
-    const checkWelcomeVideoStatus = async () => {
+export const useCreateBusinessSettings = () => {
+  return useMutation({
+    mutationFn: async (settings) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
-        .from('app_user_flags')
-        .select('enabled')
-        .eq('user_id', user.id)
-        .eq('flag', 'has_seen_welcome_video')
+        .from('business_settings')
+        .insert({
+          ...settings,
+          user_id: user.id,  // ❌ WRONG - uses team member's ID
+        })
+```
+
+**After (fixed):**
+```tsx
+export const useCreateBusinessSettings = () => {
+  return useMutation({
+    mutationFn: async (settings) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // ✅ Get effective account owner for multi-tenant support
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      // If no flag or flag is false, show the video
-      if (error || !data || !data.enabled) {
-        setIsOpen(true);
-        // Mark as seen immediately
-        await markAsSeen();
-      }
-      setHasChecked(true);
-    };
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
 
-    checkWelcomeVideoStatus();
-  }, [user, hasChecked]);
-
-  const markAsSeen = useCallback(async () => {
-    if (!user) return;
-    
-    await supabase.from('app_user_flags').upsert({
-      user_id: user.id,
-      flag: 'has_seen_welcome_video',
-      enabled: true,
-    }, { onConflict: 'user_id,flag' });
-  }, [user]);
-
-  // Don't render anything until we've checked
-  if (!hasChecked || !user) return null;
-
-  return (
-    <WelcomeVideoPlayer
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      steps={welcomeSteps}
-      chapters={welcomeChapters}
-    />
-  );
-};
+      const { data, error } = await supabase
+        .from('business_settings')
+        .insert({
+          ...settings,
+          user_id: effectiveOwnerId,  // ✅ CORRECT - uses owner's ID
+        })
 ```
 
 ---
 
-### B. Export Steps from ShowcaseLightbulb
+## Files to Modify
 
-Add exports at the end of `ShowcaseLightbulb.tsx`:
-
-```tsx
-// Export for use by WelcomeVideoAutoTrigger
-export { welcomeSteps, welcomeChapters };
-```
-
-Also remove the auto-open localStorage logic (lines 137-141):
-
-```tsx
-// REMOVE this block:
-// if (!lastSeen) {
-//   setIsOpen(true);
-//   localStorage.setItem(STORAGE_KEY, APP_VERSION);
-//   setHasNewContent(false);
-// }
-```
-
-Keep the version check for the "glow" effect on new content.
-
----
-
-### C. Mount in App.tsx
-
-Add the auto-trigger inside the authenticated routes:
-
-```tsx
-import { WelcomeVideoAutoTrigger } from "@/components/showcase/WelcomeVideoAutoTrigger";
-
-// Inside the authenticated/protected section of routes:
-<WelcomeVideoAutoTrigger />
-```
-
----
-
-### D. Disable WelcomeTour Auto-Open (Optional)
-
-In `WelcomeTour.tsx`, comment out the auto-open logic (line 78):
-
-```tsx
-// BEFORE:
-setTimeout(() => setIsOpen(true), 1500);
-
-// AFTER:
-// Auto-open disabled - cinematic welcome video handles first-time users
-// setTimeout(() => setIsOpen(true), 1500);
-```
-
----
-
-## Files to Create/Modify
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/components/showcase/WelcomeVideoAutoTrigger.tsx` | **CREATE** - Global auto-trigger component |
-| `src/components/showcase/ShowcaseLightbulb.tsx` | **MODIFY** - Export steps, remove auto-open logic |
-| `src/App.tsx` | **MODIFY** - Mount `WelcomeVideoAutoTrigger` |
-| `src/components/teaching/WelcomeTour.tsx` | **MODIFY** - Disable auto-open (optional) |
+| `src/hooks/useBusinessSettings.ts` | Add `effectiveOwnerId` lookup to `useCreateBusinessSettings` mutation |
 
 ---
 
-## User Experience Flow
+## Verification Steps
 
-```text
-New User Signs Up
-       ↓
-Redirected to Dashboard (or any page)
-       ↓
-WelcomeVideoAutoTrigger checks database
-       ↓
-No "has_seen_welcome_video" flag found
-       ↓
-┌─────────────────────────────────────┐
-│  🎬 Welcome Video Opens!            │
-│                                     │
-│  Scene 0: "Welcome to InterioApp!"  │
-│  Scene 1-8: Full product showcase   │
-│  Scene 9: Help system & support     │
-└─────────────────────────────────────┘
-       ↓
-Flag saved to database: enabled = true
-       ↓
-User closes video → Never auto-opens again
-       ↓
-Can re-watch anytime via 💡 lightbulb button
-```
+After fix, test with:
+1. Log in as a Staff/Admin team member with settings access
+2. Go to Settings → Business Details
+3. Try to save company name, address, etc.
+4. Verify it saves without errors
+5. Log in as the Owner and verify the settings appear correctly
 
 ---
 
-## Why This Approach Works
+## Summary
 
-| Feature | localStorage (Old) | Database (New) |
-|---------|-------------------|----------------|
-| Persists across devices | No | Yes |
-| Survives browser clear | No | Yes |
-| Works on first login | Yes | Yes |
-| Per-account tracking | No | Yes |
-| Already proven | - | Yes (WelcomeTour uses it) |
+| Scenario | Before Fix | After Fix |
+|----------|------------|-----------|
+| Owner saves settings | ✅ Works | ✅ Works |
+| Team member updates existing settings | ✅ Works | ✅ Works |
+| Team member creates new settings | ❌ **Errors/Fails** | ✅ Works |
 
-This ensures that every single new user who creates an account will see the welcome video exactly once, regardless of which device or browser they use.
+This fix enables the workflow you described: giving a team member permission to set up the app on your behalf.
 
