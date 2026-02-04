@@ -338,7 +338,7 @@ export const appTeachingPoints: TeachingPoint[] = [
     trigger: { type: 'empty_state', page: '/app', section: 'job-details' },
     priority: 'high',
     category: 'app',
-    skipAutoShow: true, // Component-controlled via TeachingTrigger
+    // No skipAutoShow - TeachingTrigger controls display via autoShow prop
   },
 
   // ========== DASHBOARD (2 tips) ==========
