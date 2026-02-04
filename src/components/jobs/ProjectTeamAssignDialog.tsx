@@ -153,7 +153,7 @@ export const ProjectTeamAssignDialog = ({
         if (shouldBeAssigned && !isCurrentlyAssigned) {
           // Add assignment
           promises.push(
-            assignUser.mutateAsync({ projectId, userId: memberId, role: "member" })
+            assignUser.mutateAsync({ projectId, userId: memberId, role: "member", projectName })
           );
         } else if (!shouldBeAssigned && isCurrentlyAssigned) {
           // Remove assignment
