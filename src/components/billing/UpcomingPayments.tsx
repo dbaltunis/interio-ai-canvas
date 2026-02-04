@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarClock, AlertCircle } from "lucide-react";
+import { CalendarClock, AlertCircle, Download } from "lucide-react";
 import { useUpcomingPayments, CustomInvoice } from "@/hooks/useCustomInvoices";
 import { format, isPast, isWithinInterval, addDays } from "date-fns";
 
@@ -51,6 +52,17 @@ const PaymentCard = ({ payment }: { payment: CustomInvoice }) => {
               <CalendarClock className="h-4 w-4" />
               <span>Due: {format(new Date(payment.due_date), 'MMMM d, yyyy')}</span>
             </div>
+          )}
+          {payment.pdf_url && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => window.open(payment.pdf_url!, '_blank')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Invoice
+            </Button>
           )}
         </div>
       </CardContent>
