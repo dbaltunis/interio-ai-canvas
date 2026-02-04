@@ -1,213 +1,225 @@
 
-# Critical Investigation Report: Systemic Account Creation Failures
+# New User Guidance Implementation Plan
 
-## Executive Summary
+## Overview
 
-After deep investigation, I've identified **5 critical issues** that are breaking new accounts and affecting existing accounts. These are systemic bugs, not isolated incidents.
+This plan creates a modern, mobile-first onboarding experience for all new users. The system will provide:
+
+1. **Welcome Modal** - First-time user greeting with quick orientation
+2. **Persistent Help Buttons** - Pulsing "?" icons on every major page
+3. **Missing Help Content** - Dashboard and Calendar section documentation
+4. **Consistent Integration** - Replace custom help icons with unified SectionHelpButton
 
 ---
 
-## Issue 1: Missing User Profiles (ROOT CAUSE)
+## Current State Analysis
 
-### Finding
-**34 out of 70 users (48%) are missing `user_profiles` rows!**
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `WelcomeTour` | Exists but basic | 4-step dialog, queries `app_user_flags` |
+| `SectionHelpButton` | Exists with pulse animation | Works well, needs rollout |
+| `sectionHelp.ts` | Partial content | Missing: `dashboard`, `calendar` |
+| Dashboard header | Has `ShowcaseLightbulb` | No SectionHelpButton |
+| Jobs header | Has custom `HelpIcon` | Should use SectionHelpButton |
+| Library header | No help | Needs SectionHelpButton |
+| Calendar toolbar | No help | Needs SectionHelpButton |
+| Clients | Already has SectionHelpButton | OK |
+| Messages | Already has SectionHelpButton | OK |
 
-| Metric | Value |
-|--------|-------|
-| Total auth.users | 70 |
-| Total user_profiles | 36 |
-| Missing profiles | 34 |
+---
 
-### Root Cause
-The `handle_new_user` database trigger has a silent failure mode. When it encounters ANY error, it:
-1. Logs the error with `RAISE LOG`
-2. Returns `NEW` anyway (allowing auth user creation to succeed)
-3. **Does NOT create the profile**
+## Implementation
 
-The trigger's `EXCEPTION WHEN OTHERS` block masks the failure:
-```sql
-EXCEPTION
-  WHEN OTHERS THEN
-    RAISE LOG 'handle_new_user error for %: %', NEW.id, SQLERRM;
-    RETURN NEW;  -- Silently continues even if profile creation failed!
-END;
+### Phase 1: Enhanced Welcome Experience
+
+**New Component: `src/components/onboarding/NewUserWelcome.tsx`**
+
+A modern, mobile-optimized welcome modal that appears for first-time users:
+
+- Friendly greeting with user's name
+- 3 quick-start tips with icons:
+  - "Every page has a ? button for help"
+  - "Start by adding your first client"
+  - "Explore Settings to customize your business"
+- Large touch-friendly buttons
+- Option to "Show me around" (triggers existing WelcomeTour)
+- Queries `app_user_flags` for `has_seen_welcome` flag
+- Responsive design: full-screen on mobile, centered modal on desktop
+
+**Visual Design:**
+- Soft gradient background
+- Animated entrance (slide-up on mobile, scale on desktop)
+- Primary action: "Get Started" button
+- Secondary: "Take the Tour" link
+
+---
+
+### Phase 2: Missing Help Content
+
+**Update: `src/config/sectionHelp.ts`**
+
+Add documentation for Dashboard and Calendar:
+
+```text
+dashboard:
+  title: "Dashboard"
+  icon: LayoutDashboard
+  briefDescription: "Your command center - see pending quotes, upcoming appointments, and key business metrics at a glance."
+  keyPoints:
+    - View today's appointments and tasks
+    - Track pending quotes and their values
+    - See client activity and recent updates
+    - Quick actions to create jobs or add clients
+  relatedSections: ["Jobs", "Clients", "Calendar"]
+
+calendar:
+  title: "Calendar & Scheduling"
+  icon: Calendar
+  briefDescription: "Manage appointments, installations, and team schedules. Sync with Google Calendar for seamless coordination."
+  keyPoints:
+    - Create appointments for consultations and installations
+    - Drag and drop to reschedule events
+    - Filter by team member, event type, or status
+    - Set up booking templates for client self-scheduling
+    - Sync bidirectionally with Google Calendar
+  relatedSections: ["Jobs", "Team"]
 ```
 
-### Impact on LaEla Account (baltunis+laela)
-- **Auth user created**: Yes (Feb 4, 15:55)
-- **user_roles created**: Yes (`Owner` role exists)
-- **user_permissions created**: Yes (64 permissions)
-- **business_settings created**: Yes (company: LaEla)
-- **user_profiles created**: **NO - MISSING**
-
-### Technical Fix Required
-1. **Database migration** to fix the trigger to properly raise exceptions
-2. **One-time repair script** to create missing profiles for all 34 affected users
-3. **Edge function update** to `create-admin-account` to verify profile creation succeeded
-
 ---
 
-## Issue 2: Settings Access Blocked
+### Phase 3: Consistent Help Button Rollout
 
-### Finding
-The Settings page uses `useUserRole()` which queries `user_profiles` to get `parent_account_id`. When the profile is missing:
-- `profile` is null
-- `isOwner` check passes (from `user_roles` table)
-- BUT the frontend logic in `Settings.tsx` still blocks access
+**Update: `src/components/dashboard/WelcomeHeader.tsx`**
 
-### Code Path
+Add SectionHelpButton next to the ShowcaseLightbulb:
+
 ```tsx
-// Settings.tsx line 23-24
-const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
-// Line 58-62 - Permission check that can fail
-const canViewSettings = userRoleData?.isSystemOwner
-  ? true
-  : (isOwner || isAdmin)
-      ? !hasAnyExplicitPermissions || hasViewSettingsPermission
-      : hasViewSettingsPermission;
+// In the actions area (line ~77):
+<SectionHelpButton sectionId="dashboard" className="ml-1" />
 ```
 
-The problem: `hasAnyExplicitPermissions` is `true` (64 permissions exist), so it checks `hasViewSettingsPermission` which requires querying `user_permissions`. But when the profile is missing, the RLS policies may block these queries silently.
+**Update: `src/components/jobs/JobsPageHeader.tsx`**
 
-### Technical Fix Required
-Add defensive fallback: If user has `Owner` role in `user_roles` table BUT no profile exists, grant settings access.
+Replace custom HelpIcon with SectionHelpButton:
 
----
-
-## Issue 3: Library Crashes (ErrorBoundary)
-
-### Finding
-The Library page uses `useEffectiveAccountOwner()` hook which:
-1. Queries `user_profiles` for `parent_account_id`
-2. Uses `.single()` which throws on no results
-3. Has error handling, but downstream hooks may still fail
-
-### Code Path
 ```tsx
-// useEffectiveAccountOwner.ts line 21-30
-const { data: profile, error } = await supabase
-  .from("user_profiles")
-  .select("parent_account_id")
-  .eq("user_id", user.id)
-  .single();  // This throws PGRST116 when no row found
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 
-if (error) {
-  console.warn('...');
-  return { effectiveOwnerId: user.id, currentUserId: user.id };  // Fallback exists
-}
+// Replace lines 16-17:
+<SectionHelpButton sectionId="jobs" />
 ```
 
-The fallback DOES exist, but the error is still logged and may cause issues in components that expect the profile to exist.
+**Update: `src/components/library/LibraryHeader.tsx`**
 
-### Technical Fix Required
-1. Change `.single()` to `.maybeSingle()` for graceful handling
-2. Add explicit empty state in `ModernInventoryDashboard` for new users
+Add help button to the header section (inside the main header div, after the title):
 
----
-
-## Issue 4: WhatsApp "Ready" Badge is Hardcoded
-
-### Finding
-The WhatsApp status shows "Ready" even when no Twilio is configured.
-
-### Code Location
-`src/components/jobs/email/EmailSettings.tsx` lines 326-329:
 ```tsx
-<Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-  <Check className="h-3 w-3 mr-1" />
-  Ready
-</Badge>
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+
+// After line 55 (after the subtitle):
+<div className="flex items-center gap-2">
+  <SectionHelpButton sectionId="library" />
+</div>
 ```
 
-The `hasCustomTwilio` variable exists (line 314) but is NOT used for the badge.
+**Update: `src/components/calendar/CalendarSyncToolbar.tsx`**
 
-### Technical Fix Required
-Make badge conditional on `hasCustomTwilio`:
+Add help button in the right actions section:
+
 ```tsx
-<Badge variant="outline" className={hasCustomTwilio ? "bg-green-50..." : "bg-amber-50..."}>
-  {hasCustomTwilio ? (
-    <><Check className="h-3 w-3 mr-1" />Ready</>
-  ) : (
-    <><AlertCircle className="h-3 w-3 mr-1" />Sandbox Mode</>
-  )}
-</Badge>
+import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+
+// In the right section (around line 253):
+<SectionHelpButton sectionId="calendar" />
 ```
 
 ---
 
-## Issue 5: No Welcome/Onboarding Experience
+### Phase 4: App Integration
 
-### Finding
-New users get no guidance when they first log in. No welcome message, no tooltips, no "?" help buttons on pages.
+**Update: `src/App.tsx` or main layout**
 
-### Technical Fix Required (Phase 2)
-1. Create `NewUserWelcome` component with mobile-first design
-2. Add `SectionHelpButton` to all major page headers
-3. Implement persistent help tooltips for key actions
+Add the NewUserWelcome component to render on first login:
 
----
+```tsx
+import { NewUserWelcome } from "@/components/onboarding/NewUserWelcome";
 
-## Repair Plan
-
-### Step 1: Immediate Database Repair (P0)
-Create migration to:
-1. Create missing `user_profiles` for all 34 affected users
-2. Update the `handle_new_user` trigger to NOT silently fail
-
-```sql
--- Repair missing profiles from user_roles + business_settings data
-INSERT INTO user_profiles (user_id, display_name, role, parent_account_id, is_active, created_at, updated_at)
-SELECT 
-  au.id,
-  COALESCE(au.raw_user_meta_data->>'display_name', split_part(au.email, '@', 1)),
-  COALESCE(ur.role::text, 'Owner'),
-  NULL,
-  true,
-  au.created_at,
-  now()
-FROM auth.users au
-LEFT JOIN user_profiles up ON up.user_id = au.id
-LEFT JOIN user_roles ur ON ur.user_id = au.id
-WHERE up.user_id IS NULL
-ON CONFLICT (user_id) DO NOTHING;
+// Inside authenticated layout:
+<NewUserWelcome />
 ```
 
-### Step 2: Code Fixes (P0)
-1. **Settings.tsx**: Add defensive owner check
-2. **useEffectiveAccountOwner.ts**: Change `.single()` to `.maybeSingle()`
-3. **EmailSettings.tsx**: Fix WhatsApp badge to use `hasCustomTwilio`
-
-### Step 3: Trigger Fix (P0)
-Update `handle_new_user` to:
-1. Use explicit error handling per-step
-2. Log detailed errors for debugging
-3. Consider NOT swallowing exceptions for profile creation
-
 ---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/onboarding/NewUserWelcome.tsx` | Welcome modal for first-time users |
+| `src/components/onboarding/index.ts` | Export barrel file |
 
 ## Files to Modify
 
-| Priority | File/Resource | Change |
-|----------|---------------|--------|
-| P0 | Database Migration | Repair 34 missing profiles + fix trigger |
-| P0 | `src/pages/Settings.tsx` | Add defensive owner check |
-| P0 | `src/hooks/useEffectiveAccountOwner.ts` | Change `.single()` to `.maybeSingle()` |
-| P0 | `src/components/jobs/email/EmailSettings.tsx` | Fix WhatsApp badge |
-| P1 | `src/components/inventory/ModernInventoryDashboard.tsx` | Add empty state for new users |
-| P2 | New `NewUserWelcome` component | Welcome experience |
+| File | Change |
+|------|--------|
+| `src/config/sectionHelp.ts` | Add `dashboard` and `calendar` content |
+| `src/components/dashboard/WelcomeHeader.tsx` | Add SectionHelpButton |
+| `src/components/jobs/JobsPageHeader.tsx` | Replace HelpIcon with SectionHelpButton |
+| `src/components/library/LibraryHeader.tsx` | Add SectionHelpButton to header |
+| `src/components/calendar/CalendarSyncToolbar.tsx` | Add SectionHelpButton |
+| `src/App.tsx` or layout component | Mount NewUserWelcome |
 
 ---
 
-## Why This Keeps Happening
+## Mobile-First Design Principles
 
-The root issue is that the app has grown complex with many database triggers, RLS policies, and cascading effects. When the `handle_new_user` trigger silently fails:
-1. Auth user is created (user can log in)
-2. Some seeding succeeds (roles, permissions, business_settings)
-3. Profile creation fails silently
-4. All frontend code expecting a profile breaks
+The NewUserWelcome component will follow these principles:
 
-This is a **systemic architecture issue** - silent failures are masking critical problems. The fix requires both:
-1. **Immediate repair** of existing broken accounts
-2. **Long-term fix** to prevent silent failures in triggers
+1. **Full-screen on mobile** - No small modals on phones
+2. **Large touch targets** - Minimum 44px tap areas
+3. **Bottom-anchored actions** - Primary buttons within thumb reach
+4. **Reduced content** - Fewer words, more visual cues
+5. **Swipe gestures** - Support swipe-to-dismiss on mobile
+6. **Fast animations** - 200-300ms transitions, no jarring effects
+
+---
+
+## User Flow
+
+```text
+New User Signs Up
+      ↓
+Profile Created (via fixed trigger)
+      ↓
+First Login to Dashboard
+      ↓
+NewUserWelcome Modal Appears
+  ├─→ "Get Started" → Closes modal, pulses appear on help buttons
+  └─→ "Take the Tour" → Launches WelcomeTour (existing)
+      ↓
+User Navigates to Any Page
+      ↓
+Sees Pulsing ? Button (first visit to each section)
+      ↓
+Clicks ? → Help Sheet with Quick Guide
+      ↓
+Pulse Stops (marked as clicked)
+```
+
+---
+
+## Testing Checklist
+
+After implementation, verify:
+
+- [ ] New account sees welcome modal on first login
+- [ ] Welcome modal is full-screen on mobile
+- [ ] "Take the Tour" triggers WelcomeTour
+- [ ] Dashboard has pulsing ? button on first visit
+- [ ] Jobs has pulsing ? button on first visit
+- [ ] Library has pulsing ? button on first visit
+- [ ] Calendar has pulsing ? button on first visit
+- [ ] Clicking ? opens help sheet with content
+- [ ] Pulse stops after clicking
+- [ ] Existing Clients/Messages help buttons still work
