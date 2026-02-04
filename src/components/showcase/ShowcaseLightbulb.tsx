@@ -13,11 +13,12 @@ import {
   Scene5ProjectDeepDive,
   Scene6Closing,
   Scene7Calendar,
+  Scene8Library,
 } from "@/components/help/tutorial-steps/WelcomeVideoSteps";
 
 const STORAGE_KEY = "showcase_last_seen_version";
 
-// 8 Cinematic chapters for the product showcase
+// 9 Cinematic chapters for the product showcase
 const welcomeChapters: VideoChapter[] = [
   { id: "welcome", label: "Welcome", shortLabel: "Hi" },
   { id: "intro", label: "InterioApp", shortLabel: "Intro" },
@@ -26,10 +27,11 @@ const welcomeChapters: VideoChapter[] = [
   { id: "jobs", label: "Jobs & Notes", shortLabel: "Jobs" },
   { id: "project", label: "Project Details", shortLabel: "Project" },
   { id: "calendar", label: "Calendar", shortLabel: "Calendar" },
+  { id: "library", label: "Library", shortLabel: "Library" },
   { id: "closing", label: "Get Started", shortLabel: "Ready" },
 ];
 
-// 8 Story-driven scenes following the real InterioApp workflow
+// 9 Story-driven scenes following the real InterioApp workflow
 const welcomeSteps: VideoStep[] = [
   // Scene 0: Welcome greeting
   { 
@@ -85,7 +87,7 @@ const welcomeSteps: VideoStep[] = [
     chapter: "project" 
   },
   
-  // Scene 7: Calendar integration & booking system
+  // Scene 6: Calendar integration & booking system
   { 
     title: "Calendar & Bookings", 
     description: "Google Calendar sync, booking templates, and client scheduling", 
@@ -94,7 +96,16 @@ const welcomeSteps: VideoStep[] = [
     chapter: "calendar" 
   },
   
-  // Scene 6: Closing branding
+  // Scene 7: Library - Product management, QR codes, mobile scanning
+  { 
+    title: "Product Library", 
+    description: "Manage fabrics, hardware, vendors, and scan QR codes on the go", 
+    Visual: Scene8Library, 
+    duration: 14000, 
+    chapter: "library" 
+  },
+  
+  // Scene 8: Closing branding
   { 
     title: "Get Started", 
     description: "Your complete platform for made-to-measure window treatments", 

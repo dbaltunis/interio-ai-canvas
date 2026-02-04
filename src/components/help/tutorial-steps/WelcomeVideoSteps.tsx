@@ -12,7 +12,8 @@ import {
   MessageSquare, Receipt, Layers, Eye, X, Clock, Phone, Globe,
   ShoppingBag, Package, UserPlus, Copy, ExternalLink, CalendarDays,
   DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Mail,
-  CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList, Sparkles
+  CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList, Sparkles,
+  Link, QrCode, Smartphone, Camera, Search, FolderOpen, Grid, ScanLine
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -798,25 +799,28 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
 // SCENE 7: CALENDAR & BOOKINGS - Google Calendar sync and booking system
 export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
   // Phase breakdown:
-  // 0.00-0.25: Calendar week view with Google sync badge
-  // 0.25-0.50: Booking template setup (dropdown + form)
-  // 0.50-0.80: Public booking page (split panel, date/time selection, form)
+  // 0.00-0.20: Calendar week view with Google sync badge
+  // 0.20-0.40: Booking template list + dropdown showing multiple types
+  // 0.40-0.55: Template form + Share link copied
+  // 0.55-0.80: Public booking page (split panel, date/time selection, form)
   // 0.80-1.00: Success confirmation with confetti
   
-  const showCalendarView = inPhase(phase, 0, 0.25);
-  const showTemplateSetup = inPhase(phase, 0.25, 0.50);
-  const showBookingPage = inPhase(phase, 0.50, 0.80);
+  const showCalendarView = inPhase(phase, 0, 0.20);
+  const showTemplateSetup = inPhase(phase, 0.20, 0.55);
+  const showBookingPage = inPhase(phase, 0.55, 0.80);
   const showSuccess = inPhase(phase, 0.80, 1);
   
-  const templateDropdown = inPhase(phase, 0.27, 0.35);
-  const templateForm = inPhase(phase, 0.35, 0.50);
+  const templateDropdown = inPhase(phase, 0.22, 0.32);
+  const templateForm = inPhase(phase, 0.32, 0.45);
+  const showShareLink = inPhase(phase, 0.45, 0.55);
+  const linkCopied = inPhase(phase, 0.50, 0.55);
   
-  const dateSelection = phaseProgress(phase, 0.52, 0.58);
-  const timeSelection = inPhase(phase, 0.58, 0.65);
-  const formFilling = inPhase(phase, 0.65, 0.75);
-  const clientName = typingProgress(phase, 0.66, 0.70, "Holly Watson");
-  const clientEmail = typingProgress(phase, 0.70, 0.74, "holly@email.com");
-  const confirmClick = inPhase(phase, 0.76, 0.80);
+  const dateSelection = phaseProgress(phase, 0.57, 0.63);
+  const timeSelection = inPhase(phase, 0.63, 0.68);
+  const formFilling = inPhase(phase, 0.68, 0.78);
+  const clientName = typingProgress(phase, 0.69, 0.73, "Holly Watson");
+  const clientEmail = typingProgress(phase, 0.73, 0.77, "holly@email.com");
+  const confirmClick = inPhase(phase, 0.78, 0.80);
   
   // Calendar events for week view
   const events = [
@@ -824,6 +828,13 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
     { day: 2, time: "10:30", title: "Design Session", color: "bg-green-500", duration: "30m" },
     { day: 3, time: "14:00", title: "Curtain Measure", color: "bg-purple-500", duration: "1h" },
     { day: 4, time: "11:00", title: "Client Consult", color: "bg-amber-500", duration: "45m" },
+  ];
+  
+  // Template types for dropdown
+  const templateTypes = [
+    { name: "Design Consultation", icon: Scissors, duration: "30 min", selected: true },
+    { name: "Installation Appointment", icon: Wrench, duration: "60 min", selected: false },
+    { name: "Measurement Session", icon: Ruler, duration: "45 min", selected: false },
   ];
   
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -940,7 +951,7 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
                 <div className="relative">
                   <motion.button 
                     className="px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded flex items-center gap-1"
-                    animate={{ scale: templateDropdown && !templateForm ? [1, 1.05, 1] : 1 }}
+                    animate={{ scale: templateDropdown && !templateForm && !showShareLink ? [1, 1.05, 1] : 1 }}
                     transition={{ duration: 0.3 }}
                   >
                     <Plus className="h-3 w-3" />
@@ -949,25 +960,29 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
                   </motion.button>
                   
                   <AnimatePresence>
-                    {templateDropdown && !templateForm && (
+                    {templateDropdown && !templateForm && !showShareLink && (
                       <motion.div 
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-xl z-20 py-1"
+                        className="absolute right-0 top-full mt-1 w-52 bg-popover border rounded-lg shadow-xl z-20 py-1"
                       >
-                        <div className="px-3 py-2 hover:bg-primary/10 text-xs flex items-center gap-2 bg-primary/5">
-                          <Wrench className="h-3.5 w-3.5 text-primary" />
-                          <span className="font-medium text-primary">Installation Appointment</span>
-                        </div>
-                        <div className="px-3 py-2 hover:bg-muted text-xs flex items-center gap-2">
-                          <Ruler className="h-3.5 w-3.5" />
-                          <span>Measurement Session</span>
-                        </div>
-                        <div className="px-3 py-2 hover:bg-muted text-xs flex items-center gap-2">
-                          <Scissors className="h-3.5 w-3.5" />
-                          <span>Design Consultation</span>
-                        </div>
+                        {templateTypes.map((template, i) => (
+                          <div 
+                            key={template.name}
+                            className={`px-3 py-2 text-xs flex items-center gap-2 ${
+                              template.selected ? "bg-primary/10" : "hover:bg-muted"
+                            }`}
+                          >
+                            <template.icon className={`h-3.5 w-3.5 ${template.selected ? "text-primary" : ""}`} />
+                            <div className="flex-1">
+                              <span className={template.selected ? "font-medium text-primary" : ""}>
+                                {template.name}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground text-[10px]">{template.duration}</span>
+                          </div>
+                        ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -976,19 +991,20 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
               
               {/* Template form */}
               <AnimatePresence>
-                {templateForm && (
+                {templateForm && !showShareLink && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
                     className="bg-card rounded-lg border p-4 space-y-3"
                   >
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Wrench className="h-5 w-5 text-primary" />
+                        <Scissors className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold">Installation Appointment</div>
-                        <div className="text-xs text-muted-foreground">Let clients book installation times</div>
+                        <div className="text-sm font-semibold">Design Consultation</div>
+                        <div className="text-xs text-muted-foreground">Let clients book design sessions</div>
                       </div>
                     </div>
                     
@@ -1021,6 +1037,81 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
                   </motion.div>
                 )}
               </AnimatePresence>
+              
+              {/* Share Link Phase */}
+              <AnimatePresence>
+                {showShareLink && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-card rounded-lg border p-4 space-y-3"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                        <Check className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold">Template Created!</div>
+                        <div className="text-xs text-muted-foreground">Share this link with your clients</div>
+                      </div>
+                    </div>
+                    
+                    {/* Share link input */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-muted/50 rounded border text-xs font-mono truncate">
+                        <Link className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate text-muted-foreground">yourstore.interioapp.com/book/design</span>
+                      </div>
+                      <motion.button 
+                        className={`px-3 py-2 rounded text-xs font-medium flex items-center gap-1.5 ${
+                          linkCopied 
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" 
+                            : "bg-primary text-primary-foreground"
+                        }`}
+                        animate={linkCopied ? { scale: [1, 1.05, 1] } : {}}
+                      >
+                        {linkCopied ? (
+                          <>
+                            <Check className="h-3.5 w-3.5" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5" />
+                            Copy
+                          </>
+                        )}
+                      </motion.button>
+                    </div>
+                    
+                    {/* Share options */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button className="flex-1 py-2 rounded border text-xs flex items-center justify-center gap-1.5 hover:bg-muted">
+                        <Mail className="h-3.5 w-3.5" />
+                        Email
+                      </button>
+                      <button className="flex-1 py-2 rounded border text-xs flex items-center justify-center gap-1.5 hover:bg-muted">
+                        <Phone className="h-3.5 w-3.5" />
+                        SMS
+                      </button>
+                      <button className="flex-1 py-2 rounded border text-xs flex items-center justify-center gap-1.5 hover:bg-muted">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Preview
+                      </button>
+                    </div>
+                    
+                    <motion.p 
+                      className="text-[10px] text-center text-muted-foreground pt-1"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Clients can book appointments directly from this link
+                    </motion.p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
           
@@ -1037,7 +1128,16 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
               <div className="h-full grid grid-cols-[1.2fr_2fr] gap-0 rounded-lg overflow-hidden border shadow-lg">
                 {/* Left panel - Branding (dark slate gradient like real app) */}
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4 flex flex-col">
-                  <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-10 w-auto mb-4" />
+                  {/* Generic business logo placeholder - not InterioApp branding */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
+                      <Home className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">Your Business</div>
+                      <div className="text-[9px] text-slate-300">Window Treatments</div>
+                    </div>
+                  </div>
                   <div className="flex-1">
                     <div className="text-base font-semibold mb-1">Installation Appointment</div>
                     <div className="flex items-center gap-1.5 text-xs text-slate-300 mb-3">
@@ -1235,6 +1335,507 @@ export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
                 <span className="text-xs font-medium text-green-700 dark:text-green-400">
                   Synced to Google Calendar ✓
                 </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+// SCENE 8: LIBRARY - Product management, QR codes, and mobile scanning
+export const Scene8Library = ({ phase = 0 }: StepProps) => {
+  // Phase breakdown:
+  // 0.00-0.20: Library overview with tabs and collections grid
+  // 0.20-0.40: Add new product dialog with category dropdown
+  // 0.40-0.60: QR code generation for the new product
+  // 0.60-0.85: Mobile scanning demo showing instant product lookup
+  // 0.85-1.00: Success summary with feature badges
+  
+  const showLibraryView = inPhase(phase, 0, 0.20);
+  const showAddProduct = inPhase(phase, 0.20, 0.40);
+  const showQRCode = inPhase(phase, 0.40, 0.60);
+  const showMobileScanning = inPhase(phase, 0.60, 0.85);
+  const showSuccess = inPhase(phase, 0.85, 1);
+  
+  const categoryDropdown = inPhase(phase, 0.23, 0.30);
+  const productName = typingProgress(phase, 0.30, 0.36, "Velvet Drapery");
+  const productSku = typingProgress(phase, 0.34, 0.38, "VD-001");
+  
+  const qrAnimating = inPhase(phase, 0.42, 0.55);
+  const scanningProgress = phaseProgress(phase, 0.65, 0.75);
+  const productFound = inPhase(phase, 0.75, 0.85);
+  
+  // Library tabs
+  const tabs = [
+    { name: "Collections", icon: FolderOpen, count: 160 },
+    { name: "Fabrics", icon: Layers, count: 245 },
+    { name: "Hardware", icon: Package, count: 89 },
+    { name: "Vendors", icon: Users, count: 12 },
+  ];
+  
+  // Collection cards
+  const collections = [
+    { name: "TWC Curtains", count: 45, brand: "TWC" },
+    { name: "ADARA Blinds", count: 32, brand: "ADARA" },
+    { name: "Premium Fabrics", count: 28, brand: "TWC" },
+    { name: "Hardware Pro", count: 18, brand: "SMITH" },
+  ];
+  
+  // Category options
+  const categories = [
+    { name: "Fabrics", icon: Layers },
+    { name: "Blind Materials", icon: Grid },
+    { name: "Hardware", icon: Package },
+    { name: "Headings", icon: Scissors },
+    { name: "Wallcoverings", icon: Home },
+    { name: "Services", icon: Wrench },
+  ];
+  
+  return (
+    <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
+      {/* Header */}
+      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
+          <div className="flex items-center gap-4">
+            {["Home", "Clients", "Jobs", "Library", "Calendar"].map((nav) => (
+              <span key={nav} className={`text-xs ${nav === "Library" ? "font-semibold text-primary" : "text-muted-foreground"}`}>{nav}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">381 items</span>
+        </div>
+      </div>
+      
+      <div className="p-3 h-[calc(100%-48px)] overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          {/* Phase 1: Library Overview */}
+          {showLibraryView && (
+            <motion.div 
+              key="library" 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0, x: -20 }}
+              className="h-full"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  Library
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button className="px-2.5 py-1.5 text-xs bg-muted rounded border flex items-center gap-1">
+                    <Search className="h-3 w-3" />
+                    Search
+                  </button>
+                  <button className="px-2.5 py-1.5 text-xs bg-muted rounded border flex items-center gap-1">
+                    <ScanLine className="h-3 w-3" />
+                    Scan
+                  </button>
+                  <motion.button 
+                    className="px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded flex items-center gap-1 relative"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                  >
+                    <FocusRing active={inPhase(phase, 0.15, 0.20)} />
+                    <Plus className="h-3 w-3" />
+                    Add Item
+                  </motion.button>
+                </div>
+              </div>
+              
+              {/* Tabs */}
+              <div className="flex items-center gap-1 mb-3 border-b">
+                {tabs.map((tab, i) => (
+                  <motion.button
+                    key={tab.name}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`px-3 py-2 text-xs flex items-center gap-1.5 border-b-2 ${
+                      i === 0 ? "border-primary text-primary font-medium" : "border-transparent text-muted-foreground"
+                    }`}
+                  >
+                    <tab.icon className="h-3.5 w-3.5" />
+                    {tab.name}
+                    <span className="text-[10px] text-muted-foreground">({tab.count})</span>
+                  </motion.button>
+                ))}
+              </div>
+              
+              {/* Collections grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {collections.map((collection, i) => (
+                  <motion.div
+                    key={collection.name}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + i * 0.05 }}
+                    className="p-3 bg-card rounded-lg border hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium">{collection.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded">{collection.brand}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">{collection.count} items</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Phase 2: Add Product Dialog */}
+          {showAddProduct && (
+            <motion.div 
+              key="add-product" 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full"
+            >
+              <div className="bg-card rounded-lg border shadow-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold">Add New Inventory Item</h3>
+                    <p className="text-xs text-muted-foreground">Add a new product or service to your inventory</p>
+                  </div>
+                  <button className="p-1 rounded hover:bg-muted">
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </div>
+                
+                {/* Category dropdown */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">Category</label>
+                  <div className="relative">
+                    <button className="w-full px-3 py-2 text-xs border rounded flex items-center justify-between bg-background">
+                      <span className="flex items-center gap-2">
+                        <Layers className="h-3.5 w-3.5 text-primary" />
+                        Fabrics
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {categoryDropdown && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute left-0 top-full mt-1 w-full bg-popover border rounded-lg shadow-xl z-20 py-1"
+                        >
+                          {categories.map((cat, i) => (
+                            <div 
+                              key={cat.name}
+                              className={`px-3 py-2 text-xs flex items-center gap-2 ${
+                                i === 0 ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                              }`}
+                            >
+                              <cat.icon className={`h-3.5 w-3.5 ${i === 0 ? "text-primary" : ""}`} />
+                              <span className={i === 0 ? "font-medium" : ""}>{cat.name}</span>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+                
+                {/* Form fields */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">Name</label>
+                    <input 
+                      type="text" 
+                      value={productName}
+                      readOnly
+                      placeholder="Product name"
+                      className="w-full px-3 py-2 text-xs border rounded bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">SKU</label>
+                    <input 
+                      type="text" 
+                      value={productSku}
+                      readOnly
+                      placeholder="SKU-001"
+                      className="w-full px-3 py-2 text-xs border rounded bg-background"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">Price (per m)</label>
+                    <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/50 rounded border text-xs">
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>45.00</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">Vendor</label>
+                    <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/50 rounded border text-xs">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>TWC</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <motion.button 
+                  className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center gap-2 relative"
+                  animate={{ scale: inPhase(phase, 0.38, 0.40) ? [1, 1.02, 1] : 1 }}
+                >
+                  <FocusRing active={inPhase(phase, 0.36, 0.40)} />
+                  <Check className="h-4 w-4" />
+                  Create Item
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Phase 3: QR Code Generation */}
+          {showQRCode && (
+            <motion.div 
+              key="qr-code" 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full flex flex-col items-center justify-center"
+            >
+              <div className="bg-card rounded-lg border shadow-lg p-6 text-center max-w-xs">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="mb-4"
+                >
+                  <div className="w-32 h-32 mx-auto bg-white rounded-lg p-2 border-2 border-muted relative overflow-hidden">
+                    {/* Animated QR code pattern */}
+                    <motion.div 
+                      className="w-full h-full grid grid-cols-8 grid-rows-8 gap-0.5"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {[...Array(64)].map((_, i) => {
+                        const isCorner = (i < 24 && i % 8 < 3) || (i < 24 && i % 8 > 4) || (i > 39 && i % 8 < 3);
+                        const isRandom = Math.random() > 0.5;
+                        return (
+                          <motion.div
+                            key={i}
+                            className={`rounded-sm ${isCorner || isRandom ? "bg-foreground" : "bg-transparent"}`}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: qrAnimating ? 1 : 0 }}
+                            transition={{ delay: i * 0.008 }}
+                          />
+                        );
+                      })}
+                    </motion.div>
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="text-sm font-semibold mb-1">Velvet Drapery</div>
+                  <div className="text-xs text-muted-foreground mb-3">SKU: VD-001</div>
+                  
+                  <div className="flex items-center justify-center gap-2">
+                    <button className="px-3 py-1.5 text-xs rounded border flex items-center gap-1.5 hover:bg-muted">
+                      <Download className="h-3.5 w-3.5" />
+                      Download
+                    </button>
+                    <button className="px-3 py-1.5 text-xs rounded border flex items-center gap-1.5 hover:bg-muted">
+                      <FileText className="h-3.5 w-3.5" />
+                      Print
+                    </button>
+                  </div>
+                </motion.div>
+                
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-[10px] text-muted-foreground mt-4"
+                >
+                  Every product gets a unique QR code for instant lookup
+                </motion.p>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Phase 4: Mobile Scanning Demo */}
+          {showMobileScanning && (
+            <motion.div 
+              key="mobile-scan" 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="h-full flex items-center justify-center"
+            >
+              {/* Phone mockup */}
+              <motion.div 
+                className="relative w-36 h-64 bg-foreground rounded-3xl p-1.5 shadow-2xl"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
+                {/* Phone screen */}
+                <div className="w-full h-full bg-background rounded-2xl overflow-hidden relative">
+                  {/* Camera viewfinder */}
+                  {!productFound && (
+                    <motion.div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                      <motion.div 
+                        className="w-24 h-24 border-2 border-primary rounded-lg relative"
+                        animate={{ 
+                          borderColor: ["hsl(var(--primary))", "hsl(var(--primary)/0.5)", "hsl(var(--primary))"],
+                        }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        {/* Scanning line */}
+                        <motion.div 
+                          className="absolute left-0 right-0 h-0.5 bg-primary"
+                          animate={{ 
+                            top: [`${scanningProgress * 100}%`, `${scanningProgress * 100 + 5}%`] 
+                          }}
+                          transition={{ duration: 0.5 }}
+                        />
+                        
+                        {/* Corner brackets */}
+                        <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-primary" />
+                        <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-primary" />
+                        <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-primary" />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-primary" />
+                      </motion.div>
+                      
+                      <div className="absolute bottom-4 left-0 right-0 text-center">
+                        <div className="text-[9px] text-muted-foreground flex items-center justify-center gap-1">
+                          <Camera className="h-3 w-3" />
+                          Scanning...
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Product found */}
+                  {productFound && (
+                    <motion.div 
+                      className="absolute inset-0 bg-background p-3"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-green-600" />
+                        </div>
+                        <span className="text-[10px] font-medium text-green-600">Product Found!</span>
+                      </div>
+                      
+                      {/* Product image placeholder */}
+                      <div className="w-full h-16 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg mb-2 flex items-center justify-center">
+                        <Layers className="h-6 w-6 text-purple-400" />
+                      </div>
+                      
+                      <div className="text-xs font-semibold mb-1">Velvet Drapery</div>
+                      <div className="text-[10px] text-muted-foreground mb-2">SKU: VD-001</div>
+                      
+                      <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+                        <div className="p-1.5 bg-muted/50 rounded">
+                          <div className="text-muted-foreground">Price</div>
+                          <div className="font-medium">£45/m</div>
+                        </div>
+                        <div className="p-1.5 bg-muted/50 rounded">
+                          <div className="text-muted-foreground">Stock</div>
+                          <div className="font-medium">25m</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+                
+                {/* Phone notch */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-foreground rounded-full" />
+              </motion.div>
+              
+              {/* Caption */}
+              <motion.div
+                className="absolute bottom-4 left-0 right-0 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="text-xs text-muted-foreground">
+                  Find any fabric instantly with your phone or tablet
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+          
+          {/* Phase 5: Success Summary */}
+          {showSuccess && (
+            <motion.div 
+              key="success" 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="h-full flex flex-col items-center justify-center text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4"
+              >
+                <Package className="h-7 w-7 text-primary" />
+              </motion.div>
+              
+              <motion.h3
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-base font-bold mb-1"
+              >
+                Your Product Library
+              </motion.h3>
+              
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-xs text-muted-foreground mb-4"
+              >
+                160 collections • 381 products
+              </motion.p>
+              
+              {/* Feature badges */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap justify-center gap-2"
+              >
+                {[
+                  { icon: Download, label: "Import from CSV" },
+                  { icon: Globe, label: "Sync with suppliers" },
+                  { icon: Smartphone, label: "Mobile scanning" },
+                ].map((feature, i) => (
+                  <motion.div
+                    key={feature.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + i * 0.1 }}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-full text-xs"
+                  >
+                    <feature.icon className="h-3.5 w-3.5 text-primary" />
+                    <span>{feature.label}</span>
+                    <Check className="h-3 w-3 text-green-500" />
+                  </motion.div>
+                ))}
               </motion.div>
             </motion.div>
           )}
