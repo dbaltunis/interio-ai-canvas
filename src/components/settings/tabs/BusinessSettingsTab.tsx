@@ -88,7 +88,9 @@ export const BusinessSettingsTab = () => {
     late_payment_interest_rate: 0,
     late_payment_fee_amount: 0,
     late_payment_terms: "",
-    allow_in_app_template_editing: false
+    allow_in_app_template_editing: false,
+    // Document language
+    document_language: "en" as 'en' | 'lt'
   });
 
   // Get dynamic labels based on selected country
@@ -131,7 +133,8 @@ export const BusinessSettingsTab = () => {
         late_payment_interest_rate: (businessSettings as any).late_payment_interest_rate ?? 0,
         late_payment_fee_amount: (businessSettings as any).late_payment_fee_amount ?? 0,
         late_payment_terms: (businessSettings as any).late_payment_terms || "",
-        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
+        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false,
+        document_language: ((businessSettings as any).document_language as 'en' | 'lt') || "en"
       });
     }
   }, [businessSettings]);
@@ -243,7 +246,8 @@ export const BusinessSettingsTab = () => {
           late_payment_interest_rate: (savedData as any).late_payment_interest_rate ?? 0,
           late_payment_fee_amount: (savedData as any).late_payment_fee_amount ?? 0,
           late_payment_terms: (savedData as any).late_payment_terms || "",
-          allow_in_app_template_editing: savedData.allow_in_app_template_editing || false
+          allow_in_app_template_editing: savedData.allow_in_app_template_editing || false,
+          document_language: (savedData.document_language as 'en' | 'lt') || "en"
         });
       }
       
@@ -391,7 +395,8 @@ export const BusinessSettingsTab = () => {
         late_payment_interest_rate: (businessSettings as any).late_payment_interest_rate ?? 0,
         late_payment_fee_amount: (businessSettings as any).late_payment_fee_amount ?? 0,
         late_payment_terms: (businessSettings as any).late_payment_terms || "",
-        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
+        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false,
+        document_language: ((businessSettings as any).document_language as 'en' | 'lt') || "en"
       });
     }
     
@@ -508,6 +513,31 @@ export const BusinessSettingsTab = () => {
               placeholder="https://www.example.com"
               disabled={!isEditingCompany}
             />
+          </FormFieldGroup>
+        </div>
+
+        {/* Document Language Setting */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup 
+            label="Document Language" 
+            description="Language for quotes, invoices, and other client-facing documents"
+          >
+            <Select
+              value={formData.document_language}
+              onValueChange={(value) => handleInputChange("document_language", value)}
+              disabled={!isEditingCompany}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select document language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">🇬🇧 English</SelectItem>
+                <SelectItem value="lt">🇱🇹 Lietuvių (Lithuanian) - Documents only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Only affects quotes & invoices your clients see. App interface stays in English.
+            </p>
           </FormFieldGroup>
         </div>
 

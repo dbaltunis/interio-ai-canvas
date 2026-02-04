@@ -59,6 +59,8 @@ export interface BusinessSettings {
   bank_routing_number?: string;
   bank_iban?: string;
   bank_swift_bic?: string;
+  // Document settings
+  document_language?: 'en' | 'lt';
   // Other settings
   pricing_settings?: any;
   allow_in_app_template_editing?: boolean;

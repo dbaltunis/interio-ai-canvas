@@ -20,6 +20,7 @@ import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { toast } from "sonner";
 import { resyncAllWindows, forceResyncAllWindows } from "@/utils/pricing/resyncTotalSelling";
 import { RefreshCw } from "lucide-react";
+import { UNIFIED_CATEGORIES } from "@/types/treatmentCategories";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -550,14 +551,47 @@ export const PricingRulesTab = () => {
               <CardDescription>Override default markup for specific categories (0 = use default)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Product Categories */}
+              {/* Treatment Categories - Dynamically generated from UNIFIED_CATEGORIES */}
               <div>
-                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Product Categories</h4>
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Treatment Categories</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.entries(UNIFIED_CATEGORIES).map(([key, config]) => {
+                    const value = formData.category_markups[key] || 0;
+                    const effective = value > 0 ? value : formData.default_markup_percentage;
+                    const usesDefault = value === 0;
+                    const marginEquiv = markupToMargin(effective);
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`${key}Markup`}>{config.display_name}</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {usesDefault 
+                              ? `→ Default (${effective}% markup = ${marginEquiv.toFixed(1)}% margin)` 
+                              : `→ ${effective}% markup = ${marginEquiv.toFixed(1)}% margin`}
+                          </span>
+                        </div>
+                        <Input 
+                          id={`${key}Markup`} 
+                          type="number" 
+                          step="0.1" 
+                          value={value}
+                          placeholder="0"
+                          onChange={(e) => setFormData(prev => prev ? {
+                            ...prev, 
+                            category_markups: {...prev.category_markups, [key]: Number(e.target.value)}
+                          } : null)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Other Categories */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Other Categories</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { id: 'curtainMarkup', label: 'Curtains & Drapes', key: 'curtains' },
-                    { id: 'blindMarkup', label: 'Blinds', key: 'blinds' },
-                    { id: 'shutterMarkup', label: 'Shutters', key: 'shutters' },
                     { id: 'hardwareMarkup', label: 'Hardware', key: 'hardware' },
                     { id: 'fabricMarkup', label: 'Fabrics', key: 'fabric' },
                     { id: 'installationMarkup', label: 'Installation', key: 'installation' }
