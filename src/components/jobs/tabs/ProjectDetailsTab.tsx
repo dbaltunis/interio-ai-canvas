@@ -430,19 +430,22 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     if (quoteItems.length > 0) return quoteItems.length;
     return treatments.length;
   };
-  // Simple Add Client Button with subtle attention indicator
+  // Add Client Button with attention indicator when no client assigned
   const AddClientButton = () => (
     <Button 
       variant="ghost" 
       size="sm"
       onClick={() => setShowClientSearch(true)}
       disabled={isReadOnly}
-      className="shrink-0 h-8 w-8 p-0"
+      className={cn(
+        "shrink-0 h-8 w-8 p-0 rounded-full",
+        !selectedClient && !isReadOnly && "animate-attention-ring"
+      )}
     >
       {selectedClient ? (
         <Edit className="h-3.5 w-3.5" />
       ) : (
-        <Plus className="h-4 w-4 animate-subtle-pulse text-primary" />
+        <Plus className="h-4 w-4 text-primary" />
       )}
     </Button>
   );

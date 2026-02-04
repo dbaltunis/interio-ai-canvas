@@ -1075,12 +1075,19 @@ html {
   }
 }
 
-/* Subtle attention indicator */
-@keyframes subtle-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* Attention ring indicator - pulses outward */
+@keyframes attention-ring {
+  0% { 
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5);
+  }
+  70% { 
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0);
+  }
+  100% { 
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
 }
 
-.animate-subtle-pulse {
-  animation: subtle-pulse 2s ease-in-out infinite;
+.animate-attention-ring {
+  animation: attention-ring 2s ease-out infinite;
 }
