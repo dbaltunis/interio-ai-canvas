@@ -68,7 +68,7 @@ export const useClientProjectNotes = (clientId: string | undefined) => {
       project_id: projectId,
       user_id: userData.user.id,
       content,
-      note_type: "general",
+      type: "general",
     });
 
     if (error) throw error;

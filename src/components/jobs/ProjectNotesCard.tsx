@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useProjectNotes } from "@/hooks/useProjectNotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { StickyNote, Trash2, Save, X, AtSign, ChevronDown, ChevronUp, Plus, Edit } from "lucide-react";
@@ -18,7 +18,7 @@ interface ProjectNotesCardProps {
 export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const { notes, addNote, updateNote, deleteNote, loading, error } = useProjectNotes({ projectId });
   const { data: teamMembers = [] } = useTeamMembers();
-  const { toast } = useToast();
+  const { showError, showSuccess } = useFriendlyToast();
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
@@ -36,7 +36,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
 
   const handleAdd = async () => {
     if (!note.trim()) {
-      toast({ title: "Empty note", description: "Please type something", variant: "destructive" });
+      showError(new Error("Please type something"), { context: 'add note' });
       return;
     }
     setSaving(true);
@@ -45,9 +45,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
       setNote("");
       setSelectedMentions([]);
       setIsAddingNote(false);
-      toast({ title: "Saved", description: "Note added" });
+      showSuccess("Saved", "Note added");
     } catch (e: any) {
-      toast({ title: "Error", description: e?.message || "Unable to add note", variant: "destructive" });
+      showError(e, { context: 'save note' });
     } finally {
       setSaving(false);
     }
@@ -56,9 +56,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const handleDelete = async (id: string) => {
     try {
       await deleteNote(id);
-      toast({ title: "Deleted", description: "Note removed" });
+      showSuccess("Deleted", "Note removed");
     } catch (e: any) {
-      toast({ title: "Error", description: e?.message || "Unable to delete note", variant: "destructive" });
+      showError(e, { context: 'delete note' });
     }
   };
 
@@ -74,7 +74,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
 
   const handleSaveEdit = async (noteId: string) => {
     if (!editContent.trim()) {
-      toast({ title: "Empty note", description: "Please type something", variant: "destructive" });
+      showError(new Error("Please type something"), { context: 'update note' });
       return;
     }
     setEditSaving(true);
@@ -82,9 +82,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
       await updateNote(noteId, editContent.trim());
       setEditingNoteId(null);
       setEditContent("");
-      toast({ title: "Updated", description: "Note updated" });
+      showSuccess("Updated", "Note updated");
     } catch (e: any) {
-      toast({ title: "Error", description: e?.message || "Unable to update note", variant: "destructive" });
+      showError(e, { context: 'update note' });
     } finally {
       setEditSaving(false);
     }

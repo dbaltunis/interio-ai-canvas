@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, StickyNote, Trash2, Edit, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useProjectNotes } from "@/hooks/useProjectNotes";
 
 interface JobNotesDialogProps {
@@ -19,7 +18,7 @@ interface JobNotesDialogProps {
 export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved, onNoteDeleted }: JobNotesDialogProps) => {
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { showError, showSuccess } = useFriendlyToast();
 
   // Edit state
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -33,11 +32,7 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved
 
   const handleSaveNote = async () => {
     if (!note.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a note before saving",
-        variant: "destructive"
-      });
+      showError(new Error("Please enter a note before saving"), { context: 'add note' });
       return;
     }
 
@@ -50,19 +45,12 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved
         onNoteSaved(project.id);
       }
       
-      toast({
-        title: "Note Saved",
-        description: "Your note has been added successfully",
-      });
+      showSuccess("Note Saved", "Your note has been added successfully");
       setNote("");
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error saving note:', error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to save note. Please try again.",
-        variant: "destructive"
-      });
+      showError(error, { context: 'save note' });
     } finally {
       setIsLoading(false);
     }
@@ -77,9 +65,9 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved
         onNoteDeleted(project.id);
       }
       
-      toast({ title: "Deleted", description: "Note removed" });
+      showSuccess("Deleted", "Note removed");
     } catch (error: any) {
-      toast({ title: "Error", description: error?.message || "Unable to delete note", variant: "destructive" });
+      showError(error, { context: 'delete note' });
     }
   };
 
@@ -95,7 +83,7 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved
 
   const handleSaveEdit = async (noteId: string) => {
     if (!editContent.trim()) {
-      toast({ title: "Empty note", description: "Please type something", variant: "destructive" });
+      showError(new Error("Please type something"), { context: 'update note' });
       return;
     }
     setEditSaving(true);
@@ -103,9 +91,9 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved
       await updateNote(noteId, editContent.trim());
       setEditingNoteId(null);
       setEditContent("");
-      toast({ title: "Updated", description: "Note updated" });
+      showSuccess("Updated", "Note updated");
     } catch (e: any) {
-      toast({ title: "Error", description: e?.message || "Unable to update note", variant: "destructive" });
+      showError(e, { context: 'update note' });
     } finally {
       setEditSaving(false);
     }
