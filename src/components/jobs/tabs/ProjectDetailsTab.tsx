@@ -31,7 +31,7 @@ import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useProjectStatus } from "@/contexts/ProjectStatusContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { TeachingTrigger, useTeachingTrigger } from "@/components/teaching";
+
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -430,31 +430,17 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     if (quoteItems.length > 0) return quoteItems.length;
     return treatments.length;
   };
-  // Check if Add Client teaching is active for blinking animation
-  const { isActive: isAddClientTeachingActive } = useTeachingTrigger('app-job-add-client');
-  const showAddClientTeaching = !selectedClient && !isReadOnly;
-  
-  // Add Client Button with teaching trigger
+  // Simple Add Client Button (no teaching wrapper)
   const AddClientButton = () => (
-    <TeachingTrigger 
-      teachingId="app-job-add-client" 
-      autoShow={showAddClientTeaching}
-      autoShowDelay={800}
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={() => setShowClientSearch(true)}
+      disabled={isReadOnly}
+      className="shrink-0 h-8 w-8 p-0"
     >
-      <Button 
-        variant="ghost" 
-        size="sm"
-        onClick={() => setShowClientSearch(true)}
-        disabled={isReadOnly}
-        className={cn(
-          "shrink-0 h-8 w-8 p-0",
-          isAddClientTeachingActive && !selectedClient && "teaching-pulse-ring ring-2 ring-primary ring-offset-2 ring-offset-background"
-        )}
-        data-teaching="add-client-action"
-      >
-        {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
-      </Button>
-    </TeachingTrigger>
+      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+    </Button>
   );
   
   return (

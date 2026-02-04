@@ -328,19 +328,6 @@ export const settingsTeachingPoints: TeachingPoint[] = [
 // ============================================
 
 export const appTeachingPoints: TeachingPoint[] = [
-  // ========== JOB DETAILS - Add Client (1 tip) ==========
-  {
-    id: 'app-job-add-client',
-    title: 'Add or Create a Client',
-    description: 'Click here to assign an existing client or create a new one for this project.',
-    targetSelector: '[data-teaching="add-client-action"]',
-    position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app', section: 'job-details' },
-    priority: 'high',
-    category: 'app',
-    // No skipAutoShow - TeachingTrigger controls display via autoShow prop
-  },
-
   // ========== DASHBOARD (2 tips) ==========
   {
     id: 'app-dashboard-widgets',
