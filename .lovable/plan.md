@@ -1,7 +1,11 @@
 
-## UI/UX Improvements for Room Button, Supplier Indicator & Library Cards
+## Notes Enhancement Plan
 
-Three focused improvements to enhance visual polish and reduce clutter in the material selection experience.
+This plan addresses three improvements to the notes and team collaboration system:
+
+1. **Make notes editable** - Users can modify existing notes
+2. **Show team assignment in notes** - Automatic note created when team member is added
+3. **Team Hub notification** - Assigned team members receive a message with a job link
 
 ---
 
@@ -9,168 +13,214 @@ Three focused improvements to enhance visual polish and reduce clutter in the ma
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/components/job-creation/RoomsGrid.tsx` | Modify | Pass room index to each RoomCard |
-| `src/components/job-creation/RoomCard.tsx` | Modify | Only show blinking on first room with no worksheets |
-| `src/components/inventory/InventorySelectionPanel.tsx` | Modify | Compact TWC indicator + smaller grid cards |
-| `src/components/inventory/RecentSelectionsRow.tsx` | Modify | More compact recently used section |
+| `src/hooks/useProjectNotes.ts` | Modify | Add `updateNote` function |
+| `src/components/jobs/ProjectNotesCard.tsx` | Modify | Add inline edit UI for notes |
+| `src/components/jobs/JobNotesDialog.tsx` | Modify | Add edit capability to dialog notes |
+| `src/hooks/useProjectAssignments.ts` | Modify | Auto-create note + Team Hub message on assignment |
 
 ---
 
-### 1. Blinking Only on First Room (When Empty)
+### 1. Make Notes Editable
 
-**RoomsGrid.tsx** - Pass index to RoomCard:
+#### Hook Enhancement (`useProjectNotes.ts`)
+
+Add new `updateNote` function to the hook:
+
 ```tsx
-rooms.map((room, index) => (
-  <RoomCard 
-    key={room.id}
-    room={room}
-    isFirstRoom={index === 0}  // NEW prop
-    // ... other props
-  />
-))
-```
+const updateNote = async (noteId: string, newContent: string, mentionedUserIds: string[] = []) => {
+  const { error } = await supabase
+    .from("project_notes")
+    .update({ 
+      content: newContent.trim(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", noteId);
 
-**RoomCard.tsx** - Accept prop and conditionally animate:
-```tsx
-interface RoomCardProps {
-  // ... existing props
-  isFirstRoom?: boolean;  // NEW
-}
+  if (error) throw error;
 
-// In the button:
-<Button
-  className={cn(
-    "flex-1",
-    isFirstRoom && roomSurfaces.length === 0 && "animate-attention-ring"
-  )}
->
-```
-
-Logic: Animation only appears when:
-- It's the first room (`isFirstRoom === true`)
-- Room has no measurement worksheets yet (`roomSurfaces.length === 0`)
-
----
-
-### 2. Compact TWC Linked Materials Indicator
-
-**Current** (Lines 943-952):
-```tsx
-<div className="flex items-center gap-2 py-1.5 px-3 border border-primary/30 bg-primary/10 rounded-md">
-  <Building2 className="h-3.5 w-3.5 text-primary" />
-  <span className="text-xs font-medium text-primary">TWC Linked Materials</span>
-  <Badge variant="secondary" className="ml-auto text-[10px]">
-    {treatmentFabrics.length} items
-  </Badge>
-</div>
-```
-
-**Improved** - More subtle, better spacing:
-```tsx
-<div className="flex items-center gap-1.5 mt-2 py-1 px-2 bg-muted/50 rounded text-muted-foreground">
-  <Building2 className="h-3 w-3" />
-  <span className="text-[10px] font-medium">TWC Linked</span>
-  <Badge variant="outline" className="ml-auto text-[9px] h-4 px-1">
-    {treatmentFabrics.length}
-  </Badge>
-</div>
-```
-
-Changes:
-- Smaller icon (h-3 → was h-3.5)
-- Reduced padding (py-1 px-2 → was py-1.5 px-3)
-- Shorter text ("TWC Linked" → was "TWC Linked Materials")
-- Subtle background (bg-muted/50 → was bg-primary/10)
-- Added top margin for spacing from search
-
----
-
-### 3. Smaller Library Cards (More Columns)
-
-**Current grid** (Line 1194):
-```tsx
-grid-cols-2 md:grid-cols-3 lg:grid-cols-4
-```
-
-**Improved** - More compact, matches recently used size:
-```tsx
-grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6
-```
-
-This increases density by ~50%, making cards closer to the `w-24` (96px) size used in Recently Used.
-
----
-
-### 4. More Compact Recently Used Section
-
-**Current** (RecentSelectionsRow.tsx):
-- Padding: `py-2`
-- Header margin: `mb-2`
-- Cards: `w-24` (keep as-is - user likes this size)
-
-**Improved**:
-```tsx
-<div className={cn("py-1.5", className)}>  // Reduced from py-2
-  <div className="flex items-center justify-between mb-1">  // Reduced from mb-2
-    <div className="flex items-center gap-1">  // Reduced from gap-1.5
-      <Clock className="h-3 w-3 text-muted-foreground" />  // Reduced from h-3.5
-      <span className="text-[10px] font-medium text-muted-foreground">Recent</span>  // Shortened + smaller
-      {/* Remove badge to save space - count is visible from items */}
-    </div>
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="h-5 px-1.5 text-[9px] text-muted-foreground hover:text-destructive"  // Smaller
-    >
-      <X className="h-2.5 w-2.5 mr-0.5" />
-      Clear
-    </Button>
-  </div>
+  // Handle mentions update (delete old, insert new)
+  await supabase.from("project_note_mentions").delete().eq("note_id", noteId);
   
-  <ScrollArea className="w-full">
-    <div className="flex gap-1.5 pb-1">  // Reduced from gap-2 pb-2
-      {/* Cards stay same size (w-24) */}
-    </div>
-  </ScrollArea>
-</div>
+  if (mentionedUserIds.length > 0) {
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("project_note_mentions").insert(
+      mentionedUserIds.map(uid => ({
+        note_id: noteId,
+        mentioned_user_id: uid,
+        created_by: userData.user?.id
+      }))
+    );
+  }
+
+  // Update local state
+  setNotes(prev => prev.map(n => 
+    n.id === noteId 
+      ? { ...n, content: newContent.trim(), mentions: mentionedUserIds.map(uid => ({ mentioned_user_id: uid })) }
+      : n
+  ));
+};
 ```
 
-Changes:
-- Reduced vertical padding throughout
-- Shorter label text ("Recent" → was "Recently Used")
-- Smaller icon and button
-- Removed count badge (visible from items themselves)
-- Tighter gaps between cards
+#### UI Updates (`ProjectNotesCard.tsx`)
+
+Add edit state and inline editing:
+
+```tsx
+// New state
+const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+const [editContent, setEditContent] = useState("");
+
+// Note display with edit mode
+{editingNoteId === n.id ? (
+  <div className="space-y-2">
+    <Textarea
+      value={editContent}
+      onChange={(e) => setEditContent(e.target.value)}
+      className="min-h-[60px]"
+    />
+    <div className="flex gap-2 justify-end">
+      <Button variant="ghost" size="sm" onClick={() => setEditingNoteId(null)}>
+        Cancel
+      </Button>
+      <Button size="sm" onClick={() => handleSaveEdit(n.id)}>
+        Save
+      </Button>
+    </div>
+  </div>
+) : (
+  <p className="text-sm">{n.content}</p>
+)}
+
+// Edit button (appears on hover next to delete)
+<Button 
+  variant="ghost" 
+  size="icon" 
+  onClick={() => {
+    setEditingNoteId(n.id);
+    setEditContent(n.content);
+  }}
+>
+  <Edit className="h-3.5 w-3.5" />
+</Button>
+```
+
+#### Dialog Updates (`JobNotesDialog.tsx`)
+
+Similar inline edit capability for the dialog view of notes.
 
 ---
 
-### Visual Summary
+### 2. Show Team Assignment in Notes
+
+When a team member is assigned to a project, automatically create a project note to provide audit trail visibility.
+
+#### Assignment Hook (`useProjectAssignments.ts`)
+
+Add note creation after successful assignment (after line 199):
+
+```tsx
+// After activity log insert, add a project note
+await supabase
+  .from("project_notes")
+  .insert({
+    project_id: projectId,
+    user_id: user.id,
+    content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
+    type: 'system_assignment'
+  });
+```
+
+This creates a visible record in the Project Notes section showing when and who added a team member.
+
+---
+
+### 3. Team Hub Notification for Assigned Members
+
+When a team member is added to a project, send them a direct message in the Team Hub so they see a notification with a link to the job.
+
+#### Assignment Hook (`useProjectAssignments.ts`)
+
+Add direct message after notification insert (after line 211):
+
+```tsx
+// Send Team Hub direct message for better visibility
+await supabase
+  .from("direct_messages")
+  .insert({
+    sender_id: user.id,
+    recipient_id: userId,
+    content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
+  });
+```
+
+This ensures:
+- The red badge appears on the Team Hub showing unread messages
+- When the team member opens Team Hub, they see the message with the job link
+- Clicking the link navigates them directly to the assigned project
+
+---
+
+### Data Flow Summary
 
 ```text
-BEFORE:                              AFTER:
-┌─────────────────────┐             ┌─────────────────────┐
-│ [Search...]    [+]  │             │ [Search...]    [+]  │
-│                     │             │                     │
-│ ┌─────────────────┐ │             │ TWC Linked      4   │ (smaller, muted)
-│ │ TWC Linked      │ │             │                     │
-│ │ Materials   4   │ │             │ 🕐 Recent    Clear  │ (compact header)
-│ └─────────────────┘ │             │ [▪][▪][▪]           │ (less padding)
-│                     │             │─────────────────────│
-│ 🕐 Recently Used  2 │             │ [▪][▪][▪][▪][▪][▪]  │ (6 cols)
-│    [Clear]          │             │ [▪][▪][▪][▪][▪][▪]  │
-│ [▪▪][▪▪]            │             │ [▪][▪][▪][▪][▪][▪]  │
-│                     │             └─────────────────────┘
-│ [  ▪  ][  ▪  ]      │
-│ [  ▪  ][  ▪  ]      │ (4 cols max)
-│ [  ▪  ][  ▪  ]      │
-└─────────────────────┘
+Team Member Assignment Flow:
+┌──────────────────────┐
+│ Admin assigns user   │
+│ to project           │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ 1. project_assignments │ (existing)
+│ 2. project_activity_log │ (existing)
+│ 3. notifications        │ (existing)
+│ 4. project_notes        │ NEW - visible in notes
+│ 5. direct_messages      │ NEW - Team Hub notification
+│ 6. Email notification   │ (existing)
+└──────────────────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Assigned user sees:  │
+│ - Team Hub badge     │
+│ - Direct message     │
+│ - Note in project    │
+│ - Email notification │
+└──────────────────────┘
 ```
 
 ---
 
 ### Expected Results
 
-1. **Room button**: Blinking ring only on first room until a worksheet is added
-2. **TWC indicator**: Takes less vertical space, doesn't crowd the search bar
-3. **Library cards**: Smaller and denser, matching the recently used feel
-4. **Recently used**: More compact header, saves ~15-20px vertical space
+1. **Editable Notes**: 
+   - Edit button appears on hover next to delete
+   - Click to enter inline edit mode with textarea
+   - Save/Cancel buttons to confirm or discard changes
+
+2. **Assignment Visibility in Notes**:
+   - Automatic note: "John Smith was assigned to this project by Jane Doe"
+   - Type marked as `system_assignment` to distinguish from user notes if needed
+   - Shows in Project Notes section for full audit trail
+
+3. **Team Hub Notification**:
+   - Red badge appears on assigned user's Team Hub
+   - Message includes project name and clickable link
+   - Friendly emoji for positive notification experience
+
+---
+
+### Technical Details
+
+**Database operations required:**
+- `UPDATE` on `project_notes` table (for edit functionality)
+- `INSERT` into `project_notes` table (for assignment notes)
+- `INSERT` into `direct_messages` table (for Team Hub messages)
+- `DELETE` + `INSERT` on `project_note_mentions` (for updating mentions on edit)
+
+**Query invalidations needed:**
+- `["project-notes", projectId]` - after note edit
+- `["conversations"]` - after direct message sent
+- Already existing invalidations for assignments remain
+
+**No new database tables or columns required** - all functionality uses existing schema.
