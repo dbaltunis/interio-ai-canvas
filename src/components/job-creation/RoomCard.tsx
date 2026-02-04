@@ -202,7 +202,7 @@ export const RoomCard = ({
                 disabled={isCreatingSurface}
                 variant="outline"
                 size={compact ? "sm" : "sm"}
-                className="flex-1"
+                className="flex-1 animate-attention-ring"
               >
                 <RectangleHorizontal className="h-4 w-4 mr-2" />
                 Add Measurement Worksheet
