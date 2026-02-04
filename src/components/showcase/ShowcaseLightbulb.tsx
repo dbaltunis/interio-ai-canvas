@@ -83,7 +83,7 @@ const welcomeSteps: VideoStep[] = [
     title: "Project Details", 
     description: "Quote, Payment, Work Orders, Installation & Team Sharing", 
     Visual: Scene5ProjectDeepDive, 
-    duration: 15000, 
+    duration: 18000, 
     chapter: "project" 
   },
   
