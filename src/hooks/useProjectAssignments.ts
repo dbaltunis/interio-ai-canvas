@@ -198,16 +198,23 @@ export const useAssignUserToProject = () => {
           }
         });
 
-      // Create in-app notification for assigned user
+      // Create a visible project note about the assignment
       await supabase
-        .from("notifications")
+        .from("project_notes")
         .insert({
-          user_id: userId,
-          type: 'info',
-          title: 'New Project Assignment',
-          message: `You've been assigned to "${projectName || 'a project'}" by ${currentUserProfile?.display_name || 'a team member'}`,
-          read: false,
-          action_url: `/?jobId=${projectId}`
+          project_id: projectId,
+          user_id: user.id,
+          content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
+          type: 'system_assignment'
+        });
+
+      // Send Team Hub direct message for better visibility
+      await supabase
+        .from("direct_messages")
+        .insert({
+          sender_id: user.id,
+          recipient_id: userId,
+          content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
         });
 
       // Get project client name for email
@@ -246,6 +253,8 @@ export const useAssignUserToProject = () => {
       queryClient.invalidateQueries({ queryKey: ["projects-with-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["project-activity-log", data.project_id] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["project-notes", data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
       // Invalidate assignment-based visibility queries for all users
       queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });

@@ -139,6 +139,41 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
     return inserted;
   };
 
+  const updateNote = async (noteId: string, newContent: string, mentionedUserIds: string[] = []) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error("User not authenticated");
+
+    const { error } = await sb
+      .from("project_notes")
+      .update({ 
+        content: newContent.trim(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", noteId);
+
+    if (error) throw error;
+
+    // Handle mentions update (delete old, insert new)
+    await sb.from("project_note_mentions").delete().eq("note_id", noteId);
+    
+    if (mentionedUserIds.length > 0) {
+      await sb.from("project_note_mentions").insert(
+        mentionedUserIds.map(uid => ({
+          note_id: noteId,
+          mentioned_user_id: uid,
+          created_by: userData.user?.id
+        }))
+      );
+    }
+
+    // Update local state
+    setNotes(prev => prev.map(n => 
+      n.id === noteId 
+        ? { ...n, content: newContent.trim(), mentions: mentionedUserIds.map(uid => ({ mentioned_user_id: uid })) }
+        : n
+    ));
+  };
+
   const deleteNote = async (id: string) => {
     const { error } = await sb
       .from("project_notes")
@@ -212,5 +247,5 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
     };
   }, [filter?.column, filter?.value]);
 
-  return { notes, loading, error, fetchNotes, addNote, deleteNote };
+  return { notes, loading, error, fetchNotes, addNote, updateNote, deleteNote };
 };
