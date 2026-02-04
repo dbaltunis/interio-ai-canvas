@@ -202,32 +202,32 @@ export const useAssignUserToProject = () => {
       // Get effective owner for multi-tenant notes
       const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
-      // Create a visible project note about the assignment (wrapped in try-catch for resilience)
-      try {
-        await supabase
-          .from("project_notes")
-          .insert({
-            project_id: projectId,
-            user_id: effectiveOwnerId,
-            content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
-            type: 'system_assignment'
-          });
-      } catch (noteErr) {
-        console.warn("Failed to create assignment note:", noteErr);
+      // Create a visible project note about the assignment
+      const { error: noteError } = await supabase
+        .from("project_notes")
+        .insert({
+          project_id: projectId,
+          user_id: effectiveOwnerId,
+          content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
+          type: 'system_assignment'
+        });
+
+      if (noteError) {
+        console.warn("Failed to create assignment note:", noteError);
         // Don't throw - assignment already succeeded
       }
 
-      // Send Team Hub direct message for better visibility (wrapped in try-catch for resilience)
-      try {
-        await supabase
-          .from("direct_messages")
-          .insert({
-            sender_id: user.id,
-            recipient_id: userId,
-            content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
-          });
-      } catch (dmErr) {
-        console.warn("Failed to send team hub message:", dmErr);
+      // Send Team Hub direct message for better visibility
+      const { error: dmError } = await supabase
+        .from("direct_messages")
+        .insert({
+          sender_id: user.id,
+          recipient_id: userId,
+          content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
+        });
+
+      if (dmError) {
+        console.warn("Failed to send team hub message:", dmError);
         // Don't throw - assignment already succeeded
       }
 
