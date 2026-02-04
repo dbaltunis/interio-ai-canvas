@@ -1,116 +1,148 @@
 
-
-# Enhanced Welcome Video Tutorial with Calendar Scene
+# Enhanced Tutorial: Fix Logo, Improve Calendar Scene & Add Library Scene
 
 ## Overview
 
-Extend the existing `WelcomeVideoPlayer` system to include:
-1. **New "Welcome" chapter** - A warm greeting scene BEFORE the current Intro
-2. **New "Calendar" chapter** - Showcasing Google Calendar integration, booking templates, and client booking experience
+This plan addresses three improvements to the welcome video tutorial:
 
-Both scenes will use the exact same animation framework (`framer-motion`), timing utilities (`inPhase`, `phaseProgress`, `typingProgress`), and visual style as the existing 6 scenes.
-
----
-
-## Current Structure
-
-The welcome video system consists of:
-- `ShowcaseLightbulb.tsx` - Trigger button + chapter/step definitions
-- `WelcomeVideoPlayer.tsx` - Cinematic player with progress, navigation
-- `WelcomeVideoSteps.tsx` - 6 scene components (715 lines)
-- `demoAnimations.ts` - Animation utilities
-
-Current flow: Intro → Dashboard → Theme → Jobs → Project → Closing
-
-**New flow**: Welcome → Intro → Dashboard → Theme → Jobs → Project → Calendar → Closing
+1. **Fix the logo** in the Calendar scene's public booking view - currently using InterioApp logo instead of showing a placeholder company logo
+2. **Improve the Calendar/Booking demonstration** - show clearer workflow for creating multiple booking links (Design Consultation, Installation) and sharing them with clients
+3. **Add new "Library" scene** - comprehensive demonstration of the fabric/product library, vendors, QR code generation, and mobile scanning workflow
 
 ---
 
-## Technical Implementation
+## Current Issues Identified
 
-### Phase 1: New "Welcome" Scene
-
-**New Component: `Scene0Welcome`**
-
-A warm, personalized greeting before showing the product:
-- Large animated "👋" wave emoji
-- "Welcome to InterioApp!" headline with staggered letter animation
-- Subtitle: "Let's show you around your new platform"
-- Soft pulsing background gradient
-- Duration: 4 seconds (quick and welcoming)
-
-Animation phases:
-- 0.0-0.3: Wave emoji animates in with bounce
-- 0.2-0.6: Headline types in letter by letter
-- 0.4-0.8: Subtitle fades up
-- 0.8-1.0: Gentle transition glow
+| Issue | Location | Problem |
+|-------|----------|---------|
+| Bad logo | Scene7Calendar, line 1040 | Using InterioApp logo in the "client's view" booking panel - should show a generic business logo to represent the user's custom branding |
+| Booking clarity | Scene7Calendar | Shows only one template type, doesn't clearly demonstrate multiple booking link types or the sharing workflow |
+| Missing Library scene | N/A | No demonstration of the Library feature which is core to the app |
 
 ---
 
-### Phase 2: New "Calendar" Scene
+## Implementation
 
-**New Component: `Scene7Calendar`**
+### Phase 1: Fix the Logo in Booking Panel
 
-A multi-phase scene demonstrating the complete calendar workflow:
+**Current (line 1040):**
+```tsx
+<img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-10 w-auto mb-4" />
+```
 
-**Sub-phases (total duration: 12 seconds):**
+**Solution:**
+Replace with a stylized placeholder that represents "your brand" - using a simple icon-based logo that clearly shows this is the user's business, not InterioApp:
 
-1. **Phase 0.0-0.25: Calendar View Overview**
-   - Shows the main calendar interface (week view)
-   - Events visible (like the screenshot provided)
-   - Highlights "Google Sync" toggle in top-right (ON state)
-   - Visual indicator: "Two-way sync with Google Calendar"
+```tsx
+<div className="flex items-center gap-2 mb-4">
+  <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
+    <Home className="h-5 w-5 text-white" />
+  </div>
+  <div>
+    <div className="text-sm font-semibold text-white">Your Business</div>
+    <div className="text-[9px] text-slate-300">Window Treatments</div>
+  </div>
+</div>
+```
 
-2. **Phase 0.25-0.50: Booking Template Setup**
-   - Dropdown menu appears: "New Booking Template"
-   - Shows template creation: "Installation Appointment"
-   - Duration selector: "30 minutes"
-   - Focus ring on "Create Template" button
-
-3. **Phase 0.50-0.80: Client Booking Experience**
-   - Transition to the public booking page (as per screenshot 3)
-   - Split panel: Company branding on left, calendar picker on right
-   - Date selection animation (day lights up)
-   - Time slots appear: 09:00, 10:30, 12:00, 13:30
-   - Client selects a time (focus ring → click)
-   - Form fields: Name, Email, Phone
-   - "Confirm Booking" button pressed
-
-4. **Phase 0.80-1.0: Success Confirmation**
-   - Confetti particles (small, celebratory)
-   - "Booking Confirmed!" message
-   - Shows: Event added to calendar automatically
-   - Badge: "Synced to Google Calendar ✓"
-
-**Visual Design:**
-- Use the same card/border/muted styles as other scenes
-- Show the actual InterioApp logo
-- Use realistic data: "Holly - Blind Installation, 10:30"
-- Match the Calendly-inspired split-panel layout from screenshots
+This clearly signals "this is your company's booking page" rather than showing InterioApp branding in the client-facing view.
 
 ---
 
-### Phase 3: Update Chapter/Step Definitions
+### Phase 2: Enhance Calendar Booking Demonstration
+
+**Improvements to Scene7Calendar:**
+
+1. **Show multiple booking template types** in the template dropdown (with clearer visual distinction):
+   - Design Consultation (30 min) - highlighted
+   - Installation Appointment (60 min)
+   - Measurement Session (45 min)
+
+2. **Add a "Share Link" phase** after template creation showing:
+   - Copy link button with animated clipboard feedback
+   - Shareable URL: `yourstore.interioapp.com/book/design-consultation`
+   - "Share with clients via email or SMS" message
+
+3. **Better client booking flow** showing:
+   - The booking page title changes based on template selected
+   - Cleaner time slot grid matching the screenshot
+
+**Updated phase breakdown:**
+- 0.00-0.20: Calendar week view with Google sync
+- 0.20-0.40: Template list showing multiple types → create new
+- 0.40-0.55: Template form + Share link copied
+- 0.55-0.80: Public booking page (improved layout)
+- 0.80-1.00: Success confirmation
+
+---
+
+### Phase 3: New "Library" Scene (Scene8Library)
+
+**Duration: 14 seconds**
+
+A comprehensive demonstration of the Library/Inventory management system showing:
+
+**Sub-phases:**
+
+1. **Phase 0.00-0.20: Library Overview**
+   - Library page with tabs: Collections, Fabrics, Materials, Hardware, Wallcoverings, Vendors
+   - Shows collection grid with brand logos (TWC, ADARA, etc.)
+   - Item count badge: "381 items"
+   - Search bar + filters
+
+2. **Phase 0.20-0.40: Add New Product**
+   - Click "+ Add" button
+   - Category dropdown opens: Fabrics, Blind Materials, Hardware, Headings, Wallcoverings, Services
+   - Select "Fabrics"
+   - Form fields appear: Name, SKU, Price, Vendor selector
+   - Shows "Velvet Drapery" being typed
+   - Vendor dropdown: Select "TWC"
+
+3. **Phase 0.40-0.60: QR Code Generation**
+   - Product card created with fabric image
+   - QR Code icon pops up
+   - QR Code dialog opens showing:
+     - QR code graphic (stylized squares pattern)
+     - "Velvet Drapery - VD-001"
+     - Print / Download buttons
+   - Text: "Every product gets a unique QR code"
+
+4. **Phase 0.60-0.85: Mobile Scanning Demo**
+   - Transition to mobile phone mockup
+   - Camera viewfinder scanning QR code
+   - Product details appear instantly on phone screen:
+     - Fabric image
+     - Name: "Velvet Drapery"
+     - SKU: VD-001
+     - Price: £45/m
+     - Stock: 25m available
+   - Text: "Find any fabric instantly with your phone or tablet"
+
+5. **Phase 0.85-1.00: Success State**
+   - Collection view with organized products
+   - Badge: "160 collections • 381 products"
+   - Checkmarks: "Import from CSV", "Sync with suppliers", "Mobile scanning"
+
+**Visual elements to match screenshots:**
+- Tab structure: Collections | Fabrics | Materials | Hardware | Wallcoverings | Vendors | Admin
+- Left sidebar: Brands tree (TWC expanded showing AESOP, ALLUSION, etc.)
+- Right content: Collection cards grid with item counts
+- Add dialog: Category dropdown with full list
+
+---
+
+### Phase 4: Update Chapter/Step Definitions
 
 **Modify: `src/components/showcase/ShowcaseLightbulb.tsx`**
 
-```text
-Update chapters array:
-1. Add "welcome" chapter at position 0
-2. Add "calendar" chapter after "project"
-
-Update steps array:
-1. Add Scene0Welcome as first step (before Intro)
-2. Add Scene7Calendar after Project scene
-3. Renumber: Now 8 steps total
-```
+Add new "library" chapter and Scene8Library step:
 
 New chapters array:
 ```
-welcome → intro → dashboard → theme → jobs → project → calendar → closing
+welcome → intro → dashboard → theme → jobs → project → calendar → library → closing
 ```
 
-New steps:
+New steps (9 total):
 ```
 1. Scene0Welcome (4s, chapter: welcome)
 2. Scene1IntroLogo (5s, chapter: intro)
@@ -118,8 +150,9 @@ New steps:
 4. Scene3ThemeToggle (6s, chapter: theme)
 5. Scene4JobsNotes (8s, chapter: jobs)
 6. Scene5ProjectDeepDive (15s, chapter: project)
-7. Scene7Calendar (12s, chapter: calendar)  ← NEW
-8. Scene6Closing (5s, chapter: closing)
+7. Scene7Calendar (12s, chapter: calendar) - IMPROVED
+8. Scene8Library (14s, chapter: library) - NEW
+9. Scene6Closing (5s, chapter: closing)
 ```
 
 ---
@@ -128,107 +161,87 @@ New steps:
 
 | File | Changes |
 |------|---------|
-| `src/components/showcase/ShowcaseLightbulb.tsx` | Add 2 new chapters, 2 new steps, import new scene components |
-| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Add `Scene0Welcome` and `Scene7Calendar` components (~200 new lines) |
+| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Fix logo, improve Scene7Calendar, add Scene8Library (~250 new lines) |
+| `src/components/showcase/ShowcaseLightbulb.tsx` | Add "library" chapter, add Scene8Library step, import new component |
 
 ---
 
-## Scene0Welcome Implementation Details
+## Scene8Library Implementation Details
 
 ```text
-Component structure:
-- Full-height centered flex container
-- Animated background gradient (subtle pulse)
-- Wave emoji with spring bounce animation
-- "Welcome to InterioApp!" with gradient text on key words
-- Subtitle with fade-up animation
-- Optional: small "Press → to continue" hint at bottom
+Visual structure:
+1. Main container matching dashboard style
+2. Header: Library icon + "Library" title + "381 items" badge + Search + "+ Add" button
+3. Tabs row: Collections | Fabrics | Materials | Hardware | Wallcoverings | Vendors
+4. Content area that transforms between:
+   - Collections grid (brand cards)
+   - Add product dialog (form)
+   - QR code popup
+   - Mobile phone mockup scanning
+   - Final success view
 ```
 
-Animation sequence:
-```text
-Phase    Element
-0.0      Background gradient starts pulsing
-0.1      Wave emoji scales in with bounce
-0.25     "Welcome to" text appears
-0.35     "InterioApp!" appears with primary color
-0.5      Subtitle fades up
-0.8      Gentle glow intensifies (transition hint)
-```
-
----
-
-## Scene7Calendar Implementation Details
-
-```text
-Component structure:
-1. Main container with rounded corners and border
-2. Header bar with InterioApp logo and "Calendar" nav highlighted
-3. Content area that transforms between:
-   - Full calendar week view
-   - Template creation dialog
-   - Public booking split-panel view
-   - Success confirmation overlay
-```
-
-Animation sequence:
+**Animation sequence:**
 ```text
 Phase     Content
-0.00-0.25 Calendar week view with events + Google Sync badge
-0.25-0.40 "New Booking Template" dropdown opens
-0.40-0.50 Template form appears, focus ring on create button
-0.50-0.55 Transition to public booking page (split layout)
-0.55-0.65 Date picker: day gets selected (ring → fill)
-0.65-0.72 Time slots animate in, one gets selected
-0.72-0.80 Client form fills: "Sarah Johnson", email types
-0.80-0.85 "Confirm" button clicks
-0.85-1.00 Success overlay with confetti + Google sync badge
+0.00-0.05 Library header slides in, tabs animate
+0.05-0.15 Collections grid populates (staggered)
+0.15-0.20 Highlight "+ Add" button with focus ring
+0.20-0.25 Click "+ Add", dialog slides up
+0.25-0.30 Category dropdown expands, "Fabrics" highlighted
+0.30-0.35 Form fields type: "Velvet Drapery"
+0.35-0.40 Create button clicks, dialog closes
+0.40-0.45 Product card appears in list
+0.45-0.50 QR Code icon glows, clicks
+0.50-0.60 QR dialog opens with animated QR code
+0.60-0.65 Transition to mobile phone frame
+0.65-0.75 Camera scanning animation, QR detected
+0.75-0.85 Product details slide up on phone
+0.85-0.92 Phone fades, summary badges appear
+0.92-1.00 Final state with checkmarks
 ```
 
 ---
 
-## Visual Elements to Include
+## Key Visual Elements from Screenshots
 
-From the provided screenshots:
+**Library Main View (Screenshot 2):**
+- Header: Package icon + "Library" + help button + "381 items" badge
+- Filters + Scan + "+ Add" buttons on right
+- Tab bar with category icons
+- Left sidebar: "Brands" with search, "All Collections" tree
+- Main content: Collection cards with name, item count, brand badge
 
-**Calendar View (Screenshot 2):**
-- Week view with dates (Sun-Sat)
-- Green event cards: "testing new appointment 10:30"
-- Blue cards: "Test d 09:00-09:30"
-- Right sidebar: "New Booking Template", "Manage Templates", "View Bookings", "Analytics"
-- "Google Sync" toggle (ON)
-
-**Public Booking (Screenshot 3):**
-- Left panel: Dark slate gradient, logo (80px), company name, phone
-- Template name: "testing new appointment"
-- Duration: "30 minutes"
-- Footer: "Secure booking powered by InterioApp"
-- Right panel: Date picker calendar, time slots grid
-- Clean white background
+**Add Product Dialog (Screenshot 3):**
+- Title: "Add New Inventory Item"
+- Subtitle: "Add a new product or service to your inventory"
+- Category dropdown showing: Fabrics, Blind Materials, Hardware, Headings, Wallcoverings, Services
+- Cancel / Create buttons
 
 ---
 
-## Auto-Open for New Users
+## Total Changes Summary
 
-The `ShowcaseLightbulb` already checks `localStorage` for `showcase_last_seen_version`. When the version changes, it shows the glow indicator.
+| Component | Lines | Type |
+|-----------|-------|------|
+| Scene7Calendar improvements | ~40 lines changed | Modify |
+| Logo fix in booking panel | ~15 lines | Modify |
+| Scene8Library (new) | ~280 lines | Create |
+| ShowcaseLightbulb updates | ~20 lines | Modify |
+| **Total** | ~355 lines |  |
 
-**To auto-open for first-time users:**
-- Check if `showcase_last_seen_version` is null/empty on mount
-- If null → auto-open the dialog (`setIsOpen(true)`)
-- This provides the welcome experience on first login
-
-This is a simple addition: ~3 lines in the existing `useEffect` in `ShowcaseLightbulb.tsx`.
+All new code follows the exact animation patterns, timing utilities (inPhase, phaseProgress, typingProgress), and visual styling already established in WelcomeVideoSteps.tsx.
 
 ---
 
-## Total New Code
+## Testing After Implementation
 
-| Component | Lines |
-|-----------|-------|
-| Scene0Welcome | ~50 lines |
-| Scene7Calendar | ~200 lines |
-| ShowcaseLightbulb changes | ~30 lines |
-| **Total** | ~280 new lines |
-
-All new code follows the exact patterns already established in `WelcomeVideoSteps.tsx`.
-
+- [ ] Logo no longer appears as InterioApp in booking panel
+- [ ] Calendar scene shows multiple booking template types
+- [ ] Share link animation appears after template creation
+- [ ] Library scene demonstrates product creation flow
+- [ ] QR code generation is clearly shown
+- [ ] Mobile scanning demo is smooth and clear
+- [ ] All 9 scenes play in correct order
+- [ ] Tutorial auto-opens for new users
+- [ ] Skip/navigation still works correctly
