@@ -1605,6 +1605,7 @@ export type Database = {
           created_at: string
           default_payment_terms_days: number | null
           default_profit_margin_percentage: number | null
+          document_language: string | null
           features_enabled: Json | null
           financial_year_end_day: number | null
           financial_year_end_month: number | null
@@ -1657,6 +1658,7 @@ export type Database = {
           created_at?: string
           default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
+          document_language?: string | null
           features_enabled?: Json | null
           financial_year_end_day?: number | null
           financial_year_end_month?: number | null
@@ -1709,6 +1711,7 @@ export type Database = {
           created_at?: string
           default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
+          document_language?: string | null
           features_enabled?: Json | null
           financial_year_end_day?: number | null
           financial_year_end_month?: number | null

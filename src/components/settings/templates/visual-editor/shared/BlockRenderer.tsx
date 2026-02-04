@@ -18,6 +18,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { formatCurrency } from '@/utils/formatCurrency';
 import { getDocumentTypeConfig, type DocumentTypeConfig } from '@/utils/documentTypeConfig';
 import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
+import { 
+  t, 
+  getLocalizedDocumentLabels, 
+  getLocalizedTotalsLabels, 
+  getLocalizedPaymentStatus,
+  getLocalizedBankLabels,
+  type DocumentLanguage 
+} from '@/utils/documentTranslations';
 
 interface BlockRendererProps {
   block: any;
@@ -601,27 +609,28 @@ export const LineItemsBlock: React.FC<BlockRendererProps> = ({
   ];
   const businessSettings = projectData?.businessSettings || {};
   const currency = businessSettings?.currency || projectData?.currency || 'USD';
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
 
   return (
     <div className="mb-6">
       <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#111827' }}>
-        {content.title || 'Line Items'}
+        {content.title || t('Line Items', lang)}
       </h3>
       <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: '#f9fafb' }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '14px', color: '#374151', borderBottom: '1px solid #e5e7eb' }}>
-                Description
+                {t('Description', lang)}
               </th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', fontSize: '14px', color: '#374151', borderBottom: '1px solid #e5e7eb', width: '80px' }}>
-                Qty
+                {t('Qty', lang)}
               </th>
               <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '14px', color: '#374151', borderBottom: '1px solid #e5e7eb', width: '120px' }}>
-                Unit Price
+                {t('Unit Price', lang)}
               </th>
               <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '14px', color: '#374151', borderBottom: '1px solid #e5e7eb', width: '120px' }}>
-                Total
+                {t('Total', lang)}
               </th>
             </tr>
           </thead>
@@ -659,6 +668,8 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
   const currency = businessSettings?.currency || projectData?.currency || 'USD';
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
+  const labels = getLocalizedTotalsLabels(lang);
   
   const subtotal = projectData?.subtotal || 0;
   const taxRate = projectData?.taxRate || 0.1;
@@ -670,7 +681,7 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
       <div style={{ minWidth: '280px' }}>
         {content.showSubtotal !== false && (
           <div className="flex justify-between py-2" style={{ borderBottom: '1px solid #e5e7eb' }}>
-            <span style={{ color: '#374151', fontSize: '14px' }}>Subtotal:</span>
+            <span style={{ color: '#374151', fontSize: '14px' }}>{labels.subtotal}:</span>
             <span style={{ fontWeight: '500', color: '#111827', fontSize: '14px' }}>
               {formatCurrency(subtotal, currency)}
             </span>
@@ -679,7 +690,7 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
         {content.showTax !== false && (
           <div className="flex justify-between py-2" style={{ borderBottom: '1px solid #e5e7eb' }}>
             <span style={{ color: '#374151', fontSize: '14px' }}>
-              Tax ({(taxRate * 100).toFixed(1)}%):
+              {labels.tax} ({(taxRate * 100).toFixed(1)}%):
             </span>
             <span style={{ fontWeight: '500', color: '#111827', fontSize: '14px' }}>
               {formatCurrency(taxAmount, currency)}
@@ -687,7 +698,7 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
           </div>
         )}
         <div className="flex justify-between py-3" style={{ backgroundColor: '#f9fafb', marginTop: '8px', padding: '12px', borderRadius: '6px' }}>
-          <span style={{ fontWeight: '600', color: '#111827', fontSize: '16px' }}>Total:</span>
+          <span style={{ fontWeight: '600', color: '#111827', fontSize: '16px' }}>{labels.total}:</span>
           <span style={{ fontWeight: '700', color: '#111827', fontSize: '18px' }}>
             {formatCurrency(total, currency)}
           </span>
@@ -698,14 +709,14 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
           <div className="py-2 border-t mt-2" style={{ borderColor: '#e5e7eb' }}>
             <div className="flex justify-between py-1">
               <span style={{ color: '#374151', fontSize: '14px', fontWeight: '600' }}>
-                Deposit{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
+                {t('Deposit', lang)}{projectData.payment.percentage > 0 ? ` (${projectData.payment.percentage}%)` : ''}:
               </span>
               <span style={{ fontWeight: '600', color: '#2563eb', fontSize: '14px' }}>
                 {formatCurrency(projectData.payment.amount, currency)}
               </span>
             </div>
             <div className="flex justify-between py-1">
-              <span style={{ color: '#6b7280', fontSize: '13px' }}>Balance Due:</span>
+              <span style={{ color: '#6b7280', fontSize: '13px' }}>{labels.balanceDue}:</span>
               <span style={{ color: '#6b7280', fontSize: '13px' }}>
                 {formatCurrency(total - projectData.payment.amount, currency)}
               </span>
@@ -726,16 +737,17 @@ export const ClientInfoBlock: React.FC<BlockRendererProps> = ({
 }) => {
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
   
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
 
   return (
     <div className="mb-6">
       <div className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">
-        {content.label || 'Bill To'}
+        {content.label || t('Bill To', lang)}
       </div>
       <div className="text-sm space-y-1">
-        <div className="font-bold text-gray-900">{getToken('client_name') || 'Client Name'}</div>
+        <div className="font-bold text-gray-900">{getToken('client_name') || t('Client', lang)}</div>
         {content.showCompany !== false && getToken('client_company') && (
           <div className="text-gray-700">{getToken('client_company')}</div>
         )}
@@ -761,6 +773,7 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
   const content = block.content || {};
   const style = block.style || {};
   const businessSettings = projectData?.businessSettings || {};
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
 
   // Support both new array format and legacy term1-4 format
   const getTermsToRender = (): string[] => {
@@ -787,7 +800,7 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
       }}
     >
       <h3 className="text-lg font-semibold mb-4 text-gray-900">
-        {content.title || 'Terms & Conditions'}
+        {content.title || t('Terms & Conditions', lang)}
       </h3>
       <div className="text-sm text-gray-600 space-y-3">
         {termsToRender.length > 0 ? (
@@ -816,6 +829,7 @@ export const PrivacyPolicyBlock: React.FC<BlockRendererProps> = ({
   const content = block.content || {};
   const style = block.style || {};
   const businessSettings = projectData?.businessSettings || {};
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
 
   return (
     <div 
@@ -826,7 +840,7 @@ export const PrivacyPolicyBlock: React.FC<BlockRendererProps> = ({
       }}
     >
       <h3 className="text-lg font-semibold mb-4 text-gray-900">
-        {content.title || 'Privacy Policy'}
+        {content.title || t('Privacy Policy', lang)}
       </h3>
       <div className="text-sm text-gray-600 space-y-3">
         {businessSettings?.privacy_policy ? (
@@ -853,6 +867,8 @@ export const InvoiceStatusBlock: React.FC<BlockRendererProps> = ({
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
   const style = block.style || {};
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
+  const labels = getLocalizedTotalsLabels(lang);
   
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
   
@@ -898,27 +914,25 @@ export const InvoiceStatusBlock: React.FC<BlockRendererProps> = ({
                 color: statusColors.text
               }}
             >
-              {paymentStatus === 'paid' ? 'PAID' : 
-               paymentStatus === 'partial' ? 'PARTIALLY PAID' :
-               paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+              {getLocalizedPaymentStatus(paymentStatus, lang)}
             </span>
           </div>
         </div>
         
         <div className="text-right">
           <div className="text-sm text-gray-600">
-            <span>Total: </span>
+            <span>{labels.total}: </span>
             <span className="font-medium">{total}</span>
           </div>
           {paymentStatus !== 'unpaid' && (
             <div className="text-sm text-gray-600">
-              <span>Amount Paid: </span>
+              <span>{labels.amountPaid}: </span>
               <span className="font-medium text-green-700">{amountPaid}</span>
             </div>
           )}
           {paymentStatus !== 'paid' && (
             <div className="text-base font-bold mt-1" style={{ color: statusColors.text }}>
-              <span>Balance Due: </span>
+              <span>{labels.balanceDue}: </span>
               <span>{balanceDue}</span>
             </div>
           )}
