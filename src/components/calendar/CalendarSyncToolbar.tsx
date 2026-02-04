@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, Search, Eye, MoreHorizontal } from "lucide-react";
-import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Switch } from "@/components/ui/switch";
@@ -296,9 +295,6 @@ export const CalendarSyncToolbar = ({
             </PopoverContent>
           </Popover>
         )}
-
-        {/* Calendar Help */}
-        <SectionHelpButton sectionId="calendar" />
 
         {/* View selector */}
         {view && onViewChange && (

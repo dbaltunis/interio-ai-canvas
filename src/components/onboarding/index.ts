@@ -1,1 +1,1 @@
-export { NewUserWelcome } from './NewUserWelcome';
+// Onboarding components barrel file
