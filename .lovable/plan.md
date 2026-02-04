@@ -1,159 +1,109 @@
 
-# Enhance Project Scene with Window Creation Workflow
+# Improve Project Scene with Beautiful Sketches & Extended Timing
 
 ## Overview
 
-Enhance `Scene5ProjectDeepDive` to showcase the complete quoting workflow:
-1. **Add Window button** - Click to open the window design popup
-2. **Treatment Selection** - Select "Curtains" from treatment grid
-3. **Fabric/Library Selection** - Browse and select fabric with pricing
-4. **Measurements** - Fill in dimensions, curtain type, heading, hardware
-5. **Save & Complete** - Window added to project quote
-
-This demonstrates the core value proposition: how users create professional quotes with window treatments.
+Enhance `Scene5ProjectDeepDive` in the welcome video tutorial to:
+1. **Add proper curtain and blind visual sketches** in the treatment selection grid (replacing generic icons)
+2. **Extend timing** to give users more time to understand each step
+3. **Match the actual app flow** more accurately
 
 ---
 
-## Current Scene5 Structure
+## Current Issues
 
-| Phase | Current Content | Duration |
-|-------|-----------------|----------|
-| 0.00-0.10 | Client tab (overview) | 10% |
-| 0.10-0.20 | Project tab (rooms) | 10% |
-| 0.20-0.65 | Quote tab (payment, email) | 45% |
-| 0.65-0.80 | Workroom tab | 15% |
-| 0.80-1.00 | Installation + share | 20% |
-
-## Proposed Enhanced Structure
-
-To fit the window creation workflow, I'll restructure the phases:
-
-| Phase | Content | Duration |
-|-------|---------|----------|
-| 0.00-0.08 | Client tab (overview) | 8% |
-| 0.08-0.18 | Project tab (rooms + Add Window button focused) | 10% |
-| **0.18-0.52** | **NEW: Window Creation Popup** | **34%** |
-| 0.52-0.70 | Quote tab (shows completed quote with payment) | 18% |
-| 0.70-0.82 | Workroom tab (scrolling work order) | 12% |
-| 0.82-1.00 | Installation + share | 18% |
-
-**Scene duration remains 15 seconds** (15000ms)
+| Issue | Current State | Fix |
+|-------|---------------|-----|
+| Treatment cards use generic `Layers` icon | No visual distinction between curtains/blinds/shutters | Add proper SVG sketches for each treatment type |
+| Timing too fast | Each step flashes by quickly | Extend scene duration from 15s to 18s and redistribute phases |
+| Measurement diagram is basic | Simple dashed rectangle with no character | Add a proper curtain sketch with folds and rail |
 
 ---
 
-## NEW: Window Creation Popup Flow (34% of scene)
+## Implementation
 
-Based on the provided screenshots, this popup has a step-by-step flow:
+### Phase 1: Extend Scene Duration
+
+Update `ShowcaseLightbulb.tsx` to increase Scene5's duration:
 
 ```text
-Window Selected → Treatment → Library → Measurements → Save
+Current: 15000ms (15 seconds)
+New: 18000ms (18 seconds)
 ```
 
-### Sub-phases within Window Creation (0.18-0.52):
-
-| Phase | Action | Visual |
-|-------|--------|--------|
-| 0.18-0.20 | Click "Add Window" button | Focus ring → click |
-| 0.20-0.24 | Popup opens, Step 1 active | Shows stepper: Window Selected ✓ → Treatment → Library → Measurements |
-| 0.24-0.30 | Treatment grid appears | Show CURTAINS, BLINDS, PANEL_GLIDE categories |
-| 0.30-0.33 | Click "Curtains" card | Focus ring on Curtains → selected |
-| 0.33-0.36 | Step 2 completes, move to Library | Stepper updates: ✓ Treatment → Library active |
-| 0.36-0.40 | Fabric grid appears | Show 4 fabric cards with prices (ADARA, etc.) |
-| 0.40-0.43 | Click fabric card | Select "ADARA - £26.50/m" |
-| 0.43-0.46 | Step 3 completes, move to Measurements | Stepper updates: ✓ Library → Measurements active |
-| 0.46-0.50 | Measurement worksheet appears | Rail Width, Curtain Drop, Heading Type, Hardware |
-| 0.50-0.51 | Dimensions type in | "200" → "cm", "240" → "cm" |
-| 0.51-0.52 | Click Save | Button animates → popup closes |
+This gives 3 extra seconds to slow down the window creation workflow.
 
 ---
 
-## Visual Elements from Screenshots
+### Phase 2: Redistribute Timing Phases
 
-### Treatment Selection Step (Screenshot 1)
-- Header: Design: Window 1 | Treatment: Untitled | Description: Optional...
-- Stepper: ✓ Window Selected → Treatment (blue) → Library (orange) → Measurements (gray)
-- Search bar: "Search treatments: roller blinds, curtains, shutters..."
-- Treatment categories: CURTAINS, PANEL_GLIDE
-- Treatment cards: Curtain, Curtains, Drapery blackout (with images)
+**Current phases (15s):**
+- 0.00-0.08: Client tab (1.2s)
+- 0.08-0.18: Project tab (1.5s)
+- 0.18-0.52: Window popup (5.1s) ← Too fast
+- 0.52-0.70: Quote tab (2.7s)
+- 0.70-0.82: Workroom (1.8s)
+- 0.82-1.00: Installation (2.7s)
 
-### Library/Fabric Selection (Screenshot 2)
-- Stepper: ✓ Window Selected → ✓ Treatment → Library (blue) → Measurements (pink)
-- Type filters: Blockout, Light Filter, Wide (300cm+)
-- Fabric cards grid: 4 columns
-  - Card structure: Star icon, fabric image/placeholder, Name, Size, "For: curtains", Price, "Out" badge
-
-### Measurements Worksheet (Screenshot 3)
-- Title: "Window Measurement Worksheet"
-- Left: Curtain diagram with drag handles
-- Right form:
-  - Rail Width: input with cm unit
-  - Curtain Drop: input with cm unit
-  - Curtain Type: Radio buttons (Pair/Single)
-  - Heading Type: Dropdown (S-Fold 100% Bla... 2.2x)
-  - Hardware: Dropdown selector
+**New phases (18s):**
+- 0.00-0.06: Client tab (1.1s)
+- 0.06-0.14: Project tab (1.4s)
+- 0.14-0.55: Window popup (7.4s) ← MORE TIME
+  - 0.14-0.16: Focus on "Add Window" button
+  - 0.16-0.30: Treatment step (2.5s) - more time to see options
+  - 0.30-0.40: Library step (1.8s)
+  - 0.40-0.55: Measurements step (2.7s) - more time to see form
+- 0.55-0.70: Quote tab (2.7s)
+- 0.70-0.82: Workroom (2.2s)
+- 0.82-1.00: Installation (3.2s)
 
 ---
 
-## Technical Implementation
+### Phase 3: Add Curtain & Blind Sketches to Treatment Cards
 
-### 1. Add new phase variables in Scene5ProjectDeepDive
+Replace the generic `Layers` icon in treatment cards with inline SVG sketches:
 
-```tsx
-// Window Creation Popup phases
-const showAddWindowButton = inPhase(phase, 0.12, 0.20);
-const focusAddWindow = inPhase(phase, 0.16, 0.18);
-const showWindowPopup = inPhase(phase, 0.18, 0.52);
-const showTreatmentStep = inPhase(phase, 0.20, 0.36);
-const selectCurtains = inPhase(phase, 0.30, 0.33);
-const showLibraryStep = inPhase(phase, 0.36, 0.46);
-const selectFabric = inPhase(phase, 0.40, 0.43);
-const showMeasurementsStep = inPhase(phase, 0.46, 0.52);
-const measurementsTyping = inPhase(phase, 0.48, 0.51);
-const widthValue = typingProgress(phase, 0.48, 0.495, "200");
-const dropValue = typingProgress(phase, 0.495, 0.51, "240");
-const saveClick = inPhase(phase, 0.51, 0.52);
+**Curtain Sketch:**
+```text
+Visual elements:
+- Horizontal rail/rod at top
+- Two draped curtain panels with graceful folds
+- Soft curves showing fabric draping
+- Floor-length appearance
 ```
 
-### 2. Add Window Popup Component Structure
+**Roller Blind Sketch:**
+```text
+Visual elements:
+- Roller mechanism cylinder at top
+- Fabric panel partially rolled down
+- Bottom bar/hembar
+- Control chain on one side
+```
+
+**Shutters Sketch:**
+```text
+Visual elements:
+- Frame with vertical divider
+- Horizontal louver slats
+- Panel hinges indicated
+```
+
+---
+
+### Phase 4: Improve Measurement Diagram
+
+Replace the current basic curtain diagram (lines 931-943) with a proper visual that shows:
 
 ```text
-<AnimatePresence>
-  {showWindowPopup && (
-    <motion.div className="absolute inset-0 bg-black/40 z-50">
-      <motion.div className="bg-background rounded-xl border shadow-xl">
-        
-        {/* Header: Design | Treatment | Description */}
-        <div className="header-bar">...</div>
-        
-        {/* Stepper: Window Selected → Treatment → Library → Measurements */}
-        <div className="stepper">...</div>
-        
-        {/* Step Content */}
-        <AnimatePresence mode="wait">
-          {showTreatmentStep && <TreatmentGrid />}
-          {showLibraryStep && <FabricGrid />}
-          {showMeasurementsStep && <MeasurementWorksheet />}
-        </AnimatePresence>
-        
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+Improved diagram:
+- Window frame with glass panes
+- Curtain rail mounted above window
+- Two curtain panels with elegant S-fold draping
+- Tie-backs suggested
+- Clear width/drop dimension lines with arrows
+- "Pair" label showing it's a pair of curtains
 ```
-
-### 3. Stepper Visual Design
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  ✓ Window Selected  →  Treatment  →  Library  →  Measurements      │
-│       (green)          (blue/active)   (orange)     (gray)          │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-State transitions:
-- Phase 0.20-0.36: Treatment active (blue)
-- Phase 0.36-0.46: Treatment ✓, Library active (blue)
-- Phase 0.46-0.52: Library ✓, Measurements active (blue)
 
 ---
 
@@ -161,125 +111,150 @@ State transitions:
 
 | File | Changes |
 |------|---------|
-| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Major update to Scene5ProjectDeepDive (~150-200 new lines) |
+| `src/components/showcase/ShowcaseLightbulb.tsx` | Update Scene5 duration from 15000 to 18000ms |
+| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Update Scene5ProjectDeepDive with new phases, sketches, and improved diagram |
 
 ---
 
-## Detailed Animation Sequence
+## Treatment Sketches Implementation
+
+### CurtainSketch Component (inline in Scene5)
 
 ```text
-Time    Phase   Action
-0.00    0.00    Client tab visible
-1.2s    0.08    Transition to Project tab
-1.8s    0.12    Show rooms list
-2.4s    0.16    Focus ring on "Add Window" button  
-2.7s    0.18    Click → Window popup opens
-3.0s    0.20    Treatment step active, grid animates in
-4.5s    0.30    Focus ring on "Curtains" card
-4.95s   0.33    Click → selected state
-5.4s    0.36    Transition to Library step
-6.0s    0.40    Focus ring on ADARA fabric
-6.45s   0.43    Click → selected
-6.9s    0.46    Transition to Measurements step
-7.2s    0.48    Rail Width typing: "200"
-7.65s   0.51    Curtain Drop typing: "240"
-7.8s    0.52    Save clicked → popup closes
-7.8s    0.52    Quote tab visible with new line item
+<svg viewBox="0 0 60 60" className="w-full h-full">
+  {/* Rail */}
+  <rect x="5" y="8" width="50" height="3" rx="1" fill="currentColor" opacity="0.7"/>
+  
+  {/* Left curtain panel with folds */}
+  <path d="M8 11 Q8 35 12 55 L22 55 Q18 35 20 11 Z" fill="currentColor" opacity="0.25"/>
+  <path d="M12 11 Q13 35 17 55" stroke="currentColor" opacity="0.3" strokeWidth="0.5" fill="none"/>
+  
+  {/* Right curtain panel with folds */}
+  <path d="M52 11 Q52 35 48 55 L38 55 Q42 35 40 11 Z" fill="currentColor" opacity="0.25"/>
+  <path d="M48 11 Q47 35 43 55" stroke="currentColor" opacity="0.3" strokeWidth="0.5" fill="none"/>
+  
+  {/* Decorative rings */}
+  <circle cx="10" cy="10" r="1.5" fill="currentColor" opacity="0.5"/>
+  <circle cx="50" cy="10" r="1.5" fill="currentColor" opacity="0.5"/>
+</svg>
+```
+
+### RollerBlindSketch Component (inline in Scene5)
+
+```text
+<svg viewBox="0 0 60 60" className="w-full h-full">
+  {/* Roller mechanism */}
+  <rect x="8" y="8" width="44" height="5" rx="2.5" fill="currentColor" opacity="0.6"/>
+  
+  {/* Blind fabric */}
+  <rect x="10" y="13" width="40" height="35" fill="currentColor" opacity="0.2"/>
+  
+  {/* Fabric texture lines */}
+  <line x1="10" y1="23" x2="50" y2="23" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
+  <line x1="10" y1="33" x2="50" y2="33" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
+  <line x1="10" y1="43" x2="50" y2="43" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
+  
+  {/* Bottom bar */}
+  <rect x="10" y="48" width="40" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+  
+  {/* Control chain */}
+  <line x1="48" y1="13" x2="48" y2="55" stroke="currentColor" opacity="0.4" strokeWidth="1"/>
+  <circle cx="48" cy="55" r="2" fill="currentColor" opacity="0.4"/>
+</svg>
+```
+
+### ShutterSketch Component (inline in Scene5)
+
+```text
+<svg viewBox="0 0 60 60" className="w-full h-full">
+  {/* Frame */}
+  <rect x="8" y="8" width="44" height="48" rx="1" stroke="currentColor" opacity="0.5" strokeWidth="1.5" fill="none"/>
+  
+  {/* Center divider */}
+  <line x1="30" y1="8" x2="30" y2="56" stroke="currentColor" opacity="0.5" strokeWidth="1.5"/>
+  
+  {/* Left panel louvers */}
+  {[0,1,2,3,4,5,6].map(i => (
+    <rect x="10" y={12 + i*6} width="18" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
+  ))}
+  
+  {/* Right panel louvers */}
+  {[0,1,2,3,4,5,6].map(i => (
+    <rect x="32" y={12 + i*6} width="18" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
+  ))}
+</svg>
 ```
 
 ---
 
-## Updated Scene5 Step Labels
+## Improved Measurement Diagram
 
-The scene description in ShowcaseLightbulb.tsx remains:
-```tsx
-title: "Project Details"
-description: "Quote, Payment, Work Orders, Installation & Team Sharing"
-```
+Replace lines 929-944 with a more detailed curtain visualization:
 
-But the actual flow now demonstrates the complete workflow from adding a window treatment through to sharing with the team.
-
----
-
-## New Visual Components Needed
-
-### 1. Treatment Cards Grid
-- 3 cards: Curtain, Curtains, Drapery blackout
-- Image placeholders with subtle curtain illustration
-- Selection ring animation
-
-### 2. Fabric Cards Grid  
-- 4 cards in 2x2 grid
-- Star (favorite) icon in top-left
-- Fabric name, width, price
-- "For: curtains" tag
-- "Out" stock badge (optional)
-
-### 3. Measurement Worksheet
-- Simple curtain diagram (rectangle with curtain shapes)
-- Rail Width + Curtain Drop inputs
-- Pair/Single radio buttons
-- Heading Type dropdown
-
----
-
-## Code Structure Summary
-
-The popup will be implemented as an overlay within Scene5ProjectDeepDive:
-
-```tsx
-{/* Window Creation Popup */}
-<AnimatePresence>
-  {showWindowPopup && (
-    <motion.div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <motion.div className="bg-background w-full max-w-[95%] h-[85%] rounded-xl border shadow-xl overflow-hidden flex flex-col">
-        
-        {/* Header Row: Design | Treatment | Description */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b">
-          <div className="flex-1 flex items-center gap-2">
-            <Tag className="h-4 w-4" />
-            <span className="text-sm">Design: <strong>Window 1</strong></span>
-          </div>
-          <div className="flex-1">Treatment: <strong>{currentTreatment}</strong></div>
-          <X className="h-4 w-4 cursor-pointer" />
-        </div>
-        
-        {/* Stepper */}
-        <div className="flex items-center justify-center gap-4 py-3 border-b">
-          <StepperItem label="Window Selected" status="complete" />
-          <StepperArrow />
-          <StepperItem label="Treatment" status={treatmentStatus} />
-          <StepperArrow />
-          <StepperItem label="Library" status={libraryStatus} />
-          <StepperArrow />
-          <StepperItem label="Measurements" status={measurementsStatus} />
-        </div>
-        
-        {/* Content */}
-        <div className="flex-1 overflow-hidden p-4">
-          {showTreatmentStep && <TreatmentContent />}
-          {showLibraryStep && <LibraryContent />}
-          {showMeasurementsStep && <MeasurementsContent />}
-        </div>
-        
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+```text
+<div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center relative">
+  {/* Window frame */}
+  <div className="relative w-40 h-48">
+    {/* Window background */}
+    <div className="absolute inset-x-4 top-8 bottom-4 border-2 border-muted-foreground/30 bg-sky-50 dark:bg-sky-950/30 rounded">
+      {/* Window panes */}
+      <div className="absolute inset-1 grid grid-cols-2 gap-1">
+        <div className="bg-sky-100/50 dark:bg-sky-900/30 border border-muted-foreground/10"/>
+        <div className="bg-sky-100/50 dark:bg-sky-900/30 border border-muted-foreground/10"/>
+      </div>
+    </div>
+    
+    {/* Curtain rail */}
+    <div className="absolute top-4 left-0 right-0 h-2 bg-muted-foreground/60 rounded-full"/>
+    
+    {/* Left curtain with S-folds */}
+    <div className="absolute left-0 top-6 w-12 bottom-0 bg-primary/20 rounded-b-sm overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/20"/>
+      {/* Fold lines */}
+      <div className="absolute top-4 bottom-0 left-3 w-px bg-primary/30"/>
+      <div className="absolute top-4 bottom-0 left-7 w-px bg-primary/30"/>
+    </div>
+    
+    {/* Right curtain with S-folds */}
+    <div className="absolute right-0 top-6 w-12 bottom-0 bg-primary/20 rounded-b-sm overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-l from-primary/30 via-primary/10 to-primary/20"/>
+      {/* Fold lines */}
+      <div className="absolute top-4 bottom-0 right-3 w-px bg-primary/30"/>
+      <div className="absolute top-4 bottom-0 right-7 w-px bg-primary/30"/>
+    </div>
+    
+    {/* Width dimension line */}
+    <div className="absolute -top-1 left-0 right-0 flex items-center">
+      <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-r-[5px] border-transparent border-r-blue-500"/>
+      <div className="flex-1 border-t border-blue-500"/>
+      <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px] border-transparent border-l-blue-500"/>
+    </div>
+    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-blue-600 font-medium">Rail Width</span>
+    
+    {/* Drop dimension line */}
+    <div className="absolute top-6 -right-4 bottom-0 flex flex-col items-center">
+      <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-b-[5px] border-transparent border-b-green-500"/>
+      <div className="flex-1 border-r border-green-500"/>
+      <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-t-[5px] border-transparent border-t-green-500"/>
+    </div>
+    <span className="absolute top-1/2 -right-8 -translate-y-1/2 text-[9px] text-green-600 font-medium rotate-90">Drop</span>
+  </div>
+</div>
 ```
 
 ---
 
-## Summary
+## Summary of Changes
 
-This enhancement adds the critical "Add Window → Quote" workflow to the Project scene, showing:
+| Change | Impact |
+|--------|--------|
+| Scene duration 15s → 18s | +3 seconds for better comprehension |
+| Treatment cards with SVG sketches | Visual clarity - users can see curtain vs blind |
+| Improved measurement diagram | Professional appearance matching app quality |
+| Redistributed phases | More time on window popup (5.1s → 7.4s) |
 
-1. How to add a new window treatment
-2. Selecting treatment type (Curtains)
-3. Browsing and selecting fabrics with pricing
-4. Entering measurements with visual diagram
-5. Saving to generate the quote line item
+**Total new/modified code:** ~120 lines
 
-Total new code: ~200 lines added to Scene5ProjectDeepDive
-Duration: Stays at 15 seconds
-Files modified: 1 (WelcomeVideoSteps.tsx)
+**Files modified:** 2
+- `src/components/showcase/ShowcaseLightbulb.tsx` (1 line - duration change)
+- `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` (~120 lines - sketches + timing + diagram)
