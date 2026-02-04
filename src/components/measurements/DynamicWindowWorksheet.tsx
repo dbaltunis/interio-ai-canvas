@@ -2194,6 +2194,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               cost_price: selectedItems.fabric.cost_price, // ✅ FIX: Save cost_price for accurate Cost column display
               selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
               category: selectedItems.fabric.category,
+              subcategory: selectedItems.fabric.subcategory, // ✅ FIX: Persist subcategory for grid resolution (awning_fabric, vertical_fabric, etc.)
               image_url: selectedItems.fabric.image_url,
               // CRITICAL: Include color - prioritize user selection, then first tag, then color field
               color: measurements.selected_color || selectedItems.fabric.tags?.[0] || selectedItems.fabric.color || null,
@@ -2220,9 +2221,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               id: selectedItems.material.id,
               name: selectedItems.material.name,
               selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
+              cost_price: selectedItems.material.cost_price, // ✅ FIX: Persist cost_price for accurate costing
               image_url: selectedItems.material.image_url,
               // CRITICAL: Include color for material - prioritize user selection, then first tag, then color field
               color: measurements.selected_color || selectedItems.material.tags?.[0] || selectedItems.material.color || null,
+              subcategory: selectedItems.material.subcategory, // ✅ FIX: Persist subcategory for grid resolution (vertical_fabric, etc.)
               // UNIVERSAL: Preserve pricing grid data for ALL SaaS clients
               pricing_grid_data: selectedItems.material.pricing_grid_data,
               resolved_grid_name: selectedItems.material.resolved_grid_name,
@@ -2678,7 +2681,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               fabric_type: item.name,
               fabric_width: item.fabric_width || item.wallpaper_roll_width,
               selling_price: item.selling_price || item.unit_price,
+              cost_price: item.cost_price, // ✅ FIX: Persist cost_price for accurate costing
               category: item.category,
+              subcategory: item.subcategory, // ✅ FIX: Persist subcategory for grid resolution (awning_fabric, etc.)
               image_url: item.image_url,
               // CRITICAL: Preserve pricing grid data
               pricing_grid_data: item.pricing_grid_data,
