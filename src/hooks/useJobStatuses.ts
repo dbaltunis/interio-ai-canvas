@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -36,7 +36,7 @@ export const useJobStatuses = () => {
 
 export const useCreateJobStatus = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showSuccess, showError } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async (status: Omit<JobStatusInsert, "user_id">) => {
@@ -57,24 +57,17 @@ export const useCreateJobStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
-      toast({
-        title: "Success",
-        description: "Job status created successfully",
-      });
+      showSuccess("Status created", "Job status created successfully");
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create job status",
-        variant: "destructive"
-      });
+    onError: (error: unknown) => {
+      showError(error, { context: 'create job status' });
     }
   });
 };
 
 export const useUpdateJobStatus = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showSuccess, showError } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<JobStatusUpdate>) => {
@@ -90,24 +83,17 @@ export const useUpdateJobStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
-      toast({
-        title: "Success",
-        description: "Job status updated successfully",
-      });
+      showSuccess("Status updated", "Job status updated successfully");
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error", 
-        description: error.message || "Failed to update job status",
-        variant: "destructive"
-      });
+    onError: (error: unknown) => {
+      showError(error, { context: 'update job status' });
     }
   });
 };
 
 export const useDeleteJobStatus = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showSuccess, showError } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -123,17 +109,10 @@ export const useDeleteJobStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
-      toast({
-        title: "Success",
-        description: "Job status deleted successfully",
-      });
+      showSuccess("Status deleted", "Job status deleted successfully");
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete job status",
-        variant: "destructive"
-      });
+    onError: (error: unknown) => {
+      showError(error, { context: 'delete job status' });
     }
   });
 };

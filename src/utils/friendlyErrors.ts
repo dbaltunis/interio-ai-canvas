@@ -100,6 +100,17 @@ const ERROR_PATTERNS: ErrorPattern[] = [
     }
   },
   
+  // Status slot duplicate constraint - specific pattern
+  {
+    patterns: ['unique_user_slot'],
+    error: {
+      title: "Slot already in use",
+      message: "This slot number is already assigned to another status. Please edit the existing status or choose a different slot.",
+      icon: 'validation',
+      persistent: true,
+    }
+  },
+  
   // Duplicate/Conflict errors - persistent
   {
     patterns: ['duplicate', 'already exists', 'unique constraint', 'conflict'],

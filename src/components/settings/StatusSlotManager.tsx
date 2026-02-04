@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star, EyeOff, Edit2, Save, X, FileText } from "lucide-react";
 import { useJobStatuses, useCreateJobStatus, useUpdateJobStatus } from "@/hooks/useJobStatuses";
 import { useNumberSequences } from "@/hooks/useNumberSequences";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 
 const SLOT_COUNT = 10;
 
@@ -48,7 +48,7 @@ export const StatusSlotManager = () => {
   const { data: numberSequences = [] } = useNumberSequences();
   const createStatus = useCreateJobStatus();
   const updateStatus = useUpdateJobStatus();
-  const { toast } = useToast();
+  const { showSuccess, showError } = useFriendlyToast();
 
   // Get prefix example for a document type
   const getPrefixExample = (docType: string): string => {
@@ -105,12 +105,9 @@ export const StatusSlotManager = () => {
         });
       }
       setEditingSlot(null);
-      toast({
-        title: "Success",
-        description: `Status slot ${slotNumber} saved successfully`,
-      });
+      showSuccess("Status saved", `Status slot ${slotNumber} saved successfully`);
     } catch (error) {
-      console.error("Error saving status:", error);
+      showError(error, { context: 'save status' });
     }
   };
 
@@ -124,12 +121,9 @@ export const StatusSlotManager = () => {
       }
       // Then set the new default
       await updateStatus.mutateAsync({ id: statusId, is_default: true });
-      toast({
-        title: "Success",
-        description: "Default status updated",
-      });
+      showSuccess("Default updated", "Default status updated successfully");
     } catch (error) {
-      console.error("Error setting default:", error);
+      showError(error, { context: 'set default status' });
     }
   };
 
@@ -152,12 +146,9 @@ export const StatusSlotManager = () => {
           });
         }
       }
-      toast({
-        title: "Success",
-        description: "Default workflow template applied",
-      });
+      showSuccess("Template applied", "Default workflow template applied successfully");
     } catch (error) {
-      console.error("Error applying template:", error);
+      showError(error, { context: 'apply template' });
     }
   };
 
