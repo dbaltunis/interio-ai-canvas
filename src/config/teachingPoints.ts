@@ -30,6 +30,7 @@ export interface TeachingPoint {
   sequence?: string;
   sequenceOrder?: number;
   maxShows?: number;  // Maximum times to show this teaching point
+  skipAutoShow?: boolean; // Skip auto-show for component-controlled teachings
 }
 
 // ============================================
@@ -334,10 +335,10 @@ export const appTeachingPoints: TeachingPoint[] = [
     description: 'Click here to assign an existing client or create a new one for this project.',
     targetSelector: '[data-teaching="add-client-action"]',
     position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app' },
+    trigger: { type: 'empty_state', page: '/app', section: 'job-details' },
     priority: 'high',
     category: 'app',
-    // No maxShows - show until user clicks "Got it"
+    skipAutoShow: true, // Component-controlled via TeachingTrigger
   },
 
   // ========== DASHBOARD (2 tips) ==========

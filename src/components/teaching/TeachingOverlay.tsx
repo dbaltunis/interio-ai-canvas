@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { X, Lightbulb, ChevronRight } from 'lucide-react';
+import { Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTeaching } from '@/contexts/TeachingContext';
 import { allTeachingPoints, getNextInSequence } from '@/config/teachingPoints';
@@ -29,6 +29,7 @@ export const TeachingOverlay = () => {
   const [position, setPosition] = useState<{ top: number; left: number; arrowPosition: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const retryCountRef = useRef(0);
 
   // Track route changes - only when logged in
   useEffect(() => {
@@ -37,6 +38,7 @@ export const TeachingOverlay = () => {
     const path = location.pathname;
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get('tab');
+    const jobId = searchParams.get('jobId');
     
     // Map routes to teaching pages/sections
     let page = path;
@@ -44,12 +46,13 @@ export const TeachingOverlay = () => {
     
     if (path === '/' || path === '/app') {
       page = '/app';
-      section = tab || 'dashboard';
+      // If job details panel is open, use 'job-details' section
+      section = jobId ? 'job-details' : (tab || 'dashboard');
     } else if (path === '/settings') {
       section = searchParams.get('section') || 'personal';
     }
     
-    console.log('[Teaching] Route changed:', { path, page, section, tab });
+    console.log('[Teaching] Route changed:', { path, page, section, tab, jobId });
     
     // Delay to let page render
     setTimeout(() => {
@@ -57,10 +60,11 @@ export const TeachingOverlay = () => {
     }, 1000);
   }, [location.pathname, location.search, setCurrentPage, user]);
 
-  // Position the bubble near target element
+  // Position the bubble near target element with retry logic
   useEffect(() => {
     if (!activeTeaching || !isTeachingEnabled) {
       setPosition(null);
+      retryCountRef.current = 0;
       return;
     }
 
@@ -72,25 +76,36 @@ export const TeachingOverlay = () => {
         targetEl = document.querySelector(activeTeaching.targetSelector);
       }
       
-      // If no target element found, DON'T show the bubble at all
-      // This prevents floating tips in random positions
+      // If no target element found, retry or give up
       if (!targetEl) {
-        // Only show centered if explicitly no target selector defined
-        if (!activeTeaching.targetSelector) {
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-          
-          setPosition({
-            top: viewportHeight * 0.3,
-            left: Math.min(viewportWidth - 340, viewportWidth * 0.6),
-            arrowPosition: 'none',
-          });
-        } else {
-          // Target selector defined but element not found - hide the bubble
+        if (activeTeaching.targetSelector) {
+          // Element not found yet - retry after a delay (up to 5 times)
+          if (retryCountRef.current < 5) {
+            retryCountRef.current++;
+            console.log(`[Teaching] Target not found, retry ${retryCountRef.current}/5:`, activeTeaching.targetSelector);
+            setTimeout(positionBubble, 300);
+            return;
+          }
+          // Target selector defined but element not found after retries - hide the bubble
+          console.log('[Teaching] Target not found after retries, hiding bubble');
           setPosition(null);
+          return;
         }
+        
+        // Only show centered if explicitly no target selector defined
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        setPosition({
+          top: viewportHeight * 0.3,
+          left: Math.min(viewportWidth - 340, viewportWidth * 0.6),
+          arrowPosition: 'none',
+        });
         return;
       }
+
+      // Reset retry count on success
+      retryCountRef.current = 0;
 
       const rect = targetEl.getBoundingClientRect();
       const bubbleWidth = 320;
@@ -129,6 +144,7 @@ export const TeachingOverlay = () => {
     };
 
     // Initial positioning
+    retryCountRef.current = 0;
     const timer = setTimeout(positionBubble, 100);
     
     // Reposition on scroll/resize
@@ -172,15 +188,11 @@ export const TeachingOverlay = () => {
     completeTeaching(activeTeaching.id);
   };
 
-  const handleDismissForever = () => {
-    dismissForever(activeTeaching.id);
-  };
-
   const bubble = (
     <div
       ref={bubbleRef}
       className={cn(
-        "fixed z-[9999] w-80 rounded-lg border border-primary/20 bg-primary text-primary-foreground shadow-2xl",
+        "fixed z-[9999] w-80 rounded-xl border-2 border-primary/20 bg-popover text-popover-foreground shadow-xl",
         "animate-in fade-in-0 zoom-in-95 duration-200"
       )}
       style={{
@@ -192,11 +204,11 @@ export const TeachingOverlay = () => {
       {position.arrowPosition !== 'none' && (
         <div
           className={cn(
-            "absolute w-3 h-3 bg-primary rotate-45 border-primary/20",
-            position.arrowPosition === 'bottom' && "-top-1.5 left-1/2 -translate-x-1/2 border-t border-l",
-            position.arrowPosition === 'top' && "-bottom-1.5 left-1/2 -translate-x-1/2 border-b border-r",
-            position.arrowPosition === 'left' && "-right-1.5 top-1/2 -translate-y-1/2 border-t border-r",
-            position.arrowPosition === 'right' && "-left-1.5 top-1/2 -translate-y-1/2 border-b border-l"
+            "absolute w-3 h-3 bg-popover rotate-45 border-primary/20",
+            position.arrowPosition === 'bottom' && "-top-1.5 left-1/2 -translate-x-1/2 border-t-2 border-l-2",
+            position.arrowPosition === 'top' && "-bottom-1.5 left-1/2 -translate-x-1/2 border-b-2 border-r-2",
+            position.arrowPosition === 'left' && "-right-1.5 top-1/2 -translate-y-1/2 border-t-2 border-r-2",
+            position.arrowPosition === 'right' && "-left-1.5 top-1/2 -translate-y-1/2 border-b-2 border-l-2"
           )}
         />
       )}
@@ -204,46 +216,33 @@ export const TeachingOverlay = () => {
       {/* Header */}
       <div className="flex items-start justify-between p-4 pb-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20">
-            <Lightbulb className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+            <Lightbulb className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h4 className="font-semibold text-sm">{activeTeaching.title}</h4>
             {stepInfo && (
-              <span className="text-xs text-primary-foreground/70">
+              <span className="text-xs text-muted-foreground">
                 Step {stepInfo.current} of {stepInfo.total}
               </span>
             )}
           </div>
         </div>
-        <button
-          onClick={handleDismiss}
-          className="rounded-full p-1 hover:bg-primary-foreground/20 transition-colors"
-          aria-label="Dismiss"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
 
       {/* Content */}
       <div className="px-4 pb-3">
-        <p className="text-sm text-primary-foreground/90 leading-relaxed">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           {activeTeaching.description}
         </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between border-t border-primary-foreground/20 px-4 py-3">
-        <button
-          onClick={handleDismissForever}
-          className="text-xs text-primary-foreground/60 hover:text-primary-foreground/80 transition-colors"
-        >
-          Don't show again
-        </button>
+      {/* Actions - Only "Got it" button */}
+      <div className="flex items-center justify-end border-t border-border px-4 py-3">
         <Button
           size="sm"
           onClick={handleDismiss}
-          className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 h-8"
+          className="h-8"
         >
           {hasNext ? 'Next' : 'Got it'}
           {hasNext && <ChevronRight className="h-3 w-3 ml-1" />}
