@@ -2,9 +2,7 @@
 import { useState } from "react";
 import { useCreateRoom } from "@/hooks/useRooms";
 import { useUpdateProject } from "@/hooks/useProjects";
-import { useToast } from "@/hooks/use-toast";
-import { useHasPermission } from "@/hooks/usePermissions";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 interface UseProjectJobsActionsProps {
@@ -21,29 +19,21 @@ export const useProjectJobsActions = ({
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const createRoom = useCreateRoom();
   const updateProject = useUpdateProject();
-  const { toast } = useToast();
+  const { showError } = useFriendlyToast();
   // Use explicit permissions hook for edit checks
   const { canEditJob } = useCanEditJob(project);
 
   const handleCreateRoom = async () => {
     // Check permissions
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       return;
     }
 
     // Determine the actual project ID
     const projectId = project?.project_id || project?.id;
     if (!projectId) {
-      toast({
-        title: "Error",
-        description: "No project selected",
-        variant: "destructive",
-      });
+      showError(new Error("No project selected"), { context: 'create room' });
       return;
     }
 
@@ -61,11 +51,7 @@ export const useProjectJobsActions = ({
       console.log("Room created successfully");
     } catch (error) {
       console.error("Failed to create room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create room. Please try again.",
-        variant: "destructive",
-      });
+      // Error already handled in mutation onError
     } finally {
       setIsCreatingRoom(false);
     }
@@ -78,11 +64,7 @@ export const useProjectJobsActions = ({
 
     // Check permissions
     if (!canEditJob) {
-      toast({
-        title: "Permission Denied",
-        description: "You don't have permission to edit this job.",
-        variant: "destructive",
-      });
+      showError(new Error("permission denied"), { context: 'edit this job' });
       throw new Error("Permission denied");
     }
 

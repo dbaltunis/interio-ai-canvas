@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useJobHandlers } from "../job-creation/JobHandlers";
 import { RoomManagementTabs } from "./RoomManagementTabs";
-import { useToast } from "@/hooks/use-toast";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useIsDealer } from "@/hooks/useIsDealer";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface EnhancedRoomViewProps {
   project: any;
@@ -15,7 +15,7 @@ interface EnhancedRoomViewProps {
 export const EnhancedRoomView = ({ project, clientId, isReadOnly: propIsReadOnly }: EnhancedRoomViewProps) => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
-  const { toast } = useToast();
+  const { showError } = useFriendlyToast();
   const { user } = useAuth();
   const { data: isDealer } = useIsDealer();
   const canEditAllJobs = useHasPermission('edit_all_jobs');
@@ -74,11 +74,7 @@ export const EnhancedRoomView = ({ project, clientId, isReadOnly: propIsReadOnly
       }
     } catch (error) {
       console.error("Failed to create room from template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create room from template",
-        variant: "destructive",
-      });
+      showError(error, { context: 'create room from template' });
     }
   };
 
