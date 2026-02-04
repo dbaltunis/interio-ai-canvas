@@ -261,6 +261,10 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   // Get document type configuration
   const docConfig = getDocumentTypeConfig(documentType);
   
+  // Get localized labels for document language
+  const lang = (businessSettings?.document_language as DocumentLanguage) || 'en';
+  const localizedLabels = getLocalizedDocumentLabels(documentType, lang);
+  
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
   
   const updateContent = (updates: any) => {
@@ -335,23 +339,23 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
           {/* Document Title - Dynamic based on document type */}
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em', marginTop: '16px' }}>
             {isEditable ? renderText(
-              // Use doc type title if saved title is from a different type (legacy fix)
+              // Use localized title - only use saved title if user explicitly customized it
               (() => {
                 const savedTitle = content.documentTitle;
-                const docTypeTitle = docConfig.documentTitle;
-                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
-                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
-                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+                const localizedTitle = localizedLabels.title;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio', 'Pasiūlymas', 'Sąskaita-faktūra', 'Sąmata', 'Darbo užsakymas', 'Matavimo lapas', 'Brošiūra', 'Portfolis'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle);
+                return isLegacyMismatch ? localizedTitle : (savedTitle || localizedTitle);
               })(),
               (v) => updateContent({ documentTitle: v }),
               'text-3xl font-bold',
               'Document Title'
             ) : (() => {
               const savedTitle = content.documentTitle;
-              const docTypeTitle = docConfig.documentTitle;
-              const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
-              const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
-              return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              const localizedTitle = localizedLabels.title;
+              const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio', 'Pasiūlymas', 'Sąskaita-faktūra', 'Sąmata', 'Darbo užsakymas', 'Matavimo lapas', 'Brošiūra', 'Portfolis'];
+              const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle);
+              return isLegacyMismatch ? localizedTitle : (savedTitle || localizedTitle);
             })()}
           </h1>
 
@@ -396,10 +400,10 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
             {/* Document Details - Right (Dynamic labels based on document type) */}
             <div className="text-right">
               <div className="text-sm space-y-1">
-                {docConfig.numberLabel && (
+                {localizedLabels.numberLabel && (
                   <div>
                     <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
-                      {content.quoteNumberLabel || docConfig.numberLabel}{' '}
+                      {content.quoteNumberLabel || localizedLabels.numberLabel}{' '}
                     </span>
                     <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>
                       {getToken('job_number')}
@@ -408,15 +412,15 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 )}
                 <div>
                   <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
-                    {docConfig.primaryDateLabel}: </span>
+                    {localizedLabels.primaryDate}: </span>
                   <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                     {getToken('date')}
                   </span>
                 </div>
-                {docConfig.secondaryDateLabel && (
+                {localizedLabels.secondaryDate && (
                   <div>
                     <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
-                      {docConfig.secondaryDateLabel}: </span>
+                      {localizedLabels.secondaryDate}: </span>
                     <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                       {getToken(docConfig.secondaryDateToken || 'valid_until')}
                     </span>
@@ -438,8 +442,7 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                                projectData?.paymentStatus === 'overdue' ? '#991b1b' : '#92400e'
                       }}
                     >
-                      {projectData?.paymentStatus === 'paid' ? 'PAID' : 
-                       projectData?.paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+                      {getLocalizedPaymentStatus(projectData?.paymentStatus || 'unpaid', lang)}
                     </span>
                   </div>
                 )}
@@ -494,25 +497,25 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
             <h1 className="text-2xl font-semibold mb-4">
               {(() => {
                 const savedTitle = content.documentTitle;
-                const docTypeTitle = docConfig.documentTitle;
-                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
-                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
-                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+                const localizedTitle = localizedLabels.title;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Pasiūlymas', 'Sąskaita-faktūra', 'Sąmata', 'Darbo užsakymas'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle);
+                return isLegacyMismatch ? localizedTitle : (savedTitle || localizedTitle);
               })()}
             </h1>
             <div className="text-sm space-y-1">
               <div className="flex items-center gap-2 justify-end">
                 <Hash className="h-3 w-3" />
-                <span>{content.quoteNumberLabel || docConfig.numberLabel}: {getToken('job_number')}</span>
+                <span>{content.quoteNumberLabel || localizedLabels.numberLabel}: {getToken('job_number')}</span>
               </div>
               <div className="flex items-center gap-2 justify-end">
                 <Calendar className="h-3 w-3" />
-                <span>{docConfig.primaryDateLabel}: {getToken('date')}</span>
+                <span>{localizedLabels.primaryDate}: {getToken('date')}</span>
               </div>
-              {docConfig.secondaryDateLabel && (
+              {localizedLabels.secondaryDate && (
                 <div className="flex items-center gap-2 justify-end">
                   <Calendar className="h-3 w-3" />
-                  <span>{docConfig.secondaryDateLabel}: {getToken(docConfig.secondaryDateToken || 'valid_until')}</span>
+                  <span>{localizedLabels.secondaryDate}: {getToken(docConfig.secondaryDateToken || 'valid_until')}</span>
                 </div>
               )}
             </div>
@@ -549,13 +552,13 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 )}
               </div>
             )}
-            <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-bold">
               {(() => {
                 const savedTitle = content.documentTitle;
-                const docTypeTitle = docConfig.documentTitle;
-                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
-                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
-                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+                const localizedTitle = localizedLabels.title;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Pasiūlymas', 'Sąskaita-faktūra', 'Sąmata', 'Darbo užsakymas'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle);
+                return isLegacyMismatch ? localizedTitle : (savedTitle || localizedTitle);
               })()}
             </h1>
           </div>
@@ -580,10 +583,10 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
               </div>
               <div className="mt-3 pt-3 border-t text-sm">
-                <div><strong>{docConfig.numberLabel}:</strong> {getToken('job_number')}</div>
-                <div><strong>{docConfig.primaryDateLabel}:</strong> {getToken('date')}</div>
-                {docConfig.secondaryDateLabel && (
-                  <div><strong>{docConfig.secondaryDateLabel}:</strong> {getToken(docConfig.secondaryDateToken || 'valid_until')}</div>
+                <div><strong>{localizedLabels.numberLabel}:</strong> {getToken('job_number')}</div>
+                <div><strong>{localizedLabels.primaryDate}:</strong> {getToken('date')}</div>
+                {localizedLabels.secondaryDate && (
+                  <div><strong>{localizedLabels.secondaryDate}:</strong> {getToken(docConfig.secondaryDateToken || 'valid_until')}</div>
                 )}
               </div>
             </div>
