@@ -1,86 +1,66 @@
 
 
-## Fix Team Assignment Notes + Team Hub Notifications
+## Test and Fix Remaining Issues
 
-The current implementation has a **critical bug**: Supabase client doesn't throw exceptions - it returns `{ data, error }`. The try-catch blocks are useless and silently swallow all failures.
+The code fix for assignment notes and Team Hub messages is now deployed, but:
+
+1. **No new assignment has been tested yet** - The database shows no `system_assignment` notes or recent Team Hub messages
+2. **RLS blocking `project_activity_log`** - The console shows an RLS error that will block activity logging
 
 ---
 
-### Root Cause
+### Step 1: Fix `project_activity_log` RLS Policy
 
-```tsx
-// ❌ BUG: This NEVER catches anything - Supabase returns { error }, doesn't throw
-try {
-  await supabase.from("project_notes").insert({...});
-} catch (noteErr) {
-  console.warn("Failed..."); // Never runs!
-}
+The INSERT policy requires `auth.uid() = user_id`, but this is correct and should work. However, let me check if the current user is an Admin (team member) vs Account Owner - this could cause issues.
+
+**SQL Migration needed:**
+```sql
+-- Drop restrictive policy
+DROP POLICY IF EXISTS "Insert project activities" ON public.project_activity_log;
+
+-- Create multi-tenant aware policy
+CREATE POLICY "project_activity_log_insert" ON public.project_activity_log
+FOR INSERT TO authenticated
+WITH CHECK (
+  user_id = auth.uid() OR 
+  user_id = public.get_effective_account_owner(auth.uid())
+);
 ```
 
-The insert silently fails and nothing is logged.
+This allows team members to log activities under their own ID (for attribution) while still respecting the multi-tenant model.
 
 ---
 
-### The Fix
+### Step 2: Test Assignment Flow
 
-**File: `src/hooks/useProjectAssignments.ts`** (Lines 205-232)
-
-Replace the broken try-catch with proper error checking:
-
-```tsx
-// Create a visible project note about the assignment
-const { error: noteError } = await supabase
-  .from("project_notes")
-  .insert({
-    project_id: projectId,
-    user_id: effectiveOwnerId,
-    content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
-    type: 'system_assignment'
-  });
-
-if (noteError) {
-  console.warn("Failed to create assignment note:", noteError);
-  // Don't throw - assignment already succeeded
-}
-
-// Send Team Hub direct message for better visibility
-const { error: dmError } = await supabase
-  .from("direct_messages")
-  .insert({
-    sender_id: user.id,
-    recipient_id: userId,
-    content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
-  });
-
-if (dmError) {
-  console.warn("Failed to send team hub message:", dmError);
-  // Don't throw - assignment already succeeded
-}
-```
+After the RLS fix, test by:
+1. Open a job
+2. Click "Invite team" or "Limit Access"
+3. Assign a team member
+4. Verify:
+   - ✅ Assignment succeeds
+   - ✅ Note appears in Project Notes: "X was assigned by Y"
+   - ✅ Team Hub message appears for assigned user with job link
+   - ✅ Activity log shows "team_assigned" entry
 
 ---
 
-### What This Fixes
-
-| Issue | Before | After |
-|-------|--------|-------|
-| Assignment note not created | Silent failure (try-catch doesn't work) | Proper error check + logging |
-| Team Hub notification missing | Silent failure | Proper error check + logging |
-| No visibility of failures | Nothing in console | Warnings logged for debugging |
-
----
-
-### Expected Results
-
-1. **Assignment note appears in Project Notes**: "John Smith was assigned to this project by Admin"
-2. **Team Hub message sent**: Assigned user gets a notification with job link
-3. **Errors are logged**: If something fails, we see it in console for debugging
-
----
-
-### Single File Change
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useProjectAssignments.ts` | Replace try-catch with proper `{ error }` destructuring and logging |
+| **Database Migration** | Fix `project_activity_log` INSERT RLS policy |
+
+---
+
+### Expected Results After Fix
+
+When you assign a team member:
+
+| Feature | Result |
+|---------|--------|
+| Assignment note | "John Smith was assigned to this project by Daniel (Admin)" appears in Project Notes |
+| Team Hub message | John Smith sees: "You've been assigned to the project 'Project Name'! 🎉 Click here to view: [link]" |
+| Activity log | Entry with `activity_type: team_assigned` and attribution |
+| Email notification | Sent via edge function (already working) |
 
