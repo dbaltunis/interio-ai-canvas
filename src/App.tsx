@@ -34,7 +34,6 @@ import { SyncIndicator } from "./components/system/SyncIndicator";
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import { TeachingActiveSpotlight } from "./components/teaching/TeachingActiveSpotlight";
 import { WelcomeTour } from "./components/teaching/WelcomeTour";
-import { NewUserWelcome } from "./components/onboarding/NewUserWelcome";
 import { PageSkeleton } from "./components/skeletons/PageSkeleton";
 import { BookingPageSkeleton } from "./components/booking/BookingPageSkeleton";
 import { UpdateAnnouncementModal } from "./components/version/UpdateAnnouncementModal";
@@ -191,7 +190,6 @@ const App = () => {
                       <DebugPanel />
                       <TeachingOverlay />
                       <TeachingActiveSpotlight />
-                      <NewUserWelcome />
                       <WelcomeTour />
                       <TutorialPlayer />
                   <Suspense fallback={<PageSkeleton />}>
