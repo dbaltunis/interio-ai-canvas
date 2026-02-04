@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useToast } from "@/hooks/use-toast";
 import { useProjectNotes } from "@/hooks/useProjectNotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { StickyNote, Trash2, Save, X, AtSign, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { StickyNote, Trash2, Save, X, AtSign, ChevronDown, ChevronUp, Plus, Edit } from "lucide-react";
 import { PixelNoteIcon } from "@/components/icons/PixelArtIcons";
 import { useFormattedDates } from "@/hooks/useFormattedDate";
 
@@ -16,7 +16,7 @@ interface ProjectNotesCardProps {
 }
 
 export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
-  const { notes, addNote, deleteNote, loading, error } = useProjectNotes({ projectId });
+  const { notes, addNote, updateNote, deleteNote, loading, error } = useProjectNotes({ projectId });
   const { data: teamMembers = [] } = useTeamMembers();
   const { toast } = useToast();
   const [note, setNote] = useState("");
@@ -24,6 +24,11 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
+  
+  // Edit state
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   
   // Format dates using user preferences - useCallback prevents infinite re-render
   const getNotesDate = useCallback((n: any) => n.created_at, []);
@@ -54,6 +59,34 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
       toast({ title: "Deleted", description: "Note removed" });
     } catch (e: any) {
       toast({ title: "Error", description: e?.message || "Unable to delete note", variant: "destructive" });
+    }
+  };
+
+  const handleStartEdit = (n: any) => {
+    setEditingNoteId(n.id);
+    setEditContent(n.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null);
+    setEditContent("");
+  };
+
+  const handleSaveEdit = async (noteId: string) => {
+    if (!editContent.trim()) {
+      toast({ title: "Empty note", description: "Please type something", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await updateNote(noteId, editContent.trim());
+      setEditingNoteId(null);
+      setEditContent("");
+      toast({ title: "Updated", description: "Note updated" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "Unable to update note", variant: "destructive" });
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -110,24 +143,56 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
               <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                 {notes.map(n => (
                   <div key={n.id} className="group relative p-3 bg-muted/20 rounded-lg border border-border/50 hover:border-border transition-all">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
-                          {n.content}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {formattedDates[n.id] || 'Loading...'}
-                        </p>
+                    {editingNoteId === n.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="min-h-[60px] resize-none bg-background"
+                          disabled={editSaving}
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={editSaving}>
+                            Cancel
+                          </Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(n.id)} disabled={editSaving || !editContent.trim()}>
+                            <Save className="h-3.5 w-3.5 mr-1" />
+                            {editSaving ? "Saving..." : "Save"}
+                          </Button>
+                        </div>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all" 
-                        onClick={() => handleDelete(n.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    ) : (
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
+                            {n.content}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {formattedDates[n.id] || 'Loading...'}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:bg-muted transition-all" 
+                            onClick={() => handleStartEdit(n)}
+                            title="Edit note"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all" 
+                            onClick={() => handleDelete(n.id)}
+                            title="Delete note"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
