@@ -188,11 +188,22 @@ export const useCreateBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // ✅ CRITICAL FIX: Get effective account owner for multi-tenant support
+      // Team members should create settings for their account owner, not themselves
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
+      console.log('⚙️ [useCreateBusinessSettings] Creating settings for effectiveOwnerId:', effectiveOwnerId);
+
       const { data, error } = await supabase
         .from('business_settings')
         .insert({
           ...settings,
-          user_id: user.id,
+          user_id: effectiveOwnerId, // ✅ Use effective owner, not auth user
           features_enabled: settings.features_enabled as any,
           inventory_config: settings.inventory_config as any,
         })
