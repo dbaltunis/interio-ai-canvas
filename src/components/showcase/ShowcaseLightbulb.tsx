@@ -105,12 +105,12 @@ const welcomeSteps: VideoStep[] = [
     chapter: "library" 
   },
   
-  // Scene 8: Closing branding
+  // Scene 8: Closing with help system demonstration
   { 
     title: "Get Started", 
-    description: "Your complete platform for made-to-measure window treatments", 
+    description: "Step-by-step guidance on every page with global support", 
     Visual: Scene6Closing, 
-    duration: 5000, 
+    duration: 7000, 
     chapter: "closing" 
   },
 ];
