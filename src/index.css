@@ -1074,29 +1074,3 @@ html {
     size: A4;
   }
 }
-
-/* Teaching spotlight animations */
-@keyframes teaching-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.teaching-blink {
-  animation: teaching-blink 1.2s ease-in-out infinite;
-}
-
-@keyframes teaching-pulse-ring {
-  0% { 
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
-  }
-  70% { 
-    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
-  }
-  100% { 
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
-  }
-}
-
-.teaching-pulse-ring {
-  animation: teaching-pulse-ring 1.5s ease-out infinite;
-}
