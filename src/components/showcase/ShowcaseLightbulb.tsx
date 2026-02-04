@@ -110,7 +110,7 @@ const welcomeSteps: VideoStep[] = [
     title: "Get Started", 
     description: "Step-by-step guidance on every page with global support", 
     Visual: Scene6Closing, 
-    duration: 7000, 
+    duration: 10000, 
     chapter: "closing" 
   },
 ];

@@ -1279,17 +1279,28 @@ const KaraokeText = ({
 };
 
 export const Scene6Closing = ({ phase = 0 }: StepProps) => {
+  // SLOWER TIMING - 10 seconds total, sequential flow
   const showPageIcons = inPhase(phase, 0.05, 1);
-  const showHelpClick = inPhase(phase, 0.20, 0.45);
-  const showHelpPanel = inPhase(phase, 0.32, 0.58);
-  const showSupport = inPhase(phase, 0.48, 1);
-  const showFinalMessage = inPhase(phase, 0.72, 1);
+  const showHelpClick = inPhase(phase, 0.20, 0.42);      // Question mark pulsing - 2.2s
+  const showHelpPanel = inPhase(phase, 0.28, 0.62);      // EXTENDED: 3.4s visibility  
+  const showSupport = inPhase(phase, 0.58, 1);           // Delayed start
+  const showFinalMessage = inPhase(phase, 0.78, 1);      // Delayed start
+  
+  // Stagger each step in the help panel
+  const helpPanelProgress = phaseProgress(phase, 0.28, 0.55);
   
   const pages = [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Jobs", icon: FileText },
     { name: "Library", icon: Package },
     { name: "Settings", icon: Settings },
+  ];
+  
+  const helpSteps = [
+    "Create your first project",
+    "Add rooms and windows", 
+    "Select fabrics and hardware",
+    "Generate quote and send"
   ];
   
   return (
@@ -1318,7 +1329,7 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
             key={page.name}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: i * 0.12, duration: 0.4 }}
             className="relative flex flex-col items-center"
           >
             {/* Larger icon box - w-14 h-14 */}
@@ -1333,10 +1344,10 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
             <motion.div 
               className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-md"
               animate={showHelpClick && i === 0 ? { 
-                scale: [1, 1.25, 1],
-                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 10px rgba(59, 130, 246, 0.35)', '0 0 0 0 rgba(59, 130, 246, 0)']
+                scale: [1, 1.3, 1],
+                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 12px rgba(59, 130, 246, 0.4)', '0 0 0 0 rgba(59, 130, 246, 0)']
               } : {}}
-              transition={{ duration: 1.2, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
+              transition={{ duration: 1.4, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
             >
               <HelpCircle className="h-4 w-4 text-white" strokeWidth={2.5} />
             </motion.div>
@@ -1344,7 +1355,7 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         ))}
       </motion.div>
       
-      {/* Guidance message - KARAOKE STYLE */}
+      {/* Guidance message - KARAOKE STYLE - slower reveal */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: showPageIcons ? 1 : 0 }}
@@ -1353,97 +1364,99 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         <KaraokeText 
           text="Every page has step-by-step guidance"
           startPhase={0.08}
-          endPhase={0.25}
+          endPhase={0.26}
           phase={phase}
         />
       </motion.div>
       
-      {/* Help panel preview - LARGER */}
-      <AnimatePresence>
+      {/* Help panel preview - IMPROVED: larger, header, staggered steps */}
+      <AnimatePresence mode="wait">
         {showHelpPanel && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            initial={{ opacity: 0, scale: 0.92, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-card border-2 rounded-xl shadow-xl p-4 mb-4 max-w-[280px]"
+            exit={{ opacity: 0, scale: 0.92, y: -10 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="bg-card border-2 border-primary/20 rounded-xl shadow-xl p-5 mb-5 max-w-[320px]"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-semibold">Quick Guide</span>
+            {/* Panel header */}
+            <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Lightbulb className="h-5 w-5 text-amber-500" />
+              </div>
+              <span className="text-base font-semibold">Quick Guide</span>
             </div>
-            <div className="space-y-2.5 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">1</div>
-                <span>Create your first project</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">2</div>
-                <span>Add rooms and windows</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">3</div>
-                <span>Select fabrics and hardware</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">4</div>
-                <span>Generate quote and send</span>
-              </div>
+            
+            {/* Steps with staggered animation */}
+            <div className="space-y-3">
+              {helpSteps.map((step, i) => {
+                // Each step reveals progressively
+                const stepVisible = helpPanelProgress > (i * 0.22);
+                
+                return (
+                  <motion.div 
+                    key={i}
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ 
+                      opacity: stepVisible ? 1 : 0.3, 
+                      x: stepVisible ? 0 : -8 
+                    }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  >
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors duration-300 ${
+                      stepVisible ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {i + 1}
+                    </div>
+                    <span className={`text-sm transition-colors duration-300 ${
+                      stepVisible ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>{step}</span>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Support section - LARGER FLAGS + KARAOKE TEXT */}
+      {/* Support section - LARGER FLAGS + KARAOKE TEXT - delayed start */}
       <AnimatePresence>
         {showSupport && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
             className="text-center max-w-sm"
           >
-            {/* Larger flags - text-2xl */}
+            {/* Larger flags - text-2xl with stagger */}
             <div className="flex justify-center gap-4 mb-3">
-              <motion.span 
-                className="text-2xl"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0 }}
-              >🇳🇿</motion.span>
-              <motion.span 
-                className="text-2xl"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >🇬🇧</motion.span>
-              <motion.span 
-                className="text-2xl"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >🇪🇺</motion.span>
-              <motion.span 
-                className="text-2xl"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >🇺🇸</motion.span>
+              {['🇳🇿', '🇬🇧', '🇪🇺', '🇺🇸'].map((flag, i) => (
+                <motion.span 
+                  key={flag}
+                  className="text-2xl"
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: i * 0.12, duration: 0.3 }}
+                >{flag}</motion.span>
+              ))}
             </div>
             
-            {/* Karaoke support text */}
+            {/* Karaoke support text - slower reveal */}
             <p className="text-sm mb-2">
               <KaraokeText 
                 text="Need help? Contact your sales administrator."
-                startPhase={0.52}
-                endPhase={0.65}
+                startPhase={0.60}
+                endPhase={0.72}
                 phase={phase}
               />
             </p>
             <p className="text-sm text-muted-foreground">
               <KaraokeText 
                 text="We're here to support your business every step of the way."
-                startPhase={0.60}
-                endPhase={0.75}
+                startPhase={0.68}
+                endPhase={0.82}
                 phase={phase}
               />
             </p>
@@ -1451,25 +1464,26 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
         )}
       </AnimatePresence>
       
-      {/* Final encouraging message - LARGER + KARAOKE */}
+      {/* Final encouraging message - LARGER + KARAOKE - delayed */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: showFinalMessage ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
         className="mt-5 text-center"
       >
         <h2 className="text-xl font-bold mb-2">
           <KaraokeText 
             text="You're all set!"
-            startPhase={0.74}
-            endPhase={0.82}
+            startPhase={0.80}
+            endPhase={0.88}
             phase={phase}
           />
         </h2>
         <p className="text-base">
           <KaraokeText 
             text="Start creating beautiful window treatments"
-            startPhase={0.80}
-            endPhase={0.95}
+            startPhase={0.85}
+            endPhase={0.98}
             phase={phase}
           />
         </p>
