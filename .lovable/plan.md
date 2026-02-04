@@ -1,122 +1,86 @@
 
-# Setup Laela Account with Invoice Subscription
 
-## Account Details
-- **Email**: baltunis+laela@curtainscalculator.com
-- **User ID**: `4eebf4ef-bc13-4e57-b120-32a0ca281932`
-- **Display Name**: InterioApp
-- **Current Status**: No subscription, no invoices
+# Upload Invoice PDF for Laela Account & Enable Download
 
-## Invoice Details (from PDF CC-114)
-| Field | Value |
-|-------|-------|
-| Invoice Number | CC-114 |
-| Invoice Date | 2026-01-30 |
-| Amount (Net) | €2,496.00 |
-| VAT (21%) | €524.00 |
-| **Total** | **€3,020.00** |
-| Description | Annual Application Subscription 2025-02-01 to 2026-02-01 |
-| Status | Pending (Unpaid) |
-| Setup Fee | None (as noted on invoice) |
+## Current Issues
 
----
+1. **Invoice CC-114 needs PDF attachment** - The custom invoice record needs a `pdf_url` 
+2. **Pending invoices can't be downloaded** - The `UpcomingPayments` component doesn't have a download button
 
-## Database Changes Required
+## Implementation Steps
 
-### Step 1: Create Active Invoice-Based Subscription
+### Step 1: Upload PDF to Storage
 
-```sql
-INSERT INTO public.user_subscriptions (
-  user_id,
-  plan_id,
-  status,
-  subscription_type,
-  current_period_start,
-  current_period_end,
-  total_users,
-  admin_notes
-) VALUES (
-  '4eebf4ef-bc13-4e57-b120-32a0ca281932',
-  'd1b3e66f-4e86-4302-ba71-538d843a2742',  -- All-In Custom plan
-  'active',
-  'invoice',
-  '2025-02-01'::timestamp,
-  '2026-02-01'::timestamp,
-  1,
-  'Annual invoice billing (CC-114). No setup fee. Invoice pending payment.'
-);
-```
+Upload the invoice PDF to the `business-assets` bucket (public bucket, suitable for invoices):
 
-This creates:
-- **Status**: `active` (they can use the app)
-- **Subscription Type**: `invoice` (bypasses Stripe, manually managed)
-- **Period**: Feb 1, 2025 - Feb 1, 2026
+**File location:** `business-assets/invoices/CC-114.pdf`
 
----
+**Action:** Copy the uploaded PDF to the project's public storage
 
-### Step 2: Create Pending Custom Invoice
+### Step 2: Create Storage Path for Invoices
 
-```sql
-INSERT INTO public.custom_invoices (
-  user_id,
-  description,
-  invoice_number,
-  amount,
-  currency,
-  status,
-  invoice_date,
-  due_date,
-  payment_type,
-  notes
-) VALUES (
-  '4eebf4ef-bc13-4e57-b120-32a0ca281932',
-  'Annual Application Subscription (2025-02-01 to 2026-02-01)',
-  'CC-114',
-  3020.00,  -- Total including VAT
-  'EUR',
-  'pending',
-  '2026-01-30',
-  '2026-02-28',  -- Due date (30 days from invoice)
-  'subscription',
-  'Metinis aplikacijos abonementas. Suma be PVM: €2,496.00, PVM 21%: €524.00. Mokėjimas laukiamas.'
-);
-```
+Create a folder structure in the `business-assets` bucket for invoice PDFs:
+- Path: `invoices/{invoice-number}.pdf`
+- This will be accessible via: `https://ldgrcodffsalkevafbkb.supabase.co/storage/v1/object/public/business-assets/invoices/CC-114.pdf`
 
-This creates:
-- **Status**: `pending` (unpaid)
-- **Amount**: €3,020.00 (including VAT)
-- **Payment Type**: `subscription`
-- **Due Date**: Feb 28, 2026
+### Step 3: Update Custom Invoice with PDF URL
 
----
-
-## What This Achieves
-
-1. ✅ **Account shows as "Active"** - User can log in and use all features
-2. ✅ **Invoice visible in billing** - CC-114 appears in their Custom Invoices tab
-3. ✅ **Invoice marked as Pending** - Shows as unpaid until you update it
-4. ✅ **No setup fee** - Only the annual subscription invoice
-5. ✅ **Invoice downloadable** - Users can view/download from their billing page
-
----
-
-## When Payment is Received
-
-Run this SQL to mark as paid:
-
+Run SQL to update the invoice record:
 ```sql
 UPDATE public.custom_invoices 
-SET status = 'paid', paid_at = NOW() 
+SET pdf_url = 'https://ldgrcodffsalkevafbkb.supabase.co/storage/v1/object/public/business-assets/invoices/CC-114.pdf'
 WHERE invoice_number = 'CC-114' 
   AND user_id = '4eebf4ef-bc13-4e57-b120-32a0ca281932';
 ```
 
+### Step 4: Add Download Button to UpcomingPayments
+
+**File:** `src/components/billing/UpcomingPayments.tsx`
+
+Add a download button to the `PaymentCard` component so users can download pending invoice PDFs:
+
+```typescript
+// Add to imports
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// In PaymentCard, after the due date section (line 54)
+{payment.pdf_url && (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full mt-2"
+    onClick={() => window.open(payment.pdf_url!, '_blank')}
+  >
+    <Download className="h-4 w-4 mr-2" />
+    Download Invoice
+  </Button>
+)}
+```
+
 ---
 
-## Summary
+## Files to Modify
 
-| Action | Details |
-|--------|---------|
-| Create Subscription | `active` status, `invoice` type, All-In Custom plan |
-| Create Invoice | CC-114, €3,020.00, `pending` status |
-| Affected Account | baltunis+laela@curtainscalculator.com ONLY |
+| File | Change |
+|------|--------|
+| Upload PDF | Copy `CC-114-2.pdf` to `business-assets/invoices/CC-114.pdf` |
+| Database | Update `custom_invoices` record with `pdf_url` |
+| `src/components/billing/UpcomingPayments.tsx` | Add download button for pending invoices |
+
+---
+
+## Expected Outcome
+
+After implementation:
+
+1. ✅ **Laela account** can see their pending invoice in "Upcoming Payments"
+2. ✅ **Download button visible** - They can download the PDF while invoice is pending
+3. ✅ **Invoice accessible** - PDF stored in public bucket, directly downloadable
+
+---
+
+## Note on Invoice Creation
+
+The subscription and invoice records for Laela still need to be created (as discussed previously). The SQL commands provided earlier should be run first before updating the `pdf_url`.
+
