@@ -1,8 +1,7 @@
 
+## UI/UX Improvements for Room Button, Supplier Indicator & Library Cards
 
-## Remove Teaching Spotlight from Jobs Page
-
-Clean surgical removal of the teaching spotlight system from the Jobs page to restore performance. Infrastructure files remain intact for future use.
+Three focused improvements to enhance visual polish and reduce clutter in the material selection experience.
 
 ---
 
@@ -10,123 +9,168 @@ Clean surgical removal of the teaching spotlight system from the Jobs page to re
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Modify | Remove all teaching imports, hooks, and wrapper components |
-| `src/config/teachingPoints.ts` | Modify | Remove `app-job-add-client` teaching point config |
-| `src/index.css` | Modify | Remove teaching animation CSS (optional cleanup) |
+| `src/components/job-creation/RoomsGrid.tsx` | Modify | Pass room index to each RoomCard |
+| `src/components/job-creation/RoomCard.tsx` | Modify | Only show blinking on first room with no worksheets |
+| `src/components/inventory/InventorySelectionPanel.tsx` | Modify | Compact TWC indicator + smaller grid cards |
+| `src/components/inventory/RecentSelectionsRow.tsx` | Modify | More compact recently used section |
 
 ---
 
-### Technical Details
+### 1. Blinking Only on First Room (When Empty)
 
-#### 1. ProjectDetailsTab.tsx
-
-**Remove import (line 34):**
+**RoomsGrid.tsx** - Pass index to RoomCard:
 ```tsx
-// DELETE THIS LINE:
-import { TeachingTrigger, useTeachingTrigger } from "@/components/teaching";
+rooms.map((room, index) => (
+  <RoomCard 
+    key={room.id}
+    room={room}
+    isFirstRoom={index === 0}  // NEW prop
+    // ... other props
+  />
+))
 ```
 
-**Remove hook usage (lines 433-435):**
+**RoomCard.tsx** - Accept prop and conditionally animate:
 ```tsx
-// DELETE THESE LINES:
-const { isActive: isAddClientTeachingActive } = useTeachingTrigger('app-job-add-client');
-const showAddClientTeaching = !selectedClient && !isReadOnly;
+interface RoomCardProps {
+  // ... existing props
+  isFirstRoom?: boolean;  // NEW
+}
+
+// In the button:
+<Button
+  className={cn(
+    "flex-1",
+    isFirstRoom && roomSurfaces.length === 0 && "animate-attention-ring"
+  )}
+>
 ```
 
-**Replace AddClientButton component (lines 437-458):**
+Logic: Animation only appears when:
+- It's the first room (`isFirstRoom === true`)
+- Room has no measurement worksheets yet (`roomSurfaces.length === 0`)
 
-Before:
+---
+
+### 2. Compact TWC Linked Materials Indicator
+
+**Current** (Lines 943-952):
 ```tsx
-const AddClientButton = () => (
-  <TeachingTrigger 
-    teachingId="app-job-add-client" 
-    autoShow={showAddClientTeaching}
-    autoShowDelay={800}
-  >
+<div className="flex items-center gap-2 py-1.5 px-3 border border-primary/30 bg-primary/10 rounded-md">
+  <Building2 className="h-3.5 w-3.5 text-primary" />
+  <span className="text-xs font-medium text-primary">TWC Linked Materials</span>
+  <Badge variant="secondary" className="ml-auto text-[10px]">
+    {treatmentFabrics.length} items
+  </Badge>
+</div>
+```
+
+**Improved** - More subtle, better spacing:
+```tsx
+<div className="flex items-center gap-1.5 mt-2 py-1 px-2 bg-muted/50 rounded text-muted-foreground">
+  <Building2 className="h-3 w-3" />
+  <span className="text-[10px] font-medium">TWC Linked</span>
+  <Badge variant="outline" className="ml-auto text-[9px] h-4 px-1">
+    {treatmentFabrics.length}
+  </Badge>
+</div>
+```
+
+Changes:
+- Smaller icon (h-3 → was h-3.5)
+- Reduced padding (py-1 px-2 → was py-1.5 px-3)
+- Shorter text ("TWC Linked" → was "TWC Linked Materials")
+- Subtle background (bg-muted/50 → was bg-primary/10)
+- Added top margin for spacing from search
+
+---
+
+### 3. Smaller Library Cards (More Columns)
+
+**Current grid** (Line 1194):
+```tsx
+grid-cols-2 md:grid-cols-3 lg:grid-cols-4
+```
+
+**Improved** - More compact, matches recently used size:
+```tsx
+grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6
+```
+
+This increases density by ~50%, making cards closer to the `w-24` (96px) size used in Recently Used.
+
+---
+
+### 4. More Compact Recently Used Section
+
+**Current** (RecentSelectionsRow.tsx):
+- Padding: `py-2`
+- Header margin: `mb-2`
+- Cards: `w-24` (keep as-is - user likes this size)
+
+**Improved**:
+```tsx
+<div className={cn("py-1.5", className)}>  // Reduced from py-2
+  <div className="flex items-center justify-between mb-1">  // Reduced from mb-2
+    <div className="flex items-center gap-1">  // Reduced from gap-1.5
+      <Clock className="h-3 w-3 text-muted-foreground" />  // Reduced from h-3.5
+      <span className="text-[10px] font-medium text-muted-foreground">Recent</span>  // Shortened + smaller
+      {/* Remove badge to save space - count is visible from items */}
+    </div>
     <Button 
       variant="ghost" 
-      size="sm"
-      onClick={() => setShowClientSearch(true)}
-      disabled={isReadOnly}
-      className={cn(
-        "shrink-0 h-8 w-8 p-0",
-        isAddClientTeachingActive && !selectedClient && "teaching-pulse-ring ring-2 ring-primary ring-offset-2 ring-offset-background"
-      )}
-      data-teaching="add-client-action"
+      size="sm" 
+      className="h-5 px-1.5 text-[9px] text-muted-foreground hover:text-destructive"  // Smaller
     >
-      {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
+      <X className="h-2.5 w-2.5 mr-0.5" />
+      Clear
     </Button>
-  </TeachingTrigger>
-);
+  </div>
+  
+  <ScrollArea className="w-full">
+    <div className="flex gap-1.5 pb-1">  // Reduced from gap-2 pb-2
+      {/* Cards stay same size (w-24) */}
+    </div>
+  </ScrollArea>
+</div>
 ```
 
-After (simple button, no teaching wrapper):
-```tsx
-const AddClientButton = () => (
-  <Button 
-    variant="ghost" 
-    size="sm"
-    onClick={() => setShowClientSearch(true)}
-    disabled={isReadOnly}
-    className="shrink-0 h-8 w-8 p-0"
-  >
-    {selectedClient ? <Edit className="h-3.5 w-3.5" /> : <Plus className="h-4 w-4" />}
-  </Button>
-);
-```
+Changes:
+- Reduced vertical padding throughout
+- Shorter label text ("Recent" → was "Recently Used")
+- Smaller icon and button
+- Removed count badge (visible from items themselves)
+- Tighter gaps between cards
 
 ---
 
-#### 2. teachingPoints.ts
+### Visual Summary
 
-Remove the `app-job-add-client` entry from the teaching points array (around lines 333-341):
-
-```tsx
-// DELETE THIS ENTIRE BLOCK:
-{
-  id: 'app-job-add-client',
-  title: 'Add or Create a Client',
-  description: 'Click here to assign an existing client or create a new one for this project.',
-  targetSelector: '[data-teaching="add-client-action"]',
-  position: 'bottom',
-  trigger: { type: 'empty_state', page: '/app', section: 'job-details' },
-  priority: 'high',
-  category: 'app',
-},
+```text
+BEFORE:                              AFTER:
+┌─────────────────────┐             ┌─────────────────────┐
+│ [Search...]    [+]  │             │ [Search...]    [+]  │
+│                     │             │                     │
+│ ┌─────────────────┐ │             │ TWC Linked      4   │ (smaller, muted)
+│ │ TWC Linked      │ │             │                     │
+│ │ Materials   4   │ │             │ 🕐 Recent    Clear  │ (compact header)
+│ └─────────────────┘ │             │ [▪][▪][▪]           │ (less padding)
+│                     │             │─────────────────────│
+│ 🕐 Recently Used  2 │             │ [▪][▪][▪][▪][▪][▪]  │ (6 cols)
+│    [Clear]          │             │ [▪][▪][▪][▪][▪][▪]  │
+│ [▪▪][▪▪]            │             │ [▪][▪][▪][▪][▪][▪]  │
+│                     │             └─────────────────────┘
+│ [  ▪  ][  ▪  ]      │
+│ [  ▪  ][  ▪  ]      │ (4 cols max)
+│ [  ▪  ][  ▪  ]      │
+└─────────────────────┘
 ```
-
----
-
-#### 3. index.css (Optional Cleanup)
-
-Remove teaching animation CSS (lines 1079-1102):
-
-```css
-/* DELETE THESE LINES: */
-@keyframes teaching-blink { ... }
-.teaching-blink { ... }
-@keyframes teaching-pulse-ring { ... }
-.teaching-pulse-ring { ... }
-```
-
-Note: Keep these if other pages still use the teaching system.
-
----
-
-### What Gets Preserved
-
-The following infrastructure files remain untouched for future use:
-- `src/components/teaching/` folder (all components)
-- `src/contexts/TeachingContext.tsx`
-- `src/config/teachingPoints.ts` (other teaching points remain)
 
 ---
 
 ### Expected Results
 
-After these changes:
-- Jobs page performance returns to normal immediately
-- No more infinite render loops from teaching hooks
-- "Add Client" button works as a standard button
-- Teaching system infrastructure remains available for future features
-
+1. **Room button**: Blinking ring only on first room until a worksheet is added
+2. **TWC indicator**: Takes less vertical space, doesn't crowd the search bar
+3. **Library cards**: Smaller and denser, matching the recently used feel
+4. **Recently used**: More compact header, saves ~15-20px vertical space
