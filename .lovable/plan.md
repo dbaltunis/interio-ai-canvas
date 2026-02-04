@@ -1,104 +1,144 @@
 
-# Fix Pricing for Awnings & Norman SmartDrapes (Greg Shave / CCCO)
+# Fix Pricing Grid Data Persistence for Awnings & SmartDrapes
 
-## Root Cause Identified
+## Problem Summary
 
-The pricing grid resolution in `useFabricEnrichment.ts` has incomplete subcategory-to-product-type mappings:
+Greg Shave's (CCCO) awning and SmartDrape windows show **$0 pricing** because critical fields are missing when saving to `windows_summary`:
 
-```typescript
-// CURRENT (lines 48-53) - Only handles venetian and roller
-const productTypeForGrid = fabricItem.subcategory?.includes('venetian') 
-  ? 'venetian_blinds' 
-  : fabricItem.subcategory?.includes('roller')
-  ? 'roller_blinds'
-  : productCategory;  // ← awning_fabric and vertical_fabric fall through here incorrectly
+| Field | Status | Impact |
+|-------|--------|--------|
+| `subcategory` in fabric_details | ❌ MISSING | Awning fabrics can't map to `awning` grids |
+| `subcategory` in material_details | ❌ MISSING | SmartDrape materials lose `vertical_fabric` mapping |
+
+## Evidence from Database
+
+**Awning Window (`08e3a515-...`):**
+```json
+{
+  "fabric_details": {
+    "name": "Auto - DAYSCREEN 95",
+    "price_group": "Auto-Budget",
+    "product_category": null  // ← Missing subcategory to identify as awning
+  },
+  "total_cost": 0,
+  "total_selling": 0
+}
 ```
 
-**Missing mappings:**
-- `awning_fabric` → should map to `awning`
-- `vertical_fabric` / `vertical_slats` → should map to `vertical_blinds`
+**Source Item Has Correct Data:**
+```json
+{
+  "name": "Auto - DAYSCREEN 95",
+  "subcategory": "awning_fabric",  // ← This is NOT saved!
+  "price_group": "Auto-Budget"
+}
+```
 
-The grids exist in CCCO's account and materials have correct price groups, but the code doesn't map them properly during enrichment.
+## Solution
 
----
+### Fix 1: Add `subcategory` to fabric_details (autoSave)
 
-## Fix #1: Update Fabric Enrichment Mapping
+**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
+**Lines:** 2190-2207
 
-**File:** `src/hooks/pricing/useFabricEnrichment.ts`
-
-Replace lines 48-53 with comprehensive mapping:
+Add the missing `subcategory` field:
 
 ```typescript
-// Map subcategory to product_type for grid lookup
-const subcategory = fabricItem.subcategory?.toLowerCase() || '';
-let productTypeForGrid = productCategory;
+fabric_details: selectedItems.fabric ? {
+  id: selectedItems.fabric.id,
+  name: selectedItems.fabric.name,
+  fabric_width: selectedItems.fabric.fabric_width ?? selectedItems.fabric.wallpaper_roll_width ?? null,
+  cost_price: selectedItems.fabric.cost_price,
+  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
+  category: selectedItems.fabric.category,
+  subcategory: selectedItems.fabric.subcategory,  // ← ADD THIS
+  image_url: selectedItems.fabric.image_url,
+  // ... rest unchanged
+} : null,
+```
 
-if (subcategory.includes('venetian')) {
-  productTypeForGrid = 'venetian_blinds';
-} else if (subcategory.includes('roller')) {
-  productTypeForGrid = 'roller_blinds';
-} else if (subcategory.includes('vertical') || subcategory.includes('smartdrape')) {
-  productTypeForGrid = 'vertical_blinds';
-} else if (subcategory.includes('awning')) {
-  productTypeForGrid = 'awning';
-} else if (subcategory.includes('cellular') || subcategory.includes('honeycomb')) {
-  productTypeForGrid = 'cellular_blinds';
-} else if (subcategory.includes('roman')) {
-  productTypeForGrid = 'roman_blinds';
+### Fix 2: Add `subcategory` to material_details (autoSave)
+
+**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
+**Lines:** 2219-2232
+
+Add the missing `subcategory` field:
+
+```typescript
+material_details: selectedItems.material ? {
+  id: selectedItems.material.id,
+  name: selectedItems.material.name,
+  selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
+  image_url: selectedItems.material.image_url,
+  color: measurements.selected_color || selectedItems.material.tags?.[0] || selectedItems.material.color || null,
+  subcategory: selectedItems.material.subcategory,  // ← ADD THIS
+  // ... rest unchanged
+} : null,
+```
+
+### Fix 3: Add `subcategory` to fabric_details (handleItemSelect)
+
+**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
+**Lines:** 2674-2688
+
+```typescript
+fabric_details: {
+  id: item.id,
+  fabric_id: item.id,
+  name: item.name,
+  fabric_type: item.name,
+  fabric_width: item.fabric_width || item.wallpaper_roll_width,
+  selling_price: item.selling_price || item.unit_price,
+  cost_price: item.cost_price,  // ← Also add cost_price for consistency
+  category: item.category,
+  subcategory: item.subcategory,  // ← ADD THIS
+  image_url: item.image_url,
+  // ... rest unchanged
 }
 ```
 
 ---
 
-## Fix #2: Update isBlindTreatment Detection
+## Why This Fixes the Issue
 
-**File:** `src/utils/pricing/calculateTreatmentPricing.ts`
-
-Add missing categories to `isBlindTreatment` check (lines 167-176):
+The `useFabricEnrichment` hook (lines 44-65) maps `subcategory` to `productTypeForGrid`:
 
 ```typescript
-const isBlindTreatment = treatmentCategory.includes('blind') || 
-                         treatmentCategory === 'shutters' ||
-                         treatmentCategory.includes('awning') ||  // ADD
-                         treatmentCategory.includes('drape') ||   // ADD (SmartDrape)
-                         templateName.includes('blind') ||
-                         templateName.includes('roman') ||
-                         templateName.includes('roller') ||
-                         templateName.includes('venetian') ||
-                         templateName.includes('vertical') ||
-                         templateName.includes('cellular') ||
-                         templateName.includes('honeycomb') ||
-                         templateName.includes('shutter') ||
-                         templateName.includes('awning') ||       // ADD
-                         templateName.includes('smartdrape');     // ADD
+if (subcategory.includes('awning')) {
+  productTypeForGrid = 'awning';
+} else if (subcategory.includes('vertical') || subcategory.includes('smartdrape')) {
+  productTypeForGrid = 'vertical_blinds';
+}
 ```
 
----
-
-## Verification Data
-
-CCCO account already has:
-- **12 awning pricing grids** (AUTO-1, AUTO-2, STRAIGHT-1, ZIP-1, etc.)
-- **4 vertical blinds grids** (including Norman 0_LF_AIR)
-- **Awning fabrics with matching price groups** (e.g., "Auto - DAYSCREEN 95" → Auto-Budget)
-- **Vertical materials with matching price groups** (e.g., "Lakeshore Stripe LF" → 0_LF_AIR)
-
-The data is correct - only the code mapping is missing.
+Without `subcategory` in the persisted data, the grid auto-matcher receives incorrect product type and fails to find matching grids.
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/hooks/pricing/useFabricEnrichment.ts` | Add awning, vertical, smartdrape subcategory mappings |
-| `src/utils/pricing/calculateTreatmentPricing.ts` | Add awning/drape to isBlindTreatment detection |
+| File | Lines | Change |
+|------|-------|--------|
+| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2196 | Add `subcategory` to fabric_details in autoSave |
+| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2219-2232 | Add `subcategory` to material_details in autoSave |
+| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2674-2688 | Add `subcategory` and `cost_price` to fabric_details in handleItemSelect |
 
 ---
 
-## Expected Result
+## Expected Outcome
 
-After these fixes:
-- Awning fabrics will resolve to awning pricing grids
-- Norman SmartDrape materials will resolve to vertical_blinds pricing grids
-- Grid prices will calculate correctly for Greg's quotes
+After this fix:
+
+1. **New windows:** Awning and SmartDrape windows will calculate prices correctly and persist them
+2. **Existing windows:** Need to be re-saved (open worksheet → save) to populate the missing subcategory
+3. **Room/Quote display:** Will show correct prices instead of $0
+
+---
+
+## Note on SmartDrape Template Issue
+
+The SmartDrape template has `pricing_grid_data: {}` (empty) and `price_group: null`. This means:
+- Users must select a **specific SmartDrape material** from the library (like "Lakeshore Stripe LF")
+- The template alone won't provide pricing without a material selection with a valid `price_group`
+
+This is expected behavior - the template defines the treatment type, but materials with price groups drive the grid pricing.
