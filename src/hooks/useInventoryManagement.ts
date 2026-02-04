@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 interface Inventory {
   id: string;
@@ -85,13 +86,13 @@ export const useCreateInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (item: Omit<Inventory, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
       
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .insert({
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: item.name,
           description: item.description || '',
           sku: item.sku || '',

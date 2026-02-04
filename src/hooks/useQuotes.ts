@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber, syncSequenceCounter } from "./useNumberSequenceGeneration";
@@ -68,8 +69,8 @@ export const useCreateQuote = () => {
 
   return useMutation({
     mutationFn: async (quote: Omit<QuoteInsert, "user_id" | "quote_number"> & { quote_number?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       // Check if a quote already exists for this project
       if (quote.project_id) {
@@ -77,7 +78,7 @@ export const useCreateQuote = () => {
           .from("quotes")
           .select("*")
           .eq("project_id", quote.project_id)
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveOwnerId)
           .maybeSingle();
         
         if (existingQuote) {
@@ -100,7 +101,7 @@ export const useCreateQuote = () => {
         }
         
         const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
-          p_user_id: user.id,
+          p_user_id: effectiveOwnerId,
           p_entity_type: entityType,
         });
         
@@ -110,7 +111,7 @@ export const useCreateQuote = () => {
           const { count } = await supabase
             .from("quotes")
             .select("*", { count: 'exact', head: true })
-            .eq("user_id", user.id);
+            .eq("user_id", effectiveOwnerId);
           
           quoteNumber = `QT-${String(((count || 0) + 1)).padStart(4, '0')}`;
         } else {
@@ -124,7 +125,7 @@ export const useCreateQuote = () => {
         const { data: firstStatus } = await supabase
           .from("job_statuses")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveOwnerId)
           .eq("category", "Quote")
           .eq("is_active", true)
           .order("slot_number", { ascending: true })
@@ -138,7 +139,7 @@ export const useCreateQuote = () => {
         .from("quotes")
         .insert({
           ...quote,
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           quote_number: quoteNumber,
           status_id: statusId,
         })

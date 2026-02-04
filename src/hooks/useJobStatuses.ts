@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type JobStatus = Tables<"job_statuses">;
@@ -39,14 +40,14 @@ export const useCreateJobStatus = () => {
 
   return useMutation({
     mutationFn: async (status: Omit<JobStatusInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("job_statuses")
         .insert({
           ...status,
-          user_id: user.id
+          user_id: effectiveOwnerId
         })
         .select()
         .single();

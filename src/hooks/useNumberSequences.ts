@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { useEffect } from "react";
 
 export type EntityType = 'draft' | 'quote' | 'order' | 'invoice' | 'job';
@@ -56,14 +57,14 @@ export const useCreateNumberSequence = () => {
 
   return useMutation({
     mutationFn: async (sequence: Omit<NumberSequence, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       const { data, error } = await supabase
         .from("number_sequences")
         .insert({
           ...sequence,
-          user_id: user.id,
+          user_id: effectiveOwnerId,
         })
         .select()
         .single();

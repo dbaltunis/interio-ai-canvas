@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
@@ -265,8 +266,8 @@ export const useCreateTreatment = () => {
         }
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      // FIX: Use effectiveOwnerId for multi-tenant support
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
       // Ensure quote_id is provided
       let treatmentWithQuote = { ...treatment };
@@ -293,7 +294,7 @@ export const useCreateTreatment = () => {
         fabric_details: safeStringifyJSON(treatmentWithQuote.fabric_details, 'fabric_details'),
         treatment_details: safeStringifyJSON(treatmentWithQuote.treatment_details, 'treatment_details'),
         calculation_details: safeStringifyJSON(treatmentWithQuote.calculation_details, 'calculation_details'),
-        user_id: user.id
+        user_id: effectiveOwnerId
       };
 
       console.log("Processed treatment for insertion:", processedTreatment);
