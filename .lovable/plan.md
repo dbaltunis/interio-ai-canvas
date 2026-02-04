@@ -1,144 +1,74 @@
 
-# Fix Pricing Grid Data Persistence for Awnings & SmartDrapes
+# Fix Stock Badges & Drop Arrow Visibility
 
-## Problem Summary
+## Issues Identified
 
-Greg Shave's (CCCO) awning and SmartDrape windows show **$0 pricing** because critical fields are missing when saving to `windows_summary`:
+### Issue 1: Stock Badges Still Visible
+**Screenshot Evidence:** "Out" badges showing on items that shouldn't have tracking
 
-| Field | Status | Impact |
-|-------|--------|--------|
-| `subcategory` in fabric_details | ❌ MISSING | Awning fabrics can't map to `awning` grids |
-| `subcategory` in material_details | ❌ MISSING | SmartDrape materials lose `vertical_fabric` mapping |
-
-## Evidence from Database
-
-**Awning Window (`08e3a515-...`):**
-```json
-{
-  "fabric_details": {
-    "name": "Auto - DAYSCREEN 95",
-    "price_group": "Auto-Budget",
-    "product_category": null  // ← Missing subcategory to identify as awning
-  },
-  "total_cost": 0,
-  "total_selling": 0
-}
-```
-
-**Source Item Has Correct Data:**
-```json
-{
-  "name": "Auto - DAYSCREEN 95",
-  "subcategory": "awning_fabric",  // ← This is NOT saved!
-  "price_group": "Auto-Budget"
-}
-```
-
-## Solution
-
-### Fix 1: Add `subcategory` to fabric_details (autoSave)
-
-**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
-**Lines:** 2190-2207
-
-Add the missing `subcategory` field:
-
+**Root Cause:**
 ```typescript
-fabric_details: selectedItems.fabric ? {
-  id: selectedItems.fabric.id,
-  name: selectedItems.fabric.name,
-  fabric_width: selectedItems.fabric.fabric_width ?? selectedItems.fabric.wallpaper_roll_width ?? null,
-  cost_price: selectedItems.fabric.cost_price,
-  selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
-  category: selectedItems.fabric.category,
-  subcategory: selectedItems.fabric.subcategory,  // ← ADD THIS
-  image_url: selectedItems.fabric.image_url,
-  // ... rest unchanged
-} : null,
+// Line 734 - Current condition
+{item.track_inventory !== false && item.quantity !== undefined && (
 ```
+This shows badges when `track_inventory` is `null` or `undefined` (default state for most fabrics that don't need stock tracking).
 
-### Fix 2: Add `subcategory` to material_details (autoSave)
-
-**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
-**Lines:** 2219-2232
-
-Add the missing `subcategory` field:
-
+**Fix:**
 ```typescript
-material_details: selectedItems.material ? {
-  id: selectedItems.material.id,
-  name: selectedItems.material.name,
-  selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
-  image_url: selectedItems.material.image_url,
-  color: measurements.selected_color || selectedItems.material.tags?.[0] || selectedItems.material.color || null,
-  subcategory: selectedItems.material.subcategory,  // ← ADD THIS
-  // ... rest unchanged
-} : null,
+{item.track_inventory === true && item.quantity !== undefined && (
 ```
-
-### Fix 3: Add `subcategory` to fabric_details (handleItemSelect)
-
-**File:** `src/components/measurements/DynamicWindowWorksheet.tsx`  
-**Lines:** 2674-2688
-
-```typescript
-fabric_details: {
-  id: item.id,
-  fabric_id: item.id,
-  name: item.name,
-  fabric_type: item.name,
-  fabric_width: item.fabric_width || item.wallpaper_roll_width,
-  selling_price: item.selling_price || item.unit_price,
-  cost_price: item.cost_price,  // ← Also add cost_price for consistency
-  category: item.category,
-  subcategory: item.subcategory,  // ← ADD THIS
-  image_url: item.image_url,
-  // ... rest unchanged
-}
-```
+Only show stock badges when tracking is **explicitly enabled**.
 
 ---
 
-## Why This Fixes the Issue
+### Issue 2: Drop Arrow Missing & Units Hardcoded
+**Screenshot Evidence:** "Drop: 230cm" label appears at bottom instead of on right side with arrow
 
-The `useFabricEnrichment` hook (lines 44-65) maps `subcategory` to `productTypeForGrid`:
+**Root Causes:**
+1. **Clipping:** Container has `overflow-hidden` (line 185), clipping the drop measurement label positioned with `-right-12`
+2. **Hardcoded Units:** Line 157 uses `{measurements.drop}cm` instead of dynamic unit formatting
 
+**Fixes:**
+
+1. **Change overflow to visible:**
 ```typescript
-if (subcategory.includes('awning')) {
-  productTypeForGrid = 'awning';
-} else if (subcategory.includes('vertical') || subcategory.includes('smartdrape')) {
-  productTypeForGrid = 'vertical_blinds';
-}
+// Line 185: Change overflow-hidden to overflow-visible
+<div className={`relative min-h-[400px] ... overflow-visible ${className}`}>
 ```
 
-Without `subcategory` in the persisted data, the grid auto-matcher receives incorrect product type and fails to find matching grids.
+2. **Use dynamic unit formatting:**
+```typescript
+// Line 157: Use formatFromMM for proper unit display
+Drop: {formatFromMM(parseFloat(measurements.drop) || 0, units.length)}
+```
 
 ---
 
 ## Files to Modify
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2196 | Add `subcategory` to fabric_details in autoSave |
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2219-2232 | Add `subcategory` to material_details in autoSave |
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 2674-2688 | Add `subcategory` and `cost_price` to fabric_details in handleItemSelect |
+| File | Line | Change |
+|------|------|--------|
+| `src/components/inventory/InventorySelectionPanel.tsx` | 734 | Change `track_inventory !== false` to `track_inventory === true` |
+| `src/components/treatment-visualizers/CurtainVisualizer.tsx` | 185 | Change `overflow-hidden` to `overflow-visible` |
+| `src/components/treatment-visualizers/CurtainVisualizer.tsx` | 157 | Use `formatFromMM()` for drop measurement |
 
 ---
 
-## Expected Outcome
+## Expected Results
 
-After this fix:
-
-1. **New windows:** Awning and SmartDrape windows will calculate prices correctly and persist them
-2. **Existing windows:** Need to be re-saved (open worksheet → save) to populate the missing subcategory
-3. **Room/Quote display:** Will show correct prices instead of $0
+After these fixes:
+1. **Stock badges** only appear on fabrics with `track_inventory: true`
+2. **Drop arrow** fully visible on right side of curtain visualizer
+3. **Drop measurement** shows correct units (cm/in/mm) based on user preference
 
 ---
 
-## Note on SmartDrape Template Issue
+## Re: Awning & SmartDrape Pricing
 
-The SmartDrape template has `pricing_grid_data: {}` (empty) and `price_group: null`. This means:
-- Users must select a **specific SmartDrape material** from the library (like "Lakeshore Stripe LF")
-- The template alone won't provide pricing without a material selection with a valid `price_group`
+The code fixes are implemented. To verify they work for Greg Shave / CCCO:
+1. Open an awning or SmartDrape window in the measurement worksheet
+2. Select a fabric/material with a price group (e.g., "Auto - DAYSCREEN 95" with "Auto-Budget")
+3. Save the window
+4. Verify the price appears in the room display and quote
 
-This is expected behavior - the template defines the treatment type, but materials with price groups drive the grid pricing.
+**Note:** Existing windows need to be re-saved to populate the `subcategory` field added in the previous fix.
