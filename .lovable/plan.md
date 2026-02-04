@@ -1,109 +1,160 @@
 
-# Improve Project Scene with Beautiful Sketches & Extended Timing
+
+# Tutorial Improvements: Real Fabrics, Hardware Selection & Help System
 
 ## Overview
 
-Enhance `Scene5ProjectDeepDive` in the welcome video tutorial to:
-1. **Add proper curtain and blind visual sketches** in the treatment selection grid (replacing generic icons)
-2. **Extend timing** to give users more time to understand each step
-3. **Match the actual app flow** more accurately
+This plan addresses three improvements to make the tutorial more realistic and helpful:
+
+1. **Update fabric names** - Replace generic names with realistic plain fabric names and patterns
+2. **Add hardware & pricing section** - After measurements, show scrolling to hardware selection (curtain rod, lining) with total price and fabric usage display
+3. **Enhance closing scene** - Replace feature badges with a help system demonstration showing question marks on pages, step-by-step guidance, and professional support contact information
 
 ---
 
-## Current Issues
+## Changes
 
-| Issue | Current State | Fix |
-|-------|---------------|-----|
-| Treatment cards use generic `Layers` icon | No visual distinction between curtains/blinds/shutters | Add proper SVG sketches for each treatment type |
-| Timing too fast | Each step flashes by quickly | Extend scene duration from 15s to 18s and redistribute phases |
-| Measurement diagram is basic | Simple dashed rectangle with no character | Add a proper curtain sketch with folds and rail |
+### 1. Realistic Fabric Names in Library Step
+
+**Current fabric data (lines 584-589):**
+```tsx
+const fabrics = [
+  { id: "adara", name: "ADARA", price: "£26.50/m", width: "290cm", selected: selectFabric },
+  { id: "velvet", name: "Velvet Drapery", price: "£45.00/m", width: "140cm", selected: false },
+  { id: "linen", name: "Pure Linen", price: "£38.00/m", width: "300cm", selected: false },
+  { id: "silk", name: "Silk Blend", price: "£65.00/m", width: "140cm", selected: false },
+];
+```
+
+**Updated with realistic fabric names and patterns:**
+```tsx
+const fabrics = [
+  { id: "cotton-plain", name: "Cotton Plain", price: "£26.50/m", width: "290cm", pattern: "solid", color: "Natural", selected: selectFabric },
+  { id: "herringbone", name: "Herringbone Weave", price: "£42.00/m", width: "140cm", pattern: "texture", color: "Charcoal", selected: false },
+  { id: "linen-sheer", name: "Belgian Linen", price: "£38.00/m", width: "300cm", pattern: "sheer", color: "Ivory", selected: false },
+  { id: "jacquard", name: "Damask Jacquard", price: "£58.00/m", width: "140cm", pattern: "damask", color: "Gold", selected: false },
+];
+```
+
+**Updated fabric card visuals** - Add visual pattern indicators:
+- **Solid**: Plain gradient fill
+- **Texture**: Subtle diagonal lines (herringbone)
+- **Sheer**: Light transparent gradient
+- **Damask**: Subtle repeated motif pattern
 
 ---
 
-## Implementation
+### 2. Extended Measurements Step with Hardware Selection
 
-### Phase 1: Extend Scene Duration
+**New phase structure for Scene5:**
+- Current measurements phase: 0.42-0.55 (13% = 2.34s)
+- Need to extend to show: Scroll down → Hardware → Lining → Price summary
 
-Update `ShowcaseLightbulb.tsx` to increase Scene5's duration:
-
-```text
-Current: 15000ms (15 seconds)
-New: 18000ms (18 seconds)
+**Updated phase timing:**
+```tsx
+// Window Creation Popup phases
+const showMeasurementsStep = inPhase(phase, 0.42, 0.55);
+const showMeasurementsForm = inPhase(phase, 0.42, 0.47); // Dimensions input
+const scrollToHardware = inPhase(phase, 0.47, 0.48);     // Scroll animation
+const showHardwareSection = inPhase(phase, 0.48, 0.52); // Hardware + Lining selection
+const showPriceSummary = inPhase(phase, 0.52, 0.55);    // Total price + fabric usage
 ```
 
-This gives 3 extra seconds to slow down the window creation workflow.
+**New UI elements to add after form inputs:**
 
----
-
-### Phase 2: Redistribute Timing Phases
-
-**Current phases (15s):**
-- 0.00-0.08: Client tab (1.2s)
-- 0.08-0.18: Project tab (1.5s)
-- 0.18-0.52: Window popup (5.1s) ← Too fast
-- 0.52-0.70: Quote tab (2.7s)
-- 0.70-0.82: Workroom (1.8s)
-- 0.82-1.00: Installation (2.7s)
-
-**New phases (18s):**
-- 0.00-0.06: Client tab (1.1s)
-- 0.06-0.14: Project tab (1.4s)
-- 0.14-0.55: Window popup (7.4s) ← MORE TIME
-  - 0.14-0.16: Focus on "Add Window" button
-  - 0.16-0.30: Treatment step (2.5s) - more time to see options
-  - 0.30-0.40: Library step (1.8s)
-  - 0.40-0.55: Measurements step (2.7s) - more time to see form
-- 0.55-0.70: Quote tab (2.7s)
-- 0.70-0.82: Workroom (2.2s)
-- 0.82-1.00: Installation (3.2s)
-
----
-
-### Phase 3: Add Curtain & Blind Sketches to Treatment Cards
-
-Replace the generic `Layers` icon in treatment cards with inline SVG sketches:
-
-**Curtain Sketch:**
 ```text
-Visual elements:
-- Horizontal rail/rod at top
-- Two draped curtain panels with graceful folds
-- Soft curves showing fabric draping
-- Floor-length appearance
+┌────────────────────────────────────────┐
+│ HARDWARE SELECTION                     │
+├────────────────────────────────────────┤
+│ Curtain Track:  [Ceiling Track ▾]      │
+│ Lining:         [Blockout     ▾]       │
+├────────────────────────────────────────┤
+│ 📐 FABRIC CALCULATION                  │
+│ Fabric Required: 8.4m                  │
+│ Widths: 3 × 2.9m                       │
+├────────────────────────────────────────┤
+│ 💰 PRICE SUMMARY                       │
+│ Fabric: Cotton Plain × 8.4m   £222.60  │
+│ Track: Ceiling Track          £145.00  │
+│ Lining: Blockout × 8.4m        £67.20  │
+│ Making & Installation         £280.00  │
+│ ──────────────────────────────         │
+│ Total                        £714.80   │
+└────────────────────────────────────────┘
 ```
 
-**Roller Blind Sketch:**
-```text
-Visual elements:
-- Roller mechanism cylinder at top
-- Fabric panel partially rolled down
-- Bottom bar/hembar
-- Control chain on one side
-```
-
-**Shutters Sketch:**
-```text
-Visual elements:
-- Frame with vertical divider
-- Horizontal louver slats
-- Panel hinges indicated
+**Scroll animation:**
+```tsx
+<motion.div 
+  className="space-y-3 overflow-hidden"
+  animate={{ y: showHardwareSection ? -80 : 0 }}
+  transition={{ duration: 0.4, ease: "easeInOut" }}
+>
 ```
 
 ---
 
-### Phase 4: Improve Measurement Diagram
+### 3. Enhanced Closing Scene with Help System
 
-Replace the current basic curtain diagram (lines 931-943) with a proper visual that shows:
+**Current Scene6Closing** shows:
+- Logo
+- "Ready to get started?" message
+- Feature badges (Quote Builder, Team Notes, Work Orders, etc.)
+
+**New Scene6Closing** will show:
+- Step-by-step guidance demonstration
+- Question mark icons on pages
+- Professional support contact information
+- Friendly, universal message for all users
+
+**New closing content:**
 
 ```text
-Improved diagram:
-- Window frame with glass panes
-- Curtain rail mounted above window
-- Two curtain panels with elegant S-fold draping
-- Tie-backs suggested
-- Clear width/drop dimension lines with arrows
-- "Pair" label showing it's a pair of curtains
+Phase 0.0-0.3: Show multiple page mockups with (?) icons
+┌──────────────────────────────────────────────┐
+│ [Dashboard]  [Jobs]  [Library]  [Settings]   │
+│      (?)       (?)      (?)        (?)       │
+│                                              │
+│   "Every page has step-by-step guidance"     │
+└──────────────────────────────────────────────┘
+
+Phase 0.3-0.6: Animate question mark click → Help panel opens
+┌──────────────────────────────────────────────┐
+│  💡 Getting Started                          │
+│  ─────────────────                           │
+│  1. Create your first project                │
+│  2. Add rooms and windows                    │
+│  3. Select fabrics from library              │
+│  4. Generate quote → Send to client          │
+│                                              │
+│  "Need help? We're here for you."            │
+└──────────────────────────────────────────────┘
+
+Phase 0.6-1.0: Support message with regions
+┌──────────────────────────────────────────────┐
+│  ┌─────────────────────────────────────────┐ │
+│  │    🌏 Global Support                    │ │
+│  │                                         │ │
+│  │    Contact your sales administrator     │ │
+│  │    in New Zealand, UK, EU, or US.       │ │
+│  │                                         │ │
+│  │    We'll help you get set up and        │ │
+│  │    support your business every step     │ │
+│  │    of the way.                          │ │
+│  │                                         │ │
+│  │    [🇳🇿] [🇬🇧] [🇪🇺] [🇺🇸]               │ │
+│  └─────────────────────────────────────────┘ │
+│                                              │
+│     You're ready to start creating           │
+│     beautiful window treatments!             │
+└──────────────────────────────────────────────┘
 ```
+
+**Key messaging principles:**
+- **Universal** - Works for both users and business owners
+- **Reassuring** - "You'll always know what to do next"
+- **Professional** - Contact support, we'll help you
+- **Friendly** - Encouraging tone without being overly casual
 
 ---
 
@@ -111,150 +162,322 @@ Improved diagram:
 
 | File | Changes |
 |------|---------|
-| `src/components/showcase/ShowcaseLightbulb.tsx` | Update Scene5 duration from 15000 to 18000ms |
-| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Update Scene5ProjectDeepDive with new phases, sketches, and improved diagram |
+| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Update fabric data, add hardware/pricing section, redesign Scene6Closing |
 
 ---
 
-## Treatment Sketches Implementation
+## Detailed Implementation
 
-### CurtainSketch Component (inline in Scene5)
+### A. Update Fabric Cards (Lines 584-589)
 
-```text
-<svg viewBox="0 0 60 60" className="w-full h-full">
-  {/* Rail */}
-  <rect x="5" y="8" width="50" height="3" rx="1" fill="currentColor" opacity="0.7"/>
-  
-  {/* Left curtain panel with folds */}
-  <path d="M8 11 Q8 35 12 55 L22 55 Q18 35 20 11 Z" fill="currentColor" opacity="0.25"/>
-  <path d="M12 11 Q13 35 17 55" stroke="currentColor" opacity="0.3" strokeWidth="0.5" fill="none"/>
-  
-  {/* Right curtain panel with folds */}
-  <path d="M52 11 Q52 35 48 55 L38 55 Q42 35 40 11 Z" fill="currentColor" opacity="0.25"/>
-  <path d="M48 11 Q47 35 43 55" stroke="currentColor" opacity="0.3" strokeWidth="0.5" fill="none"/>
-  
-  {/* Decorative rings */}
-  <circle cx="10" cy="10" r="1.5" fill="currentColor" opacity="0.5"/>
-  <circle cx="50" cy="10" r="1.5" fill="currentColor" opacity="0.5"/>
-</svg>
+Replace fabric array with realistic names and add pattern property:
+
+```tsx
+const fabrics = [
+  { id: "cotton-plain", name: "Cotton Plain", price: "£26.50/m", width: "290cm", pattern: "solid", selected: selectFabric },
+  { id: "herringbone", name: "Herringbone", price: "£42.00/m", width: "140cm", pattern: "texture", selected: false },
+  { id: "belgian-linen", name: "Belgian Linen", price: "£38.00/m", width: "300cm", pattern: "sheer", selected: false },
+  { id: "damask", name: "Damask", price: "£58.00/m", width: "140cm", pattern: "damask", selected: false },
+];
 ```
 
-### RollerBlindSketch Component (inline in Scene5)
+Update fabric card visuals (line 984) to show different patterns:
 
-```text
-<svg viewBox="0 0 60 60" className="w-full h-full">
-  {/* Roller mechanism */}
-  <rect x="8" y="8" width="44" height="5" rx="2.5" fill="currentColor" opacity="0.6"/>
-  
-  {/* Blind fabric */}
-  <rect x="10" y="13" width="40" height="35" fill="currentColor" opacity="0.2"/>
-  
-  {/* Fabric texture lines */}
-  <line x1="10" y1="23" x2="50" y2="23" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
-  <line x1="10" y1="33" x2="50" y2="33" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
-  <line x1="10" y1="43" x2="50" y2="43" stroke="currentColor" opacity="0.1" strokeWidth="0.5"/>
-  
-  {/* Bottom bar */}
-  <rect x="10" y="48" width="40" height="3" rx="1" fill="currentColor" opacity="0.5"/>
-  
-  {/* Control chain */}
-  <line x1="48" y1="13" x2="48" y2="55" stroke="currentColor" opacity="0.4" strokeWidth="1"/>
-  <circle cx="48" cy="55" r="2" fill="currentColor" opacity="0.4"/>
-</svg>
-```
-
-### ShutterSketch Component (inline in Scene5)
-
-```text
-<svg viewBox="0 0 60 60" className="w-full h-full">
-  {/* Frame */}
-  <rect x="8" y="8" width="44" height="48" rx="1" stroke="currentColor" opacity="0.5" strokeWidth="1.5" fill="none"/>
-  
-  {/* Center divider */}
-  <line x1="30" y1="8" x2="30" y2="56" stroke="currentColor" opacity="0.5" strokeWidth="1.5"/>
-  
-  {/* Left panel louvers */}
-  {[0,1,2,3,4,5,6].map(i => (
-    <rect x="10" y={12 + i*6} width="18" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
-  ))}
-  
-  {/* Right panel louvers */}
-  {[0,1,2,3,4,5,6].map(i => (
-    <rect x="32" y={12 + i*6} width="18" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
-  ))}
-</svg>
-```
-
----
-
-## Improved Measurement Diagram
-
-Replace lines 929-944 with a more detailed curtain visualization:
-
-```text
-<div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center relative">
-  {/* Window frame */}
-  <div className="relative w-40 h-48">
-    {/* Window background */}
-    <div className="absolute inset-x-4 top-8 bottom-4 border-2 border-muted-foreground/30 bg-sky-50 dark:bg-sky-950/30 rounded">
-      {/* Window panes */}
-      <div className="absolute inset-1 grid grid-cols-2 gap-1">
-        <div className="bg-sky-100/50 dark:bg-sky-900/30 border border-muted-foreground/10"/>
-        <div className="bg-sky-100/50 dark:bg-sky-900/30 border border-muted-foreground/10"/>
-      </div>
+```tsx
+<div className={`w-full aspect-square rounded mb-1.5 ${
+  fabric.pattern === 'solid' ? 'bg-gradient-to-br from-stone-200 to-stone-300' :
+  fabric.pattern === 'texture' ? 'bg-gradient-to-br from-slate-300 to-slate-400' :
+  fabric.pattern === 'sheer' ? 'bg-gradient-to-br from-amber-50 to-amber-100' :
+  'bg-gradient-to-br from-amber-200 to-amber-300'
+}`}>
+  {/* Pattern overlay for texture */}
+  {fabric.pattern === 'texture' && (
+    <svg className="w-full h-full opacity-30" viewBox="0 0 20 20">
+      <pattern id="herringbone" width="4" height="4" patternUnits="userSpaceOnUse">
+        <path d="M0 2 L2 0 L4 2 L2 4 Z" fill="currentColor" opacity="0.3"/>
+      </pattern>
+      <rect width="20" height="20" fill="url(#herringbone)"/>
+    </svg>
+  )}
+  {/* Pattern for damask */}
+  {fabric.pattern === 'damask' && (
+    <div className="w-full h-full flex items-center justify-center opacity-20">
+      <div className="w-4 h-4 border border-current rounded-full"/>
     </div>
-    
-    {/* Curtain rail */}
-    <div className="absolute top-4 left-0 right-0 h-2 bg-muted-foreground/60 rounded-full"/>
-    
-    {/* Left curtain with S-folds */}
-    <div className="absolute left-0 top-6 w-12 bottom-0 bg-primary/20 rounded-b-sm overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/20"/>
-      {/* Fold lines */}
-      <div className="absolute top-4 bottom-0 left-3 w-px bg-primary/30"/>
-      <div className="absolute top-4 bottom-0 left-7 w-px bg-primary/30"/>
-    </div>
-    
-    {/* Right curtain with S-folds */}
-    <div className="absolute right-0 top-6 w-12 bottom-0 bg-primary/20 rounded-b-sm overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-l from-primary/30 via-primary/10 to-primary/20"/>
-      {/* Fold lines */}
-      <div className="absolute top-4 bottom-0 right-3 w-px bg-primary/30"/>
-      <div className="absolute top-4 bottom-0 right-7 w-px bg-primary/30"/>
-    </div>
-    
-    {/* Width dimension line */}
-    <div className="absolute -top-1 left-0 right-0 flex items-center">
-      <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-r-[5px] border-transparent border-r-blue-500"/>
-      <div className="flex-1 border-t border-blue-500"/>
-      <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px] border-transparent border-l-blue-500"/>
-    </div>
-    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-blue-600 font-medium">Rail Width</span>
-    
-    {/* Drop dimension line */}
-    <div className="absolute top-6 -right-4 bottom-0 flex flex-col items-center">
-      <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-b-[5px] border-transparent border-b-green-500"/>
-      <div className="flex-1 border-r border-green-500"/>
-      <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-t-[5px] border-transparent border-t-green-500"/>
-    </div>
-    <span className="absolute top-1/2 -right-8 -translate-y-1/2 text-[9px] text-green-600 font-medium rotate-90">Drop</span>
-  </div>
+  )}
 </div>
+```
+
+---
+
+### B. Add Hardware & Pricing Section (Lines 1100-1130)
+
+After the form section, add scrollable container with hardware selection and price summary:
+
+```tsx
+{/* Scrollable content container */}
+<motion.div 
+  className="space-y-3"
+  animate={{ y: showHardwareSection ? -100 : 0 }}
+  transition={{ duration: 0.5, ease: "easeInOut" }}
+>
+  {/* Existing form fields... */}
+  
+  {/* Hardware Selection - appears when scrolled */}
+  {showHardwareSection && (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-3 pt-3 border-t"
+    >
+      <div className="text-sm font-semibold">Hardware & Accessories</div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Curtain Track</label>
+          <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
+            <span>Ceiling Track</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Lining</label>
+          <div className="h-9 px-3 border rounded-lg bg-background flex items-center justify-between text-sm">
+            <span>Blockout</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+  
+  {/* Price Summary */}
+  {showPriceSummary && (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-muted/30 rounded-lg p-3 space-y-2"
+    >
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Calculator className="h-4 w-4 text-primary" />
+        <span>Price Summary</span>
+      </div>
+      
+      <div className="text-xs space-y-1.5">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Fabric Required:</span>
+          <span className="font-medium">8.4m (3 widths)</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Cotton Plain × 8.4m</span>
+          <span>£222.60</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Ceiling Track</span>
+          <span>£145.00</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Blockout Lining</span>
+          <span>£67.20</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Making & Install</span>
+          <span>£280.00</span>
+        </div>
+        <div className="border-t pt-1.5 flex justify-between font-semibold">
+          <span>Total</span>
+          <span className="text-primary">£714.80</span>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</motion.div>
+```
+
+---
+
+### C. Redesign Scene6Closing (Lines 1139-1152)
+
+Complete rewrite with help system demonstration:
+
+```tsx
+export const Scene6Closing = ({ phase = 0 }: StepProps) => {
+  const showPageIcons = inPhase(phase, 0.05, 1);
+  const showHelpClick = inPhase(phase, 0.25, 0.45);
+  const showHelpPanel = inPhase(phase, 0.35, 0.65);
+  const showSupport = inPhase(phase, 0.55, 1);
+  const showFinalMessage = inPhase(phase, 0.75, 1);
+  
+  const pages = [
+    { name: "Dashboard", icon: LayoutDashboard },
+    { name: "Jobs", icon: FileText },
+    { name: "Library", icon: Package },
+    { name: "Settings", icon: Settings },
+  ];
+  
+  return (
+    <div className="h-full flex flex-col items-center justify-center p-4 bg-background relative overflow-hidden">
+      {/* Subtle background gradient */}
+      <motion.div 
+        className="absolute inset-0 opacity-20"
+        animate={{ 
+          background: [
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.15) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.25) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.15) 0%, transparent 70%)"
+          ] 
+        }}
+        transition={{ duration: 4, repeat: Infinity }}
+      />
+      
+      {/* Page icons with question marks */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: showPageIcons ? 1 : 0, y: showPageIcons ? 0 : 20 }}
+        className="flex gap-4 mb-6"
+      >
+        {pages.map((page, i) => (
+          <motion.div 
+            key={page.name}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.1 }}
+            className="relative flex flex-col items-center"
+          >
+            <div className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center ${
+              showHelpClick && i === 0 ? 'border-primary bg-primary/10' : 'border-border bg-card'
+            }`}>
+              <page.icon className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <span className="text-[10px] text-muted-foreground mt-1">{page.name}</span>
+            
+            {/* Question mark badge */}
+            <motion.div 
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center"
+              animate={showHelpClick && i === 0 ? { 
+                scale: [1, 1.3, 1],
+                boxShadow: ['0 0 0 0 rgba(59, 130, 246, 0)', '0 0 0 8px rgba(59, 130, 246, 0.3)', '0 0 0 0 rgba(59, 130, 246, 0)']
+              } : {}}
+              transition={{ duration: 1, repeat: showHelpClick && i === 0 ? Infinity : 0 }}
+            >
+              <HelpCircle className="h-3 w-3 text-white" />
+            </motion.div>
+          </motion.div>
+        ))}
+      </motion.div>
+      
+      {/* Guidance message */}
+      <motion.p 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showPageIcons ? 1 : 0 }}
+        className="text-sm text-center text-muted-foreground mb-4"
+      >
+        Every page has step-by-step guidance
+      </motion.p>
+      
+      {/* Help panel preview */}
+      <AnimatePresence>
+        {showHelpPanel && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-card border rounded-lg shadow-lg p-4 mb-4 max-w-xs"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-semibold">Quick Guide</span>
+            </div>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">1</div>
+                <span>Create your first project</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">2</div>
+                <span>Add rooms and windows</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">3</div>
+                <span>Select fabrics and hardware</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">4</div>
+                <span>Generate quote and send</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Support section */}
+      <AnimatePresence>
+        {showSupport && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center max-w-sm"
+          >
+            <div className="flex justify-center gap-3 mb-3">
+              <span className="text-lg">🇳🇿</span>
+              <span className="text-lg">🇬🇧</span>
+              <span className="text-lg">🇪🇺</span>
+              <span className="text-lg">🇺🇸</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-2">
+              Need help? Contact your sales administrator.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              We're here to support your business every step of the way.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Final encouraging message */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showFinalMessage ? 1 : 0 }}
+        className="mt-6 text-center"
+      >
+        <h2 className="text-lg font-bold text-foreground mb-1">You're all set!</h2>
+        <p className="text-sm text-muted-foreground">
+          Start creating beautiful window treatments
+        </p>
+      </motion.div>
+    </div>
+  );
+};
 ```
 
 ---
 
 ## Summary of Changes
 
-| Change | Impact |
-|--------|--------|
-| Scene duration 15s → 18s | +3 seconds for better comprehension |
-| Treatment cards with SVG sketches | Visual clarity - users can see curtain vs blind |
-| Improved measurement diagram | Professional appearance matching app quality |
-| Redistributed phases | More time on window popup (5.1s → 7.4s) |
+| Change | Lines Affected | Impact |
+|--------|----------------|--------|
+| Update fabric data array | ~6 lines | Realistic fabric names with patterns |
+| Update fabric card visuals | ~15 lines | Visual pattern indicators |
+| Add new phase variables | ~5 lines | Hardware/pricing timing |
+| Add scroll animation | ~10 lines | Smooth transition to hardware |
+| Add hardware selection section | ~30 lines | Track and lining dropdowns |
+| Add price summary section | ~35 lines | Fabric usage + itemized pricing |
+| Rewrite Scene6Closing | ~120 lines | Help system + support info |
+| Add new imports | ~3 lines | HelpCircle, Lightbulb, Settings, Calculator, LayoutDashboard |
 
-**Total new/modified code:** ~120 lines
+**Total: ~225 lines modified/added**
 
-**Files modified:** 2
-- `src/components/showcase/ShowcaseLightbulb.tsx` (1 line - duration change)
-- `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` (~120 lines - sketches + timing + diagram)
+---
+
+## Duration Consideration
+
+The closing scene is currently **5 seconds** (5000ms). To show the help system demonstration properly, I recommend increasing to **7 seconds** (7000ms):
+
+- 0.00-0.25: Page icons with question marks appear (1.75s)
+- 0.25-0.45: Question mark click animation (1.4s)  
+- 0.35-0.65: Help panel appears (2.1s)
+- 0.55-1.00: Support message + final text (3.15s)
+
+This provides enough time for users to read and understand the help system message.
+
