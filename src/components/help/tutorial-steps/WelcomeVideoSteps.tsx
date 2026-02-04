@@ -1,6 +1,7 @@
 /**
- * WelcomeVideoSteps - 6-Scene Cinematic Product Showcase
+ * WelcomeVideoSteps - 8-Scene Cinematic Product Showcase
  * IMPROVED: Larger fonts, realistic names, focus highlights, Scene 3 fixed
+ * UPDATED: Added Scene0Welcome and Scene7Calendar
  */
 
 import React from "react";
@@ -8,10 +9,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Moon, Sun, Plus, ChevronRight, ChevronDown, Check, Trash2,
   Share2, FileText, Users, Home, Bed, ChefHat, Bath, MoreHorizontal,
-  MessageSquare, Receipt, Layers, Eye, X,
-  ShoppingBag, Package, UserPlus, Copy, ExternalLink,
+  MessageSquare, Receipt, Layers, Eye, X, Clock, Phone, Globe,
+  ShoppingBag, Package, UserPlus, Copy, ExternalLink, CalendarDays,
   DollarSign, Calendar, Lightbulb, Settings, Ruler, Scissors, Mail,
-  CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList
+  CreditCard, Download, Send, CheckCircle2, Wrench, ClipboardList, Sparkles
 } from "lucide-react";
 import { inPhase, phaseProgress, typingProgress } from "@/lib/demoAnimations";
 import { DemoCursor } from "@/components/help/DemoCursor";
@@ -34,6 +35,86 @@ const FocusRing = ({ active }: { active: boolean }) => (
     )}
   </AnimatePresence>
 );
+
+// SCENE 0: WELCOME GREETING - New warm opening scene
+export const Scene0Welcome = ({ phase = 0 }: StepProps) => {
+  const showWave = inPhase(phase, 0.1, 1);
+  const showWelcome = inPhase(phase, 0.2, 1);
+  const showApp = inPhase(phase, 0.35, 1);
+  const showSubtitle = inPhase(phase, 0.5, 1);
+  const showHint = inPhase(phase, 0.75, 1);
+  
+  return (
+    <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-background relative overflow-hidden">
+      {/* Pulsing background gradient */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          background: [
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.08) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.15) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.08) 0%, transparent 70%)",
+          ],
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      {/* Wave emoji with bounce */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+        animate={{ 
+          opacity: showWave ? 1 : 0, 
+          scale: showWave ? 1 : 0.5,
+          rotate: showWave ? [0, 15, -10, 15, 0] : -20
+        }}
+        transition={{ 
+          duration: 0.6, 
+          rotate: { duration: 1.2, ease: "easeInOut" }
+        }}
+        className="text-6xl mb-6"
+      >
+        👋
+      </motion.div>
+      
+      {/* Welcome text */}
+      <div className="relative z-10">
+        <motion.h1
+          className="text-2xl md:text-3xl font-bold mb-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: showWelcome ? 1 : 0, y: showWelcome ? 0 : 20 }}
+        >
+          Welcome to{" "}
+          <motion.span
+            className="text-primary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showApp ? 1 : 0 }}
+          >
+            InterioApp!
+          </motion.span>
+        </motion.h1>
+        
+        <motion.p
+          className="text-muted-foreground text-sm md:text-base max-w-sm mx-auto"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: showSubtitle ? 1 : 0, y: showSubtitle ? 0 : 15 }}
+        >
+          Let's show you around your new platform
+        </motion.p>
+      </div>
+      
+      {/* Continue hint */}
+      <motion.div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-muted-foreground"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showHint ? 0.7 : 0 }}
+      >
+        <span>Press</span>
+        <kbd className="px-2 py-0.5 rounded bg-muted border text-[10px] font-mono">→</kbd>
+        <span>or wait to continue</span>
+      </motion.div>
+    </div>
+  );
+};
 
 // SCENE 1: OPENING BRANDING
 export const Scene1IntroLogo = ({ phase = 0 }: StepProps) => {
@@ -709,7 +790,456 @@ export const Scene6Closing = ({ phase = 0 }: StepProps) => {
       <motion.div className="absolute inset-0 opacity-30" animate={{ background: ["radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)", "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.3) 0%, transparent 60%)", "radial-gradient(circle at 50% 50%, hsl(var(--primary)/0.2) 0%, transparent 60%)"] }} transition={{ duration: 3, repeat: Infinity }} />
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: showLogo ? 1 : 0, scale: showLogo ? 1 : 0.9 }} className="mb-6"><img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="InterioApp" className="h-16 w-auto" /></motion.div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: showMessage ? 1 : 0, y: showMessage ? 0 : 20 }} className="mb-8"><h2 className="text-xl font-bold mb-2">Ready to get started?</h2><p className="text-sm text-muted-foreground max-w-sm">Your complete platform for made-to-measure window treatments</p></motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: showCTA ? 1 : 0 }} className="flex flex-wrap justify-center gap-2 max-w-xs">{["Quote Builder", "Team Notes", "Work Orders", "Payments", "Installation"].map((feature, i) => (<motion.span key={feature} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 * i }} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-full font-medium">{feature}</motion.span>))}</motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: showCTA ? 1 : 0 }} className="flex flex-wrap justify-center gap-2 max-w-xs">{["Quote Builder", "Team Notes", "Work Orders", "Payments", "Installation", "Bookings"].map((feature, i) => (<motion.span key={feature} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 * i }} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-full font-medium">{feature}</motion.span>))}</motion.div>
+    </div>
+  );
+};
+
+// SCENE 7: CALENDAR & BOOKINGS - Google Calendar sync and booking system
+export const Scene7Calendar = ({ phase = 0 }: StepProps) => {
+  // Phase breakdown:
+  // 0.00-0.25: Calendar week view with Google sync badge
+  // 0.25-0.50: Booking template setup (dropdown + form)
+  // 0.50-0.80: Public booking page (split panel, date/time selection, form)
+  // 0.80-1.00: Success confirmation with confetti
+  
+  const showCalendarView = inPhase(phase, 0, 0.25);
+  const showTemplateSetup = inPhase(phase, 0.25, 0.50);
+  const showBookingPage = inPhase(phase, 0.50, 0.80);
+  const showSuccess = inPhase(phase, 0.80, 1);
+  
+  const templateDropdown = inPhase(phase, 0.27, 0.35);
+  const templateForm = inPhase(phase, 0.35, 0.50);
+  
+  const dateSelection = phaseProgress(phase, 0.52, 0.58);
+  const timeSelection = inPhase(phase, 0.58, 0.65);
+  const formFilling = inPhase(phase, 0.65, 0.75);
+  const clientName = typingProgress(phase, 0.66, 0.70, "Holly Watson");
+  const clientEmail = typingProgress(phase, 0.70, 0.74, "holly@email.com");
+  const confirmClick = inPhase(phase, 0.76, 0.80);
+  
+  // Calendar events for week view
+  const events = [
+    { day: 1, time: "09:00", title: "Blind Install", color: "bg-blue-500", duration: "1h" },
+    { day: 2, time: "10:30", title: "Design Session", color: "bg-green-500", duration: "30m" },
+    { day: 3, time: "14:00", title: "Curtain Measure", color: "bg-purple-500", duration: "1h" },
+    { day: 4, time: "11:00", title: "Client Consult", color: "bg-amber-500", duration: "45m" },
+  ];
+  
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const timeSlots = ["09:00", "10:30", "12:00", "13:30", "15:00"];
+  
+  return (
+    <div className="h-full w-full bg-background rounded-xl overflow-hidden border border-border relative">
+      {/* Header */}
+      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="IA" className="h-6 w-auto" />
+          <div className="flex items-center gap-4">
+            {["Home", "Clients", "Jobs", "Messages", "Calendar"].map((nav) => (
+              <span key={nav} className={`text-xs ${nav === "Calendar" ? "font-semibold text-primary" : "text-muted-foreground"}`}>{nav}</span>
+            ))}
+          </div>
+        </div>
+        {/* Google Sync Badge */}
+        <motion.div 
+          className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs"
+          animate={{ opacity: showCalendarView || showTemplateSetup ? 1 : 0.5 }}
+        >
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="font-medium">Google Sync</span>
+        </motion.div>
+      </div>
+      
+      <div className="p-3 h-[calc(100%-48px)] overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          {/* Phase 1: Calendar Week View */}
+          {showCalendarView && (
+            <motion.div 
+              key="calendar" 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0, x: -20 }}
+              className="h-full"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  February 2026
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button className="px-2.5 py-1.5 text-xs bg-muted rounded border">Today</button>
+                  <button className="px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded flex items-center gap-1">
+                    <Plus className="h-3 w-3" />
+                    New Template
+                  </button>
+                </div>
+              </div>
+              
+              {/* Week grid */}
+              <div className="bg-card rounded-lg border overflow-hidden">
+                {/* Day headers */}
+                <div className="grid grid-cols-7 border-b bg-muted/30">
+                  {days.map((day, i) => (
+                    <div key={day} className="p-2 text-center border-r last:border-r-0">
+                      <div className="text-[10px] text-muted-foreground uppercase">{day}</div>
+                      <div className={`text-sm font-medium ${i === 2 ? "text-primary" : ""}`}>{i + 2}</div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Event slots */}
+                <div className="grid grid-cols-7 min-h-[140px]">
+                  {days.map((_, dayIndex) => (
+                    <div key={dayIndex} className="border-r last:border-r-0 p-1 min-h-[140px]">
+                      {events.filter(e => e.day === dayIndex).map((event, i) => (
+                        <motion.div 
+                          key={i}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.1 + i * 0.1 }}
+                          className={`${event.color} text-white text-[9px] p-1.5 rounded mb-1`}
+                        >
+                          <div className="font-medium truncate">{event.title}</div>
+                          <div className="opacity-80">{event.time}</div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Sync indicator */}
+              <motion.div 
+                className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span>Two-way sync with Google Calendar</span>
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              </motion.div>
+            </motion.div>
+          )}
+          
+          {/* Phase 2: Template Setup */}
+          {showTemplateSetup && (
+            <motion.div 
+              key="template" 
+              initial={{ opacity: 0, x: 20 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              exit={{ opacity: 0, x: -20 }}
+              className="h-full"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  Booking Templates
+                </h2>
+                <div className="relative">
+                  <motion.button 
+                    className="px-2.5 py-1.5 text-xs bg-primary text-primary-foreground rounded flex items-center gap-1"
+                    animate={{ scale: templateDropdown && !templateForm ? [1, 1.05, 1] : 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Plus className="h-3 w-3" />
+                    New Template
+                    <ChevronDown className="h-3 w-3" />
+                  </motion.button>
+                  
+                  <AnimatePresence>
+                    {templateDropdown && !templateForm && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-xl z-20 py-1"
+                      >
+                        <div className="px-3 py-2 hover:bg-primary/10 text-xs flex items-center gap-2 bg-primary/5">
+                          <Wrench className="h-3.5 w-3.5 text-primary" />
+                          <span className="font-medium text-primary">Installation Appointment</span>
+                        </div>
+                        <div className="px-3 py-2 hover:bg-muted text-xs flex items-center gap-2">
+                          <Ruler className="h-3.5 w-3.5" />
+                          <span>Measurement Session</span>
+                        </div>
+                        <div className="px-3 py-2 hover:bg-muted text-xs flex items-center gap-2">
+                          <Scissors className="h-3.5 w-3.5" />
+                          <span>Design Consultation</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              
+              {/* Template form */}
+              <AnimatePresence>
+                {templateForm && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card rounded-lg border p-4 space-y-3"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Wrench className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold">Installation Appointment</div>
+                        <div className="text-xs text-muted-foreground">Let clients book installation times</div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1">Duration</label>
+                        <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/50 rounded border text-sm">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>30 minutes</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1">Buffer Time</label>
+                        <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/50 rounded border text-sm">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>15 minutes</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <motion.button 
+                      className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center gap-2 relative"
+                      animate={{ scale: [1, 1.02, 1] }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                      <FocusRing active={true} />
+                      <Check className="h-4 w-4" />
+                      Create Template
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+          
+          {/* Phase 3: Public Booking Page */}
+          {showBookingPage && !showSuccess && (
+            <motion.div 
+              key="booking" 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full"
+            >
+              {/* Split panel layout - matches the actual public booking UI */}
+              <div className="h-full grid grid-cols-[1.2fr_2fr] gap-0 rounded-lg overflow-hidden border shadow-lg">
+                {/* Left panel - Branding (dark slate gradient like real app) */}
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4 flex flex-col">
+                  <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="Logo" className="h-10 w-auto mb-4" />
+                  <div className="flex-1">
+                    <div className="text-base font-semibold mb-1">Installation Appointment</div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-300 mb-3">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>30 minutes</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <Phone className="h-3.5 w-3.5" />
+                      <span>+44 20 7123 4567</span>
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400 flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Secure booking powered by InterioApp
+                  </div>
+                </div>
+                
+                {/* Right panel - Booking form */}
+                <div className="bg-background p-3 space-y-2 overflow-y-auto">
+                  <div className="text-xs font-medium text-muted-foreground uppercase">Select Date & Time</div>
+                  
+                  {/* Mini calendar */}
+                  <div className="bg-card rounded-lg border p-2">
+                    <div className="text-xs font-medium mb-2 text-center">February 2026</div>
+                    <div className="grid grid-cols-7 gap-0.5 text-center">
+                      {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                        <div key={i} className="text-[9px] text-muted-foreground py-1">{d}</div>
+                      ))}
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => {
+                        const isSelected = day === 12 && dateSelection > 0.5;
+                        const isAvailable = [10, 11, 12, 13, 14, 17, 18, 19].includes(day);
+                        return (
+                          <motion.div
+                            key={day}
+                            className={`text-[10px] py-1 rounded ${
+                              isSelected 
+                                ? "bg-primary text-primary-foreground font-medium" 
+                                : isAvailable 
+                                  ? "hover:bg-muted cursor-pointer" 
+                                  : "text-muted-foreground/40"
+                            }`}
+                            animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
+                          >
+                            {day}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Time slots */}
+                  <AnimatePresence>
+                    {dateSelection > 0.5 && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="space-y-1"
+                      >
+                        <div className="text-xs font-medium text-muted-foreground">Available Times</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {timeSlots.map((slot, i) => {
+                            const isSelected = slot === "10:30" && timeSelection;
+                            return (
+                              <motion.button
+                                key={slot}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className={`px-2 py-1.5 text-xs rounded border ${
+                                  isSelected 
+                                    ? "bg-primary text-primary-foreground border-primary" 
+                                    : "hover:border-primary"
+                                }`}
+                              >
+                                {slot}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  {/* Client form */}
+                  <AnimatePresence>
+                    {formFilling && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-2 pt-1"
+                      >
+                        <div className="text-xs font-medium text-muted-foreground">Your Details</div>
+                        <div className="space-y-1.5">
+                          <input 
+                            type="text" 
+                            value={clientName}
+                            readOnly
+                            placeholder="Name"
+                            className="w-full px-2.5 py-1.5 text-xs border rounded bg-background"
+                          />
+                          <input 
+                            type="email" 
+                            value={clientEmail}
+                            readOnly
+                            placeholder="Email"
+                            className="w-full px-2.5 py-1.5 text-xs border rounded bg-background"
+                          />
+                        </div>
+                        
+                        <motion.button 
+                          className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center gap-1.5 relative"
+                          animate={confirmClick ? { scale: 0.97 } : { scale: 1 }}
+                        >
+                          {confirmClick && <FocusRing active={true} />}
+                          <Check className="h-3.5 w-3.5" />
+                          Confirm Booking
+                        </motion.button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Phase 4: Success Confirmation */}
+          {showSuccess && (
+            <motion.div 
+              key="success" 
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="h-full flex flex-col items-center justify-center text-center relative"
+            >
+              {/* Mini confetti particles */}
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className={`absolute w-2 h-2 rounded-full ${
+                    ["bg-primary", "bg-green-500", "bg-amber-500", "bg-blue-500"][i % 4]
+                  }`}
+                  initial={{ 
+                    x: 0, 
+                    y: 0, 
+                    scale: 0,
+                    opacity: 1 
+                  }}
+                  animate={{ 
+                    x: (Math.random() - 0.5) * 200,
+                    y: (Math.random() - 0.5) * 150,
+                    scale: [0, 1, 0.5],
+                    opacity: [1, 1, 0]
+                  }}
+                  transition={{ 
+                    duration: 1.5,
+                    delay: i * 0.05,
+                    ease: "easeOut"
+                  }}
+                />
+              ))}
+              
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4"
+              >
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </motion.div>
+              
+              <motion.h3
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-lg font-bold mb-1"
+              >
+                Booking Confirmed! 🎉
+              </motion.h3>
+              
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-sm text-muted-foreground mb-4"
+              >
+                Holly's appointment is scheduled
+              </motion.p>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200"
+              >
+                <CalendarDays className="h-4 w-4 text-green-600" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                  Synced to Google Calendar ✓
+                </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
