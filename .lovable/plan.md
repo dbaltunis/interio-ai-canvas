@@ -1,74 +1,122 @@
 
-# Fix Stock Badges & Drop Arrow Visibility
+# Setup Laela Account with Invoice Subscription
 
-## Issues Identified
+## Account Details
+- **Email**: baltunis+laela@curtainscalculator.com
+- **User ID**: `4eebf4ef-bc13-4e57-b120-32a0ca281932`
+- **Display Name**: InterioApp
+- **Current Status**: No subscription, no invoices
 
-### Issue 1: Stock Badges Still Visible
-**Screenshot Evidence:** "Out" badges showing on items that shouldn't have tracking
-
-**Root Cause:**
-```typescript
-// Line 734 - Current condition
-{item.track_inventory !== false && item.quantity !== undefined && (
-```
-This shows badges when `track_inventory` is `null` or `undefined` (default state for most fabrics that don't need stock tracking).
-
-**Fix:**
-```typescript
-{item.track_inventory === true && item.quantity !== undefined && (
-```
-Only show stock badges when tracking is **explicitly enabled**.
-
----
-
-### Issue 2: Drop Arrow Missing & Units Hardcoded
-**Screenshot Evidence:** "Drop: 230cm" label appears at bottom instead of on right side with arrow
-
-**Root Causes:**
-1. **Clipping:** Container has `overflow-hidden` (line 185), clipping the drop measurement label positioned with `-right-12`
-2. **Hardcoded Units:** Line 157 uses `{measurements.drop}cm` instead of dynamic unit formatting
-
-**Fixes:**
-
-1. **Change overflow to visible:**
-```typescript
-// Line 185: Change overflow-hidden to overflow-visible
-<div className={`relative min-h-[400px] ... overflow-visible ${className}`}>
-```
-
-2. **Use dynamic unit formatting:**
-```typescript
-// Line 157: Use formatFromMM for proper unit display
-Drop: {formatFromMM(parseFloat(measurements.drop) || 0, units.length)}
-```
+## Invoice Details (from PDF CC-114)
+| Field | Value |
+|-------|-------|
+| Invoice Number | CC-114 |
+| Invoice Date | 2026-01-30 |
+| Amount (Net) | €2,496.00 |
+| VAT (21%) | €524.00 |
+| **Total** | **€3,020.00** |
+| Description | Annual Application Subscription 2025-02-01 to 2026-02-01 |
+| Status | Pending (Unpaid) |
+| Setup Fee | None (as noted on invoice) |
 
 ---
 
-## Files to Modify
+## Database Changes Required
 
-| File | Line | Change |
-|------|------|--------|
-| `src/components/inventory/InventorySelectionPanel.tsx` | 734 | Change `track_inventory !== false` to `track_inventory === true` |
-| `src/components/treatment-visualizers/CurtainVisualizer.tsx` | 185 | Change `overflow-hidden` to `overflow-visible` |
-| `src/components/treatment-visualizers/CurtainVisualizer.tsx` | 157 | Use `formatFromMM()` for drop measurement |
+### Step 1: Create Active Invoice-Based Subscription
+
+```sql
+INSERT INTO public.user_subscriptions (
+  user_id,
+  plan_id,
+  status,
+  subscription_type,
+  current_period_start,
+  current_period_end,
+  total_users,
+  admin_notes
+) VALUES (
+  '4eebf4ef-bc13-4e57-b120-32a0ca281932',
+  'd1b3e66f-4e86-4302-ba71-538d843a2742',  -- All-In Custom plan
+  'active',
+  'invoice',
+  '2025-02-01'::timestamp,
+  '2026-02-01'::timestamp,
+  1,
+  'Annual invoice billing (CC-114). No setup fee. Invoice pending payment.'
+);
+```
+
+This creates:
+- **Status**: `active` (they can use the app)
+- **Subscription Type**: `invoice` (bypasses Stripe, manually managed)
+- **Period**: Feb 1, 2025 - Feb 1, 2026
 
 ---
 
-## Expected Results
+### Step 2: Create Pending Custom Invoice
 
-After these fixes:
-1. **Stock badges** only appear on fabrics with `track_inventory: true`
-2. **Drop arrow** fully visible on right side of curtain visualizer
-3. **Drop measurement** shows correct units (cm/in/mm) based on user preference
+```sql
+INSERT INTO public.custom_invoices (
+  user_id,
+  description,
+  invoice_number,
+  amount,
+  currency,
+  status,
+  invoice_date,
+  due_date,
+  payment_type,
+  notes
+) VALUES (
+  '4eebf4ef-bc13-4e57-b120-32a0ca281932',
+  'Annual Application Subscription (2025-02-01 to 2026-02-01)',
+  'CC-114',
+  3020.00,  -- Total including VAT
+  'EUR',
+  'pending',
+  '2026-01-30',
+  '2026-02-28',  -- Due date (30 days from invoice)
+  'subscription',
+  'Metinis aplikacijos abonementas. Suma be PVM: €2,496.00, PVM 21%: €524.00. Mokėjimas laukiamas.'
+);
+```
+
+This creates:
+- **Status**: `pending` (unpaid)
+- **Amount**: €3,020.00 (including VAT)
+- **Payment Type**: `subscription`
+- **Due Date**: Feb 28, 2026
 
 ---
 
-## Re: Awning & SmartDrape Pricing
+## What This Achieves
 
-The code fixes are implemented. To verify they work for Greg Shave / CCCO:
-1. Open an awning or SmartDrape window in the measurement worksheet
-2. Select a fabric/material with a price group (e.g., "Auto - DAYSCREEN 95" with "Auto-Budget")
-3. Save the window
-4. Verify the price appears in the room display and quote
+1. ✅ **Account shows as "Active"** - User can log in and use all features
+2. ✅ **Invoice visible in billing** - CC-114 appears in their Custom Invoices tab
+3. ✅ **Invoice marked as Pending** - Shows as unpaid until you update it
+4. ✅ **No setup fee** - Only the annual subscription invoice
+5. ✅ **Invoice downloadable** - Users can view/download from their billing page
 
-**Note:** Existing windows need to be re-saved to populate the `subcategory` field added in the previous fix.
+---
+
+## When Payment is Received
+
+Run this SQL to mark as paid:
+
+```sql
+UPDATE public.custom_invoices 
+SET status = 'paid', paid_at = NOW() 
+WHERE invoice_number = 'CC-114' 
+  AND user_id = '4eebf4ef-bc13-4e57-b120-32a0ca281932';
+```
+
+---
+
+## Summary
+
+| Action | Details |
+|--------|---------|
+| Create Subscription | `active` status, `invoice` type, All-In Custom plan |
+| Create Invoice | CC-114, €3,020.00, `pending` status |
+| Affected Account | baltunis+laela@curtainscalculator.com ONLY |
