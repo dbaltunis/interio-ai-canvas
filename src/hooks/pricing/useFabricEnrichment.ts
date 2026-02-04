@@ -44,13 +44,23 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
         fabricItem.product_category ||  // Legacy field
         formData?.treatment_category;   // From form/template
       
-      // ✅ For blinds, map subcategory to product_type for grid lookup
-      // venetian_slats → venetian_blinds
-      const productTypeForGrid = fabricItem.subcategory?.includes('venetian') 
-        ? 'venetian_blinds' 
-        : fabricItem.subcategory?.includes('roller')
-        ? 'roller_blinds'
-        : productCategory;
+      // ✅ Map subcategory to product_type for grid lookup
+      const subcategory = (fabricItem.subcategory || '').toLowerCase();
+      let productTypeForGrid = productCategory;
+
+      if (subcategory.includes('venetian')) {
+        productTypeForGrid = 'venetian_blinds';
+      } else if (subcategory.includes('roller')) {
+        productTypeForGrid = 'roller_blinds';
+      } else if (subcategory.includes('vertical') || subcategory.includes('smartdrape')) {
+        productTypeForGrid = 'vertical_blinds';
+      } else if (subcategory.includes('awning')) {
+        productTypeForGrid = 'awning';
+      } else if (subcategory.includes('cellular') || subcategory.includes('honeycomb')) {
+        productTypeForGrid = 'cellular_blinds';
+      } else if (subcategory.includes('roman')) {
+        productTypeForGrid = 'roman_blinds';
+      }
       
       const hasSystemType = formData?.system_type;
 
