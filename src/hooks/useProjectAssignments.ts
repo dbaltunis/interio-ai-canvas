@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useFriendlyToast } from "@/hooks/use-friendly-toast";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 interface ProjectAssignment {
   id: string;
@@ -86,7 +87,7 @@ export const useProjectAssignments = (projectId?: string) => {
 
 export const useAssignUserToProject = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showError, showSuccess, showInfo } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async ({
@@ -198,24 +199,37 @@ export const useAssignUserToProject = () => {
           }
         });
 
-      // Create a visible project note about the assignment
-      await supabase
-        .from("project_notes")
-        .insert({
-          project_id: projectId,
-          user_id: user.id,
-          content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
-          type: 'system_assignment'
-        });
+      // Get effective owner for multi-tenant notes
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
-      // Send Team Hub direct message for better visibility
-      await supabase
-        .from("direct_messages")
-        .insert({
-          sender_id: user.id,
-          recipient_id: userId,
-          content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
-        });
+      // Create a visible project note about the assignment (wrapped in try-catch for resilience)
+      try {
+        await supabase
+          .from("project_notes")
+          .insert({
+            project_id: projectId,
+            user_id: effectiveOwnerId,
+            content: `${assignedUserProfile?.display_name || 'Team member'} was assigned to this project by ${currentUserProfile?.display_name || 'Admin'}`,
+            type: 'system_assignment'
+          });
+      } catch (noteErr) {
+        console.warn("Failed to create assignment note:", noteErr);
+        // Don't throw - assignment already succeeded
+      }
+
+      // Send Team Hub direct message for better visibility (wrapped in try-catch for resilience)
+      try {
+        await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: user.id,
+            recipient_id: userId,
+            content: `You've been assigned to the project "${projectName || 'Untitled Project'}"! 🎉\n\nClick here to view: ${window.location.origin}/?jobId=${projectId}`
+          });
+      } catch (dmErr) {
+        console.warn("Failed to send team hub message:", dmErr);
+        // Don't throw - assignment already succeeded
+      }
 
       // Get project client name for email
       const { data: projectData } = await supabase
@@ -258,25 +272,14 @@ export const useAssignUserToProject = () => {
       // Invalidate assignment-based visibility queries for all users
       queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Team member assigned to project",
-      });
+      showSuccess("Success", "Team member assigned to project");
     },
     onError: (error: any) => {
       // Handle already assigned case (both our custom error and unique constraint)
       if (error.message === "ALREADY_ASSIGNED" || error.code === "23505") {
-        toast({
-          title: "Already Assigned",
-          description: "This team member is already assigned to this project",
-          variant: "destructive",
-        });
+        showInfo("Already Assigned", "This team member is already assigned to this project");
       } else {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to assign team member",
-          variant: "destructive",
-        });
+        showError(error, { context: 'assign team member' });
       }
     },
   });
@@ -284,7 +287,7 @@ export const useAssignUserToProject = () => {
 
 export const useRemoveUserFromProject = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showError, showSuccess } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async ({
@@ -347,24 +350,17 @@ export const useRemoveUserFromProject = () => {
       // Invalidate assignment-based visibility queries for all users
       queryClient.invalidateQueries({ queryKey: ["my-project-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Team member removed from project",
-      });
+      showSuccess("Success", "Team member removed from project");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove team member",
-        variant: "destructive",
-      });
+      showError(error, { context: 'remove team member' });
     },
   });
 };
 
 export const useUpdateProjectAssignment = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showError, showSuccess } = useFriendlyToast();
 
   return useMutation({
     mutationFn: async ({
@@ -396,17 +392,10 @@ export const useUpdateProjectAssignment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["project-assignments", data.project_id] });
-      toast({
-        title: "Success",
-        description: "Assignment updated successfully",
-      });
+      showSuccess("Success", "Assignment updated successfully");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update assignment",
-        variant: "destructive",
-      });
+      showError(error, { context: 'update assignment' });
     },
   });
 };
