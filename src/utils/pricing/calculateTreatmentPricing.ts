@@ -166,6 +166,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const templateName = (template?.name || '').toLowerCase();
   const isBlindTreatment = treatmentCategory.includes('blind') || 
                            treatmentCategory === 'shutters' ||
+                           treatmentCategory.includes('awning') ||
+                           treatmentCategory.includes('drape') ||
                            templateName.includes('blind') ||
                            templateName.includes('roman') ||
                            templateName.includes('roller') ||
@@ -173,7 +175,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
                            templateName.includes('vertical') ||
                            templateName.includes('cellular') ||
                            templateName.includes('honeycomb') ||
-                           templateName.includes('shutter');
+                           templateName.includes('shutter') ||
+                           templateName.includes('awning') ||
+                           templateName.includes('smartdrape');
   
   console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   
