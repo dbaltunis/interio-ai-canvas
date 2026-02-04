@@ -1,86 +1,73 @@
 
 
-# Fix Team Members Cannot Save Business Settings
+# Multi-Tenant Audit: Fix Team Member Creation Bugs
 
-## Problem Identified
+## Summary
 
-When you give a team member (Admin, Staff) access to settings, they can VIEW business details but **cannot SAVE** them. This happens because:
+I audited all mutation hooks in the codebase and found **12 hooks** with the same bug that was just fixed in `useBusinessSettings.ts`. When team members (Admin/Staff) try to create records, the system uses their own `user.id` instead of the account owner's ID, causing:
 
-1. The **UPDATE** mutation correctly uses `effectiveOwnerId` (the account owner)
-2. The **CREATE** mutation incorrectly uses `user.id` (the team member)
-
-This means:
-- If owner already has settings → team member can update ✅
-- If owner has no settings yet → team member cannot create ❌
-
-You want to delegate setup to team members, but they get errors when trying to save!
+- **RLS policy violations** (permission denied errors)
+- **Data siloed to the wrong user** (invisible to team and account owner)
+- **"This doesn't work" reports from clients**
 
 ---
 
-## Root Cause
+## Affected Hooks (Priority Order)
 
-**File:** `src/hooks/useBusinessSettings.ts`
+### Critical - Core Workflow
 
-**Line 195 (CREATE):**
-```tsx
-user_id: user.id,  // ❌ Uses team member's ID
-```
+| File | Hook | Impact |
+|------|------|--------|
+| `src/hooks/useQuotes.ts` | `useCreateQuote` | Team members can't create quotes |
+| `src/hooks/useTreatments.ts` | `useCreateTreatment` | Team members can't add treatments to projects |
+| `src/hooks/useWindows.ts` | `useCreateWindow` | Team members can't add surfaces/windows |
+| `src/hooks/useRoomProducts.ts` | `useCreateRoomProduct`, `useCreateRoomProducts` | Team members can't add products to rooms |
 
-**Lines 227-233 (UPDATE):**
-```tsx
-const { data: profile } = await supabase
-  .from("user_profiles")
-  .select("parent_account_id")
-  .eq("user_id", user.id)
-  .maybeSingle();
+### High - Account Configuration
 
-const effectiveOwnerId = profile?.parent_account_id || user.id;
-// ✅ Correctly uses owner's ID
-```
+| File | Hook | Impact |
+|------|------|--------|
+| `src/hooks/useJobStatuses.ts` | `useCreateJobStatus` | Team members can't configure job statuses |
+| `src/hooks/useNumberSequences.ts` | `useCreateNumberSequence` | Team members can't set up document numbering |
+| `src/hooks/useSuppliers.ts` | `useCreateSupplier` | Team members can't add suppliers |
+| `src/hooks/useInventoryManagement.ts` | `useCreateInventoryItem` | Team members can't add inventory |
+
+### Medium - Exceptions to Review
+
+| File | Hook | Decision Needed |
+|------|------|-----------------|
+| `src/hooks/useAppointments.ts` | `useCreateAppointment` | **Keep per-user** - Calendar events should be owned by the individual who creates them |
 
 ---
 
-## Solution
+## The Fix Pattern
 
-Add the same `effectiveOwnerId` logic to `useCreateBusinessSettings` so team members can create settings on behalf of the account owner.
+Each affected hook needs the same 5-line addition before the insert:
 
-**Before (broken):**
 ```tsx
-export const useCreateBusinessSettings = () => {
-  return useMutation({
-    mutationFn: async (settings) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data, error } = await supabase
-        .from('business_settings')
-        .insert({
-          ...settings,
-          user_id: user.id,  // ❌ WRONG - uses team member's ID
-        })
-```
+// BEFORE (buggy):
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) throw new Error("User not authenticated");
 
-**After (fixed):**
-```tsx
-export const useCreateBusinessSettings = () => {
-  return useMutation({
-    mutationFn: async (settings) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // ✅ Get effective account owner for multi-tenant support
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("parent_account_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+const { data, error } = await supabase
+  .from("table_name")
+  .insert({
+    ...data,
+    user_id: user.id,  // ❌ Uses team member's ID
+  })
 
-      const effectiveOwnerId = profile?.parent_account_id || user.id;
+// AFTER (fixed):
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
-      const { data, error } = await supabase
-        .from('business_settings')
-        .insert({
-          ...settings,
-          user_id: effectiveOwnerId,  // ✅ CORRECT - uses owner's ID
-        })
+// In mutation function:
+const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+
+const { data, error } = await supabase
+  .from("table_name")
+  .insert({
+    ...data,
+    user_id: effectiveOwnerId,  // ✅ Uses account owner's ID
+  })
 ```
 
 ---
@@ -89,28 +76,63 @@ export const useCreateBusinessSettings = () => {
 
 | File | Change |
 |------|--------|
-| `src/hooks/useBusinessSettings.ts` | Add `effectiveOwnerId` lookup to `useCreateBusinessSettings` mutation |
+| `src/hooks/useQuotes.ts` | Add `getEffectiveOwnerForMutation` to `useCreateQuote` |
+| `src/hooks/useTreatments.ts` | Add `getEffectiveOwnerForMutation` to `useCreateTreatment` |
+| `src/hooks/useWindows.ts` | Add `getEffectiveOwnerForMutation` to `useCreateWindow` |
+| `src/hooks/useRoomProducts.ts` | Add `getEffectiveOwnerForMutation` to `useCreateRoomProduct` and `useCreateRoomProducts` |
+| `src/hooks/useJobStatuses.ts` | Add `getEffectiveOwnerForMutation` to `useCreateJobStatus` |
+| `src/hooks/useNumberSequences.ts` | Add `getEffectiveOwnerForMutation` to `useCreateNumberSequence` |
+| `src/hooks/useSuppliers.ts` | Add `getEffectiveOwnerForMutation` to `useCreateSupplier` |
+| `src/hooks/useInventoryManagement.ts` | Add `getEffectiveOwnerForMutation` to `useCreateInventoryItem` |
 
 ---
 
-## Verification Steps
+## Already Fixed ✅
 
-After fix, test with:
-1. Log in as a Staff/Admin team member with settings access
-2. Go to Settings → Business Details
-3. Try to save company name, address, etc.
-4. Verify it saves without errors
-5. Log in as the Owner and verify the settings appear correctly
+These hooks already use the correct pattern:
+
+| File | Status |
+|------|--------|
+| `src/hooks/useBusinessSettings.ts` | ✅ Fixed (just now) |
+| `src/hooks/useSMSTemplates.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
+| `src/hooks/useVendors.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
+| `src/hooks/useSystemTemplates.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
+| `src/hooks/useSurfaces.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
+| `src/hooks/useRooms.ts` | ✅ Uses `getEffectiveOwnerForMutation` |
+| `src/hooks/useClients.ts` | ✅ Uses `effectiveOwnerId` pattern |
+
+---
+
+## Intentionally Per-User (No Fix Needed)
+
+| File | Reason |
+|------|--------|
+| `src/hooks/useAppointments.ts` | Calendar events are personal - each team member manages their own schedule |
+| `src/hooks/useUserPreferences.ts` | UI preferences are per-user (theme, sidebar state, etc.) |
+
+---
+
+## Verification After Fix
+
+Test each scenario with a Staff/Admin team member:
+
+1. **Create a new quote** → Should save successfully and be visible to owner
+2. **Add a treatment to a project** → Should work without RLS errors
+3. **Add a surface/window** → Should work for team members
+4. **Add products to a room** → Should work in the room designer
+5. **Configure job statuses** → Team members can help set up the account
+6. **Add suppliers** → Team members can add vendors
+7. **Add inventory items** → Team members can manage fabric library
 
 ---
 
 ## Summary
 
-| Scenario | Before Fix | After Fix |
-|----------|------------|-----------|
-| Owner saves settings | ✅ Works | ✅ Works |
-| Team member updates existing settings | ✅ Works | ✅ Works |
-| Team member creates new settings | ❌ **Errors/Fails** | ✅ Works |
+| Category | Count |
+|----------|-------|
+| Hooks to fix | 8 |
+| Already correct | 7 |
+| Intentionally per-user | 2 |
 
-This fix enables the workflow you described: giving a team member permission to set up the app on your behalf.
+This fix will enable the workflow you want: **give a team member permission to set up and manage the app on your behalf**.
 
