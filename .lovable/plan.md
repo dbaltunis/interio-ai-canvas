@@ -1,191 +1,227 @@
 
 
-# Fix Closing Scene - Slow Down Help Panel & Improve Readability
+# Show Welcome Video to Every New User - Database-Backed Approach
 
-## Problem
+## Overview
 
-The help panel that appears when "clicking" the question mark is only visible for **~1.8 seconds** (phases 0.32-0.58 out of 7s total). This is way too fast to read, especially since it overlaps with other content appearing at the same time.
+Currently, the welcome video tutorial uses `localStorage` to track if a user has seen it. This has two problems:
+1. **Not persistent across devices** - A user who signs up on mobile won't see the video when they log in on desktop
+2. **Can be cleared** - If browser storage is cleared, the video shows again
 
-**Current timing issues:**
-- Too many elements appearing simultaneously
-- Help panel disappears before user can read all 4 steps
-- Support text starts before help panel finishes
-- Feels rushed and chaotic
+The solution is to use the existing `app_user_flags` database table (already used by `WelcomeTour`) to track this at the account level, ensuring **every single new user** sees the video exactly once, on any device.
 
 ---
 
-## Solution: Extend Duration & Sequential Flow
+## Current State
 
-### 1. Increase Scene Duration from 7s to 10s
-
-This gives us more time to show each element properly without rushing.
-
-**File: `src/components/showcase/ShowcaseLightbulb.tsx`**
-- Line 113: Change `duration: 7000` to `duration: 10000`
+| Component | Storage Method | Issue |
+|-----------|---------------|-------|
+| `ShowcaseLightbulb.tsx` | `localStorage` (`showcase_last_seen_version`) | Per-browser only |
+| `WelcomeTour.tsx` | `app_user_flags` table (`has_seen_product_tour`) | Already database-backed |
 
 ---
 
-### 2. Redesign Phase Timing - Sequential, Not Overlapping
+## Solution
 
-**New phase structure (10 seconds total):**
+### 1. Create a Database Flag for the Welcome Video
 
-| Phase | Duration | Content |
-|-------|----------|---------|
-| 0.00-0.15 | 1.5s | Page icons appear one by one |
-| 0.10-0.30 | 2.0s | "Every page has step-by-step guidance" karaoke |
-| 0.25-0.40 | 1.5s | Question mark click animation (Dashboard pulsing) |
-| 0.35-0.65 | 3.0s | **Help panel visible - MORE TIME** |
-| 0.60-0.80 | 2.0s | Flags + support text (karaoke) |
-| 0.75-1.00 | 2.5s | Final "You're all set!" message |
+Use the existing `app_user_flags` table with a new flag: `has_seen_welcome_video`
 
-**Key change:** Help panel now visible for **3 seconds** instead of 1.8s
+This table already exists and works well for `WelcomeTour` - we simply add another flag.
 
 ---
 
-### 3. Updated Phase Variables
+### 2. Create a Global Auto-Trigger Component
+
+Create a new component `WelcomeVideoAutoTrigger.tsx` that:
+- Runs for all authenticated users
+- Checks if `has_seen_welcome_video` flag exists and is `true`
+- If not, automatically opens the video player
+- Once opened, marks the flag as `true` in the database
+
+This component will be mounted in `App.tsx` (inside the authenticated route) so it runs regardless of which page the user lands on.
+
+---
+
+### 3. Keep ShowcaseLightbulb as Manual Re-watch Button
+
+The lightbulb button stays in the dashboard header for users who want to re-watch the video manually. Remove only the auto-open logic from it.
+
+---
+
+### 4. Disable WelcomeTour Auto-Open (Optional)
+
+Since the cinematic video is more comprehensive, we can disable the auto-open of the older 4-step `WelcomeTour` to avoid overwhelming new users with two tours. Users can still access it from Tips & Guidance if needed.
+
+---
+
+## Implementation Details
+
+### A. New Component: `WelcomeVideoAutoTrigger.tsx`
 
 ```tsx
-// Scene6Closing - SLOWER, MORE READABLE
-const showPageIcons = inPhase(phase, 0.05, 1);
-const showHelpClick = inPhase(phase, 0.20, 0.40);      // Question mark pulsing
-const showHelpPanel = inPhase(phase, 0.30, 0.65);      // EXTENDED: 3.5s visibility
-const showSupport = inPhase(phase, 0.58, 1);           // Delayed start
-const showFinalMessage = inPhase(phase, 0.78, 1);      // Delayed start
+// src/components/showcase/WelcomeVideoAutoTrigger.tsx
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { WelcomeVideoPlayer } from "./WelcomeVideoPlayer";
+import { welcomeSteps, welcomeChapters } from "./ShowcaseLightbulb";
+
+export const WelcomeVideoAutoTrigger = () => {
+  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
+
+  // Check database flag on mount
+  useEffect(() => {
+    if (!user || hasChecked) return;
+
+    const checkWelcomeVideoStatus = async () => {
+      const { data, error } = await supabase
+        .from('app_user_flags')
+        .select('enabled')
+        .eq('user_id', user.id)
+        .eq('flag', 'has_seen_welcome_video')
+        .maybeSingle();
+
+      // If no flag or flag is false, show the video
+      if (error || !data || !data.enabled) {
+        setIsOpen(true);
+        // Mark as seen immediately
+        await markAsSeen();
+      }
+      setHasChecked(true);
+    };
+
+    checkWelcomeVideoStatus();
+  }, [user, hasChecked]);
+
+  const markAsSeen = useCallback(async () => {
+    if (!user) return;
+    
+    await supabase.from('app_user_flags').upsert({
+      user_id: user.id,
+      flag: 'has_seen_welcome_video',
+      enabled: true,
+    }, { onConflict: 'user_id,flag' });
+  }, [user]);
+
+  // Don't render anything until we've checked
+  if (!hasChecked || !user) return null;
+
+  return (
+    <WelcomeVideoPlayer
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      steps={welcomeSteps}
+      chapters={welcomeChapters}
+    />
+  );
+};
 ```
 
 ---
 
-### 4. Improved Help Panel Layout
+### B. Export Steps from ShowcaseLightbulb
 
-Make the help panel clearer and easier to scan:
+Add exports at the end of `ShowcaseLightbulb.tsx`:
 
 ```tsx
-<motion.div
-  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  exit={{ opacity: 0, scale: 0.9, y: -10 }}
-  transition={{ duration: 0.4 }}
-  className="bg-card border-2 border-primary/20 rounded-xl shadow-xl p-5 mb-5 max-w-[320px]"
->
-  <div className="flex items-center gap-2.5 mb-4 pb-2 border-b border-border">
-    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-      <Lightbulb className="h-5 w-5 text-amber-500" />
-    </div>
-    <span className="text-base font-semibold">Quick Guide</span>
-  </div>
-  
-  {/* Steps with more spacing and larger text */}
-  <div className="space-y-3">
-    {[
-      "Create your first project",
-      "Add rooms and windows", 
-      "Select fabrics and hardware",
-      "Generate quote and send"
-    ].map((step, i) => (
-      <motion.div 
-        key={i}
-        className="flex items-center gap-3"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: i * 0.15 }}
-      >
-        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-          {i + 1}
-        </div>
-        <span className="text-sm">{step}</span>
-      </motion.div>
-    ))}
-  </div>
-</motion.div>
+// Export for use by WelcomeVideoAutoTrigger
+export { welcomeSteps, welcomeChapters };
+```
+
+Also remove the auto-open localStorage logic (lines 137-141):
+
+```tsx
+// REMOVE this block:
+// if (!lastSeen) {
+//   setIsOpen(true);
+//   localStorage.setItem(STORAGE_KEY, APP_VERSION);
+//   setHasNewContent(false);
+// }
+```
+
+Keep the version check for the "glow" effect on new content.
+
+---
+
+### C. Mount in App.tsx
+
+Add the auto-trigger inside the authenticated routes:
+
+```tsx
+import { WelcomeVideoAutoTrigger } from "@/components/showcase/WelcomeVideoAutoTrigger";
+
+// Inside the authenticated/protected section of routes:
+<WelcomeVideoAutoTrigger />
 ```
 
 ---
 
-### 5. Adjust Karaoke Text Timing
+### D. Disable WelcomeTour Auto-Open (Optional)
 
-Slow down the word reveal to match the extended duration:
+In `WelcomeTour.tsx`, comment out the auto-open logic (line 78):
 
 ```tsx
-// Guidance message
-<KaraokeText 
-  text="Every page has step-by-step guidance"
-  startPhase={0.10}
-  endPhase={0.28}  // Extended
-  phase={phase}
-/>
+// BEFORE:
+setTimeout(() => setIsOpen(true), 1500);
 
-// Support text
-<KaraokeText 
-  text="Need help? Contact your sales administrator."
-  startPhase={0.60}
-  endPhase={0.72}  // Extended
-  phase={phase}
-/>
-
-<KaraokeText 
-  text="We're here to support your business every step of the way."
-  startPhase={0.68}
-  endPhase={0.82}  // Extended
-  phase={phase}
-/>
-
-// Final message
-<KaraokeText 
-  text="You're all set!"
-  startPhase={0.80}
-  endPhase={0.88}
-  phase={phase}
-/>
-
-<KaraokeText 
-  text="Start creating beautiful window treatments"
-  startPhase={0.85}
-  endPhase={0.98}
-  phase={phase}
-/>
+// AFTER:
+// Auto-open disabled - cinematic welcome video handles first-time users
+// setTimeout(() => setIsOpen(true), 1500);
 ```
 
 ---
 
-### 6. Smoother Transitions
+## Files to Create/Modify
 
-Add `exit` animations to prevent abrupt disappearing:
+| File | Action |
+|------|--------|
+| `src/components/showcase/WelcomeVideoAutoTrigger.tsx` | **CREATE** - Global auto-trigger component |
+| `src/components/showcase/ShowcaseLightbulb.tsx` | **MODIFY** - Export steps, remove auto-open logic |
+| `src/App.tsx` | **MODIFY** - Mount `WelcomeVideoAutoTrigger` |
+| `src/components/teaching/WelcomeTour.tsx` | **MODIFY** - Disable auto-open (optional) |
 
-```tsx
-<AnimatePresence mode="wait">
-  {showHelpPanel && (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 15 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-    >
-      {/* Help panel content */}
-    </motion.div>
-  )}
-</AnimatePresence>
+---
+
+## User Experience Flow
+
+```text
+New User Signs Up
+       ↓
+Redirected to Dashboard (or any page)
+       ↓
+WelcomeVideoAutoTrigger checks database
+       ↓
+No "has_seen_welcome_video" flag found
+       ↓
+┌─────────────────────────────────────┐
+│  🎬 Welcome Video Opens!            │
+│                                     │
+│  Scene 0: "Welcome to InterioApp!"  │
+│  Scene 1-8: Full product showcase   │
+│  Scene 9: Help system & support     │
+└─────────────────────────────────────┘
+       ↓
+Flag saved to database: enabled = true
+       ↓
+User closes video → Never auto-opens again
+       ↓
+Can re-watch anytime via 💡 lightbulb button
 ```
 
 ---
 
-## Files to Modify
+## Why This Approach Works
 
-| File | Changes |
-|------|---------|
-| `src/components/showcase/ShowcaseLightbulb.tsx` | Line 113: `duration: 7000` → `duration: 10000` |
-| `src/components/help/tutorial-steps/WelcomeVideoSteps.tsx` | Lines 1281-1479: Update Scene6Closing with new timing |
+| Feature | localStorage (Old) | Database (New) |
+|---------|-------------------|----------------|
+| Persists across devices | No | Yes |
+| Survives browser clear | No | Yes |
+| Works on first login | Yes | Yes |
+| Per-account tracking | No | Yes |
+| Already proven | - | Yes (WelcomeTour uses it) |
 
----
-
-## Summary of Improvements
-
-| Issue | Before | After |
-|-------|--------|-------|
-| Scene duration | 7 seconds | **10 seconds** |
-| Help panel visibility | ~1.8s (26%) | **~3.5s (35%)** |
-| Content overlapping | Multiple elements at once | **Sequential flow** |
-| Help panel styling | Basic card | **Larger, with header, staggered steps** |
-| Transitions | Abrupt exit | **Smooth fade out** |
-
-This creates a calmer, more readable closing experience where users have time to actually read and understand the help system before moving to the final message.
+This ensures that every single new user who creates an account will see the welcome video exactly once, regardless of which device or browser they use.
 
