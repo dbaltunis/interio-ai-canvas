@@ -12,6 +12,8 @@ interface TeachingTriggerProps {
   autoShow?: boolean;
   /** Delay before auto-showing (ms) */
   autoShowDelay?: number;
+  /** Disable the popover and only render children (use when global overlay handles the tooltip) */
+  disablePopover?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export const TeachingTrigger = ({
   position,
   autoShow = true,
   autoShowDelay = 500,
+  disablePopover = false,
 }: TeachingTriggerProps) => {
   const { 
     activeTeaching, 
@@ -93,6 +96,11 @@ export const TeachingTrigger = ({
       total: sequencePoints.length,
     };
   };
+  
+  // If popover is disabled, just render children (global overlay handles tooltip)
+  if (disablePopover) {
+    return <>{children}</>;
+  }
   
   return (
     <TeachingPopover

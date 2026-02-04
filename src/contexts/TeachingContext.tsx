@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { allTeachingPoints, TeachingPoint, getNextInSequence, getTeachingPointsForPage } from '@/config/teachingPoints';
 
 const STORAGE_KEY = 'teaching_progress';
@@ -263,6 +263,9 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  // Ref to track the last shown teaching to prevent infinite loops
+  const lastShownTeachingRef = useRef<string | null>(null);
+  
   // Set current page for context-aware teaching
   const setCurrentPage = useCallback((page: string, section?: string) => {
     setCurrentPageState({ page, section });
@@ -278,33 +281,34 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     // Auto-show teaching for new page if enabled
     if (isTeachingEnabled && initialized) {
       const next = getNextTeaching(page, section);
-      console.log('[Teaching] Page changed:', { page, section, next: next?.id, isTeachingEnabled, initialized });
+      
+      // Guard: Don't re-show the same teaching (prevents infinite loop)
+      if (next && lastShownTeachingRef.current === next.id) {
+        return;
+      }
+      
+      console.log('[Teaching] Page changed:', { page, section, next: next?.id });
       
       // Support first_visit and empty_state triggers for auto-show
       if (next && (next.trigger.type === 'first_visit' || next.trigger.type === 'empty_state')) {
         // Small delay to let page render
         setTimeout(() => {
-          // Check maxShows limit if defined
-          const showCount = progress.showCounts[next.id] || 0;
-          const maxShows = next.maxShows;
-          const withinMaxShows = !maxShows || showCount < maxShows;
-          
-          if (!hasSeenTeaching(next.id) && !isDismissedForever(next.id) && withinMaxShows) {
-            console.log('[Teaching] Showing teaching:', next.id, { showCount, maxShows });
-            // Increment show count
-            setProgress(prev => ({
-              ...prev,
-              showCounts: {
-                ...prev.showCounts,
-                [next.id]: (prev.showCounts[next.id] || 0) + 1,
-              },
-            }));
-            setActiveTeaching(next);
+          if (!hasSeenTeaching(next.id) && !isDismissedForever(next.id)) {
+            // Check maxShows limit if defined
+            const currentShowCount = progress.showCounts[next.id] || 0;
+            const maxShows = next.maxShows;
+            const withinMaxShows = !maxShows || currentShowCount < maxShows;
+            
+            if (withinMaxShows) {
+              console.log('[Teaching] Showing teaching:', next.id);
+              lastShownTeachingRef.current = next.id;
+              setActiveTeaching(next);
+            }
           }
         }, 500);
       }
     }
-  }, [isTeachingEnabled, initialized, getNextTeaching, hasSeenTeaching, isDismissedForever, progress.showCounts]);
+  }, [isTeachingEnabled, initialized, getNextTeaching, hasSeenTeaching, isDismissedForever]);
 
   const value: TeachingContextValue = {
     activeTeaching,
