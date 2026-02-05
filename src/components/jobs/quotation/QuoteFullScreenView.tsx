@@ -12,6 +12,8 @@ import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
+import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
+import { useQuoteTemplateData } from "@/hooks/useQuoteTemplateData";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -63,6 +65,10 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const dueDate = quote?.due_date || null;
   const currency = businessSettings?.currency || 'GBP';
 
+  // Determine quote template style from business settings
+  const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
+  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && documentType === 'quote';
+
   // Handle CSV export
   const handleExportCSV = (format: 'generic' | 'xero' | 'quickbooks') => {
     const exportData = prepareInvoiceExportData(quote, client, quotationItems, businessSettings);
@@ -100,6 +106,69 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   }), [project, client, businessSettings, projectSummaries, quotationItems, subtotal, taxRate, taxAmount, total, markupPercentage]);
+
+  // Prepare data for Homekaara template
+  const preparedQuoteData = useMemo(() => {
+    if (!useHomekaaraTemplate) return null;
+    return prepareQuoteData(projectData, showDetailedBreakdown);
+  }, [projectData, showDetailedBreakdown, useHomekaaraTemplate]);
+
+  // Transform data for Homekaara template format
+  const homekaaraTemplateData = useMemo(() => {
+    if (!useHomekaaraTemplate || !preparedQuoteData) return null;
+    
+    return {
+      items: preparedQuoteData.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total: item.total,
+        prate: item.quantity,
+        image_url: item.image_url,
+        breakdown: item.breakdown?.map(b => ({
+          label: b.name || b.category || '',
+          value: b.description || (b.total_cost ? `${b.total_cost}` : ''),
+        })).filter(b => b.label || b.value),
+        room_name: item.room_name,
+        room_id: item.room_id,
+        surface_name: item.surface_name,
+        treatment_type: item.treatment_type,
+      })),
+      subtotal: preparedQuoteData.subtotal,
+      taxAmount: preparedQuoteData.taxAmount,
+      total: preparedQuoteData.total,
+      currency: preparedQuoteData.currency,
+      businessInfo: {
+        name: businessSettings?.company_name || 'Your Business',
+        logo_url: businessSettings?.company_logo_url,
+        email: businessSettings?.business_email,
+        phone: businessSettings?.business_phone,
+        address: [businessSettings?.address, businessSettings?.city, businessSettings?.state, businessSettings?.zip_code].filter(Boolean).join(', '),
+      },
+      clientInfo: {
+        name: client?.full_name || client?.name || 'Client',
+        email: client?.email,
+        phone: client?.phone,
+        address: client?.address,
+      },
+      metadata: {
+        quote_number: project?.quote_number || project?.id || 'N/A',
+        date: project?.created_at ? new Date(project.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+        status: project?.status || 'Draft',
+        validity_days: project?.validity_days || 14,
+        services_required: project?.services_required,
+        expected_purchase_date: project?.expected_purchase_date,
+        referral_source: project?.referral_source,
+      },
+      paymentInfo: {
+        advance_paid: project?.advance_paid || 0,
+        deposit_percentage: 50,
+      },
+      introMessage: project?.intro_message,
+    };
+  }, [useHomekaaraTemplate, preparedQuoteData, businessSettings, client, project]);
 
   const handleDownloadPDF = () => {
     // Open browser's native print dialog - most reliable approach
@@ -224,19 +293,35 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         {/* Scrollable content area - visible on screen */}
         <div className="flex-1 overflow-y-auto bg-white p-8 no-print">
           <div ref={previewRef}>
-            <LivePreview 
-              blocks={templateBlocks} 
-              projectData={projectData}
-              isEditable={false}
-              isPrintMode={false}
-              documentType={selectedTemplate?.template_style || 'quote'}
-              showDetailedBreakdown={showDetailedBreakdown}
-              showImages={showImages}
-              onSettingsChange={(settings) => {
-                if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
-                if (settings.showImages !== undefined) setShowImages(settings.showImages);
-              }}
-            />
+            {useHomekaaraTemplate && homekaaraTemplateData ? (
+              <QuoteTemplateHomekaara
+                items={homekaaraTemplateData.items}
+                subtotal={homekaaraTemplateData.subtotal}
+                taxAmount={homekaaraTemplateData.taxAmount}
+                total={homekaaraTemplateData.total}
+                currency={homekaaraTemplateData.currency}
+                businessInfo={homekaaraTemplateData.businessInfo}
+                clientInfo={homekaaraTemplateData.clientInfo}
+                metadata={homekaaraTemplateData.metadata}
+                paymentInfo={homekaaraTemplateData.paymentInfo}
+                introMessage={homekaaraTemplateData.introMessage}
+                isEditable={false}
+              />
+            ) : (
+              <LivePreview 
+                blocks={templateBlocks} 
+                projectData={projectData}
+                isEditable={false}
+                isPrintMode={false}
+                documentType={selectedTemplate?.template_style || 'quote'}
+                showDetailedBreakdown={showDetailedBreakdown}
+                showImages={showImages}
+                onSettingsChange={(settings) => {
+                  if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
+                  if (settings.showImages !== undefined) setShowImages(settings.showImages);
+                }}
+              />
+            )}
           </div>
         </div>
         
@@ -246,15 +331,31 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           style={{ display: 'none' }}
           className="print:block"
         >
-          <LivePreview 
-            blocks={templateBlocks} 
-            projectData={projectData}
-            isEditable={false}
-            isPrintMode={true}
-            documentType={selectedTemplate?.template_style || 'quote'}
-            showDetailedBreakdown={showDetailedBreakdown}
-            showImages={showImages}
-          />
+          {useHomekaaraTemplate && homekaaraTemplateData ? (
+            <QuoteTemplateHomekaara
+              items={homekaaraTemplateData.items}
+              subtotal={homekaaraTemplateData.subtotal}
+              taxAmount={homekaaraTemplateData.taxAmount}
+              total={homekaaraTemplateData.total}
+              currency={homekaaraTemplateData.currency}
+              businessInfo={homekaaraTemplateData.businessInfo}
+              clientInfo={homekaaraTemplateData.clientInfo}
+              metadata={homekaaraTemplateData.metadata}
+              paymentInfo={homekaaraTemplateData.paymentInfo}
+              introMessage={homekaaraTemplateData.introMessage}
+              isEditable={false}
+            />
+          ) : (
+            <LivePreview 
+              blocks={templateBlocks} 
+              projectData={projectData}
+              isEditable={false}
+              isPrintMode={true}
+              documentType={selectedTemplate?.template_style || 'quote'}
+              showDetailedBreakdown={showDetailedBreakdown}
+              showImages={showImages}
+            />
+          )}
         </div>
 
       </DialogContent>
