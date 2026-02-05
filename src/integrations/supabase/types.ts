@@ -1623,6 +1623,7 @@ export type Database = {
           payment_reference_prefix: string | null
           pricing_settings: Json | null
           privacy_policy: string | null
+          quote_template: string | null
           registration_number: string | null
           show_profit_margins_to_staff: boolean | null
           show_vendor_costs_to_managers: boolean | null
@@ -1676,6 +1677,7 @@ export type Database = {
           payment_reference_prefix?: string | null
           pricing_settings?: Json | null
           privacy_policy?: string | null
+          quote_template?: string | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
@@ -1729,6 +1731,7 @@ export type Database = {
           payment_reference_prefix?: string | null
           pricing_settings?: Json | null
           privacy_policy?: string | null
+          quote_template?: string | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
@@ -6673,6 +6676,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          advance_paid: number | null
           client_id: string | null
           completion_date: string | null
           created_at: string
@@ -6680,9 +6684,11 @@ export type Database = {
           description: string | null
           draft_number: string | null
           due_date: string | null
+          expected_purchase_date: string | null
           fabric_pools: Json | null
           funnel_stage: string | null
           id: string
+          intro_message: string | null
           invoice_number: string | null
           job_number: string | null
           name: string
@@ -6690,6 +6696,8 @@ export type Database = {
           parent_job_id: string | null
           priority: string | null
           quote_number: string | null
+          referral_source: string | null
+          services_required: string | null
           shopify_order_id: string | null
           shopify_order_number: string | null
           source: string | null
@@ -6698,6 +6706,7 @@ export type Database = {
           status_id: string | null
           updated_at: string
           user_id: string
+          validity_days: number | null
           work_order_content_filter: Json | null
           work_order_document_type: string | null
           work_order_pin: string | null
@@ -6706,6 +6715,7 @@ export type Database = {
           work_order_treatment_filter: Json | null
         }
         Insert: {
+          advance_paid?: number | null
           client_id?: string | null
           completion_date?: string | null
           created_at?: string
@@ -6713,9 +6723,11 @@ export type Database = {
           description?: string | null
           draft_number?: string | null
           due_date?: string | null
+          expected_purchase_date?: string | null
           fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
+          intro_message?: string | null
           invoice_number?: string | null
           job_number?: string | null
           name: string
@@ -6723,6 +6735,8 @@ export type Database = {
           parent_job_id?: string | null
           priority?: string | null
           quote_number?: string | null
+          referral_source?: string | null
+          services_required?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
           source?: string | null
@@ -6731,6 +6745,7 @@ export type Database = {
           status_id?: string | null
           updated_at?: string
           user_id: string
+          validity_days?: number | null
           work_order_content_filter?: Json | null
           work_order_document_type?: string | null
           work_order_pin?: string | null
@@ -6739,6 +6754,7 @@ export type Database = {
           work_order_treatment_filter?: Json | null
         }
         Update: {
+          advance_paid?: number | null
           client_id?: string | null
           completion_date?: string | null
           created_at?: string
@@ -6746,9 +6762,11 @@ export type Database = {
           description?: string | null
           draft_number?: string | null
           due_date?: string | null
+          expected_purchase_date?: string | null
           fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
+          intro_message?: string | null
           invoice_number?: string | null
           job_number?: string | null
           name?: string
@@ -6756,6 +6774,8 @@ export type Database = {
           parent_job_id?: string | null
           priority?: string | null
           quote_number?: string | null
+          referral_source?: string | null
+          services_required?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
           source?: string | null
@@ -6764,6 +6784,7 @@ export type Database = {
           status_id?: string | null
           updated_at?: string
           user_id?: string
+          validity_days?: number | null
           work_order_content_filter?: Json | null
           work_order_document_type?: string | null
           work_order_pin?: string | null
