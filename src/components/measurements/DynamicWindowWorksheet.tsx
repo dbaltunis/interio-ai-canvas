@@ -34,6 +34,7 @@ import { useCurtainEngine } from "@/engine/useCurtainEngine";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { syncWindowToWorkshopItem } from "@/hooks/useWorkshopItemSync";
 
@@ -2057,9 +2058,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     if (isAccessory) {
                       // Use the accessory name directly (e.g., "Runners", "End Caps")
                       displayName = opt.name || extracted.name;
-                      // Create pricing description (e.g., "12 × ₹10")
-                      displayDescription = accessoryQuantity > 1 && accessoryUnitPrice > 0 
-                        ? `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`
+                      // Create pricing description with dynamic currency symbol
+                      const currSymbol = getCurrencySymbol(units?.currency || 'USD');
+                      displayDescription = accessoryQuantity > 1 && accessoryUnitPrice > 0
+                        ? `${accessoryQuantity} × ${currSymbol}${accessoryUnitPrice.toFixed(2)}`
                         : extracted.value;
                     }
                     

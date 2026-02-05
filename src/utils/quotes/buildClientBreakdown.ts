@@ -603,7 +603,8 @@ export const buildClientBreakdown = (
       
       // For accessories, format description with quantity and pricing
       if (isAccessory && accessoryQuantity > 1 && accessoryUnitPrice > 0) {
-        formattedDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+        const currencySymbol = getCurrencySymbol(units.currency);
+        formattedDescription = `${accessoryQuantity} × ${currencySymbol}${accessoryUnitPrice.toFixed(2)}`;
         if (option.pricingDetails) {
           formattedDescription += ` (${option.pricingDetails})`;
         }
