@@ -1,116 +1,94 @@
 
 
-# Fix Unfriendly Technical Error Notifications
+# Fix Duplicate Pricing & Hidden Value Filtering Bugs
 
-## Problem Identified
+## Confirmed Root Causes (Code Evidence)
 
-The screenshot shows a raw database error: **"duplicate key value violates unique constraint 'unique_user_slot'"** - this is technical jargon that means nothing to end users.
+### Bug 1: Duplicate Pricing Entries
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx` (lines 645-660)
 
-**Root Causes:**
+The code calls BOTH:
+- `onOptionPriceChange()` (line 646) - adds entry like `control_type_af6eed75_motor: Motor`
+- `onSelectedOptionsChange()` (line 650) - adds ANOTHER entry with different name format
 
-1. **`useJobStatuses.ts`** directly displays `error.message` from database errors
-2. **`StatusSlotManager.tsx`** catches errors but only logs them - never shows user feedback
-3. **`friendlyErrors.ts`** has a generic "duplicate" pattern but no specific pattern for status slots
+This bypasses the deduplication filter in `VisualMeasurementSheet.tsx` (line 176) which only filters by `optionKey + ':'` prefix.
 
----
+### Bug 2: Hidden Values Still Visible
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx` (lines 72-75)
 
-## Solution Overview
+```typescript
+const { data: settings } = await supabase
+  .from('template_option_settings')
+  .select('treatment_option_id, is_enabled')  // ← Missing hidden_value_ids!
+```
 
-Migrate error handling to use the existing `useFriendlyToast` system with enhanced error patterns for status management.
+This bypasses the `useTreatmentOptions` hook's correct filtering.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Add Specific Error Pattern for Status Slots
+### Step 1: Remove Duplicate `onSelectedOptionsChange` Calls
 
-**File:** `src/utils/friendlyErrors.ts`
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx`
 
-Add a new pattern before the generic "duplicate" pattern to catch the `unique_user_slot` constraint:
+Remove lines 649-660 where `onSelectedOptionsChange` is manually called after `onOptionPriceChange`. The `onOptionPriceChange` handler in `VisualMeasurementSheet.tsx` already updates `selectedOptions` correctly.
+
+### Step 2: Trust Hook's Pre-Filtered Data
+
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx`
+
+Replace lines 64-109 with simplified logic:
 
 ```typescript
-// Add BEFORE the generic "duplicate/conflict" pattern (around line 103)
-{
-  patterns: ['unique_user_slot'],
-  error: {
-    title: "Slot already in use",
-    message: "This slot number is already assigned to another status. Please edit the existing status or choose a different slot.",
-    icon: 'validation',
-    persistent: true,
-  }
-},
+useEffect(() => {
+  // useTreatmentOptions already handles:
+  // ✅ is_enabled filtering (WHITELIST)
+  // ✅ hidden_value_ids filtering
+  // ✅ template_order_index sorting
+  
+  // Deduplicate by label to prevent duplicate dropdowns
+  const uniqueOptions = allOptions.reduce((acc, opt) => {
+    if (!acc.some(existing => existing.label === opt.label)) {
+      acc.push(opt);
+    }
+    return acc;
+  }, [] as typeof allOptions);
+  
+  setTreatmentOptions(uniqueOptions);
+}, [allOptions]);
 ```
 
-### Step 2: Update useJobStatuses Hook to Use Friendly Errors
+### Step 3: Apply Same Fix to DynamicCurtainOptions
 
-**File:** `src/hooks/useJobStatuses.ts`
+**File:** `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx`
 
-Replace `useToast` with `useFriendlyToast` for better error handling:
-
-| Line | Change |
-|------|--------|
-| 3 | Replace `useToast` import with `useFriendlyToast` |
-| 39 | Use `showError` and `showSuccess` from `useFriendlyToast()` |
-| 60-70 | Replace toast calls with `showSuccess()` and `showError()` |
-| 93-103 | Replace toast calls with `showSuccess()` and `showError()` |
-| 126-136 | Replace toast calls with `showSuccess()` and `showError()` |
-
-**Key Changes:**
-- Success: `showSuccess("Status saved", "Job status updated successfully")`
-- Error: `showError(error, { context: 'update job status' })` - auto-parses technical errors
-
-### Step 3: Fix StatusSlotManager Silent Errors
-
-**File:** `src/components/settings/StatusSlotManager.tsx`
-
-Currently, errors are caught but only logged with `console.error` - users see nothing.
-
-| Line | Current | Fix |
-|------|---------|-----|
-| 19 | `import { useToast }` | `import { useFriendlyToast }` |
-| 51 | `const { toast } = useToast()` | `const { showSuccess, showError } = useFriendlyToast()` |
-| 108-114 | Success toast, silent error | Add `showError(error, { context: 'save status' })` in catch block |
-| 127-133 | Success toast, silent error | Add `showError(error, { context: 'set default status' })` in catch block |
-| 155-161 | Success toast, silent error | Add `showError(error, { context: 'apply template' })` in catch block |
+Remove duplicate `onSelectedOptionsChange` calls at lines 1550-1564 and 1592-1605.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/utils/friendlyErrors.ts` | Add specific `unique_user_slot` pattern |
-| `src/hooks/useJobStatuses.ts` | Migrate to `useFriendlyToast` |
-| `src/components/settings/StatusSlotManager.tsx` | Add error notifications, use `useFriendlyToast` |
+| File | Change |
+|------|--------|
+| `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx` | Remove duplicate calls, simplify filtering |
+| `src/components/measurements/dynamic-options/DynamicCurtainOptions.tsx` | Remove duplicate calls |
 
 ---
 
 ## Expected Results
 
-### Before
-```
-Error
-duplicate key value violates unique constraint "unique_user_slot"
-```
-
-### After
-```
-Slot already in use
-This slot number is already assigned to another status. 
-Please edit the existing status or choose a different slot.
-```
-
-The friendly error system will:
-- Show amber/warning styling instead of harsh red
-- Use clear, actionable language
-- Persist until user dismisses (so they have time to read)
-- Apply consistent styling across all status operations
+| Before | After |
+|--------|-------|
+| `control_type_af6eed75: Stainless Steel Chain $15.00` | Single entry: |
+| `control_type_af6eed75: Stainless Steel Chain $10.00` | `control_type_af6eed75: Stainless Steel Chain $10.00` |
+| Hidden values still selectable | Only visible values in dropdown |
 
 ---
 
-## Technical Notes
+## Accounts Affected
 
-- The `useFriendlyToast` hook is already implemented at `src/hooks/use-friendly-toast.ts`
-- Error pattern matching is case-insensitive and scans the full error message
-- Specific patterns (like `unique_user_slot`) should be placed BEFORE generic ones (like `duplicate`) in the array to ensure they match first
+- **All accounts using roller blinds templates** - this is a code bug, not data issue
+- Fix will apply universally once deployed
+- Greg's account and demo account will both benefit
 
