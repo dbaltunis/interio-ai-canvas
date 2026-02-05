@@ -81,8 +81,14 @@ export const QuoteTemplateStyleSelector: React.FC = () => {
   const handleSelectStyle = async (styleId: string) => {
     if (styleId === currentStyle) return;
     
+    if (!businessSettings?.id) {
+      toast.error('Business settings not found. Please try again.');
+      return;
+    }
+    
     try {
       await updateSettings.mutateAsync({
+        id: businessSettings.id,
         quote_template: styleId,
       } as any);
       
