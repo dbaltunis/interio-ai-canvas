@@ -343,9 +343,9 @@ export const QuotationTab = ({
   }, [selectedTemplate]);
 
   // Check if Homekaara template style should be used
+  // When 'homekaara' is selected in business settings, it overrides the block-based template
   const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
-  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && 
-    (selectedTemplate?.template_style === 'quote' || !selectedTemplate?.template_style);
+  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara';
 
   // Function to update template settings
   const handleUpdateTemplateSettings = async (key: string, value: any) => {
