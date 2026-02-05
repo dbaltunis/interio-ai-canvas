@@ -132,10 +132,21 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
       item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // Map subcategory keys to compatible_treatments values for cross-matching
+    const CATEGORY_TO_TREATMENT: Record<string, string> = {
+      'awning_fabric': 'awning',
+      'curtain_fabric': 'curtains',
+      'sheer_fabric': 'sheers',
+      'upholstery_fabric': 'upholstery',
+    };
+    
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory ||
       // Group roman_fabric with curtain_fabric under "Curtain & Roman" tab
-      (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric');
+      (activeCategory === 'curtain_fabric' && item.subcategory === 'roman_fabric') ||
+      // Include items with matching compatible_treatments (multi-treatment use case)
+      (CATEGORY_TO_TREATMENT[activeCategory] && 
+        item.compatible_treatments?.includes(CATEGORY_TO_TREATMENT[activeCategory]));
 
     // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
     const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
