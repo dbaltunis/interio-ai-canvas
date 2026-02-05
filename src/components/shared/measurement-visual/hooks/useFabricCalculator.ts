@@ -122,9 +122,12 @@ export const useFabricCalculator = ({
       
       // Calculate how many fabric widths are needed
       const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
-      
+
       // Calculate seam allowances for joining fabric pieces
-      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+      // CRITICAL FIX: seamHems is TOTAL per join (not per side), so do NOT multiply by 2
+      // See ALGORITHM_SPECIFICATION.md section 8.1
+      const seamsCount = Math.max(0, widthsRequired - 1);
+      const totalSeamAllowance = seamsCount * seamHems;  // Fixed: removed × 2
       
       // Calculate total drop including all allowances
       const totalDrop = height + headerHem + bottomHem + pooling;
