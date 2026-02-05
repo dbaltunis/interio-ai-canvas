@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { userInputToCM } from "@/utils/measurementBoundary";
@@ -192,16 +192,22 @@ export const CostCalculationSummary = ({
   const curtainCostsRef = useRef<{ costs: CurtainCostsCallback; key: string } | null>(null);
   const lastReportedCurtainKeyRef = useRef<string>('');
   
+  // ✅ FIX: Use state to track current keys - React properly observes state changes (not ref mutations)
+  const [blindCostsKey, setBlindCostsKey] = useState<string>('');
+  const [curtainCostsKey, setCurtainCostsKey] = useState<string>('');
+  
   // ✅ Report blind costs to parent AFTER render, only when values change
+  // Using state-based key instead of ref.current in dependency array
   useEffect(() => {
     if (!onBlindCostsCalculated || !blindCostsRef.current) return;
     
     const { costs, key } = blindCostsRef.current;
     if (key !== lastReportedBlindKeyRef.current) {
+      console.log('💰 [CostCalculationSummary] Reporting blind costs change:', { key, costs });
       lastReportedBlindKeyRef.current = key;
       onBlindCostsCalculated(costs);
     }
-  }, [onBlindCostsCalculated, blindCostsRef.current?.key]);
+  }, [onBlindCostsCalculated, blindCostsKey]); // ✅ FIX: Track state, not ref.current
   
   // ✅ NEW: Report curtain costs to parent AFTER render, only when values change
   useEffect(() => {
@@ -209,10 +215,11 @@ export const CostCalculationSummary = ({
     
     const { costs, key } = curtainCostsRef.current;
     if (key !== lastReportedCurtainKeyRef.current) {
+      console.log('💰 [CostCalculationSummary] Reporting curtain costs change:', { key, costs });
       lastReportedCurtainKeyRef.current = key;
       onCurtainCostsCalculated(costs);
     }
-  }, [onCurtainCostsCalculated, curtainCostsRef.current?.key]);
+  }, [onCurtainCostsCalculated, curtainCostsKey]); // ✅ FIX: Track state, not ref.current
   
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric } = useFabricEnrichment({
@@ -398,7 +405,7 @@ export const CostCalculationSummary = ({
       // ✅ FIX: Include option selection changes in key (same pattern as curtains) to trigger updates
       const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
       const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
-      const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
+      const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
       
       // Use ref to track and report changes via useEffect (defined at component level)
       blindCostsRef.current = {
@@ -411,8 +418,14 @@ export const CostCalculationSummary = ({
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
         },
-        key: blindCostsKey,
+        key: computedBlindKey,
       };
+      
+      // ✅ FIX: Update state to trigger useEffect (React observes state changes, not ref mutations)
+      if (computedBlindKey !== blindCostsKey) {
+        // Use setTimeout to avoid setting state during render
+        setTimeout(() => setBlindCostsKey(computedBlindKey), 0);
+      }
 
     // =========================================================
     // UNIFIED QUOTE SUMMARY for Blinds
@@ -709,7 +722,7 @@ export const CostCalculationSummary = ({
       return selectedHeading; // Use ID as fallback
     })();
     
-    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
+    const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
     
     curtainCostsRef.current = {
       costs: {
@@ -723,8 +736,14 @@ export const CostCalculationSummary = ({
         totalCost,
         linearMeters,
       },
-      key: curtainCostsKey,
+      key: computedCurtainKey,
     };
+    
+    // ✅ FIX: Update state to trigger useEffect (React observes state changes, not ref mutations)
+    if (computedCurtainKey !== curtainCostsKey) {
+      // Use setTimeout to avoid setting state during render
+      setTimeout(() => setCurtainCostsKey(computedCurtainKey), 0);
+    }
   }
 
   // =========================================================
