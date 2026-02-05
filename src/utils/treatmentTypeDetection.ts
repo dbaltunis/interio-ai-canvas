@@ -82,6 +82,9 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   if (name.includes('roman') || description.includes('roman blind')) return 'roman_blinds';
   if (name.includes('venetian')) return 'venetian_blinds';
   if (name.includes('shutter')) return 'shutters';
+  // ✅ FIX: Add awning and panel_glide to name-based fallback detection
+  if (name.includes('awning') || description.includes('awning')) return 'awning';
+  if (name.includes('panel') && name.includes('glide')) return 'panel_glide';
   if (name.includes('wallpaper') || name.includes('wall covering') || description.includes('wallpaper')) return 'wallpaper';
   
   return 'curtains'; // default
