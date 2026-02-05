@@ -173,7 +173,22 @@ export const VisualMeasurementSheet = ({
       
       // Use ref to get current state, update it, and set new state
       const currentOptions = selectedOptionsRef.current;
-      const filteredOptions = currentOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
+      
+      // ✅ FIX: Also remove any sub-options (keys starting with parentKey_) when parent changes
+      const filteredOptions = currentOptions.filter(opt => {
+        const optKeyFromName = opt.optionKey || (opt.name.includes(':') ? opt.name.split(':')[0].trim() : opt.name);
+        // Remove exact match AND any sub-options (e.g., control_type_motor when control_type changes)
+        return !opt.name.startsWith(optionKey + ':') && !optKeyFromName.startsWith(optionKey + '_');
+      });
+      
+      // ✅ FIX: If label is empty and price is 0, this is a removal request - don't add new option
+      if (label === '' && price === 0) {
+        console.log(`🎯 handleOptionPriceChange - REMOVING ${optionKey}:`, { filteredOptions });
+        selectedOptionsRef.current = filteredOptions;
+        onSelectedOptionsChange(filteredOptions);
+        return;
+      }
+      
       const newOption = {
         name: `${optionKey}: ${label}`,
         label: label, // CRITICAL: Store label separately for quote description extraction

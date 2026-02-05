@@ -583,7 +583,12 @@ export const DynamicRollerBlindFields = ({
                           // Clear previous item selection when category changes
                           const prevCategory = subCategorySelections[option.key];
                           if (prevCategory && prevCategory !== categoryKey) {
-                            onChange(`${option.key}_${prevCategory}`, '');
+                            const clearedKey = `${option.key}_${prevCategory}`;
+                            onChange(clearedKey, '');
+                            // ✅ FIX: Also remove from selectedOptions by calling onOptionPriceChange with 0/empty
+                            if (onOptionPriceChange) {
+                              onOptionPriceChange(clearedKey, 0, '', 'fixed', undefined, undefined);
+                            }
                           }
                         }}
                         disabled={readOnly}

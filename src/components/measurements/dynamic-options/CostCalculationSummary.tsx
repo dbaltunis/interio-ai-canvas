@@ -395,7 +395,10 @@ export const CostCalculationSummary = ({
       
       // ✅ CRITICAL FIX: Store costs for useEffect to report to parent (NOT during render!)
       // The useEffect below will call onBlindCostsCalculated only when values change
-      const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}`;
+      // ✅ FIX: Include option selection changes in key (same pattern as curtains) to trigger updates
+      const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
+      const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
+      const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
       
       // Use ref to track and report changes via useEffect (defined at component level)
       blindCostsRef.current = {
