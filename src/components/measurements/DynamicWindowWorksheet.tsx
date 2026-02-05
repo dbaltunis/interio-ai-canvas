@@ -1082,7 +1082,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           const specificTreatmentType = detectTreatmentType(selectedTemplate);
           
           // Display category for UI grouping only - DO NOT use for database storage
-          const displayCategory = specificTreatmentType.includes('blind') 
+          // Use a comprehensive check that matches the centralized isBlindTreatment logic
+          // ✅ FIX: Include awning, panel_glide, drape to ensure correct calculation path
+          const isBlindLikeType = specificTreatmentType.includes('blind') || 
+                                  specificTreatmentType === 'awning' ||
+                                  specificTreatmentType === 'panel_glide' ||
+                                  specificTreatmentType.includes('drape');
+
+          const displayCategory = isBlindLikeType 
             ? 'blinds' 
             : specificTreatmentType.includes('shutter') 
             ? 'shutters' 

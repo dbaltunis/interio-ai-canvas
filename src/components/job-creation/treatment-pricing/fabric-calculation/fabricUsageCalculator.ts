@@ -15,9 +15,16 @@ import { calculateOrientation } from './orientationCalculator';
 import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
 import { validateMeasurement } from '@/utils/measurementBoundary';
 
-// Helper to detect if treatment is a blind
-export const isBlind = (treatmentCategory?: string) =>
-  !!treatmentCategory && /blind/i.test(treatmentCategory);
+// Helper to detect if treatment is a blind-like type (uses sqm calculation)
+// ✅ FIX: Include awning, panel_glide, drape to match centralized isBlindTreatment logic
+export const isBlind = (treatmentCategory?: string) => {
+  if (!treatmentCategory) return false;
+  const cat = treatmentCategory.toLowerCase();
+  return /blind/i.test(cat) || 
+         cat === 'awning' || 
+         cat === 'panel_glide' ||
+         cat.includes('drape');
+};
 
 /**
  * Calculate fabric usage for a treatment
