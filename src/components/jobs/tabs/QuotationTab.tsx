@@ -41,6 +41,8 @@ import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
 import { useQuotePayment } from "@/hooks/useQuotePayment";
 import { useQuoteExclusions } from "@/hooks/useQuoteExclusions";
+import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
+import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -341,6 +343,11 @@ export const QuotationTab = ({
     };
   }, [selectedTemplate]);
 
+  // Check if Homekaara template style should be used
+  const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
+  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && 
+    (selectedTemplate?.template_style === 'quote' || !selectedTemplate?.template_style);
+
   // Function to update template settings
   const handleUpdateTemplateSettings = async (key: string, value: any) => {
     if (!selectedTemplate || isReadOnly) {
@@ -504,6 +511,68 @@ export const QuotationTab = ({
       } : undefined
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
+
+  // Prepare Homekaara template data - MUST be after projectData
+  const homekaaraTemplateData = useMemo(() => {
+    if (!useHomekaaraTemplate) return null;
+    
+    const preparedData = prepareQuoteData(
+      { windowSummaries: projectSummaries, businessSettings },
+      templateSettings.showDetailedBreakdown
+    );
+    
+    return {
+      items: preparedData.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total: item.total,
+        prate: item.quantity,
+        image_url: item.image_url,
+        breakdown: item.breakdown?.map(b => ({
+          label: b.name || b.category || '',
+          value: b.description || (b.total_cost ? `${b.total_cost}` : ''),
+        })),
+        room_name: item.room_name,
+        room_id: item.room_id,
+        surface_name: item.surface_name,
+        treatment_type: item.treatment_type,
+      })),
+      subtotal: preparedData.subtotal,
+      taxAmount: preparedData.taxAmount,
+      total: preparedData.total,
+      currency: preparedData.currency,
+      businessInfo: {
+        name: businessSettings?.company_name || 'Your Business',
+        logo_url: businessSettings?.company_logo_url,
+        email: businessSettings?.business_email,
+        phone: businessSettings?.business_phone,
+        address: [businessSettings?.address, businessSettings?.city, businessSettings?.state, businessSettings?.zip_code].filter(Boolean).join(', '),
+      },
+      clientInfo: {
+        name: (client as any)?.full_name || client?.name || 'Client',
+        email: client?.email,
+        phone: client?.phone,
+        address: client?.address,
+      },
+      metadata: {
+        quote_number: (project as any)?.quote_number || project?.id || 'N/A',
+        date: project?.created_at ? new Date(project.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+        status: project?.status || 'Draft',
+        validity_days: (project as any)?.validity_days || 14,
+        services_required: (project as any)?.services_required,
+        expected_purchase_date: (project as any)?.expected_purchase_date,
+        referral_source: (project as any)?.referral_source,
+      },
+      paymentInfo: {
+        advance_paid: (project as any)?.advance_paid || 0,
+        deposit_percentage: 50,
+      },
+      introMessage: (project as any)?.intro_message,
+    };
+  }, [useHomekaaraTemplate, projectSummaries, businessSettings, client, project, templateSettings.showDetailedBreakdown]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -1103,40 +1172,89 @@ export const QuotationTab = ({
       />
 
       {/* Quote Preview */}
-      {isEmptyVersion ? <EmptyQuoteVersionState currentVersion={currentVersion} onAddRoom={() => {
-      const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
-      if (roomsTab) roomsTab.click();
-    }} /> : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? <div className="flex flex-col items-center justify-center py-20 text-center">
+      {isEmptyVersion ? (
+        <EmptyQuoteVersionState currentVersion={currentVersion} onAddRoom={() => {
+          const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
+          if (roomsTab) roomsTab.click();
+        }} />
+      ) : useHomekaaraTemplate && homekaaraTemplateData ? (
+        <section className="mt-2 sm:mt-4">
+          <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
+            <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
+              <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
+                width: '210mm',
+                minHeight: '297mm',
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '10pt',
+                padding: '8mm',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}>
+                <QuoteTemplateHomekaara
+                  items={homekaaraTemplateData.items}
+                  subtotal={homekaaraTemplateData.subtotal}
+                  taxAmount={homekaaraTemplateData.taxAmount}
+                  total={homekaaraTemplateData.total}
+                  currency={homekaaraTemplateData.currency}
+                  businessInfo={homekaaraTemplateData.businessInfo}
+                  clientInfo={homekaaraTemplateData.clientInfo}
+                  metadata={homekaaraTemplateData.metadata}
+                  paymentInfo={homekaaraTemplateData.paymentInfo}
+                  introMessage={homekaaraTemplateData.introMessage}
+                  isEditable={false}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
           <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Quote Template Found</h3>
           <p className="text-sm text-muted-foreground max-w-md mb-4">
             You need to create a quote template before you can generate quotes. Go to Settings → Documents to create your first template.
           </p>
           <Button onClick={() => {
-        // Navigate to settings/documents tab
-        window.location.href = '/?settings=documents';
-      }}>
+            window.location.href = '/?settings=documents';
+          }}>
             <FileText className="h-4 w-4 mr-2" />
             Create Template
           </Button>
-        </div> : <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
-          {/* A4 Background Container - Gray background to simulate paper on desk */}
+        </div>
+      ) : (
+        <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
             <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
               <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
-            width: '210mm',
-            minHeight: '297mm',
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: '10pt',
-            padding: '8mm',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={!isExclusionEditMode} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} excludedItems={excludedItems} onToggleExclusion={toggleExclusion} isExclusionEditMode={isExclusionEditMode} quoteId={activeQuoteId || quoteId} />
+                width: '210mm',
+                minHeight: '297mm',
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '10pt',
+                padding: '8mm',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}>
+                <LivePreview 
+                  key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} 
+                  blocks={templateBlocks} 
+                  projectData={projectData} 
+                  isEditable={false} 
+                  isPrintMode={!isExclusionEditMode} 
+                  documentType={selectedTemplate?.template_style || 'quote'} 
+                  layout={templateSettings.layout} 
+                  showDetailedBreakdown={templateSettings.layout === 'detailed'} 
+                  showImages={templateSettings.showImages} 
+                  groupByRoom={templateSettings.groupByRoom} 
+                  excludedItems={excludedItems} 
+                  onToggleExclusion={toggleExclusion} 
+                  isExclusionEditMode={isExclusionEditMode} 
+                  quoteId={activeQuoteId || quoteId} 
+                />
               </div>
             </div>
           </div>
-        </section>}
+        </section>
+      )}
 
       {/* Email Modal */}
       <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
