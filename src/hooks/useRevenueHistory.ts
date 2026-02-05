@@ -44,48 +44,46 @@ export const useRevenueHistory = () => {
       const previousEnd = subDays(start, 1);
       const previousStart = subDays(previousEnd, periodLength - 1);
 
-      // First get revenue status IDs for this user
-      const { data: revenueStatuses } = await supabase
-        .from("job_statuses")
-        .select("id, name")
-        .eq("user_id", effectiveOwnerId);
-
-      const revenueStatusIds = revenueStatuses
-        ?.filter(s => REVENUE_STATUS_NAMES.includes(s.name.toLowerCase()))
-        .map(s => s.id) || [];
-
-      if (revenueStatusIds.length === 0) {
-        // No revenue statuses found, return empty data
-        return { data: [], currentTotal: 0, previousTotal: 0, changePercent: 0 };
-      }
-
-      // Fetch current period revenue from projects with revenue statuses
-      const { data: currentProjects } = await supabase
+      // FIX: Query projects with status name joined, then filter in-memory
+      // This works across user accounts for team members
+      const { data: currentProjectsRaw } = await supabase
         .from("projects")
         .select(`
           id,
           created_at,
           status_id,
+          job_statuses!status_id(name),
           quotes!inner(total_amount)
         `)
         .eq("user_id", effectiveOwnerId)
-        .in("status_id", revenueStatusIds)
         .gte("created_at", start.toISOString())
         .lte("created_at", end.toISOString());
 
-      // Fetch previous period projects
-      const { data: previousProjects } = await supabase
+      // Filter by status name matching revenue criteria (case-insensitive)
+      const currentProjects = currentProjectsRaw?.filter(p => {
+        const statusName = (p.job_statuses as any)?.name?.toLowerCase() || '';
+        return REVENUE_STATUS_NAMES.includes(statusName);
+      }) || [];
+
+      // Fetch previous period projects with status name joined
+      const { data: previousProjectsRaw } = await supabase
         .from("projects")
         .select(`
           id,
           created_at,
           status_id,
+          job_statuses!status_id(name),
           quotes!inner(total_amount)
         `)
         .eq("user_id", effectiveOwnerId)
-        .in("status_id", revenueStatusIds)
         .gte("created_at", previousStart.toISOString())
         .lte("created_at", previousEnd.toISOString());
+
+      // Filter by status name matching revenue criteria
+      const previousProjects = previousProjectsRaw?.filter(p => {
+        const statusName = (p.job_statuses as any)?.name?.toLowerCase() || '';
+        return REVENUE_STATUS_NAMES.includes(statusName);
+      }) || [];
 
       // Determine grouping based on period length
       let intervals: Date[];
