@@ -1,100 +1,110 @@
-# ✅ FIXED: Architectural Solution Implemented
+# ✅ FIXED: Single Source of Truth Architecture
 
 ## The Problem (SOLVED)
 
-Previously, `AdaptiveFabricPricingDisplay.tsx` manually recalculated fabric requirements (lines 671-710), causing discrepancies:
+Previously, `AdaptiveFabricPricingDisplay.tsx` called `useCurtainEngine` locally (lines 62-69), even when `engineResult` was passed from the parent. This caused discrepancies because:
+
+1. **Local call used different parameters**: `selectedOptions: []` (empty array), non-enriched fabric
+2. **Parent call used correct parameters**: enriched fabric with pricing grid data, full options list
+
+This caused different values:
+- AdaptiveFabricPricingDisplay: 4.60m (local calculation with wrong params)
+- CostCalculationSummary: 4.55m (parent's calculation with correct params)
+
+## The Solution (IMPLEMENTED - Feb 2026)
+
+### 1. Removed Local Calculation from AdaptiveFabricPricingDisplay
 
 ```typescript
 // ❌ OLD CODE - REMOVED
-const requiredWidthCm = (railWidth × fullness) + sideHems + returns;
-// MISSING: + seam allowances!
+const localEngineResult = useCurtainEngine({
+  treatmentCategory,
+  measurements,
+  selectedTemplate: template,
+  selectedFabric: selectedFabricItem,
+  selectedOptions: [], // WRONG: Should have full options list
+  units,
+});
+const engineResult = engineResultProp ?? localEngineResult; // Could use wrong result
+
+// ✅ NEW CODE - DISPLAY ONLY
+// This component is DISPLAY-ONLY
+// engineResult comes from parent (DynamicWindowWorksheet calls useCurtainEngine once)
+// fabricCalculation comes from parent (VisualMeasurementSheet calculates once)
+// We NEVER recalculate here - only display the provided values
 ```
 
-This caused different values:
-- Fabric Cost Display: 8.30m (missing seams)
-- Cost Summary: 8.20m (correct, includes seams)
+### 2. Single Calculation Point
+All costs are calculated ONCE in `DynamicWindowWorksheet.tsx`:
 
-## The Solution (IMPLEMENTED)
-
-### 1. Single Calculation Point
-All costs are now calculated ONCE in `DynamicWindowWorksheet.tsx`:
 ```typescript
-// ✅ Calculate once
-const linearMeters = fabricCalculation.linearMeters; // Already includes ALL allowances
-const totalMetersToOrder = linearMeters × horizontalPiecesNeeded;
-const fabricCost = totalMetersToOrder × pricePerMeter;
-
-// Save to state
-setCalculatedCosts({ fabricTotalCost: fabricCost, ... });
+// Line 254: Single useCurtainEngine call
+const engineResult = useCurtainEngine({
+  treatmentCategory,
+  surfaceId,
+  projectId,
+  measurements,
+  selectedTemplate,
+  selectedFabric: enrichedFabric, // ✅ Use enriched fabric with pricing grid data
+  selectedOptions,                // ✅ Full options list
+  units,
+});
 ```
 
-### 2. Pass Pre-Calculated Values
-Display components receive calculated values as props (no fabricCalculation object):
+### 3. Pass Pre-Calculated Values to All Displays
+Display components receive calculated values as props:
+
 ```typescript
-<AdaptiveFabricPricingDisplay
-  // Uses fabricCalculation.linearMeters directly (no manual recalc)
+<VisualMeasurementSheet
+  engineResult={engineResult}  // ✅ Passes to AdaptiveFabricPricingDisplay
 />
 
 <CostCalculationSummary
+  engineResult={engineResult}
   fabricDisplayData={{
-    linearMeters: calculatedCosts.fabricLinearMeters,
-    totalMeters: calculatedCosts.fabricTotalMeters,
-    pricePerMeter: calculatedCosts.fabricCostPerMeter,
-    horizontalPieces: calculatedCosts.horizontalPiecesNeeded,
-    orientation: calculatedCosts.fabricOrientation
+    linearMeters: perPieceMeters,
+    totalMeters: totalMeters,
+    pricePerMeter: pricePerMeter,
+    horizontalPieces: piecesToDisplay,
+    orientation: isRailroaded ? 'horizontal' : 'vertical'
   }}
 />
 ```
 
-### 3. Display Only
-Both display components now:
-- ✅ Use pre-calculated values
-- ✅ NO manual recalculation
+### 4. Display Components Are DISPLAY-ONLY
+
+Both components now:
+- ✅ Use pre-calculated values from parent
+- ✅ NO local recalculation
 - ✅ Show identical values
 - ✅ Single source of truth
+- ❌ NEVER call useCurtainEngine, useFabricCalculator, or any calculation functions
 
-## What `fabricCalculation.linearMeters` Includes
-
-From `orientationCalculator.ts` (lines 135-142):
-```typescript
-const totalSeamAllowance = (verticalSeamsRequired × seamHem × 2) + (horizontalSeamsRequired × seamHem × 2);
-
-if (orientation === 'horizontal') {
-  totalLengthCm = (widthsRequired × requiredWidth) + totalSeamAllowance;
-} else {
-  totalLengthCm = (widthsRequired × requiredLength) + totalSeamAllowance;
-}
-
-linearMeters = totalLengthCm / 100;
-```
-
-Includes:
-- Rail width × fullness ✅
-- Side hems ✅
-- Returns (left + right) ✅
-- **Seam allowances** (vertical + horizontal) ✅
-- Header/bottom hems (for vertical) ✅
-- Pattern repeat adjustments ✅
-
-## Benefits
-
-1. ✅ **Consistency**: All displays show identical values
-2. ✅ **Maintainability**: Change logic in ONE place
-3. ✅ **Accuracy**: No more missing seam allowances
-4. ✅ **Performance**: Calculate once, display many times
-5. ✅ **Debuggability**: Single data flow path
-
-## Architecture Diagram
+## Data Flow Architecture
 
 ```
-User Input → orientationCalculator.ts → fabricCalculation → DynamicWindowWorksheet
-                                                                    ↓
-                                                          calculatedCosts (state)
-                                                                    ↓
-                                            ┌───────────────────────┴───────────────────────┐
-                                            ↓                                               ↓
-                              AdaptiveFabricPricingDisplay              CostCalculationSummary
-                                    (DISPLAY ONLY)                            (DISPLAY ONLY)
+User Input
+    ↓
+DynamicWindowWorksheet
+    ├─→ useCurtainEngine() ────→ engineResult (SINGLE SOURCE)
+    │                                  ↓
+    └─→ VisualMeasurementSheet ←──────┴─────→ CostCalculationSummary
+             ↓                                        ↓
+        AdaptiveFabricPricingDisplay            QuoteSummaryTable
+             (DISPLAY ONLY)                     (DISPLAY ONLY)
 ```
 
-See ARCHITECTURE.md for full documentation.
+## Key Rules
+
+1. **ONE calculation per render**: `DynamicWindowWorksheet` calls `useCurtainEngine` once
+2. **Props flow down**: `engineResult` is passed as prop to all display components
+3. **Display-only components**: Never call calculation functions directly
+4. **Fallback chain**: `engineResult` → `fabricCalculation` → error state (no guessing)
+
+## Related Files
+
+- `src/components/measurements/DynamicWindowWorksheet.tsx` - Single calculation point
+- `src/components/measurements/VisualMeasurementSheet.tsx` - Passes engineResult to children
+- `src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx` - Display only
+- `src/components/measurements/dynamic-options/CostCalculationSummary.tsx` - Display only
+- `src/engine/useCurtainEngine.ts` - The calculation hook (called ONCE in parent)

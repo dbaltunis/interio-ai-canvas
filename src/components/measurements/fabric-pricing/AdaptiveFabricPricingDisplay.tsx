@@ -15,8 +15,9 @@ import { PricingGridPreview } from "../PricingGridPreview";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getBlindHemDefaults, calculateBlindSqm } from "@/utils/blindCalculationDefaults";
-import { useCurtainEngine } from "@/engine/useCurtainEngine";
 // Centralized formulas used by orientationCalculator - calculations happen there, results passed via fabricCalculation prop
+// CRITICAL: DO NOT call useCurtainEngine here - use ONLY the engineResult prop from parent
+// See STOP_RECALCULATING.md for architecture decision
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -32,9 +33,9 @@ interface AdaptiveFabricPricingDisplayProps {
   useLeftoverForHorizontal?: boolean;
   onToggleLeftoverForHorizontal?: () => void;
   /**
-   * NEW: Pre-computed engine result from parent
-   * When provided, this is used instead of calling useCurtainEngine internally
-   * This ensures SINGLE SOURCE OF TRUTH - engine called once at parent level
+   * Pre-computed engine result from parent - SINGLE SOURCE OF TRUTH
+   * For curtains/romans, this MUST be provided by parent (DynamicWindowWorksheet)
+   * This component is DISPLAY-ONLY - it never calculates, only renders
    */
   engineResult?: any | null;
 }
@@ -49,7 +50,7 @@ export const AdaptiveFabricPricingDisplay = ({
   usedLeftoverCount = 0,
   useLeftoverForHorizontal = false,
   onToggleLeftoverForHorizontal,
-  engineResult: engineResultProp,
+  engineResult,
 }: AdaptiveFabricPricingDisplayProps) => {
   const {
     units,
@@ -57,19 +58,10 @@ export const AdaptiveFabricPricingDisplay = ({
     getFabricUnitLabel
   } = useMeasurementUnits();
 
-  // NEW ENGINE: Use pre-computed result from parent if provided, otherwise calculate locally
-  // This ensures a single source of truth when parent passes the result
-  const localEngineResult = useCurtainEngine({
-    treatmentCategory,
-    measurements,
-    selectedTemplate: template,
-    selectedFabric: selectedFabricItem,
-    selectedOptions: [], // Options handled separately in this component
-    units,
-  });
-  
-  // Use prop if provided (single source from parent), otherwise use local calculation
-  const engineResult = engineResultProp !== undefined ? engineResultProp : localEngineResult;
+  // CRITICAL: This component is DISPLAY-ONLY
+  // engineResult comes from parent (DynamicWindowWorksheet calls useCurtainEngine once)
+  // fabricCalculation comes from parent (VisualMeasurementSheet calculates once)
+  // We NEVER recalculate here - only display the provided values
 
   // Log engine result for comparison (dev mode)
   if (engineResult && import.meta.env.DEV) {
