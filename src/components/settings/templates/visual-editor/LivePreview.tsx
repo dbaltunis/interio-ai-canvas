@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useRef } from 'react';
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { formatCurrency, getCurrencySymbol } from "@/utils/formatCurrency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -835,7 +835,8 @@ const LivePreviewBlock = ({
             if (isAccessory) {
               // For accessories, format description with quantity and pricing
               if (accessoryQuantity > 1 && accessoryUnitPrice > 0) {
-                displayDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+                const currSymbol = getCurrencySymbol(projectData?.currency || getDefaultCurrency());
+                displayDescription = `${accessoryQuantity} × ${currSymbol}${accessoryUnitPrice.toFixed(2)}`;
                 if (pricingDetails) {
                   displayDescription += ` (${pricingDetails})`;
                 }

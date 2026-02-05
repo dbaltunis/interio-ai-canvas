@@ -193,7 +193,8 @@ export const calculateAccessoriesFromOptionData = (
   hardwareBasePrice: number,
   railWidthCm: number,
   fullness: number = 1,
-  mountType: 'ceiling' | 'wall' | 'both' = 'wall'
+  mountType: 'ceiling' | 'wall' | 'both' = 'wall',
+  currencySymbol: string = '$'
 ): HardwareAccessoryResult => {
   const accessories: AccessoryItem[] = [];
   let accessoriesTotalPrice = 0;
@@ -247,7 +248,7 @@ export const calculateAccessoriesFromOptionData = (
       accessoriesTotalPrice += totalPrice;
       
       // Build breakdown string with formula description
-      breakdown.push(`${formatAccessoryName(key)}: ${quantity} × ₹${unitPrice.toFixed(0)} = ₹${totalPrice.toFixed(0)} (${formulaConfig.description})`);
+      breakdown.push(`${formatAccessoryName(key)}: ${quantity} × ${currencySymbol}${unitPrice.toFixed(0)} = ${currencySymbol}${totalPrice.toFixed(0)} (${formulaConfig.description})`);
     } catch (error) {
       console.error(`Error calculating accessory ${key}:`, error);
     }

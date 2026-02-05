@@ -162,22 +162,23 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const pricingType = template?.pricing_type;
   
   // CRITICAL: Detect blinds from template name OR category - templates might not have treatment_category
+  // NOTE: Drapes are CURTAINS (linear-meter pricing), NOT blinds (sqm pricing)
   const treatmentCategory = template?.treatment_category || template?.category || '';
   const templateName = (template?.name || '').toLowerCase();
-  const isBlindTreatment = treatmentCategory.includes('blind') || 
+  const isBlindTreatment = treatmentCategory.includes('blind') ||
                            treatmentCategory === 'shutters' ||
                            treatmentCategory.includes('awning') ||
-                           treatmentCategory.includes('drape') ||
+                           // REMOVED: treatmentCategory.includes('drape') - drapes are curtains, not blinds!
                            templateName.includes('blind') ||
                            templateName.includes('roman') ||
                            templateName.includes('roller') ||
                            templateName.includes('venetian') ||
-                           templateName.includes('vertical') ||
+                           templateName.includes('vertical blind') || // More specific - 'vertical' alone could match curtains
                            templateName.includes('cellular') ||
                            templateName.includes('honeycomb') ||
                            templateName.includes('shutter') ||
                            templateName.includes('awning') ||
-                           templateName.includes('smartdrape');
+                           templateName.includes('smartdrape'); // SmartDrape is a specific blind product
   
   console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   

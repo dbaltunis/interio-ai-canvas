@@ -3,6 +3,8 @@
  * Replaces template placeholders with real data from the database
  */
 
+import { formatCurrency as formatCurrencyUtil } from './formatCurrency';
+
 interface QuoteData {
   client?: {
     name?: string;
@@ -27,6 +29,7 @@ interface QuoteData {
     tax?: number;
     total?: number;
     deposit?: number;
+    currency?: string;
   };
   items?: Array<{
     name: string;
@@ -35,17 +38,15 @@ interface QuoteData {
     price: number;
     total: number;
   }>;
+  currency?: string;
 }
 
 /**
- * Format currency values
+ * Format currency values using the global currency utility
+ * Falls back to USD if no currency specified
  */
-const formatCurrency = (amount: number | undefined): string => {
-  if (amount === undefined || amount === null) return '$0.00';
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-  }).format(amount);
+const formatCurrencyLocal = (amount: number | undefined, currency?: string): string => {
+  return formatCurrencyUtil(amount, currency || 'USD');
 };
 
 /**
@@ -87,11 +88,12 @@ export const replacePlaceholders = (text: string, data: QuoteData): string => {
   result = result.replace(/\{\{quote\.validUntil\}\}/g, formatDate(data.quote?.validUntil));
   result = result.replace(/\{\{quote\.status\}\}/g, data.quote?.status || 'Draft');
   
-  // Financial placeholders
-  result = result.replace(/\{\{quote\.subtotal\}\}/g, formatCurrency(data.quote?.subtotal));
-  result = result.replace(/\{\{quote\.tax\}\}/g, formatCurrency(data.quote?.tax));
-  result = result.replace(/\{\{quote\.total\}\}/g, formatCurrency(data.quote?.total));
-  result = result.replace(/\{\{quote\.deposit\}\}/g, formatCurrency(data.quote?.deposit));
+  // Financial placeholders - use currency from data
+  const currency = data.currency || data.quote?.currency || 'USD';
+  result = result.replace(/\{\{quote\.subtotal\}\}/g, formatCurrencyLocal(data.quote?.subtotal, currency));
+  result = result.replace(/\{\{quote\.tax\}\}/g, formatCurrencyLocal(data.quote?.tax, currency));
+  result = result.replace(/\{\{quote\.total\}\}/g, formatCurrencyLocal(data.quote?.total, currency));
+  result = result.replace(/\{\{quote\.deposit\}\}/g, formatCurrencyLocal(data.quote?.deposit, currency));
   
   // Date/Time placeholders
   result = result.replace(/\{\{today\}\}/g, formatDate(new Date()));
@@ -121,7 +123,13 @@ export const bindDataToCanvas = (canvasJSON: any, data: QuoteData): any => {
 /**
  * Generate product table HTML from line items with optional totals
  */
-export const generateProductTableHTML = (items: QuoteData['items'], subtotal?: number, taxAmount?: number, total?: number): string => {
+export const generateProductTableHTML = (
+  items: QuoteData['items'],
+  subtotal?: number,
+  taxAmount?: number,
+  total?: number,
+  currency: string = 'USD'
+): string => {
   if (!items || items.length === 0) {
     return `
       <div style="padding: 40px; text-align: center; color: #9ca3af; background: #f9fafb; border-radius: 8px;">
@@ -138,8 +146,8 @@ export const generateProductTableHTML = (items: QuoteData['items'], subtotal?: n
           ${item.description ? `<div style="font-size: 12px; color: #6b7280;">${item.description}</div>` : ''}
         </td>
         <td style="padding: 16px 12px; text-align: center; color: #4b5563;">${item.quantity || 1}</td>
-        <td style="padding: 16px 12px; text-align: right; color: #4b5563;">${formatCurrency(item.price || 0)}</td>
-        <td style="padding: 16px 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(item.total || (item.price || 0) * (item.quantity || 1))}</td>
+        <td style="padding: 16px 12px; text-align: right; color: #4b5563;">${formatCurrencyLocal(item.price || 0, currency)}</td>
+        <td style="padding: 16px 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrencyLocal(item.total || (item.price || 0) * (item.quantity || 1), currency)}</td>
       </tr>
     `)
     .join('');
@@ -148,15 +156,15 @@ export const generateProductTableHTML = (items: QuoteData['items'], subtotal?: n
     <tfoot>
       <tr style="border-top: 2px solid #e5e7eb;">
         <td colspan="3" style="padding: 12px; text-align: right; font-weight: 600; color: #6b7280;">Subtotal:</td>
-        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(subtotal)}</td>
+        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrencyLocal(subtotal, currency)}</td>
       </tr>
       <tr>
         <td colspan="3" style="padding: 12px; text-align: right; font-weight: 600; color: #6b7280;">Tax:</td>
-        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(taxAmount)}</td>
+        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrencyLocal(taxAmount, currency)}</td>
       </tr>
       <tr style="border-top: 2px solid #e5e7eb; background: #f9fafb;">
         <td colspan="3" style="padding: 16px 12px; text-align: right; font-weight: 700; color: #1f2937; font-size: 16px;">Total:</td>
-        <td style="padding: 16px 12px; text-align: right; font-weight: 700; color: #1f2937; font-size: 16px;">${formatCurrency(total)}</td>
+        <td style="padding: 16px 12px; text-align: right; font-weight: 700; color: #1f2937; font-size: 16px;">${formatCurrencyLocal(total, currency)}</td>
       </tr>
     </tfoot>
   ` : '';

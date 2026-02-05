@@ -12,8 +12,26 @@ export const getCurrencySymbol = (currency: string): string => {
     'EUR': '€',
     'ZAR': 'R',
     'INR': '₹',
+    'CAD': 'C$',
+    'JPY': '¥',
+    'CHF': 'CHF',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'MYR': 'RM',
+    'THB': '฿',
+    'PHP': '₱',
+    'IDR': 'Rp',
+    'AED': 'د.إ',
+    'SAR': '﷼',
+    'QAR': 'ر.ق',
+    'KWD': 'د.ك',
+    'BHD': '.د.ب',
+    'OMR': 'ر.ع.',
   };
-  return symbols[currency] || '$';
+  return symbols[currency] || currency || '$';
 };
 
 export const formatCurrency = (
@@ -25,8 +43,6 @@ export const formatCurrency = (
     locale?: string;
   }
 ): string => {
-  // If no currency provided, return empty (prevents showing wrong default)
-  if (!currency) return '';
   const {
     showSymbol = true,
     decimals = 2,
@@ -34,7 +50,20 @@ export const formatCurrency = (
   } = options || {};
 
   const numAmount = Number(amount ?? 0);
-  
+
+  // If no currency provided, still show the number (never return empty)
+  // This prevents values from disappearing in the UI
+  if (!currency) {
+    if (!Number.isFinite(numAmount)) {
+      return '0.00';
+    }
+    // Return formatted number without currency symbol
+    return numAmount.toLocaleString(locale || 'en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  }
+
   if (!Number.isFinite(numAmount)) {
     return showSymbol ? `${getCurrencySymbol(currency)}0.00` : '0.00';
   }
@@ -63,10 +92,21 @@ export const formatCompactCurrency = (
   amount: number | null | undefined,
   currency?: string
 ): string => {
-  // If no currency provided, return empty (prevents showing wrong default)
-  if (!currency) return '';
   const numAmount = Number(amount ?? 0);
-  
+
+  // If no currency provided, still show the number (never return empty)
+  if (!currency) {
+    if (!Number.isFinite(numAmount)) {
+      return '0';
+    }
+    // Return compact number without currency symbol
+    return new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    }).format(numAmount);
+  }
+
   if (!Number.isFinite(numAmount)) {
     return `${getCurrencySymbol(currency)}0`;
   }
