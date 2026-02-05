@@ -1547,21 +1547,9 @@ export const DynamicCurtainOptions = ({
                         onOptionPriceChange(subOptionKey, price, displayLabel, pricingMethod);
                       }
                       
-                      if (onSelectedOptionsChange) {
-                        // ✅ CLEAN FIX: Filter by optionKey or label prefix
-                        const updatedOptions = selectedOptions.filter(opt => {
-                          const optKey = (opt as any).optionKey;
-                          if (optKey) return optKey !== subOptionKey;
-                          return !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}:`);
-                        });
-                        updatedOptions.push({ 
-                          name: displayLabel, 
-                          price, 
-                          pricingMethod,
-                          optionKey: subOptionKey // ✅ Store key for reliable filtering
-                        } as any);
-                        onSelectedOptionsChange(updatedOptions);
-                      }
+                      // ✅ FIX: Removed duplicate onSelectedOptionsChange call
+                      // The onOptionPriceChange handler in VisualMeasurementSheet already updates selectedOptions
+                      // Calling both was causing duplicate pricing entries that bypassed deduplication
                     }, 0);
                   }
                   
@@ -1588,21 +1576,9 @@ export const DynamicCurtainOptions = ({
                                 onOptionPriceChange(subOptionKey, price, displayLabel, pricingMethod);
                               }
                               
-                              // ✅ CLEAN FIX: Also update selectedOptions for Cost Summary display
-                              if (onSelectedOptionsChange) {
-                                const updatedOptions = selectedOptions.filter(opt => {
-                                  const optKey = (opt as any).optionKey;
-                                  if (optKey) return optKey !== subOptionKey;
-                                  return !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}:`);
-                                });
-                                updatedOptions.push({
-                                  name: displayLabel,
-                                  price: price,
-                                  pricingMethod,
-                                  optionKey: subOptionKey // ✅ Store key for reliable filtering
-                                } as any);
-                                onSelectedOptionsChange(updatedOptions);
-                              }
+                              // ✅ FIX: Removed duplicate onSelectedOptionsChange call
+                              // The onOptionPriceChange handler in VisualMeasurementSheet already updates selectedOptions
+                              // Calling both was causing duplicate pricing entries that bypassed deduplication
                             }
                           }}
                           disabled={readOnly}

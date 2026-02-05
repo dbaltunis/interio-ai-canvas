@@ -61,52 +61,30 @@ export const DynamicRollerBlindFields = ({
   // Filter by template_option_settings if templateId is available
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
   
+  // ✅ FIX: Trust useTreatmentOptions hook which already handles:
+  // - is_enabled filtering (WHITELIST approach)
+  // - hidden_value_ids filtering (value-level visibility)
+  // - template_order_index sorting
+  // Deduplicate by label to prevent duplicate dropdowns from TWC-synced options
   useEffect(() => {
-    const filterByTemplateSettings = async () => {
-      if (!templateId || allOptions.length === 0) {
-        setTreatmentOptions(allOptions);
-        return;
-      }
-      
-      // Fetch template_option_settings to see which options are enabled
-      const { data: settings } = await supabase
-        .from('template_option_settings')
-        .select('treatment_option_id, is_enabled')
-        .eq('template_id', templateId);
-      
-      const settingsMap = new Map(
-        settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
-      );
-      
-      const hasAnySettings = settings && settings.length > 0;
-      
-      // WHITELIST APPROACH: If template HAS settings, only show explicitly enabled options
-      // This prevents unlinked duplicate options from appearing
-      const enabledOptions = allOptions.filter(opt => {
-        if (!hasAnySettings) {
-          // No settings at all = show all options (backward compatible for templates without settings)
-          return true;
-        }
-        
-        if (!settingsMap.has(opt.id)) {
-          // Template HAS settings but this option is NOT linked = hide it
-          console.log(`❌ Hiding option "${opt.label}" - not linked to template settings`);
-          return false;
-        }
-        
-        const isEnabled = settingsMap.get(opt.id);
-        if (!isEnabled) {
-          console.log(`❌ Hiding option "${opt.label}" - disabled in template settings`);
-        }
-        return isEnabled;
-      });
-      
-      console.log(`✅ WHITELIST: Showing ${enabledOptions.length} enabled options out of ${allOptions.length} total (template has ${settings?.length || 0} settings)`);
-      setTreatmentOptions(enabledOptions);
-    };
+    if (allOptions.length === 0) {
+      setTreatmentOptions([]);
+      return;
+    }
     
-    filterByTemplateSettings();
-  }, [templateId, allOptions]);
+    // Deduplicate options by label (keep first occurrence based on template_order_index)
+    const uniqueOptions = allOptions.reduce((acc, opt) => {
+      if (!acc.some(existing => existing.label === opt.label)) {
+        acc.push(opt);
+      } else {
+        console.log(`⚠️ Deduplicating option "${opt.label}" (key: ${opt.key}) - already exists`);
+      }
+      return acc;
+    }, [] as typeof allOptions);
+    
+    console.log(`✅ DynamicRollerBlindFields: Using ${uniqueOptions.length} pre-filtered options from useTreatmentOptions (deduplicated from ${allOptions.length})`);
+    setTreatmentOptions(uniqueOptions);
+  }, [allOptions]);
 
   // Fetch TWC data when templateId changes - detect TWC products via inventory_item_id
   useEffect(() => {
@@ -646,18 +624,9 @@ export const DynamicRollerBlindFields = ({
                                   onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, 'fixed', undefined, (option as any).template_order_index);
                                 }
                                 
-                                // CRITICAL: Also update selectedOptions for Cost Summary display
-                                if (onSelectedOptionsChange) {
-                                  const updatedOptions = selectedOptions.filter(opt => 
-                                    !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
-                                  );
-                                  updatedOptions.push({
-                                    name: displayLabel,
-                                    price: price,
-                                    pricingMethod: 'fixed'
-                                  });
-                                  onSelectedOptionsChange(updatedOptions);
-                                }
+                                // ✅ FIX: Removed duplicate onSelectedOptionsChange call
+                                // The onOptionPriceChange handler in VisualMeasurementSheet already updates selectedOptions
+                                // Calling both was causing duplicate pricing entries that bypassed deduplication
                               }
                             }}
                             disabled={readOnly}
