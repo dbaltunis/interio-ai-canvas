@@ -238,17 +238,15 @@ Step 5: Apply waste
 
 **FIX REQUIRED:** Update `useFabricCalculator.ts` to NOT multiply seam_hem by 2
 
-### 8.2 Waste Percentage Application
+### 8.2 Waste Percentage Application - FIXED
 
-**DISCREPANCY:**
-- `useFabricCalculator.ts`: Applies waste_multiplier to linear_meters
-- `CalculationEngine.ts`: Applies waste to subtotal cost, NOT to fabric meters
+**ISSUE:** CalculationEngine was applying waste to COST, useFabricCalculator to METERS
+**STATUS:** Fixed - Both now apply waste to LINEAR_METERS
 
 **CORRECT BEHAVIOR:**
-- Waste should be applied to FABRIC METERS (affects how much fabric to order)
-- Cost waste is a separate concept
-
-**FIX REQUIRED:** Align both calculators on where waste is applied
+- Waste is applied to LINEAR_METERS (affects how much fabric to order)
+- `linear_meters` = raw_meters × (1 + waste_percentage / 100)
+- `fabric_cost` = linear_meters × price_per_meter (includes waste)
 
 ### 8.3 Side Hem for Pairs - FIXED
 
@@ -286,6 +284,7 @@ Step 5: Apply waste
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-02-05 | Initial specification, fixed panel_count for side hems |
+| 1.0.1 | 2026-02-05 | Fixed seam allowance (removed ×2), aligned waste percentage to meters |
 
 ---
 

@@ -155,12 +155,14 @@ export class CalculationEngine {
     );
     
     const base_cost = template.base_price || 0;
-    
+
     const subtotal = fabric_cost + material_cost + options_cost + base_cost;
-    
-    const waste_percentage = template.waste_percentage;
-    const waste_amount = roundTo(subtotal * (waste_percentage / 100), 2);
-    const total = roundTo(subtotal + waste_amount, 2);
+
+    // NOTE: Waste percentage is now applied to LINEAR_METERS in calculateLinear()
+    // This ensures the fabric_cost already reflects the waste for ordering purposes
+    // No additional waste is applied to the cost subtotal
+    const waste_amount = 0;  // Waste is in meters, not cost
+    const total = roundTo(subtotal, 2);
     
     return {
       width_cm,
@@ -294,12 +296,12 @@ export class CalculationEngine {
       steps.push(`Total fabric (railroaded): (${total_width_cm} × ${horizontal_pieces}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
       
       widths_required = horizontal_pieces; // For railroaded, "widths" are horizontal pieces
-      
+
       linear_meters_raw = cmToM(total_fabric_cm);
       linear_meters = roundTo(linear_meters_raw, 2);
-      values['linear_meters'] = linear_meters;
-      steps.push(`Linear meters: ${total_fabric_cm} / 100 = ${linear_meters}m`);
-      
+      values['linear_meters_before_waste'] = linear_meters;
+      steps.push(`Linear meters (raw): ${total_fabric_cm} / 100 = ${linear_meters}m`);
+
     } else {
       // VERTICAL: Standard calculation - fabric width covers curtain width, buy length for drop
       // widths_required = ceil(total_width_cm / fabric_width_cm)
@@ -321,17 +323,29 @@ export class CalculationEngine {
       
       linear_meters_raw = cmToM(total_fabric_cm);
       linear_meters = roundTo(linear_meters_raw, 2);
-      values['linear_meters'] = linear_meters;
-      steps.push(`Linear meters: ${total_fabric_cm} / 100 = ${linear_meters}m`);
+      values['linear_meters_before_waste'] = linear_meters;
+      steps.push(`Linear meters (raw): ${total_fabric_cm} / 100 = ${linear_meters}m`);
     }
-    
+
+    // Apply waste percentage to linear_meters (for ordering purposes)
+    // CRITICAL: Waste is applied to FABRIC METERS, not cost
+    // This matches useFabricCalculator behavior and reflects what needs to be ordered
+    const waste_percentage = template.waste_percentage || 0;
+    const waste_multiplier = 1 + (waste_percentage / 100);
+    const linear_meters_with_waste = roundTo(linear_meters * waste_multiplier, 2);
+    values['waste_percentage'] = waste_percentage;
+    values['linear_meters'] = linear_meters_with_waste;
+    if (waste_percentage > 0) {
+      steps.push(`With ${waste_percentage}% waste: ${linear_meters} × ${waste_multiplier} = ${linear_meters_with_waste}m`);
+    }
+
     const formula_string = is_railroaded
-      ? `RAILROADED: (${total_width_cm}cm × ${values['horizontal_pieces']} pieces) + ${seam_allowance_cm}cm seams = ${linear_meters}m`
-      : `VERTICAL: (${widths_required} widths × ${total_drop_cm}cm drop) + ${seam_allowance_cm}cm seams = ${linear_meters}m`;
-    
+      ? `RAILROADED: (${total_width_cm}cm × ${values['horizontal_pieces']} pieces) + ${seam_allowance_cm}cm seams = ${linear_meters_with_waste}m`
+      : `VERTICAL: (${widths_required} widths × ${total_drop_cm}cm drop) + ${seam_allowance_cm}cm seams = ${linear_meters_with_waste}m`;
+
     return {
-      linear_meters,
-      linear_meters_raw,
+      linear_meters: linear_meters_with_waste,  // Return with waste for ordering
+      linear_meters_raw,  // Keep raw for reference
       widths_required,
       drops_per_width: 1,
       total_drop_cm,
