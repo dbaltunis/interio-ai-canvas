@@ -1,167 +1,153 @@
 
-
-# Comprehensive Fix: Awning Pricing Not Saving
+# Technical Fix Plan: Option Changes Not Updating Prices/Products
 
 ## Investigation Summary
 
-I conducted a thorough code and database investigation to identify why awning pricing shows correctly in the worksheet ($800.70) but saves as $0 to the database.
+I conducted a thorough code investigation and identified **3 specific bugs** that cause option changes to appear "stuck" - they display correctly in the UI but don't persist to the database when saved.
 
 ---
 
-## Root Cause (Code Evidence)
+## Root Causes (Verified Code Evidence)
 
-### Bug Location: `DynamicWindowWorksheet.tsx` lines 1085-1091
+### Bug 1: Blind Costs Key Missing Option Selection Changes
 
+**File:** `src/components/measurements/dynamic-options/CostCalculationSummary.tsx`
+
+**Line 398** (Blinds - BROKEN):
 ```typescript
-const displayCategory = specificTreatmentType.includes('blind') 
-  ? 'blinds' 
-  : specificTreatmentType.includes('shutter') 
-  ? 'shutters' 
-  : specificTreatmentType === 'wallpaper'
-  ? 'wallpaper'
-  : 'curtains';  // ← AWNING FALLS HERE!
+const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}`;
 ```
 
-**Problem**: When `specificTreatmentType === 'awning'`:
-- Does NOT include 'blind' → fails first check
-- Does NOT include 'shutter' → fails second check  
-- Is NOT 'wallpaper' → fails third check
-- **Defaults to 'curtains'** → WRONG PATH!
-
-### Database Evidence
-
-```sql
--- Awning window saves with $0:
-window_id: 595dd6db-a8d8-44b0-8b08-e5a8544e755d
-treatment_type: awning
-total_cost: 0
-total_selling: 0
-fabric_details.cost_price: 0
-
--- Roller blind saves correctly:
-window_id: 5dc991eb-0fe2-4285-9f36-047ddf50d93e  
-treatment_type: roller_blinds
-total_cost: 232
-total_selling: 394.4
-```
-
-### Why This Happens
-
-1. **Detection is correct**: `detectTreatmentType()` returns `'awning'` correctly (line 66-67)
-2. **displayCategory is wrong**: The save logic uses its own check that misses awning
-3. **Wrong calculation path**: Since `displayCategory === 'curtains'`, it tries to use `liveCurtainCalcResult` which is null for awnings
-4. **Fallback to curtain math**: Uses fullness ratios, linear meters calculations - completely wrong for awnings
-
----
-
-## Inconsistency Identified
-
-**Centralized check (CORRECT)** - `calculateTreatmentPricing.ts` lines 167-180:
+**Lines 688-709** (Curtains - CORRECT):
 ```typescript
-const isBlindTreatment = treatmentCategory.includes('blind') || 
-                         treatmentCategory === 'shutters' ||
-                         treatmentCategory.includes('awning') ||  // ✅ Has awning
-                         treatmentCategory.includes('drape') ||   // ✅ Has drape
-                         ...
+const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).value || (o as any).label || ''}`).join(',');
+const curtainCostsKey = `${fabricCost}-...-${optionSelectionKey}-${measurementKey}-${headingKey}`;
 ```
 
-**Local check (BROKEN)** - `DynamicWindowWorksheet.tsx` line 1085:
+**Problem:** The blind costs key only includes numeric totals. When you switch between two options with the same price (or both $0), the key doesn't change, so:
+- `useEffect` on line 200 doesn't fire
+- Parent component (`DynamicWindowWorksheet`) never receives the updated options
+- When you save, it uses stale option data
+
+### Bug 2: Orphaned Sub-Options When Parent Option Changes
+
+**File:** `src/components/measurements/VisualMeasurementSheet.tsx`
+
+**Lines 174-176:**
 ```typescript
-specificTreatmentType.includes('blind')  // ❌ Missing awning, drape, panel_glide
+const currentOptions = selectedOptionsRef.current;
+const filteredOptions = currentOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
 ```
 
----
+**Problem:** This only filters options with exact key prefix (e.g., `control_type:`). Sub-options use keys like `control_type_motor:`, which DON'T match this filter.
 
-## Files to Fix
+**Scenario:**
+1. User selects "Motor" for Control Type
+2. Sub-option "Battery Type: Rechargeable" is added as `control_type_motor: Rechargeable`
+3. User switches Control Type to "Chain" (no motor)
+4. Filter removes `control_type: Motor` but leaves `control_type_motor: Rechargeable`
+5. Quote still shows and charges for battery option!
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/components/measurements/DynamicWindowWorksheet.tsx` | 1085-1091 | Add awning, drape, panel_glide to displayCategory check |
-| `src/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator.ts` | 19-20 | Add awning, drape, panel_glide to isBlind helper |
-| `src/utils/treatmentTypeDetection.ts` | 75-87 | Add awning to name-based fallback detection |
+### Bug 3: Sub-Option Values Not Cleared in Measurements
+
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx`
+
+**Lines 584-587:**
+```typescript
+if (prevCategory && prevCategory !== categoryKey) {
+  onChange(`${option.key}_${prevCategory}`, '');
+}
+```
+
+**Problem:** This clears the measurement value when switching sub-categories, but it does NOT call `onOptionPriceChange` to remove the option from `selectedOptions`. The option stays in the cost summary.
 
 ---
 
 ## Implementation Plan
 
-### Fix 1: Update displayCategory Logic
+### Fix 1: Add optionSelectionKey to Blind Costs Key
 
-**File:** `src/components/measurements/DynamicWindowWorksheet.tsx` (lines 1085-1091)
+**File:** `src/components/measurements/dynamic-options/CostCalculationSummary.tsx`
 
-Replace the current fragile check with a comprehensive one:
+**Change at lines 396-398:**
 
 ```typescript
-// Use a comprehensive check that matches the centralized isBlindTreatment logic
-const isBlindLikeType = specificTreatmentType.includes('blind') || 
-                        specificTreatmentType === 'awning' ||
-                        specificTreatmentType === 'panel_glide' ||
-                        specificTreatmentType.includes('drape');
-
-const displayCategory = isBlindLikeType 
-  ? 'blinds' 
-  : specificTreatmentType.includes('shutter') 
-  ? 'shutters' 
-  : specificTreatmentType === 'wallpaper'
-  ? 'wallpaper'
-  : 'curtains';
+// ✅ FIX: Include option selection changes in key (same pattern as curtains)
+const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
+const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
+const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
 ```
 
-### Fix 2: Update isBlind Helper
+### Fix 2: Clear Orphaned Sub-Options When Parent Changes
 
-**File:** `src/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator.ts` (lines 19-20)
+**File:** `src/components/measurements/VisualMeasurementSheet.tsx`
+
+**Change at lines 174-176:**
 
 ```typescript
-// Current (broken):
-export const isBlind = (treatmentCategory?: string) =>
-  !!treatmentCategory && /blind/i.test(treatmentCategory);
+const currentOptions = selectedOptionsRef.current;
+// ✅ FIX: Also remove any sub-options (keys starting with parentKey_)
+const filteredOptions = currentOptions.filter(opt => {
+  const optKeyFromName = opt.optionKey || (opt.name.includes(':') ? opt.name.split(':')[0] : opt.name);
+  // Remove exact match AND any sub-options (e.g., control_type_motor when control_type changes)
+  return !opt.name.startsWith(optionKey + ':') && !optKeyFromName.startsWith(optionKey + '_');
+});
+```
 
-// Fixed:
-export const isBlind = (treatmentCategory?: string) => {
-  if (!treatmentCategory) return false;
-  const cat = treatmentCategory.toLowerCase();
-  return /blind/i.test(cat) || 
-         cat === 'awning' || 
-         cat === 'panel_glide' ||
-         cat.includes('drape');
+### Fix 3: Notify Parent When Sub-Option Is Cleared
+
+**File:** `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx`
+
+**Change at lines 584-587:**
+
+```typescript
+if (prevCategory && prevCategory !== categoryKey) {
+  const clearedKey = `${option.key}_${prevCategory}`;
+  onChange(clearedKey, '');
+  // ✅ FIX: Also remove from selectedOptions by calling onOptionPriceChange with 0/empty
+  if (onOptionPriceChange) {
+    onOptionPriceChange(clearedKey, 0, '', 'fixed', undefined, undefined);
+  }
+}
+```
+
+**Additionally, update handleOptionPriceChange in VisualMeasurementSheet to remove options when price is 0 and label is empty:**
+
+**File:** `src/components/measurements/VisualMeasurementSheet.tsx` (lines 167-200)
+
+Add a check:
+```typescript
+const handleOptionPriceChange = (optionKey: string, price: number, label: string, ...) => {
+  if (onSelectedOptionsChange) {
+    const currentOptions = selectedOptionsRef.current;
+    
+    // ✅ FIX: Also remove sub-options when parent changes
+    const filteredOptions = currentOptions.filter(opt => {
+      const optKeyFromName = opt.optionKey || (opt.name.includes(':') ? opt.name.split(':')[0] : opt.name);
+      return !opt.name.startsWith(optionKey + ':') && !optKeyFromName.startsWith(optionKey + '_');
+    });
+    
+    // ✅ FIX: If label is empty and price is 0, this is a removal request - don't add new option
+    if (label === '' && price === 0) {
+      selectedOptionsRef.current = filteredOptions;
+      onSelectedOptionsChange(filteredOptions);
+      return;
+    }
+    
+    // ... rest of existing logic to add new option
+  }
 };
 ```
 
-### Fix 3: Add Awning to Name-Based Detection Fallback
-
-**File:** `src/utils/treatmentTypeDetection.ts` (around line 84)
-
-Add awning check to the name-based fallback section:
-
-```typescript
-if (name.includes('shutter')) return 'shutters';
-if (name.includes('awning') || description.includes('awning')) return 'awning';  // ADD THIS
-if (name.includes('panel') || name.includes('glide')) return 'panel_glide';       // ADD THIS
-if (name.includes('wallpaper') || name.includes('wall covering') || description.includes('wallpaper')) return 'wallpaper';
-```
-
 ---
 
-## Accounts Affected
+## Files to Modify
 
-| Impact | Who |
-|--------|-----|
-| **Directly affected** | All accounts using Awning templates (Greg/CCCO, future customers) |
-| **Potentially affected** | Accounts using Panel Glide or SmartDrape templates |
-| **Not affected** | Accounts using only standard blinds/curtains |
-
-This is a **code bug**, not a data issue - the fix will work for all accounts once deployed.
-
----
-
-## Prevention Strategy
-
-### Rule to Establish
-> **Never duplicate treatment category detection logic.** Use the centralized `isBlindCategory` helper from `blindCostCalculator.ts` or create a shared utility that ALL components reference.
-
-### Add to Memory
-Create a memory entry documenting that:
-1. Awning, Panel Glide, and SmartDrape treatments must be routed through the "blinds" calculation path
-2. Any new treatment types must be added to ALL detection helpers in one commit
+| File | Change | Lines |
+|------|--------|-------|
+| `src/components/measurements/dynamic-options/CostCalculationSummary.tsx` | Add optionSelectionKey to blind costs key | 396-398 |
+| `src/components/measurements/VisualMeasurementSheet.tsx` | Clear sub-options when parent changes + handle removal requests | 167-200 |
+| `src/components/measurements/roller-blind-fields/DynamicRollerBlindFields.tsx` | Notify parent when sub-option cleared | 584-587 |
 
 ---
 
@@ -169,22 +155,33 @@ Create a memory entry documenting that:
 
 | Before | After |
 |--------|-------|
-| Worksheet shows $800.70 | Worksheet shows $800.70 |
-| Database saves $0 | Database saves $800.70 |
-| Room card shows A$0.00 | Room card shows A$800.70 |
-| Quote shows $0 | Quote shows $800.70 |
+| Change option with same price → no update | Any option change triggers update |
+| Switch from Motor to Chain → battery still charged | Motor sub-options removed |
+| UI shows correct options but save uses stale data | UI and save use identical data |
+
+---
+
+## Accounts Affected
+
+| Impact | Accounts |
+|--------|----------|
+| **Directly affected** | All accounts using roller blinds, vertical blinds, or any blind template with options |
+| **Not affected** | Curtain-only accounts (curtains already have the optionSelectionKey fix) |
+
+This is a **code bug**, not a data issue - fix applies universally.
 
 ---
 
 ## Testing Checklist
 
-After implementation:
-
-1. [ ] Open Greg's account project with awning windows
-2. [ ] Open Auto Awning worksheet - verify price displays
-3. [ ] Click Save & Close
-4. [ ] Verify Room 5 shows correct totals (not A$0.00)
-5. [ ] Check database: `windows_summary.total_cost` and `total_selling` have values
-6. [ ] Test Straight Drop and Zip Screen templates same way
-7. [ ] Verify roller blinds still work correctly (no regression)
+1. [ ] Open Roller Blind worksheet
+2. [ ] Select "Motor" for Control Type
+3. [ ] Select a battery type in sub-options
+4. [ ] Switch Control Type to "Chain"
+5. [ ] Verify battery option disappears from cost summary
+6. [ ] Click Save & Close
+7. [ ] Re-open worksheet - verify Chain is selected, no battery option
+8. [ ] Switch between two $0 options (e.g., Roll Direction)
+9. [ ] Verify cost summary updates immediately
+10. [ ] Save and verify correct option persisted
 
