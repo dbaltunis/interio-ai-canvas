@@ -30,6 +30,8 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -259,6 +261,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   // Get treatments data early so it can be used in the effect
   const { data: allProjectTreatments = [] } = useTreatments(projectId);
+
+  // Get markup settings for calculating selling prices
+  const { data: markupSettings } = useMarkupSettings();
 
   // Centralized data loading effect - SINGLE SOURCE OF TRUTH
   useEffect(() => {
@@ -1100,7 +1105,24 @@ export const EnhancedMeasurementWorksheet = forwardRef<
            difference: Math.abs(totalCost - breakdownTotal),
            breakdown: calculation_details.breakdown.map((i: any) => ({ name: i.name, cost: i.total_cost }))
          });
-         
+
+         // CRITICAL: Calculate total_selling with markup at SAVE TIME
+         // This ensures the selling price is stored and never recalculated
+         const markupResult = resolveMarkup({
+           productMarkup: (fabricItem as any)?.markup_percentage,
+           categoryMarkup: markupSettings?.category_markups?.[generalCategory],
+           subcategoryMarkup: markupSettings?.subcategory_markups?.[specificTreatmentType],
+           globalMarkup: markupSettings?.global_markup,
+         });
+         const totalSelling = applyMarkup(breakdownTotal, markupResult.percentage);
+
+         console.log('💵 Markup calculation:', {
+           costPrice: breakdownTotal,
+           markupPercentage: markupResult.percentage,
+           markupSource: markupResult.source,
+           sellingPrice: totalSelling
+         });
+
          await saveWindowSummary.mutateAsync({
            window_id: surfaceId,
            linear_meters: linearMeters,
@@ -1111,6 +1133,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
            manufacturing_cost: manufacturingCost,
            heading_cost: headingCost, // CRITICAL: Save heading cost
            total_cost: breakdownTotal, // CRITICAL: Use breakdown sum as source of truth
+           total_selling: totalSelling, // CRITICAL: Save selling price so we never recalculate
            template_id: selectedCovering.id,
            pricing_type: selectedCovering.pricing_type,
            waste_percent: selectedCovering.waste_percent || 0,
