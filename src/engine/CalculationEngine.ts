@@ -248,11 +248,18 @@ export class CalculationEngine {
     const finished_width_cm = rail_width_cm * fullness;
     values['finished_width_cm'] = finished_width_cm;
     steps.push(`Finished width: ${rail_width_cm} × ${fullness} = ${finished_width_cm}cm`);
-    
+
+    // Panel count: 'pair' = 2 curtains (4 side hems), 'single' = 1 curtain (2 side hems)
+    // CRITICAL FIX: This was previously always using 2 side hems, causing 15cm discrepancy for pairs
+    const panel_count = measurements.panel_configuration === 'pair' ? 2 : 1;
+    const total_side_hems_cm = side_hem_cm * 2 * panel_count;  // 2 sides per curtain × number of curtains
+    values['panel_count'] = panel_count;
+    values['total_side_hems_cm'] = total_side_hems_cm;
+
     // Total width with returns and side hems
-    const total_width_cm = finished_width_cm + total_returns_cm + (side_hem_cm * 2);
+    const total_width_cm = finished_width_cm + total_returns_cm + total_side_hems_cm;
     values['total_width_cm'] = total_width_cm;
-    steps.push(`Total width: ${finished_width_cm} + ${total_returns_cm} + ${side_hem_cm * 2} = ${total_width_cm}cm`);
+    steps.push(`Total width: ${finished_width_cm} + ${total_returns_cm} + ${total_side_hems_cm} (${panel_count} panel${panel_count > 1 ? 's' : ''} × 2 sides × ${side_hem_cm}cm) = ${total_width_cm}cm`);
     
     // Check if fabric is railroaded/horizontal
     const is_railroaded = measurements.fabric_rotated === true;
