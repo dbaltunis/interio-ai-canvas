@@ -42,7 +42,6 @@ import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, p
 import { useQuotePayment } from "@/hooks/useQuotePayment";
 import { useQuoteExclusions } from "@/hooks/useQuoteExclusions";
 import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
-import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -513,37 +512,45 @@ export const QuotationTab = ({
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
   // Prepare Homekaara template data - MUST be after projectData
+  // Uses quotationData.items (already computed) instead of re-parsing projectSummaries
   const homekaaraTemplateData = useMemo(() => {
     if (!useHomekaaraTemplate) return null;
     
-    const preparedData = prepareQuoteData(
-      { windowSummaries: projectSummaries, businessSettings },
-      templateSettings.showDetailedBreakdown
-    );
+    // Use sourceTreatments which already have all the correct data from useQuotationSync
+    const items = sourceTreatments.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity || 1,
+      unit_price: item.unit_price || item.total,
+      total: item.total || 0,
+      prate: item.quantity || 1,
+      image_url: item.image_url,
+      breakdown: item.children?.map((child: any) => ({
+        label: child.name || child.category || '',
+        value: child.description || (child.total ? `${child.total}` : ''),
+      })) || [],
+      room_name: item.room_name,
+      room_id: item.room_id,
+      surface_name: item.surface_name,
+      treatment_type: item.treatment_type,
+    }));
+    
+    // Get currency from business settings
+    let currency = 'USD';
+    try {
+      const measurementUnits = businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units) : null;
+      currency = measurementUnits?.currency || 'USD';
+    } catch {
+      currency = 'USD';
+    }
     
     return {
-      items: preparedData.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total: item.total,
-        prate: item.quantity,
-        image_url: item.image_url,
-        breakdown: item.breakdown?.map(b => ({
-          label: b.name || b.category || '',
-          value: b.description || (b.total_cost ? `${b.total_cost}` : ''),
-        })),
-        room_name: item.room_name,
-        room_id: item.room_id,
-        surface_name: item.surface_name,
-        treatment_type: item.treatment_type,
-      })),
-      subtotal: preparedData.subtotal,
-      taxAmount: preparedData.taxAmount,
-      total: preparedData.total,
-      currency: preparedData.currency,
+      items,
+      subtotal: subtotal,
+      taxAmount: taxAmount,
+      total: total,
+      currency: currency,
       businessInfo: {
         name: businessSettings?.company_name || 'Your Business',
         logo_url: businessSettings?.company_logo_url,
@@ -572,7 +579,7 @@ export const QuotationTab = ({
       },
       introMessage: (project as any)?.intro_message,
     };
-  }, [useHomekaaraTemplate, projectSummaries, businessSettings, client, project, templateSettings.showDetailedBreakdown]);
+  }, [useHomekaaraTemplate, sourceTreatments, subtotal, taxAmount, total, businessSettings, client, project]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
