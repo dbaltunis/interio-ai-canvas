@@ -3,9 +3,14 @@ import { AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { userInputToCM } from "@/utils/measurementBoundary";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
-import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
+import { calculateBlindCosts } from "./utils/blindCostCalculator";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
-import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
+import {
+  detectTreatmentCategory,
+  isManufacturedItem,
+  isWallpaperType,
+  isRomanBlindType
+} from "@/utils/treatmentTypeUtils";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -269,7 +274,10 @@ export const CostCalculationSummary = ({
   useEffect(() => {
     if (!savedCostBreakdown || savedCostBreakdown.length === 0 || savedTotalCost == null) return;
 
-    const treatmentCat = detectTreatmentType(template);
+    const treatmentCat = detectTreatmentCategory({
+      treatmentCategory: template?.treatment_category,
+      templateName: template?.name
+    });
 
     // Extract costs from saved breakdown
     const fabricItem = savedCostBreakdown.find(item => item.category === 'fabric');
@@ -284,7 +292,7 @@ export const CostCalculationSummary = ({
     const savedKey = `saved-${savedTotalCost}-${savedCostBreakdown.map(i => `${i.name}:${i.total_cost}`).join(',')}`;
 
     // ✅ Report costs based on treatment type
-    if (treatmentCat === 'wallpaper' && onWallpaperCostsCalculated) {
+    if (isWallpaperType(treatmentCat) && onWallpaperCostsCalculated) {
       const wallpaperKey = savedKey;
       if (wallpaperKey !== lastReportedWallpaperKeyRef.current) {
         lastReportedWallpaperKeyRef.current = wallpaperKey;
@@ -296,7 +304,7 @@ export const CostCalculationSummary = ({
           squareMeters: 0, // Not stored in breakdown
         });
       }
-    } else if (isBlindCategory(treatmentCat, template?.name) && onBlindCostsCalculated) {
+    } else if (isManufacturedItem(treatmentCat) && onBlindCostsCalculated) {
       const blindKey = savedKey;
       if (blindKey !== lastReportedBlindKeyRef.current) {
         lastReportedBlindKeyRef.current = blindKey;
@@ -344,7 +352,7 @@ export const CostCalculationSummary = ({
         costBreakdown={savedCostBreakdown}
         totalCost={savedTotalCost}
         templateName={template?.name}
-        treatmentCategory={detectTreatmentType(template)}
+        treatmentCategory={detectTreatmentCategory({ treatmentCategory: template?.treatment_category, templateName: template?.name })}
         selectedColor={measurements?.selected_color}
         canViewCosts={canViewCosts}
         canViewMarkup={canViewMarkup}
@@ -397,7 +405,10 @@ export const CostCalculationSummary = ({
   };
 
   // Use proper treatment detection instead of template.treatment_category
-  const treatmentCategory = detectTreatmentType(template);
+  const treatmentCategory = detectTreatmentCategory({
+    treatmentCategory: template?.treatment_category,
+    templateName: template?.name
+  });
   // CRITICAL: measurements are in USER'S DISPLAY UNIT
   // Use centralized conversion utility to convert to CM at calculation boundary
   const rawWidth = safeParseFloat(measurements.rail_width, 0);
@@ -410,7 +421,7 @@ export const CostCalculationSummary = ({
     templateName: template.name,
     width,
     height,
-    isBlind: isBlindCategory(treatmentCategory, template.name),
+    isBlind: isManufacturedItem(treatmentCategory),
     measurements,
     selectedFabric: selectedFabric?.name
   });
@@ -429,7 +440,7 @@ export const CostCalculationSummary = ({
   }
 
   // WALLPAPER: Add before blind check
-  if (treatmentCategory === 'wallpaper' && measurements.wall_width && measurements.wall_height && fabricToUse) {
+  if (isWallpaperType(treatmentCategory) && measurements.wall_width && measurements.wall_height && fabricToUse) {
     const wallWidth = safeParseFloat(measurements.wall_width, 0);
     const wallHeight = safeParseFloat(measurements.wall_height, 0);
     
@@ -499,8 +510,8 @@ export const CostCalculationSummary = ({
     );
   }
 
-  // BLINDS: Use clean calculator (check both category and template name)
-  if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
+  // BLINDS: Use clean calculator (uses centralized isManufacturedItem detection)
+  if (isManufacturedItem(treatmentCategory) && width > 0 && height > 0) {
     try {
       // ✅ CRITICAL DEBUG: Log fabric enrichment status
       console.log('🔧 Calculating blind costs with:', {
@@ -597,7 +608,7 @@ export const CostCalculationSummary = ({
     // Build items for table display with per-item markup
     const tableItems: QuoteSummaryItem[] = [
       {
-        name: isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric',
+        name: isManufacturedItem(treatmentCategory) ? 'Material' : 'Fabric',
         details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
         category: 'fabric',
@@ -621,7 +632,7 @@ export const CostCalculationSummary = ({
     selectedOptions
       .filter(opt => {
         const isLiningOption = opt.name?.toLowerCase().includes('lining');
-        const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
+        const isBlindTreatment = isManufacturedItem(treatmentCategory);
         if (isLiningOption && isBlindTreatment) return false;
         return true;
       })
@@ -918,7 +929,7 @@ export const CostCalculationSummary = ({
   const liningMarkupPercent = liningMarkupResult.percentage;
   
   // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP (e.g., curtain_making/roman_making at 100%)
-  const isRomanTreatment = template.name?.toLowerCase().includes('roman') || treatmentCategory?.includes('roman');
+  const isRomanTreatment = isRomanBlindType(treatmentCategory);
   const mfgMarkupKey = isRomanTreatment ? 'roman_making' : 'curtain_making';
   const mfgMarkupResult = resolveMarkup({
     category: mfgMarkupKey,

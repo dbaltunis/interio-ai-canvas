@@ -6,6 +6,7 @@
 
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
+import { isManufacturedItem, inferCategoryFromName } from '@/utils/treatmentTypeUtils';
 
 interface OptionDetail {
   name: string;
@@ -335,15 +336,19 @@ export const calculateBlindCosts = (
   };
 };
 
+/**
+ * Check if category is a blind/shutter (manufactured item)
+ * Uses centralized treatmentTypeUtils for consistent detection across codebase
+ */
 export const isBlindCategory = (category: string, templateName?: string): boolean => {
-  const categoryLower = category.toLowerCase();
-  const nameLower = (templateName || '').toLowerCase();
-  return categoryLower.includes('blind') || 
-         categoryLower.includes('shade') ||
-         categoryLower.includes('shutter') ||  // ✅ Include shutters
-         categoryLower.includes('awning') ||   // ✅ Include awnings
-         nameLower.includes('blind') ||
-         nameLower.includes('shade') ||
-         nameLower.includes('shutter') ||
-         nameLower.includes('awning');
+  // Check category first using centralized utility
+  if (isManufacturedItem(category)) return true;
+
+  // Fallback: infer from template name if category check fails
+  if (templateName) {
+    const inferredCategory = inferCategoryFromName(templateName);
+    if (inferredCategory && isManufacturedItem(inferredCategory)) return true;
+  }
+
+  return false;
 };

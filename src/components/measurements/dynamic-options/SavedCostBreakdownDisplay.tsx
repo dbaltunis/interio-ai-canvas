@@ -15,6 +15,7 @@ import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
 import type { MarkupSettings } from "@/hooks/useMarkupSettings";
 import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { isRomanBlindType, isBlindType } from "@/utils/treatmentTypeUtils";
 
 interface CostBreakdownItem {
   id: string;
@@ -63,9 +64,9 @@ export const SavedCostBreakdownDisplay = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
-  // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP
-  const isRomanTreatment = templateName?.toLowerCase().includes('roman') || treatmentCategory?.includes('roman');
-  const isBlindTreatment = templateName?.toLowerCase().includes('blind') || treatmentCategory?.includes('blind');
+  // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP - Using centralized detection
+  const isRomanTreatment = isRomanBlindType(treatmentCategory) || isRomanBlindType(templateName);
+  const isBlindTreatment = isBlindType(treatmentCategory) || isBlindType(templateName);
   const mfgMarkupKey = isRomanTreatment ? 'roman_making' : isBlindTreatment ? 'blind_making' : 'curtain_making';
   const mfgMarkupResult = resolveMarkup({
     category: mfgMarkupKey,

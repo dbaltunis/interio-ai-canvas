@@ -1,7 +1,13 @@
+import {
+  isManufacturedItem,
+  isWallpaperType,
+  detectTreatmentCategory,
+  isAreaCalculationType
+} from '@/utils/treatmentTypeUtils';
 
 /**
  * Calculate treatment pricing with fabric costs, lining, manufacturing, and options
- * 
+ *
  * CRITICAL MEASUREMENT UNIT EXPECTATION:
  * This function expects measurements to already be converted to CENTIMETERS (CM).
  * 
@@ -161,24 +167,13 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   let fabricCost = 0;
   const pricingType = template?.pricing_type;
   
-  // CRITICAL: Detect blinds from template name OR category - templates might not have treatment_category
-  // NOTE: Drapes are CURTAINS (linear-meter pricing), NOT blinds (sqm pricing)
-  const treatmentCategory = template?.treatment_category || template?.category || '';
-  const templateName = (template?.name || '').toLowerCase();
-  const isBlindTreatment = treatmentCategory.includes('blind') ||
-                           treatmentCategory === 'shutters' ||
-                           treatmentCategory.includes('awning') ||
-                           // REMOVED: treatmentCategory.includes('drape') - drapes are curtains, not blinds!
-                           templateName.includes('blind') ||
-                           templateName.includes('roman') ||
-                           templateName.includes('roller') ||
-                           templateName.includes('venetian') ||
-                           templateName.includes('vertical blind') || // More specific - 'vertical' alone could match curtains
-                           templateName.includes('cellular') ||
-                           templateName.includes('honeycomb') ||
-                           templateName.includes('shutter') ||
-                           templateName.includes('awning') ||
-                           templateName.includes('smartdrape'); // SmartDrape is a specific blind product
+  // CRITICAL: Use centralized treatment detection - eliminates fragmented string checks
+  const detectedCategory = detectTreatmentCategory({
+    treatmentCategory: template?.treatment_category || template?.category,
+    templateName: template?.name
+  });
+  const treatmentCategory = detectedCategory || template?.treatment_category || template?.category || '';
+  const isBlindTreatment = isManufacturedItem(detectedCategory);
   
   console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   
@@ -419,7 +414,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       // Fabric with detailed quantity and unit price
       ...(fabricCost > 0 ? [{
         id: 'fabric',
-        name: fabricItem?.name || (isBlindTreatment ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'),
+        name: fabricItem?.name || (isBlindTreatment ? 'Material' : isWallpaperType(detectedCategory) ? 'Wallpaper' : 'Fabric'),
         description: effectivePricingType === 'per_sqm' && isBlindTreatment 
           ? `${((widthCm * heightCm) / 10000 * wasteMultiplier).toFixed(2)} sqm × ${pricePerMeter.toFixed(2)}/sqm`
           : `${linearMeters.toFixed(2)} m × ${pricePerMeter.toFixed(2)}/m`,
