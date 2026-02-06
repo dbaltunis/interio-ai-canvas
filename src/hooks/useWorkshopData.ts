@@ -4,6 +4,7 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { isManufacturedItem, detectTreatmentCategory } from "@/utils/treatmentTypeUtils";
 
 export interface WorkshopRoomItem {
   id: string;
@@ -64,6 +65,11 @@ export interface WorkshopRoomItem {
     bottom: number;
     side: number;
     seam?: number;
+  };
+
+  returns?: {
+    left: number;
+    right: number;
   };
   
   fullness?: {
@@ -207,13 +213,13 @@ export const useWorkshopData = (projectId?: string) => {
         resolvedGridName: summary.material_details.resolved_grid_name,
       } : undefined;
       
-      // Use material OR fabric for display (prioritize material for blind treatments)
-      const treatmentTypeLower = (summary?.treatment_type || s.surface_type || '').toLowerCase();
-      const isBlindTreatment = treatmentTypeLower.includes('blind') || 
-                               treatmentTypeLower.includes('venetian') || 
-                               treatmentTypeLower.includes('vertical') ||
-                               treatmentTypeLower.includes('cellular') ||
-                               treatmentTypeLower.includes('shutter');
+      // Use centralized treatment detection - eliminates hardcoded string checks
+      const detectedCategory = detectTreatmentCategory({
+        treatmentCategory: summary?.treatment_category,
+        treatmentType: summary?.treatment_type,
+        templateName: summary?.template_name
+      });
+      const isBlindTreatment = isManufacturedItem(detectedCategory);
       const finalFabricDetails = isBlindTreatment && materialDetails ? {
         name: materialDetails.name,
         fabricWidth: materialDetails.slatWidth || 0,
@@ -253,10 +259,16 @@ export const useWorkshopData = (projectId?: string) => {
       
       // Derive hem values from template settings - no hardcoded fallbacks
       const hems = {
-        header: summary?.measurements_details?.header_hem || summary?.template_details?.header_allowance || 0,
-        bottom: summary?.measurements_details?.bottom_hem || summary?.template_details?.bottom_hem || 0,
-        side: summary?.measurements_details?.side_hem || summary?.template_details?.side_hems || 0,
-        seam: summary?.measurements_details?.seam_hem || summary?.template_details?.seam_hems || 0,
+        header: summary?.measurements_details?.header_hem || summary?.measurements_details?.header_allowance_cm || summary?.template_details?.header_allowance || 0,
+        bottom: summary?.measurements_details?.bottom_hem || summary?.measurements_details?.bottom_hem_cm || summary?.template_details?.bottom_hem || 0,
+        side: summary?.measurements_details?.side_hem || summary?.measurements_details?.side_hems_cm || summary?.template_details?.side_hems || 0,
+        seam: summary?.measurements_details?.seam_hem || summary?.measurements_details?.seam_hems_cm || summary?.template_details?.seam_hems || 0,
+      };
+
+      // Extract return values for curtains - CRITICAL: These are part of width calculations
+      const returns = {
+        left: summary?.measurements_details?.return_left_cm || summary?.template_details?.return_left || 0,
+        right: summary?.measurements_details?.return_right_cm || summary?.template_details?.return_right || 0,
       };
       
       // Get fullness from data - no hardcoded fallback, log warning if missing
@@ -361,6 +373,7 @@ export const useWorkshopData = (projectId?: string) => {
         materialDetails,
         fabricUsage,
         hems,
+        returns,
         fullness,
         options,
         liningDetails,

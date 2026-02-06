@@ -277,8 +277,15 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                             <div>H:{formatFromCM(item.hems.header, units.length)} | B:{formatFromCM(item.hems.bottom, units.length)} | S:{formatFromCM(item.hems.side, units.length)}</div>
                           </div>
                         )}
+
+                        {item.returns && (item.returns.left > 0 || item.returns.right > 0) && (
+                          <div className="mt-2 text-[10px]">
+                            <div className="font-semibold mb-0.5">Returns:</div>
+                            <div>L:{formatFromCM(item.returns.left, units.length)} | R:{formatFromCM(item.returns.right, units.length)}</div>
+                          </div>
+                        )}
                       </td>
-                      
+
                       {/* Measurements Column */}
                       <td className="p-2 border-r align-top w-[15%]">
                         {item.measurements && (

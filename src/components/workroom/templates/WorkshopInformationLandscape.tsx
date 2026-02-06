@@ -475,6 +475,19 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                             </div>
                           )}
                           
+                          {/* Returns - ONLY for curtains with return values */}
+                          {!isBlindTreatment && item.returns && (item.returns.left > 0 || item.returns.right > 0) && (
+                            <div className="text-[9px] space-y-0.5 mt-1">
+                              <div className="font-medium">Returns:</div>
+                              {item.returns.left > 0 && (
+                                <div>• Left: {formatFromCM(item.returns.left, units.length)}</div>
+                              )}
+                              {item.returns.right > 0 && (
+                                <div>• Right: {formatFromCM(item.returns.right, units.length)}</div>
+                              )}
+                            </div>
+                          )}
+
                           {/* For blinds - show manufacturing info if no sewing details */}
                           {isBlindTreatment && (
                             <div className="text-[9px] text-gray-600">
