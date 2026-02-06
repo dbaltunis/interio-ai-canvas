@@ -327,9 +327,10 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
       style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif' }}
     >
       {/* ========== HEADER SECTION ========== */}
-      <div className="flex justify-between items-start p-8 pb-4">
+      {/* Note: p-6 padding to ensure content fits within A4 PDF bounds (210mm = ~794px) */}
+      <div className="flex justify-between items-start p-6 pb-4">
         {/* Left: Business & Client Info */}
-        <div className="flex-1 min-w-0 pr-6">
+        <div className="flex-1 min-w-0 pr-4">
           {businessInfo.logo_url ? (
             <img
               src={businessInfo.logo_url}
@@ -357,7 +358,8 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
         </div>
 
         {/* Right: Quote Metadata */}
-        <div className="w-72 flex-shrink-0">
+        {/* Note: Use max-w instead of fixed w to allow shrinking for PDF */}
+        <div className="w-64 max-w-[40%] flex-shrink">
           <table className="text-sm w-full">
             <tbody>
               <tr>
@@ -434,12 +436,12 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
       </div>
 
       {/* Accent Line */}
-      <div className="px-8 pb-3">
+      <div className="px-6 pb-3">
         <div className="w-2 h-1 rounded-full bg-amber-700"></div>
       </div>
 
       {/* ========== INTRO MESSAGE ========== */}
-      <div className="px-8 pb-5">
+      <div className="px-6 pb-5">
         {isEditable ? (
           <EditableText
             value={introMessage}
@@ -454,7 +456,7 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
       </div>
 
       {/* ========== ITEMS TABLE ========== */}
-      <div className="px-8">
+      <div className="px-6">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr style={{ backgroundColor: '#E8E4DF' }}>
@@ -551,7 +553,7 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
       </div>
 
       {/* ========== SUBTOTAL & DISCOUNT ========== */}
-      <div className="px-8 py-4">
+      <div className="px-6 py-4">
         <div className="flex justify-end gap-6">
           <span className="font-semibold text-stone-700">Subtotal:</span>
           <span className="font-bold text-stone-800 text-lg whitespace-nowrap">
@@ -582,12 +584,12 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
         )}
       </div>
 
-      <div className="px-8">
+      <div className="px-6">
         <div className="border-t border-stone-200"></div>
       </div>
 
       {/* ========== PAYMENT SUMMARY ========== */}
-      <div className="px-8 py-4 flex justify-between items-start">
+      <div className="px-6 py-4 flex justify-between items-start">
         <div>
           <h3 className="font-bold text-stone-800 mb-2">Payment Summary</h3>
           <p className="text-sm text-stone-600">
@@ -614,12 +616,12 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
         </div>
       </div>
 
-      <div className="px-8">
+      <div className="px-6">
         <div className="border-t border-stone-200"></div>
       </div>
 
       {/* ========== TERMS & ACCEPT BUTTON ========== */}
-      <div className="px-8 py-5 flex gap-6">
+      <div className="px-6 py-5 flex gap-6">
         {/* Terms */}
         <div className="flex-1">
           <h3 className="font-bold text-stone-800 mb-3">
@@ -656,7 +658,7 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
 
       {/* ========== SAVE BUTTON (Edit Mode) ========== */}
       {isEditable && onSaveChanges && (
-        <div className="px-8 pb-6">
+        <div className="px-6 pb-6">
           <button
             onClick={handleSave}
             className="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium py-3 rounded transition-colors"
