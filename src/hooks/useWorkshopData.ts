@@ -347,8 +347,15 @@ export const useWorkshopData = (projectId?: string) => {
           unit: (width || height) ? getLengthUnitLabel() : undefined,
         },
         treatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined,
+        // CRITICAL: Include full summary so work order can access treatment_type/treatment_category
+        // for proper blind detection (treatmentType above might be template_name like "Pure Wood 50mm")
         notes: s.notes || undefined,
-        summary: summary,
+        summary: {
+          ...summary,
+          // Ensure treatment_type and treatment_category are accessible
+          treatment_type: summary?.treatment_type || summary?.treatment_category || '',
+          treatment_category: summary?.treatment_category || summary?.treatment_type || '',
+        },
         surface: s,
         fabricDetails: finalFabricDetails,
         materialDetails,

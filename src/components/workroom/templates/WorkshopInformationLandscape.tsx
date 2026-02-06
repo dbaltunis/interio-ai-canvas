@@ -425,15 +425,26 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   {/* Sewing/Manufacturing Details column */}
                   <td className="py-3 px-2 align-top">
                     {(() => {
-                      // Determine if this is a blind/shutter treatment
+                      // CRITICAL FIX: Check BOTH treatmentType AND summary.treatment_type/treatment_category
+                      // treatmentType might be template_name like "Pure Wood (50mm)" which doesn't indicate blind
+                      // treatment_type/treatment_category from summary is the actual treatment category
                       const treatmentLower = (item.treatmentType || '').toLowerCase();
-                      const isBlindTreatment = treatmentLower.includes('blind') || 
-                                               treatmentLower.includes('venetian') || 
-                                               treatmentLower.includes('vertical') ||
-                                               treatmentLower.includes('cellular') ||
-                                               treatmentLower.includes('shutter') ||
-                                               treatmentLower.includes('roller');
-                      
+                      const summaryTreatmentType = (item.summary?.treatment_type || item.summary?.treatment_category || '').toLowerCase();
+                      const templateNameLower = (item.summary?.template_name || '').toLowerCase();
+
+                      // Check all possible sources for blind/shutter detection
+                      const checkIsBlind = (str: string) =>
+                        str.includes('blind') ||
+                        str.includes('venetian') ||
+                        str.includes('vertical') ||
+                        str.includes('cellular') ||
+                        str.includes('shutter') ||
+                        str.includes('roller');
+
+                      const isBlindTreatment = checkIsBlind(treatmentLower) ||
+                                               checkIsBlind(summaryTreatmentType) ||
+                                               checkIsBlind(templateNameLower);
+
                       // Check if fullness and hems have meaningful values (not default zeros)
                       const hasFullness = item.fullness && item.fullness.ratio > 0 && item.fullness.ratio !== 1;
                       const hasHems = item.hems && (item.hems.header > 0 || item.hems.bottom > 0 || item.hems.side > 0);
