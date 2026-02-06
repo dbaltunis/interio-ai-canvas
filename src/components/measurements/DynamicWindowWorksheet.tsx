@@ -1831,8 +1831,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           
           const summaryData = {
             window_id: surfaceId,
-            // CRITICAL: Save per-piece meters for proper breakdown display
-            linear_meters: fabricCalculation?.orderedLinearMeters || linearMeters,
+            // CRITICAL: Use same linearMeters as cost_breakdown.fabric.quantity for consistency
+            // liveCurtainCalcResult.linearMeters is the authoritative source from CostCalculationSummary
+            linear_meters: linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
             // For blinds/shutters, use material price; for curtains use fabric calculation
