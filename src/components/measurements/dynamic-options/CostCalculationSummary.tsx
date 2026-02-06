@@ -628,15 +628,23 @@ export const CostCalculationSummary = ({
     // Default markup for display
     const markupPercentage = markupSettings?.default_markup_percentage || 0;
 
+    // ✅ CRITICAL FIX: Check if fabric uses pricing grid
+    // Grid pricing ALREADY includes markup - do NOT apply additional markup
+    const fabricUsesPricingGrid = !!(fabricToUse?.pricing_grid_data && fabricToUse?.resolved_grid_name);
+
     // Build items for table display with per-item markup
+    // For grid pricing: fabricCost ALREADY includes markup, sellingPrice = fabricCost
+    // For non-grid: fabricCost is cost_price, apply markup to get sellingPrice
     const tableItems: QuoteSummaryItem[] = [
       {
         name: isManufacturedItem(treatmentCategory) ? 'Material' : 'Fabric',
         details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
         category: 'fabric',
-        markupPercentage: fabricMarkupPercent,
-        sellingPrice: applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
+        markupPercentage: fabricUsesPricingGrid ? 0 : fabricMarkupPercent, // Skip markup for grid pricing
+        sellingPrice: fabricUsesPricingGrid
+          ? blindCosts.fabricCost  // Grid price already includes markup
+          : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
       }
     ];
 
