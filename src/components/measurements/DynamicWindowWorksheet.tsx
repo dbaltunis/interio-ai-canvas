@@ -2181,7 +2181,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       return ((sellingPrice - costPrice) / costPrice) * 100;
                     }
                     return undefined;
-                  })()
+                  })(),
+                  // ✅ CRITICAL: Save display formula for consistent rendering across all views
+                  // This ensures live view, saved view, work orders, and quotes show IDENTICAL formulas
+                  display_formula: liveCurtainCalcResult?.fabricDisplayFormula || liveBlindCalcResult?.displayText || undefined,
+                  pricing_method_label: liveCurtainCalcResult?.fabricPricingMethodLabel || undefined,
+                  quantity_display: liveCurtainCalcResult?.fabricQuantityDisplay || undefined,
                 }] : []),
                 // Lining
                 ...(finalLiningCost > 0 ? [{

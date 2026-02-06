@@ -35,6 +35,10 @@ interface CostBreakdownItem {
   markup_percentage?: number;      // Product-level markup
   pricing_grid_markup?: number;    // Grid-level markup
   implied_markup?: number;         // Implied from cost_price vs selling_price
+  // ✅ CRITICAL: Display data for consistent rendering
+  display_formula?: string;        // Pre-built formula string (e.g., "4.51m × £26.50/m = £119.52")
+  pricing_method_label?: string;   // e.g., "Per Linear Meter", "Per Square Meter"
+  quantity_display?: string;       // e.g., "4.51m", "2.5 sqm", "2 panels"
 }
 
 interface SavedCostBreakdownDisplayProps {
@@ -182,10 +186,22 @@ export const SavedCostBreakdownDisplay = ({
   const filteredHardwareItems = hardwareGroup ? filterMeaningfulHardwareItems(hardwareGroup.items) : [];
 
   // Build rows for display with clear math: "qty × price = total"
+  // ✅ CRITICAL: Use saved display_formula if available for consistent rendering
   const buildDetailsString = (item: CostBreakdownItem, showCosts = true): string => {
+    // Priority 1: Use saved display_formula (ensures consistency with live view)
+    if (item.display_formula && showCosts) {
+      return item.display_formula;
+    }
+
+    // Priority 2: Use quantity_display if available (for quantity-only display)
+    if (item.quantity_display && !showCosts) {
+      return item.quantity_display;
+    }
+
+    // Fallback: Build from quantity and unit_price
     if (item.quantity && item.unit_price) {
       const unit = item.unit || '';
-      const qtyPart = `${item.quantity}${unit ? ` ${unit}` : ''}`;
+      const qtyPart = item.quantity_display || `${item.quantity}${unit ? ` ${unit}` : ''}`;
       if (showCosts) {
         return `${qtyPart} × ${formatPrice(item.unit_price)} = ${formatPrice(item.total_cost)}`;
       }

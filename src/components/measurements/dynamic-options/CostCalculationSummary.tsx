@@ -95,6 +95,12 @@ interface CurtainCostsCallback {
   optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
   totalCost: number;
   linearMeters: number;
+  // ✅ CRITICAL: Display data for consistent formula rendering
+  fabricDisplayFormula?: string;      // e.g., "4.51m × £26.50/m = £119.52"
+  fabricPricingMethod?: string;       // e.g., "per_metre", "per_sqm", "pricing_grid"
+  fabricPricingMethodLabel?: string;  // e.g., "Per Linear Meter", "Per Square Meter"
+  fabricUnitPrice?: number;           // The cost price per unit used
+  fabricQuantityDisplay?: string;     // e.g., "4.51m", "2.5 sqm", "2 panels"
 }
 
 // ✅ NEW: Callback interface for wallpaper costs
@@ -859,7 +865,51 @@ export const CostCalculationSummary = ({
     })();
     
     const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
-    
+
+    // ✅ CRITICAL: Build display formula for consistent rendering across all views
+    // This ensures live view and saved view show IDENTICAL formulas
+    let fabricDisplayFormula = '';
+    let fabricPricingMethod = '';
+    let fabricPricingMethodLabel = '';
+    let fabricUnitPrice = 0;
+    let fabricQuantityDisplay = '';
+
+    if (fabricDisplayData) {
+      fabricUnitPrice = fabricDisplayData.pricePerMeter || 0;
+      const quantity = fabricDisplayData.totalMeters || 0;
+
+      if (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName) {
+        // Grid pricing - show grid name
+        fabricPricingMethod = 'pricing_grid';
+        fabricPricingMethodLabel = 'Pricing Grid';
+        fabricDisplayFormula = `Grid: ${fabricDisplayData.gridName}`;
+        fabricQuantityDisplay = fabricDisplayData.gridName;
+      } else {
+        // Standard pricing - build formula
+        fabricPricingMethod = template?.pricing_type || 'per_metre';
+
+        // Determine pricing method label
+        if (fabricPricingMethod === 'per_sqm') {
+          fabricPricingMethodLabel = 'Per Square Meter';
+          fabricQuantityDisplay = `${quantity.toFixed(2)} sqm`;
+        } else if (fabricPricingMethod === 'per_drop') {
+          fabricPricingMethodLabel = 'Per Drop';
+          fabricQuantityDisplay = `${Math.round(quantity)} drop(s)`;
+        } else if (fabricPricingMethod === 'per_panel') {
+          fabricPricingMethodLabel = 'Per Panel';
+          fabricQuantityDisplay = `${Math.round(quantity)} panel(s)`;
+        } else {
+          fabricPricingMethodLabel = 'Per Linear Meter';
+          fabricQuantityDisplay = `${quantity.toFixed(2)}m`;
+        }
+
+        // Build formula string: "4.51m × £26.50/m = £119.52"
+        const symbol = getCurrencySymbol(units.currency);
+        const unitSuffix = fabricPricingMethod === 'per_sqm' ? '/sqm' : '/m';
+        fabricDisplayFormula = `${fabricQuantityDisplay} × ${symbol}${fabricUnitPrice.toFixed(2)}${unitSuffix} = ${symbol}${fabricCost.toFixed(2)}`;
+      }
+    }
+
     curtainCostsRef.current = {
       costs: {
         fabricCost,
@@ -871,6 +921,12 @@ export const CostCalculationSummary = ({
         optionDetails,
         totalCost,
         linearMeters,
+        // ✅ Display data for consistent rendering
+        fabricDisplayFormula,
+        fabricPricingMethod,
+        fabricPricingMethodLabel,
+        fabricUnitPrice,
+        fabricQuantityDisplay,
       },
       key: computedCurtainKey,
     };
