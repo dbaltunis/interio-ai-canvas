@@ -31,7 +31,7 @@ export interface MeasurementsContract {
   rail_width_mm: number;
   /** Drop/height in millimeters */
   drop_mm: number;
-  
+
   /** User-selected fullness ratio (e.g., 2.0, 2.5, 3.0) */
   heading_fullness?: number;
   /** Left return in millimeters */
@@ -40,10 +40,13 @@ export interface MeasurementsContract {
   return_right_mm?: number;
   /** Pooling/puddle allowance in millimeters */
   pooling_mm?: number;
-  
+
   /** Fabric orientation: true = railroaded/horizontal (width covers drop) */
   fabric_rotated?: boolean;
-  
+
+  /** Panel configuration: 'single' = 1 curtain, 'pair' = 2 curtains */
+  panel_configuration?: 'single' | 'pair';
+
   // Blind-specific
   stack_position?: 'left' | 'right' | 'center' | 'split';
   control_side?: 'left' | 'right';

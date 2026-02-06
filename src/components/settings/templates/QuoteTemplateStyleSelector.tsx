@@ -36,8 +36,8 @@ const templateStyles: TemplateStyleOption[] = [
   },
   {
     id: 'homekaara',
-    name: 'Homekaara',
-    description: 'Modern elegant design with product images and detailed breakdowns',
+    name: 'Professional Curtains Quote',
+    description: 'Elegant design with product images, room grouping, and detailed cost breakdowns. Best for curtain and blind quotes.',
     preview: (
       <div className="w-full h-32 rounded border overflow-hidden" style={{ backgroundColor: '#FAF9F7' }}>
         {/* Header */}

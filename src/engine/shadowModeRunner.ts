@@ -143,7 +143,14 @@ export function buildMeasurements(
         result.pooling_mm = convertLength(val, userUnit, 'mm');
       }
     }
-    
+
+    // Panel configuration - 'pair' means 2 curtains (4 side hems), 'single' means 1 curtain (2 side hems)
+    if (measurements.curtain_type != null) {
+      result.panel_configuration = measurements.curtain_type === 'pair' ? 'pair' : 'single';
+    } else if (measurements.panel_configuration != null) {
+      result.panel_configuration = measurements.panel_configuration === 'pair' ? 'pair' : 'single';
+    }
+
     return result;
   } catch (error) {
     console.warn('[ENGINE_SHADOW] Failed to build measurements:', error);
