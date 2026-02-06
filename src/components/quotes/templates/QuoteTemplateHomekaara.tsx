@@ -60,6 +60,12 @@ export interface PaymentInfo {
   deposit_percentage?: number;
 }
 
+export interface DiscountInfo {
+  type: 'percentage' | 'fixed';
+  value: number;
+  amount: number;
+}
+
 export interface QuoteTemplateHomekaaraProps {
   // Quote line items (from prepareQuoteData or similar)
   items: QuoteLineItem[];
@@ -79,7 +85,10 @@ export interface QuoteTemplateHomekaaraProps {
   
   // Payment
   paymentInfo?: PaymentInfo;
-  
+
+  // Discount
+  discountInfo?: DiscountInfo;
+
   // Content
   introMessage?: string;
   termsAndConditions?: string[];
@@ -248,6 +257,7 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
   clientInfo,
   metadata: initialMetadata,
   paymentInfo = { advance_paid: 0 },
+  discountInfo,
   introMessage: initialIntro,
   termsAndConditions,
   onAcceptQuote,
@@ -310,9 +320,10 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
   const balancePayable = total - paymentInfo.advance_paid;
 
   // ===== RENDER =====
+  // Note: Use w-full instead of max-w-4xl to fit within PDF container (210mm A4 width)
   return (
     <div
-      className="max-w-4xl mx-auto bg-white"
+      className="w-full bg-white"
       style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif' }}
     >
       {/* ========== HEADER SECTION ========== */}
@@ -539,12 +550,36 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
         </table>
       </div>
 
-      {/* ========== SUBTOTAL ========== */}
-      <div className="px-8 py-4 flex justify-end gap-6">
-        <span className="font-semibold text-stone-700">Subtotal:</span>
-        <span className="font-bold text-stone-800 text-lg whitespace-nowrap">
-          {formatCurrency(subtotal, currency)}
-        </span>
+      {/* ========== SUBTOTAL & DISCOUNT ========== */}
+      <div className="px-8 py-4">
+        <div className="flex justify-end gap-6">
+          <span className="font-semibold text-stone-700">Subtotal:</span>
+          <span className="font-bold text-stone-800 text-lg whitespace-nowrap">
+            {formatCurrency(subtotal, currency)}
+          </span>
+        </div>
+
+        {/* Discount row - only show if discount applied */}
+        {discountInfo && discountInfo.amount > 0 && (
+          <div className="flex justify-end gap-6 mt-2">
+            <span className="text-stone-600">
+              Discount{discountInfo.type === 'percentage' ? ` (${discountInfo.value}%)` : ''}:
+            </span>
+            <span className="text-red-600 whitespace-nowrap">
+              -{formatCurrency(discountInfo.amount, currency)}
+            </span>
+          </div>
+        )}
+
+        {/* Tax row if applicable */}
+        {taxAmount > 0 && (
+          <div className="flex justify-end gap-6 mt-2">
+            <span className="text-stone-600">Tax:</span>
+            <span className="text-stone-800 whitespace-nowrap">
+              {formatCurrency(taxAmount, currency)}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="px-8">

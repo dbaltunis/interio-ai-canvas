@@ -123,6 +123,9 @@ export const QuotationTab = ({
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
   // TEMPORARILY DISABLED: Exclusion edit mode caused quote breaking issues
   const isExclusionEditMode = false; // useState(false) - revert when reimplemented
+
+  // Edit mode for Homekaara template
+  const [isHomekaaraEditable, setIsHomekaaraEditable] = useState(false);
   
   // Quote item exclusions hook
   const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
@@ -526,9 +529,11 @@ export const QuotationTab = ({
       total: item.total || 0,
       prate: item.quantity || 1,
       image_url: item.image_url,
+      // CRITICAL: Use display_formula for consistent formula rendering across all views
+      // Priority: display_formula > description > total
       breakdown: item.children?.map((child: any) => ({
         label: child.name || child.category || '',
-        value: child.description || (child.total ? `${child.total}` : ''),
+        value: child.display_formula || child.description || (child.total_cost ? `${child.total_cost.toFixed(2)}` : ''),
       })) || [],
       room_name: item.room_name,
       room_id: item.room_id,
@@ -565,21 +570,33 @@ export const QuotationTab = ({
         address: client?.address,
       },
       metadata: {
-        quote_number: (project as any)?.quote_number || project?.id || 'N/A',
-        date: project?.created_at ? new Date(project.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
-        status: project?.status || 'Draft',
-        validity_days: (project as any)?.validity_days || 14,
-        services_required: (project as any)?.services_required,
-        expected_purchase_date: (project as any)?.expected_purchase_date,
-        referral_source: (project as any)?.referral_source,
+        quote_number: project?.job_number || currentQuote?.id?.slice(0, 8) || 'N/A',
+        date: currentQuote?.created_at
+          ? new Date(currentQuote.created_at).toLocaleDateString('en-GB')
+          : project?.created_at
+            ? new Date(project.created_at).toLocaleDateString('en-GB')
+            : new Date().toLocaleDateString('en-GB'),
+        status: currentQuote?.status || project?.status || 'Draft',
+        validity_days: currentQuote?.valid_until
+          ? Math.ceil((new Date(currentQuote.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : 14,
+        services_required: (currentQuote as any)?.metadata?.services_required || (project as any)?.services_required,
+        expected_purchase_date: (currentQuote as any)?.metadata?.expected_purchase_date || (project as any)?.expected_purchase_date,
+        referral_source: (currentQuote as any)?.metadata?.referral_source || (project as any)?.referral_source,
       },
       paymentInfo: {
-        advance_paid: (project as any)?.advance_paid || 0,
-        deposit_percentage: 50,
+        advance_paid: currentQuote?.amount_paid || 0,
+        deposit_percentage: currentQuote?.payment_percentage || 50,
       },
-      introMessage: (project as any)?.intro_message,
+      // Discount info - pass to template for display
+      discountInfo: currentQuote?.discount_type ? {
+        type: currentQuote.discount_type as 'percentage' | 'fixed',
+        value: currentQuote.discount_value || 0,
+        amount: currentQuote.discount_amount || 0,
+      } : undefined,
+      introMessage: currentQuote?.notes || (project as any)?.intro_message,
     };
-  }, [useHomekaaraTemplate, sourceTreatments, subtotal, taxAmount, total, businessSettings, client, project]);
+  }, [useHomekaaraTemplate, sourceTreatments, subtotal, taxAmount, total, businessSettings, client, project, currentQuote]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -641,6 +658,86 @@ export const QuotationTab = ({
     } finally {
       setIsGeneratingPDF(false);
     }
+  };
+
+  // Handle Homekaara template save
+  const handleHomekaaraSave = async (data: { metadata: any; introMessage: string; items: any[] }) => {
+    if (!currentQuote?.id) {
+      toast({
+        title: "Error",
+        description: "No quote selected to save changes.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Save quote metadata changes to database
+      const { error } = await supabase
+        .from('quotes')
+        .update({
+          notes: data.introMessage,
+          // Store metadata in JSON field if available
+          metadata: {
+            services_required: data.metadata.services_required,
+            expected_purchase_date: data.metadata.expected_purchase_date,
+            referral_source: data.metadata.referral_source,
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentQuote.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Changes Saved",
+        description: "Quote has been updated successfully."
+      });
+      setIsHomekaaraEditable(false);
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save changes.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle image upload for Homekaara template
+  const handleHomekaaraImageUpload = async (itemId: string, file: File): Promise<string> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/treatments/${itemId}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('treatment-images')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error('Failed to upload image');
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('treatment-images')
+      .getPublicUrl(filePath);
+
+    // Update treatment with new image URL
+    await supabase
+      .from('treatments')
+      .update({ image_url: publicUrl })
+      .eq('id', itemId);
+
+    toast({
+      title: "Image Uploaded",
+      description: "Product image has been updated."
+    });
+
+    return publicUrl;
   };
 
   // Email quote
@@ -918,17 +1015,41 @@ export const QuotationTab = ({
             {/* Email action is available via Contact button in JobDetailPage header */}
 
             {/* Discount Button */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleAddDiscount} 
-              disabled={createQuote.isPending || isReadOnly} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddDiscount}
+              disabled={createQuote.isPending || isReadOnly}
               className="h-9 px-2 lg:px-4"
               title="Discount"
             >
               <Percent className="h-4 w-4" />
               <span className="hidden lg:inline ml-2">Discount</span>
             </Button>
+
+            {/* Edit Quote Button - Only for Homekaara Template */}
+            {useHomekaaraTemplate && (
+              <Button
+                variant={isHomekaaraEditable ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsHomekaaraEditable(!isHomekaaraEditable)}
+                disabled={isReadOnly}
+                className="h-9 px-2 lg:px-4"
+                title={isHomekaaraEditable ? "Done Editing" : "Edit Quote"}
+              >
+                {isHomekaaraEditable ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span className="hidden lg:inline ml-2">Done</span>
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4" />
+                    <span className="hidden lg:inline ml-2">Edit Quote</span>
+                  </>
+                )}
+              </Button>
+            )}
 
             {/* Edit Items Toggle Button - TEMPORARILY HIDDEN
                Needs reimplementation to avoid breaking quotes
@@ -1207,8 +1328,11 @@ export const QuotationTab = ({
                   clientInfo={homekaaraTemplateData.clientInfo}
                   metadata={homekaaraTemplateData.metadata}
                   paymentInfo={homekaaraTemplateData.paymentInfo}
+                  discountInfo={homekaaraTemplateData.discountInfo}
                   introMessage={homekaaraTemplateData.introMessage}
-                  isEditable={false}
+                  isEditable={isHomekaaraEditable}
+                  onSaveChanges={handleHomekaaraSave}
+                  onImageUpload={handleHomekaaraImageUpload}
                 />
               </div>
             </div>
