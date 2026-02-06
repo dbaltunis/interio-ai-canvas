@@ -204,9 +204,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   // PHASE 1: Prevent continuous state resets from polling
   const hasLoadedInitialData = useRef(false);
   const latestSummaryRef = useRef<any>(null);
-  
+
   // PHASE 4: Track user editing to prevent data reload during typing
   const isUserEditing = useRef(false);
+
+  // PHASE 6: Track restore mode - prevents template callbacks from overriding saved values
+  // CRITICAL FIX: When loading existing data, we must trust saved values (like heading_fullness)
+  // and NOT let template selection callbacks apply defaults that change the calculation
+  const isRestoringData = useRef(false);
   
   // PHASE 5: Track if units changed after initial load for re-conversion
   const previousUnitsRef = useRef<string | null>(null);
@@ -361,6 +366,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     
     // Async function to handle data loading
     const loadData = async () => {
+      // CRITICAL: Set restore mode BEFORE any state updates
+      // This prevents template callbacks from overriding saved values
+      isRestoringData.current = true;
+      console.log('🔒 [RESTORE MODE ON] Beginning data restore - template defaults will be skipped');
+
       // Priority 1: Load from windows_summary table if available
       if (existingWindowSummary) {
         const measurementsDetails = existingWindowSummary.measurements_details as any || {};
@@ -761,7 +771,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         
         // PHASE 1: Mark as loaded to prevent future reloads
         hasLoadedInitialData.current = true;
+        // PHASE 6: Exit restore mode - template callbacks can now apply defaults normally
+        isRestoringData.current = false;
         console.log('✅ Initial data load complete - will not reload again');
+        console.log('🔓 [RESTORE MODE OFF] Data restore complete - template defaults now allowed');
         
         // Set fabric calculation if available - CRITICAL: Include hems and returns AND totalWidthWithAllowances
         // FIX: Set fabricCalculation even when linear_meters is null so manufacturing can calculate
@@ -855,7 +868,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   // Priority 2: Load from existingMeasurement (legacy support) - separate effect
   useEffect(() => {
     if (hasLoadedInitialData.current || !existingMeasurement) return;
-    
+
+    // Set restore mode to prevent template defaults from overriding saved values
+    isRestoringData.current = true;
+
     if (existingMeasurement) {
       setMeasurements(existingMeasurement.measurements || {});
 
@@ -890,15 +906,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       //   setLayeredTreatments(existingMeasurement.layered_treatments);
       //   setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
       // }
-      
+
       hasLoadedInitialData.current = true;
+      isRestoringData.current = false;
     }
   }, [existingMeasurement]);
 
   // Priority 3: Load from existing treatments for cross-mode compatibility - separate effect
   useEffect(() => {
     if (hasLoadedInitialData.current || !existingTreatments || existingTreatments.length === 0) return;
-    
+
+    // Set restore mode to prevent template defaults from overriding saved values
+    isRestoringData.current = true;
+
     if (existingTreatments && existingTreatments.length > 0) {
       const treatment = existingTreatments[0];
 
@@ -913,8 +933,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       } catch (e) {
         console.warn("Failed to parse treatment details:", e);
       }
-      
+
       hasLoadedInitialData.current = true;
+      isRestoringData.current = false;
     }
   }, [existingTreatments]);
 
@@ -2784,9 +2805,18 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       console.log('✅ Same template or initial load - keeping existing options');
     }
     
-    // ✅ FIX: Initialize measurements with template defaults ONLY if not already set
-    // Don't overwrite existing saved values
+    // ✅ CRITICAL FIX: Initialize measurements with template defaults ONLY if:
+    // 1. Not in restore mode (loading existing data) - we must trust saved values
+    // 2. Value doesn't already exist in measurements
+    // This prevents the bug where opening existing treatment changes fabric calculation
     setMeasurements(prev => {
+      // PHASE 6: Skip applying template defaults during restore mode
+      // This is CRITICAL - saved heading_fullness must be preserved, not overwritten
+      if (isRestoringData.current) {
+        console.log('⏭️ [RESTORE MODE] Skipping template defaults - trusting saved values');
+        return prev;
+      }
+
       const templateAny = template as any;
       return {
         ...prev,
@@ -2802,7 +2832,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         heading_fullness: prev.heading_fullness ?? templateAny.default_fullness ?? template.fullness_ratio,
       };
     });
-    
+
     console.log('🎯 Template selected - initialized defaults from template (no hardcoded fallbacks)');
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
