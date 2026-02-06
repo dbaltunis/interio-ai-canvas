@@ -37,6 +37,12 @@ import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { syncWindowToWorkshopItem } from "@/hooks/useWorkshopItemSync";
+import {
+  isManufacturedItem,
+  isWallpaperType,
+  usesGridPricing,
+  getMaterialLabel as getTreatmentMaterialLabel
+} from "@/utils/treatmentTypeUtils";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -1910,13 +1916,25 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               
               // CRITICAL FIX: Get actual fabric/material name for display
               const fabricName = selectedItems.fabric?.name || selectedItems.material?.name || 'Material';
-              const fabricColor = measurements.selected_color || selectedItems.fabric?.tags?.[0] || selectedItems.fabric?.color || 
+              const fabricColor = measurements.selected_color || selectedItems.fabric?.tags?.[0] || selectedItems.fabric?.color ||
                                  selectedItems.material?.tags?.[0] || selectedItems.material?.color || null;
-              const materialLabel = selectedTemplate?.treatment_category?.includes('blind') || selectedTemplate?.treatment_category?.includes('shutter') 
-                ? 'Material' 
-                : selectedTemplate?.treatment_category === 'wallpaper' 
-                  ? 'Wallpaper' 
-                  : 'Fabric';
+
+              // Use centralized utility for material label
+              const treatmentCat = selectedTemplate?.treatment_category || '';
+              const materialLabel = getTreatmentMaterialLabel(treatmentCat);
+
+              // CRITICAL: Determine correct unit based on treatment type and pricing method
+              // Blinds/shutters use sqm or grid, curtains use linear meters
+              const determineUnit = (): string => {
+                if (isWallpaperType(treatmentCat)) return 'roll';
+                if (isManufacturedItem(treatmentCat)) {
+                  // Blinds/shutters - check for grid pricing
+                  const usesPricing = selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data;
+                  return usesPricing ? '' : 'sqm'; // Grid pricing shows dimensions, not units
+                }
+                return 'm'; // Curtains, romans use linear meters
+              };
+              const fabricUnit = determineUnit();
               
               // UNIVERSAL: Build option items with full name:value format for quote display
               // Works for ALL treatment types: curtains, romans, blinds, shutters, wallpaper, hardware, services
@@ -2124,7 +2142,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   total_cost: fabricCost,
                   category: 'fabric',
                   quantity: fabricQuantity,
-                  unit: 'm',
+                  unit: fabricUnit, // Use treatment-type-aware unit (m for curtains, sqm for blinds)
                   unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                   widths_required: fabricCalculation?.widthsRequired,
