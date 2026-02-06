@@ -3044,15 +3044,25 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     selectedTemplate={selectedTemplate} 
                     selectedFabric={selectedItems.fabric?.id}
                     selectedFabricItem={selectedItems.fabric}
-                    selectedLining={selectedLining} 
-                    onLiningChange={setSelectedLining} 
-                    selectedHeading={selectedHeading} 
-                    onHeadingChange={setSelectedHeading} 
+                    selectedLining={selectedLining}
+                    onLiningChange={(lining) => {
+                      isUserEditing.current = true;
+                      setSelectedLining(lining);
+                    }}
+                    selectedHeading={selectedHeading}
+                    onHeadingChange={(heading) => {
+                      isUserEditing.current = true;
+                      setSelectedHeading(heading);
+                    }} 
                     onFabricCalculationChange={setFabricCalculation} 
                     readOnly={readOnly} 
                     treatmentCategory={treatmentCategory}
                     selectedOptions={selectedOptions}
-                    onSelectedOptionsChange={setSelectedOptions}
+                    onSelectedOptionsChange={(options) => {
+                      // CRITICAL: Mark as editing when options change to prevent saved costs display
+                      isUserEditing.current = true;
+                      setSelectedOptions(options);
+                    }}
                     selectedMaterial={selectedItems.material}
                     engineResult={engineResult}
                   />
@@ -3450,11 +3460,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       setCalculatedCosts(newCalculatedCosts);
                     }
 
-                    // ✅ FIX: When editing and engine/fabric not loaded yet, show saved costs
-                    // This prevents €0.00 display while data is still loading
+                    // ✅ FIX: Show saved costs ONLY during initial load, NOT when user is editing
+                    // This prevents €0.00 display while data is loading, but allows live updates during editing
                     const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] | undefined;
                     const savedTotal = existingWindowSummary?.total_cost;
-                    const shouldUseSavedCosts = savedBreakdown && savedTotal && savedTotal > 0 && totalCost === 0;
+                    // CRITICAL: Never use saved costs when user is actively editing - always show live calculation
+                    // isUserEditing.current is true when user is interacting with inputs
+                    const shouldUseSavedCosts = !isUserEditing.current && savedBreakdown && savedTotal && savedTotal > 0 && totalCost === 0;
                     
                     return (
                       <CostCalculationSummary
