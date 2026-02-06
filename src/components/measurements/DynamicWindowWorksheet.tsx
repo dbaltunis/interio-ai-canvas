@@ -1859,7 +1859,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 pricingMethod: 'per-meter',
                 quantity: linearMeters,
                 unit: 'm',
-                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
+                // ✅ CRITICAL: Use selling_price FIRST for consistency with display path
+                unit_price: selectedItems.fabric?.selling_price || fabricCalculation?.pricePerMeter || 0
               }] : []),
               // Lining (base item)
               ...(selectedLining && selectedLining !== 'none' ? [{
@@ -2160,7 +2161,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   category: 'fabric',
                   quantity: fabricQuantity,
                   unit: fabricUnit, // Use treatment-type-aware unit (m for curtains, sqm for blinds)
-                  unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+                  // ✅ CRITICAL: Use selling_price FIRST for consistency with display path (line 3209)
+                  unit_price: selectedItems.fabric?.selling_price || selectedItems.material?.selling_price || fabricCalculation?.pricePerMeter || 0,
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                   widths_required: fabricCalculation?.widthsRequired,
                   fabric_orientation: fabricCalculation?.fabricOrientation,
