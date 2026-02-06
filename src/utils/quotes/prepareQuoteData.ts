@@ -1,4 +1,5 @@
 import { buildClientBreakdown, ClientBreakdownItem } from './buildClientBreakdown';
+import { isManufacturedItem, detectTreatmentCategory } from '@/utils/treatmentTypeUtils';
 
 export interface PreparedQuoteItem {
   id: string;
@@ -52,9 +53,13 @@ export const prepareQuoteData = (
         // Build detailed breakdown
         const breakdown = showDetailedBreakdown ? buildClientBreakdown(summary) : undefined;
 
-        // Extract treatment details
-        const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
-        const isBlindsOrShutters = treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter');
+        // Extract treatment details using centralized detection
+        const treatmentCategory = detectTreatmentCategory({
+          treatmentCategory: summary.treatment_category,
+          treatmentType: summary.treatment_type,
+          templateName: summary.template_name
+        }) || summary.treatment_category || summary.treatment_type || '';
+        const isBlindsOrShutters = isManufacturedItem(treatmentCategory);
 
         // Get material details (fabric for curtains, material for blinds)
         const materialDetails = isBlindsOrShutters ? (summary.material_details || {}) : (summary.fabric_details || {});
