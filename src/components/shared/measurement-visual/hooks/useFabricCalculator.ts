@@ -171,9 +171,9 @@ export const useFabricCalculator = ({
       
       // Calculate remnant (difference between ordered and used)
       const remnantMeters = orderedLinearMeters - linearMeters;
-      
+
       // 🆕 Calculate seaming labor (if multiple widths)
-      const seamsCount = widthsRequired > 1 ? widthsRequired - 1 : 0;
+      // Note: seamsCount is already calculated above at line 129
       const seamLaborHours = seamsCount * 0.25; // 15 minutes per seam
       
       // Calculate total cost based on ORDERED fabric (not just used)
