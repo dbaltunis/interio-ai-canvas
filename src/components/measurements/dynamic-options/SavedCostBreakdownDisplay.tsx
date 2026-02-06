@@ -64,9 +64,25 @@ export const SavedCostBreakdownDisplay = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
-  // ✅ RESOLVE MANUFACTURING-SPECIFIC MARKUP - Using centralized detection
+  // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS - Match CostCalculationSummary behavior
   const isRomanTreatment = isRomanBlindType(treatmentCategory) || isRomanBlindType(templateName);
   const isBlindTreatment = isBlindType(treatmentCategory) || isBlindType(templateName);
+
+  // Fabric markup - resolve from treatment category
+  const fabricMarkupResult = resolveMarkup({
+    category: treatmentCategory || 'curtains',
+    markupSettings: markupSettings || undefined
+  });
+  const fabricMarkupPercent = fabricMarkupResult.percentage;
+
+  // Lining markup - specific category
+  const liningMarkupResult = resolveMarkup({
+    category: 'lining',
+    markupSettings: markupSettings || undefined
+  });
+  const liningMarkupPercent = liningMarkupResult.percentage;
+
+  // Manufacturing markup - treatment-specific making category
   const mfgMarkupKey = isRomanTreatment ? 'roman_making' : isBlindTreatment ? 'blind_making' : 'curtain_making';
   const mfgMarkupResult = resolveMarkup({
     category: mfgMarkupKey,
@@ -74,8 +90,53 @@ export const SavedCostBreakdownDisplay = ({
   });
   const mfgMarkupPercent = mfgMarkupResult.percentage;
 
-  const getSellingPrice = (costPrice: number, isManufacturing = false) => {
-    const markup = isManufacturing ? mfgMarkupPercent : markupPercentage;
+  // Heading markup - specific category
+  const headingMarkupResult = resolveMarkup({
+    category: 'heading',
+    markupSettings: markupSettings || undefined
+  });
+  const headingMarkupPercent = headingMarkupResult.percentage;
+
+  // Hardware markup - specific category
+  const hardwareMarkupResult = resolveMarkup({
+    category: 'hardware',
+    markupSettings: markupSettings || undefined
+  });
+  const hardwareMarkupPercent = hardwareMarkupResult.percentage;
+
+  /**
+   * Get selling price for an item based on its category
+   * ✅ CRITICAL: Match CostCalculationSummary's per-category markup resolution
+   */
+  const getSellingPrice = (costPrice: number, category: string) => {
+    let markup = markupPercentage; // Default fallback
+
+    switch (category) {
+      case 'fabric':
+        markup = fabricMarkupPercent;
+        break;
+      case 'lining':
+        markup = liningMarkupPercent;
+        break;
+      case 'manufacturing':
+        markup = mfgMarkupPercent;
+        break;
+      case 'heading':
+        markup = headingMarkupPercent;
+        break;
+      case 'hardware':
+      case 'hardware_accessory':
+        markup = hardwareMarkupPercent;
+        break;
+      default:
+        // For options and other categories, resolve dynamically
+        const optionMarkupResult = resolveMarkup({
+          category: category,
+          markupSettings: markupSettings || undefined
+        });
+        markup = optionMarkupResult.percentage;
+    }
+
     return markup > 0 ? applyMarkup(costPrice, markup) : costPrice;
   };
 
@@ -126,12 +187,11 @@ export const SavedCostBreakdownDisplay = ({
     return '';
   };
 
-  // Calculate totals with per-item markup
+  // Calculate totals with per-item category-specific markup
   const calculateAdjustedQuotePrice = (): number => {
     let total = 0;
     costBreakdown.forEach(item => {
-      const isManufacturing = item.category === 'manufacturing';
-      total += getSellingPrice(item.total_cost, isManufacturing);
+      total += getSellingPrice(item.total_cost, item.category);
     });
     return total;
   };
@@ -168,7 +228,7 @@ export const SavedCostBreakdownDisplay = ({
                 {buildDetailsString(fabricItem, canViewCosts)}
               </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {formatPrice(getSellingPrice(fabricItem.total_cost))}
+                {formatPrice(getSellingPrice(fabricItem.total_cost, 'fabric'))}
               </td>
             </tr>
           )}
@@ -181,7 +241,7 @@ export const SavedCostBreakdownDisplay = ({
                 {buildDetailsString(liningItem, canViewCosts)}
               </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {formatPrice(getSellingPrice(liningItem.total_cost))}
+                {formatPrice(getSellingPrice(liningItem.total_cost, 'lining'))}
               </td>
             </tr>
           )}
@@ -194,7 +254,7 @@ export const SavedCostBreakdownDisplay = ({
                 {buildDetailsString(manufacturingItem, canViewCosts)}
               </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {formatPrice(getSellingPrice(manufacturingItem.total_cost, true))}
+                {formatPrice(getSellingPrice(manufacturingItem.total_cost, 'manufacturing'))}
               </td>
             </tr>
           )}
@@ -207,7 +267,7 @@ export const SavedCostBreakdownDisplay = ({
                 {buildDetailsString(headingItem, canViewCosts)}
               </td>
               <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                {formatPrice(getSellingPrice(headingItem.total_cost))}
+                {formatPrice(getSellingPrice(headingItem.total_cost, 'heading'))}
               </td>
             </tr>
           )}
@@ -217,13 +277,13 @@ export const SavedCostBreakdownDisplay = ({
             const details = canViewCosts
               ? (item.quantity && item.unit_price ? `${item.quantity} × ${formatPrice(item.unit_price)}` : '')
               : (item.quantity ? `${item.quantity}` : '');
-            
+
             return (
               <tr key={`hw-${index}`} className="border-b border-border/50">
                 <td className="px-3 py-2 font-medium text-foreground">{item.name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{details}</td>
                 <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                  {(item.total_cost || 0) > 0 ? formatPrice(getSellingPrice(item.total_cost || 0)) : (
+                  {(item.total_cost || 0) > 0 ? formatPrice(getSellingPrice(item.total_cost || 0, item.category || 'hardware')) : (
                     <span className="text-muted-foreground font-normal">Included</span>
                   )}
                 </td>
@@ -241,7 +301,7 @@ export const SavedCostBreakdownDisplay = ({
                   {buildDetailsString(option as CostBreakdownItem, canViewCosts)}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                  {(option.total_cost || 0) > 0 ? formatPrice(getSellingPrice(option.total_cost || 0)) : (
+                  {(option.total_cost || 0) > 0 ? formatPrice(getSellingPrice(option.total_cost || 0, option.category || 'option')) : (
                     <span className="text-muted-foreground font-normal">Included</span>
                   )}
                 </td>
