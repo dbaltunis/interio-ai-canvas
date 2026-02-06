@@ -2168,7 +2168,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   horizontal_pieces_needed: horizontalPiecesNeeded,
                   pieces_charged: piecesToCharge,
                   image_url: selectedItems.fabric?.image_url || selectedItems.material?.image_url || null,
-                  color: fabricColor
+                  color: fabricColor,
+                  // ✅ CRITICAL: Save markup sources for proper resolution when loading saved data
+                  markup_percentage: selectedItems.fabric?.markup_percentage || selectedItems.material?.markup_percentage || undefined,
+                  pricing_grid_markup: selectedItems.fabric?.pricing_grid_markup || selectedItems.material?.pricing_grid_markup || undefined,
+                  // Implied markup from library pricing (cost_price vs selling_price)
+                  implied_markup: (() => {
+                    const item = selectedItems.fabric || selectedItems.material;
+                    const costPrice = item?.cost_price || 0;
+                    const sellingPrice = item?.selling_price || 0;
+                    if (costPrice > 0 && sellingPrice > costPrice) {
+                      return ((sellingPrice - costPrice) / costPrice) * 100;
+                    }
+                    return undefined;
+                  })()
                 }] : []),
                 // Lining
                 ...(finalLiningCost > 0 ? [{

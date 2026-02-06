@@ -31,6 +31,10 @@ interface CostBreakdownItem {
   horizontal_pieces_needed?: number;
   pieces_charged?: number;
   description?: string;
+  // ✅ Markup sources for proper hierarchy resolution
+  markup_percentage?: number;      // Product-level markup
+  pricing_grid_markup?: number;    // Grid-level markup
+  implied_markup?: number;         // Implied from cost_price vs selling_price
 }
 
 interface SavedCostBreakdownDisplayProps {
@@ -68,8 +72,15 @@ export const SavedCostBreakdownDisplay = ({
   const isRomanTreatment = isRomanBlindType(treatmentCategory) || isRomanBlindType(templateName);
   const isBlindTreatment = isBlindType(treatmentCategory) || isBlindType(templateName);
 
-  // Fabric markup - resolve from treatment category
+  // Get fabric item to extract saved markup sources
+  const fabricItem = costBreakdown.find(item => item.category === 'fabric');
+
+  // ✅ Fabric markup - CRITICAL: Use saved markup sources for proper hierarchy
+  // Hierarchy: Product → Implied (library pricing) → Grid → Category → Global
   const fabricMarkupResult = resolveMarkup({
+    productMarkup: fabricItem?.markup_percentage,
+    impliedMarkup: fabricItem?.implied_markup,
+    gridMarkup: fabricItem?.pricing_grid_markup,
     category: treatmentCategory || 'curtains',
     markupSettings: markupSettings || undefined
   });
@@ -156,8 +167,7 @@ export const SavedCostBreakdownDisplay = ({
     return details;
   };
 
-  // Group breakdown by category
-  const fabricItem = costBreakdown.find(item => item.category === 'fabric');
+  // Group breakdown by category (fabricItem already defined above for markup resolution)
   const manufacturingItem = costBreakdown.find(item => item.category === 'manufacturing');
   const liningItem = costBreakdown.find(item => item.category === 'lining');
   const headingItem = costBreakdown.find(item => item.category === 'heading');
