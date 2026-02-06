@@ -185,10 +185,12 @@ Same as Roller Blind (area-based calculation)
 
 ### 6.1 Area Calculation
 
+> **NOTE:** Shutters are manufactured to exact size - NO hem allowances are applied.
+> This is INTENTIONAL and differs from blinds (which may have hem requirements).
+
 ```
-Step 1: Calculate raw area
+Step 1: Calculate raw area (NO HEMS)
   sqm = (rail_width_cm / 100) × (drop_cm / 100)
-  // NOTE: Shutters do NOT include hem allowances in SQM
 ```
 
 ### 6.2 Pricing
