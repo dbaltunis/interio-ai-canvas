@@ -92,6 +92,20 @@ export const calculateOptionPrices = (
 
   return options.map(option => {
     const basePrice = Number(option.price) || 0;
+
+    // ✅ CRITICAL FIX: If calculatedPrice already exists and is valid, USE IT!
+    // This preserves saved prices when editing existing treatments
+    // Only recalculate if calculatedPrice is missing/zero AND basePrice exists
+    if (option.calculatedPrice !== undefined && option.calculatedPrice !== null && option.calculatedPrice > 0) {
+      console.log(`💰 Option "${option.name}": Using existing calculatedPrice ${option.calculatedPrice} (not recalculating)`);
+      return {
+        ...option,
+        calculatedPrice: option.calculatedPrice,
+        pricingDetails: option.pricingDetails || 'Saved price',
+        basePrice: option.basePrice ?? basePrice
+      };
+    }
+
     let calculatedPrice = basePrice;
     let pricingDetails = '';
 
