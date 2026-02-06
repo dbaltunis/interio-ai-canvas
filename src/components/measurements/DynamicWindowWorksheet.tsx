@@ -613,11 +613,25 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         }
         
         // CRITICAL: Restore selected options for blinds/shutters/etc
+        // ✅ PRIORITY: Use measurements_details.selected_options (just dynamic options)
+        // Fallback to summary.selected_options but FILTER OUT non-option items (Fabric, Lining, Heading)
         if (measurementsDetails?.selected_options || existingWindowSummary.selected_options) {
-          const savedOptions = measurementsDetails?.selected_options || existingWindowSummary.selected_options;
-          if (Array.isArray(savedOptions) && savedOptions.length > 0) {
-            setSelectedOptions(savedOptions);
-            console.log('✅ Restored selected options:', savedOptions);
+          const rawSavedOptions = measurementsDetails?.selected_options || existingWindowSummary.selected_options;
+          if (Array.isArray(rawSavedOptions) && rawSavedOptions.length > 0) {
+            // Filter out base items that are managed separately (Fabric, Lining, Heading, Fullness Ratio)
+            // These should NOT be in selectedOptions state - they have dedicated state variables
+            const filteredOptions = rawSavedOptions.filter((opt: any) => {
+              const name = (opt.name || '').toLowerCase();
+              // Skip base items that are managed separately
+              if (name.startsWith('fabric:')) return false;
+              if (name.startsWith('lining:')) return false;
+              if (name.startsWith('heading:')) return false;
+              if (name.startsWith('fullness ratio:')) return false;
+              if (name.startsWith('ring type:')) return false;
+              return true;
+            });
+            setSelectedOptions(filteredOptions);
+            console.log('✅ Restored selected options:', filteredOptions.length, 'items (filtered from', rawSavedOptions.length, ')');
           }
         }
         
@@ -2303,8 +2317,32 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             // STEP 4: Measurements - Store both raw and converted values INCLUDING selected_options
             measurements_details: {
               ...measurements,
-              // CRITICAL: Store selected options for blinds/shutters inside measurements_details
-              selected_options: selectedOptions,
+              // CRITICAL: Store selected options WITH calculatedPrice for accurate restoration
+              // Use live-calculated results to enrich options with their calculated prices
+              selected_options: (() => {
+                // Get option details from live calculation results (blinds or curtains)
+                const liveOptionDetails = liveBlindCalcResult?.optionDetails || liveCurtainCalcResult?.optionDetails || [];
+
+                // Merge calculatedPrice back into selectedOptions
+                return selectedOptions.map(opt => {
+                  // Find matching option detail by name or optionKey
+                  const optNameLower = (opt.name || '').toLowerCase();
+                  const optKeyLower = (opt.optionKey || '').toLowerCase();
+
+                  const liveDetail = liveOptionDetails.find((d: any) => {
+                    const detailNameLower = (d.name || '').toLowerCase();
+                    return detailNameLower === optNameLower ||
+                           detailNameLower.includes(optKeyLower) ||
+                           optNameLower.includes(detailNameLower);
+                  });
+
+                  return {
+                    ...opt,
+                    // CRITICAL: Save calculatedPrice so it can be restored on edit
+                    calculatedPrice: liveDetail?.cost ?? opt.calculatedPrice ?? opt.price ?? 0
+                  };
+                });
+              })(),
               // CRITICAL: Store fabric calculation details for accurate display
               horizontal_pieces_needed: fabricCalculation?.horizontalPiecesNeeded || 1,
               fabric_orientation: fabricCalculation?.fabricOrientation || 'vertical',
