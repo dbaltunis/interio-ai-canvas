@@ -3,6 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateWindowSummaryCache } from "@/utils/cacheInvalidation";
 import { useRef, useCallback } from "react";
+import {
+  isHardBlindType,
+  isShutterType,
+  isWallpaperType
+} from "@/utils/treatmentTypeUtils";
 
 export interface WindowSummary {
   window_id: string;
@@ -157,18 +162,12 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   
   // CRITICAL: Roman blinds use same fabrics/linings as curtains, so DON'T skip enrichment
   // Only skip for roller, venetian, vertical, cellular blinds, shutters, and wallpaper
-  const isBlindType = (treatmentCategory === 'roller_blinds' || 
-                       treatmentCategory === 'venetian_blinds' ||
-                       treatmentCategory === 'vertical_blinds' ||
-                       treatmentCategory === 'cellular_blinds') ||
-                      (treatmentType?.includes('roller') || 
-                       treatmentType?.includes('venetian') ||
-                       treatmentType?.includes('vertical') ||
-                       treatmentType?.includes('cellular'));
-  const isShutterType = treatmentCategory === 'shutters' || treatmentType?.includes('shutter');
-  const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
+  // Use centralized utilities for consistent detection
+  const isBlind = isHardBlindType(treatmentCategory) || isHardBlindType(treatmentType);
+  const isShutter = isShutterType(treatmentCategory) || isShutterType(treatmentType);
+  const isWallpaper = isWallpaperType(treatmentCategory) || isWallpaperType(treatmentType);
   
-  if (isBlindType || isShutterType || isWallpaperType) {
+  if (isBlind || isShutter || isWallpaper) {
     // CRITICAL: For blinds/shutters/wallpaper, preserve ALL cost fields exactly as provided
     // Do NOT recalculate - the total_cost already includes options_cost from calculateTreatmentPricing
     console.log('📦 Preserving exact costs for blinds/shutters/wallpaper:', {

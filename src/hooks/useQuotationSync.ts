@@ -10,6 +10,14 @@ import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMarkup, applyMarkup, calculateGrossMargin } from "@/utils/pricing/markupResolver";
+import {
+  isManufacturedItem,
+  isWallpaperType,
+  isRomanBlindType,
+  isShutterType as isShutterCategory,
+  isBlindType,
+  getMakingCategory
+} from "@/utils/treatmentTypeUtils";
 
 interface QuotationSyncOptions {
   projectId: string;
@@ -195,7 +203,7 @@ export const useQuotationSync = ({
           
           // Extract REAL details from JSON - handle both fabric and material
           const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
-          const isBlindsOrShutters = treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter');
+          const isBlindsOrShutters = isManufacturedItem(treatmentCategory);
           
           // For blinds/shutters, use material_details; for curtains/wallpaper, use fabric_details
           const materialDetails = isBlindsOrShutters ? (summary.material_details || {}) : (summary.fabric_details || {});
@@ -219,10 +227,10 @@ export const useQuotationSync = ({
           // Material/Fabric image from inventory (for child rows - the actual fabric swatch)
           const materialImageUrl = materialDetails.image_url || fabricDetails.image_url || null;
           
-          // Determine material type label
+          // Determine material type label using centralized utilities
           const getMaterialLabel = () => {
-            if (treatmentCategory === 'wallpaper' || fabricDetails.category === 'wallcovering' || fabricDetails.category === 'wallcover') return 'Wallpaper';
-            if (treatmentCategory?.includes('blind')) return 'Material';
+            if (isWallpaperType(treatmentCategory) || fabricDetails.category === 'wallcovering' || fabricDetails.category === 'wallcover') return 'Wallpaper';
+            if (isManufacturedItem(treatmentCategory)) return 'Material';
             return 'Fabric';
           };
           
@@ -241,7 +249,7 @@ export const useQuotationSync = ({
           // Build description - use description_text first (user-editable), then build from material name
           const materialName = materialDetails.name || fabricDetails.name || productName;
           let description = summary.description_text || materialName;
-          if (treatmentCategory === 'wallpaper' && wallpaperDetails.total_rolls) {
+          if (isWallpaperType(treatmentCategory) && wallpaperDetails.total_rolls) {
             description = `${wallpaperDetails.strips_needed || 0} strips × ${wallpaperDetails.strip_length_cm || 0}cm = ${wallpaperDetails.total_length_m || 0}m (${wallpaperDetails.total_rolls} rolls)`;
           }
           
@@ -249,7 +257,7 @@ export const useQuotationSync = ({
             productName,
             description,
             treatmentCategory,
-            isWallpaper: treatmentCategory === 'wallpaper'
+            isWallpaper: isWallpaperType(treatmentCategory)
           });
           
           // Get currency from business settings measurement_units
@@ -401,7 +409,7 @@ export const useQuotationSync = ({
               materialLabel,
               productName,
               treatmentCategory,
-              isWallpaper: treatmentCategory === 'wallpaper'
+              isWallpaper: isWallpaperType(treatmentCategory)
             });
             
             // Get currency from business settings measurement_units
@@ -438,18 +446,12 @@ export const useQuotationSync = ({
           }
 
           // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
-          if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && treatmentCategory !== 'wallpaper') {
+          if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && !isWallpaperType(treatmentCategory)) {
             console.log('[QUOTE ITEM] Adding manufacturing (NOT wallpaper)');
             
             // MARKUP FIX: Resolve manufacturing-specific markup based on treatment type
-            // Maps: curtain → curtain_making, roman → roman_making, blind → blind_making, shutter → shutter_making
-            const mfgMarkupKey = treatmentCategory === 'roman' 
-              ? 'roman_making' 
-              : treatmentCategory === 'shutter' || treatmentCategory === 'shutters'
-                ? 'shutter_making'
-                : treatmentCategory === 'blind' || treatmentCategory === 'blinds'
-                  ? 'blind_making'
-                  : 'curtain_making'; // Default for curtains
+            // Uses centralized getMakingCategory for consistent markup resolution
+            const mfgMarkupKey = getMakingCategory(treatmentCategory);
             
             const mfgMarkupResult = resolveMarkup({
               category: mfgMarkupKey,
@@ -477,7 +479,7 @@ export const useQuotationSync = ({
               cost_total: mfgCostPrice,
               isChild: true
             });
-          } else if (treatmentCategory === 'wallpaper') {
+          } else if (isWallpaperType(treatmentCategory)) {
             console.log('[QUOTE ITEM] SKIPPING manufacturing for wallpaper');
           }
 
