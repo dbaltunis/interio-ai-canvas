@@ -92,6 +92,15 @@ interface CurtainCostsCallback {
   linearMeters: number;
 }
 
+// ✅ NEW: Callback interface for wallpaper costs
+interface WallpaperCostsCallback {
+  materialCost: number;
+  totalCost: number;
+  quantity: number;
+  unitLabel: string;
+  squareMeters: number;
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -100,11 +109,11 @@ interface CostCalculationSummaryProps {
   selectedHeading?: string;
   inventory: any[];
   fabricCalculation?: any;
-  selectedOptions?: Array<{ 
-    name: string; 
-    price?: number; 
-    pricingMethod?: string; 
-    optionKey?: string; 
+  selectedOptions?: Array<{
+    name: string;
+    price?: number;
+    pricingMethod?: string;
+    optionKey?: string;
     pricingGridData?: any;
     calculatedPrice?: number;  // Pre-calculated price from calculateOptionPrices
     pricingDetails?: string;   // Pre-formatted pricing details string
@@ -128,7 +137,7 @@ interface CostCalculationSummaryProps {
     gridName?: string; // ✅ Grid name for display
   };
   manufacturingDetails?: ManufacturingDetails;
-  /** 
+  /**
    * NEW: Engine result - when provided, this is the SINGLE SOURCE OF TRUTH
    * All display values come from here, no local calculations
    */
@@ -149,6 +158,10 @@ interface CostCalculationSummaryProps {
    * This eliminates the recalculation anti-pattern by using the same values for display and save.
    */
   onCurtainCostsCalculated?: (costs: CurtainCostsCallback) => void;
+  /**
+   * Callback to report live-calculated wallpaper costs to parent for use during save.
+   */
+  onWallpaperCostsCalculated?: (costs: WallpaperCostsCallback) => void;
 }
 
 export const CostCalculationSummary = ({
@@ -173,28 +186,34 @@ export const CostCalculationSummary = ({
   savedTotalCost,
   onBlindCostsCalculated,
   onCurtainCostsCalculated,
+  onWallpaperCostsCalculated,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
   const { data: markupSettings } = useMarkupSettings();
   const { data: roleData } = useUserRole();
-  
+
   // ✅ COST VISIBILITY CONTROLS: Dealers and restricted users should only see quote prices
   const canViewCosts = roleData?.canViewVendorCosts ?? false;
   const canViewMarkup = roleData?.canViewMarkup ?? false;
-  
+
   // ✅ CRITICAL: Refs for deferred callback to prevent infinite render loop
-  // The blind costs are stored here during render, then reported via useEffect AFTER render
+  // The costs are stored here during render, then reported via useEffect AFTER render
   const blindCostsRef = useRef<{ costs: BlindCostsCallback; key: string } | null>(null);
   const lastReportedBlindKeyRef = useRef<string>('');
-  
-  // ✅ NEW: Refs for curtain costs callback (same pattern)
+
+  // ✅ Refs for curtain costs callback (same pattern)
   const curtainCostsRef = useRef<{ costs: CurtainCostsCallback; key: string } | null>(null);
   const lastReportedCurtainKeyRef = useRef<string>('');
-  
-  // ✅ FIX: Use state to track current keys - React properly observes state changes (not ref mutations)
+
+  // ✅ NEW: Refs for wallpaper costs callback
+  const wallpaperCostsRef = useRef<{ costs: WallpaperCostsCallback; key: string } | null>(null);
+  const lastReportedWallpaperKeyRef = useRef<string>('');
+
+  // ✅ Use state to track current keys - React properly observes state changes (not ref mutations)
   const [blindCostsKey, setBlindCostsKey] = useState<string>('');
   const [curtainCostsKey, setCurtainCostsKey] = useState<string>('');
+  const [wallpaperCostsKey, setWallpaperCostsKey] = useState<string>('');
   
   // ✅ Report blind costs to parent AFTER render, only when values change
   // Using state-based key instead of ref.current in dependency array
@@ -209,17 +228,29 @@ export const CostCalculationSummary = ({
     }
   }, [onBlindCostsCalculated, blindCostsKey]); // ✅ FIX: Track state, not ref.current
   
-  // ✅ NEW: Report curtain costs to parent AFTER render, only when values change
+  // ✅ Report curtain costs to parent AFTER render, only when values change
   useEffect(() => {
     if (!onCurtainCostsCalculated || !curtainCostsRef.current) return;
-    
+
     const { costs, key } = curtainCostsRef.current;
     if (key !== lastReportedCurtainKeyRef.current) {
       console.log('💰 [CostCalculationSummary] Reporting curtain costs change:', { key, costs });
       lastReportedCurtainKeyRef.current = key;
       onCurtainCostsCalculated(costs);
     }
-  }, [onCurtainCostsCalculated, curtainCostsKey]); // ✅ FIX: Track state, not ref.current
+  }, [onCurtainCostsCalculated, curtainCostsKey]);
+
+  // ✅ NEW: Report wallpaper costs to parent AFTER render, only when values change
+  useEffect(() => {
+    if (!onWallpaperCostsCalculated || !wallpaperCostsRef.current) return;
+
+    const { costs, key } = wallpaperCostsRef.current;
+    if (key !== lastReportedWallpaperKeyRef.current) {
+      console.log('💰 [CostCalculationSummary] Reporting wallpaper costs change:', { key, costs });
+      lastReportedWallpaperKeyRef.current = key;
+      onWallpaperCostsCalculated(costs);
+    }
+  }, [onWallpaperCostsCalculated, wallpaperCostsKey]);
   
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric } = useFabricEnrichment({
@@ -233,7 +264,79 @@ export const CostCalculationSummary = ({
   // ============================================================
   // DISPLAY-ONLY MODE: If saved breakdown provided, use it directly
   // This eliminates recalculation anti-pattern - no unit conversion errors
+  // ✅ CRITICAL FIX: Still call callbacks so parent has cost data for saving
   // ============================================================
+  useEffect(() => {
+    if (!savedCostBreakdown || savedCostBreakdown.length === 0 || savedTotalCost == null) return;
+
+    const treatmentCat = detectTreatmentType(template);
+
+    // Extract costs from saved breakdown
+    const fabricItem = savedCostBreakdown.find(item => item.category === 'fabric');
+    const liningItem = savedCostBreakdown.find(item => item.category === 'lining');
+    const mfgItem = savedCostBreakdown.find(item => item.category === 'manufacturing');
+    const headingItem = savedCostBreakdown.find(item => item.category === 'heading');
+    const optionItems = savedCostBreakdown.filter(item =>
+      !['fabric', 'lining', 'manufacturing', 'heading'].includes(item.category)
+    );
+
+    // Build callback key from saved data
+    const savedKey = `saved-${savedTotalCost}-${savedCostBreakdown.map(i => `${i.name}:${i.total_cost}`).join(',')}`;
+
+    // ✅ Report costs based on treatment type
+    if (treatmentCat === 'wallpaper' && onWallpaperCostsCalculated) {
+      const wallpaperKey = savedKey;
+      if (wallpaperKey !== lastReportedWallpaperKeyRef.current) {
+        lastReportedWallpaperKeyRef.current = wallpaperKey;
+        onWallpaperCostsCalculated({
+          materialCost: fabricItem?.total_cost || 0,
+          totalCost: savedTotalCost,
+          quantity: fabricItem?.quantity || 0,
+          unitLabel: fabricItem?.unit || 'roll',
+          squareMeters: 0, // Not stored in breakdown
+        });
+      }
+    } else if (isBlindCategory(treatmentCat, template?.name) && onBlindCostsCalculated) {
+      const blindKey = savedKey;
+      if (blindKey !== lastReportedBlindKeyRef.current) {
+        lastReportedBlindKeyRef.current = blindKey;
+        onBlindCostsCalculated({
+          fabricCost: fabricItem?.total_cost || 0,
+          manufacturingCost: mfgItem?.total_cost || 0,
+          optionsCost: optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0),
+          optionDetails: optionItems.map(item => ({
+            name: item.name,
+            cost: item.total_cost,
+            pricingMethod: item.pricing_method || 'fixed',
+          })),
+          totalCost: savedTotalCost,
+          squareMeters: 0, // Not stored in breakdown
+          displayText: '',
+        });
+      }
+    } else if (onCurtainCostsCalculated) {
+      const curtainKey = savedKey;
+      if (curtainKey !== lastReportedCurtainKeyRef.current) {
+        lastReportedCurtainKeyRef.current = curtainKey;
+        onCurtainCostsCalculated({
+          fabricCost: fabricItem?.total_cost || 0,
+          liningCost: liningItem?.total_cost || 0,
+          manufacturingCost: mfgItem?.total_cost || 0,
+          headingCost: headingItem?.total_cost || 0,
+          headingName: headingItem?.name,
+          optionsCost: optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0),
+          optionDetails: optionItems.map(item => ({
+            name: item.name,
+            cost: item.total_cost,
+            pricingMethod: item.pricing_method || 'fixed',
+          })),
+          totalCost: savedTotalCost,
+          linearMeters: fabricItem?.quantity || 0,
+        });
+      }
+    }
+  }, [savedCostBreakdown, savedTotalCost, template, onBlindCostsCalculated, onCurtainCostsCalculated, onWallpaperCostsCalculated]);
+
   if (savedCostBreakdown && savedCostBreakdown.length > 0 && savedTotalCost != null) {
     console.log('✅ [DISPLAY-ONLY] Using saved cost breakdown, no recalculation');
     return (
@@ -343,7 +446,7 @@ export const CostCalculationSummary = ({
     }
     
     const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, fabricToUse);
-    
+
     if (!wallpaperCalc) {
       return (
         <Alert variant="destructive">
@@ -354,6 +457,28 @@ export const CostCalculationSummary = ({
           </AlertDescription>
         </Alert>
       );
+    }
+
+    // ✅ CRITICAL FIX: Store wallpaper costs for useEffect to report to parent
+    if (onWallpaperCostsCalculated) {
+      const computedWallpaperKey = `${wallpaperCalc.totalCost}-${wallpaperCalc.quantity}-${wallpaperCalc.squareMeters}-${wallWidth}-${wallHeight}`;
+
+      wallpaperCostsRef.current = {
+        costs: {
+          materialCost: wallpaperCalc.totalCost,
+          totalCost: wallpaperCalc.totalCost,
+          quantity: wallpaperCalc.quantity,
+          unitLabel: wallpaperCalc.unitLabel,
+          squareMeters: wallpaperCalc.squareMeters,
+        },
+        key: computedWallpaperKey,
+      };
+
+      // Update state to trigger useEffect
+      if (computedWallpaperKey !== wallpaperCostsKey) {
+        // ✅ FIX: Use requestAnimationFrame instead of setTimeout to avoid timing issues
+        requestAnimationFrame(() => setWallpaperCostsKey(computedWallpaperKey));
+      }
     }
 
     const markupPercentage = markupSettings?.default_markup_percentage || 0;
@@ -423,8 +548,8 @@ export const CostCalculationSummary = ({
       
       // ✅ FIX: Update state to trigger useEffect (React observes state changes, not ref mutations)
       if (computedBlindKey !== blindCostsKey) {
-        // Use setTimeout to avoid setting state during render
-        setTimeout(() => setBlindCostsKey(computedBlindKey), 0);
+        // ✅ FIX: Use requestAnimationFrame instead of setTimeout to avoid timing issues
+        requestAnimationFrame(() => setBlindCostsKey(computedBlindKey));
       }
 
     // =========================================================
@@ -741,8 +866,8 @@ export const CostCalculationSummary = ({
     
     // ✅ FIX: Update state to trigger useEffect (React observes state changes, not ref mutations)
     if (computedCurtainKey !== curtainCostsKey) {
-      // Use setTimeout to avoid setting state during render
-      setTimeout(() => setCurtainCostsKey(computedCurtainKey), 0);
+      // ✅ FIX: Use requestAnimationFrame instead of setTimeout to avoid timing issues
+      requestAnimationFrame(() => setCurtainCostsKey(computedCurtainKey));
     }
   }
 
