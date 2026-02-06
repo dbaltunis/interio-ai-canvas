@@ -46,7 +46,7 @@ export const calculateOptionPrices = (
   const rawWidth = Number(measurements?.rail_width) || Number(measurements?.width) || 0;
   const rawHeight = Number(measurements?.drop) || Number(measurements?.height) || 0;
   const measurementUnit = (measurements?.unit || 'mm')?.toLowerCase();
-  
+
   // CRITICAL: Convert to CM based on the EXPLICIT unit - no guessing
   // Measurements can come in user's display unit OR database unit (MM)
   let widthCm: number, heightCm: number;
@@ -62,6 +62,14 @@ export const calculateOptionPrices = (
     // In inches - multiply by 2.54
     widthCm = rawWidth * 2.54;
     heightCm = rawHeight * 2.54;
+  } else if (measurementUnit === 'feet' || measurementUnit === 'ft') {
+    // In feet - multiply by 30.48 (1 foot = 30.48 cm)
+    widthCm = rawWidth * 30.48;
+    heightCm = rawHeight * 30.48;
+  } else if (measurementUnit === 'yards' || measurementUnit === 'yd') {
+    // In yards - multiply by 91.44 (1 yard = 91.44 cm)
+    widthCm = rawWidth * 91.44;
+    heightCm = rawHeight * 91.44;
   } else if (measurementUnit === 'mm') {
     // Database standard MM - divide by 10
     widthCm = rawWidth / 10;

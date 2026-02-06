@@ -145,37 +145,41 @@ export function WindowSummaryCard({
     });
 
     // Helper to apply markup to a single item
-    // CRITICAL: For manufacturing items, use the specific making category (curtain_making, blind_making)
+    // ✅ CRITICAL: Use saved markup sources for proper hierarchy (Product → Implied → Grid → Category → Global)
     const applyMarkupToItem = (item: any) => {
       if (!markupSettings) return item;
-      
+
       const itemCategory = item.category;
-      
+
       // For manufacturing items, use the specific making category directly
       // This ensures we get the 100% manufacturing markup instead of the parent category's 50%
       const isMakingCategory = itemCategory?.includes('making') || itemCategory === 'manufacturing';
-      
+
       let effectiveCategory: string;
       if (isMakingCategory) {
         // Use the stored making category directly, or derive it from treatment type
         const treatmentCat = summary.treatment_category || summary.treatment_type || 'curtains';
-        effectiveCategory = itemCategory?.includes('making') 
-          ? itemCategory 
-          : (treatmentCat.includes('blind') ? 'blind_making' : 
+        effectiveCategory = itemCategory?.includes('making')
+          ? itemCategory
+          : (treatmentCat.includes('blind') ? 'blind_making' :
              treatmentCat.includes('roman') ? 'roman_making' : 'curtain_making');
       } else {
         effectiveCategory = summary.treatment_category || summary.treatment_type || 'curtains';
       }
-      
+
+      // ✅ CRITICAL: Use saved markup sources from the item for proper hierarchy
       const markupResult = resolveMarkup({
+        productMarkup: item.markup_percentage,
+        impliedMarkup: item.implied_markup,
+        gridMarkup: item.pricing_grid_markup,
         category: effectiveCategory,
         subcategory: isMakingCategory ? undefined : itemCategory,
         markupSettings: markupSettings
       });
-      
+
       const costPrice = Number(item.total_cost) || 0;
       const unitCost = Number(item.unit_price) || 0;
-      
+
       return {
         ...item,
         total_cost: applyMarkup(costPrice, markupResult.percentage),

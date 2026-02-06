@@ -1453,7 +1453,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             } else if (pricingType === 'per_metre') {
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
-              const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
+              // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT during live editing, NOT MM
+              const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
               // ✅ FIX: Use ?? to respect explicit 0 values - fullness 0 makes no sense, so keep || for it
               const fullness = fabricCalculation?.fullnessRatio ?? (parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1);
               // ✅ FIX: Use ?? to respect user's explicit 0 for side_hem
@@ -1513,8 +1514,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : 
                        pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
                        pricingType === 'per_metre' ? (() => {
-                         // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM first
-                         const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10;
+                         // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT, convert to CM
+                         const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
                          const fullness = fabricCalculation.fullnessRatio || 0;
                          const sideHemsCm = fabricCalculation.totalSideHems || 0;
                          const returnsCm = fabricCalculation.returns || 0;
@@ -1639,8 +1640,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // Calculate hardware quantity if applicable
           let hardwareQuantity = 0;
           if (headingMetadata?.spacing && parseFloat(measurements.rail_width) > 0) {
-            // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM for spacing calculation
-            const railWidthCm = parseFloat(measurements.rail_width) / 10;
+            // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT, convert to CM
+            const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
             const spacingCm = parseFloat(headingMetadata.spacing);
             hardwareQuantity = Math.ceil(railWidthCm / spacingCm) + 1;
           }
@@ -1830,8 +1831,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           
           const summaryData = {
             window_id: surfaceId,
-            // CRITICAL: Save per-piece meters for proper breakdown display
-            linear_meters: fabricCalculation?.orderedLinearMeters || linearMeters,
+            // CRITICAL: Use same linearMeters as cost_breakdown.fabric.quantity for consistency
+            // liveCurtainCalcResult.linearMeters is the authoritative source from CostCalculationSummary
+            linear_meters: linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
             // For blinds/shutters, use material price; for curtains use fabric calculation
@@ -2166,7 +2168,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   horizontal_pieces_needed: horizontalPiecesNeeded,
                   pieces_charged: piecesToCharge,
                   image_url: selectedItems.fabric?.image_url || selectedItems.material?.image_url || null,
-                  color: fabricColor
+                  color: fabricColor,
+                  // ✅ CRITICAL: Save markup sources for proper resolution when loading saved data
+                  markup_percentage: selectedItems.fabric?.markup_percentage || selectedItems.material?.markup_percentage || undefined,
+                  pricing_grid_markup: selectedItems.fabric?.pricing_grid_markup || selectedItems.material?.pricing_grid_markup || undefined,
+                  // Implied markup from library pricing (cost_price vs selling_price)
+                  implied_markup: (() => {
+                    const item = selectedItems.fabric || selectedItems.material;
+                    const costPrice = item?.cost_price || 0;
+                    const sellingPrice = item?.selling_price || 0;
+                    if (costPrice > 0 && sellingPrice > costPrice) {
+                      return ((sellingPrice - costPrice) / costPrice) * 100;
+                    }
+                    return undefined;
+                  })()
                 }] : []),
                 // Lining
                 ...(finalLiningCost > 0 ? [{
@@ -3435,11 +3450,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
                     // Calculate options cost - CRITICAL: Use pricing method calculations!
                     // Hardware uses actual rail width, fabric options use fullness-adjusted linear meters
-                    // ✅ FIX: Pass totalMeters explicitly so per-linear-meter options (like Lining) calculate correctly
-                    const rawEnrichedOptions = calculateOptionPrices(selectedOptions, measurements, {
-                      ...fabricCalculation,
-                      linearMeters: totalMeters  // ✅ Use correct linear meters (fullness-adjusted)
-                    });
+                    // ✅ FIX: Pass unit field so calculateOptionPrices knows measurements are in user's display unit
+                    const rawEnrichedOptions = calculateOptionPrices(
+                      selectedOptions,
+                      { ...measurements, unit: units.length },  // CRITICAL: Include unit to prevent wrong conversion
+                      {
+                        ...fabricCalculation,
+                        linearMeters: totalMeters  // Use correct linear meters (fullness-adjusted)
+                      }
+                    );
 
                     // ✅ CRITICAL FIX: Deduplicate options by name to prevent duplicate entries
                     // This can happen when options are added from multiple sources or saved with duplicates

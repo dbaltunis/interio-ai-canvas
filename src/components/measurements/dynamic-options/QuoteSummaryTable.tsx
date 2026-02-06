@@ -181,10 +181,18 @@ export const QuoteSummaryTable = ({
             );
           })}
 
-          {/* Hardware items (flattened) */}
+          {/* Hardware items (flattened) - use per-item markup for consistency */}
           {filteredHardwareItems.map((item: any, index: number) => {
-            const itemPrice = item.total_cost || item.price || 0;
-            const sellingPrice = markupPercentage > 0 ? applyMarkup(itemPrice, markupPercentage) : itemPrice;
+            // ✅ CRITICAL: Use getItemSellingPrice for consistent per-item markup handling
+            // Hardware items should respect item.markupPercentage or item.sellingPrice if provided
+            const itemForPricing: QuoteSummaryItem = {
+              name: item.name || '',
+              price: item.total_cost || item.price || 0,
+              category: item.category || 'hardware',
+              markupPercentage: item.markupPercentage,
+              sellingPrice: item.sellingPrice
+            };
+            const sellingPrice = getItemSellingPrice(itemForPricing);
             const displayDetails = canViewCosts
               ? (item.quantity && item.unit_price ? `${item.quantity} × ${formatPrice(item.unit_price)}` : '')
               : (item.quantity ? `${item.quantity}` : '');
