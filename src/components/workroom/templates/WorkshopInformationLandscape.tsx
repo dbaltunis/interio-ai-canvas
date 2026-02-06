@@ -9,6 +9,13 @@ import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { MaterialsTable } from "../sections/MaterialsTable";
+import {
+  detectTreatmentCategory,
+  isManufacturedItem,
+  isSoftFurnishing,
+  shouldShowHemAllowances,
+  shouldShowFabricRequirements
+} from "@/utils/treatmentTypeUtils";
 
 export interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
@@ -243,15 +250,13 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   {/* Fabric & Details column */}
                   <td className="py-3 px-2 align-top border-r border-gray-200">
                     {(() => {
-                      // Determine if this is a blind/shutter treatment (material-based) vs curtain/roman (fabric-based)
-                      const treatmentLower = (item.treatmentType || '').toLowerCase();
-                      const isBlindTreatment = treatmentLower.includes('blind') || 
-                                               treatmentLower.includes('venetian') || 
-                                               treatmentLower.includes('vertical') ||
-                                               treatmentLower.includes('cellular') ||
-                                               treatmentLower.includes('shutter') ||
-                                               treatmentLower.includes('roller');
-                      
+                      // Use centralized detection that checks all sources
+                      const detectedCategory = detectTreatmentCategory({
+                        treatmentType: item.treatmentType,
+                        summary: item.summary
+                      });
+                      const isBlindTreatment = isManufacturedItem(detectedCategory);
+
                       // Get color from material (for blinds) or fabric (for curtains)
                       const displayColor = item.materialDetails?.color || item.fabricDetails?.color;
                       
@@ -395,11 +400,14 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                       
                       {/* Cut dimensions for manufacturing - only show for curtains and roman blinds that use hems/fullness */}
                       {(() => {
-                        const treatmentLower = (item.treatmentType || '').toLowerCase();
-                        const isCurtainOrRoman = treatmentLower.includes('curtain') || treatmentLower.includes('roman');
+                        const detectedCategory = detectTreatmentCategory({
+                          treatmentType: item.treatmentType,
+                          summary: item.summary
+                        });
+                        const showCutDimensions = isSoftFurnishing(detectedCategory);
                         const hasFabricUsage = item.fabricUsage && (item.fabricUsage.totalDropCm > 0 || item.fabricUsage.totalWidthCm > 0);
-                        
-                        if (!isCurtainOrRoman || !hasFabricUsage) return null;
+
+                        if (!showCutDimensions || !hasFabricUsage) return null;
                         
                         return (
                           <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
@@ -425,15 +433,14 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   {/* Sewing/Manufacturing Details column */}
                   <td className="py-3 px-2 align-top">
                     {(() => {
-                      // Determine if this is a blind/shutter treatment
-                      const treatmentLower = (item.treatmentType || '').toLowerCase();
-                      const isBlindTreatment = treatmentLower.includes('blind') || 
-                                               treatmentLower.includes('venetian') || 
-                                               treatmentLower.includes('vertical') ||
-                                               treatmentLower.includes('cellular') ||
-                                               treatmentLower.includes('shutter') ||
-                                               treatmentLower.includes('roller');
-                      
+                      // Use centralized detection from treatmentTypeUtils
+                      const detectedCategory = detectTreatmentCategory({
+                        treatmentType: item.treatmentType,
+                        summary: item.summary
+                      });
+                      const isBlindTreatment = isManufacturedItem(detectedCategory);
+                      const showHems = shouldShowHemAllowances(detectedCategory);
+
                       // Check if fullness and hems have meaningful values (not default zeros)
                       const hasFullness = item.fullness && item.fullness.ratio > 0 && item.fullness.ratio !== 1;
                       const hasHems = item.hems && (item.hems.header > 0 || item.hems.bottom > 0 || item.hems.side > 0);
@@ -447,8 +454,8 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                             </div>
                           )}
                           
-                          {/* Hem Allowances - ONLY for curtains/romans with actual hem values */}
-                          {!isBlindTreatment && hasHems && (
+                          {/* Hem Allowances - ONLY for treatments that show hems with actual hem values */}
+                          {showHems && hasHems && (
                             <div className="text-[9px] space-y-0.5 mt-1">
                               <div className="font-medium">Hem Allowances:</div>
                               {item.hems!.header > 0 && (

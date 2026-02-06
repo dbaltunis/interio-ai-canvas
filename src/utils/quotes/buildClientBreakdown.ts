@@ -2,6 +2,12 @@ import { MeasurementUnits, defaultMeasurementUnits, convertLength } from '@/hook
 import { MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
 import { resolveMarkup, applyMarkup } from '@/utils/pricing/markupResolver';
 import { getCurrencySymbol } from '@/utils/formatCurrency';
+import {
+  isManufacturedItem,
+  getMakingCategory,
+  getMaterialLabel as getTreatmentMaterialLabel,
+  detectTreatmentCategory
+} from '@/utils/treatmentTypeUtils';
 
 export interface ClientBreakdownItem {
   id?: string;
@@ -38,17 +44,8 @@ const applyMarkupToItem = (
   let markupCategory: string;
   
   if (itemCategory === 'manufacturing' || itemCategory === 'making') {
-    // Use treatment-specific making category
-    const treatmentCat = (treatmentCategory || 'curtain').toLowerCase();
-    if (treatmentCat.includes('roman')) {
-      markupCategory = 'roman_making';
-    } else if (treatmentCat.includes('blind')) {
-      markupCategory = 'blind_making';
-    } else if (treatmentCat.includes('shutter')) {
-      markupCategory = 'shutter_making';
-    } else {
-      markupCategory = 'curtain_making';
-    }
+    // Use centralized making category determination
+    markupCategory = getMakingCategory(treatmentCategory);
   } else if (itemCategory === 'fabric' || itemCategory === 'material') {
     // Use treatment category for fabric/material
     markupCategory = treatmentCategory || 'curtains';
@@ -406,16 +403,19 @@ export const buildClientBreakdown = (
   // This path should rarely be used - cost_breakdown should always exist
   
   // Fabric line - handle both fabric and material (for blinds/shutters)
-  const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
-  
+  // Use centralized detection instead of string-based checks
+  const detectedCategory = detectTreatmentCategory({
+    treatmentCategory: summary.treatment_category,
+    treatmentType: summary.treatment_type
+  });
+  const isBlindsOrShutters = isManufacturedItem(detectedCategory);
+
   // Source-aware label: Material for blinds/shutters, Wallpaper for wallcoverings, Fabric for curtains/romans
   const getMaterialLabel = (): string => {
-    const treatmentCategory = summary.treatment_category;
-    const hasWallpaper = treatmentCategory === 'wallpaper' || 
+    const hasWallpaper = summary.treatment_category === 'wallpaper' ||
                          summary.fabric_details?.category === 'wallcovering';
     if (hasWallpaper) return 'Wallpaper';
-    if (treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter')) return 'Material';
-    return 'Fabric';
+    return getTreatmentMaterialLabel(detectedCategory);
   };
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
   
