@@ -82,6 +82,12 @@ interface BlindCostsCallback {
   totalCost: number;
   squareMeters: number;
   displayText: string;
+  // ✅ CRITICAL: Display data for consistent formula rendering (same as curtains)
+  fabricDisplayFormula?: string;      // e.g., "2.5 sqm × £15.00/sqm = £37.50"
+  fabricPricingMethod?: string;       // e.g., "per_sqm", "pricing_grid"
+  fabricPricingMethodLabel?: string;  // e.g., "Per Square Meter"
+  fabricUnitPrice?: number;           // The cost price per unit used
+  fabricQuantityDisplay?: string;     // e.g., "2.5 sqm"
 }
 
 // ✅ NEW: Callback interface for curtains/romans - live calculated values
@@ -550,6 +556,11 @@ export const CostCalculationSummary = ({
       const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
       
       // Use ref to track and report changes via useEffect (defined at component level)
+      // ✅ Build display formula fields for blinds (consistent with curtains)
+      const fabricPricePerSqm = blindCosts.squareMeters > 0 ? blindCosts.fabricCost / blindCosts.squareMeters : 0;
+      const symbol = getCurrencySymbol(units.currency);
+      const blindDisplayFormula = `${blindCosts.squareMeters.toFixed(2)} sqm × ${symbol}${fabricPricePerSqm.toFixed(2)}/sqm = ${symbol}${blindCosts.fabricCost.toFixed(2)}`;
+
       blindCostsRef.current = {
         costs: {
           fabricCost: blindCosts.fabricCost,
@@ -559,6 +570,12 @@ export const CostCalculationSummary = ({
           totalCost: blindCosts.totalCost,
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
+          // ✅ Display data for consistent rendering (same as curtains)
+          fabricDisplayFormula: blindDisplayFormula,
+          fabricPricingMethod: 'per_sqm',
+          fabricPricingMethodLabel: 'Per Square Meter',
+          fabricUnitPrice: fabricPricePerSqm,
+          fabricQuantityDisplay: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         },
         key: computedBlindKey,
       };
