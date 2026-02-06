@@ -1453,7 +1453,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             } else if (pricingType === 'per_metre') {
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
-              const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
+              // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT during live editing, NOT MM
+              const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
               // ✅ FIX: Use ?? to respect explicit 0 values - fullness 0 makes no sense, so keep || for it
               const fullness = fabricCalculation?.fullnessRatio ?? (parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1);
               // ✅ FIX: Use ?? to respect user's explicit 0 for side_hem
@@ -1513,8 +1514,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : 
                        pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
                        pricingType === 'per_metre' ? (() => {
-                         // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM first
-                         const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10;
+                         // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT, convert to CM
+                         const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
                          const fullness = fabricCalculation.fullnessRatio || 0;
                          const sideHemsCm = fabricCalculation.totalSideHems || 0;
                          const returnsCm = fabricCalculation.returns || 0;
@@ -1639,8 +1640,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // Calculate hardware quantity if applicable
           let hardwareQuantity = 0;
           if (headingMetadata?.spacing && parseFloat(measurements.rail_width) > 0) {
-            // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM for spacing calculation
-            const railWidthCm = parseFloat(measurements.rail_width) / 10;
+            // ✅ CRITICAL: measurements.rail_width is in USER'S DISPLAY UNIT, convert to CM
+            const railWidthCm = convertLength(parseFloat(measurements.rail_width || '0'), units.length, 'cm');
             const spacingCm = parseFloat(headingMetadata.spacing);
             hardwareQuantity = Math.ceil(railWidthCm / spacingCm) + 1;
           }
