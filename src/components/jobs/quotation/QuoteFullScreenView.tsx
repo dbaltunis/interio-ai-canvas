@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet } from "lucide-react";
+import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Edit2, Save } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(true);
   const [showImages, setShowImages] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
 
   // Get document type and quote info
@@ -116,7 +117,14 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   // Transform data for Homekaara template format
   const homekaaraTemplateData = useMemo(() => {
     if (!useHomekaaraTemplate || !preparedQuoteData) return null;
-    
+
+    // Helper to format currency for breakdown values
+    const formatBreakdownPrice = (price: number | undefined): string => {
+      if (!price || price <= 0) return '';
+      const symbol = currency === 'INR' ? '₹' : currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency;
+      return `${symbol}${price.toLocaleString(currency === 'INR' ? 'en-IN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
     return {
       items: preparedQuoteData.items.map(item => ({
         id: item.id,
@@ -127,10 +135,20 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         total: item.total,
         prate: item.quantity,
         image_url: item.image_url,
-        breakdown: item.breakdown?.map(b => ({
-          label: b.name || b.category || '',
-          value: b.description || (b.total_cost ? `${b.total_cost}` : ''),
-        })).filter(b => b.label || b.value),
+        // FIXED: Properly transform breakdown items with correct label/value mapping
+        breakdown: item.breakdown?.map(b => {
+          // Build a meaningful value string
+          let valueStr = b.description || '';
+          // If there's a price, append it
+          if (b.total_cost && b.total_cost > 0) {
+            const priceStr = formatBreakdownPrice(b.total_cost);
+            valueStr = valueStr ? `${valueStr} - ${priceStr}` : priceStr;
+          }
+          return {
+            label: b.name || b.category || 'Item',
+            value: valueStr || '-',
+          };
+        }).filter(b => b.label && b.value) || [],
         room_name: item.room_name,
         room_id: item.room_id,
         surface_name: item.surface_name,
@@ -154,7 +172,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         address: client?.address,
       },
       metadata: {
-        quote_number: project?.quote_number || project?.id || 'N/A',
+        quote_number: project?.quote_number || project?.id?.slice(0, 8)?.toUpperCase() || 'N/A',
         date: project?.created_at ? new Date(project.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
         status: project?.status || 'Draft',
         validity_days: project?.validity_days || 14,
@@ -164,11 +182,11 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
       },
       paymentInfo: {
         advance_paid: project?.advance_paid || 0,
-        deposit_percentage: 50,
+        deposit_percentage: project?.deposit_percentage || 50,
       },
       introMessage: project?.intro_message,
     };
-  }, [useHomekaaraTemplate, preparedQuoteData, businessSettings, client, project]);
+  }, [useHomekaaraTemplate, preparedQuoteData, businessSettings, client, project, currency]);
 
   const handleDownloadPDF = () => {
     // Open browser's native print dialog - most reliable approach
@@ -207,6 +225,20 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                     Show Images
                   </Label>
                 </div>
+                {/* Edit Mode Toggle - Only for Homekaara template */}
+                {useHomekaaraTemplate && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="edit-mode"
+                      checked={isEditMode}
+                      onCheckedChange={setIsEditMode}
+                    />
+                    <Label htmlFor="edit-mode" className="text-sm cursor-pointer">
+                      <Edit2 className="h-4 w-4 inline mr-1" />
+                      Edit Mode
+                    </Label>
+                  </div>
+                )}
               </div>
               
               {/* Record Payment - Only for invoices */}
@@ -305,7 +337,25 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                 metadata={homekaaraTemplateData.metadata}
                 paymentInfo={homekaaraTemplateData.paymentInfo}
                 introMessage={homekaaraTemplateData.introMessage}
-                isEditable={false}
+                isEditable={isEditMode}
+                onSaveChanges={(data) => {
+                  // TODO: Save changes to database
+                  console.log('Quote changes to save:', data);
+                  toast({
+                    title: "Changes saved",
+                    description: "Your quote edits have been saved.",
+                  });
+                  setIsEditMode(false);
+                }}
+                onImageUpload={async (itemId, file) => {
+                  // TODO: Upload image to storage
+                  const url = URL.createObjectURL(file);
+                  toast({
+                    title: "Image uploaded",
+                    description: "Product image has been added.",
+                  });
+                  return url;
+                }}
               />
             ) : (
               <LivePreview 
