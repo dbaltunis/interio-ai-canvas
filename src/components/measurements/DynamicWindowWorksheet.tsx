@@ -3435,11 +3435,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
                     // Calculate options cost - CRITICAL: Use pricing method calculations!
                     // Hardware uses actual rail width, fabric options use fullness-adjusted linear meters
-                    // ✅ FIX: Pass totalMeters explicitly so per-linear-meter options (like Lining) calculate correctly
-                    const rawEnrichedOptions = calculateOptionPrices(selectedOptions, measurements, {
-                      ...fabricCalculation,
-                      linearMeters: totalMeters  // ✅ Use correct linear meters (fullness-adjusted)
-                    });
+                    // ✅ FIX: Pass unit field so calculateOptionPrices knows measurements are in user's display unit
+                    const rawEnrichedOptions = calculateOptionPrices(
+                      selectedOptions,
+                      { ...measurements, unit: units.length },  // CRITICAL: Include unit to prevent wrong conversion
+                      {
+                        ...fabricCalculation,
+                        linearMeters: totalMeters  // Use correct linear meters (fullness-adjusted)
+                      }
+                    );
 
                     // ✅ CRITICAL FIX: Deduplicate options by name to prevent duplicate entries
                     // This can happen when options are added from multiple sources or saved with duplicates

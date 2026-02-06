@@ -704,12 +704,12 @@ export const DynamicCurtainOptions = ({
           }
         }
         
-        // Update parent's price tracking
-        if (onOptionPriceChange) {
-          const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
-          onOptionPriceChange(optionKey, price, selectedValue.label, pricingMethod);
-        }
-        
+        // ✅ CRITICAL FIX: Removed redundant onOptionPriceChange call
+        // onOptionPriceChange creates entries with "${optionKey}: ${label}" format
+        // onSelectedOptionsChange below creates entries with "${option.label}: ${selectedValue.label}" format
+        // Both calling onSelectedOptionsChange results in DUPLICATES with different names!
+        // Solution: Only use onSelectedOptionsChange which has complete accessory support
+
         // ✅ CLEAN FIX: Update selectedOptions using optionKey as unique identifier
         if (onSelectedOptionsChange) {
           // Remove ALL options that start with this option's key or label prefix
