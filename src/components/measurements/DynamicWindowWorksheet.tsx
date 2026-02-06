@@ -3398,10 +3398,24 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     // Calculate options cost - CRITICAL: Use pricing method calculations!
                     // Hardware uses actual rail width, fabric options use fullness-adjusted linear meters
                     // ✅ FIX: Pass totalMeters explicitly so per-linear-meter options (like Lining) calculate correctly
-                    const enrichedOptions = calculateOptionPrices(selectedOptions, measurements, { 
-                      ...fabricCalculation, 
+                    const rawEnrichedOptions = calculateOptionPrices(selectedOptions, measurements, {
+                      ...fabricCalculation,
                       linearMeters: totalMeters  // ✅ Use correct linear meters (fullness-adjusted)
                     });
+
+                    // ✅ CRITICAL FIX: Deduplicate options by name to prevent duplicate entries
+                    // This can happen when options are added from multiple sources or saved with duplicates
+                    const seenOptionNames = new Set<string>();
+                    const enrichedOptions = rawEnrichedOptions.filter(opt => {
+                      const normalizedName = (opt.name || '').toLowerCase().trim();
+                      if (seenOptionNames.has(normalizedName)) {
+                        console.warn(`⚠️ [DEDUPE] Removing duplicate option: "${opt.name}" (calculatedPrice: ${opt.calculatedPrice})`);
+                        return false;
+                      }
+                      seenOptionNames.add(normalizedName);
+                      return true;
+                    });
+
                     const optionsCost = enrichedOptions.reduce((sum, opt) => sum + getOptionEffectivePrice(opt), 0);
 
                     // ✅ BUILD allDisplayOptions AFTER enrichedOptions calculated
