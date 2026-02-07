@@ -113,6 +113,40 @@ export const useImportTWCProducts = () => {
 
   return useMutation({
     mutationFn: async (selectedProducts: TWCProduct[]) => {
+      // First, ensure TWC exists as a vendor
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Check if TWC vendor already exists
+      const { data: existingVendor } = await supabase
+        .from('vendors')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', 'The Wholesale Company (TWC)')
+        .maybeSingle();
+
+      // Create TWC vendor if it doesn't exist
+      if (!existingVendor) {
+        const { error: vendorError } = await supabase
+          .from('vendors')
+          .insert({
+            user_id: user.id,
+            name: 'The Wholesale Company (TWC)',
+            contact_person: 'TWC Support',
+            email: 'support@twc.com',
+            notes: 'Auto-created during TWC product import',
+            active: true
+          });
+
+        if (vendorError) {
+          console.error('Failed to create TWC vendor:', vendorError);
+          // Continue anyway - vendor is optional for import
+        } else {
+          console.log('✅ Created TWC vendor');
+        }
+      }
+
+      // Now sync the products
       const { data, error } = await supabase.functions.invoke("twc-sync-products", {
         body: { products: selectedProducts },
       });
@@ -124,6 +158,7 @@ export const useImportTWCProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["twc-imported-products"] });
       queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["vendors"] }); // Also refresh vendors list
       
       const summary = [
         `✓ ${data.imported} product${data.imported !== 1 ? 's' : ''} added to Inventory`,
