@@ -16,7 +16,10 @@ import { TreatmentNotesField } from "./treatment-pricing/TreatmentNotesField";
 import { TreatmentFormActions } from "./treatment-pricing/TreatmentFormActions";
 import { useFabricCalculation } from "./treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "./treatment-pricing/useTreatmentFormData";
-import { calculateBlindCost, calculateShutterCost } from "@/utils/blindCostCalculations";
+// Use NEW unified calculation engine for consistent pricing
+import { calculateBlindCosts, isBlindCategory } from "@/components/measurements/dynamic-options/utils/blindCostCalculator";
+import { convertLength } from "@/utils/lengthUnits";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -42,93 +45,120 @@ export const TreatmentPricingForm = ({
   const { formData, setFormData, handleInputChange, resetForm } = useTreatmentFormData(treatmentType, windowCovering, existingTreatmentData);
   const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
+  const { data: businessSettings } = useBusinessSettings();
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts: calculateCurtainCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
-  // CRITICAL: Detect treatment category to use correct calculation
-  // Blinds (roller, venetian, cellular, vertical) and shutters use pricing grids, NOT curtain-style fabric calculations
-  const isBlindsOrShutters = windowCovering?.category === 'blinds' || windowCovering?.category === 'shutters' || 
-                             windowCovering?.treatment_category === 'blinds' || windowCovering?.treatment_category === 'shutters' ||
-                             treatmentType.toLowerCase().includes('blind') || treatmentType.toLowerCase().includes('shutter') ||
-                             treatmentType.toLowerCase().includes('venetian') || treatmentType.toLowerCase().includes('cellular') ||
-                             treatmentType.toLowerCase().includes('honeycomb') || treatmentType.toLowerCase().includes('vertical');
-  
-  // Calculate costs using the correct method based on treatment type
+  // Get user's preferred measurement unit (default to mm)
+  const userUnit = businessSettings?.measurement_unit || 'mm';
+
+  // CRITICAL: Detect treatment category using centralized utility
+  const treatmentCategory = windowCovering?.treatment_category || windowCovering?.category || '';
+  const isBlindsOrShutters = isBlindCategory(treatmentCategory, treatmentType);
+
+  // Calculate costs using the UNIFIED calculation engine
   const costs = React.useMemo(() => {
     if (isBlindsOrShutters) {
-      // Use blind calculation logic (imported at top of file)
-      const width = parseFloat(formData.rail_width) || 0;
-      const height = parseFloat(formData.drop) || 0;
-      
-      // Get selected options with prices from hierarchical options
+      // CRITICAL: Convert measurements to CM for consistent calculation
+      const rawWidth = parseFloat(formData.rail_width) || 0;
+      const rawHeight = parseFloat(formData.drop) || 0;
+
+      // Convert from user's unit to CM (the calculation engine expects CM)
+      const widthCm = convertLength(rawWidth, userUnit, 'cm');
+      const heightCm = convertLength(rawHeight, userUnit, 'cm');
+
+      console.log('🔄 TreatmentPricingForm: Unit conversion', {
+        rawWidth, rawHeight,
+        userUnit,
+        widthCm, heightCm
+      });
+
+      // Get selected options with FULL pricing details from hierarchical options
       const selectedOpts = hierarchicalOptions
         .flatMap(category => category.subcategories || [])
         .flatMap(sub => sub.sub_subcategories || [])
         .filter(opt => formData.selected_options.includes(opt.id))
         .map(opt => ({
           name: opt.name,
-          price: opt.base_price || 0
+          price: opt.base_price || 0,
+          pricingMethod: opt.pricing_method || 'fixed',
+          pricingGridData: opt.pricing_grid_data || null,
+          label: opt.label || opt.name
         }));
-      
-      // Also include traditional options
+
+      // Also include traditional options with their pricing methods
       const traditionalOpts = options
         .filter(opt => formData.selected_options.includes(opt.id))
         .map(opt => ({
           name: opt.name,
-          price: opt.base_price || 0
+          price: opt.base_price || 0,
+          pricingMethod: opt.pricing_method || 'fixed',
+          pricingGridData: opt.pricing_grid_data || null,
+          label: opt.label || opt.name
         }));
-      
+
       const allOptions = [...selectedOpts, ...traditionalOpts];
-      
-      // Create a fabric item from formData or use window covering fabric with pricing grid
+
+      // Create a fabric item with all pricing grid data preserved
       const fabricItem = windowCovering?.fabric_details || {
         name: formData.fabric_type || 'Material',
         unit_price: parseFloat(formData.fabric_cost_per_yard) || 0,
         selling_price: parseFloat(formData.fabric_cost_per_yard) || 0,
         price_per_meter: parseFloat(formData.fabric_cost_per_yard) || 0,
         fabric_width_cm: parseFloat(formData.fabric_width) || 0,
-        // Preserve pricing grid data if it exists
+        // Preserve ALL pricing grid data
         pricing_grid_data: windowCovering?.fabric_details?.pricing_grid_data,
+        pricing_grid_markup: windowCovering?.fabric_details?.pricing_grid_markup || 0,
         resolved_grid_name: windowCovering?.fabric_details?.resolved_grid_name,
         resolved_grid_code: windowCovering?.fabric_details?.resolved_grid_code,
         resolved_grid_id: windowCovering?.fabric_details?.resolved_grid_id,
         price_group: windowCovering?.fabric_details?.price_group,
         product_category: windowCovering?.fabric_details?.product_category
       };
-      
-      // Calculate based on blind/shutter type
-      let result;
-      if (treatmentType.toLowerCase().includes('shutter')) {
-        result = calculateShutterCost(width, height, windowCovering, fabricItem, allOptions);
-      } else {
-        result = calculateBlindCost(width, height, windowCovering, fabricItem, allOptions);
-      }
-      
+
+      // Build measurements object for double configuration support
+      const measurements = {
+        rail_width: widthCm,
+        drop: heightCm,
+        curtain_type: formData.curtain_type || 'single' // For roman blind double config
+      };
+
+      // Use the UNIFIED calculation engine (same as DynamicWindowWorksheet)
+      const result = calculateBlindCosts(
+        widthCm,
+        heightCm,
+        windowCovering, // template
+        fabricItem,
+        allOptions,
+        measurements
+      );
+
       return {
         fabricCost: result.fabricCost.toFixed(2),
         laborCost: result.manufacturingCost.toFixed(2),
         optionsCost: result.optionsCost.toFixed(2),
-        headingCost: result.headingCost.toFixed(2), // CRITICAL: Include heading cost (always 0 for blinds)
+        headingCost: '0.00', // Blinds don't have heading costs
         totalCost: result.totalCost.toFixed(2),
-        fabricUsage: `${width}cm × ${height}cm`,
+        fabricUsage: result.displayText || `${widthCm.toFixed(1)}cm × ${heightCm.toFixed(1)}cm`,
         fabricOrientation: 'standard',
         seamsRequired: 0,
         seamLaborHours: 0,
         widthsRequired: 1,
-        optionDetails: allOptions.map(opt => ({
+        squareMeters: result.squareMeters,
+        optionDetails: result.optionDetails || allOptions.map(opt => ({
           name: opt.name,
           cost: opt.price,
-          method: 'fixed',
-          calculation: `Fixed price: ${opt.price}`
+          method: opt.pricingMethod || 'fixed',
+          calculation: `${opt.pricingMethod || 'fixed'}: ${opt.price}`
         })),
-        warnings: result.warnings || [],
+        warnings: [],
         costComparison: null
       };
     } else {
       // Use curtain calculation
       return calculateCurtainCosts();
     }
-  }, [isBlindsOrShutters, formData, options, hierarchicalOptions, windowCovering, treatmentType, calculateCurtainCosts]);
+  }, [isBlindsOrShutters, formData, options, hierarchicalOptions, windowCovering, treatmentType, calculateCurtainCosts, userUnit]);
 
   // Enhanced debugging for options loading
   console.log('=== TreatmentPricingForm Debug ===');
