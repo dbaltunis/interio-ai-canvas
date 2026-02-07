@@ -6,14 +6,43 @@
 import { resolveGridForProduct } from './gridResolver';
 
 /**
+ * Check if pricing grid data is valid and contains actual pricing information
+ */
+const hasValidPricingGridData = (gridData: any): boolean => {
+  if (!gridData || typeof gridData !== 'object') return false;
+
+  // Check for standard format
+  if (gridData.widthColumns && Array.isArray(gridData.widthColumns) && gridData.widthColumns.length > 0) {
+    return true;
+  }
+  // Check for legacy formats
+  if (gridData.widths && Array.isArray(gridData.widths) && gridData.widths.length > 0) {
+    return true;
+  }
+  if (gridData.dropRanges && Array.isArray(gridData.dropRanges) && gridData.dropRanges.length > 0) {
+    return true;
+  }
+  if (gridData.prices && Array.isArray(gridData.prices) && gridData.prices.length > 0) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Enriches a single template with pricing grid data if applicable
  */
 export const enrichTemplateWithGrid = async (
   template: any,
   fabricItem?: any
 ): Promise<any> => {
-  // Only enrich if pricing_type is 'pricing_grid' and no grid data exists
-  if (template?.pricing_type !== 'pricing_grid' || template?.pricing_grid_data) {
+  // Skip if not a pricing_grid type
+  if (template?.pricing_type !== 'pricing_grid') {
+    return template;
+  }
+
+  // Skip if template already has valid pricing grid data
+  if (hasValidPricingGridData(template?.pricing_grid_data)) {
     return template;
   }
 

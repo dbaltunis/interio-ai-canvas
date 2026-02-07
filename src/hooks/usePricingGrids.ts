@@ -144,8 +144,22 @@ export const useDeletePricingGrid = () => {
 // IMPORTANT: Input width and drop should be in CM (the app's standard)
 // The function will convert to match the grid's stored unit
 export const getPriceFromGrid = (gridData: any, widthCm: number, dropCm: number): number => {
-  if (!gridData) {
+  // Enhanced null/empty check - handle null, undefined, empty objects, and invalid data
+  if (!gridData || typeof gridData !== 'object') {
     console.log("❌ getPriceFromGrid: No grid data provided");
+    return 0;
+  }
+
+  // Check if gridData is an empty object or has no meaningful pricing data
+  const hasValidData = (
+    (gridData.widthColumns && Array.isArray(gridData.widthColumns) && gridData.widthColumns.length > 0) ||
+    (gridData.widths && Array.isArray(gridData.widths) && gridData.widths.length > 0) ||
+    (gridData.dropRanges && Array.isArray(gridData.dropRanges) && gridData.dropRanges.length > 0) ||
+    (gridData.prices && Array.isArray(gridData.prices) && gridData.prices.length > 0)
+  );
+
+  if (!hasValidData) {
+    console.log("❌ getPriceFromGrid: Grid data is empty or invalid:", gridData);
     return 0;
   }
 
