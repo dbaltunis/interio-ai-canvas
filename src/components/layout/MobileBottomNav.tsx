@@ -120,8 +120,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
       console.log('[MobileBottomNav] Online store check:', { hasStore: data && data.length > 0 });
       return data && data.length > 0;
     },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes - store status changes rarely
+    refetchOnMount: false, // Use cached data
   });
   
   // Filter nav items based on permissions and dealer restrictions

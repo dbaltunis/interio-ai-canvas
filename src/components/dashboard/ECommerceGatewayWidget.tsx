@@ -35,8 +35,8 @@ export const ECommerceGatewayWidget = () => {
       console.log('[ECommerceGatewayWidget] Online store query result:', data);
       return data && data.length > 0;
     },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    refetchOnMount: false, // Use cached data
   });
 
   // Check if user has Shopify Integration

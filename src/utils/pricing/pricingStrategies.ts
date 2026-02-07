@@ -1,5 +1,7 @@
 // Pricing Strategy Pattern - All pricing methods in one place
 
+import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+
 export type PricingMethod = 
   | 'fixed'
   | 'per-unit'
@@ -172,9 +174,7 @@ export const calculatePrice = (
       }
       
       try {
-        // Import getPriceFromGrid dynamically to avoid circular dependency
-        const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
-        
+        // getPriceFromGrid is imported at the top of the file
         // CRITICAL: railWidth and drop in context are in MM, getPriceFromGrid expects CM
         const widthCm = railWidth / 10; // Convert mm to cm
         const dropCm = drop / 10; // Convert mm to cm
