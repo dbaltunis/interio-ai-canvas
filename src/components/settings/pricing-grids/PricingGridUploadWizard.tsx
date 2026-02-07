@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import { looksLikeMillimeters, type GridUnit } from '@/utils/gridUnitUtils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendors } from '@/hooks/useVendors';
+import { useQueryClient } from '@tanstack/react-query';
 import { getTreatmentOptions, getUnifiedConfig } from '@/types/treatmentCategories';
 import { PriceGroupAutocomplete } from './PriceGroupAutocomplete';
 import { useMaterialMatchCount } from '@/hooks/useInventoryPriceGroups';
@@ -46,7 +47,53 @@ export const PricingGridUploadWizard = ({
   initialProductType,
   initialPriceGroup 
 }: PricingGridUploadWizardProps) => {
-  const { data: vendors = [] } = useVendors();
+  const { data: vendors = [], refetch: refetchVendors } = useVendors();
+  const queryClient = useQueryClient();
+
+  // Auto-create TWC vendor if user has TWC products but no TWC vendor
+  useEffect(() => {
+    const ensureTWCVendor = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if TWC vendor already exists
+      const hasTWCVendor = vendors.some(v =>
+        v.name?.toLowerCase().includes('twc') ||
+        v.name?.toLowerCase().includes('wholesale company')
+      );
+      if (hasTWCVendor) return;
+
+      // Check if user has any TWC products
+      const { data: twcProducts } = await supabase
+        .from('inventory_items')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('supplier', 'TWC')
+        .limit(1);
+
+      if (!twcProducts || twcProducts.length === 0) return;
+
+      // User has TWC products but no TWC vendor - create one
+      console.log('Creating TWC vendor for existing TWC products...');
+      const { error } = await supabase
+        .from('vendors')
+        .insert({
+          user_id: user.id,
+          name: 'The Wholesale Company (TWC)',
+          contact_person: 'TWC Support',
+          notes: 'Auto-created for TWC product pricing',
+          active: true
+        });
+
+      if (!error) {
+        console.log('✅ TWC vendor created');
+        refetchVendors();
+        queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      }
+    };
+
+    ensureTWCVendor();
+  }, [vendors, refetchVendors, queryClient]);
   
   const [step, setStep] = useState<WizardStep>('supplier');
   const [supplierId, setSupplierId] = useState('');
