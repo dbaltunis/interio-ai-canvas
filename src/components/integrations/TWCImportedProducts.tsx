@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Loader2, RefreshCw, Trash2, ExternalLink, AlertTriangle } from "lucide-react";
+import { Package, Loader2, RefreshCw, Trash2, ExternalLink, AlertTriangle, Settings, DollarSign, Grid3X3 } from "lucide-react";
 import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct, useDeleteAllTWCData } from "@/hooks/useTWCProducts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TWCPricingConfigSheet } from "./TWCPricingConfigSheet";
 
 export const TWCImportedProducts = () => {
   const { data: importedProducts, isLoading } = useTWCImportedProducts();
@@ -25,6 +26,7 @@ export const TWCImportedProducts = () => {
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [pricingProduct, setPricingProduct] = useState<any>(null);
 
   if (isLoading) {
     return (
@@ -137,31 +139,62 @@ export const TWCImportedProducts = () => {
             </div>
           </div>
 
-          <div className="space-y-2 max-h-[250px] overflow-y-auto">
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {importedProducts.map((product: any) => {
               const hasTemplate = product.templates && product.templates.length > 0;
               const twcItemNumber = product.metadata?.twc_item_number || product.sku;
               const optionsCount = product.metadata?.twc_questions?.length || 0;
+              const materialsCount = product.metadata?.twc_fabrics_and_colours?.itemMaterials?.length || 0;
+              const hasPricingGrid = product.metadata?.pricing_grid_data || product.pricing_grid_data;
+              const priceGroup = product.price_group;
 
               return (
-                <div key={product.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                <div key={product.id} className="flex items-center justify-between p-3 bg-background rounded-lg border hover:border-primary/30 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm truncate">{product.name}</span>
+                      {priceGroup && (
+                        <Badge variant="outline" className="text-[10px]">Group {priceGroup}</Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                       <span>#{twcItemNumber}</span>
-                      {optionsCount > 0 && <span>• {optionsCount} options in API</span>}
+                      {optionsCount > 0 && <span>• {optionsCount} options</span>}
+                      {materialsCount > 0 && <span>• {materialsCount} materials</span>}
                       {hasTemplate ? (
                         <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Template Ready</Badge>
                       ) : (
                         <Badge variant="outline" className="text-[10px]">Needs Template</Badge>
                       )}
+                      {hasPricingGrid ? (
+                        <Badge className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          <Grid3X3 className="h-2.5 w-2.5 mr-1" />Pricing Grid
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                          <DollarSign className="h-2.5 w-2.5 mr-0.5" />No Pricing
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {!hasTemplate && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setPricingProduct(product)}
+                      title="Configure Pricing Grid"
+                    >
+                      <DollarSign className="h-3.5 w-3.5 mr-1" />
+                      Pricing
+                    </Button>
+                    {hasTemplate ? (
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleViewTemplate(product)}>
+                        <Settings className="h-3.5 w-3.5 mr-1" />
+                        Template
+                      </Button>
+                    ) : (
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCreateTemplate(product)}>
                         Create Template
                       </Button>
@@ -234,6 +267,13 @@ export const TWCImportedProducts = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Pricing Configuration Sheet */}
+      <TWCPricingConfigSheet
+        open={!!pricingProduct}
+        onOpenChange={(open) => !open && setPricingProduct(null)}
+        product={pricingProduct}
+      />
     </>
   );
 };
