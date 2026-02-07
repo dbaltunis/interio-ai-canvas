@@ -3316,7 +3316,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     // ✅ LEGACY LINING REMOVED: Lining is now an OPTION with per-linear-meter pricing
                     // The old selectedLining/template.lining_types system is deprecated
                     // Lining cost is calculated in calculateOptionPrices() above
-                    let liningCost = 0; // Lining is now part of optionsCost
+                    const liningCost = 0; // Lining is now part of optionsCost
 
                     // Get the selected pricing method
                     const selectedPricingMethod = measurements.selected_pricing_method 

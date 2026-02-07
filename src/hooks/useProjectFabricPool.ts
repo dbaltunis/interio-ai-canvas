@@ -71,7 +71,7 @@ export const calculateFabricNeeds = (
 
   let usedFromPool = 0;
   let needsOrdering = 0;
-  let leftoverFromOrder = 0;
+  const leftoverFromOrder = 0;
 
   if (availableFromPool >= requiredAmount) {
     // Use entirely from pool

@@ -137,7 +137,7 @@ export const calculateIntegratedFabricUsage = async (params: FabricCalculationPa
   console.log('Calculating integrated fabric usage with params:', params);
 
   // Initialize calculation result
-  let result: IntegratedCalculationResult = {
+  const result: IntegratedCalculationResult = {
     fabricUsage: {
       yards: 0,
       meters: 0,

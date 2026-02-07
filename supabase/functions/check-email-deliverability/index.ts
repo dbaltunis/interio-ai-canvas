@@ -120,7 +120,7 @@ serve(async (req) => {
     console.log('User has custom SendGrid - checking their domain authentication');
 
     // Initialize report for SendGrid users
-    let report: DeliverabilityReport = {
+    const report: DeliverabilityReport = {
       domainAuthentication: {
         spf: { valid: false },
         dkim: { valid: false, configured: false },

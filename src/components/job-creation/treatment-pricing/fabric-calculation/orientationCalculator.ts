@@ -70,7 +70,7 @@ export const calculateOrientation = (
   } = params;
 
   let effectiveFabricWidth, requiredLength, requiredWidth;
-  let warnings: string[] = [];
+  const warnings: string[] = [];
   let feasible = true;
 
   // Calculate totals with allowances

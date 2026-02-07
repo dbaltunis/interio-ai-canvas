@@ -108,7 +108,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId,
   const filteredData = useMemo(() => {
     if (!data) return data;
     
-    let filtered = { ...data };
+    const filtered = { ...data };
     
     // Filter by room
     if (selectedRoom && selectedRoom !== 'all') {

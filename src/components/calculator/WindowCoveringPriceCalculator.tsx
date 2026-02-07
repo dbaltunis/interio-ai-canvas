@@ -60,34 +60,38 @@ export const WindowCoveringPriceCalculator = ({
         };
       
       case 'per-meter':
-      case 'per-metre':
+      case 'per-metre': {
         const widthInMeters = trackWidth / 100;
         return {
           cost: baseCost * widthInMeters,
           calculation: `${baseCost} × ${widthInMeters.toFixed(2)}m`
         };
-      
-      case 'per-yard':
+      }
+
+      case 'per-yard': {
         const widthInYards = trackWidth / 91.44;
         return {
           cost: baseCost * widthInYards,
           calculation: `${baseCost} × ${widthInYards.toFixed(2)} yards`
         };
-      
+      }
+
       case 'per-sqm':
-      case 'per-square-meter':
+      case 'per-square-meter': {
         const areaInSqm = (trackWidth / 100) * (drop / 100);
         return {
           cost: baseCost * areaInSqm,
           calculation: `${baseCost} × ${areaInSqm.toFixed(2)}m²`
         };
-      
-      case 'per-linear-meter':
+      }
+
+      case 'per-linear-meter': {
         const perimeterInMeters = (trackWidth + 2 * drop) / 100;
         return {
           cost: baseCost * perimeterInMeters,
           calculation: `${baseCost} × ${perimeterInMeters.toFixed(2)}m perimeter`
         };
+      }
       
       case 'percentage':
         // This would need fabric cost context
@@ -130,19 +134,20 @@ export const WindowCoveringPriceCalculator = ({
     let calculationDetails: Partial<PriceCalculationResult> = {};
 
     switch (windowCovering.fabrication_pricing_method) {
-      case 'per-panel':
+      case 'per-panel': {
         // Calculate required fabric width
         const requiredFabricWidth = trackWidth * fullnessRatio;
-        
+
         // Calculate panels needed
         const panelsNeeded = Math.ceil(requiredFabricWidth / (fabricWidth * panelSplit));
-        
+
         basePrice = windowCovering.unit_price * panelsNeeded;
         calculationDetails = {
           requiredFabricWidth,
           panelsNeeded
         };
         break;
+      }
 
       case 'per-drop':
         basePrice = windowCovering.unit_price * (drop / 100); // Convert cm to meters

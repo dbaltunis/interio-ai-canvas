@@ -141,7 +141,7 @@ export const DurationBadge = ({ startTime, endTime, className }: DurationBadgePr
   const startTotalMinutes = startHours * 60 + startMinutes;
   const endTotalMinutes = endHours * 60 + endMinutes;
   
-  let durationMinutes = endTotalMinutes - startTotalMinutes;
+  const durationMinutes = endTotalMinutes - startTotalMinutes;
   if (durationMinutes <= 0) return null;
   
   const hours = Math.floor(durationMinutes / 60);

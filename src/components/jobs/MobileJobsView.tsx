@@ -125,7 +125,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     const projectQuotes = quotes.filter(quote => quote.project_id === project.id);
     
     // Get client name for search
-    let client = clients.find((c) => c.id === project.client_id);
+    const client = clients.find((c) => c.id === project.client_id);
     const clientName = client?.name || 'No Client';
     
     return {

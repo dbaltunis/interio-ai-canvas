@@ -119,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Handle standard status updates with better reliability
-      let updateData: any = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
 

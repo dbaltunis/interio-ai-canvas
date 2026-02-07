@@ -413,7 +413,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
 
     // Process attachments if any
-    let attachments: any[] = [];
+    const attachments: any[] = [];
     if (attachmentPaths && attachmentPaths.length > 0) {
       console.log("Processing attachments:", attachmentPaths.length);
       

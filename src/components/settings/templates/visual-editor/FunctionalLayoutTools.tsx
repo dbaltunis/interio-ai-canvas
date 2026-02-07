@@ -161,7 +161,7 @@ const AdvancedLayoutToolsComponent = ({
       const canvasWidth = 800; // Assuming canvas width
       const canvasHeight = 600; // Assuming canvas height
       
-      let newElement = { ...element };
+      const newElement = { ...element };
 
       switch (type) {
         case 'left':

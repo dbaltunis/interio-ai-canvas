@@ -17,7 +17,7 @@ export interface PricingRule {
 }
 
 // Mock data store
-let mockPricingRules: PricingRule[] = [
+const mockPricingRules: PricingRule[] = [
   {
     id: "pr-1",
     name: "Bulk Discount",

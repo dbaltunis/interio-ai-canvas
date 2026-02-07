@@ -88,7 +88,7 @@ export const useSendEmail = () => {
 
       try {
         // Upload attachments to storage if any
-        let attachmentPaths: string[] = [];
+        const attachmentPaths: string[] = [];
         if (emailData.attachments && emailData.attachments.length > 0) {
           console.log("Uploading attachments:", emailData.attachments.length);
           
@@ -219,7 +219,7 @@ export const useSendEmail = () => {
       console.error("Error details:", error);
       
       // Provide helpful error message
-      let errorMessage = error.message || "Failed to send email";
+      const errorMessage = error.message || "Failed to send email";
       
       toast({
         title: "Email Failed",
