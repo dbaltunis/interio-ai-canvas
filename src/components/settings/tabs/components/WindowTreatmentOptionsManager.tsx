@@ -1772,10 +1772,14 @@ export const WindowTreatmentOptionsManager = () => {
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="fixed">Fixed</SelectItem>
-                                        <SelectItem value="per-meter">Per m</SelectItem>
+                                        <SelectItem value="per-meter">Per Meter</SelectItem>
+                                        <SelectItem value="per-width">Per Width</SelectItem>
+                                        <SelectItem value="per-drop">Per Drop</SelectItem>
                                         <SelectItem value="per-sqm">Per m²</SelectItem>
                                         <SelectItem value="per-panel">Per Panel</SelectItem>
                                         <SelectItem value="per-unit">Per Unit</SelectItem>
+                                        <SelectItem value="per-hour">Per Hour</SelectItem>
+                                        <SelectItem value="percentage">Percentage</SelectItem>
                                       </SelectContent>
                                     </Select>
                                     <div className="relative">

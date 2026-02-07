@@ -44,7 +44,10 @@ export const PRICING_METHODS = {
   
   // Percentage-based
   PERCENTAGE: 'percentage',
-  
+
+  // Time-based (for services)
+  PER_HOUR: 'per-hour',
+
   // Inheritance
   INHERIT: 'inherit',
 } as const;
@@ -90,8 +93,11 @@ export const OPTION_PRICING_METHODS: PricingMethodCode[] = [
   PRICING_METHODS.PER_UNIT,
   PRICING_METHODS.PER_LINEAR_METER,
   PRICING_METHODS.PER_WIDTH,
+  PRICING_METHODS.PER_DROP,
+  PRICING_METHODS.PER_PANEL,
   PRICING_METHODS.PRICING_GRID,
   PRICING_METHODS.PERCENTAGE,
+  PRICING_METHODS.PER_HOUR,
 ];
 
 // ============= DISPLAY LABELS =============
@@ -207,6 +213,12 @@ export const PRICING_METHOD_LABELS: Record<string, PricingMethodLabelConfig> = {
     imperialSuffix: '',
     description: 'Use parent pricing method',
   },
+  [PRICING_METHODS.PER_HOUR]: {
+    label: 'Per Hour',
+    metricSuffix: '/hr',
+    imperialSuffix: '/hr',
+    description: 'Price per hour (services/labor)',
+  },
 };
 
 // ============= HELPER FUNCTIONS =============
@@ -311,6 +323,11 @@ export const normalizePricingMethod = (method: string): PricingMethodCode => {
     
     // Inherit
     'inherit': PRICING_METHODS.INHERIT,
+
+    // Time-based
+    'per-hour': PRICING_METHODS.PER_HOUR,
+    'per-hr': PRICING_METHODS.PER_HOUR,
+    'hourly': PRICING_METHODS.PER_HOUR,
   };
   
   return mappings[normalized] || (normalized as PricingMethodCode);
