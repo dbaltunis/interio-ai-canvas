@@ -16,6 +16,7 @@ import { TreatmentNotesField } from "./treatment-pricing/TreatmentNotesField";
 import { TreatmentFormActions } from "./treatment-pricing/TreatmentFormActions";
 import { useFabricCalculation } from "./treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "./treatment-pricing/useTreatmentFormData";
+import { SystemTypeSelector } from "./treatment-pricing/SystemTypeSelector";
 // Use NEW unified calculation engine for consistent pricing
 import { calculateBlindCosts, isBlindCategory } from "@/components/measurements/dynamic-options/utils/blindCostCalculator";
 import { convertLength } from "@/utils/lengthUnits";
@@ -381,6 +382,18 @@ export const TreatmentPricingForm = ({
               selectedOptions={formData.selected_options}
               onOptionToggle={handleOptionToggle}
             />
+          )}
+
+          {/* SYSTEM TYPE SELECTOR - For blinds and shutters to select pricing grid system type */}
+          {isBlindsOrShutters && treatmentCategory && (
+            <div className="rounded-lg border bg-card p-4">
+              <SystemTypeSelector
+                productType={treatmentCategory}
+                priceGroup={windowCovering?.fabric_details?.price_group}
+                value={formData.system_type}
+                onChange={(value) => handleInputChange("system_type", value)}
+              />
+            </div>
           )}
 
           {/* FABRIC DETAILS - Only show for curtains and roman blinds */}

@@ -97,6 +97,7 @@ export const PricingGridUploadWizard = ({
   
   const [step, setStep] = useState<WizardStep>('supplier');
   const [supplierId, setSupplierId] = useState('');
+  const [skipSupplier, setSkipSupplier] = useState(false);
   const [productType, setProductType] = useState(initialProductType || '');
   const [priceGroup, setPriceGroup] = useState(initialPriceGroup || '');
   const [includesFabricPrice, setIncludesFabricPrice] = useState(true);
@@ -109,8 +110,8 @@ export const PricingGridUploadWizard = ({
   const [gridUnit, setGridUnit] = useState<GridUnit>('cm');
   const [detectedUnit, setDetectedUnit] = useState<GridUnit | null>(null);
 
-  // Get material count for selected price group
-  const { data: materialMatch } = useMaterialMatchCount(supplierId, productType, priceGroup);
+  // Get material count for selected price group (pass null if skipping supplier)
+  const { data: materialMatch } = useMaterialMatchCount(skipSupplier ? null : supplierId, productType, priceGroup);
 
   const selectedVendor = vendors.find(v => v.id === supplierId);
   const selectedConfig = productType ? getUnifiedConfig(productType) : null;
@@ -126,7 +127,7 @@ export const PricingGridUploadWizard = ({
 
   const canProceed = () => {
     switch (step) {
-      case 'supplier': return !!supplierId;
+      case 'supplier': return !!supplierId || skipSupplier;
       case 'product': return !!productType && !!priceGroup;
       case 'upload': return !!csvFile;
       case 'review': return !!gridName && !!gridCode;
@@ -174,10 +175,11 @@ export const PricingGridUploadWizard = ({
     }
     
     // Auto-generate grid name and code
-    const supplierName = selectedVendor?.name || 'Unknown';
+    const supplierName = skipSupplier ? 'INHOUSE' : (selectedVendor?.name || 'Unknown');
+    const supplierPrefix = skipSupplier ? 'OWN' : supplierName.substring(0, 3).toUpperCase();
     const productLabel = selectedConfig?.display_name || productType.replace(/_/g, ' ');
     setGridName(`${productLabel} - Group ${priceGroup}`);
-    setGridCode(`${supplierName.substring(0, 3).toUpperCase()}-${productType.substring(0, 3).toUpperCase()}-${priceGroup}`);
+    setGridCode(`${supplierPrefix}-${productType.substring(0, 3).toUpperCase()}-${priceGroup}`);
   };
 
   /**
@@ -206,8 +208,12 @@ export const PricingGridUploadWizard = ({
   };
 
   const handleSubmit = async () => {
-    if (!csvFile || !supplierId || !productType || !priceGroup || !gridName || !gridCode) {
+    if (!csvFile || !productType || !priceGroup || !gridName || !gridCode) {
       toast.error('Please complete all required fields');
+      return;
+    }
+    if (!supplierId && !skipSupplier) {
+      toast.error('Please select a supplier or skip the supplier step');
       return;
     }
 
@@ -227,7 +233,7 @@ export const PricingGridUploadWizard = ({
           name: gridName,
           grid_code: gridCode,
           grid_data: gridData,
-          supplier_id: supplierId,
+          supplier_id: supplierId || null, // Allow null for small businesses without suppliers
           product_type: productType,
           price_group: priceGroup.toUpperCase().trim(),
           markup_percentage: parseFloat(markupPercentage) || 0,
@@ -332,9 +338,31 @@ export const PricingGridUploadWizard = ({
               <div className="text-center py-8 text-muted-foreground">
                 <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No suppliers found.</p>
-                <p className="text-sm">Add suppliers in Settings → Vendors first.</p>
+                <p className="text-sm">Add suppliers in Settings → Vendors, or skip this step.</p>
               </div>
             )}
+
+            {/* Skip supplier option for small businesses */}
+            <div className="mt-6 pt-4 border-t">
+              <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50 border">
+                <Checkbox
+                  id="skip-supplier"
+                  checked={skipSupplier}
+                  onCheckedChange={(checked) => {
+                    setSkipSupplier(!!checked);
+                    if (checked) setSupplierId('');
+                  }}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="skip-supplier" className="text-sm font-medium cursor-pointer">
+                    I don't use external suppliers
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    For small businesses that manufacture their own products or don't need supplier tracking
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -538,7 +566,7 @@ export const PricingGridUploadWizard = ({
             <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Supplier</span>
-                <Badge variant="outline">{selectedVendor?.name}</Badge>
+                <Badge variant="outline">{skipSupplier ? 'None (In-house)' : selectedVendor?.name}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Product Type</span>

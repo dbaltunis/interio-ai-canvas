@@ -22,6 +22,7 @@ export interface TreatmentFormData {
   selected_options: string[];
   notes: string;
   images: File[];
+  system_type: string; // For pricing grid selection (e.g., "cassette", "open", "motorized")
 }
 
 export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any, existingData?: any) => {
@@ -58,7 +59,8 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
     custom_labor_rate: existingData?.custom_labor_rate || "",
     selected_options: existingData?.selected_options || [],
     notes: existingData?.notes || "",
-    images: existingData?.images || []
+    images: existingData?.images || [],
+    system_type: existingData?.system_type || windowCovering?.system_type || ""
   });
 
   // Auto-set roll direction based on fabric width - only if fabric width is provided
@@ -103,7 +105,8 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
       custom_labor_rate: existingData?.custom_labor_rate || "",
       selected_options: existingData?.selected_options || [],
       notes: existingData?.notes || "",
-      images: existingData?.images || []
+      images: existingData?.images || [],
+      system_type: existingData?.system_type || windowCovering?.system_type || ""
     });
   };
 
