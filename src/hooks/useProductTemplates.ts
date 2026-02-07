@@ -30,7 +30,7 @@ export interface ProductTemplate {
 }
 
 // Mock data store
-export let mockTemplates: ProductTemplate[] = [
+export const mockTemplates: ProductTemplate[] = [
   {
     id: "1",
     name: "Curtains",

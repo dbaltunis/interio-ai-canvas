@@ -45,7 +45,7 @@ const parsePrice = (value: any): number => {
   if (value === null || value === undefined) return 0;
   
   // Convert to string and clean
-  let cleaned = String(value)
+  const cleaned = String(value)
     .replace(/^"|"$/g, '')           // Remove surrounding quotes
     .replace(/[€$£¥₹R]/g, '')        // Remove currency symbols
     .replace(/^(NZ|A|AU|US|CA)\$/i, '') // Remove prefixed currency codes (NZ$, A$, etc.)

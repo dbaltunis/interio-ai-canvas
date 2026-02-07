@@ -234,7 +234,7 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
 
   // Debug visibility (non-breaking)
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
+     
     console.log("extractWindowMetrics:", {
       railWidthCm,
       dropCm,

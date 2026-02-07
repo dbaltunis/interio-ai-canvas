@@ -42,7 +42,7 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
   const filteredProducts = useMemo(() => {
     if (!products) return [];
 
-    let filtered = products.filter((product: any) => {
+    const filtered = products.filter((product: any) => {
       // Category type filter (window treatments vs wallpaper)
       if (categoryFilter !== 'all') {
         const category = product.inventory_item?.category?.toLowerCase();

@@ -60,7 +60,7 @@ serve(async (req) => {
 
     let inserted = 0;
     let skipped = 0;
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     // Get existing clients by email to check for duplicates
     const { data: existingClients, error: fetchError } = await supabase

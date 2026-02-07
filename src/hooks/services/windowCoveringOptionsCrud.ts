@@ -3,7 +3,7 @@
 import type { WindowCoveringOption } from '../types/windowCoveringOptionsTypes';
 
 // Mock data store
-let mockOptions: WindowCoveringOption[] = [];
+const mockOptions: WindowCoveringOption[] = [];
 
 export const createOption = async (option: Omit<WindowCoveringOption, 'id'>) => {
   const newOption: WindowCoveringOption = {

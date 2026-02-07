@@ -96,7 +96,7 @@ async function trackEvent(event: TrackingEvent) {
     }
 
     // Update counters based on event type
-    let updateData: any = {
+    const updateData: any = {
       updated_at: new Date().toISOString()
     };
 

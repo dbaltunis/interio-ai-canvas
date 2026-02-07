@@ -50,8 +50,19 @@ export const usePricingGrid = (gridId: string) => {
   return useQuery({
     queryKey: ["pricing-grid", gridId],
     queryFn: async (): Promise<PricingGrid | null> => {
-      // Mock data since table doesn't exist yet
-      return null;
+      if (!gridId) return null;
+
+      const { data, error } = await supabase
+        .from('pricing_grids')
+        .select('*')
+        .eq('id', gridId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching pricing grid:', error);
+        return null;
+      }
+      return data;
     },
     enabled: !!gridId,
     staleTime: 5 * 60 * 1000,
@@ -61,21 +72,44 @@ export const usePricingGrid = (gridId: string) => {
 
 export const useCreatePricingGrid = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (gridData: { name: string; grid_data: any; grid_code?: string }): Promise<PricingGrid> => {
-      // Mock creation since we're not using this for actual creation anymore
-      const mockGrid: PricingGrid = {
-        id: 'mock-id',
-        user_id: 'mock-user',
-        grid_code: gridData.grid_code || 'MOCK',
-        name: gridData.name,
-        grid_data: gridData.grid_data,
-        active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      return mockGrid;
+    mutationFn: async (gridData: {
+      name: string;
+      grid_data: any;
+      grid_code?: string;
+      supplier_id?: string | null;
+      product_type?: string | null;
+      price_group?: string | null;
+    }): Promise<PricingGrid> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Generate grid code from name if not provided
+      const gridCode = gridData.grid_code || gridData.name.trim().replace(/\s+/g, '_').toUpperCase();
+
+      const { data, error } = await supabase
+        .from('pricing_grids')
+        .insert([{
+          user_id: user.id,
+          name: gridData.name,
+          grid_code: gridCode,
+          grid_data: gridData.grid_data,
+          supplier_id: gridData.supplier_id || null,
+          product_type: gridData.product_type || null,
+          price_group: gridData.price_group || null,
+          active: true,
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating pricing grid:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });
@@ -86,11 +120,18 @@ export const useCreatePricingGrid = () => {
 
 export const useDeletePricingGrid = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (gridId: string): Promise<void> => {
-      // Mock deletion since table doesn't exist yet
-      console.log('Mock deleting pricing grid:', gridId);
+      const { error } = await supabase
+        .from('pricing_grids')
+        .delete()
+        .eq('id', gridId);
+
+      if (error) {
+        console.error('Error deleting pricing grid:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });

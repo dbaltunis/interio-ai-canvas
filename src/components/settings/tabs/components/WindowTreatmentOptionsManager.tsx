@@ -896,7 +896,7 @@ export const WindowTreatmentOptionsManager = () => {
         );
         
         // Build sub_options with colors if present
-        let newSubOptions = [...formData.sub_options];
+        const newSubOptions = [...formData.sub_options];
         if (colorTags.length > 0) {
           // Check if a "Color" sub-option already exists
           const existingColorSubOption = newSubOptions.find(

@@ -114,7 +114,7 @@ export const TeachingOverlay = () => {
       
       let top = 0;
       let left = 0;
-      let arrowPosition = activeTeaching.position;
+      const arrowPosition = activeTeaching.position;
 
       switch (activeTeaching.position) {
         case 'bottom':

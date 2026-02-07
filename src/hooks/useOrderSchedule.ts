@@ -94,7 +94,7 @@ export const useUpcomingOrderDates = (count: number = 5) => {
 
     const dates: Date[] = [];
     const today = new Date();
-    let currentDate = new Date(today);
+    const currentDate = new Date(today);
 
     while (dates.length < count) {
       const dayIndex = currentDate.getDay();
