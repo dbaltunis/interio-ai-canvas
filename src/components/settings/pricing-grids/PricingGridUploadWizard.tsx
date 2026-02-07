@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-  Building2, 
-  Package, 
-  Upload, 
-  Check, 
-  ChevronLeft, 
+import {
+  Building2,
+  Package,
+  Upload,
+  Check,
+  ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
   Sparkles,
@@ -27,6 +27,7 @@ import { getTreatmentOptions, getUnifiedConfig } from '@/types/treatmentCategori
 import { PriceGroupAutocomplete } from './PriceGroupAutocomplete';
 import { useMaterialMatchCount } from '@/hooks/useInventoryPriceGroups';
 import { cn } from '@/lib/utils';
+import type { StandardPricingGridData } from '@/types/pricingGrid';
 
 const TREATMENT_OPTIONS = getTreatmentOptions();
 
@@ -132,23 +133,29 @@ export const PricingGridUploadWizard = ({
     setGridCode(`${supplierName.substring(0, 3).toUpperCase()}-${productType.substring(0, 3).toUpperCase()}-${priceGroup}`);
   };
 
-  const parseCsvToGridData = (csvText: string, unit: GridUnit) => {
+  /**
+   * Parse CSV to StandardPricingGridData format
+   */
+  const parseCsvToGridData = (csvText: string, unit: GridUnit): StandardPricingGridData => {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV must have header and data rows');
 
     const headers = lines[0].split(',').map(h => h.trim());
-    const widthColumns = headers.slice(1);
+    // Parse widths as numbers
+    const widthColumns = headers.slice(1)
+      .map(w => parseFloat(w.replace(/[^0-9.-]/g, '')) || 0)
+      .sort((a, b) => a - b);
 
     const dropRows = lines.slice(1).map(line => {
       const values = line.split(',').map(v => v.trim());
       return {
-        drop: values[0],
-        prices: values.slice(1).map(p => parseFloat(p) || 0)
+        drop: parseFloat(values[0].replace(/[^0-9.-]/g, '')) || 0,
+        prices: values.slice(1).map(p => parseFloat(p.replace(/[^0-9.-]/g, '')) || 0)
       };
-    });
+    }).sort((a, b) => a.drop - b.drop);
 
-    // Include the unit in the grid data
-    return { widthColumns, dropRows, unit };
+    // Return standard format with version
+    return { widthColumns, dropRows, unit, version: 1 };
   };
 
   const handleSubmit = async () => {

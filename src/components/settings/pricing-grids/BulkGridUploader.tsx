@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendors } from '@/hooks/useVendors';
+import type { StandardPricingGridData, GridUnit } from '@/types/pricingGrid';
+import { inferUnit } from '@/types/pricingGrid';
 
 const GRID_PRODUCT_TYPES = [
   { value: 'curtains', label: 'Curtains' },
@@ -64,22 +66,35 @@ export const BulkGridUploader = ({ onComplete }: BulkGridUploaderProps) => {
     setEntries(entries.map(e => e.id === id ? { ...e, ...updates } : e));
   };
 
-  const parseCsvToGridData = (csvText: string) => {
+  /**
+   * Parse CSV to StandardPricingGridData format
+   * CSV format: first column is drop, remaining columns are widths
+   * First row is header with width values
+   */
+  const parseCsvToGridData = (csvText: string): StandardPricingGridData => {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV must have header and data rows');
 
     const headers = lines[0].split(',').map(h => h.trim());
-    const widthColumns = headers.slice(1);
+    // Parse widths as numbers, skip first column (drop header)
+    const widthColumns = headers.slice(1).map(w => parseFloat(w.replace(/[^0-9.-]/g, '')) || 0);
 
     const dropRows = lines.slice(1).map(line => {
       const values = line.split(',').map(v => v.trim());
       return {
-        drop: values[0],
-        prices: values.slice(1).map(p => parseFloat(p) || 0)
+        drop: parseFloat(values[0].replace(/[^0-9.-]/g, '')) || 0,
+        prices: values.slice(1).map(p => parseFloat(p.replace(/[^0-9.-]/g, '')) || 0)
       };
-    });
+    }).sort((a, b) => a.drop - b.drop);
 
-    return { widthColumns, dropRows };
+    // Sort widths ascending
+    widthColumns.sort((a, b) => a - b);
+
+    // Infer unit from values (>=500 assumed mm)
+    const maxValue = Math.max(...widthColumns, ...dropRows.map(r => r.drop));
+    const unit: GridUnit = maxValue >= 500 ? 'mm' : 'cm';
+
+    return { widthColumns, dropRows, unit, version: 1 };
   };
 
   const handleBulkUpload = async () => {

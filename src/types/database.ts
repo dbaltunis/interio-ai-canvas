@@ -1,3 +1,4 @@
+import type { StandardPricingGridData, AnyPricingGridData } from './pricingGrid';
 
 // Database types for tables not yet in Supabase types
 export interface PricingGrid {
@@ -6,7 +7,8 @@ export interface PricingGrid {
   grid_code: string;
   name: string;
   description?: string;
-  grid_data: any;
+  /** Grid data - should be StandardPricingGridData, but may be legacy format */
+  grid_data: StandardPricingGridData | AnyPricingGridData;
   markup_percentage?: number;
   active: boolean;
   created_at: string;
