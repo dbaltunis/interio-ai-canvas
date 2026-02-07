@@ -2,13 +2,13 @@ import { useState, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Loader2, CheckCircle2, Grid3X3, DollarSign, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import type { StandardPricingGridData, GridUnit } from "@/types/pricingGrid";
 
 interface TWCPricingConfigSheetProps {
   open: boolean;
@@ -54,39 +54,50 @@ export const TWCPricingConfigSheet = ({ open, onOpenChange, product }: TWCPricin
     }
   };
 
-  const parseCSVToGrid = (csvText: string) => {
-    const lines = csvText.trim().split('\n').map(line => 
+  /**
+   * Parse CSV to StandardPricingGridData format
+   */
+  const parseCSVToGrid = (csvText: string): StandardPricingGridData | null => {
+    const lines = csvText.trim().split('\n').map(line =>
       line.split(',').map(cell => cell.trim().replace(/"/g, ''))
     );
-    
+
     if (lines.length < 2) return null;
-    
+
     // First row is headers (width columns)
-    const widthColumns = lines[0].slice(1).map(w => parseInt(w, 10)).filter(w => !isNaN(w));
+    const widthColumns = lines[0].slice(1)
+      .map(w => parseFloat(w.replace(/[^0-9.-]/g, '')))
+      .filter(w => !isNaN(w) && w > 0)
+      .sort((a, b) => a - b);
+
     if (widthColumns.length === 0) return null;
-    
+
     // Remaining rows are drop rows with prices
-    const dropRows: number[] = [];
-    const prices: Record<string, number> = {};
-    
+    const dropRows: { drop: number; prices: number[] }[] = [];
+
     for (let i = 1; i < lines.length; i++) {
       const row = lines[i];
-      const drop = parseInt(row[0], 10);
-      if (isNaN(drop)) continue;
-      
-      dropRows.push(drop);
-      
-      for (let j = 0; j < widthColumns.length; j++) {
-        const price = parseFloat(row[j + 1]);
-        if (!isNaN(price)) {
-          prices[`${widthColumns[j]}_${drop}`] = price;
-        }
-      }
+      const drop = parseFloat(row[0].replace(/[^0-9.-]/g, ''));
+      if (isNaN(drop) || drop <= 0) continue;
+
+      const prices = row.slice(1).map(p => {
+        const price = parseFloat(p.replace(/[^0-9.-]/g, ''));
+        return isNaN(price) ? 0 : price;
+      });
+
+      dropRows.push({ drop, prices });
     }
-    
+
     if (dropRows.length === 0) return null;
-    
-    return { widthColumns, dropRows, prices };
+
+    // Sort by drop value
+    dropRows.sort((a, b) => a.drop - b.drop);
+
+    // Infer unit from max values (>=500 is mm)
+    const maxValue = Math.max(...widthColumns, ...dropRows.map(r => r.drop));
+    const unit: GridUnit = maxValue >= 500 ? 'mm' : 'cm';
+
+    return { widthColumns, dropRows, unit, version: 1 };
   };
 
   const handleSave = async () => {
@@ -250,19 +261,23 @@ export const TWCPricingConfigSheet = ({ open, onOpenChange, product }: TWCPricin
                 </div>
 
                 {/* Sample prices */}
-                {gridData.prices && Object.keys(gridData.prices).length > 0 && (
+                {gridData.dropRows && gridData.dropRows.length > 0 && (
                   <div className="pt-2 border-t">
-                    <div className="text-xs text-muted-foreground mb-1">Sample prices:</div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Sample prices (unit: {gridData.unit || 'cm'}):
+                    </div>
                     <div className="flex flex-wrap gap-1">
-                      {Object.entries(gridData.prices).slice(0, 4).map(([key, price]) => (
-                        <Badge key={key} variant="outline" className="text-xs">
-                          <DollarSign className="h-3 w-3 mr-1" />
-                          {String(price)}
-                        </Badge>
-                      ))}
-                      {Object.keys(gridData.prices).length > 4 && (
+                      {gridData.dropRows.slice(0, 2).flatMap((row: any) =>
+                        row.prices?.slice(0, 2).map((price: number, idx: number) => (
+                          <Badge key={`${row.drop}-${idx}`} variant="outline" className="text-xs">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            {price.toFixed(2)}
+                          </Badge>
+                        ))
+                      )}
+                      {gridData.dropRows.length > 2 && (
                         <Badge variant="secondary" className="text-xs">
-                          +{Object.keys(gridData.prices).length - 4} more
+                          +more prices
                         </Badge>
                       )}
                     </div>

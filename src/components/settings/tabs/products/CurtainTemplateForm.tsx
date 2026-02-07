@@ -18,6 +18,42 @@ import { HeadingStyleSelector } from "./HeadingStyleSelector";
 import { TemplateOptionsManager } from "./TemplateOptionsManager";
 import { TWCOptionsPreview } from "./TWCOptionsPreview";
 import { OptionRulesManager } from "./OptionRulesManager";
+import { useQuery } from "@tanstack/react-query";
+
+// Hook to fetch manufacturing defaults from business_settings
+const useManufacturingDefaults = () => {
+  return useQuery({
+    queryKey: ['manufacturing-defaults'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('business_settings')
+        .select('pricing_settings')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading manufacturing defaults:', error);
+        return null;
+      }
+
+      if (data?.pricing_settings) {
+        const settings = typeof data.pricing_settings === 'string'
+          ? JSON.parse(data.pricing_settings)
+          : data.pricing_settings;
+
+        // Validate settings is a proper object
+        if (typeof settings === 'object' && settings !== null && !('0' in settings) && !Array.isArray(settings)) {
+          return settings.manufacturing_defaults || null;
+        }
+      }
+      return null;
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+};
 
 interface PrefilledData {
   name: string;
@@ -38,25 +74,47 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   const updateTemplate = useUpdateCurtainTemplate();
   const [isSaving, setIsSaving] = useState(false);
   const [linkedTWCProduct, setLinkedTWCProduct] = useState<any>(null);
-  
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+
+  // Fetch manufacturing defaults from business_settings
+  const { data: manufacturingDefaults } = useManufacturingDefaults();
+
+  // Helper to get default value: template value > business defaults > fallback (0 or empty)
+  const getDefaultValue = (
+    templateValue: number | undefined | null,
+    defaultKey: keyof NonNullable<typeof manufacturingDefaults>,
+    fallback: string = ""
+  ): string => {
+    // If template has a value, use it
+    if (templateValue !== undefined && templateValue !== null) {
+      return templateValue.toString();
+    }
+    // If business defaults are available, use them
+    if (manufacturingDefaults && manufacturingDefaults[defaultKey] !== undefined) {
+      return manufacturingDefaults[defaultKey].toString();
+    }
+    // Otherwise return empty (0 for new templates without defaults)
+    return fallback;
+  };
+
   const [formData, setFormData] = useState({
     name: template?.name || prefilledData?.name || "",
     description: template?.description || prefilledData?.description || "",
     image_url: (template as any)?.image_url || "",
     treatment_category: template?.treatment_category || prefilledData?.category || "curtains",
-    
+
     // Hidden system_type - auto-generated from treatment_category
     system_type: (template as any)?.system_type || template?.treatment_category || "curtains",
-    
+
     // Inventory item link for TWC products
     inventory_item_id: (template as any)?.inventory_item_id || prefilledData?.inventoryItemId || null,
-    
+
     // Heading/Options
     selected_heading_ids: template?.selected_heading_ids || [],
-    
+
     // Hand-finished toggle
     offers_hand_finished: template?.offers_hand_finished || false,
-    
+
     // Pricing
     pricing_type: template?.pricing_type || "per_metre",
     unit_price: template?.unit_price?.toString() || "",
@@ -71,30 +129,49 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     drop_height_ranges: (template as any)?.drop_height_ranges || [],
     machine_drop_height_prices: (template as any)?.machine_drop_height_prices || [],
     hand_drop_height_prices: (template as any)?.hand_drop_height_prices || [],
-    
+
     // Making/Stitching charge
     making_charge_per_meter: (template as any)?.making_charge_per_meter?.toString() || "",
     making_charge_method: (template as any)?.making_charge_method || "per_meter",
     heading_making_charges: (template as any)?.heading_making_charges || {},
-    
+
     // Heading-specific price overrides (per-metre pricing)
     heading_prices: (template as any)?.heading_prices || {},
-    
-    // Manufacturing
-    header_allowance: template?.header_allowance?.toString() || "8",
-    bottom_hem: template?.bottom_hem?.toString() || "15",
-    side_hems: template?.side_hems?.toString() || "7.5",
-    seam_hems: template?.seam_hems?.toString() || "3",
-    return_left: template?.return_left?.toString() || "7.5",
-    return_right: template?.return_right?.toString() || "7.5",
-    overlap: template?.overlap?.toString() || "10",
-    waste_percent: template?.waste_percent?.toString() || "5",
+
+    // Manufacturing - initialized with empty values, will be updated when defaults load
+    header_allowance: template?.header_allowance?.toString() || "",
+    bottom_hem: template?.bottom_hem?.toString() || "",
+    side_hems: template?.side_hems?.toString() || "",
+    seam_hems: template?.seam_hems?.toString() || "",
+    return_left: template?.return_left?.toString() || "",
+    return_right: template?.return_right?.toString() || "",
+    overlap: template?.overlap?.toString() || "",
+    waste_percent: template?.waste_percent?.toString() || "",
     // Size constraints (optional)
     minimum_width: (template as any)?.minimum_width?.toString() || "",
     maximum_width: (template as any)?.maximum_width?.toString() || "",
     minimum_height: (template as any)?.minimum_height?.toString() || "",
     maximum_height: (template as any)?.maximum_height?.toString() || "",
   });
+
+  // Apply manufacturing defaults when they load (only for new templates without values)
+  useEffect(() => {
+    if (manufacturingDefaults && !defaultsApplied && !template) {
+      // Only apply defaults for new templates (not editing existing ones)
+      setFormData(prev => ({
+        ...prev,
+        header_allowance: prev.header_allowance || manufacturingDefaults.header_allowance?.toString() || "",
+        bottom_hem: prev.bottom_hem || manufacturingDefaults.bottom_hem?.toString() || "",
+        side_hems: prev.side_hems || manufacturingDefaults.side_hems?.toString() || "",
+        seam_hems: prev.seam_hems || manufacturingDefaults.seam_hems?.toString() || "",
+        return_left: prev.return_left || manufacturingDefaults.return_left?.toString() || "",
+        return_right: prev.return_right || manufacturingDefaults.return_right?.toString() || "",
+        overlap: prev.overlap || manufacturingDefaults.overlap?.toString() || "",
+        waste_percent: prev.waste_percent || manufacturingDefaults.waste_percent?.toString() || "",
+      }));
+      setDefaultsApplied(true);
+    }
+  }, [manufacturingDefaults, defaultsApplied, template]);
 
   // Fetch linked TWC product data when template has inventory_item_id
   useEffect(() => {

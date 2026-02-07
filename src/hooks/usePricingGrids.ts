@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { PricingGrid } from "@/types/database";
 import { inferGridUnit, convertToGridUnit, type GridUnit } from "@/utils/gridUnitUtils";
+import {
+  normalizeGridData,
+  getPriceFromStandardGrid,
+  isStandardFormat,
+  type StandardPricingGridData
+} from "@/types/pricingGrid";
 
 interface GridData {
   rows?: Array<{
@@ -101,16 +107,41 @@ export const getPriceFromGrid = (gridData: any, widthCm: number, dropCm: number)
     console.log("❌ getPriceFromGrid: No grid data provided");
     return 0;
   }
-  
+
   try {
+    // PREFERRED PATH: Use unified grid normalization
+    // This converts any known format to the standard format first
+    const normalizedGrid = normalizeGridData(gridData);
+    if (normalizedGrid) {
+      console.log("🔍 === PRICING GRID LOOKUP (Normalized) ===");
+      console.log("📊 Input (CM):", { widthCm, dropCm });
+      console.log("📊 Grid unit:", normalizedGrid.unit);
+      console.log("📋 Available widths:", normalizedGrid.widthColumns.map(w => w + normalizedGrid.unit));
+      console.log("📋 Available drops:", normalizedGrid.dropRows.map(r => r.drop + normalizedGrid.unit));
+
+      const price = getPriceFromStandardGrid(normalizedGrid, widthCm, dropCm, 'cm');
+
+      if (price !== null) {
+        console.log("✅ GRID MATCH FOUND (normalized):");
+        console.log("  📏 Requested Width:", widthCm + "cm");
+        console.log("  📏 Requested Drop:", dropCm + "cm");
+        console.log("  💰 Manufacturing Price:", price);
+        console.log("🔍 === END PRICING GRID LOOKUP ===");
+        return price;
+      }
+    }
+
+    // FALLBACK: Legacy code paths for edge cases
+    console.log("⚠️ Using legacy grid lookup (normalization returned null)");
+
     // Infer the grid's unit from values if not explicitly set
     const gridUnit = inferGridUnit(gridData);
-    
+
     // Convert input CM values to match the grid's unit
     const width = convertToGridUnit(widthCm, gridUnit);
     const drop = convertToGridUnit(dropCm, gridUnit);
-    
-    console.log("🔍 === PRICING GRID LOOKUP ===");
+
+    console.log("🔍 === PRICING GRID LOOKUP (Legacy) ===");
     console.log("📊 Input (CM):", { widthCm, dropCm });
     console.log("📊 Grid unit:", gridUnit);
     console.log("📊 Converted for lookup:", { width: width + gridUnit, drop: drop + gridUnit });
