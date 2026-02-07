@@ -1836,10 +1836,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             linear_meters: linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
-            // For blinds/shutters, use material price; for curtains use fabric calculation
-            price_per_meter: (displayCategory === 'blinds' || displayCategory === 'shutters') 
+            // ✅ CRITICAL: Use selling_price consistently for both save AND display
+            // This ensures live popup, saved window display, and quote all show the same values
+            price_per_meter: (displayCategory === 'blinds' || displayCategory === 'shutters')
               ? (selectedItems.material?.selling_price || selectedItems.material?.unit_price || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0)
-              : (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
+              : (selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || fabricCalculation?.pricePerMeter || 0),
             fabric_cost: fabricCost, // Use the already calculated fabricCost, not recalculate
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
@@ -1858,7 +1859,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 pricingMethod: 'per-meter',
                 quantity: linearMeters,
                 unit: 'm',
-                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
+                // ✅ CRITICAL: Use selling_price FIRST for consistency with display path
+                unit_price: selectedItems.fabric?.selling_price || fabricCalculation?.pricePerMeter || 0
               }] : []),
               // Lining (base item)
               ...(selectedLining && selectedLining !== 'none' ? [{
@@ -2159,7 +2161,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   category: 'fabric',
                   quantity: fabricQuantity,
                   unit: fabricUnit, // Use treatment-type-aware unit (m for curtains, sqm for blinds)
-                  unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+                  // ✅ CRITICAL: Use selling_price FIRST for consistency with display path (line 3209)
+                  unit_price: selectedItems.fabric?.selling_price || selectedItems.material?.selling_price || fabricCalculation?.pricePerMeter || 0,
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                   widths_required: fabricCalculation?.widthsRequired,
                   fabric_orientation: fabricCalculation?.fabricOrientation,
@@ -3204,12 +3207,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     // Get price from fabric item or fabricCalculation - never calculate from total/meters
                     const selectedFabricItem = selectedItems.fabric || selectedItems.material;
-                    // ✅ FIX: Use cost_price as base - markup is applied separately in CostCalculationSummary
-                    // This ensures Cost column shows actual cost (₹440/m), and Sell column shows cost + markup (₹924/m)
-                    const pricePerMeter = selectedFabricItem?.cost_price
-                      || selectedFabricItem?.price_per_meter 
-                      || selectedFabricItem?.selling_price  // Fallback only if no cost_price exists
-                      || fabricCalculation?.pricePerMeter 
+                    // ✅ CRITICAL FIX: Use selling_price as the PRIMARY source for consistent display
+                    // The quote and window display show CLIENT-FACING prices (what customer pays)
+                    // This ensures live popup matches saved window display and quote
+                    // Cost price is only for internal profit tracking
+                    const pricePerMeter = selectedFabricItem?.selling_price
+                      || selectedFabricItem?.price_per_meter
+                      || selectedFabricItem?.cost_price  // Fallback only if no selling_price exists
+                      || fabricCalculation?.pricePerMeter
                       || 0;
                     
                     // ✅ FIX: Check if curtain fabric uses pricing grid

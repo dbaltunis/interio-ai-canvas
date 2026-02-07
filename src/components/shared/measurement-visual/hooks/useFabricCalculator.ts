@@ -175,9 +175,13 @@ export const useFabricCalculator = ({
       // 🆕 Calculate seaming labor (if multiple widths)
       // Note: seamsCount is already calculated above at line 129
       const seamLaborHours = seamsCount * 0.25; // 15 minutes per seam
-      
+
+      // ✅ CRITICAL: Use selling_price first for consistency with all other display paths
+      // This ensures useFabricCalculator matches DynamicWindowWorksheet (line 3214)
+      const effectivePricePerMeter = fabric.selling_price || fabric.price_per_meter;
+
       // Calculate total cost based on ORDERED fabric (not just used)
-      const fabricCost = orderedLinearMeters * fabric.price_per_meter;
+      const fabricCost = orderedLinearMeters * effectivePricePerMeter;
       const totalCost = fabricCost;
 
       return {
@@ -186,7 +190,7 @@ export const useFabricCalculator = ({
         remnantMeters,
         totalCost,
         fabricCost,
-        pricePerMeter: fabric.price_per_meter,
+        pricePerMeter: effectivePricePerMeter,
         widthsRequired,
         seamsCount,
         seamLaborHours,

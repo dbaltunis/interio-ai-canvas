@@ -557,17 +557,28 @@ export const CostCalculationSummary = ({
       
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
-      const fabricPricePerSqm = blindCosts.squareMeters > 0 ? blindCosts.fabricCost / blindCosts.squareMeters : 0;
+      // ✅ CRITICAL FIX: Calculate SELLING prices for callback (with markup)
+      // This ensures saved values match what's displayed in the quote summary table
+      const fabricSellingPrice = fabricUsesPricingGrid
+        ? blindCosts.fabricCost  // Grid price already includes markup
+        : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent);
+      const manufacturingSellingPrice = applyMarkup(blindCosts.manufacturingCost, mfgMarkupPercent);
+
+      // Calculate unit price based on selling price, not cost price
+      const fabricPricePerSqm = blindCosts.squareMeters > 0 ? fabricSellingPrice / blindCosts.squareMeters : 0;
       const symbol = getCurrencySymbol(units.currency);
-      const blindDisplayFormula = `${blindCosts.squareMeters.toFixed(2)} sqm × ${symbol}${fabricPricePerSqm.toFixed(2)}/sqm = ${symbol}${blindCosts.fabricCost.toFixed(2)}`;
+      // ✅ CRITICAL: Formula should show SELLING price (what customer pays), not cost price
+      const blindDisplayFormula = `${blindCosts.squareMeters.toFixed(2)} sqm × ${symbol}${fabricPricePerSqm.toFixed(2)}/sqm = ${symbol}${fabricSellingPrice.toFixed(2)}`;
 
       blindCostsRef.current = {
         costs: {
-          fabricCost: blindCosts.fabricCost,
-          manufacturingCost: blindCosts.manufacturingCost,
+          // ✅ CRITICAL: Send SELLING prices in callback, not cost prices
+          // This ensures saved values match displayed values
+          fabricCost: fabricSellingPrice,
+          manufacturingCost: manufacturingSellingPrice,
           optionsCost: blindCosts.optionsCost,
           optionDetails: blindCosts.optionDetails, // ✅ Include individual option costs
-          totalCost: blindCosts.totalCost,
+          totalCost: fabricSellingPrice + manufacturingSellingPrice + blindCosts.optionsCost,
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
           // ✅ Display data for consistent rendering (same as curtains)
@@ -595,17 +606,17 @@ export const CostCalculationSummary = ({
     
     // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS FOR BLINDS
     // Calculate implied markup from library pricing if both cost_price and selling_price exist
-    const fabricCostPrice = fabricToUse?.cost_price || 0;
-    const fabricSellingPrice = fabricToUse?.selling_price || 0;
-    const hasLibraryPricing = fabricCostPrice > 0 && fabricSellingPrice > fabricCostPrice;
-    const impliedMarkup = hasLibraryPricing 
-      ? ((fabricSellingPrice - fabricCostPrice) / fabricCostPrice) * 100 
+    const libFabricCostPrice = fabricToUse?.cost_price || 0;
+    const libFabricSellingPrice = fabricToUse?.selling_price || 0;
+    const hasLibraryPricing = libFabricCostPrice > 0 && libFabricSellingPrice > libFabricCostPrice;
+    const impliedMarkup = hasLibraryPricing
+      ? ((libFabricSellingPrice - libFabricCostPrice) / libFabricCostPrice) * 100
       : undefined;
-    
+
     if (impliedMarkup && impliedMarkup > 0) {
       console.log('💰 [BLIND LIBRARY PRICING] Using implied markup:', {
-        cost_price: fabricCostPrice,
-        selling_price: fabricSellingPrice,
+        cost_price: libFabricCostPrice,
+        selling_price: libFabricSellingPrice,
         impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
         note: 'Prevents double-markup on library fabrics'
       });
@@ -628,15 +639,23 @@ export const CostCalculationSummary = ({
     // Default markup for display
     const markupPercentage = markupSettings?.default_markup_percentage || 0;
 
+    // ✅ CRITICAL FIX: Check if fabric uses pricing grid
+    // Grid pricing ALREADY includes markup - do NOT apply additional markup
+    const fabricUsesPricingGrid = !!(fabricToUse?.pricing_grid_data && fabricToUse?.resolved_grid_name);
+
     // Build items for table display with per-item markup
+    // For grid pricing: fabricCost ALREADY includes markup, sellingPrice = fabricCost
+    // For non-grid: fabricCost is cost_price, apply markup to get sellingPrice
     const tableItems: QuoteSummaryItem[] = [
       {
         name: isManufacturedItem(treatmentCategory) ? 'Material' : 'Fabric',
         details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
         category: 'fabric',
-        markupPercentage: fabricMarkupPercent,
-        sellingPrice: applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
+        markupPercentage: fabricUsesPricingGrid ? 0 : fabricMarkupPercent, // Skip markup for grid pricing
+        sellingPrice: fabricUsesPricingGrid
+          ? blindCosts.fabricCost  // Grid price already includes markup
+          : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
       }
     ];
 
@@ -1023,6 +1042,12 @@ export const CostCalculationSummary = ({
   // Build items for table display with per-item markup
   const tableItems: QuoteSummaryItem[] = [];
 
+  // ✅ CRITICAL FIX: Check if fabric uses library pricing (has both cost_price and selling_price)
+  // If library pricing exists, fabricCost is already based on selling_price - DO NOT apply additional markup
+  const curtainUsesLibraryPricing = curtainHasLibraryPricing;
+  const curtainUsesPricingGrid = fabricDisplayData?.usesPricingGrid && fabricDisplayData?.gridName;
+  const curtainFabricAlreadyHasMarkup = curtainUsesLibraryPricing || curtainUsesPricingGrid;
+
   // Fabric - with clear math display and category-specific markup
   if (fabricCost > 0) {
     let fabricDetails = '';
@@ -1039,14 +1064,17 @@ export const CostCalculationSummary = ({
     } else if (linearMeters > 0) {
       fabricDetails = `${linearMeters.toFixed(2)}m`;
     }
-    
+
     tableItems.push({
       name: 'Fabric',
       details: fabricDetails,
       price: fabricCost,
       category: 'fabric',
-      markupPercentage: fabricMarkupPercent,
-      sellingPrice: applyMarkup(fabricCost, fabricMarkupPercent)
+      // ✅ CRITICAL: Skip markup if fabric already has markup included (library pricing or grid)
+      markupPercentage: curtainFabricAlreadyHasMarkup ? 0 : fabricMarkupPercent,
+      sellingPrice: curtainFabricAlreadyHasMarkup
+        ? fabricCost  // Already includes markup from selling_price or grid
+        : applyMarkup(fabricCost, fabricMarkupPercent)
     });
   }
 
