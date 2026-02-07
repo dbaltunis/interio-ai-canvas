@@ -332,6 +332,7 @@ export const TreatmentPricingForm = ({
           <TreatmentMeasurementsCard
             formData={formData}
             onInputChange={handleInputChange}
+            windowCovering={windowCovering}
           />
 
           <TreatmentOptionsCard 

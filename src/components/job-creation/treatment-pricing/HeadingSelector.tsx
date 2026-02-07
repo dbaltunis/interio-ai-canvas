@@ -8,11 +8,18 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 interface HeadingSelectorProps {
   selectedHeading?: string;
   onHeadingChange: (headingId: string) => void;
+  /** Optional: Filter to only show these heading IDs (from template.selected_heading_ids) */
+  allowedHeadingIds?: string[];
 }
 
-export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSelectorProps) => {
-  const { data: headingOptions = [], isLoading } = useHeadingInventory();
+export const HeadingSelector = ({ selectedHeading, onHeadingChange, allowedHeadingIds }: HeadingSelectorProps) => {
+  const { data: allHeadingOptions = [], isLoading } = useHeadingInventory();
   const { getFabricUnitLabel, units } = useMeasurementUnits();
+
+  // Filter headings based on template's allowed heading IDs
+  const headingOptions = allowedHeadingIds && allowedHeadingIds.length > 0
+    ? allHeadingOptions.filter(h => allowedHeadingIds.includes(h.id))
+    : allHeadingOptions;
 
   if (isLoading) {
     return (
