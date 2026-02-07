@@ -162,8 +162,10 @@ export const useFabricCalculator = ({
         });
       } else {
         // VERTICAL/STANDARD: Calculate linear metres needed (actual fabric used)
-        linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
-        
+        // ✅ FIX: Seam allowance is added ONCE (between widths), not multiplied per width
+        // Formula: (totalDrop × widths + seams) / 100 × waste
+        linearMeters = ((totalDrop * widthsRequired) + totalSeamAllowance) / 100 * wasteMultiplier;
+
         // Calculate ORDERED fabric (full widths must be purchased)
         dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
         orderedLinearMeters = dropPerWidthMeters * widthsRequired;
