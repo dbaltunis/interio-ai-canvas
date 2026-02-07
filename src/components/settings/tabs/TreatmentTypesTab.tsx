@@ -5,17 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Wrench, Clock, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useTreatmentTypes, useCreateTreatmentType, useDeleteTreatmentType } from "@/hooks/useTreatmentTypes";
+import { useTreatmentTypes, useCreateTreatmentType, useUpdateTreatmentType, useDeleteTreatmentType } from "@/hooks/useTreatmentTypes";
 
 export const TreatmentTypesTab = () => {
   const { toast } = useToast();
 
   const { data: treatmentTypes = [], isLoading } = useTreatmentTypes();
   const createTreatmentType = useCreateTreatmentType();
+  const updateTreatmentType = useUpdateTreatmentType();
   const deleteTreatmentType = useDeleteTreatmentType();
+
+  const [editingTreatment, setEditingTreatment] = useState<any>(null);
+  const [isConfigureDialogOpen, setIsConfigureDialogOpen] = useState(false);
 
   const [newTreatment, setNewTreatment] = useState({
     name: "",
@@ -75,6 +80,56 @@ export const TreatmentTypesTab = () => {
   const handleMaterialsChange = (materialsString: string) => {
     const materials = materialsString.split(",").map(m => m.trim()).filter(m => m);
     setNewTreatment({ ...newTreatment, required_materials: materials });
+  };
+
+  const handleConfigureTreatment = (treatment: any) => {
+    setEditingTreatment({
+      id: treatment.id,
+      name: treatment.name || "",
+      category: treatment.category || "",
+      description: treatment.description || "",
+      estimated_hours: treatment.estimated_hours || 0,
+      complexity: treatment.complexity || "Medium",
+      labor_rate: treatment.labor_rate || 85,
+      required_materials: treatment.required_materials || [],
+    });
+    setIsConfigureDialogOpen(true);
+  };
+
+  const handleUpdateTreatment = async () => {
+    if (!editingTreatment) return;
+
+    try {
+      await updateTreatmentType.mutateAsync({
+        id: editingTreatment.id,
+        name: editingTreatment.name,
+        category: editingTreatment.category,
+        description: editingTreatment.description,
+        estimated_hours: editingTreatment.estimated_hours,
+        complexity: editingTreatment.complexity,
+        labor_rate: editingTreatment.labor_rate,
+        required_materials: editingTreatment.required_materials,
+      });
+
+      setIsConfigureDialogOpen(false);
+      setEditingTreatment(null);
+
+      toast({
+        title: "Success",
+        description: "Treatment type updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update treatment type",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditMaterialsChange = (materialsString: string) => {
+    const materials = materialsString.split(",").map(m => m.trim()).filter(m => m);
+    setEditingTreatment({ ...editingTreatment, required_materials: materials });
   };
 
   if (isLoading) {
@@ -150,7 +205,11 @@ export const TreatmentTypesTab = () => {
                     </div>
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleConfigureTreatment(treatment)}
+                      >
                         <Settings className="h-4 w-4 mr-2" />
                         Configure
                       </Button>
@@ -263,7 +322,7 @@ export const TreatmentTypesTab = () => {
             />
           </div>
 
-          <Button 
+          <Button
             onClick={handleCreateTreatment}
             disabled={createTreatmentType.isPending}
             className="bg-brand-primary hover:bg-brand-accent"
@@ -273,6 +332,112 @@ export const TreatmentTypesTab = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Configure Treatment Dialog */}
+      <Dialog open={isConfigureDialogOpen} onOpenChange={setIsConfigureDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Configure Treatment Type</DialogTitle>
+          </DialogHeader>
+
+          {editingTreatment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editName">Treatment Name</Label>
+                  <Input
+                    id="editName"
+                    value={editingTreatment.name}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editCategory">Category</Label>
+                  <select
+                    id="editCategory"
+                    className="w-full p-2 border rounded-md"
+                    value={editingTreatment.category}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, category: e.target.value })}
+                  >
+                    <option value="">Select category...</option>
+                    <option value="Curtains">Curtains</option>
+                    <option value="Blinds">Blinds</option>
+                    <option value="Shutters">Shutters</option>
+                    <option value="Tracks">Tracks</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="editDescription">Description</Label>
+                <Textarea
+                  id="editDescription"
+                  value={editingTreatment.description}
+                  onChange={(e) => setEditingTreatment({ ...editingTreatment, description: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="editHours">Estimated Hours</Label>
+                  <Input
+                    id="editHours"
+                    type="number"
+                    step="0.1"
+                    value={editingTreatment.estimated_hours}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, estimated_hours: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editRate">Labor Rate ($/hr)</Label>
+                  <Input
+                    id="editRate"
+                    type="number"
+                    step="0.01"
+                    value={editingTreatment.labor_rate}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, labor_rate: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editComplexity">Complexity</Label>
+                  <select
+                    id="editComplexity"
+                    className="w-full p-2 border rounded-md"
+                    value={editingTreatment.complexity}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, complexity: e.target.value })}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="editMaterials">Required Materials (comma separated)</Label>
+                <Input
+                  id="editMaterials"
+                  value={editingTreatment.required_materials.join(", ")}
+                  onChange={(e) => handleEditMaterialsChange(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfigureDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateTreatment}
+              disabled={updateTreatmentType.isPending}
+              className="bg-brand-primary hover:bg-brand-accent"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

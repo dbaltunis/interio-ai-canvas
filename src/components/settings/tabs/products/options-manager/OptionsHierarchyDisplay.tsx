@@ -170,7 +170,7 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
                 formatCurrency={formatCurrency}
                 getPricingLabel={getPricingLabel}
                 isExpanded={true}
-                onToggleExpanded={() => {}}
+                onToggleExpanded={() => toggleExpanded(category.id, 'category')}
                 expandedSubcategories={expandedSubcategories}
                 onToggleSubcategory={(id) => toggleExpanded(id, 'subcategory')}
                 expandedSubSubcategories={expandedSubSubcategories}
