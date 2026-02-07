@@ -177,34 +177,41 @@ export const calculateFabricUsage = (
   );
 
   // ✅ FIX: Get hems from template FIRST, then form data - NO HARDCODED FALLBACKS
-  // Use nullish coalescing (??) instead of OR (||) to allow 0 as valid value
-  const headerHemRaw = parseFloat(formData.header_hem) || 
-                   parseFloat(selectedTemplate?.header_allowance) || 
-                   parseFloat(selectedTemplate?.header_hem) || 
-                   parseFloat(selectedTemplate?.header_hem_cm);
-  
-  const bottomHemRaw = parseFloat(formData.bottom_hem) || 
-                   parseFloat(selectedTemplate?.bottom_hem) || 
-                   parseFloat(selectedTemplate?.bottom_allowance) ||
-                   parseFloat(selectedTemplate?.bottom_hem_cm);
-  
-  const sideHemRaw = parseFloat(formData.side_hem) || 
-                 parseFloat(selectedTemplate?.side_hem) ||
-                 parseFloat(selectedTemplate?.side_hem_cm);
-  
-  const seamHemRaw = parseFloat(formData.seam_hem) || 
-                 parseFloat(selectedTemplate?.seam_allowance) ||
-                 parseFloat(selectedTemplate?.seam_hem_cm);
+  // Use helper to properly handle 0 as valid value (not falsy skip)
+  const parseNumeric = (val: any): number | undefined => {
+    const parsed = parseFloat(val);
+    return !isNaN(parsed) ? parsed : undefined;
+  };
+
+  // Use nullish coalescing (??) to allow 0 as valid value
+  const headerHemRaw = parseNumeric(formData.header_hem) ??
+                   parseNumeric(selectedTemplate?.header_allowance) ??
+                   parseNumeric(selectedTemplate?.header_hem) ??
+                   parseNumeric(selectedTemplate?.header_hem_cm);
+
+  const bottomHemRaw = parseNumeric(formData.bottom_hem) ??
+                   parseNumeric(selectedTemplate?.bottom_hem) ??
+                   parseNumeric(selectedTemplate?.bottom_allowance) ??
+                   parseNumeric(selectedTemplate?.bottom_hem_cm);
+
+  const sideHemRaw = parseNumeric(formData.side_hem) ??
+                 parseNumeric(selectedTemplate?.side_hem) ??
+                 parseNumeric(selectedTemplate?.side_hem_cm);
+
+  const seamHemRaw = parseNumeric(formData.seam_hem) ??
+                 parseNumeric(selectedTemplate?.seam_allowance) ??
+                 parseNumeric(selectedTemplate?.seam_hem_cm);
   
   // CRITICAL: Use 0 as fallback (no hem) instead of arbitrary values
+  // Use nullish coalescing since parseNumeric returns undefined for invalid values
+  const headerHem = headerHemRaw ?? 0;
+  const bottomHem = bottomHemRaw ?? 0;
+  const sideHem = sideHemRaw ?? 0;
+  const seamHem = seamHemRaw ?? 0;
+
   // Log warning if hems are missing from template configuration
-  const headerHem = !isNaN(headerHemRaw) ? headerHemRaw : 0;
-  const bottomHem = !isNaN(bottomHemRaw) ? bottomHemRaw : 0;
-  const sideHem = !isNaN(sideHemRaw) ? sideHemRaw : 0;
-  const seamHem = !isNaN(seamHemRaw) ? seamHemRaw : 0;
-  
-  if (isNaN(headerHemRaw) || isNaN(bottomHemRaw)) {
-    console.warn('⚠️ [fabricUsageCalculator] Missing hem values in template:', selectedTemplate?.name, 
+  if (headerHemRaw === undefined || bottomHemRaw === undefined) {
+    console.warn('⚠️ [fabricUsageCalculator] Missing hem values in template:', selectedTemplate?.name,
       '- Using 0 as default. Configure hems in template for accurate calculations.');
   }
   

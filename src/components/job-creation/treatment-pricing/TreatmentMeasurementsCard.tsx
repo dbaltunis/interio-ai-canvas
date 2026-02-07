@@ -9,9 +9,11 @@ import { TreatmentFormData } from "./useTreatmentFormData";
 interface TreatmentMeasurementsCardProps {
   formData: TreatmentFormData;
   onInputChange: (field: string, value: any) => void;
+  /** Optional: Template/windowCovering to filter available headings */
+  windowCovering?: any;
 }
 
-export const TreatmentMeasurementsCard = ({ formData, onInputChange }: TreatmentMeasurementsCardProps) => {
+export const TreatmentMeasurementsCard = ({ formData, onInputChange, windowCovering }: TreatmentMeasurementsCardProps) => {
   const { getLengthUnitLabel } = useMeasurementUnits();
 
   return (
@@ -59,6 +61,7 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
         <HeadingSelector
           selectedHeading={formData.selected_heading}
           onHeadingChange={(headingId) => onInputChange("selected_heading", headingId)}
+          allowedHeadingIds={windowCovering?.selected_heading_ids}
         />
 
         {/* Hem Allowances Section */}

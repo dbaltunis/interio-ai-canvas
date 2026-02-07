@@ -618,7 +618,18 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Side Hems:</span>
-                  <span>{formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}</span>
+                  <span>
+                    {formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}
+                    {(() => {
+                      const sideHem = template?.side_hems || template?.side_hem || 0;
+                      const curtainType = measurements?.curtain_type || template?.panel_configuration || 'pair';
+                      const curtainCount = curtainType === 'pair' || curtainType === 'double' ? 2 : 1;
+                      if (sideHem > 0 && curtainCount > 1) {
+                        return <span className="text-[10px] ml-1">({formatMeasurement(sideHem, 'cm')} × 2 sides × {curtainCount})</span>;
+                      }
+                      return null;
+                    })()}
+                  </span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Returns (L+R):</span>
@@ -661,7 +672,18 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Side Hems:</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}</span>
+                  <span className="font-medium text-foreground">
+                    {formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}
+                    {(() => {
+                      const sideHem = template?.side_hems || template?.side_hem || 0;
+                      const curtainType = measurements?.curtain_type || template?.panel_configuration || 'pair';
+                      const curtainCount = curtainType === 'pair' || curtainType === 'double' ? 2 : 1;
+                      if (sideHem > 0 && curtainCount > 1) {
+                        return <span className="text-[10px] ml-1 text-muted-foreground">({formatMeasurement(sideHem, 'cm')} × 2 × {curtainCount})</span>;
+                      }
+                      return null;
+                    })()}
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
                   <span className="font-medium">Total Width:</span>

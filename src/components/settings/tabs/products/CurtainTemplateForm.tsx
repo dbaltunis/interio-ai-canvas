@@ -131,6 +131,23 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   }, [formData.inventory_item_id]);
 
   const handleInputChange = (field: string, value: any) => {
+    // Handle JSON-stringified arrays from child components
+    if (
+      (field === 'height_price_ranges' ||
+       field === 'drop_height_ranges' ||
+       field === 'machine_drop_height_prices' ||
+       field === 'hand_drop_height_prices') &&
+      typeof value === 'string'
+    ) {
+      try {
+        const parsed = JSON.parse(value);
+        setFormData(prev => ({ ...prev, [field]: parsed }));
+        return;
+      } catch (e) {
+        // If parsing fails, store as-is (fallback)
+        console.warn(`Failed to parse JSON for field ${field}:`, e);
+      }
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
