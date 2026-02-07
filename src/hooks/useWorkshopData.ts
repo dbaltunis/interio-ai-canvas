@@ -238,8 +238,15 @@ export const useWorkshopData = (projectId?: string) => {
       const usesLeftover = md.uses_leftover_for_horizontal === true || md.uses_leftover_for_horizontal === 'true';
       
       // Total drop with hems for manufacturing
-      const totalDropCm = (md.total_drop_per_width_cm || 0) || 
-        ((md.drop_cm || (heightMM || 0) / 10) + (md.header_allowance_cm || 0) + (md.bottom_hem_cm || 0) + (md.pooling_amount_cm || 0));
+      // ✅ FIX: Use consistent fallback chain for hem values (measurements -> template)
+      const td = summary?.template_details || {};
+      const headerHemCm = md.header_hem ?? md.header_allowance_cm ?? td.header_allowance ?? 0;
+      const bottomHemCm = md.bottom_hem ?? md.bottom_hem_cm ?? td.bottom_hem ?? 0;
+      const poolingCm = md.pooling_amount_cm ?? md.pooling_amount ?? 0;
+      const dropCm = md.drop_cm ?? (heightMM || 0) / 10;
+
+      const totalDropCm = (md.total_drop_per_width_cm || 0) ||
+        (dropCm + headerHemCm + bottomHemCm + poolingCm);
       
       // Total width with allowances for manufacturing
       const totalWidthCm = md.total_width_with_allowances_cm || 0;
