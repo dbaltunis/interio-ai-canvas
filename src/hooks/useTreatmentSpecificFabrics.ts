@@ -361,8 +361,31 @@ export const useTreatmentSpecificFabrics = (
             resolved_grid_id: grid.id
           };
         }
-        
-        // Method 2: Via price_group (resolve through pricing rules)
+
+        // Method 2: From metadata.pricing_grid_data (TWC products store pricing here)
+        // CRITICAL: This is where TWC products have their pricing grids stored!
+        const metadataPricingGrid = (item.metadata as any)?.pricing_grid_data;
+        if (metadataPricingGrid && typeof metadataPricingGrid === 'object') {
+          // Validate the grid has actual data
+          const hasValidGrid = (
+            (metadataPricingGrid.widthColumns?.length > 0) ||
+            (metadataPricingGrid.widths?.length > 0) ||
+            (metadataPricingGrid.dropRanges?.length > 0)
+          );
+
+          if (hasValidGrid) {
+            console.log('📊 [TWC] Using pricing grid from metadata:', item.name);
+            return {
+              ...item,
+              pricing_grid_data: metadataPricingGrid,
+              resolved_grid_name: `${item.name} (TWC Grid)`,
+              resolved_grid_code: item.sku || 'TWC',
+              resolved_grid_id: 'metadata'
+            };
+          }
+        }
+
+        // Method 3: Via price_group (resolve through pricing rules)
         if (item.price_group && !item.pricing_grid_id) {
           try {
             const productType = item.product_category || treatmentCategory;
@@ -370,23 +393,25 @@ export const useTreatmentSpecificFabrics = (
               productType,
               systemType: item.system_type,
               fabricPriceGroup: item.price_group,
+              fabricSupplierId: item.vendor_id,
               userId: user.id
             });
-            
+
             if (gridResult.gridId) {
               return {
                 ...item,
                 pricing_grid_data: gridResult.gridData,
                 resolved_grid_name: gridResult.gridName,
                 resolved_grid_code: gridResult.gridCode,
-                resolved_grid_id: gridResult.gridId
+                resolved_grid_id: gridResult.gridId,
+                pricing_grid_markup: gridResult.markupPercentage
               };
             }
           } catch (error) {
             console.error('Error enriching item with grid:', item.name, error);
           }
         }
-        
+
         return item;
       }));
       

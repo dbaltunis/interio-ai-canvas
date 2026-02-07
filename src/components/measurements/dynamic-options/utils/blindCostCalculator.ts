@@ -71,7 +71,17 @@ export const calculateBlindCosts = (
   // UNIVERSAL RULE FOR ALL SAAS CLIENTS: Fabric pricing grids = TOTAL PRODUCT PRICE
   // This applies to ALL blind types (Roller, Venetian, Vertical, Cellular, etc.) across ALL accounts
   // CRITICAL: Fabric pricing grids contain the COMPLETE price (fabric + manufacturing combined)
-  const fabricHasPricingGrid = fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name;
+  // Check for valid pricing grid data - either from enrichment (resolved_grid_name) or direct (metadata)
+  const hasValidPricingGrid = (gridData: any): boolean => {
+    if (!gridData || typeof gridData !== 'object') return false;
+    return (
+      (gridData.widthColumns && Array.isArray(gridData.widthColumns) && gridData.widthColumns.length > 0) ||
+      (gridData.widths && Array.isArray(gridData.widths) && gridData.widths.length > 0) ||
+      (gridData.dropRanges && Array.isArray(gridData.dropRanges) && gridData.dropRanges.length > 0) ||
+      (gridData.dropRows && Array.isArray(gridData.dropRows) && gridData.dropRows.length > 0)
+    );
+  };
+  const fabricHasPricingGrid = hasValidPricingGrid(fabricItem?.pricing_grid_data);
   
   if (fabricHasPricingGrid) {
     // ✅ FIX #2: Capture grid markup from enriched fabric
