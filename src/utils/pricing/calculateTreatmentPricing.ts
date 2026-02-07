@@ -4,6 +4,7 @@ import {
   detectTreatmentCategory,
   isAreaCalculationType
 } from '@/utils/treatmentTypeUtils';
+import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 
 /**
  * Calculate treatment pricing with fabric costs, lining, manufacturing, and options
@@ -182,9 +183,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   
   // CRITICAL: Handle pricing_grid type - use grid lookup for total product price
   if (effectivePricingType === 'pricing_grid') {
-    // Import getPriceFromGrid dynamically to avoid circular dependency
-    const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
-    
+    // getPriceFromGrid is imported at the top of the file
+
     // Check for grid data from multiple sources: input, fabric item, or template
     const gridData = pricingGridData || fabricItem?.pricing_grid_data || template?.pricing_grid_data;
     

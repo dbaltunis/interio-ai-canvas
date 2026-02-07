@@ -16,6 +16,7 @@ import { TreatmentNotesField } from "./treatment-pricing/TreatmentNotesField";
 import { TreatmentFormActions } from "./treatment-pricing/TreatmentFormActions";
 import { useFabricCalculation } from "./treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "./treatment-pricing/useTreatmentFormData";
+import { calculateBlindCost, calculateShutterCost } from "@/utils/blindCostCalculations";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -55,9 +56,7 @@ export const TreatmentPricingForm = ({
   // Calculate costs using the correct method based on treatment type
   const costs = React.useMemo(() => {
     if (isBlindsOrShutters) {
-      // Use blind calculation logic
-      const { calculateBlindCost, calculateShutterCost } = require('@/utils/blindCostCalculations');
-      
+      // Use blind calculation logic (imported at top of file)
       const width = parseFloat(formData.rail_width) || 0;
       const height = parseFloat(formData.drop) || 0;
       
