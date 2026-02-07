@@ -28,7 +28,6 @@ import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
 import { LoadingState } from "./components/ui/loading-state";
-import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import { SyncIndicator } from "./components/system/SyncIndicator";
 // FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
@@ -52,7 +51,6 @@ const PublicBookingPage = lazyWithRetry(() => import("./components/calendar/Publ
 const PublicStorePage = lazyWithRetry(() => import("./components/public-store/PublicStorePage").then(m => ({ default: m.PublicStorePage })), "PublicStore");
 const PublicWorkOrder = lazyWithRetry(() => import("./pages/PublicWorkOrder"), "PublicWorkOrder");
 const SubscriptionTest = lazyWithRetry(() => import("./pages/SubscriptionTest").then(m => ({ default: m.SubscriptionTest })), "SubscriptionTest");
-const ManualQuoteTest = lazyWithRetry(() => import("./pages/ManualQuoteTest").then(m => ({ default: m.ManualQuoteTest })), "ManualQuoteTest");
 const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
 const Purchasing = lazyWithRetry(() => import("./pages/Purchasing"), "Purchasing");
 const AdminBugManagement = lazyWithRetry(() => import("./pages/AdminBugManagement"), "AdminBugManagement");
@@ -343,14 +341,6 @@ const App = () => {
                   </ProtectedRoute>
                 } />
 
-                <Route path="/test/manual-quotes" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
-                      <ManualQuoteTest />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
-                
                 {/* Documentation page */}
                 <Route path="/documentation" element={
                   <ProtectedRoute>
@@ -388,7 +378,6 @@ const App = () => {
                   </TutorialProvider>
                   </TeachingProvider>
                   </AccountStatusGuard>
-                  <ProjectInventoryTrackingHandler />
                 </AuthProvider>
                  </BrowserRouter>
               </ThemeProvider>
