@@ -91,8 +91,8 @@ export const useUserPermissions = () => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 3,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnWindowFocus: false, // Permissions don't change while using the app
+    refetchOnMount: false, // Use cached data - staleTime handles freshness
   });
 };
 

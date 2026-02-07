@@ -146,8 +146,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
       console.log('[ResponsiveHeader] Store nav check:', { hasStore: !!store, hasShopify: !!shopify, showNav: hasStore });
       return hasStore;
     },
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes - store status doesn't change often
+    refetchOnMount: false,
   });
 
   // Check if user has email provider configured (SendGrid OR Resend)
