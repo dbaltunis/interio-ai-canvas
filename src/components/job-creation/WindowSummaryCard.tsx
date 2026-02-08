@@ -45,16 +45,17 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
   );
 }
 
-export function WindowSummaryCard({ 
-  surface, 
-  onEditSurface, 
-  onDeleteSurface, 
-  onViewDetails, 
+export function WindowSummaryCard({
+  surface,
+  onEditSurface,
+  onDeleteSurface,
+  onViewDetails,
   onRenameSurface,
   isMainWindow = true,
   treatmentLabel,
   treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP - before any early returns
   // Permission checks - properly check edit permissions
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
@@ -62,15 +63,9 @@ export function WindowSummaryCard({
   // This is safer than hardcoding true - at least requires a permission
   const canEditJobs = canEditAllJobs || canEditAssignedJobs;
   const canDeleteJobs = useHasPermission('delete_jobs');
-  
-  // Add defensive check for surface data
-  if (!surface || !surface.id) {
-    console.error('WindowSummaryCard: Invalid surface data', surface);
-    return null;
-  }
-  
-  // Use surface.id directly as the window_id - single source of truth
-  const windowId = surface.id;
+
+  // Use surface.id directly as the window_id - single source of truth (with safe fallback)
+  const windowId = surface?.id || '';
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const { compact } = useCompactMode();
@@ -79,58 +74,19 @@ export function WindowSummaryCard({
   const queryClient = useQueryClient();
   const { data: markupSettings } = useMarkupSettings();
 
-  // Detect treatment type from multiple sources - prioritize fabric category detection
-  const detectTreatmentTypeFromFabric = () => {
+  // Unit helpers - CRITICAL: measurements from windows_summary are in MM, not CM!
+  const { units, convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
+
+  // Detect treatment type from multiple sources - MUST be before useMemo hooks
+  const treatmentType = useMemo(() => {
+    if (propTreatmentType) return propTreatmentType;
+    // Detect from fabric category
     const category = summary?.fabric_details?.category?.toLowerCase() || '';
     if (category.includes('wallcover') || category.includes('wallpaper')) return 'wallpaper';
     if (category.includes('blind')) return 'blinds';
-    return null;
-  };
-
-  const treatmentType = 
-    propTreatmentType || 
-    detectTreatmentTypeFromFabric() ||
-    summary?.treatment_type || 
-    summary?.treatment_category ||
-    'curtains';
-
-  // Unit helpers - CRITICAL: measurements from windows_summary are in MM, not CM!
-  const { units, convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
-  
-  /**
-   * Format measurement for display - returns "Not set" when no valid measurement
-   * CRITICAL: Only show actual values, never placeholder/static numbers
-   */
-  const fmtMeasurement = (mm?: number) => {
-    // Return "Not set" for undefined, null, zero, or invalid values
-    if (mm === undefined || mm === null) return null;
-    const numValue = Number(mm);
-    if (isNaN(numValue) || numValue <= 0) return null;
-    // Convert from MM to user's preferred unit
-    const converted = convertToUserUnit(numValue, 'mm');
-    const unitLabel = getLengthUnitLabel();
-    return `${converted.toFixed(2)} ${unitLabel}`;
-  };
-  
-  // Helper to display measurement or "Not set" placeholder
-  const displayMeasurement = (value: string | null) => {
-    return value || <span className="text-muted-foreground italic">Not set</span>;
-  };
-
-  // Simplified logging - reduce console noise
-  if (process.env.NODE_ENV === 'development') {
-    console.log('📊 WindowSummaryCard:', {
-      windowId,
-      hasSummary: !!summary,
-      total: summary?.total_cost,
-      treatmentType,
-      // Wallpaper debugging
-      linear_meters: summary?.linear_meters,
-      widths_required: summary?.widths_required,
-      wall_width: summary?.measurements_details?.wall_width,
-      wall_height: summary?.measurements_details?.wall_height
-    });
-  }
+    // Fallback to summary fields
+    return summary?.treatment_type || summary?.treatment_category || 'curtains';
+  }, [propTreatmentType, summary?.fabric_details?.category, summary?.treatment_type, summary?.treatment_category]);
 
   // DISPLAY-ONLY ARCHITECTURE: Trust saved cost_breakdown completely, no recalculations
   // CRITICAL: Apply markup to ALL items to show SELLING prices (not cost prices)
@@ -436,6 +392,26 @@ export function WindowSummaryCard({
     console.log('💰 [DISPLAY] Window card retail price (fallback):', { costTotal, markup: markupResult.percentage, retailPrice });
     return retailPrice;
   }, [summary, enrichedBreakdown, markupSettings]);
+
+  // Helper functions - defined after hooks but before return
+  const fmtMeasurement = (mm?: number) => {
+    if (mm === undefined || mm === null) return null;
+    const numValue = Number(mm);
+    if (isNaN(numValue) || numValue <= 0) return null;
+    const converted = convertToUserUnit(numValue, 'mm');
+    const unitLabel = getLengthUnitLabel();
+    return `${converted.toFixed(2)} ${unitLabel}`;
+  };
+
+  const displayMeasurement = (value: string | null) => {
+    return value || <span className="text-muted-foreground italic">Not set</span>;
+  };
+
+  // NOW we can do the defensive check - AFTER all hooks are called
+  if (!surface || !surface.id) {
+    console.error('WindowSummaryCard: Invalid surface data', surface);
+    return null;
+  }
 
   const displayName = treatmentLabel || surface.name;
 

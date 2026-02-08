@@ -26,7 +26,9 @@ export const BulkUserActions = ({ users, selectedUsers, onSelectAll, onClearSele
   const deleteUser = useDeleteUser();
   
   const canManageUsers = useHasPermission('manage_team');
-  const canExport = useHasPermission('view_analytics') || useHasPermission('manage_team');
+  const canViewAnalytics = useHasPermission('view_analytics');
+  // Combine permissions AFTER hooks are called to avoid short-circuit evaluation
+  const canExport = canViewAnalytics || canManageUsers;
 
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;

@@ -18,19 +18,19 @@ interface TargetRect {
  * Shows a dark overlay with a "hole" around the target, pulsing ring animation, and tooltip.
  */
 export const TeachingActiveSpotlight = () => {
-  // Safe access to context - handle HMR edge cases
-  let contextValue;
-  try {
-    contextValue = useTeaching();
-  } catch (e) {
-    // Context not available during HMR, return null gracefully
-    return null;
-  }
-  
-  const { activeSpotlight, dismissSpotlight, completeTeaching } = contextValue;
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP - before any early returns
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom' | 'left' | 'right'>('bottom');
   const [isVisible, setIsVisible] = useState(false);
+  const [contextError, setContextError] = useState(false);
+
+  // Safe access to context - always call the hook, handle errors gracefully
+  const teachingContext = useTeaching();
+
+  // Extract values safely - if context throws during render, these will be undefined
+  const activeSpotlight = teachingContext?.activeSpotlight;
+  const dismissSpotlight = teachingContext?.dismissSpotlight;
+  const completeTeaching = teachingContext?.completeTeaching;
 
   // Find and track the target element
   const updateTargetPosition = useCallback(() => {
@@ -40,7 +40,7 @@ export const TeachingActiveSpotlight = () => {
     if (element) {
       const rect = element.getBoundingClientRect();
       const padding = 8;
-      
+
       setTargetRect({
         top: rect.top - padding,
         left: rect.left - padding,
@@ -51,7 +51,7 @@ export const TeachingActiveSpotlight = () => {
       // Determine tooltip position based on available space
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
-      
+
       if (rect.bottom + 150 < viewportHeight) {
         setTooltipPosition('bottom');
       } else if (rect.top > 150) {
@@ -98,25 +98,32 @@ export const TeachingActiveSpotlight = () => {
     };
   }, [activeSpotlight, updateTargetPosition, targetRect]);
 
-  const handleComplete = () => {
-    if (activeSpotlight) {
+  // Handle complete action
+  const handleComplete = useCallback(() => {
+    if (activeSpotlight && completeTeaching && dismissSpotlight) {
       completeTeaching(activeSpotlight.id);
       dismissSpotlight();
     }
-  };
+  }, [activeSpotlight, completeTeaching, dismissSpotlight]);
 
-  const handleDismiss = () => {
-    dismissSpotlight();
-  };
+  // Handle dismiss action
+  const handleDismiss = useCallback(() => {
+    if (dismissSpotlight) {
+      dismissSpotlight();
+    }
+  }, [dismissSpotlight]);
 
-  if (!activeSpotlight || !isVisible) return null;
+  // NOW we can do early returns - AFTER all hooks are called
+  if (!teachingContext || !activeSpotlight || !isVisible) {
+    return null;
+  }
 
   const tooltipStyles = () => {
     if (!targetRect) return {};
-    
+
     const tooltipWidth = 280;
     const tooltipOffset = 16;
-    
+
     switch (tooltipPosition) {
       case 'bottom':
         return {
@@ -194,7 +201,7 @@ export const TeachingActiveSpotlight = () => {
                 height: targetRect.height,
               }}
             />
-            
+
             {/* Pulsing ring animation */}
             <motion.div
               className="absolute rounded-lg border-2 border-primary pointer-events-none"
@@ -241,14 +248,14 @@ export const TeachingActiveSpotlight = () => {
                 <X className="h-3.5 w-3.5" />
               </Button>
             </div>
-            
+
             {/* Content */}
             <div className="p-3">
               <p className="text-sm text-muted-foreground mb-4">
                 {activeSpotlight.description}
               </p>
-              
-              <Button 
+
+              <Button
                 onClick={handleComplete}
                 className="w-full gap-2"
                 size="sm"

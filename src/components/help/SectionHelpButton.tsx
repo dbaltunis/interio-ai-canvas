@@ -63,11 +63,15 @@ export const SectionHelpButton = ({
           {/* Tutorial Carousel */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground">Quick Guide</h4>
-            {tutorialMap[sectionId] && tutorialMap[sectionId].steps.length > 0 && tutorialMap[sectionId].steps[0].Visual !== (() => null) ? <TutorialCarousel steps={tutorialMap[sectionId].steps} /> : <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
+            {tutorialMap[sectionId] && tutorialMap[sectionId].steps.length > 0 && tutorialMap[sectionId].steps[0].Visual ? (
+              <TutorialCarousel steps={tutorialMap[sectionId].steps} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center">
                 <div className="text-muted-foreground text-sm">
                   Tutorial coming soon
                 </div>
-              </div>}
+              </div>
+            )}
           </div>
           
           {/* Key Points */}
