@@ -187,7 +187,7 @@ const EditableText: React.FC<EditableTextProps> = ({
 };
 
 // ============================================
-// HELPER: Image Uploader Component
+// HELPER: Image Uploader Component (Enhanced)
 // ============================================
 
 interface ImageUploaderProps {
@@ -215,15 +215,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ imageUrl, onUpload, isEdi
   return (
     <div
       onClick={handleClick}
-      className={`w-16 h-20 rounded overflow-hidden flex-shrink-0 ${
-        isEditable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+      className={`w-20 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-stone-200 shadow-sm ${
+        isEditable ? 'cursor-pointer hover:opacity-80 transition-opacity hover:border-amber-500' : ''
       }`}
+      style={{ minWidth: '80px' }}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt="Product" className="w-full h-full object-cover" />
+        <img
+          src={imageUrl}
+          alt="Product"
+          className="w-full h-full object-cover print-image"
+          style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+        />
       ) : (
         <div
-          className={`w-full h-full bg-stone-100 flex items-center justify-center ${
+          className={`w-full h-full bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center ${
             isEditable ? 'border-2 border-dashed border-stone-300 hover:border-amber-500' : ''
           }`}
         >
@@ -321,56 +327,97 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
 
   // ===== RENDER =====
   // Note: Use w-full instead of max-w-4xl to fit within PDF container (210mm A4 width)
+  // Professional quote template with improved styling for print and digital viewing
   return (
     <div
-      className="w-full bg-white"
-      style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif' }}
+      className="w-full bg-white quote-template-homekaara"
+      style={{
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        WebkitPrintColorAdjust: 'exact',
+        printColorAdjust: 'exact',
+      }}
     >
       {/* ========== HEADER SECTION ========== */}
       {/* Note: p-6 padding to ensure content fits within A4 PDF bounds (210mm = ~794px) */}
-      <div className="flex justify-between items-start p-6 pb-4">
+      <div className="flex justify-between items-start p-6 pb-4 quote-header avoid-page-break">
         {/* Left: Business & Client Info */}
-        <div className="flex-1 min-w-0 pr-4">
+        <div className="flex-1 min-w-0 pr-6">
           {businessInfo.logo_url ? (
             <img
               src={businessInfo.logo_url}
               alt={businessInfo.name}
-              className="h-10 mb-3 object-contain"
+              className="h-12 mb-3 object-contain print-image"
+              style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
             />
           ) : (
-            <h1 className="text-2xl font-bold text-stone-800 mb-3">{businessInfo.name}</h1>
+            <h1
+              className="text-2xl font-bold mb-3"
+              style={{ color: '#9C8B7A' }}
+            >
+              {businessInfo.name}
+            </h1>
           )}
 
           <div className="text-sm text-stone-600 space-y-0.5">
-            <p className="text-stone-800">{businessInfo.name}</p>
+            {!businessInfo.logo_url && (
+              <p className="text-stone-800 font-medium">{businessInfo.name}</p>
+            )}
             {businessInfo.email && <p>{businessInfo.email}</p>}
             {businessInfo.phone && <p>{businessInfo.phone}</p>}
           </div>
 
-          <div className="mt-4">
-            <p className="text-sm font-semibold text-stone-800">Prepared For:</p>
-            <div className="text-sm text-stone-600 mt-1 space-y-0.5">
-              <p className="text-stone-800">{clientInfo.name}</p>
+          <div
+            className="mt-4 p-3 rounded-lg"
+            style={{
+              backgroundColor: '#F5F3F0',
+              borderLeft: '3px solid #9C8B7A',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact',
+            }}
+          >
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">
+              Prepared For
+            </p>
+            <div className="text-sm text-stone-600 space-y-0.5">
+              <p className="text-stone-800 font-semibold text-base">{clientInfo.name}</p>
               {clientInfo.email && <p>{clientInfo.email}</p>}
               {clientInfo.phone && <p>{clientInfo.phone}</p>}
+              {clientInfo.address && (
+                <p className="text-xs text-stone-500 mt-1">{clientInfo.address}</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right: Quote Metadata */}
-        {/* Note: Use max-w instead of fixed w to allow shrinking for PDF */}
-        <div className="w-64 max-w-[40%] flex-shrink">
+        {/* Right: Quote Metadata - Styled as a card */}
+        <div
+          className="w-64 max-w-[40%] flex-shrink rounded-lg overflow-hidden"
+          style={{
+            backgroundColor: '#F5F3F0',
+            border: '1px solid #E7E5E4',
+            WebkitPrintColorAdjust: 'exact',
+            printColorAdjust: 'exact',
+          }}
+        >
+          {/* Quote Number Header */}
+          <div
+            className="px-4 py-3 text-center"
+            style={{
+              backgroundColor: '#9C8B7A',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact',
+            }}
+          >
+            <p className="text-white text-xs uppercase tracking-wide font-medium">Quote</p>
+            <p className="text-white text-xl font-bold">{metadata.quote_number}</p>
+          </div>
+
+          {/* Metadata Fields */}
           <table className="text-sm w-full">
             <tbody>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 whitespace-nowrap">Quote#</td>
-                <td className="font-bold text-stone-800 text-xl text-right">
-                  {metadata.quote_number}
-                </td>
-              </tr>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 whitespace-nowrap">Date</td>
-                <td className="text-right">
+              <tr className="border-b border-stone-200">
+                <td className="text-stone-500 py-2 px-3 text-xs">Date</td>
+                <td className="py-2 px-3 text-right font-medium text-stone-700">
                   <EditableText
                     value={metadata.date}
                     onChange={(v) => setMetadata((prev) => ({ ...prev, date: v }))}
@@ -378,58 +425,76 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
                   />
                 </td>
               </tr>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 whitespace-nowrap">Status</td>
-                <td className="text-right">
-                  <EditableText
-                    value={metadata.status}
-                    onChange={(v) => setMetadata((prev) => ({ ...prev, status: v }))}
-                    isEditable={isEditable}
-                  />
+              <tr className="border-b border-stone-200">
+                <td className="text-stone-500 py-2 px-3 text-xs">Status</td>
+                <td className="py-2 px-3 text-right">
+                  <span
+                    className="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor:
+                        metadata.status === 'Approved' || metadata.status === 'Accepted'
+                          ? '#D1FAE5'
+                          : metadata.status === 'Draft'
+                          ? '#FEF3C7'
+                          : '#E7E5E4',
+                      color:
+                        metadata.status === 'Approved' || metadata.status === 'Accepted'
+                          ? '#047857'
+                          : metadata.status === 'Draft'
+                          ? '#92400E'
+                          : '#57534E',
+                      WebkitPrintColorAdjust: 'exact',
+                      printColorAdjust: 'exact',
+                    }}
+                  >
+                    {isEditable ? (
+                      <EditableText
+                        value={metadata.status}
+                        onChange={(v) => setMetadata((prev) => ({ ...prev, status: v }))}
+                        isEditable={isEditable}
+                      />
+                    ) : (
+                      metadata.status
+                    )}
+                  </span>
                 </td>
               </tr>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 whitespace-nowrap">Services required?</td>
-                <td className="text-right">
-                  <EditableText
-                    value={metadata.services_required || ''}
-                    onChange={(v) => setMetadata((prev) => ({ ...prev, services_required: v }))}
-                    isEditable={isEditable}
-                    placeholder="—"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 align-top whitespace-nowrap">
-                  Expected Purchase &<br />
-                  Installation date?
-                </td>
-                <td className="text-right align-top">
-                  <EditableText
-                    value={metadata.expected_purchase_date || ''}
-                    onChange={(v) =>
-                      setMetadata((prev) => ({ ...prev, expected_purchase_date: v }))
-                    }
-                    isEditable={isEditable}
-                    placeholder="—"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="text-stone-500 py-1 pr-3 align-top whitespace-nowrap">
-                  How did you hear
-                  <br />
-                  about {businessInfo.name}?
-                </td>
-                <td className="text-right align-top">
-                  <EditableText
-                    value={metadata.referral_source || ''}
-                    onChange={(v) => setMetadata((prev) => ({ ...prev, referral_source: v }))}
-                    isEditable={isEditable}
-                    placeholder="—"
-                  />
-                </td>
-              </tr>
+              {metadata.validity_days && (
+                <tr className="border-b border-stone-200">
+                  <td className="text-stone-500 py-2 px-3 text-xs">Valid For</td>
+                  <td className="py-2 px-3 text-right font-medium text-stone-700 text-xs">
+                    {metadata.validity_days} days
+                  </td>
+                </tr>
+              )}
+              {(metadata.services_required || isEditable) && (
+                <tr className="border-b border-stone-200">
+                  <td className="text-stone-500 py-2 px-3 text-xs align-top">Services</td>
+                  <td className="py-2 px-3 text-right text-xs">
+                    <EditableText
+                      value={metadata.services_required || ''}
+                      onChange={(v) => setMetadata((prev) => ({ ...prev, services_required: v }))}
+                      isEditable={isEditable}
+                      placeholder="—"
+                    />
+                  </td>
+                </tr>
+              )}
+              {(metadata.expected_purchase_date || isEditable) && (
+                <tr>
+                  <td className="text-stone-500 py-2 px-3 text-xs align-top">Expected Date</td>
+                  <td className="py-2 px-3 text-right text-xs">
+                    <EditableText
+                      value={metadata.expected_purchase_date || ''}
+                      onChange={(v) =>
+                        setMetadata((prev) => ({ ...prev, expected_purchase_date: v }))
+                      }
+                      isEditable={isEditable}
+                      placeholder="—"
+                    />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -437,7 +502,13 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
 
       {/* Accent Line */}
       <div className="px-6 pb-3">
-        <div className="w-2 h-1 rounded-full bg-amber-700"></div>
+        <div
+          className="h-1 rounded-full"
+          style={{
+            background: 'linear-gradient(90deg, #9C8B7A 0%, #D4C4B5 50%, transparent 100%)',
+            width: '120px',
+          }}
+        ></div>
       </div>
 
       {/* ========== INTRO MESSAGE ========== */}
@@ -451,56 +522,100 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
             className="text-stone-600 text-sm leading-relaxed w-full"
           />
         ) : (
-          <p className="text-stone-600 text-sm leading-relaxed">{introMessage}</p>
+          <p className="text-stone-600 text-sm leading-relaxed italic">"{introMessage}"</p>
         )}
       </div>
 
       {/* ========== ITEMS TABLE ========== */}
-      <div className="px-6">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr style={{ backgroundColor: '#E8E4DF' }}>
-              <th className="text-left py-3 px-3 font-medium text-stone-700 text-xs w-24">
-                Room / Window
+      <div className="px-6 avoid-page-break">
+        <table className="w-full text-sm border-collapse quote-items-table" style={{ tableLayout: 'fixed' }}>
+          <thead style={{ display: 'table-header-group' }}>
+            <tr
+              style={{
+                backgroundColor: '#9C8B7A',
+                WebkitPrintColorAdjust: 'exact',
+                printColorAdjust: 'exact',
+              }}
+            >
+              <th
+                className="text-left py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide"
+                style={{ width: '100px' }}
+              >
+                Window
               </th>
-              <th className="text-left py-3 px-3 font-medium text-stone-700 text-xs w-20">
-                Product Image
+              <th
+                className="text-left py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide"
+                style={{ width: '90px' }}
+              >
+                Image
               </th>
-              <th className="text-left py-3 px-3 font-medium text-stone-700 text-xs">
+              <th className="text-left py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide">
                 Product Details
               </th>
-              <th className="text-center py-3 px-3 font-medium text-stone-700 text-xs w-12">
+              <th
+                className="text-center py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide"
+                style={{ width: '50px' }}
+              >
                 Qty
               </th>
-              <th className="text-right py-3 px-3 font-medium text-stone-700 text-xs w-24 whitespace-nowrap">
-                Unit Price
+              <th
+                className="text-right py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide"
+                style={{ width: '90px' }}
+              >
+                Unit&nbsp;Price
               </th>
-              <th className="text-center py-3 px-3 font-medium text-stone-700 text-xs w-12">
-                Prate
-              </th>
-              <th className="text-right py-3 px-3 font-medium text-stone-700 text-xs w-24">
-                Price
+              <th
+                className="text-right py-3 px-3 font-semibold text-white text-xs uppercase tracking-wide"
+                style={{ width: '100px' }}
+              >
+                Total
               </th>
             </tr>
           </thead>
           <tbody>
             {Object.entries(itemsByRoom).map(([roomName, roomItems]) => (
               <React.Fragment key={roomName}>
-                {/* Room Header Row */}
-                <tr style={{ backgroundColor: '#F5F3F0' }}>
-                  <td colSpan={7} className="py-2 px-3 font-semibold text-stone-700">
-                    {roomName}
+                {/* Room Header Row - Styled as section divider */}
+                <tr
+                  className="room-header-row"
+                  style={{
+                    backgroundColor: '#E8E4DF',
+                    WebkitPrintColorAdjust: 'exact',
+                    printColorAdjust: 'exact',
+                  }}
+                >
+                  <td
+                    colSpan={6}
+                    className="py-2.5 px-3 font-bold text-stone-800 text-sm border-l-4 border-amber-600"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-amber-600"></span>
+                      {roomName}
+                    </span>
                   </td>
                 </tr>
 
-                {/* Room Items */}
-                {roomItems.map((item) => (
-                  <tr key={item.id} className="border-b border-stone-200 align-top">
-                    {/* Room/Window Name */}
-                    <td className="py-3 px-3 text-stone-700 text-sm">{item.surface_name || ''}</td>
+                {/* Room Items - Alternating colors for readability */}
+                {roomItems.map((item, itemIndex) => (
+                  <tr
+                    key={item.id}
+                    className="quote-item-row align-top"
+                    style={{
+                      backgroundColor: itemIndex % 2 === 0 ? '#FFFFFF' : '#FAFAF9',
+                      borderBottom: '1px solid #E7E5E4',
+                      pageBreakInside: 'avoid',
+                      breakInside: 'avoid',
+                      WebkitPrintColorAdjust: 'exact',
+                      printColorAdjust: 'exact',
+                    }}
+                  >
+                    {/* Surface/Window Name */}
+                    <td className="py-4 px-3 text-stone-700 text-sm font-medium">
+                      {item.surface_name || '—'}
+                    </td>
 
-                    {/* Product Image */}
-                    <td className="py-3 px-3">
+                    {/* Product Image - Larger and better styled */}
+                    <td className="py-4 px-3">
                       <ImageUploader
                         imageUrl={item.image_url}
                         onUpload={(file) => handleImageUpload(item.id, file)}
@@ -508,40 +623,54 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
                       />
                     </td>
 
-                    {/* Product Details & Breakdown */}
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-stone-800 mb-2">{item.name}</div>
+                    {/* Product Details & Breakdown - Enhanced styling */}
+                    <td className="py-4 px-3">
+                      <div
+                        className="font-bold text-stone-900 mb-2 text-sm"
+                        style={{ color: '#44403C' }}
+                      >
+                        {item.name}
+                      </div>
                       {item.breakdown && item.breakdown.length > 0 && (
-                        <table className="text-xs">
-                          <tbody>
-                            {item.breakdown.map((detail, idx) => (
-                              <tr key={idx}>
-                                <td className="text-stone-500 pr-3 py-0.5 whitespace-nowrap align-top">
-                                  {detail.label}:
-                                </td>
-                                <td className="text-stone-700 py-0.5">{detail.value}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div
+                          className="bg-stone-50 rounded-md p-2 mt-1"
+                          style={{
+                            backgroundColor: '#F5F5F4',
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact',
+                          }}
+                        >
+                          <table className="text-xs w-full">
+                            <tbody>
+                              {item.breakdown.map((detail, idx) => (
+                                <tr key={idx}>
+                                  <td
+                                    className="text-stone-500 pr-3 py-1 whitespace-nowrap align-top font-medium"
+                                    style={{ width: '40%' }}
+                                  >
+                                    {detail.label}:
+                                  </td>
+                                  <td className="text-stone-700 py-1">{detail.value}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       )}
                     </td>
 
                     {/* Quantity */}
-                    <td className="py-3 px-3 text-center text-stone-700">{item.quantity || ''}</td>
+                    <td className="py-4 px-3 text-center text-stone-700 font-medium">
+                      {item.quantity || 1}
+                    </td>
 
                     {/* Unit Price */}
-                    <td className="py-3 px-3 text-right text-stone-700 whitespace-nowrap">
+                    <td className="py-4 px-3 text-right text-stone-700 whitespace-nowrap font-medium">
                       {formatCurrency(item.unit_price || item.total, currency)}
                     </td>
 
-                    {/* Prate */}
-                    <td className="py-3 px-3 text-center text-stone-700">
-                      {item.prate || item.quantity || ''}
-                    </td>
-
-                    {/* Total Price */}
-                    <td className="py-3 px-3 text-right font-medium text-stone-800 whitespace-nowrap">
+                    {/* Total Price - Highlighted */}
+                    <td className="py-4 px-3 text-right font-bold text-stone-900 whitespace-nowrap">
                       {formatCurrency(item.total, currency)}
                     </td>
                   </tr>
@@ -552,106 +681,205 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
         </table>
       </div>
 
-      {/* ========== SUBTOTAL & DISCOUNT ========== */}
-      <div className="px-6 py-4">
-        <div className="flex justify-end gap-6">
-          <span className="font-semibold text-stone-700">Subtotal:</span>
-          <span className="font-bold text-stone-800 text-lg whitespace-nowrap">
-            {formatCurrency(subtotal, currency)}
-          </span>
+      {/* ========== TOTALS SECTION ========== */}
+      <div className="px-6 py-5 avoid-page-break">
+        <div className="flex justify-end">
+          <div
+            className="w-72 rounded-lg overflow-hidden"
+            style={{
+              backgroundColor: '#F5F3F0',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact',
+            }}
+          >
+            {/* Subtotal */}
+            <div className="flex justify-between items-center px-4 py-2.5 border-b border-stone-200">
+              <span className="text-stone-600 text-sm">Subtotal</span>
+              <span className="font-semibold text-stone-800 whitespace-nowrap">
+                {formatCurrency(subtotal, currency)}
+              </span>
+            </div>
+
+            {/* Discount row - only show if discount applied */}
+            {discountInfo && discountInfo.amount > 0 && (
+              <div className="flex justify-between items-center px-4 py-2.5 border-b border-stone-200">
+                <span className="text-stone-600 text-sm">
+                  Discount{discountInfo.type === 'percentage' ? ` (${discountInfo.value}%)` : ''}
+                </span>
+                <span className="text-red-600 font-medium whitespace-nowrap">
+                  -{formatCurrency(discountInfo.amount, currency)}
+                </span>
+              </div>
+            )}
+
+            {/* Tax row if applicable */}
+            {taxAmount > 0 && (
+              <div className="flex justify-between items-center px-4 py-2.5 border-b border-stone-200">
+                <span className="text-stone-600 text-sm">Tax (GST/VAT)</span>
+                <span className="text-stone-800 whitespace-nowrap">
+                  {formatCurrency(taxAmount, currency)}
+                </span>
+              </div>
+            )}
+
+            {/* Grand Total */}
+            <div
+              className="flex justify-between items-center px-4 py-3"
+              style={{
+                backgroundColor: '#9C8B7A',
+                WebkitPrintColorAdjust: 'exact',
+                printColorAdjust: 'exact',
+              }}
+            >
+              <span className="text-white font-bold">TOTAL</span>
+              <span className="text-white font-bold text-lg whitespace-nowrap">
+                {formatCurrency(total, currency)}
+              </span>
+            </div>
+          </div>
         </div>
-
-        {/* Discount row - only show if discount applied */}
-        {discountInfo && discountInfo.amount > 0 && (
-          <div className="flex justify-end gap-6 mt-2">
-            <span className="text-stone-600">
-              Discount{discountInfo.type === 'percentage' ? ` (${discountInfo.value}%)` : ''}:
-            </span>
-            <span className="text-red-600 whitespace-nowrap">
-              -{formatCurrency(discountInfo.amount, currency)}
-            </span>
-          </div>
-        )}
-
-        {/* Tax row if applicable */}
-        {taxAmount > 0 && (
-          <div className="flex justify-end gap-6 mt-2">
-            <span className="text-stone-600">Tax:</span>
-            <span className="text-stone-800 whitespace-nowrap">
-              {formatCurrency(taxAmount, currency)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="px-6">
-        <div className="border-t border-stone-200"></div>
       </div>
 
       {/* ========== PAYMENT SUMMARY ========== */}
-      <div className="px-6 py-4 flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-stone-800 mb-2">Payment Summary</h3>
-          <p className="text-sm text-stone-600">
-            Advance Paid:{' '}
-            <span className="text-stone-800 ml-4 whitespace-nowrap">
-              {formatCurrency(paymentInfo.advance_paid, currency, false)}
-            </span>
-          </p>
-        </div>
+      <div className="px-6 py-4 avoid-page-break">
+        <div
+          className="rounded-lg p-4 flex justify-between items-start"
+          style={{
+            backgroundColor: '#FAFAFA',
+            border: '1px solid #E7E5E4',
+            WebkitPrintColorAdjust: 'exact',
+            printColorAdjust: 'exact',
+          }}
+        >
+          <div>
+            <h3 className="font-bold text-stone-800 mb-2 flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: '#9C8B7A' }}
+              ></span>
+              Payment Summary
+            </h3>
+            {paymentInfo.advance_paid > 0 && (
+              <p className="text-sm text-stone-600">
+                Advance Paid:{' '}
+                <span className="text-green-700 font-semibold ml-2 whitespace-nowrap">
+                  {formatCurrency(paymentInfo.advance_paid, currency, false)}
+                </span>
+              </p>
+            )}
+            {paymentInfo.deposit_percentage && (
+              <p className="text-xs text-stone-500 mt-1">
+                Required deposit: {paymentInfo.deposit_percentage}% to confirm order
+              </p>
+            )}
+          </div>
 
-        <div className="text-sm text-right">
-          <p className="mb-1">
-            Total Order Value:{' '}
-            <span className="font-bold text-stone-800 ml-2 whitespace-nowrap">
-              {formatCurrency(total, currency, false)}
-            </span>
-          </p>
-          <p>
-            Balance Payable:{' '}
-            <span className="font-bold text-stone-800 ml-2 whitespace-nowrap">
-              {formatCurrency(balancePayable, currency, false)}
-            </span>
-          </p>
+          <div className="text-right">
+            <div className="mb-1">
+              <span className="text-sm text-stone-600">Total Order Value:</span>
+              <span className="font-bold text-stone-800 ml-3 whitespace-nowrap text-lg">
+                {formatCurrency(total, currency, false)}
+              </span>
+            </div>
+            <div
+              className="inline-block px-3 py-1.5 rounded-md mt-1"
+              style={{
+                backgroundColor: balancePayable > 0 ? '#FEF3C7' : '#D1FAE5',
+                WebkitPrintColorAdjust: 'exact',
+                printColorAdjust: 'exact',
+              }}
+            >
+              <span className="text-sm font-medium">
+                Balance Payable:{' '}
+                <span
+                  className="font-bold whitespace-nowrap"
+                  style={{ color: balancePayable > 0 ? '#92400E' : '#047857' }}
+                >
+                  {formatCurrency(balancePayable, currency, false)}
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="px-6">
-        <div className="border-t border-stone-200"></div>
+      {/* Divider */}
+      <div className="px-6 py-2">
+        <div className="border-t-2 border-stone-200"></div>
       </div>
 
       {/* ========== TERMS & ACCEPT BUTTON ========== */}
-      <div className="px-6 py-5 flex gap-6">
+      <div className="px-6 py-5 flex gap-8 avoid-page-break">
         {/* Terms */}
         <div className="flex-1">
-          <h3 className="font-bold text-stone-800 mb-3">
-            {businessInfo.name} Terms & Conditions:
+          <h3
+            className="font-bold text-stone-800 mb-3 pb-2 border-b flex items-center gap-2"
+            style={{ borderColor: '#9C8B7A' }}
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: '#9C8B7A' }}
+            ></span>
+            Terms & Conditions
           </h3>
-          <div className="text-xs text-stone-600 space-y-1.5 leading-relaxed">
+          <div className="text-xs text-stone-600 space-y-2 leading-relaxed">
             {terms.map((term, idx) => (
-              <p key={idx}>
-                <span className="font-semibold">{idx + 1}.</span> {term}
-              </p>
+              <div key={idx} className="flex gap-2">
+                <span
+                  className="font-bold text-white text-center rounded flex-shrink-0"
+                  style={{
+                    backgroundColor: '#9C8B7A',
+                    minWidth: '18px',
+                    height: '18px',
+                    lineHeight: '18px',
+                    fontSize: '10px',
+                    WebkitPrintColorAdjust: 'exact',
+                    printColorAdjust: 'exact',
+                  }}
+                >
+                  {idx + 1}
+                </span>
+                <span className="text-stone-700">{term}</span>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Accept Button & Contact */}
-        <div className="w-48 flex-shrink-0">
+        <div className="w-52 flex-shrink-0">
           {onAcceptQuote && (
             <button
               onClick={onAcceptQuote}
-              className="w-full text-white font-medium py-3 px-4 rounded text-sm mb-4 hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#9C8B7A' }}
+              className="w-full text-white font-semibold py-3.5 px-4 rounded-lg text-sm mb-4 hover:opacity-90 transition-all shadow-md no-print"
+              style={{
+                backgroundColor: '#9C8B7A',
+                background: 'linear-gradient(135deg, #9C8B7A 0%, #7A6A5A 100%)',
+              }}
             >
-              View and Accept Quote
+              ✓ Accept Quote
             </button>
           )}
 
-          <div className="text-xs text-stone-600">
-            <p className="font-semibold text-stone-800">{businessInfo.name}</p>
-            {businessInfo.email && <p className="mt-1">{businessInfo.email}</p>}
-            {businessInfo.phone && <p>{businessInfo.phone}</p>}
+          <div
+            className="p-3 rounded-lg text-xs"
+            style={{
+              backgroundColor: '#F5F3F0',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact',
+            }}
+          >
+            <p className="font-bold text-stone-800 mb-1">{businessInfo.name}</p>
+            {businessInfo.email && (
+              <p className="text-stone-600 break-all">{businessInfo.email}</p>
+            )}
+            {businessInfo.phone && (
+              <p className="text-stone-600 mt-0.5">{businessInfo.phone}</p>
+            )}
+            {businessInfo.address && (
+              <p className="text-stone-500 mt-1 text-xs leading-tight">
+                {businessInfo.address}
+              </p>
+            )}
           </div>
         </div>
       </div>

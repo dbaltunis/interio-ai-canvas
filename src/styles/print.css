@@ -4,17 +4,20 @@
   body * {
     visibility: hidden;
   }
-  
+
   /* Show only the printable quote area */
   #quote-live-preview,
   #quote-live-preview *,
   .workshop-printable,
-  .workshop-printable * {
+  .workshop-printable *,
+  .quote-template-homekaara,
+  .quote-template-homekaara * {
     visibility: visible;
   }
-  
+
   #quote-live-preview,
-  .workshop-printable {
+  .workshop-printable,
+  .quote-template-homekaara {
     position: absolute;
     left: 0;
     top: 0;
@@ -23,15 +26,15 @@
 
   /* Remove all page margins and padding */
   @page {
-    margin: 15mm;
+    margin: 12mm 10mm;
     size: A4 portrait;
   }
-  
+
   /* Landscape orientation support */
   @page :first {
     size: A4 portrait;
   }
-  
+
   body.landscape @page,
   .landscape @page {
     size: A4 landscape;
@@ -45,12 +48,11 @@
     display: none !important;
   }
 
-  /* Ensure clean backgrounds - NO GRIDS */
+  /* Ensure clean backgrounds with color preservation */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
-    background-image: none !important;
   }
 
   /* Keep header and client details together */
@@ -59,6 +61,41 @@
   .client-details-block {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* ========== QUOTE TEMPLATE HOMEKAARA SPECIFIC STYLES ========== */
+  .quote-template-homekaara {
+    font-size: 11px !important;
+  }
+
+  /* Allow table to break between rows but keep rows together */
+  .quote-items-table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    width: 100% !important;
+  }
+
+  /* Keep item rows together */
+  .quote-item-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Room header should stay with first item */
+  .room-header-row {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Repeat table header on each page */
+  .quote-items-table thead {
+    display: table-header-group !important;
+  }
+
+  /* Preserve background colors for quote template */
+  .quote-template-homekaara [style*="background"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* ALLOW tables to break between rows */
@@ -82,17 +119,17 @@
   tbody tr:first-child {
     page-break-before: avoid !important;
   }
-  
+
   /* Optional page break after room sections */
   .workshop-room-section {
     page-break-after: auto;
   }
-  
+
   /* Force page break before specific elements */
   .force-page-break {
     page-break-before: always !important;
   }
-  
+
   /* Ensure cards have proper spacing for page breaks */
   .workshop-item-card {
     margin-bottom: 0.5rem;
@@ -112,41 +149,52 @@
     color-adjust: exact !important;
   }
 
-  /* Force white background and black text for quote content */
+  /* Default white background for regular quotes */
   #quote-live-preview,
-  #quote-live-preview *,
   .quote-preview-container,
-  .quote-preview-container *,
-  .workshop-printable,
-  .workshop-printable * {
+  .workshop-printable {
     background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: transparent !important;
   }
 
-  /* Remove all borders and grid patterns */
+  /* Preserve Homekaara template colors */
+  .quote-template-homekaara,
+  .quote-template-homekaara * {
+    /* Allow the template's own colors */
+  }
+
+  /* Remove shadows and unnecessary decorations */
   #quote-live-preview *,
   .quote-preview-container *,
-  .workshop-printable * {
-    background-image: none !important;
-    border: none !important;
+  .workshop-printable *,
+  .quote-template-homekaara * {
     box-shadow: none !important;
   }
-  
+
   /* Workshop-specific page break rules */
   .workshop-room-section {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  
+
   .workshop-item-card {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  
+
   .workshop-page-break {
     page-break-before: always !important;
     break-before: page !important;
+  }
+
+  /* Ensure currency values don't break */
+  .whitespace-nowrap {
+    white-space: nowrap !important;
+  }
+
+  /* Prevent text orphans and widows */
+  p, td, th {
+    orphans: 3;
+    widows: 3;
   }
 
   /* Page numbering for printed documents */
@@ -160,11 +208,11 @@
   .page-number::after {
     content: counter(page);
   }
-  
+
   .total-pages::after {
     content: counter(pages);
   }
-  
+
   .page-number-placeholder {
     display: block !important;
   }
