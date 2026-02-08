@@ -388,6 +388,19 @@ export const CostCalculationSummary = ({
     );
   }
 
+  // ✅ CRITICAL FIX: Wait for markup settings to load before showing prices
+  // This prevents showing 0% markup (Cost = Quote Price) on initial render
+  // Without this guard, users see incorrect prices until settings load
+  if (!markupReady) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50 animate-pulse">
+        <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+        <div className="h-6 bg-muted rounded w-24"></div>
+        <p className="text-xs text-muted-foreground mt-2">Loading pricing...</p>
+      </div>
+    );
+  }
+
   const formatPrice = (price: number) => {
     const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
@@ -613,11 +626,10 @@ export const CostCalculationSummary = ({
 
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
-      // ✅ CRITICAL FIX: Calculate SELLING prices for callback (with markup)
-      // This ensures saved values match what's displayed in the quote summary table
-      const fabricSellingPrice = fabricUsesPricingGrid
-        ? blindCosts.fabricCost  // Grid price already includes markup
-        : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent);
+      // ✅ CRITICAL FIX: Calculate SELLING prices for display
+      // blindCosts.fabricCost is always BASE COST (no markup) - markup is applied here for display
+      // Grid markup is included in fabricMarkupPercent via resolveMarkup hierarchy
+      const fabricSellingPrice = applyMarkup(blindCosts.fabricCost, fabricMarkupPercent);
       const manufacturingSellingPrice = applyMarkup(blindCosts.manufacturingCost, mfgMarkupPercent);
 
       // Calculate unit price based on selling price, not cost price
@@ -663,18 +675,16 @@ export const CostCalculationSummary = ({
     // =========================================================
 
     // Build items for table display with per-item markup
-    // For grid pricing: fabricCost ALREADY includes markup, sellingPrice = fabricCost
-    // For non-grid: fabricCost is cost_price, apply markup to get sellingPrice
+    // ✅ CRITICAL FIX: blindCosts.fabricCost is always BASE COST (no markup applied)
+    // Markup (grid or category) is applied here for display via fabricMarkupPercent
     const tableItems: QuoteSummaryItem[] = [
       {
         name: isManufacturedItem(treatmentCategory) ? 'Material' : 'Fabric',
         details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
         category: 'fabric',
-        markupPercentage: fabricUsesPricingGrid ? 0 : fabricMarkupPercent, // Skip markup for grid pricing
-        sellingPrice: fabricUsesPricingGrid
-          ? blindCosts.fabricCost  // Grid price already includes markup
-          : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
+        markupPercentage: fabricMarkupPercent,
+        sellingPrice: applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
       }
     ];
 
@@ -690,6 +700,8 @@ export const CostCalculationSummary = ({
     }
 
     // Add options with category-specific markups
+    // ✅ CRITICAL FIX: Deduplicate options to prevent duplicate display
+    const seenBlindOptionKeys = new Set<string>();
     selectedOptions
       .filter(opt => {
         const isLiningOption = opt.name?.toLowerCase().includes('lining');
@@ -699,8 +711,17 @@ export const CostCalculationSummary = ({
       })
       .forEach(option => {
         const optAny = option as any;
+
+        // Deduplicate by optionKey or name
+        const dedupeKey = optAny.optionKey || option.name || JSON.stringify(option);
+        if (seenBlindOptionKeys.has(dedupeKey)) {
+          console.log('🔄 [BlindCostSummary] Filtering duplicate option:', dedupeKey);
+          return; // Skip duplicate
+        }
+        seenBlindOptionKeys.add(dedupeKey);
+
         let displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
-        
+
         // Only recalculate if no calculatedPrice exists
         if (optAny.calculatedPrice === undefined) {
           if (option.pricingMethod === 'per-meter') {
@@ -711,7 +732,7 @@ export const CostCalculationSummary = ({
             displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
           }
         }
-        
+
         // Resolve option-specific markup
         const optionCategory = optAny.category || 'option';
         const optionMarkupResult = resolveMarkup({
@@ -1157,18 +1178,30 @@ export const CostCalculationSummary = ({
   }
 
   // Options - resolve markup per option category
+  // ✅ CRITICAL FIX: Deduplicate options to prevent duplicate display
+  // Options can accumulate duplicates over save/edit cycles
+  const seenOptionKeys = new Set<string>();
   selectedOptions.forEach(option => {
     const optAny = option as any;
+
+    // Deduplicate by optionKey or name
+    const dedupeKey = optAny.optionKey || option.name || JSON.stringify(option);
+    if (seenOptionKeys.has(dedupeKey)) {
+      console.log('🔄 [CostSummary] Filtering duplicate option:', dedupeKey);
+      return; // Skip duplicate
+    }
+    seenOptionKeys.add(dedupeKey);
+
     const displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
     const optionCategory = optAny.category || 'option';
-    
+
     // Resolve option-specific markup
     const optionMarkupResult = resolveMarkup({
       category: optionCategory,
       markupSettings
     });
     const optionMarkupPercent = optionMarkupResult.percentage;
-    
+
     tableItems.push({
       name: option.name,
       details: optAny.pricingDetails || '',

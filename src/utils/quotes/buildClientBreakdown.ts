@@ -382,15 +382,14 @@ export const buildClientBreakdown = (
     // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
     const groupedItems = groupRelatedOptions(enrichedItems);
 
-    // ✅ CRITICAL FIX: Do NOT re-apply markup to structured cost_breakdown
-    // The saved values should already include the correct selling prices
-    // Re-applying markup causes inconsistent pricing between views
-    //
-    // If markup is needed, it should be applied ONLY at save time in DynamicWindowWorksheet
-    // The cost_breakdown should store final client-facing selling prices
-    const itemsWithMarkup = groupedItems;
+    // ✅ CRITICAL FIX: ALWAYS apply markup to structured cost_breakdown for CLIENT-FACING display
+    // The cost_breakdown stores COST prices (what we pay), but quotes must show SELLING prices (what customer pays)
+    // Apply per-item markup based on category (fabric, manufacturing, lining, etc.)
+    const itemsWithMarkup = markupSettings
+      ? groupedItems.map((item: ClientBreakdownItem) => applyMarkupToItem(item, markupSettings, treatmentCategory))
+      : groupedItems;
 
-    console.log('✅ Returning %d items after grouping (original: %d), markup NOT re-applied (using saved selling prices)',
+    console.log('✅ Returning %d items after grouping (original: %d), markup applied for client display',
       itemsWithMarkup.length, enrichedItems.length);
     itemsWithMarkup.forEach((item: any) => {
       console.log('  Item:', item.name, '| Desc:', item.description, '| Selling Price:', item.total_cost, '| Color:', item.color);
