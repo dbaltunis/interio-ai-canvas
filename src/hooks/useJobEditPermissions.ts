@@ -1,92 +1,49 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "./usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "./useUserRole";
 import { useClients } from "./useClients";
 
 /**
- * Hook to check if a user can edit a specific job based on explicit permissions
+ * Hook to check if a user can edit a specific job based on permissions
  * 
  * Logic:
- * - Edit Any Job: Can edit any job (if enabled)
- * - Edit Assigned Jobs: Can only edit jobs assigned to them (created by them OR client assigned to them)
+ * - edit_all_jobs: Can edit any job
+ * - edit_assigned_jobs: Can only edit jobs assigned to them (created by them OR client assigned to them)
  * - Neither enabled: Cannot edit any job
  * 
- * For Owners: Only bypass restrictions if NO explicit permissions exist in table
- * If ANY explicit permissions exist, respect ALL settings (missing = disabled)
+ * Uses the unified permission system that merges role-based + custom permissions
  */
 export const useCanEditJob = (project: any) => {
   const { user } = useAuth();
-  const { data: userRoleData } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   
-  // Fetch explicit permissions
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[useCanEditJob] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user,
-  });
-  
-  // Check if user has ANY explicit permissions in the table
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  
-  // Check if edit permissions are explicitly enabled
-  const hasEditAllJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'edit_all_jobs'
-  ) ?? false;
-  const hasEditAssignedJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'edit_assigned_jobs'
-  ) ?? false;
-  
-  // System Owner: ALWAYS has full access regardless of explicit permissions
-  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  const canEditAllJobs = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions 
-      ? true // Owner with no explicit permissions = full access
-      : hasEditAllJobsPermission;
-  
-  const canEditAssignedJobs = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions
-      ? true // Owner with no explicit permissions = full access
-      : hasEditAssignedJobsPermission;
+  // Use unified permission system (handles role-based + custom permissions)
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
   
   // Fetch clients to check assignment
   const { data: clients = [] } = useClients();
   
+  // Loading state - permissions are still being fetched
+  const isLoading = canEditAllJobs === undefined || canEditAssignedJobs === undefined;
+  
   // Determine if this specific job can be edited
   const canEditJob = (() => {
+    // Still loading permissions
+    if (isLoading) {
+      return false;
+    }
+    
     // If both permissions are disabled, cannot edit
     if (!canEditAllJobs && !canEditAssignedJobs) {
       return false;
     }
     
-    // If both are enabled, can edit any job
-    if (canEditAllJobs && canEditAssignedJobs) {
+    // If "Edit All Jobs" is enabled, can edit any job
+    if (canEditAllJobs) {
       return true;
     }
     
-    // If only "Edit Any Job" is enabled, can edit any job
-    if (canEditAllJobs && !canEditAssignedJobs) {
-      return true;
-    }
-    
-    // If only "Edit Assigned Jobs" is enabled, can edit jobs assigned to them
-    // (created by them OR client assigned to them)
-    if (canEditAssignedJobs && !canEditAllJobs) {
+    // If only "Edit Assigned Jobs" is enabled, check assignment
+    if (canEditAssignedJobs) {
       if (!project || !user) return false;
       
       // Check if job was created by the user
@@ -104,9 +61,8 @@ export const useCanEditJob = (project: any) => {
   
   return {
     canEditJob,
-    canEditAllJobs,
-    canEditAssignedJobs,
-    isLoading: permissionsLoading,
+    canEditAllJobs: canEditAllJobs ?? false,
+    canEditAssignedJobs: canEditAssignedJobs ?? false,
+    isLoading,
   };
 };
-
