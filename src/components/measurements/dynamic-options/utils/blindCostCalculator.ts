@@ -76,21 +76,22 @@ export const calculateBlindCosts = (
   const fabricHasPricingGrid = hasValidPricingGrid(fabricItem?.pricing_grid_data);
   
   if (fabricHasPricingGrid) {
-    // ✅ FIX #2: Capture grid markup from enriched fabric
+    // ✅ FIX: Capture grid markup for pass-through (NOT applied here - applied in display/save layer)
     gridMarkupPercentage = fabricItem?.pricing_grid_markup || 0;
-    
+
     // UNIVERSAL: Fabric pricing grid = TOTAL PRODUCT PRICE (not just fabric cost)
     // Works for ALL blind types and ALL SaaS client accounts automatically
     const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
-    
-    // ✅ FIX #2: Apply grid markup percentage if set
-    const markupMultiplier = gridMarkupPercentage > 0 ? (1 + gridMarkupPercentage / 100) : 1;
-    const priceWithMarkup = totalGridPrice * markupMultiplier;
-    
+
+    // ✅ CRITICAL FIX: Do NOT apply grid markup here!
+    // Markup should be applied consistently in ONE place: the display/save layer (DynamicWindowWorksheet)
+    // Previously this was causing double-markup: once here, once in DynamicWindowWorksheet
+    // The grid price from database is the BASE COST - markup is a business decision applied later
+
     // For double configuration, multiply the grid price by 2 (two blinds)
-    fabricCost = priceWithMarkup * blindMultiplier;
+    fabricCost = totalGridPrice * blindMultiplier;
     fabricPricePerSqm = squareMeters > 0 ? fabricCost / squareMeters : 0;
-    
+
     console.log('✅ UNIVERSAL FABRIC GRID (ALL CLIENTS, ALL BLIND TYPES):', {
       blindType: template?.treatment_category || 'unknown',
       gridName: fabricItem.resolved_grid_name,
@@ -98,11 +99,10 @@ export const calculateBlindCosts = (
       dimensions: `${widthCm}cm × ${heightCm}cm`,
       baseGridPrice: totalGridPrice,
       gridMarkupPercentage,
-      markupMultiplier,
-      priceWithMarkup,
+      note: 'Grid markup NOT applied here - applied in display/save layer for consistency',
       blindMultiplier,
       totalFabricCost: fabricCost,
-      note: 'Grid price = TOTAL product price (fabric + manufacturing) - applies to ALL SaaS clients'
+      rule: 'Grid price = TOTAL product price (fabric + manufacturing) - applies to ALL SaaS clients'
     });
   } else {
     // No grid - use per-unit pricing for fabric only (already uses total squareMeters which includes multiplier)
