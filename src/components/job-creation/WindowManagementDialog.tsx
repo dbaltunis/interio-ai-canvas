@@ -85,6 +85,16 @@ export const WindowManagementDialog = ({
   const worksheetRef = useRef<MeasurementBridgeRef>(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [isSavingOnClose, setIsSavingOnClose] = useState(false);
+  // Counter to force MeasurementBridge remount when dialog reopens
+  const [dialogOpenCounter, setDialogOpenCounter] = useState(0);
+
+  // Increment counter when dialog opens to force MeasurementBridge remount
+  // This ensures fresh state and data loading when reopening the same window
+  useEffect(() => {
+    if (isOpen) {
+      setDialogOpenCounter(prev => prev + 1);
+    }
+  }, [isOpen]);
 
   // Keep windowName in sync with surface prop
   useEffect(() => {
@@ -424,7 +434,7 @@ export const WindowManagementDialog = ({
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
   const { data: windowSummary, refetch: refetchWindowSummary } = useQuery({
-    queryKey: ['window-summary-treatment', surface?.id],
+    queryKey: ['window-summary-treatment', surface?.id, dialogOpenCounter],
     queryFn: async () => {
       if (!surface?.id) return null;
       const { data } = await supabase
@@ -436,9 +446,9 @@ export const WindowManagementDialog = ({
       return data;
     },
     enabled: !!surface?.id && isOpen,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
-    staleTime: 30000, // 30 seconds - rely on mutation invalidation for updates
+    staleTime: 0, // Always refetch when dialog opens
     gcTime: 60000,    // 1 minute cache
   });
   
@@ -727,7 +737,7 @@ export const WindowManagementDialog = ({
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2 pointer-events-auto">
             <MeasurementBridge
-              key={surface?.id}
+              key={`${surface?.id}-${dialogOpenCounter}`}
               ref={worksheetRef}
               mode="dynamic"
               clientId={clientId || ""}
