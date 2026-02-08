@@ -56,6 +56,6 @@ export const useStatusPermissions = (statusId: string | null | undefined) => {
       };
     },
     enabled: !!statusId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds - reduced to ensure status changes are reflected quickly
   });
 };

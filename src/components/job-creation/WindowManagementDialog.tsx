@@ -112,7 +112,8 @@ export const WindowManagementDialog = ({
       return data;
     },
     enabled: !!projectId,
-    staleTime: 30 * 1000,
+    staleTime: 10 * 1000, // 10 seconds - ensure fresh status data for editing permissions
+    refetchOnMount: true, // Always check status when dialog opens
   });
 
   // Check status permissions for read-only mode
