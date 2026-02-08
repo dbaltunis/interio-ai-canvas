@@ -72,6 +72,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   const handleCreateSurface = (roomId: string, surfaceType: string) => {
     createSurface.mutate({
+      project_id: projectId,
       room_id: roomId,
       surface_type: surfaceType,
       name: `${surfaceType} surface`
