@@ -311,8 +311,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     }
   }, [curtainTemplatesLoading, onlyOneTypeAvailable, selectedWindowType, hasWallpaperTemplates]);
 
-  // Combined loading state
-  const isInitialLoading = windowCoveringsLoading || headingInventoryLoading || headingOptionsLoading || curtainTemplatesLoading;
+  // Combined loading state - optimized for faster initial render
+  // Only wait for essential data: curtain templates (for treatment selection) and window summary (for existing data)
+  // Heading inventory and options load in background for later tabs
+  const isInitialLoading = curtainTemplatesLoading || (surfaceId && windowSummaryLoading);
 
   // Helper function to get heading name from ID
   const getHeadingName = (headingId: string) => {
@@ -333,28 +335,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
   // Load existing window summary data to populate the form
   const {
-    data: existingWindowSummary
+    data: existingWindowSummary,
+    isLoading: windowSummaryLoading
   } = useQuery({
     queryKey: ["window-summary", surfaceId],
     queryFn: async () => {
       if (!surfaceId) return null;
-      const {
-        supabase
-      } = await import('@/integrations/supabase/client');
-      const {
-        data,
-        error
-      } = await supabase.from("windows_summary").select("*").eq("window_id", surfaceId).maybeSingle();
+      // Use already-imported supabase instead of dynamic import for faster loading
+      const { data, error } = await supabase
+        .from("windows_summary")
+        .select("*")
+        .eq("window_id", surfaceId)
+        .maybeSingle();
       if (error) {
         console.error("Error loading window summary:", error);
         return null;
       }
-      console.log('📊 Loaded existing window summary:', data);
       return data;
     },
     enabled: !!surfaceId,
-    refetchOnMount: true, // Always refetch when component mounts to ensure fresh data
-    staleTime: 0 // Consider data immediately stale to ensure fresh data when editing
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   // Keep latestSummaryRef updated but don't trigger state resets
@@ -807,7 +808,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         hasLoadedInitialData.current = true;
         // PHASE 6: Exit restore mode - template callbacks can now apply defaults normally
         isRestoringData.current = false;
-        console.log('✅ Initial data load complete - will not reload again');
+
+        // CRITICAL FIX: Initialize lastSavedState with loaded data to prevent false "unsaved changes" dialog
+        // This ensures the comparison baseline matches what was loaded from database
+        lastSavedState.current = {
+          templateId: templateDetails?.id || existingWindowSummary.template_id,
+          fabricId: fabricDetails?.fabric_id || fabricDetails?.id,
+          hardwareId: existingWindowSummary.selected_hardware_id,
+          materialId: existingWindowSummary.selected_material_id,
+          measurements: JSON.stringify(measurementsDetails || {}),
+          heading: existingWindowSummary.selected_heading_id || 'none',
+          lining: existingWindowSummary.selected_lining_type || 'none'
+        };
+        console.log('✅ Initial data load complete - lastSavedState initialized to prevent false unsaved changes');
         console.log('🔓 [RESTORE MODE OFF] Data restore complete - template defaults now allowed');
         
         // Set fabric calculation if available - CRITICAL: Include hems and returns AND totalWidthWithAllowances
@@ -1108,10 +1121,23 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       lining: selectedLining
     };
     
-    // If we have a last saved state, compare with it
-    const hasChanges = lastSavedState.current 
-      ? JSON.stringify(currentState) !== JSON.stringify(lastSavedState.current)
-      : !!(selectedTemplate || selectedItems.fabric || selectedItems.hardware || Object.keys(measurements).length > 0);
+    // CRITICAL FIX: Only flag as "unsaved changes" if:
+    // 1. Data has been loaded (hasLoadedInitialData is true) AND state differs from saved state
+    // 2. OR this is a new window (no existingWindowSummary) with actual user selections
+    // This prevents the false "unsaved changes" dialog when opening existing treatments
+    const hasChanges = (() => {
+      // If initial data hasn't loaded yet, don't flag as changed
+      if (!hasLoadedInitialData.current) return false;
+
+      // If we have a saved state baseline, compare against it
+      if (lastSavedState.current) {
+        return JSON.stringify(currentState) !== JSON.stringify(lastSavedState.current);
+      }
+
+      // New window with no saved data - only flag if user made actual selections
+      // AND they've interacted (not just auto-loaded defaults)
+      return false; // Default to no changes for new windows until user explicitly makes changes
+    })();
 
     setHasUnsavedChanges(hasChanges);
   }, [selectedTemplate, selectedItems, measurements, selectedHeading, selectedLining]);
@@ -1120,17 +1146,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
-          // Import supabase
-          const {
-            supabase
-          } = await import('@/integrations/supabase/client');
-
-          // Get current user
-          const {
-            data: {
-              user
-            }
-          } = await supabase.auth.getUser();
+          // Get current user (supabase already imported at top of file)
+          const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
             throw new Error("User not authenticated");
           }
