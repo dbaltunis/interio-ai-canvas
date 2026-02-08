@@ -801,10 +801,13 @@ export const CostCalculationSummary = ({
       ? calculatedFabricCost
       : (fabricCalculation?.totalCost ?? fabricCalculation?.fabricCost ?? (useEngine ? engineResult.fabric_cost : 0));
   
-  // Linear meters: fabricDisplayData.totalMeters > engine > fabricCalculation > 0
-  // ✅ CRITICAL: Use totalMeters from fabricDisplayData (parent passes the correct source)
-  const linearMeters = fabricDisplayData?.totalMeters 
-    ?? (useEngine ? (engineResult.linear_meters ?? 0) : (fabricCalculation?.linearMeters ?? 0));
+  // Linear meters: PRIORITY: engine > fabricDisplayData.totalMeters > fabricCalculation > 0
+  // ✅ CRITICAL FIX: Prioritize engineResult when available to prevent formula inconsistency
+  // This fixes the "5.10m vs 5.08m" display mismatch between pricing method and quote summary
+  // Engine is the authoritative source - fabricDisplayData may be stale on initial render
+  const linearMeters = useEngine && engineResult?.linear_meters != null
+    ? engineResult.linear_meters  // Engine is always authoritative when available
+    : (fabricDisplayData?.totalMeters ?? fabricCalculation?.linearMeters ?? 0);
   
   // Widths required: engine > fabricCalculation > 1
   const widthsRequired = useEngine
@@ -930,7 +933,9 @@ export const CostCalculationSummary = ({
 
     if (fabricDisplayData) {
       fabricUnitPrice = fabricDisplayData.pricePerMeter || 0;
-      const quantity = fabricDisplayData.totalMeters || 0;
+      // ✅ CRITICAL FIX: Use authoritative linearMeters (same source as display)
+      // This prevents formula mismatch between live calculation and saved data
+      const quantity = linearMeters;
 
       if (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName) {
         // Grid pricing - show grid name
@@ -1076,7 +1081,9 @@ export const CostCalculationSummary = ({
       if (fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName) {
         fabricDetails = `Grid: ${fabricDisplayData.gridName}`;
       } else {
-        const meters = fabricDisplayData.totalMeters;
+        // ✅ CRITICAL FIX: Use the same linearMeters source (which prioritizes engineResult)
+        // This ensures formula display matches the Pricing Method display in AdaptiveFabricPricingDisplay
+        const meters = linearMeters;  // Already computed from authoritative source above
         const pricePerUnit = fabricDisplayData.pricePerMeter;
         // ✅ FIX: Use consistent cost - either calculatedFabricCost prop or display-calculated value
         const consistentFabricCost = calculatedFabricCost ?? (meters * pricePerUnit);

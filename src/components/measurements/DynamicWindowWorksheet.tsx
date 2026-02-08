@@ -630,8 +630,22 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               if (name.startsWith('ring type:')) return false;
               return true;
             });
-            setSelectedOptions(filteredOptions);
-            console.log('✅ Restored selected options:', filteredOptions.length, 'items (filtered from', rawSavedOptions.length, ')');
+
+            // ✅ CRITICAL FIX: Deduplicate options by optionKey or name to prevent duplicate display
+            // Options can accumulate duplicates over save/edit cycles
+            const seenKeys = new Set<string>();
+            const deduplicatedOptions = filteredOptions.filter((opt: any) => {
+              const key = opt.optionKey || opt.name || JSON.stringify(opt);
+              if (seenKeys.has(key)) {
+                console.log('🔄 Filtering duplicate option:', key);
+                return false;
+              }
+              seenKeys.add(key);
+              return true;
+            });
+
+            setSelectedOptions(deduplicatedOptions);
+            console.log('✅ Restored selected options:', deduplicatedOptions.length, 'items (filtered from', rawSavedOptions.length, ', deduplicated from', filteredOptions.length, ')');
           }
         }
         
@@ -1851,51 +1865,68 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             options_cost: (displayCategory === 'blinds' || displayCategory === 'shutters') ? blindOptionsCost : curtainOptionsCost,
             heading_cost: finalHeadingCost || 0,
             // CRITICAL: Save comprehensive options list including ALL selections
-            selected_options: [
-              // Fabric (base item)
-              ...(selectedItems.fabric ? [{
-                name: `Fabric: ${selectedItems.fabric.name}`,
-                price: fabricCost,
-                pricingMethod: 'per-meter',
-                quantity: linearMeters,
-                unit: 'm',
-                // ✅ CRITICAL: Use selling_price FIRST for consistency with display path
-                unit_price: selectedItems.fabric?.selling_price || fabricCalculation?.pricePerMeter || 0
-              }] : []),
-              // Lining (base item)
-              ...(selectedLining && selectedLining !== 'none' ? [{
-                name: `Lining: ${selectedLining}`,
-                price: finalLiningCost,
-                pricingMethod: 'per-meter',
-                quantity: linearMeters,
-                unit: 'm'
-              }] : []),
-              // Dynamic options from treatment_options
-              ...selectedOptions,
-              // Add heading if selected
-              ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
-                name: `Heading: ${(() => {
-                  const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
-                  return headingOpt?.name || selectedHeading;
-                })()}`,
-                price: finalHeadingCost || 0,
-                pricingMethod: 'fixed'
-              }] : []),
-              // NOTE: Manufacturing is NOT included here - it's saved separately as manufacturing_cost
-              // Adding it here would cause duplication in totals
-              // Add fullness ratio ONLY for curtain/roman treatments
-              ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
-                name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
-                price: 0,
-                pricingMethod: 'included'
-              }] : []),
-              // Add eyelet ring if selected
-              ...(measurements.selected_eyelet_ring ? [{
-                name: `Ring Type: ${measurements.selected_eyelet_ring}`,
-                price: 0,
-                pricingMethod: 'included'
-              }] : [])
-            ],
+            // ✅ DEDUPLICATE: Remove duplicate options before saving
+            selected_options: (() => {
+              const rawOptions = [
+                // Fabric (base item)
+                ...(selectedItems.fabric ? [{
+                  optionKey: 'fabric_base',
+                  name: `Fabric: ${selectedItems.fabric.name}`,
+                  price: fabricCost,
+                  pricingMethod: 'per-meter',
+                  quantity: linearMeters,
+                  unit: 'm',
+                  // ✅ CRITICAL: Use selling_price FIRST for consistency with display path
+                  unit_price: selectedItems.fabric?.selling_price || fabricCalculation?.pricePerMeter || 0
+                }] : []),
+                // Lining (base item)
+                ...(selectedLining && selectedLining !== 'none' ? [{
+                  optionKey: 'lining_base',
+                  name: `Lining: ${selectedLining}`,
+                  price: finalLiningCost,
+                  pricingMethod: 'per-meter',
+                  quantity: linearMeters,
+                  unit: 'm'
+                }] : []),
+                // Dynamic options from treatment_options
+                ...selectedOptions,
+                // Add heading if selected
+                ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                  optionKey: 'heading_base',
+                  name: `Heading: ${(() => {
+                    const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
+                    return headingOpt?.name || selectedHeading;
+                  })()}`,
+                  price: finalHeadingCost || 0,
+                  pricingMethod: 'fixed'
+                }] : []),
+                // NOTE: Manufacturing is NOT included here - it's saved separately as manufacturing_cost
+                // Adding it here would cause duplication in totals
+                // Add fullness ratio ONLY for curtain/roman treatments
+                ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
+                  optionKey: 'fullness_ratio_base',
+                  name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
+                  price: 0,
+                  pricingMethod: 'included'
+                }] : []),
+                // Add eyelet ring if selected
+                ...(measurements.selected_eyelet_ring ? [{
+                  optionKey: 'ring_type_base',
+                  name: `Ring Type: ${measurements.selected_eyelet_ring}`,
+                  price: 0,
+                  pricingMethod: 'included'
+                }] : [])
+              ];
+
+              // ✅ DEDUPLICATE: Remove options with same optionKey or name
+              const seenKeys = new Set<string>();
+              return rawOptions.filter((opt: any) => {
+                const key = opt.optionKey || opt.name;
+                if (seenKeys.has(key)) return false;
+                seenKeys.add(key);
+                return true;
+              });
+            })(),
             
             // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
             rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 

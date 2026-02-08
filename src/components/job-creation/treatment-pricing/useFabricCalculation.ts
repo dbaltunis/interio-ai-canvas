@@ -1,5 +1,5 @@
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateFabricUsage } from "./fabric-calculation/fabricUsageCalculator";
@@ -350,23 +350,35 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     runIntegratedCalculation();
   }, [formData, hierarchicalOptions, units]);
 
+  // CRITICAL FIX: Return the integratedCosts state directly, not a function
+  // This ensures that when integratedCosts updates, consumers will re-render
+  const defaultCosts = useMemo(() => ({
+    fabricCost: "0.00",
+    optionsCost: "0.00",
+    headingCost: "0.00",
+    laborCost: "0.00",
+    totalCost: "0.00",
+    fabricUsage: "0.0",
+    fabricOrientation: 'vertical' as const,
+    costComparison: null,
+    warnings: [] as string[],
+    seamsRequired: 0,
+    seamLaborHours: 0,
+    widthsRequired: 0,
+    optionDetails: [] as Array<{ name: string; cost: number; method: string; calculation: string }>
+  }), []);
+
+  // CRITICAL FIX: Return the actual costs state, not a function that reads it
+  // This allows useMemo consumers to depend on the actual values and re-render
+  const currentCosts = integratedCosts || defaultCosts;
+
   return {
     calculateFabricUsage: () => fabricUsageCalculation,
-    calculateCosts: () => integratedCosts || {
-      fabricCost: "0.00",
-      optionsCost: "0.00",
-      headingCost: "0.00", // CRITICAL: Include in default return
-      laborCost: "0.00",
-      totalCost: "0.00",
-      fabricUsage: "0.0",
-      fabricOrientation: 'vertical',
-      costComparison: null,
-      warnings: [],
-      seamsRequired: 0,
-      seamLaborHours: 0,
-      widthsRequired: 0,
-      optionDetails: []
-    },
+    // Keep the function for backwards compatibility, but it now reads from stable reference
+    calculateCosts: () => currentCosts,
+    // NEW: Also expose the costs directly for proper reactive updates
+    costs: currentCosts,
+    isCalculating: integratedCosts === null,
     calculateOptionCost: (option: any) => calculateOptionCost(option, formData)
   };
 };
