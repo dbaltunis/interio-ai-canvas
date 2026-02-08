@@ -123,10 +123,10 @@ export const useWindowSummary = (windowId: string | undefined) => {
       return data as WindowSummary | null;
     },
     enabled: !!windowId,
-    staleTime: 10000, // Increased to 10 seconds - reduces refetch frequency
+    staleTime: 5000, // 5 seconds - balance between performance and freshness
     gcTime: 60000, // Keep in cache for 1 minute
     refetchOnWindowFocus: false, // Prevent refetch on tab focus
-    refetchOnMount: false, // Prevent refetch on every mount
+    refetchOnMount: true, // FIX: Always refetch when component mounts to ensure fresh data when editing
     refetchInterval: false, // Disable automatic refetching
   });
 };

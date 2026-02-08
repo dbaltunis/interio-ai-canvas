@@ -851,7 +851,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
     // Call the async function
     loadData();
-  }, []); // CRITICAL: Empty dependency array - only run on mount
+  }, [existingWindowSummary]); // FIX: Include existingWindowSummary to handle async query loading
+  // The hasLoadedInitialData.current ref prevents multiple loads after initial data is loaded
 
   // PHASE 5: Re-convert measurements when units change AFTER initial load
   // This handles the race condition where units load after measurements are restored
