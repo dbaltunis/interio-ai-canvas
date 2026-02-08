@@ -48,7 +48,9 @@ export const TreatmentPricingForm = ({
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const { data: businessSettings } = useBusinessSettings();
   const uploadFile = useUploadFile();
-  const { calculateFabricUsage, calculateCosts: calculateCurtainCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
+  // CRITICAL FIX: Use `costs` directly instead of calling `calculateCosts()` function
+  // This ensures reactive updates when costs are calculated asynchronously
+  const { calculateFabricUsage, costs: curtainCosts, isCalculating: isCurtainCalculating } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
   // Get user's preferred measurement unit (default to mm)
   const userUnit = businessSettings?.measurement_unit || 'mm';
@@ -156,10 +158,11 @@ export const TreatmentPricingForm = ({
         costComparison: null
       };
     } else {
-      // Use curtain calculation
-      return calculateCurtainCosts();
+      // CRITICAL FIX: Use curtainCosts directly instead of calling a function
+      // This ensures the useMemo properly re-evaluates when costs update
+      return curtainCosts;
     }
-  }, [isBlindsOrShutters, formData, options, hierarchicalOptions, windowCovering, treatmentType, calculateCurtainCosts, userUnit]);
+  }, [isBlindsOrShutters, formData, options, hierarchicalOptions, windowCovering, treatmentType, curtainCosts, userUnit]);
 
   // Enhanced debugging for options loading
   console.log('=== TreatmentPricingForm Debug ===');
