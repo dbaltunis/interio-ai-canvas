@@ -126,20 +126,23 @@ describe('calculateBlindCosts', () => {
       expect(result.manufacturingCost).toBe(0);
     });
 
-    it('should apply grid markup if set', () => {
+    it('should NOT apply grid markup in calculator (markup applied in display/save layer)', () => {
+      // CRITICAL: Grid markup is now applied in the display/save layer (CostCalculationSummary/DynamicWindowWorksheet)
+      // NOT in blindCostCalculator. This prevents double-markup issues.
       const fabricWithGridAndMarkup = {
         name: 'Grid Fabric With Markup',
         pricing_grid_data: {
           widthColumns: ['50', '100'],
           dropRows: [{ drop: '100', prices: [100, 150] }]
         },
-        pricing_grid_markup: 20 // 20% markup
+        pricing_grid_markup: 20 // 20% markup - stored but NOT applied here
       };
 
       const result = calculateBlindCosts(100, 150, mockTemplate, fabricWithGridAndMarkup, []);
 
-      // Grid price (250) * 1.20 = 300
-      expect(result.fabricCost).toBe(300);
+      // Grid price = 250 (base cost from grid lookup)
+      // Markup is NOT applied here - it will be applied in display/save layer
+      expect(result.fabricCost).toBe(250);
     });
   });
 
