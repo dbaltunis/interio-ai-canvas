@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle, Pencil, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
-import { useProjectStatus } from "@/contexts/ProjectStatusContext";
+import { useProjectStatus, ProjectStatusProvider } from "@/contexts/ProjectStatusContext";
 import { 
   PixelUserIcon, 
   PixelClipboardIcon, 
@@ -906,6 +906,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const moreTabs = allTabs.slice(3);
 
   return (
+    <ProjectStatusProvider projectId={jobId}>
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
       {/* Enhanced Header Section - Scrolls away */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
@@ -1281,5 +1282,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         />
       )}
     </div>
+    </ProjectStatusProvider>
   );
 };
