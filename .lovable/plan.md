@@ -1,85 +1,69 @@
 
-# Fix Plan: Homekaara Template Not Displaying in Jobs
+# Fix: Staff Users Can't Edit Jobs (Permission Check Bug)
 
-## Root Cause Identified
+## Problem Found
 
-The Homekaara template is correctly saved in `business_settings.quote_template = 'homekaara'`, but the conditional logic in `QuotationTab.tsx` has an unnecessary secondary check that prevents it from rendering.
+The "Permission needed" message is appearing because there's a **bug in the job edit permission check**. Here's what's happening:
 
-### The Problem
+### Root Cause
+The `useJobEditPermissions.ts` hook checks permissions **only from the database**, ignoring the role-based default permissions defined in `constants/permissions.ts`.
 
-**Current logic (line 347-348):**
-```typescript
-const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && 
-  (selectedTemplate?.template_style === 'quote' || !selectedTemplate?.template_style);
-```
+- The Staff role has `edit_assigned_jobs` in its default permissions (this is correct)
+- But `useCanEditJob` fetches from the `user_permissions` table directly, which may be empty for Staff users
+- Since there are no explicit DB records, the hook returns `canEditJob: false`
 
-**Why it fails:**
-- `quoteTemplateStyle` = `'homekaara'` (correct)
-- `selectedTemplate?.template_style` = `'detailed'` (from the dropdown)
-- Since `'detailed'` is not `'quote'` and not `undefined`, the entire condition evaluates to `false`
-
-### The Fix
-
-The Homekaara global style should override the block-based template when selected. The secondary check is unnecessary and should be removed:
-
-**Fixed logic:**
-```typescript
-const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara';
-```
-
-This means when a business selects "Homekaara" in Settings, ALL their quotes will use the Homekaara template, regardless of which block-based template is chosen in the dropdown.
-
----
-
-## Implementation
-
-### File: `src/components/jobs/tabs/QuotationTab.tsx`
-
-**Change (line 345-348):**
-
-Before:
-```typescript
-// Check if Homekaara template style should be used
-const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
-const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && 
-  (selectedTemplate?.template_style === 'quote' || !selectedTemplate?.template_style);
-```
-
-After:
-```typescript
-// Check if Homekaara template style should be used
-// When 'homekaara' is selected in business settings, it overrides the block-based template
-const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
-const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara';
-```
-
----
-
-## Why This Makes Sense
-
-The quote template style selector in Settings presents two options:
-1. **Default** - Use the block-based template editor (LivePreview)
-2. **Homekaara** - Use the fixed Homekaara design
-
-These are mutually exclusive global styles. When "Homekaara" is selected, it should completely replace the block-based system, not depend on whether the selected block template happens to have a specific `template_style` value.
-
----
-
-## Testing Checklist
-
-1. [ ] Ensure `business_settings.quote_template` = `'homekaara'` (already confirmed)
-2. [ ] Navigate to any job's Quote tab
-3. [ ] Verify the Homekaara template renders (room grouping, tan/beige colors, product images)
-4. [ ] Switch back to Default in settings
-5. [ ] Verify the block-based template (LivePreview) renders again
-
----
+### Why It Broke
+This likely worked before because either:
+1. Staff users had explicit permission records in the database
+2. Or the permission check was using a different approach that included role-based defaults
 
 ## Technical Details
 
-| Item | Details |
-|------|---------|
-| File | `src/components/jobs/tabs/QuotationTab.tsx` |
-| Lines | 345-348 |
-| Effort | Low (2-line change) |
-| Risk | None - the condition simply becomes more permissive |
+**Current broken logic in `useJobEditPermissions.ts`:**
+```text
+1. Fetch user_permissions table for user → returns []
+2. Check if user is Owner → No (Staff)
+3. hasAnyExplicitPermissions = 0 > 0 = false
+4. canEditAssignedJobs = isOwner && !hasAnyExplicitPermissions = false
+5. Result: canEditJob = false ❌
+```
+
+**Correct logic should be:**
+```text
+1. Get role-based permissions (Staff has edit_assigned_jobs)
+2. Add any custom database permissions on top
+3. Check if edit_assigned_jobs exists in merged set → YES
+4. Result: canEditJob = true ✅
+```
+
+## Solution
+
+Refactor `useJobEditPermissions.ts` to use the unified permission system instead of querying the database directly:
+
+### Step 1: Update the Hook to Use Unified Permissions
+Replace direct database queries with the `useHasPermission` hook that already handles role+custom permission merging correctly.
+
+### Step 2: Simplify the Logic
+The hook will check:
+- `useHasPermission('edit_all_jobs')` → can edit any job
+- `useHasPermission('edit_assigned_jobs')` → can edit assigned jobs only
+
+### Step 3: Keep Assignment Check Logic
+When only `edit_assigned_jobs` is granted, verify the user is assigned to the specific project/client.
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/hooks/useJobEditPermissions.ts` | Refactor to use `useHasPermission` instead of direct DB query |
+
+## Expected Outcome
+
+After this fix:
+- Staff users will be able to add rooms, windows, and treatments to jobs assigned to them
+- The role-based default permissions will be respected
+- Custom permission overrides will still work for accounts that need them
+
+## No Database Changes Required
+
+This is purely a frontend logic fix - the permission constants are already correct.
