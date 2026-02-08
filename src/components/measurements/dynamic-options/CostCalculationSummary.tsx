@@ -545,16 +545,60 @@ export const CostCalculationSummary = ({
       });
       
       const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements);
-      
+
       console.log('✅ Blind calculator results:', blindCosts);
-      
+
+    // =========================================================
+    // RESOLVE MARKUPS FIRST (before using them below)
+    // ✅ CRITICAL FIX: Define these BEFORE they are used to avoid TDZ error
+    // =========================================================
+
+    // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS FOR BLINDS
+    // Calculate implied markup from library pricing if both cost_price and selling_price exist
+    const libFabricCostPrice = fabricToUse?.cost_price || 0;
+    const libFabricSellingPrice = fabricToUse?.selling_price || 0;
+    const hasLibraryPricing = libFabricCostPrice > 0 && libFabricSellingPrice > libFabricCostPrice;
+    const impliedMarkup = hasLibraryPricing
+      ? ((libFabricSellingPrice - libFabricCostPrice) / libFabricCostPrice) * 100
+      : undefined;
+
+    if (impliedMarkup && impliedMarkup > 0) {
+      console.log('💰 [BLIND LIBRARY PRICING] Using implied markup:', {
+        cost_price: libFabricCostPrice,
+        selling_price: libFabricSellingPrice,
+        impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
+        note: 'Prevents double-markup on library fabrics'
+      });
+    }
+
+    const fabricMarkupResult = resolveMarkup({
+      impliedMarkup, // ✅ Pass implied markup to prevent double-markup
+      category: 'blinds',
+      markupSettings
+    });
+    const fabricMarkupPercent = fabricMarkupResult.percentage;
+
+    const mfgMarkupKey = 'blind_making';
+    const mfgMarkupResult = resolveMarkup({
+      category: mfgMarkupKey,
+      markupSettings
+    });
+    const mfgMarkupPercent = mfgMarkupResult.percentage;
+
+    // Default markup for display
+    const markupPercentage = markupSettings?.default_markup_percentage || 0;
+
+    // ✅ CRITICAL FIX: Check if fabric uses pricing grid
+    // Grid pricing ALREADY includes markup - do NOT apply additional markup
+    const fabricUsesPricingGrid = !!(fabricToUse?.pricing_grid_data && fabricToUse?.resolved_grid_name);
+
       // ✅ CRITICAL FIX: Store costs for useEffect to report to parent (NOT during render!)
       // The useEffect below will call onBlindCostsCalculated only when values change
       // ✅ FIX: Include option selection changes in key (same pattern as curtains) to trigger updates
       const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
       const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
       const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
-      
+
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
       // ✅ CRITICAL FIX: Calculate SELLING prices for callback (with markup)
@@ -590,7 +634,7 @@ export const CostCalculationSummary = ({
         },
         key: computedBlindKey,
       };
-      
+
       // ✅ FIX: Update state to trigger useEffect (React observes state changes, not ref mutations)
       if (computedBlindKey !== blindCostsKey) {
         // ✅ FIX: Use requestAnimationFrame instead of setTimeout to avoid timing issues
@@ -603,45 +647,6 @@ export const CostCalculationSummary = ({
     // - Shows prices for authorized users (canViewCosts = true)
     // - Shows "Included" for dealers (canViewCosts = false)
     // =========================================================
-    
-    // ✅ RESOLVE CATEGORY-SPECIFIC MARKUPS FOR BLINDS
-    // Calculate implied markup from library pricing if both cost_price and selling_price exist
-    const libFabricCostPrice = fabricToUse?.cost_price || 0;
-    const libFabricSellingPrice = fabricToUse?.selling_price || 0;
-    const hasLibraryPricing = libFabricCostPrice > 0 && libFabricSellingPrice > libFabricCostPrice;
-    const impliedMarkup = hasLibraryPricing
-      ? ((libFabricSellingPrice - libFabricCostPrice) / libFabricCostPrice) * 100
-      : undefined;
-
-    if (impliedMarkup && impliedMarkup > 0) {
-      console.log('💰 [BLIND LIBRARY PRICING] Using implied markup:', {
-        cost_price: libFabricCostPrice,
-        selling_price: libFabricSellingPrice,
-        impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
-        note: 'Prevents double-markup on library fabrics'
-      });
-    }
-    
-    const fabricMarkupResult = resolveMarkup({
-      impliedMarkup, // ✅ Pass implied markup to prevent double-markup
-      category: 'blinds',
-      markupSettings
-    });
-    const fabricMarkupPercent = fabricMarkupResult.percentage;
-    
-    const mfgMarkupKey = 'blind_making';
-    const mfgMarkupResult = resolveMarkup({
-      category: mfgMarkupKey,
-      markupSettings
-    });
-    const mfgMarkupPercent = mfgMarkupResult.percentage;
-    
-    // Default markup for display
-    const markupPercentage = markupSettings?.default_markup_percentage || 0;
-
-    // ✅ CRITICAL FIX: Check if fabric uses pricing grid
-    // Grid pricing ALREADY includes markup - do NOT apply additional markup
-    const fabricUsesPricingGrid = !!(fabricToUse?.pricing_grid_data && fabricToUse?.resolved_grid_name);
 
     // Build items for table display with per-item markup
     // For grid pricing: fabricCost ALREADY includes markup, sellingPrice = fabricCost
