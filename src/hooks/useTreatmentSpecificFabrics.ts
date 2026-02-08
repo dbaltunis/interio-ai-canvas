@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCATEGORIES } from "@/constants/inventorySubcategories";
+import { hasValidPricingGrid } from "@/utils/pricing/gridValidation";
 
 const PAGE_SIZE = 100; // Increased for large TWC inventories
 
@@ -365,24 +366,16 @@ export const useTreatmentSpecificFabrics = (
         // Method 2: From metadata.pricing_grid_data (TWC products store pricing here)
         // CRITICAL: This is where TWC products have their pricing grids stored!
         const metadataPricingGrid = (item.metadata as any)?.pricing_grid_data;
-        if (metadataPricingGrid && typeof metadataPricingGrid === 'object') {
-          // Validate the grid has actual data
-          const hasValidGrid = (
-            (metadataPricingGrid.widthColumns?.length > 0) ||
-            (metadataPricingGrid.widths?.length > 0) ||
-            (metadataPricingGrid.dropRanges?.length > 0)
-          );
-
-          if (hasValidGrid) {
-            console.log('📊 [TWC] Using pricing grid from metadata:', item.name);
-            return {
-              ...item,
-              pricing_grid_data: metadataPricingGrid,
-              resolved_grid_name: `${item.name} (TWC Grid)`,
-              resolved_grid_code: item.sku || 'TWC',
-              resolved_grid_id: 'metadata'
-            };
-          }
+        // ✅ CRITICAL FIX: Use shared hasValidPricingGrid utility for consistent validation
+        if (metadataPricingGrid && hasValidPricingGrid(metadataPricingGrid)) {
+          console.log('📊 [TWC] Using pricing grid from metadata:', item.name);
+          return {
+            ...item,
+            pricing_grid_data: metadataPricingGrid,
+            resolved_grid_name: `${item.name} (TWC Grid)`,
+            resolved_grid_code: item.sku || 'TWC',
+            resolved_grid_id: 'metadata'
+          };
         }
 
         // Method 3: Via price_group (resolve through pricing rules)

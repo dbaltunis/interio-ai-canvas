@@ -23,6 +23,7 @@ import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
 import { useUserRole } from "@/hooks/useUserRole";
 import { QuoteSummaryTable, QuoteSummaryItem } from "./QuoteSummaryTable";
+import { hasValidPricingGrid } from "@/utils/pricing/gridValidation";
 
 interface ManufacturingDetails {
   pricingType: string;
@@ -207,8 +208,12 @@ export const CostCalculationSummary = ({
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
-  const { data: markupSettings } = useMarkupSettings();
+  const { data: markupSettings, isLoading: isLoadingMarkup } = useMarkupSettings();
   const { data: roleData } = useUserRole();
+
+  // ✅ FIX: Wait for markup settings to load before calculating prices
+  // This prevents showing 0% markup during initial render
+  const markupReady = !isLoadingMarkup && markupSettings !== undefined;
 
   // ✅ COST VISIBILITY CONTROLS: Dealers and restricted users should only see quote prices
   const canViewCosts = roleData?.canViewVendorCosts ?? false;
@@ -484,7 +489,8 @@ export const CostCalculationSummary = ({
 
     // ✅ CRITICAL FIX: Store wallpaper costs for useEffect to report to parent
     if (onWallpaperCostsCalculated) {
-      const computedWallpaperKey = `${wallpaperCalc.totalCost}-${wallpaperCalc.quantity}-${wallpaperCalc.squareMeters}-${wallWidth}-${wallHeight}`;
+      // ✅ CRITICAL FIX: Include markupReady in key so prices update when settings load
+      const computedWallpaperKey = `${wallpaperCalc.totalCost}-${wallpaperCalc.quantity}-${wallpaperCalc.squareMeters}-${wallWidth}-${wallHeight}-${markupReady}`;
 
       wallpaperCostsRef.current = {
         costs: {
@@ -571,8 +577,11 @@ export const CostCalculationSummary = ({
       });
     }
 
+    // ✅ CRITICAL FIX: Pass all markup sources for consistent resolution (same as curtains)
     const fabricMarkupResult = resolveMarkup({
-      impliedMarkup, // ✅ Pass implied markup to prevent double-markup
+      impliedMarkup, // Implied from cost_price vs selling_price
+      gridMarkup: fabricToUse?.pricing_grid_markup, // Grid-level markup if exists
+      productMarkup: fabricToUse?.markup_percentage, // Product-level markup if exists
       category: 'blinds',
       markupSettings
     });
@@ -588,16 +597,19 @@ export const CostCalculationSummary = ({
     // Default markup for display
     const markupPercentage = markupSettings?.default_markup_percentage || 0;
 
-    // ✅ CRITICAL FIX: Check if fabric uses pricing grid
+    // ✅ CRITICAL FIX: Check if fabric uses pricing grid using SHARED utility
+    // This ensures same validation logic as blindCostCalculator
     // Grid pricing ALREADY includes markup - do NOT apply additional markup
-    const fabricUsesPricingGrid = !!(fabricToUse?.pricing_grid_data && fabricToUse?.resolved_grid_name);
+    const fabricUsesPricingGrid = hasValidPricingGrid(fabricToUse?.pricing_grid_data);
 
       // ✅ CRITICAL FIX: Store costs for useEffect to report to parent (NOT during render!)
       // The useEffect below will call onBlindCostsCalculated only when values change
       // ✅ FIX: Include option selection changes in key (same pattern as curtains) to trigger updates
       const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
       const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
-      const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
+      // ✅ CRITICAL FIX: Include markup percentages in key so prices update when settings load
+      const markupKey = `${fabricMarkupPercent}-${mfgMarkupPercent}-${markupReady}`;
+      const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}-${markupKey}`;
 
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
@@ -905,7 +917,8 @@ export const CostCalculationSummary = ({
       return selectedHeading; // Use ID as fallback
     })();
     
-    const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
+    // ✅ CRITICAL FIX: Include markupReady in key so prices update when settings load
+    const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}-${markupReady}`;
 
     // ✅ CRITICAL: Build display formula for consistent rendering across all views
     // This ensures live view and saved view show IDENTICAL formulas
@@ -1050,7 +1063,10 @@ export const CostCalculationSummary = ({
   // ✅ CRITICAL FIX: Check if fabric uses library pricing (has both cost_price and selling_price)
   // If library pricing exists, fabricCost is already based on selling_price - DO NOT apply additional markup
   const curtainUsesLibraryPricing = curtainHasLibraryPricing;
-  const curtainUsesPricingGrid = fabricDisplayData?.usesPricingGrid && fabricDisplayData?.gridName;
+  // ✅ CRITICAL FIX: Use BOTH display data flag AND shared utility for consistency
+  // This ensures same validation logic as blinds section
+  const curtainUsesPricingGrid = (fabricDisplayData?.usesPricingGrid && fabricDisplayData?.gridName) ||
+                                  hasValidPricingGrid(fabricToUse?.pricing_grid_data);
   const curtainFabricAlreadyHasMarkup = curtainUsesLibraryPricing || curtainUsesPricingGrid;
 
   // Fabric - with clear math display and category-specific markup
