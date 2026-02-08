@@ -628,16 +628,18 @@ export const CostCalculationSummary = ({
 
       blindCostsRef.current = {
         costs: {
-          // ✅ CRITICAL: Send SELLING prices in callback, not cost prices
-          // This ensures saved values match displayed values
-          fabricCost: fabricSellingPrice,
-          manufacturingCost: manufacturingSellingPrice,
+          // ✅ CRITICAL FIX: Send COST prices (not selling prices) to match interface contract
+          // DynamicWindowWorksheet will apply markup to calculate total_selling
+          // This prevents the double-markup bug where £39/£56 displayed became £80 saved
+          fabricCost: blindCosts.fabricCost,  // COST price (markup will be applied in DynamicWindowWorksheet)
+          manufacturingCost: blindCosts.manufacturingCost,  // COST price
           optionsCost: blindCosts.optionsCost,
           optionDetails: blindCosts.optionDetails, // ✅ Include individual option costs
-          totalCost: fabricSellingPrice + manufacturingSellingPrice + blindCosts.optionsCost,
+          totalCost: blindCosts.totalCost,  // Sum of COST prices (fabric + mfg + options)
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
           // ✅ Display data for consistent rendering (same as curtains)
+          // Note: formula shows SELLING price for display, but callback sends COST for calculation
           fabricDisplayFormula: blindDisplayFormula,
           fabricPricingMethod: 'per_sqm',
           fabricPricingMethodLabel: 'Per Square Meter',

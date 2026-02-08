@@ -1742,18 +1742,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             
             // ✅ CRITICAL FIX: Use correct component costs for each treatment type
             // For blinds/shutters, fabric/manufacturing costs come from liveBlindCalcResult
+            // NOTE: As of this fix, liveBlindCalcResult sends COST prices (not selling prices)
+            // so DynamicWindowWorksheet correctly applies markup to calculate total_selling
             let effectiveFabricCost = fabricCost;
             let effectiveManufacturingCost = manufacturingCost;
             let effectiveLiningCost = finalLiningCost;
             let effectiveHeadingCost = finalHeadingCost;
-            
+
             if (displayCategory === 'blinds' || displayCategory === 'shutters') {
               effectiveFabricCost = liveBlindCalcResult?.fabricCost ?? fabricCost;
               effectiveManufacturingCost = liveBlindCalcResult?.manufacturingCost ?? manufacturingCost;
               effectiveLiningCost = 0; // Blinds don't have lining
               effectiveHeadingCost = 0; // Blinds don't have heading
             }
-            
+
             // Calculate selling prices for each component with their specific category markup
             const fabricMarkupResult = resolveMarkup({
               productMarkup, // ✅ Pass explicit product-level markup from inventory item
@@ -1763,33 +1765,33 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               markupSettings: markupSettings || undefined
             });
             const fabricSelling = applyMarkup(effectiveFabricCost, fabricMarkupResult.percentage);
-            
+
             const liningMarkupResult = resolveMarkup({
               category: 'lining',
               markupSettings: markupSettings || undefined
             });
             const liningSelling = applyMarkup(effectiveLiningCost, liningMarkupResult.percentage);
-            
+
             const headingMarkupResult = resolveMarkup({
               category: 'heading',
               markupSettings: markupSettings || undefined
             });
             const headingSelling = applyMarkup(effectiveHeadingCost, headingMarkupResult.percentage);
-            
+
             const manufacturingMarkupResult = resolveMarkup({
               category: makingCategory,
               markupSettings: markupSettings || undefined
             });
             const manufacturingSelling = applyMarkup(effectiveManufacturingCost, manufacturingMarkupResult.percentage);
-            
+
             const optionsMarkupResult = resolveMarkup({
               category: 'options',
               markupSettings: markupSettings || undefined
             });
             const optionsSelling = applyMarkup(effectiveOptionsCost, optionsMarkupResult.percentage);
-            
+
             const totalSelling = fabricSelling + liningSelling + headingSelling + manufacturingSelling + optionsSelling;
-            
+
             // ✅ Calculate overall effective markup percentage: (selling - cost) / cost * 100
             const totalCostForMarkup = effectiveFabricCost + effectiveLiningCost + effectiveHeadingCost + effectiveManufacturingCost + effectiveOptionsCost;
             const effectiveMarkupPercent = totalCostForMarkup > 0 
