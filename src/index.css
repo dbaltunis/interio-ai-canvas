@@ -1020,6 +1020,33 @@ html {
     margin-bottom: 0.75rem !important;
   }
 
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .print\:border-none {
+    border: none !important;
+  }
+  
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+  
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\:text-black {
+    color: black !important;
+  }
+  
+  @page {
+    margin: 8mm;
+    size: A4;
+  }
+}
+
 /* Dropdown and Select component fixes for dark mode */
 .dark [data-radix-select-content],
 .apple-graphite [data-radix-select-content] {
@@ -1046,33 +1073,6 @@ html {
   background: hsl(var(--card)) !important;
   border: 1px solid hsl(var(--border)) !important;
   color: hsl(var(--card-foreground)) !important;
-}
-  
-  body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  
-  .print\:border-none {
-    border: none !important;
-  }
-  
-  .print\:p-0 {
-    padding: 0 !important;
-  }
-  
-  .print\:shadow-none {
-    box-shadow: none !important;
-  }
-  
-  .print\:text-black {
-    color: black !important;
-  }
-  
-  @page {
-    margin: 8mm;
-    size: A4;
-  }
 }
 
 /* Attention ring indicator - pulses outward */
