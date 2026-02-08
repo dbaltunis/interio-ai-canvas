@@ -175,6 +175,7 @@ const App = () => {
               <ThemeDarkSync />
               <InteractionUnlockGuard />
               <Toaster />
+              <Sonner />
               <BrowserRouter>
                 <NavObserver />
                 
