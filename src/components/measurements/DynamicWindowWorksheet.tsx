@@ -2716,7 +2716,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             queryKey: ["window-summary", surfaceId]
           });
           await queryClient.invalidateQueries({
+            queryKey: ["window-summary-treatment", surfaceId]
+          });
+          await queryClient.invalidateQueries({
             queryKey: ["project-window-summaries"]
+          });
+          await queryClient.invalidateQueries({
+            queryKey: ["project-window-summaries", projectId]
           });
           await queryClient.invalidateQueries({
             queryKey: ["treatments"]
@@ -2726,6 +2732,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           });
           await queryClient.invalidateQueries({
             queryKey: ["workshop-items"]
+          });
+          // Also refresh surfaces for cards that read from that table
+          await queryClient.invalidateQueries({
+            queryKey: ["surfaces"]
+          });
+          await queryClient.invalidateQueries({
+            queryKey: ["surfaces", projectId]
           });
       } catch (error) {
         console.error("❌ Auto-save failed:", error);

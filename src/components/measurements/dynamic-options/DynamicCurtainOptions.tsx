@@ -197,6 +197,9 @@ export const DynamicCurtainOptions = ({
     refetchInventory();
   }, [refetchInventory]);
   
+  // Track whether we've synced restored options to parent
+  const [hasInitialSyncCompleted, setHasInitialSyncCompleted] = useState(false);
+
   // Initialize treatmentOptionSelections from saved measurements
   useEffect(() => {
     const initialSelections: Record<string, string> = {};
@@ -205,23 +208,79 @@ export const DynamicCurtainOptions = ({
       if (key.startsWith('treatment_option_')) {
         const optionKey = key.replace('treatment_option_', '');
         initialSelections[optionKey] = measurements[key];
-      } else if (!key.startsWith('selected_') && 
-                 !['rail_width', 'drop', 'header_hem', 'bottom_hem', 'side_hems', 'seam_hems', 
-                   'return_left', 'return_right', 'waste_percent', 'pooling_amount', 
+      } else if (!key.startsWith('selected_') &&
+                 !['rail_width', 'drop', 'header_hem', 'bottom_hem', 'side_hems', 'seam_hems',
+                   'return_left', 'return_right', 'waste_percent', 'pooling_amount',
                    'manufacturing_type', 'heading_fullness', 'curtain_type', 'curtain_side',
-                   'pooling_option', 'fabric_rotated', 'surface_id', 'surface_name', 
+                   'pooling_option', 'fabric_rotated', 'surface_id', 'surface_name',
                    'window_type', 'unit', 'fabric_width_cm', 'wall_width_cm', 'wall_height_cm',
                    'fullness_ratio', 'horizontal_pieces_needed', 'fabric_orientation'].includes(key)) {
         // This might be a treatment option stored without prefix
         initialSelections[key] = measurements[key];
       }
     });
-    
+
     if (Object.keys(initialSelections).length > 0) {
       console.log('🎨 Restoring treatment option selections:', initialSelections);
       setTreatmentOptionSelections(initialSelections);
+      // Reset sync flag when selections are restored so they get synced to parent
+      setHasInitialSyncCompleted(false);
     }
   }, [template?.id, measurements]); // Re-initialize when template or measurements change
+
+  // ✅ CRITICAL FIX: Sync restored treatmentOptionSelections to parent's selectedOptions
+  // This ensures options restored from saved measurements appear in the Quote Summary
+  useEffect(() => {
+    // Only run once after initial restoration and when options are loaded
+    if (hasInitialSyncCompleted) return;
+    if (treatmentOptions.length === 0) return;
+    if (Object.keys(treatmentOptionSelections).length === 0) return;
+    if (!onSelectedOptionsChange) return;
+
+    console.log('🔄 Syncing restored options to Quote Summary...');
+
+    const restoredOptions: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }> = [];
+
+    // Build options array from restored treatmentOptionSelections
+    Object.entries(treatmentOptionSelections).forEach(([optionKey, valueId]) => {
+      if (!valueId) return;
+
+      // Find the option definition
+      const option = treatmentOptions.find(o => o.key === optionKey);
+      if (!option || !option.option_values) return;
+
+      // Find the selected value
+      const selectedValue = option.option_values.find((v: any) => v.id === valueId);
+      if (!selectedValue) return;
+
+      const price = getOptionPrice(selectedValue);
+      const pricingMethod = getOptionPricingMethod(selectedValue);
+
+      restoredOptions.push({
+        name: `${option.label}: ${selectedValue.label}`,
+        price,
+        pricingMethod,
+        pricingGridData: selectedValue.extra_data?.pricing_grid_data,
+        optionKey: optionKey
+      });
+
+      console.log(`  ✅ Synced option: ${option.label}: ${selectedValue.label} (${price})`);
+    });
+
+    if (restoredOptions.length > 0) {
+      // Merge with existing selectedOptions, avoiding duplicates
+      const existingKeys = new Set(selectedOptions.map(o => (o as any).optionKey || o.name));
+      const newOptions = restoredOptions.filter(o => !existingKeys.has(o.optionKey || o.name));
+
+      if (newOptions.length > 0) {
+        const mergedOptions = [...selectedOptions, ...newOptions];
+        console.log('📋 Merged options for Quote Summary:', mergedOptions.map(o => o.name));
+        onSelectedOptionsChange(mergedOptions);
+      }
+    }
+
+    setHasInitialSyncCompleted(true);
+  }, [treatmentOptions, treatmentOptionSelections, hasInitialSyncCompleted, onSelectedOptionsChange, selectedOptions]);
   
   // ✅ CRITICAL FIX: Apply heading→hardware defaults from option_rules
   // When heading changes, check if rules specify a hardware_type default and apply it
