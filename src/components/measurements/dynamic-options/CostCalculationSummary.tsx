@@ -207,8 +207,12 @@ export const CostCalculationSummary = ({
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
-  const { data: markupSettings } = useMarkupSettings();
+  const { data: markupSettings, isLoading: isLoadingMarkup } = useMarkupSettings();
   const { data: roleData } = useUserRole();
+
+  // ✅ FIX: Wait for markup settings to load before calculating prices
+  // This prevents showing 0% markup during initial render
+  const markupReady = !isLoadingMarkup && markupSettings !== undefined;
 
   // ✅ COST VISIBILITY CONTROLS: Dealers and restricted users should only see quote prices
   const canViewCosts = roleData?.canViewVendorCosts ?? false;
@@ -484,7 +488,8 @@ export const CostCalculationSummary = ({
 
     // ✅ CRITICAL FIX: Store wallpaper costs for useEffect to report to parent
     if (onWallpaperCostsCalculated) {
-      const computedWallpaperKey = `${wallpaperCalc.totalCost}-${wallpaperCalc.quantity}-${wallpaperCalc.squareMeters}-${wallWidth}-${wallHeight}`;
+      // ✅ CRITICAL FIX: Include markupReady in key so prices update when settings load
+      const computedWallpaperKey = `${wallpaperCalc.totalCost}-${wallpaperCalc.quantity}-${wallpaperCalc.squareMeters}-${wallWidth}-${wallHeight}-${markupReady}`;
 
       wallpaperCostsRef.current = {
         costs: {
@@ -597,7 +602,9 @@ export const CostCalculationSummary = ({
       // ✅ FIX: Include option selection changes in key (same pattern as curtains) to trigger updates
       const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).label || ''}`).join(',');
       const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
-      const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}`;
+      // ✅ CRITICAL FIX: Include markup percentages in key so prices update when settings load
+      const markupKey = `${fabricMarkupPercent}-${mfgMarkupPercent}-${markupReady}`;
+      const computedBlindKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}-${optionSelectionKey}-${measurementKey}-${markupKey}`;
 
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
@@ -905,7 +912,8 @@ export const CostCalculationSummary = ({
       return selectedHeading; // Use ID as fallback
     })();
     
-    const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
+    // ✅ CRITICAL FIX: Include markupReady in key so prices update when settings load
+    const computedCurtainKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}-${markupReady}`;
 
     // ✅ CRITICAL: Build display formula for consistent rendering across all views
     // This ensures live view and saved view show IDENTICAL formulas
