@@ -388,6 +388,19 @@ export const CostCalculationSummary = ({
     );
   }
 
+  // ✅ CRITICAL FIX: Wait for markup settings to load before showing prices
+  // This prevents showing 0% markup (Cost = Quote Price) on initial render
+  // Without this guard, users see incorrect prices until settings load
+  if (!markupReady) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50 animate-pulse">
+        <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+        <div className="h-6 bg-muted rounded w-24"></div>
+        <p className="text-xs text-muted-foreground mt-2">Loading pricing...</p>
+      </div>
+    );
+  }
+
   const formatPrice = (price: number) => {
     const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
