@@ -687,6 +687,8 @@ export const CostCalculationSummary = ({
     }
 
     // Add options with category-specific markups
+    // ✅ CRITICAL FIX: Deduplicate options to prevent duplicate display
+    const seenBlindOptionKeys = new Set<string>();
     selectedOptions
       .filter(opt => {
         const isLiningOption = opt.name?.toLowerCase().includes('lining');
@@ -696,8 +698,17 @@ export const CostCalculationSummary = ({
       })
       .forEach(option => {
         const optAny = option as any;
+
+        // Deduplicate by optionKey or name
+        const dedupeKey = optAny.optionKey || option.name || JSON.stringify(option);
+        if (seenBlindOptionKeys.has(dedupeKey)) {
+          console.log('🔄 [BlindCostSummary] Filtering duplicate option:', dedupeKey);
+          return; // Skip duplicate
+        }
+        seenBlindOptionKeys.add(dedupeKey);
+
         let displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
-        
+
         // Only recalculate if no calculatedPrice exists
         if (optAny.calculatedPrice === undefined) {
           if (option.pricingMethod === 'per-meter') {
@@ -708,7 +719,7 @@ export const CostCalculationSummary = ({
             displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
           }
         }
-        
+
         // Resolve option-specific markup
         const optionCategory = optAny.category || 'option';
         const optionMarkupResult = resolveMarkup({
@@ -1154,18 +1165,30 @@ export const CostCalculationSummary = ({
   }
 
   // Options - resolve markup per option category
+  // ✅ CRITICAL FIX: Deduplicate options to prevent duplicate display
+  // Options can accumulate duplicates over save/edit cycles
+  const seenOptionKeys = new Set<string>();
   selectedOptions.forEach(option => {
     const optAny = option as any;
+
+    // Deduplicate by optionKey or name
+    const dedupeKey = optAny.optionKey || option.name || JSON.stringify(option);
+    if (seenOptionKeys.has(dedupeKey)) {
+      console.log('🔄 [CostSummary] Filtering duplicate option:', dedupeKey);
+      return; // Skip duplicate
+    }
+    seenOptionKeys.add(dedupeKey);
+
     const displayPrice = optAny.calculatedPrice ?? option.price ?? 0;
     const optionCategory = optAny.category || 'option';
-    
+
     // Resolve option-specific markup
     const optionMarkupResult = resolveMarkup({
       category: optionCategory,
       markupSettings
     });
     const optionMarkupPercent = optionMarkupResult.percentage;
-    
+
     tableItems.push({
       name: option.name,
       details: optAny.pricingDetails || '',
