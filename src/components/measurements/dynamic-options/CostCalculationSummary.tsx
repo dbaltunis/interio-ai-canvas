@@ -613,11 +613,10 @@ export const CostCalculationSummary = ({
 
       // Use ref to track and report changes via useEffect (defined at component level)
       // ✅ Build display formula fields for blinds (consistent with curtains)
-      // ✅ CRITICAL FIX: Calculate SELLING prices for callback (with markup)
-      // This ensures saved values match what's displayed in the quote summary table
-      const fabricSellingPrice = fabricUsesPricingGrid
-        ? blindCosts.fabricCost  // Grid price already includes markup
-        : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent);
+      // ✅ CRITICAL FIX: Calculate SELLING prices for display
+      // blindCosts.fabricCost is always BASE COST (no markup) - markup is applied here for display
+      // Grid markup is included in fabricMarkupPercent via resolveMarkup hierarchy
+      const fabricSellingPrice = applyMarkup(blindCosts.fabricCost, fabricMarkupPercent);
       const manufacturingSellingPrice = applyMarkup(blindCosts.manufacturingCost, mfgMarkupPercent);
 
       // Calculate unit price based on selling price, not cost price
@@ -663,18 +662,16 @@ export const CostCalculationSummary = ({
     // =========================================================
 
     // Build items for table display with per-item markup
-    // For grid pricing: fabricCost ALREADY includes markup, sellingPrice = fabricCost
-    // For non-grid: fabricCost is cost_price, apply markup to get sellingPrice
+    // ✅ CRITICAL FIX: blindCosts.fabricCost is always BASE COST (no markup applied)
+    // Markup (grid or category) is applied here for display via fabricMarkupPercent
     const tableItems: QuoteSummaryItem[] = [
       {
         name: isManufacturedItem(treatmentCategory) ? 'Material' : 'Fabric',
         details: `${blindCosts.squareMeters.toFixed(2)} sqm`,
         price: blindCosts.fabricCost,
         category: 'fabric',
-        markupPercentage: fabricUsesPricingGrid ? 0 : fabricMarkupPercent, // Skip markup for grid pricing
-        sellingPrice: fabricUsesPricingGrid
-          ? blindCosts.fabricCost  // Grid price already includes markup
-          : applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
+        markupPercentage: fabricMarkupPercent,
+        sellingPrice: applyMarkup(blindCosts.fabricCost, fabricMarkupPercent)
       }
     ];
 
