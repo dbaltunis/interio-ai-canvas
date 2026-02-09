@@ -740,8 +740,10 @@ const handler = async (req: Request): Promise<Response> => {
         inventory_item_id: item.id, // Link template to inventory item
         active: true,
         description: `TWC Template: ${item.name}`,
-        // Default values for required fields
+        // Default values for required fields - ALL hem fields must be present
+        // for calculations to work (getBlindHemValues checks header_allowance, bottom_hem, side_hems)
         fullness_ratio: 2.0,
+        header_allowance: 5,
         bottom_hem: 10,
         side_hems: 5,
         seam_hems: 3,

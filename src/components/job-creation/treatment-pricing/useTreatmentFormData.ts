@@ -27,14 +27,18 @@ export interface TreatmentFormData {
 
 export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any, existingData?: any) => {
   // Detect if this is a blind/shutter (not curtain/roman) to avoid unnecessary curtain-specific defaults
-  const isBlindOrShutter = treatmentType.toLowerCase().includes('blind') || 
+  const isBlindOrShutter = treatmentType.toLowerCase().includes('blind') ||
                            treatmentType.toLowerCase().includes('shutter') ||
                            treatmentType.toLowerCase().includes('venetian') ||
                            treatmentType.toLowerCase().includes('cellular') ||
                            treatmentType.toLowerCase().includes('honeycomb') ||
                            treatmentType.toLowerCase().includes('vertical') ||
-                           windowCovering?.category === 'blinds' || 
-                           windowCovering?.category === 'shutters';
+                           treatmentType.toLowerCase().includes('awning') ||
+                           treatmentType.toLowerCase().includes('panel') ||
+                           windowCovering?.category === 'blinds' ||
+                           windowCovering?.category === 'shutters' ||
+                           windowCovering?.category === 'awning' ||
+                           windowCovering?.category === 'panel_glide';
   
   const [formData, setFormData] = useState<TreatmentFormData>({
     product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",

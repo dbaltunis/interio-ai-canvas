@@ -16,13 +16,16 @@ import { calculatePrice, resolvePricingMethod, type PricingMethod, type PricingC
 const isBlindType = (formData: any): boolean => {
   const treatmentType = formData.treatment_type?.toLowerCase() || '';
   const treatmentCategory = formData.treatment_category?.toLowerCase() || '';
-  
-  return treatmentType.includes('blind') || 
+
+  return treatmentType.includes('blind') ||
          treatmentCategory.includes('blind') ||
          treatmentCategory === 'roller_blinds' ||
          treatmentCategory === 'venetian_blinds' ||
          treatmentCategory === 'cellular_blinds' ||
          treatmentCategory === 'vertical_blinds' ||
+         treatmentCategory === 'zebra_blinds' ||
+         treatmentCategory === 'panel_glide' ||
+         treatmentCategory === 'awning' ||
          formData.curtain_type === 'blind';
 };
 

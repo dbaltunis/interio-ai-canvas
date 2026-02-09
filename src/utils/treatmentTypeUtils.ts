@@ -27,7 +27,7 @@ import {
 
 /**
  * Check if a treatment category is a blind type (any blind)
- * Includes: roller, venetian, vertical, cellular, zebra blinds
+ * Includes: roller, venetian, vertical, cellular, zebra, panel_glide blinds
  */
 export function isBlindType(category: string | undefined | null): boolean {
   if (!category) return false;
@@ -40,6 +40,7 @@ export function isBlindType(category: string | undefined | null): boolean {
     'vertical_blinds',
     'cellular_blinds',
     'zebra_blinds',
+    'panel_glide',
     'roman_blinds' // Note: Romans are hybrid - fabric but calculated like blinds in some contexts
   ];
 
@@ -59,7 +60,8 @@ export function isHardBlindType(category: string | undefined | null): boolean {
     'venetian_blinds',
     'vertical_blinds',
     'cellular_blinds',
-    'zebra_blinds'
+    'zebra_blinds',
+    'panel_glide',
   ];
 
   return hardBlindCategories.includes(normalized);

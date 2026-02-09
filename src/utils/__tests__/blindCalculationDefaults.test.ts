@@ -110,48 +110,56 @@ describe('getBlindHemValues', () => {
       expect(() => getBlindHemValues(undefined)).toThrow('Template is required');
     });
 
-    it('should throw error when header_hem is missing', () => {
+    it('should return 0 defaults when header_hem is missing (TWC sync compatibility)', () => {
       const template = {
         name: 'Missing Header',
         blind_bottom_hem_cm: 10,
         blind_side_hem_cm: 4
       };
 
-      expect(() => getBlindHemValues(template)).toThrow('missing required values');
-      expect(() => getBlindHemValues(template)).toThrow('header_hem');
+      const result = getBlindHemValues(template);
+      expect(result.headerHemCm).toBe(0);
+      expect(result.bottomHemCm).toBe(10);
+      expect(result.sideHemCm).toBe(4);
     });
 
-    it('should throw error when bottom_hem is missing', () => {
+    it('should return 0 defaults when bottom_hem is missing (TWC sync compatibility)', () => {
       const template = {
         name: 'Missing Bottom',
         blind_header_hem_cm: 8,
         blind_side_hem_cm: 4
       };
 
-      expect(() => getBlindHemValues(template)).toThrow('missing required values');
-      expect(() => getBlindHemValues(template)).toThrow('bottom_hem');
+      const result = getBlindHemValues(template);
+      expect(result.headerHemCm).toBe(8);
+      expect(result.bottomHemCm).toBe(0);
+      expect(result.sideHemCm).toBe(4);
     });
 
-    it('should throw error when side_hem is missing', () => {
+    it('should return 0 defaults when side_hem is missing (TWC sync compatibility)', () => {
       const template = {
         name: 'Missing Side',
         blind_header_hem_cm: 8,
         blind_bottom_hem_cm: 10
       };
 
-      expect(() => getBlindHemValues(template)).toThrow('missing required values');
-      expect(() => getBlindHemValues(template)).toThrow('side_hem');
+      const result = getBlindHemValues(template);
+      expect(result.headerHemCm).toBe(8);
+      expect(result.bottomHemCm).toBe(10);
+      expect(result.sideHemCm).toBe(0);
     });
 
-    it('should throw error listing all missing values', () => {
+    it('should return all 0 defaults when all values missing (TWC sync compatibility)', () => {
       const template = {
         name: 'Missing All'
         // no hem values
       };
 
-      expect(() => getBlindHemValues(template)).toThrow('header_hem');
-      expect(() => getBlindHemValues(template)).toThrow('bottom_hem');
-      expect(() => getBlindHemValues(template)).toThrow('side_hem');
+      const result = getBlindHemValues(template);
+      expect(result.headerHemCm).toBe(0);
+      expect(result.bottomHemCm).toBe(0);
+      expect(result.sideHemCm).toBe(0);
+      expect(result.wastePercent).toBe(0);
     });
   });
 });

@@ -18,9 +18,9 @@ export type { TreatmentCategoryDbValue };
 
 // Treatment type classifications
 export const LINEAR_TYPES: TreatmentCategoryDbValue[] = ['curtains', 'roman_blinds'];
-export const AREA_TYPES: TreatmentCategoryDbValue[] = ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters'];
-export const GRID_TYPES: TreatmentCategoryDbValue[] = ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters'];
-export const UNSUPPORTED_TYPES: TreatmentCategoryDbValue[] = ['wallpaper', 'awning', 'panel_glide'];
+export const AREA_TYPES: TreatmentCategoryDbValue[] = ['roller_blinds', 'zebra_blinds', 'venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters', 'panel_glide', 'awning'];
+export const GRID_TYPES: TreatmentCategoryDbValue[] = ['roller_blinds', 'zebra_blinds', 'venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters', 'panel_glide', 'awning'];
+export const UNSUPPORTED_TYPES: TreatmentCategoryDbValue[] = ['wallpaper'];
 
 /**
  * Measurements from UI/database - ALL VALUES IN MILLIMETERS

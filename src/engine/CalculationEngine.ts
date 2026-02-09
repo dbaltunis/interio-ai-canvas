@@ -137,11 +137,19 @@ export class CalculationEngine {
       }
       
     } else {
-      throw new CalculationError(
-        `Unknown category type: ${category}`,
-        'unknown_category',
-        { category }
-      );
+      // Graceful fallback for unknown/new treatment types (e.g. future TWC-synced categories)
+      // Use area calculation as a safe default since most non-curtain treatments are area-based
+      console.warn(`⚠️ [CalculationEngine] Unknown category "${category}" - falling back to area calculation`);
+      const areaResult = this.calculateArea(measurements, template);
+
+      sqm = areaResult.sqm;
+      formula_breakdown = areaResult.formula;
+
+      if (material) {
+        material_cost = this.calculateMaterialCost(material, sqm, width_cm, drop_cm);
+      } else if (fabric) {
+        fabric_cost = this.calculateFabricCost(fabric, undefined, width_cm, drop_cm);
+      }
     }
     
     const options_cost = this.calculateOptionsCost(
