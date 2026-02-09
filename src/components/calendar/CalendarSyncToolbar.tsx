@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, isSameMonth } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
@@ -237,7 +237,18 @@ export const CalendarSyncToolbar = ({
           </div>
 
           <h2 className="text-sm font-semibold ml-1 min-w-[120px]">
-            {format(currentDate, 'MMMM yyyy')}
+            {view === 'day'
+              ? format(currentDate, 'EEE, MMM d, yyyy')
+              : view === 'week'
+              ? (() => {
+                  const weekStart = startOfWeek(currentDate);
+                  const weekEnd = endOfWeek(currentDate);
+                  return isSameMonth(weekStart, weekEnd)
+                    ? `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'd, yyyy')}`
+                    : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
+                })()
+              : format(currentDate, 'MMMM yyyy')
+            }
           </h2>
 
           {/* Sync status indicator - minimal */}
