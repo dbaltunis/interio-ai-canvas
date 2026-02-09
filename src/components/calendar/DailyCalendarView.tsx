@@ -16,10 +16,12 @@ interface DailyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
+  filteredAppointments?: any[];
 }
 
-export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }: DailyCalendarViewProps) => {
+export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
+  const displayAppointments = filteredAppointments || appointments;
   const { data: clients } = useClients();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { data: tasks } = useMyTasks();
@@ -80,8 +82,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   // Get events for the current day
   const getDayEvents = () => {
-    if (!appointments) return [];
-    return appointments.filter(appointment => {
+    if (!displayAppointments) return [];
+    return displayAppointments.filter(appointment => {
       // Format both dates in the same timezone for comparison
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
       const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
@@ -334,7 +336,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         top: `${style.top}px`,
                         height: `${style.height}px`,
                         zIndex: 10 + eventIndex,
-                        backgroundColor: eventColor ? `${eventColor}15` : 'hsl(var(--muted) / 0.3)',
+                        backgroundColor: eventColor ? `${eventColor}30` : 'hsl(var(--muted) / 0.3)',
                         borderLeft: `3px solid ${eventColor}`,
                       }}
                       onClick={() => onEventClick?.(event.id)}

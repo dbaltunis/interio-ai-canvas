@@ -229,20 +229,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return <MobileCalendarView />;
   }
 
-  const getEventsForDate = (date: Date) => {
-    if (!appointments) return [];
-    return appointments.filter(appointment => {
-      // Format both dates in user's timezone for comparison
+  const getEventsForDate = (date: Date, useFiltered = true) => {
+    const source = useFiltered ? filteredAppointments : appointments;
+    if (!source) return [];
+    return source.filter(appointment => {
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, displayTimezone, 'yyyy-MM-dd');
       const filterDateStr = TimezoneUtils.formatInTimezone(date.toISOString(), displayTimezone, 'yyyy-MM-dd');
-      console.log('[CalendarView] Filtering for date:', {
-        title: appointment.title,
-        utcTime: appointment.start_time,
-        displayTimezone,
-        appointmentDateStr,
-        filterDateStr,
-        matches: appointmentDateStr === filterDateStr
-      });
       return appointmentDateStr === filterDateStr;
     });
   };
@@ -328,8 +320,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                   isWeekend && isCurrentMonth ? 'bg-muted/20' : 'bg-background'
                 } hover:bg-accent/30`}
                 onClick={() => {
-                  setSelectedDate(day);
-                  setShowCreateEventDialog(true);
+                  setCurrentDate(day);
+                  setView('day');
                 }}
               >
                 {/* Day number - refined today indicator */}
@@ -355,7 +347,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                         transition={{ delay: idx * 0.05, duration: 0.15 }}
                         className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
                         style={{
-                          backgroundColor: event.color ? `${event.color}20` : 'hsl(var(--primary) / 0.1)',
+                          backgroundColor: event.color ? `${event.color}30` : 'hsl(var(--primary) / 0.15)',
                           borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
                         }}
                         onClick={(e) => {
@@ -373,7 +365,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     </EventHoverCard>
                   ))}
                   {events.length > 3 && (
-                    <div className="text-[10px] text-muted-foreground font-medium px-1">
+                    <div
+                      className="text-[10px] text-primary font-medium px-1 cursor-pointer hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentDate(day);
+                        setView('day');
+                      }}
+                    >
                       +{events.length - 3} more
                     </div>
                   )}
@@ -596,10 +595,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                 </div>
               )}
               {view === 'day' && (
-                <DailyCalendarView 
+                <DailyCalendarView
                   currentDate={currentDate}
                   onEventClick={handleEventClick}
                   onTimeSlotClick={handleTimeSlotClick}
+                  filteredAppointments={filteredAppointments}
                 />
               )}
             </>
