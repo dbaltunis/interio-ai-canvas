@@ -898,6 +898,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
       inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
       pricingGridData, // CRITICAL: Pass grid data for pricing_grid type templates
+      pricingGridDiscount: fabricItem?.pricing_grid_discount || 0,
     });
     
     console.log('🔍 calculateTreatmentPricing returned (WHAT GETS SAVED):', {
@@ -1595,6 +1596,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   unitsCurrency: units.currency,
                   selectedOptions,
                   inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
+                  pricingGridDiscount: fabricItem?.pricing_grid_discount || 0,
                 });
 
                 console.log('💰 Passing calculated costs to display:', {

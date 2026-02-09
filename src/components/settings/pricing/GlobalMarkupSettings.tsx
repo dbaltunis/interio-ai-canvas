@@ -139,7 +139,7 @@ export const GlobalMarkupSettings: React.FC = () => {
               <Input
                 id="default-markup"
                 type="number"
-                min="-100"
+                min="0"
                 max="500"
                 step="0.5"
                 value={localSettings.default_markup_percentage}
@@ -151,7 +151,7 @@ export const GlobalMarkupSettings: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applied when no other markup is set. Use negative values for discount.
+              Applied when no other markup is set
             </p>
           </div>
 
@@ -260,7 +260,7 @@ export const GlobalMarkupSettings: React.FC = () => {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {categories.map(({ key, label }) => {
               const categoryValue = localSettings.category_markups[key] || 0;
-              const effectiveMarkup = categoryValue !== 0 ? categoryValue : localSettings.default_markup_percentage;
+              const effectiveMarkup = categoryValue > 0 ? categoryValue : localSettings.default_markup_percentage;
               const usesDefault = categoryValue === 0;
               
               return (

@@ -64,8 +64,8 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     };
   }
   
-  // 3. Check grid-level markup (0 = use default, negative = discount)
-  if (context.gridMarkup != null && context.gridMarkup !== 0) {
+  // 3. Check grid-level markup (0 = use default/fall through)
+  if (context.gridMarkup != null && context.gridMarkup > 0) {
     return {
       percentage: context.gridMarkup,
       source: 'grid',
@@ -216,7 +216,6 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
  */
 export function applyMarkup(costPrice: number, markupPercentage: number): number {
   if (costPrice <= 0) return costPrice;
-  // Negative markup = discount (e.g., -10 means 10% discount off cost)
   return costPrice * (1 + markupPercentage / 100);
 }
 

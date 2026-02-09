@@ -107,6 +107,7 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
             pricing_method: 'pricing_grid', // ✅ CRITICAL: Set pricing method for engine
             pricing_grid_data: gridResult.gridData,
             pricing_grid_markup: gridResult.markupPercentage,
+            pricing_grid_discount: gridResult.discountPercentage || 0,
             resolved_grid_id: gridResult.gridId,
             resolved_grid_code: gridResult.gridCode,
             resolved_grid_name: gridResult.gridName
