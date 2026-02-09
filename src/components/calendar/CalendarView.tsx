@@ -580,11 +580,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return true;
   });
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentDate(subWeeks(currentDate, 1));
+  const navigateCalendar = (direction: 'prev' | 'next') => {
+    const delta = direction === 'prev' ? -1 : 1;
+    if (view === 'day') {
+      setCurrentDate(addDays(currentDate, delta));
+    } else if (view === 'week') {
+      setCurrentDate(delta === -1 ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
     } else {
-      setCurrentDate(addWeeks(currentDate, 1));
+      setCurrentDate(addMonths(currentDate, delta));
     }
   };
 
@@ -607,8 +610,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             currentDate={currentDate}
             view={view}
             onTodayClick={() => setCurrentDate(new Date())}
-            onPrevClick={() => navigateWeek('prev')}
-            onNextClick={() => navigateWeek('next')}
+            onPrevClick={() => navigateCalendar('prev')}
+            onNextClick={() => navigateCalendar('next')}
             onViewChange={(value: CalendarView) => setView(value)}
             onFiltersChange={setFilters}
             onStaffFilterChange={setSelectedStaffId}
