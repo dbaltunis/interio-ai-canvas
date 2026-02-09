@@ -62,6 +62,28 @@ import { SupplierOrderingDropdown } from "./SupplierOrderingDropdown";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { useIsUserAssigned } from "@/hooks/useProjectAssignments";
 
+/**
+ * Small component that reads ProjectStatus context to control the edit button visibility.
+ * Must be rendered INSIDE <ProjectStatusProvider> to get the correct isLocked value.
+ */
+function ProjectNameEditButton({ canEditJob, onStartEditing }: { canEditJob: boolean; onStartEditing: () => void }) {
+  const { isLocked } = useProjectStatus();
+  const canEditProjectName = canEditJob && !isLocked;
+
+  if (!canEditProjectName) return null;
+
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => onStartEditing()}
+      className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+    >
+      <Pencil className="h-3.5 w-3.5" />
+    </Button>
+  );
+}
+
 interface JobDetailPageProps {
   jobId: string;
   onBack: () => void;
@@ -205,8 +227,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   
   // Permission check for editing project name
   const { canEditJob } = useCanEditJob(project);
-  const { isLocked } = useProjectStatus();
-  const canEditProjectName = canEditJob && !isLocked;
+  // NOTE: useProjectStatus() was removed here because it was called OUTSIDE the
+  // ProjectStatusProvider (which wraps the JSX return). Instead, the ProjectNameEditButton
+  // component calls useProjectStatus() from inside the Provider.
   
   // Sync editedName with project.name
   useEffect(() => {
@@ -966,16 +989,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate">
                       {project.name || "Untitled Project"}
                     </h1>
-                    {canEditProjectName && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setIsEditingName(true)}
-                        className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
+                    <ProjectNameEditButton
+                      canEditJob={canEditJob}
+                      onStartEditing={() => setIsEditingName(true)}
+                    />
                     {duplicates && (
                       <DuplicateJobIndicator 
                         isDuplicate={duplicates.isDuplicate}
