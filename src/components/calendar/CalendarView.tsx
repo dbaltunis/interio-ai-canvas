@@ -151,6 +151,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     eventTypes: [],
     statuses: []
   });
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   
   // Enable real-time updates
   useRealtimeBookings();
@@ -495,6 +496,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       }
     }
 
+    // Staff member filter - show only events for selected staff member
+    if (selectedStaffId) {
+      const isStaffOwner = appointment.user_id === selectedStaffId;
+      const isStaffTeamMember = appointment.team_member_ids?.includes(selectedStaffId);
+      if (!isStaffOwner && !isStaffTeamMember) return false;
+    }
+
     // Search term filter
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
@@ -554,6 +562,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onNextClick={() => navigateWeek('next')}
             onViewChange={(value: CalendarView) => setView(value)}
             onFiltersChange={setFilters}
+            onStaffFilterChange={setSelectedStaffId}
+            selectedStaffId={selectedStaffId}
             onSchedulerClick={() => setShowSchedulerSlider(true)}
             onDateChange={setCurrentDate}
             onManageTemplates={() => setShowSchedulerManagement(true)}

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, Search, Eye, MoreHorizontal } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, Search, Eye, MoreHorizontal, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +14,7 @@ import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -33,6 +34,8 @@ interface CalendarSyncToolbarProps {
   onNextClick?: () => void;
   onViewChange?: (view: CalendarView) => void;
   onFiltersChange?: (filters: CalendarFilterState) => void;
+  onStaffFilterChange?: (staffUserId: string | null) => void;
+  selectedStaffId?: string | null;
   onSchedulerClick?: () => void;
   onDateChange?: (date: Date) => void;
   onManageTemplates?: () => void;
@@ -50,6 +53,8 @@ export const CalendarSyncToolbar = ({
   onNextClick,
   onViewChange,
   onFiltersChange,
+  onStaffFilterChange,
+  selectedStaffId,
   onSchedulerClick,
   onDateChange,
   onManageTemplates,
@@ -109,6 +114,8 @@ export const CalendarSyncToolbar = ({
 
     return () => clearInterval(interval);
   }, [isConnected, googleSyncEnabled, integration?.last_sync, syncFromGoogle, syncAllToGoogle]);
+
+  const { data: teamMembers } = useTeamMembers();
 
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;
@@ -244,6 +251,32 @@ export const CalendarSyncToolbar = ({
               </Tooltip>
             </TooltipProvider>
           )}
+        </div>
+      )}
+
+      {/* Staff Calendar Selector */}
+      {onStaffFilterChange && teamMembers && teamMembers.length > 0 && (
+        <div className="flex items-center ml-2">
+          <Select
+            value={selectedStaffId || "all"}
+            onValueChange={(value) => onStaffFilterChange(value === "all" ? null : value)}
+          >
+            <SelectTrigger className="h-7 w-[140px] text-xs gap-1">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              <SelectValue placeholder="All Staff" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Staff</SelectItem>
+              <SelectItem value={user?.id || "me"}>My Calendar</SelectItem>
+              {teamMembers
+                .filter((m: any) => m.user_id !== user?.id)
+                .map((member: any) => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.full_name || member.email || 'Team Member'}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
