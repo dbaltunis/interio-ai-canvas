@@ -87,14 +87,14 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
       )}
 
       {/* Team Member Picker Popover */}
-      <Popover open={isOpen} onOpenChange={setIsOpen} modal={false}>
+      <Popover open={isOpen} onOpenChange={setIsOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-start gap-2">
             <Users className="h-4 w-4" />
             {isAllSelected ? "All members" : `Individual (${selectedMembers.length})`}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80" align="start">
+        <PopoverContent className="w-80 z-[9999]" align="start">
           <div className="space-y-4">
             <div>
               <h4 className="font-medium mb-1">Share with Team</h4>

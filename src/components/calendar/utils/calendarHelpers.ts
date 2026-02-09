@@ -13,6 +13,9 @@ export const getEventsForDate = (appointments: any[] | undefined, date: Date): a
     const startTime = new Date(appointment.start_time);
     const endTime = new Date(appointment.end_time);
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) return false;
+    // Filter out ghost events: very short (<= 15 min) with no title
+    const durationMs = endTime.getTime() - startTime.getTime();
+    if (durationMs <= 15 * 60 * 1000 && !appointment.title?.trim()) return false;
     return isSameDay(startTime, date);
   });
 };

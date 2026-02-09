@@ -202,6 +202,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     statuses: []
   });
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("calendar.hiddenSources");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // Quick add popover state
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -438,6 +446,17 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       if (!filters.statuses.includes(appointment.status)) return false;
     }
 
+    // Sidebar source visibility filter
+    if (hiddenSources.has('personal')) {
+      // Hide personal (non-synced) appointments owned by current user
+      const isOwner = appointment.user_id === currentUserId;
+      const isSynced = !!appointment.google_event_id || !!appointment.outlook_event_id || !!appointment.nylas_event_id;
+      if (isOwner && !isSynced) return false;
+    }
+    if (hiddenSources.has('google') && appointment.google_event_id) return false;
+    if (hiddenSources.has('outlook') && appointment.outlook_event_id) return false;
+    if (hiddenSources.has('nylas') && appointment.nylas_event_id) return false;
+
     return true;
   });
 
@@ -460,6 +479,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           currentDate={currentDate}
           onDateChange={setCurrentDate}
           onBookingLinks={() => setShowSchedulerSlider(true)}
+          onHiddenSourcesChange={setHiddenSources}
         />
       )}
 
