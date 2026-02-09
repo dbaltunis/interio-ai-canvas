@@ -3,6 +3,7 @@ import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar a
 import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { useOutlookCalendarIntegration, useOutlookCalendarSync } from "@/hooks/useOutlookCalendar";
+import { useNylasCalendarIntegration, useNylasCalendarSync } from "@/hooks/useNylasCalendar";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -70,6 +71,8 @@ export const CalendarSyncToolbar = ({
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   const { integration: outlookIntegration, isConnected: isOutlookConnected } = useOutlookCalendarIntegration();
   const { syncFromOutlook, syncAllToOutlook, isSyncingFromOutlook, isSyncingAll: isSyncingAllOutlook } = useOutlookCalendarSync();
+  const { integration: nylasIntegration, isConnected: isNylasConnected } = useNylasCalendarIntegration();
+  const { syncFromNylas, syncToNylas, isSyncingFromNylas, isSyncingToNylas } = useNylasCalendarSync();
   const isTablet = useIsTablet();
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -97,35 +100,43 @@ export const CalendarSyncToolbar = ({
         await syncFromOutlook();
         await syncAllToOutlook();
       }
+      if (isNylasConnected) {
+        await syncFromNylas();
+        await syncToNylas();
+      }
     }
   };
 
   // Auto-sync interval - every 5 minutes when enabled
   useEffect(() => {
-    if ((!isConnected && !isOutlookConnected) || !calendarSyncEnabled) {
+    if ((!isConnected && !isOutlookConnected && !isNylasConnected) || !calendarSyncEnabled) {
       return;
     }
 
     const lastGoogleSync = integration?.last_sync;
     const lastOutlookSync = outlookIntegration?.last_sync;
-    const shouldSyncNow = (!lastGoogleSync && !lastOutlookSync) ||
+    const lastNylasSync = nylasIntegration?.last_sync;
+    const shouldSyncNow = (!lastGoogleSync && !lastOutlookSync && !lastNylasSync) ||
       (lastGoogleSync && Date.now() - new Date(lastGoogleSync).getTime() > 5 * 60 * 1000) ||
-      (lastOutlookSync && Date.now() - new Date(lastOutlookSync).getTime() > 5 * 60 * 1000);
+      (lastOutlookSync && Date.now() - new Date(lastOutlookSync).getTime() > 5 * 60 * 1000) ||
+      (lastNylasSync && Date.now() - new Date(lastNylasSync).getTime() > 5 * 60 * 1000);
 
     if (shouldSyncNow) {
       if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
       if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
+      if (isNylasConnected) { syncFromNylas(); syncToNylas(); }
     }
 
     const interval = setInterval(() => {
       if (calendarSyncEnabled) {
         if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
         if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
+        if (isNylasConnected) { syncFromNylas(); syncToNylas(); }
       }
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isConnected, isOutlookConnected, calendarSyncEnabled, integration?.last_sync, outlookIntegration?.last_sync, syncFromGoogle, syncAllToGoogle, syncFromOutlook, syncAllToOutlook]);
+  }, [isConnected, isOutlookConnected, isNylasConnected, calendarSyncEnabled, integration?.last_sync, outlookIntegration?.last_sync, nylasIntegration?.last_sync, syncFromGoogle, syncAllToGoogle, syncFromOutlook, syncAllToOutlook, syncFromNylas, syncToNylas]);
 
   const { data: teamMembers } = useTeamMembers();
 
@@ -201,8 +212,8 @@ export const CalendarSyncToolbar = ({
     return `${Math.floor(secondsAgo / 86400)}d`;
   };
   
-  const anyCalendarConnected = isConnected || isOutlookConnected;
-  const anySyncing = (isSyncingFromGoogle || isSyncingAll || isSyncingFromOutlook || isSyncingAllOutlook) && calendarSyncEnabled;
+  const anyCalendarConnected = isConnected || isOutlookConnected || isNylasConnected;
+  const anySyncing = (isSyncingFromGoogle || isSyncingAll || isSyncingFromOutlook || isSyncingAllOutlook || isSyncingFromNylas || isSyncingToNylas) && calendarSyncEnabled;
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -258,7 +269,7 @@ export const CalendarSyncToolbar = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 ml-2">
-                    {(integration?.active || outlookIntegration?.active) ? (
+                    {(integration?.active || outlookIntegration?.active || nylasIntegration?.active) ? (
                       <CheckCircle2 className="h-3 w-3 text-green-500" />
                     ) : (
                       <XCircle className="h-3 w-3 text-destructive" />
@@ -271,6 +282,7 @@ export const CalendarSyncToolbar = ({
                 <TooltipContent side="bottom" className="text-xs">
                   {isConnected && <p>Google Calendar: {getLastSyncText(integration?.last_sync)}</p>}
                   {isOutlookConnected && <p>Outlook Calendar: {getLastSyncText(outlookIntegration?.last_sync)}</p>}
+                  {isNylasConnected && <p>Nylas ({nylasIntegration?.provider === 'microsoft' ? 'Outlook' : nylasIntegration?.provider === 'google' ? 'Google' : 'Calendar'}): {getLastSyncText(nylasIntegration?.last_sync)}</p>}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -473,7 +485,7 @@ export const CalendarSyncToolbar = ({
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {isConnected && isOutlookConnected ? 'Calendar Sync' : isConnected ? 'Google Sync' : 'Outlook Sync'}
+                    Calendar Sync
                   </span>
                   <Switch
                     checked={calendarSyncEnabled}
