@@ -34,6 +34,7 @@ interface CalendarSyncToolbarProps {
   onPrevClick?: () => void;
   onNextClick?: () => void;
   onViewChange?: (view: CalendarView) => void;
+  filters?: CalendarFilterState;
   onFiltersChange?: (filters: CalendarFilterState) => void;
   onStaffFilterChange?: (staffUserId: string | null) => void;
   selectedStaffId?: string | null;
@@ -53,6 +54,7 @@ export const CalendarSyncToolbar = ({
   onPrevClick,
   onNextClick,
   onViewChange,
+  filters,
   onFiltersChange,
   onStaffFilterChange,
   selectedStaffId,
@@ -148,7 +150,6 @@ export const CalendarSyncToolbar = ({
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[CalendarSyncToolbar] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -319,7 +320,7 @@ export const CalendarSyncToolbar = ({
                   className="pl-7 h-7 text-xs"
                   autoFocus
                   onBlur={() => setShowSearch(false)}
-                  onChange={(e) => onFiltersChange({ searchTerm: e.target.value, userIds: [], eventTypes: [], statuses: [] })}
+                  onChange={(e) => onFiltersChange({ ...filters, searchTerm: e.target.value } as CalendarFilterState)}
                 />
               </div>
             ) : (

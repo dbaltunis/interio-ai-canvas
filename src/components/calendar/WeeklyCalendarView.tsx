@@ -47,6 +47,43 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
   const [schedulerSlotDialog, setSchedulerSlotDialog] = useState<{ open: boolean; slot: any }>({ open: false, slot: null });
   
+  // Event creation state
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
+  const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
+
+  // Drag and drop state
+  const [activeEvent, setActiveEvent] = useState<any>(null);
+
+  // Get week days starting from Sunday
+  const getWeekDays = () => {
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(startOfCurrentWeek, i));
+    }
+    return days;
+  };
+
+  const weekDays = getWeekDays();
+
+  // Generate all 24-hour time slots (00:00 to 23:30)
+  const allTimeSlots = (() => {
+    const slots = [];
+    for (let hour = 0; hour <= 23; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+      if (hour < 23) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
+    }
+    slots.push('23:30');
+    return slots;
+  })();
+
+  // Default to full 24-hour view, with toggle for working hours
+  const [showExtendedHours, setShowExtendedHours] = useState(true);
+  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
+
   // Get current user ID
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -71,43 +108,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, [currentDate]); // Re-run when navigating weeks
-  
-  // Event creation state
-  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
-  const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
-  const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
-  
-  // Drag and drop state
-  const [activeEvent, setActiveEvent] = useState<any>(null);
-
-  // Generate all 24-hour time slots (00:00 to 23:30)
-  const allTimeSlots = (() => {
-    const slots = [];
-    for (let hour = 0; hour <= 23; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < 23) {
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
-      }
-    }
-    slots.push('23:30');
-    return slots;
-  })();
-
-  // Default to full 24-hour view, with toggle for working hours
-  const [showExtendedHours, setShowExtendedHours] = useState(true);
-  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
-
-  // Get week days starting from Sunday
-  const getWeekDays = () => {
-    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 0 });
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(addDays(startOfCurrentWeek, i));
-    }
-    return days;
-  };
-
-  const weekDays = getWeekDays();
 
   // Get events for a specific date with date validation
   const getEventsForDate = (date: Date) => {
@@ -392,7 +392,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         end_time: newEndTime.toISOString()
       });
     } catch (error) {
-      console.error('Failed to update appointment:', error);
+      // Error handled by React Query's onError
     }
   };
 

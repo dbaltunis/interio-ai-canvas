@@ -87,7 +87,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[CalendarSidebar] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -222,7 +221,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         importance: 'silent',
       });
     } catch (error) {
-      console.error("Error deleting event:", error);
       toast({
         title: "Error",
         description: "Failed to delete the event. Please try again.",

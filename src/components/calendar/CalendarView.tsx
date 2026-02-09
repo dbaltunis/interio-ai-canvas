@@ -90,7 +90,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[CalendarView] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -613,6 +612,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onPrevClick={() => navigateCalendar('prev')}
             onNextClick={() => navigateCalendar('next')}
             onViewChange={(value: CalendarView) => setView(value)}
+            filters={filters}
             onFiltersChange={setFilters}
             onStaffFilterChange={setSelectedStaffId}
             selectedStaffId={selectedStaffId}
