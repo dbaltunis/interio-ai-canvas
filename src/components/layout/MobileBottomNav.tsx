@@ -118,7 +118,6 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         return false;
       }
       
-      console.log('[MobileBottomNav] Online store check:', { hasStore: data && data.length > 0 });
       return data && data.length > 0;
     },
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes - store status changes rarely

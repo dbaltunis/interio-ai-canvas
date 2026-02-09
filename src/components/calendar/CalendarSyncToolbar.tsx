@@ -111,14 +111,12 @@ export const CalendarSyncToolbar = ({
       (lastOutlookSync && Date.now() - new Date(lastOutlookSync).getTime() > 5 * 60 * 1000);
 
     if (shouldSyncNow) {
-      console.log('Initial auto-sync triggered');
       if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
       if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
     }
 
     const interval = setInterval(() => {
       if (calendarSyncEnabled) {
-        console.log('Background auto-sync triggered');
         if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
         if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
       }

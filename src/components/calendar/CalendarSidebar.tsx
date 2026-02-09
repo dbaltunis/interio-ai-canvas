@@ -447,7 +447,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                         });
                         return;
                       }
-                      console.log('[CalendarSidebar] New Booking Template clicked');
                       onBookingLinks();
                     }}
                     className="w-full pointer-events-auto relative z-10"
@@ -466,7 +465,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                 <div className="grid grid-cols-1 gap-2">
                   <Button 
                     onClick={() => {
-                      console.log('[CalendarSidebar] Manage Templates clicked');
                       setShowSchedulerManagement(true);
                     }}
                     className="w-full justify-start pointer-events-auto relative z-10"
