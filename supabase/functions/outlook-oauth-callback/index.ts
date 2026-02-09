@@ -1,0 +1,266 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  console.log('Outlook OAuth callback received:', req.url);
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    const error = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
+
+    console.log('Outlook OAuth params:', { code: !!code, state, error });
+
+    if (error) {
+      console.error('Outlook OAuth error:', error, errorDescription);
+      return new Response(
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: '${error}: ${errorDescription || ''}' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: ${error}</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+
+    if (!code) {
+      console.error('No authorization code received');
+      return new Response(
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: 'No authorization code received' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: No authorization code received</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+
+    // Exchange code for tokens
+    console.log('Exchanging code for Microsoft tokens...');
+    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/outlook-oauth-callback`;
+
+    const tokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: Deno.env.get('MICROSOFT_CLIENT_ID') || '',
+        client_secret: Deno.env.get('MICROSOFT_CLIENT_SECRET') || '',
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+        scope: 'Calendars.ReadWrite offline_access User.Read',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Microsoft token exchange failed:', errorText);
+      return new Response(
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: 'Failed to exchange authorization code' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Token exchange failed</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+
+    const tokens = await tokenResponse.json();
+    console.log('Microsoft token exchange successful');
+
+    // Create Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
+
+    const userId = state;
+
+    if (!userId) {
+      console.error('No user ID in state parameter');
+      return new Response(
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: 'Authentication state error' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Invalid state</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+
+    console.log('Storing Outlook integration for user:', userId);
+
+    const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000)).toISOString();
+
+    // Store or update the integration
+    const { error: dbError } = await supabaseClient
+      .from('integration_settings')
+      .upsert({
+        user_id: userId,
+        integration_type: 'outlook_calendar',
+        active: true,
+        api_credentials: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt,
+        },
+        configuration: {
+          calendar_id: 'primary',
+          sync_enabled: true,
+        },
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,integration_type'
+      });
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return new Response(
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: 'Failed to save integration' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Database error</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+
+    console.log('Outlook integration saved successfully');
+
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <title>Outlook Calendar Connected</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              text-align: center;
+              padding: 40px 20px;
+              background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+              min-height: 100vh;
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+            }
+            .success-icon {
+              width: 80px;
+              height: 80px;
+              background: #0078d4;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 24px;
+            }
+            .success-icon svg {
+              width: 40px;
+              height: 40px;
+              color: white;
+            }
+            h2 { color: #1f2937; margin: 0 0 12px; font-size: 24px; }
+            p { color: #6b7280; margin: 0 0 24px; font-size: 16px; }
+            .close-btn {
+              background: #0078d4;
+              color: white;
+              border: none;
+              padding: 12px 32px;
+              border-radius: 8px;
+              font-size: 16px;
+              cursor: pointer;
+            }
+            .close-btn:hover { background: #106ebe; }
+            .status { margin-top: 16px; font-size: 12px; color: #9ca3af; }
+          </style>
+        </head>
+        <body>
+          <div class="success-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2>Outlook Calendar Connected!</h2>
+          <p>Your Outlook Calendar is now connected successfully.</p>
+          <button class="close-btn" onclick="closeWindow()">Close Window</button>
+          <div class="status" id="status">Notifying app...</div>
+
+          <script>
+            let notified = false;
+
+            function updateStatus(msg) {
+              document.getElementById('status').textContent = msg;
+            }
+
+            function closeWindow() {
+              try { window.close(); } catch(e) {}
+              setTimeout(() => { updateStatus('You can close this tab manually.'); }, 500);
+            }
+
+            // Method 1: postMessage to parent
+            try {
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: 'OUTLOOK_AUTH_SUCCESS', timestamp: Date.now() }, '*');
+                notified = true;
+                updateStatus('App notified via postMessage');
+              }
+            } catch(e) {}
+
+            // Method 2: localStorage
+            try {
+              localStorage.setItem('outlook_calendar_auth_success', JSON.stringify({
+                success: true,
+                timestamp: Date.now(),
+                userId: '${userId}'
+              }));
+              notified = true;
+              setTimeout(() => {
+                try { localStorage.removeItem('outlook_calendar_auth_success'); } catch(e) {}
+              }, 5000);
+            } catch(e) {}
+
+            // Auto-close
+            setTimeout(() => {
+              try { if (window.opener && !window.opener.closed) window.opener.focus(); } catch(e) {}
+              updateStatus('Connection complete! You can close this window.');
+              setTimeout(() => closeWindow(), 2000);
+            }, 1500);
+          </script>
+        </body>
+      </html>`,
+      { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+    );
+
+  } catch (error) {
+    console.error('Outlook OAuth callback error:', error);
+    return new Response(
+      `<html><body><script>
+        if (window.opener) {
+          window.opener.postMessage({ type: 'OUTLOOK_AUTH_ERROR', error: 'Unexpected error occurred' }, '*');
+        }
+        setTimeout(() => window.close(), 1000);
+      </script>
+      <p>Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}</p></body></html>`,
+      { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+    );
+  }
+});
