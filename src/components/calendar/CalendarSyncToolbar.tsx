@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, Search, Eye, MoreHorizontal, Users } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings as SettingsIcon, BarChart3, Search, Eye, MoreHorizontal, Users, ListTodo } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { useOutlookCalendarIntegration, useOutlookCalendarSync } from "@/hooks/useOutlookCalendar";
@@ -322,6 +322,20 @@ export const CalendarSyncToolbar = ({
               </Button>
             )}
           </>
+        )}
+
+        {/* Tasks toggle */}
+        {onTasksClick && (
+          <Button
+            variant={showTasksView ? "default" : "ghost"}
+            size="sm"
+            onClick={onTasksClick}
+            className="h-7 gap-1 px-2 text-xs"
+            title={showTasksView ? "Show Calendar" : "Show Tasks"}
+          >
+            <ListTodo className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Tasks</span>
+          </Button>
         )}
 
         {/* View selector */}

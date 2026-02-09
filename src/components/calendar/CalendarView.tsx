@@ -324,11 +324,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                   setView('day');
                 }}
               >
-                {/* Day number - refined today indicator */}
+                {/* Day number */}
                 <div className={`text-xs font-medium mb-0.5 flex-shrink-0 ${
-                  dayIsToday 
-                    ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]' 
-                    : ''
+                  dayIsToday
+                    ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-[11px] font-bold'
+                    : isCurrentMonth ? 'text-foreground' : ''
                 }`}>
                   {format(day, 'd')}
                 </div>
@@ -396,13 +396,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       return clickDateTime >= eventStart && clickDateTime < eventEnd;
     });
 
-    // If there's a conflict, show a dialog asking what to do
+    // If there's a conflict, show a toast warning but still proceed
     if (hasConflict) {
-      if (confirm("There's already an event at this time. Do you want to create an overlapping event anyway? Click OK to proceed or Cancel to choose a different time.")) {
-        // Proceed with creating the event
-        proceedWithEventCreation(date, time);
-      }
-      return;
+      toast({
+        title: "Time slot overlap",
+        description: "There's already an event at this time. Creating overlapping event.",
+      });
     }
 
     // No conflict, proceed normally
