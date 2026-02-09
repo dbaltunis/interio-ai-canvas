@@ -84,7 +84,6 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
         duration: 5000,
       });
     } catch (error) {
-      console.error("Booking error:", error);
       toast({
         title: "Booking Failed",
         description: "Please try again or contact support.",

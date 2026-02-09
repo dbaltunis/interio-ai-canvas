@@ -43,8 +43,7 @@ export const TimezoneSettingsDialog = ({ open, onOpenChange }: TimezoneSettingsD
   const getCurrentTime = (timezone: string) => {
     try {
       return TimezoneUtils.formatInTimezone(new Date(), timezone, 'PPp');
-    } catch (error) {
-      console.error('Error formatting time:', error);
+    } catch {
       return new Date().toLocaleString();
     }
   };

@@ -115,7 +115,6 @@ export const UnifiedAppointmentDialog = ({
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[UnifiedAppointmentDialog] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -357,7 +356,7 @@ export const UnifiedAppointmentDialog = ({
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to save appointment:', error);
+      // Error handled by React Query's onError
     }
   };
 
@@ -371,7 +370,7 @@ export const UnifiedAppointmentDialog = ({
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      console.error('Failed to delete appointment:', error);
+      // Error handled by React Query's onError
     }
   };
 

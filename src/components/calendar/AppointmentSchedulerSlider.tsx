@@ -81,7 +81,6 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[AppointmentSchedulerSlider] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -232,7 +231,6 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
 
       onClose();
     } catch (error) {
-      console.error("Error creating schedule:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Failed to Create Schedule",

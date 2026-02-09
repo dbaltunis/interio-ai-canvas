@@ -44,13 +44,21 @@ export const MobileCalendarView = () => {
 
   // Filter appointments for selected date and sort by time
   const dayAppointments = appointments
-    .filter(apt => apt.start_time && isSameDay(new Date(apt.start_time), selectedDate))
+    .filter(apt => {
+      if (!apt.start_time || !apt.end_time) return false;
+      const startTime = new Date(apt.start_time);
+      const endTime = new Date(apt.end_time);
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) return false;
+      return isSameDay(startTime, selectedDate);
+    })
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   // Filter tasks for selected date
   const dayTasks = (tasks || []).filter(task => {
     if (!task.due_date) return false;
-    return isSameDay(new Date(task.due_date), selectedDate);
+    const taskDate = new Date(task.due_date);
+    if (isNaN(taskDate.getTime())) return false;
+    return isSameDay(taskDate, selectedDate);
   }).map(task => ({
     id: task.id,
     title: task.title,
