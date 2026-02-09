@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
