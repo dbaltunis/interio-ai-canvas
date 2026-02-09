@@ -117,6 +117,10 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     return isToday(new Date(appointment.start_time));
   }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
 
+  // Find the next upcoming event (first future event today, or first event tomorrow+)
+  const now = new Date();
+  const nextUpEvent = todayEvents.find(e => new Date(e.end_time) > now);
+
   // Get upcoming events (next 7 days, excluding today)
   const upcomingEvents = appointments?.filter(appointment => {
     const eventDate = new Date(appointment.start_time);
@@ -325,6 +329,35 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </CardContent>
           </Card>
 
+          {/* Next Up - prominent highlight */}
+          {nextUpEvent && (
+            <div
+              className="flex-shrink-0 rounded-lg p-3 cursor-pointer hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: `${nextUpEvent.color || '#3b82f6'}15`,
+                border: `1px solid ${nextUpEvent.color || '#3b82f6'}30`,
+              }}
+              onClick={() => setSelectedEvent(nextUpEvent)}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: nextUpEvent.color || '#3b82f6' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next up</span>
+              </div>
+              <div className="font-semibold text-sm">{nextUpEvent.title}</div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                <Clock className="h-3 w-3" />
+                {format(new Date(nextUpEvent.start_time), 'h:mm a')}
+                {nextUpEvent.end_time && ` – ${format(new Date(nextUpEvent.end_time), 'h:mm a')}`}
+              </div>
+              {nextUpEvent.location && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  <span className="truncate">{nextUpEvent.location}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Today's Schedule */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
@@ -417,93 +450,47 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </Card>
           )}
 
-          {/* Appointment Scheduling */}
-          <Card className="flex-shrink-0">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Manage booking templates and view appointments
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3 px-3 pb-4">
-              {/* Primary Action - Create New Scheduler */}
+          {/* Quick Actions */}
+          <div className="flex-shrink-0 space-y-2">
+            <div className="text-xs font-medium text-muted-foreground px-1">Quick Actions</div>
+            <div className="grid grid-cols-2 gap-1.5">
               {(() => {
-                // Calculate if button should be disabled
                 const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
                 const shouldDisable = isPermissionLoaded && !canCreateAppointments;
-                
                 return (
-                  <Button 
+                  <Button
                     onClick={() => {
-                      // Only allow if user has permission and permissions have loaded
-                      if (!isPermissionLoaded) {
-                        return; // Don't do anything while loading
-                      }
+                      if (!isPermissionLoaded) return;
                       if (!canCreateAppointments) {
-                        toast({
-                          title: "Permission Denied",
-                          description: "You don't have permission to create appointments.",
-                          variant: "destructive",
-                        });
+                        toast({ title: "Permission Denied", description: "You don't have permission to create appointments.", variant: "destructive" });
                         return;
                       }
                       onBookingLinks();
                     }}
-                    className="w-full"
+                    variant="outline"
                     size="sm"
                     disabled={shouldDisable}
-                    title={shouldDisable ? "You don't have permission to create appointments" : undefined}
+                    className="h-8 text-xs"
                   >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    New Booking Template
+                    <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                    Template
                   </Button>
                 );
               })()}
-              
-              {/* Management Section */}
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-1 gap-2">
-                  <Button 
-                    onClick={() => {
-                      setShowSchedulerManagement(true);
-                    }}
-                    className="w-full justify-start"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">Manage Templates</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowBookingManagement(true)}
-                    className="w-full justify-start"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">View Bookings</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowAnalytics(true)}
-                    className="w-full justify-start"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">View Analytics</div>
-                    </div>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Button onClick={() => setShowBookingManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                Bookings
+              </Button>
+              <Button onClick={() => setShowSchedulerManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Manage
+              </Button>
+              <Button onClick={() => setShowAnalytics(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                Analytics
+              </Button>
+            </div>
+          </div>
         </div>
       </ScrollArea>
 
