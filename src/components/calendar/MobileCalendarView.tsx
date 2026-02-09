@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, subWeeks, isPast } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
+import { deduplicateEvents } from "./utils/calendarHelpers";
 import { cn } from "@/lib/utils";
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
@@ -42,16 +43,17 @@ export const MobileCalendarView = () => {
   const startDate = startOfWeek(selectedDate);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
 
-  // Filter appointments for selected date and sort by time
-  const dayAppointments = appointments
-    .filter(apt => {
-      if (!apt.start_time || !apt.end_time) return false;
-      const startTime = new Date(apt.start_time);
-      const endTime = new Date(apt.end_time);
-      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) return false;
-      return isSameDay(startTime, selectedDate);
-    })
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  // Filter appointments for selected date, deduplicate, and sort by time
+  const dayAppointments = deduplicateEvents(
+    appointments
+      .filter(apt => {
+        if (!apt.start_time || !apt.end_time) return false;
+        const startTime = new Date(apt.start_time);
+        const endTime = new Date(apt.end_time);
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) return false;
+        return isSameDay(startTime, selectedDate);
+      })
+  ).sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   // Filter tasks for selected date
   const dayTasks = (tasks || []).filter(task => {

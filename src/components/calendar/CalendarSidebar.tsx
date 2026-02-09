@@ -14,6 +14,7 @@ interface CalendarSidebarProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onBookingLinks: () => void;
+  onHiddenSourcesChange?: (hiddenSources: Set<string>) => void;
 }
 
 // Calendar source definition
@@ -24,7 +25,7 @@ interface CalendarSource {
   connected: boolean;
 }
 
-export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
+export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onHiddenSourcesChange }: CalendarSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return localStorage.getItem("calendar.sidebarCollapsed") === "true";
@@ -63,9 +64,17 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
       if (next.has(sourceId)) next.delete(sourceId);
       else next.add(sourceId);
       try { localStorage.setItem("calendar.hiddenSources", JSON.stringify([...next])); } catch {}
+      onHiddenSourcesChange?.(next);
       return next;
     });
   };
+
+  // Notify parent of initial hidden sources on mount
+  useEffect(() => {
+    if (hiddenSources.size > 0) {
+      onHiddenSourcesChange?.(hiddenSources);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
