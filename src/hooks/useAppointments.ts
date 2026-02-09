@@ -88,38 +88,41 @@ export const useCreateAppointment = () => {
         description: "Appointment created successfully",
       });
 
-      // Auto-sync to Google Calendar
+      // Auto-sync to connected calendars (Google + Outlook in parallel)
       try {
-        const { data: integration } = await supabase
+        const { data: integrations } = await supabase
           .from('integration_settings')
-          .select('active')
+          .select('integration_type, active')
           .eq('user_id', data.user_id)
-          .eq('integration_type', 'google_calendar')
-          .single();
+          .in('integration_type', ['google_calendar', 'outlook_calendar'])
+          .eq('active', true);
 
-        if (integration?.active) {
-          toast({
-            title: "Syncing...",
-            description: "Syncing to Google Calendar",
-          });
+        const syncPromises: Promise<void>[] = [];
 
-          const { error: syncError } = await supabase.functions.invoke('sync-to-google-calendar', {
-            body: { appointmentId: data.id }
-          });
+        if (integrations?.some(i => i.integration_type === 'google_calendar')) {
+          syncPromises.push(
+            supabase.functions.invoke('sync-to-google-calendar', {
+              body: { appointmentId: data.id }
+            }).then(({ error }) => {
+              if (error) console.error('Google sync error:', error);
+            })
+          );
+        }
 
-          if (syncError) {
-            console.error('Sync error:', syncError);
-            toast({
-              title: "Sync Failed",
-              description: "Created appointment but failed to sync to Google Calendar. You can manually sync later.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Synced!",
-              description: "Appointment synced to Google Calendar",
-            });
-          }
+        if (integrations?.some(i => i.integration_type === 'outlook_calendar')) {
+          syncPromises.push(
+            supabase.functions.invoke('sync-to-outlook-calendar', {
+              body: { appointmentId: data.id }
+            }).then(({ error }) => {
+              if (error) console.error('Outlook sync error:', error);
+            })
+          );
+        }
+
+        if (syncPromises.length > 0) {
+          toast({ title: "Syncing...", description: "Syncing to connected calendars" });
+          await Promise.allSettled(syncPromises);
+          toast({ title: "Synced!", description: "Appointment synced to your calendars" });
         }
       } catch (error) {
         console.error('Auto-sync error:', error);
@@ -158,41 +161,44 @@ export const useUpdateAppointment = () => {
         description: "Appointment updated successfully",
       });
 
-      // Auto-sync to Google Calendar if appointment details changed
+      // Auto-sync to connected calendars if appointment details changed
       const timeFieldsChanged = variables.start_time || variables.end_time || variables.title || variables.description || variables.location;
-      
+
       if (timeFieldsChanged) {
         try {
-          const { data: integration } = await supabase
+          const { data: integrations } = await supabase
             .from('integration_settings')
-            .select('active')
+            .select('integration_type, active')
             .eq('user_id', data.user_id)
-            .eq('integration_type', 'google_calendar')
-            .single();
+            .in('integration_type', ['google_calendar', 'outlook_calendar'])
+            .eq('active', true);
 
-          if (integration?.active) {
-            toast({
-              title: "Syncing...",
-              description: "Updating Google Calendar",
-            });
+          const syncPromises: Promise<void>[] = [];
 
-            const { error: syncError } = await supabase.functions.invoke('sync-to-google-calendar', {
-              body: { appointmentId: data.id }
-            });
+          if (integrations?.some(i => i.integration_type === 'google_calendar')) {
+            syncPromises.push(
+              supabase.functions.invoke('sync-to-google-calendar', {
+                body: { appointmentId: data.id }
+              }).then(({ error }) => {
+                if (error) console.error('Google sync error:', error);
+              })
+            );
+          }
 
-            if (syncError) {
-              console.error('Sync error:', syncError);
-              toast({
-                title: "Sync Failed",
-                description: "Updated appointment but failed to sync to Google Calendar",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Synced!",
-                description: "Changes synced to Google Calendar",
-              });
-            }
+          if (integrations?.some(i => i.integration_type === 'outlook_calendar')) {
+            syncPromises.push(
+              supabase.functions.invoke('sync-to-outlook-calendar', {
+                body: { appointmentId: data.id }
+              }).then(({ error }) => {
+                if (error) console.error('Outlook sync error:', error);
+              })
+            );
+          }
+
+          if (syncPromises.length > 0) {
+            toast({ title: "Syncing...", description: "Updating connected calendars" });
+            await Promise.allSettled(syncPromises);
+            toast({ title: "Synced!", description: "Changes synced to your calendars" });
           }
         } catch (error) {
           console.error('Auto-sync error:', error);

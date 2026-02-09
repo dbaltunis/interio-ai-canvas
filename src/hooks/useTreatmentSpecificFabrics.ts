@@ -397,7 +397,8 @@ export const useTreatmentSpecificFabrics = (
                 resolved_grid_name: gridResult.gridName,
                 resolved_grid_code: gridResult.gridCode,
                 resolved_grid_id: gridResult.gridId,
-                pricing_grid_markup: gridResult.markupPercentage
+                pricing_grid_markup: gridResult.markupPercentage,
+                pricing_grid_discount: gridResult.discountPercentage || 0
               };
             }
           } catch (error) {

@@ -7,6 +7,8 @@
 import { MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
 
 export interface MarkupContext {
+  // Quote-level override (per-job custom markup - highest priority)
+  quoteMarkupOverride?: number | null;
   // Product-level (from inventory item's markup_percentage)
   productMarkup?: number;
   // Implied markup (calculated from cost_price vs selling_price in library)
@@ -33,7 +35,16 @@ export interface ResolvedMarkup {
  */
 export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
   const settings = context.markupSettings || defaultMarkupSettings;
-  
+
+  // 0. Quote-level override (per-job custom markup - highest priority)
+  if (context.quoteMarkupOverride != null) {
+    return {
+      percentage: context.quoteMarkupOverride,
+      source: 'global',
+      sourceName: 'Job Custom Markup'
+    };
+  }
+
   // 1. Check product-level markup (explicit markup_percentage on inventory item)
   if (context.productMarkup && context.productMarkup > 0) {
     return {
@@ -53,8 +64,8 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     };
   }
   
-  // 3. Check grid-level markup
-  if (context.gridMarkup && context.gridMarkup > 0) {
+  // 3. Check grid-level markup (0 = use default/fall through)
+  if (context.gridMarkup != null && context.gridMarkup > 0) {
     return {
       percentage: context.gridMarkup,
       source: 'grid',
@@ -204,7 +215,7 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
  * Apply markup to a cost price
  */
 export function applyMarkup(costPrice: number, markupPercentage: number): number {
-  if (costPrice <= 0 || markupPercentage < 0) return costPrice;
+  if (costPrice <= 0) return costPrice;
   return costPrice * (1 + markupPercentage / 100);
 }
 

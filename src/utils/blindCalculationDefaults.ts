@@ -34,18 +34,20 @@ export const getBlindHemValues = (template: any): BlindHemValues => {
   if (headerRaw == null) missing.push('header_hem');
   if (bottomRaw == null) missing.push('bottom_hem');
   if (sideRaw == null) missing.push('side_hem');
-  
+
   if (missing.length > 0) {
-    throw new Error(
-      `[getBlindHemValues] Template "${template.name || template.id}" missing required values: ${missing.join(', ')}. ` +
-      `Configure these in template manufacturing settings.`
+    // WARN instead of throwing - TWC-synced templates may be missing hem fields
+    // Use 0 as safe default so calculations still work (just without hem allowance)
+    console.warn(
+      `⚠️ [getBlindHemValues] Template "${template.name || template.id}" missing values: ${missing.join(', ')}. ` +
+      `Using 0 as default. Configure these in template manufacturing settings for accurate calculations.`
     );
   }
-  
+
   return {
-    headerHemCm: parseFloat(headerRaw),
-    bottomHemCm: parseFloat(bottomRaw),
-    sideHemCm: parseFloat(sideRaw),
+    headerHemCm: headerRaw != null ? parseFloat(headerRaw) : 0,
+    bottomHemCm: bottomRaw != null ? parseFloat(bottomRaw) : 0,
+    sideHemCm: sideRaw != null ? parseFloat(sideRaw) : 0,
     wastePercent: parseFloat(wasteRaw) || 0
   };
 };

@@ -755,6 +755,7 @@ export type Database = {
           location: string | null
           notification_enabled: boolean | null
           notification_minutes: number | null
+          outlook_event_id: string | null
           project_id: string | null
           shared_with_organization: boolean | null
           start_time: string
@@ -781,6 +782,7 @@ export type Database = {
           location?: string | null
           notification_enabled?: boolean | null
           notification_minutes?: number | null
+          outlook_event_id?: string | null
           project_id?: string | null
           shared_with_organization?: boolean | null
           start_time: string
@@ -807,6 +809,7 @@ export type Database = {
           location?: string | null
           notification_enabled?: boolean | null
           notification_minutes?: number | null
+          outlook_event_id?: string | null
           project_id?: string | null
           shared_with_organization?: boolean | null
           start_time?: string

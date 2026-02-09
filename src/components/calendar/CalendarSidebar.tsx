@@ -87,7 +87,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[CalendarSidebar] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -110,26 +109,25 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
           : hasCreateAppointmentsPermission;
 
-  // Debug logging to help troubleshoot permission issues
-  console.log('[CalendarSidebar] Permission check:', {
-    isSystemOwner: userRoleData?.isSystemOwner,
-    isOwner,
-    isAdmin,
-    hasAnyExplicitPermissions,
-    hasCreateAppointmentsPermission,
-    canCreateAppointments,
-    permissionsLoading,
-    roleLoading,
-    explicitPermissionsDefined: explicitPermissions !== undefined
-  });
+  // Debug logging removed for production
 
-  // Get upcoming events (next 7 days)
+  // Get today's events (sorted by time)
+  const todayEvents = appointments?.filter(appointment => {
+    return isToday(new Date(appointment.start_time));
+  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
+
+  // Find the next upcoming event (first future event today, or first event tomorrow+)
+  const now = new Date();
+  const nextUpEvent = todayEvents.find(e => new Date(e.end_time) > now);
+
+  // Get upcoming events (next 7 days, excluding today)
   const upcomingEvents = appointments?.filter(appointment => {
     const eventDate = new Date(appointment.start_time);
-    const today = new Date();
-    const nextWeek = addDays(today, 7);
-    return eventDate >= today && eventDate <= nextWeek;
-  }).slice(0, 5) || [];
+    const tomorrow = addDays(new Date(), 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const nextWeek = addDays(new Date(), 7);
+    return eventDate >= tomorrow && eventDate <= nextWeek;
+  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()).slice(0, 5) || [];
 
   // Helper function to get client name
   const getClientName = (clientId?: string) => {
@@ -223,7 +221,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         importance: 'silent',
       });
     } catch (error) {
-      console.error("Error deleting event:", error);
       toast({
         title: "Error",
         description: "Failed to delete the event. Please try again.",
@@ -278,8 +275,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   }
 
   return (
-    <div className="w-[360px] min-w-[360px] max-w-[360px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
-      <ScrollArea className="flex-1 pointer-events-auto">
+    <div className="w-[280px] min-w-[280px] max-w-[280px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
+      <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 px-3 py-4">
           {/* Header with Calendar title and Collapse Button */}
           <div className="flex items-center justify-between border-b pb-3">
@@ -330,177 +327,168 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </CardContent>
           </Card>
 
-          {/* Upcoming Events */}
-          <Card className="flex-1 min-h-0">
+          {/* Next Up - prominent highlight */}
+          {nextUpEvent && (
+            <div
+              className="flex-shrink-0 rounded-lg p-3 cursor-pointer hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: `${nextUpEvent.color || '#3b82f6'}15`,
+                border: `1px solid ${nextUpEvent.color || '#3b82f6'}30`,
+              }}
+              onClick={() => setSelectedEvent(nextUpEvent)}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: nextUpEvent.color || '#3b82f6' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next up</span>
+              </div>
+              <div className="font-semibold text-sm">{nextUpEvent.title}</div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                <Clock className="h-3 w-3" />
+                {format(new Date(nextUpEvent.start_time), 'h:mm a')}
+                {nextUpEvent.end_time && ` – ${format(new Date(nextUpEvent.end_time), 'h:mm a')}`}
+              </div>
+              {nextUpEvent.location && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  <span className="truncate">{nextUpEvent.location}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Today's Schedule */}
+          <Card className="flex-shrink-0">
             <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
-              <CardTitle className="text-sm">Upcoming Events</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Today's Schedule</CardTitle>
+                <span className="text-xs text-muted-foreground font-normal">{todayEvents.length} event{todayEvents.length !== 1 ? 's' : ''}</span>
+              </div>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 px-3 pb-4">
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {upcomingEvents.length > 0 ? (
-                  upcomingEvents.map(event => {
-                    const attendees = getAttendeeInfo(event);
-                    const eventColor = event.color || '#3b82f6'; // Default blue
-                    
+            <CardContent className="px-3 pb-4">
+              <div className="space-y-2">
+                {todayEvents.length > 0 ? (
+                  todayEvents.map(event => {
+                    const eventColor = event.color || '#3b82f6';
+                    const startTime = new Date(event.start_time);
+                    const isPast = startTime < new Date();
+
                     return (
-                       <div 
-                          key={event.id} 
-                          className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                        {/* Enhanced color indicator */}
-                        <div 
-                          className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg opacity-80 group-hover:opacity-100 transition-opacity"
+                      <div
+                        key={event.id}
+                        className={`relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group ${isPast ? 'opacity-60' : ''}`}
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg"
                           style={{ backgroundColor: eventColor }}
                         />
-                        
-                         <div className="ml-3 flex-1 min-w-0 pr-6">
-                           <div className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors break-words">
-                             {event.title}
-                           </div>
-                          
-                          {/* Time */}
-                          <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                            {format(new Date(event.start_time), 'MMM d, HH:mm')}
+                        <div className="ml-3 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                              {format(startTime, 'HH:mm')}
+                            </span>
+                            <span className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                              {event.title}
+                            </span>
                           </div>
-                          
-                          {/* Location */}
                           {event.location && (
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                            <div className="flex items-center text-xs text-muted-foreground mt-0.5 ml-11">
                               <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                               <span className="truncate">{event.location}</span>
                             </div>
                           )}
-                          
-                          {/* Attendees with Avatars */}
-                          {attendees.length > 0 && (
-                            <div className="flex items-center mt-2 gap-1">
-                              <div className="flex -space-x-1">
-                                {attendees.slice(0, 3).map((attendee) => (
-                                  <Avatar key={attendee.id} className="w-5 h-5 border border-background">
-                                    <AvatarImage src={attendee.avatar || undefined} />
-                                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                      {attendee.name.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                                {attendees.length > 3 && (
-                                  <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
-                                    <span className="text-xs text-muted-foreground">+{attendees.length - 3}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                        
-                        {/* Color dot indicator in top right */}
-                        <div 
-                          className="absolute top-2 right-2 w-3 h-3 rounded-full border border-white/50 shadow-sm"
-                          style={{ backgroundColor: eventColor }}
-                        />
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming events
+                  <div className="text-sm text-muted-foreground text-center py-3">
+                    No events today
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Appointment Scheduling */}
-          <Card className="flex-shrink-0 pointer-events-auto">
-            <CardHeader className="pb-2 pt-4 px-4 pointer-events-auto">
-              <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Manage booking templates and view appointments
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3 px-3 pb-4 pointer-events-auto">
-              {/* Primary Action - Create New Scheduler */}
+          {/* Coming Up */}
+          {upcomingEvents.length > 0 && (
+            <Card className="flex-shrink-0">
+              <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
+                <CardTitle className="text-sm text-muted-foreground">Coming Up</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-4">
+                <div className="space-y-2">
+                  {upcomingEvents.map(event => {
+                    const eventColor = event.color || '#3b82f6';
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group"
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg opacity-60"
+                          style={{ backgroundColor: eventColor }}
+                        />
+                        <div className="ml-3 min-w-0">
+                          <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                            {event.title}
+                          </div>
+                          <div className="flex items-center text-xs text-muted-foreground mt-0.5">
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            {format(new Date(event.start_time), 'EEE, MMM d')} at {format(new Date(event.start_time), 'HH:mm')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Actions */}
+          <div className="flex-shrink-0 space-y-2">
+            <div className="text-xs font-medium text-muted-foreground px-1">Quick Actions</div>
+            <div className="grid grid-cols-2 gap-1.5">
               {(() => {
-                // Calculate if button should be disabled
                 const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
                 const shouldDisable = isPermissionLoaded && !canCreateAppointments;
-                
                 return (
-                  <Button 
+                  <Button
                     onClick={() => {
-                      // Only allow if user has permission and permissions have loaded
-                      if (!isPermissionLoaded) {
-                        return; // Don't do anything while loading
-                      }
+                      if (!isPermissionLoaded) return;
                       if (!canCreateAppointments) {
-                        toast({
-                          title: "Permission Denied",
-                          description: "You don't have permission to create appointments.",
-                          variant: "destructive",
-                        });
+                        toast({ title: "Permission Denied", description: "You don't have permission to create appointments.", variant: "destructive" });
                         return;
                       }
-                      console.log('[CalendarSidebar] New Booking Template clicked');
                       onBookingLinks();
                     }}
-                    className="w-full pointer-events-auto relative z-10"
+                    variant="outline"
                     size="sm"
                     disabled={shouldDisable}
-                    title={shouldDisable ? "You don't have permission to create appointments" : undefined}
+                    className="h-8 text-xs"
                   >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    New Booking Template
+                    <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                    Template
                   </Button>
                 );
               })()}
-              
-              {/* Management Section */}
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-1 gap-2">
-                  <Button 
-                    onClick={() => {
-                      console.log('[CalendarSidebar] Manage Templates clicked');
-                      setShowSchedulerManagement(true);
-                    }}
-                    className="w-full justify-start pointer-events-auto relative z-10"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">Manage Templates</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowBookingManagement(true)}
-                    className="w-full justify-start pointer-events-auto relative z-10"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">View Bookings</div>
-                    </div>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowAnalytics(true)}
-                    className="w-full justify-start pointer-events-auto relative z-10"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    <div className="text-left flex-1">
-                      <div className="text-xs font-medium">View Analytics</div>
-                    </div>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Button onClick={() => setShowBookingManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                Bookings
+              </Button>
+              <Button onClick={() => setShowSchedulerManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Manage
+              </Button>
+              <Button onClick={() => setShowAnalytics(true)} variant="outline" size="sm" className="h-8 text-xs">
+                <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                Analytics
+              </Button>
+            </div>
+          </div>
         </div>
       </ScrollArea>
 

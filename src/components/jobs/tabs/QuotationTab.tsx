@@ -29,6 +29,7 @@ import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
+import { InlineMarkupOverride } from "@/components/jobs/quotation/InlineMarkupOverride";
 import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
 import { RecordPaymentDialog } from "@/components/jobs/quotation/RecordPaymentDialog";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
@@ -117,6 +118,7 @@ export const QuotationTab = ({
     setSearchParams(newParams, { replace: true });
   };
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isMarkupOverrideOpen, setIsMarkupOverrideOpen] = useState(false);
   const [isPaymentConfigOpen, setIsPaymentConfigOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
@@ -1027,6 +1029,23 @@ export const QuotationTab = ({
               <span className="hidden lg:inline ml-2">Discount</span>
             </Button>
 
+            {/* Per-Job Markup Override Button */}
+            <Button
+              variant={((currentQuote as any)?.custom_markup_percentage != null) ? "default" : "outline"}
+              size="sm"
+              onClick={async () => {
+                const effectiveQuoteId = await getOrCreateQuoteId();
+                if (!effectiveQuoteId) return;
+                setIsMarkupOverrideOpen(!isMarkupOverrideOpen);
+              }}
+              disabled={createQuote.isPending || isReadOnly}
+              className="h-9 px-2 lg:px-4"
+              title="Custom Markup"
+            >
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden lg:inline ml-2">Markup</span>
+            </Button>
+
             {/* Edit Quote Button - Only for Homekaara Template */}
             {useHomekaaraTemplate && (
               <Button
@@ -1248,6 +1267,16 @@ export const QuotationTab = ({
           amount: currentQuote.discount_amount || 0,
           selectedItems: currentQuote.selected_discount_items as string[] || undefined
         } : undefined} 
+      />
+
+      {/* Inline Markup Override Panel - Per-job custom markup */}
+      <InlineMarkupOverride
+        isOpen={isMarkupOverrideOpen}
+        onClose={() => setIsMarkupOverrideOpen(false)}
+        quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''}
+        projectId={projectId}
+        currentMarkup={(currentQuote as any)?.custom_markup_percentage ?? null}
+        defaultMarkup={(businessSettings?.pricing_settings as any)?.default_markup_percentage || 0}
       />
 
       {/* Inline Payment Config Panel - Pass GST-inclusive discounted total */}

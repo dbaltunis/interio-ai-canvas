@@ -33,6 +33,7 @@ export interface TreatmentPricingInput {
   selectedOptions?: Array<{ name: string; price: number; description?: string; image_url?: string; pricing_method?: string; extra_data?: any }>; // CRITICAL: Add selected options with pricing method
   inventoryItems?: any[]; // CRITICAL: Add inventory items to look up heading prices
   pricingGridData?: any; // CRITICAL: Pricing grid data for grid-based pricing
+  pricingGridDiscount?: number; // Trade/supplier discount % applied to grid list prices before markup
 }
 
 export interface TreatmentPricingResult {
@@ -62,7 +63,7 @@ export interface TreatmentPricingResult {
 }
 
 export const calculateTreatmentPricing = (input: TreatmentPricingInput): TreatmentPricingResult => {
-  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [], pricingGridData } = input;
+  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [], pricingGridData, pricingGridDiscount = 0 } = input;
 
   console.log('🎯 calculateTreatmentPricing called with:', {
     template: template ? { 
@@ -190,8 +191,12 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     
     if (gridData) {
       // Grid expects CM, we already have CM
-      const gridPrice = getPriceFromGrid(gridData, widthCm, heightCm);
-      
+      const rawGridPrice = getPriceFromGrid(gridData, widthCm, heightCm);
+      // Apply trade/supplier discount if set on the grid
+      const gridPrice = pricingGridDiscount > 0
+        ? rawGridPrice * (1 - pricingGridDiscount / 100)
+        : rawGridPrice;
+
       if (gridPrice > 0) {
         // For pricing_grid with includes_fabric_price, grid contains TOTAL price (fabric + manufacturing)
         // Check if template indicates all-inclusive pricing

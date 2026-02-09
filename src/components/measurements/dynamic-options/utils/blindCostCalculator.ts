@@ -83,13 +83,20 @@ export const calculateBlindCosts = (
     // Works for ALL blind types and ALL SaaS client accounts automatically
     const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
 
+    // Apply trade/supplier discount if set on the grid
+    // Flow: grid list price × (1 - discount/100) = effective cost, then markup applied later
+    const gridDiscountPercent = fabricItem?.pricing_grid_discount || 0;
+    const discountedGridPrice = gridDiscountPercent > 0
+      ? totalGridPrice * (1 - gridDiscountPercent / 100)
+      : totalGridPrice;
+
     // ✅ CRITICAL FIX: Do NOT apply grid markup here!
     // Markup should be applied consistently in ONE place: the display/save layer (DynamicWindowWorksheet)
     // Previously this was causing double-markup: once here, once in DynamicWindowWorksheet
     // The grid price from database is the BASE COST - markup is a business decision applied later
 
     // For double configuration, multiply the grid price by 2 (two blinds)
-    fabricCost = totalGridPrice * blindMultiplier;
+    fabricCost = discountedGridPrice * blindMultiplier;
     fabricPricePerSqm = squareMeters > 0 ? fabricCost / squareMeters : 0;
 
     console.log('✅ UNIVERSAL FABRIC GRID (ALL CLIENTS, ALL BLIND TYPES):', {
@@ -98,6 +105,8 @@ export const calculateBlindCosts = (
       gridCode: fabricItem.resolved_grid_code,
       dimensions: `${widthCm}cm × ${heightCm}cm`,
       baseGridPrice: totalGridPrice,
+      gridDiscountPercent,
+      discountedGridPrice,
       gridMarkupPercentage,
       note: 'Grid markup NOT applied here - applied in display/save layer for consistency',
       blindMultiplier,

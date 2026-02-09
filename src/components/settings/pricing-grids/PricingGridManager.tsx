@@ -45,11 +45,13 @@ export const PricingGridManager = () => {
   const [newProductType, setNewProductType] = useState<string>('');
   const [newPriceGroup, setNewPriceGroup] = useState('');
   const [newMarkupPercentage, setNewMarkupPercentage] = useState<string>('');
+  const [newDiscountPercentage, setNewDiscountPercentage] = useState<string>('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // Inline edit state
   const [editingGridId, setEditingGridId] = useState<string | null>(null);
+  const [editField, setEditField] = useState<'markup' | 'discount'>('markup');
   const [editMarkupValue, setEditMarkupValue] = useState<string>('');
   
   // Guide modal state
@@ -176,8 +178,9 @@ export const PricingGridManager = () => {
           product_type: newProductType,
           price_group: newPriceGroup.toUpperCase().trim(),
           markup_percentage: parseFloat(newMarkupPercentage) || 0,
+          discount_percentage: parseFloat(newDiscountPercentage) || 0,
           active: true
-        });
+        } as any);
 
       if (error) throw error;
 
@@ -189,6 +192,7 @@ export const PricingGridManager = () => {
       setNewProductType('');
       setNewPriceGroup('');
       setNewMarkupPercentage('');
+      setNewDiscountPercentage('');
       setCsvFile(null);
       refetch();
     } catch (error: any) {
@@ -223,33 +227,37 @@ export const PricingGridManager = () => {
     return config?.display_name || value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Mutation for updating markup
-  const updateMarkupMutation = useMutation({
-    mutationFn: async ({ gridId, markup }: { gridId: string; markup: number }) => {
+  // Mutation for updating markup or discount
+  const updateGridFieldMutation = useMutation({
+    mutationFn: async ({ gridId, field, value }: { gridId: string; field: 'markup' | 'discount'; value: number }) => {
+      const updateData = field === 'markup'
+        ? { markup_percentage: value }
+        : { discount_percentage: value };
       const { error } = await supabase
         .from('pricing_grids')
-        .update({ markup_percentage: markup })
+        .update(updateData as any)
         .eq('id', gridId);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Markup updated');
+      toast.success(`${editField === 'markup' ? 'Markup' : 'Discount'} updated`);
       queryClient.invalidateQueries({ queryKey: ['pricing-grids'] });
       setEditingGridId(null);
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to update markup');
+      toast.error(error.message || 'Failed to update');
     }
   });
 
-  const handleStartEditMarkup = (gridId: string, currentMarkup: number) => {
+  const handleStartEdit = (gridId: string, field: 'markup' | 'discount', currentValue: number) => {
     setEditingGridId(gridId);
-    setEditMarkupValue(String(currentMarkup || 0));
+    setEditField(field);
+    setEditMarkupValue(String(currentValue || 0));
   };
 
-  const handleSaveMarkup = (gridId: string) => {
-    const markup = parseFloat(editMarkupValue) || 0;
-    updateMarkupMutation.mutate({ gridId, markup });
+  const handleSaveEdit = (gridId: string) => {
+    const value = parseFloat(editMarkupValue) || 0;
+    updateGridFieldMutation.mutate({ gridId, field: editField, value });
   };
 
   const handleCancelEdit = () => {
@@ -446,28 +454,61 @@ export const PricingGridManager = () => {
             </div>
           </div>
 
-          {/* Description and Markup */}
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="grid-description">Description</Label>
+            <Input
+              id="grid-description"
+              placeholder="Optional notes about this grid"
+              value={newGridDescription}
+              onChange={(e) => setNewGridDescription(e.target.value)}
+            />
+          </div>
+
+          {/* Discount and Markup */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="grid-description">Description</Label>
-              <Input
-                id="grid-description"
-                placeholder="Optional notes about this grid"
-                value={newGridDescription}
-                onChange={(e) => setNewGridDescription(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="markup-percentage">Default Markup %</Label>
+                <Label htmlFor="discount-percentage">Trade Discount %</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Set a markup percentage for this grid. Leave at 0 to use global markup settings.</p>
+                      <p>Supplier/trade discount off the grid's list prices. E.g., 10% discount means you pay 90% of list. Leave at 0 for no discount.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="relative">
+                <Input
+                  id="discount-percentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  placeholder="0"
+                  value={newDiscountPercentage}
+                  onChange={(e) => setNewDiscountPercentage(e.target.value)}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  %
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="markup-percentage">Markup %</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Markup applied on top of the discounted cost. Leave at 0 to use global markup settings.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -567,20 +608,21 @@ export const PricingGridManager = () => {
                           {getProductTypeLabel(grid.product_type)}
                         </Badge>
                       )}
-                      {/* Inline Markup Edit */}
+                      {/* Inline Edit (Markup or Discount) */}
                       {editingGridId === grid.id ? (
                         <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{editField === 'markup' ? 'Markup:' : 'Discount:'}</span>
                           <Input
                             type="number"
                             min="0"
-                            max="500"
+                            max={editField === 'markup' ? 500 : 100}
                             step="0.5"
                             value={editMarkupValue}
                             onChange={(e) => setEditMarkupValue(e.target.value)}
                             className="w-20 h-7 text-xs"
                             autoFocus
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveMarkup(grid.id);
+                              if (e.key === 'Enter') handleSaveEdit(grid.id);
                               if (e.key === 'Escape') handleCancelEdit();
                             }}
                           />
@@ -589,8 +631,8 @@ export const PricingGridManager = () => {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={() => handleSaveMarkup(grid.id)}
-                            disabled={updateMarkupMutation.isPending}
+                            onClick={() => handleSaveEdit(grid.id)}
+                            disabled={updateGridFieldMutation.isPending}
                           >
                             <Check className="h-3.5 w-3.5 text-emerald-500" />
                           </Button>
@@ -604,14 +646,26 @@ export const PricingGridManager = () => {
                           </Button>
                         </div>
                       ) : (
-                        <Badge 
-                          variant={(grid as any).markup_percentage > 0 ? "default" : "outline"} 
-                          className={`text-xs cursor-pointer hover:opacity-80 ${(grid as any).markup_percentage > 0 ? 'bg-emerald-500' : ''}`}
-                          onClick={() => handleStartEditMarkup(grid.id, (grid as any).markup_percentage || 0)}
-                        >
-                          <Pencil className="h-3 w-3 mr-1" />
-                          {(grid as any).markup_percentage > 0 ? `+${(grid as any).markup_percentage}%` : 'Set markup'}
-                        </Badge>
+                        <>
+                          {/* Discount badge */}
+                          <Badge
+                            variant={(grid as any).discount_percentage > 0 ? "default" : "outline"}
+                            className={`text-xs cursor-pointer hover:opacity-80 ${(grid as any).discount_percentage > 0 ? 'bg-amber-500' : ''}`}
+                            onClick={() => handleStartEdit(grid.id, 'discount', (grid as any).discount_percentage || 0)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            {(grid as any).discount_percentage > 0 ? `-${(grid as any).discount_percentage}%` : 'Set discount'}
+                          </Badge>
+                          {/* Markup badge */}
+                          <Badge
+                            variant={(grid as any).markup_percentage > 0 ? "default" : "outline"}
+                            className={`text-xs cursor-pointer hover:opacity-80 ${(grid as any).markup_percentage > 0 ? 'bg-emerald-500' : ''}`}
+                            onClick={() => handleStartEdit(grid.id, 'markup', (grid as any).markup_percentage || 0)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            {(grid as any).markup_percentage > 0 ? `+${(grid as any).markup_percentage}%` : 'Set markup'}
+                          </Badge>
+                        </>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">

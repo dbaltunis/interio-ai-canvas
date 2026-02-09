@@ -16,45 +16,8 @@ export const DynamicWindowRenderer = ({
   className = "",
   enhanced = true // Default to enhanced rendering
 }: DynamicWindowRendererProps) => {
-  
-  // Use enhanced renderer by default
-  if (enhanced) {
-    return (
-      <EnhancedWindowRenderer
-        windowType={windowType}
-        measurements={measurements}
-        selectedTreatment={selectedTreatment}
-        className={className}
-        showDepth={true}
-        frameColor="#8B7355"
-        wallColor="#F5F5F0"
-      />
-    );
-  }
-  
-  const renderWindow = useMemo(() => {
-    switch (windowType) {
-      case 'bay':
-        return renderBayWindow();
-      case 'french_doors':
-        return renderFrenchDoors();
-      case 'sliding_doors':
-        return renderSlidingDoors();
-      case 'large_window':
-        return renderLargeWindow();
-      case 'terrace_doors':
-        return renderTerraceDoors();
-      case 'corner_window':
-        return renderCornerWindow();
-      case 'arched_window':
-        return renderArchedWindow();
-      case 'skylight':
-        return renderSkylight();
-      default:
-        return renderStandardWindow();
-    }
-  }, [windowType, measurements, selectedTreatment]);
 
+  // All render helper functions must be defined before useMemo
   const renderStandardWindow = () => (
     <div className="relative w-full h-full flex items-center justify-center">
       {/* Window Frame - Much larger and clearer */}
@@ -84,7 +47,7 @@ export const DynamicWindowRenderer = ({
             ))}
           </div>
         </div>
-        
+
         {/* Center panel */}
         <div className="absolute left-5 top-0 w-10 h-12 border-2 border-gray-600 bg-blue-50">
           <div className="grid grid-cols-2 grid-rows-3 h-full gap-0.5 p-0.5">
@@ -95,7 +58,7 @@ export const DynamicWindowRenderer = ({
           {/* Center vertical bar */}
           <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 transform -translate-x-1/2"></div>
         </div>
-        
+
         {/* Right angled panel */}
         <div className="absolute right-0 top-0 w-6 h-12 border-2 border-gray-600 bg-blue-50 transform rotate-12 origin-bottom-left">
           <div className="grid grid-rows-3 h-full gap-0.5 p-0.5">
@@ -120,7 +83,7 @@ export const DynamicWindowRenderer = ({
         {/* Door handle */}
         <div className="absolute right-2 top-1/2 w-2 h-1 bg-muted-foreground rounded"></div>
       </div>
-      
+
       {/* Right door */}
       <div className="absolute left-1/2 right-4 top-4 bottom-4 border-4 border-muted-foreground bg-background/50 ml-1">
         <div className="grid grid-cols-1 grid-rows-4 h-full gap-1 p-2">
@@ -144,7 +107,7 @@ export const DynamicWindowRenderer = ({
           ))}
         </div>
       </div>
-      
+
       {/* Front panel (sliding) */}
       <div className="absolute left-4 right-6 top-4 bottom-4 border-4 border-foreground bg-background/50 shadow-lg">
         <div className="grid grid-cols-2 grid-rows-4 h-full gap-1 p-2">
@@ -197,7 +160,7 @@ export const DynamicWindowRenderer = ({
           ))}
         </div>
       </div>
-      
+
       {/* Right window */}
       <div className="absolute left-1/2 right-4 top-4 bottom-4 border-4 border-r-0 border-muted-foreground bg-background/50">
         <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-1 pl-2">
@@ -206,7 +169,7 @@ export const DynamicWindowRenderer = ({
           ))}
         </div>
       </div>
-      
+
       {/* Corner connector */}
       <div className="absolute left-1/2 top-4 bottom-4 w-1 bg-muted-foreground transform -translate-x-1/2"></div>
     </div>
@@ -222,7 +185,7 @@ export const DynamicWindowRenderer = ({
           ))}
         </div>
       </div>
-      
+
       {/* Rectangular bottom */}
       <div className="absolute left-8 right-8 top-20 bottom-4 border-4 border-t-0 border-muted-foreground bg-background/50">
         <div className="grid grid-cols-3 grid-rows-2 h-full gap-1 p-2">
@@ -244,7 +207,7 @@ export const DynamicWindowRenderer = ({
           ))}
         </div>
       </div>
-      
+
       {/* Light rays effect */}
       <div className="absolute left-1/2 top-2 w-1 h-12 bg-yellow-300/50 transform -translate-x-1/2 -skew-x-12"></div>
       <div className="absolute left-1/3 top-4 w-1 h-8 bg-yellow-300/30 transform -skew-x-12"></div>
@@ -252,10 +215,50 @@ export const DynamicWindowRenderer = ({
     </div>
   );
 
+  // useMemo MUST be called unconditionally (Rules of Hooks)
+  const renderWindow = useMemo(() => {
+    if (enhanced) return null; // Not used in enhanced mode
+    switch (windowType) {
+      case 'bay':
+        return renderBayWindow();
+      case 'french_doors':
+        return renderFrenchDoors();
+      case 'sliding_doors':
+        return renderSlidingDoors();
+      case 'large_window':
+        return renderLargeWindow();
+      case 'terrace_doors':
+        return renderTerraceDoors();
+      case 'corner_window':
+        return renderCornerWindow();
+      case 'arched_window':
+        return renderArchedWindow();
+      case 'skylight':
+        return renderSkylight();
+      default:
+        return renderStandardWindow();
+    }
+  }, [windowType, measurements, selectedTreatment, enhanced]);
+
+  // Use enhanced renderer by default - AFTER all hooks
+  if (enhanced) {
+    return (
+      <EnhancedWindowRenderer
+        windowType={windowType}
+        measurements={measurements}
+        selectedTreatment={selectedTreatment}
+        className={className}
+        showDepth={true}
+        frameColor="#8B7355"
+        wallColor="#F5F5F0"
+      />
+    );
+  }
+
   return (
     <div className={`relative bg-gradient-to-b from-sky-50 to-sky-100 border-2 border-border rounded-lg ${className}`}>
       {renderWindow}
-      
+
       {/* Window type label */}
       <div className="absolute top-2 left-2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium">
         {windowType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}

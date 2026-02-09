@@ -16,10 +16,12 @@ interface DailyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
+  filteredAppointments?: any[];
 }
 
-export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }: DailyCalendarViewProps) => {
+export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
+  const displayAppointments = filteredAppointments || appointments;
   const { data: clients } = useClients();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { data: tasks } = useMyTasks();
@@ -80,19 +82,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   // Get events for the current day
   const getDayEvents = () => {
-    if (!appointments) return [];
-    return appointments.filter(appointment => {
+    if (!displayAppointments) return [];
+    return displayAppointments.filter(appointment => {
       // Format both dates in the same timezone for comparison
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
       const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
-      console.log('[DailyCalendarView] Filtering appointment:', {
-        title: appointment.title,
-        utcStartTime: appointment.start_time,
-        userTimezone,
-        appointmentDateStr,
-        currentDateStr,
-        matches: appointmentDateStr === currentDateStr
-      });
       return appointmentDateStr === currentDateStr;
     });
   };
@@ -198,24 +192,32 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
-            
+            const [slotH] = time.split(':').map(Number);
+            const isBusinessHour = slotH >= 9 && slotH < 17;
+
             return (
-              <div 
-                key={time} 
+              <div
+                key={time}
                 className={`h-12 flex ${
                   isHourSlot ? 'border-b border-border/20' : ''
                 }`}
               >
-                {/* Time label - narrower */}
+                {/* Time label */}
                 <div className="w-14 py-2 px-1 text-right flex-shrink-0">
-                  {isHourSlot && (
-                    <span className="text-[10px] font-medium text-muted-foreground">{time}</span>
-                  )}
+                  {isHourSlot && (() => {
+                    const h = slotH;
+                    const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+                    return (
+                      <span className={`text-[10px] font-medium tabular-nums ${isBusinessHour ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>{label}</span>
+                    );
+                  })()}
                 </div>
-                
+
                 {/* Time slot */}
-                <div 
-                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative border-l border-border/10"
+                <div
+                  className={`flex-1 cursor-pointer transition-colors relative border-l border-border/10 ${
+                    isBusinessHour ? 'hover:bg-accent/30' : 'bg-muted/10 hover:bg-accent/20'
+                  }`}
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
                   title={`Click to create event at ${time}`}
                 >
@@ -234,11 +236,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         const top = (minutesFromSlotStart / 30) * 48;
                         
                         return (
-                          <div 
-                            className="absolute left-0 right-0 h-0.5 bg-destructive z-20"
+                          <div
+                            className="absolute left-0 right-0 z-20 pointer-events-none"
                             style={{ top: `${top}px` }}
                           >
-                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
+                            <div className="h-[2px] bg-red-500 w-full" />
+                            <div className="absolute -left-1.5 -top-[5px] w-3 h-3 bg-red-500 rounded-full shadow-sm" />
                           </div>
                         );
                       }
@@ -252,39 +255,21 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           
           {/* Events overlay */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="relative ml-20"> {/* Offset for time labels */}
+            <div className="relative ml-14"> {/* Offset for time labels (matches w-14) */}
               {dayEvents.map((event: any, eventIndex) => {
                 // Parse times directly in user's timezone for calculations
                 // Extract hour and minute from the formatted time string
                 const startTimeStr = TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm');
                 const endTimeStr = TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm');
                 
-                console.log('[DailyCalendarView] Event timezone conversion:', {
-                  title: event.title,
-                  utcStartTime: event.start_time,
-                  utcEndTime: event.end_time,
-                  userTimezone,
-                  startTimeStr,
-                  endTimeStr,
-                  step1_parsedStartTime: new Date(event.start_time).toISOString(),
-                  step2_formattedInTimezone: startTimeStr
-                });
-                
                 const [startHour, startMin] = startTimeStr.split(':').map(Number);
                 const [endHour, endMin] = endTimeStr.split(':').map(Number);
-                
+
                 // Create Date objects with these time components for style calculation
                 const startTime = new Date(currentDate);
                 startTime.setHours(startHour, startMin, 0, 0);
                 const endTime = new Date(currentDate);
                 endTime.setHours(endHour, endMin, 0, 0);
-                
-                console.log('[DailyCalendarView] Final display times:', {
-                  title: event.title,
-                  displayStartHour: startHour,
-                  displayStartMin: startMin,
-                  displayStartTime: format(startTime, 'HH:mm')
-                });
                 const style = calculateEventStyle(startTime, endTime);
                 
                 if (!style.visible) return null;
@@ -356,7 +341,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         top: `${style.top}px`,
                         height: `${style.height}px`,
                         zIndex: 10 + eventIndex,
-                        backgroundColor: eventColor ? `${eventColor}15` : 'hsl(var(--muted) / 0.3)',
+                        backgroundColor: eventColor ? `${eventColor}30` : 'hsl(var(--muted) / 0.3)',
                         borderLeft: `3px solid ${eventColor}`,
                       }}
                       onClick={() => onEventClick?.(event.id)}

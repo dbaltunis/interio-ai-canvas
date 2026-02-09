@@ -25,6 +25,10 @@ export interface MarkupSettings {
   dynamic_pricing_enabled: boolean;
   quantity_discounts_enabled: boolean;
   show_markup_to_staff: boolean;
+  // Call-out fee: auto-added to every quote
+  callout_fee_enabled: boolean;
+  callout_fee_amount: number;
+  callout_fee_name: string;
 }
 
 // ✅ FIX: Default values are now 0% - user must explicitly set markups
@@ -49,7 +53,10 @@ export const defaultMarkupSettings: MarkupSettings = {
   minimum_markup_percentage: 0,
   dynamic_pricing_enabled: false,
   quantity_discounts_enabled: false,
-  show_markup_to_staff: false
+  show_markup_to_staff: false,
+  callout_fee_enabled: false,
+  callout_fee_amount: 0,
+  callout_fee_name: 'Call-Out Fee'
 };
 
 export const useMarkupSettings = () => {

@@ -59,15 +59,19 @@ export function TWCSubmitDialog({
   }, [open, clientData, projectData, quoteId]);
 
   // Mapping from your option keys to TWC API field names
+  // Includes snake_case keys AND label-based keys for TWC question names
   const OPTION_TO_TWC_MAPPING: Record<string, string> = {
+    // Snake_case keys (from app's option system)
     'control_type': 'Control Type',
     'chain_side': 'Cont Side',
     'cont_side': 'Cont Side',
+    'control_side': 'Cont Side',
     'control_length': 'Control Length',
     'roller_chain_length': 'Control Length',
     'roller_installation': 'Fixing',
     'fixing': 'Fixing',
     'installation': 'Fixing',
+    'finish': 'Finish',
     'hold_down': 'Hold Down Clips',
     'hold_down_clips': 'Hold Down Clips',
     'fascia': 'Fascia',
@@ -81,16 +85,57 @@ export function TWCSubmitDialog({
     'motor_side': 'Motor Side',
     'remote_type': 'Remote Type',
     'valance': 'Valance',
+    'pelmets': 'Pelmets',
+    'pelmet': 'Pelmets',
     'woven_tape': 'Woven Tape',
     'acorn': 'Acorn',
     'cut_out': 'Cut Out',
     'ladder_tape': 'Ladder Tape',
+    // Label-based keys (TWC question labels used directly as option keys)
+    'Control Type': 'Control Type',
+    'Cont Side': 'Cont Side',
+    'Control Length': 'Control Length',
+    'Fixing': 'Fixing',
+    'Finish': 'Finish',
+    'Hold Down Clips': 'Hold Down Clips',
+    'Fascia': 'Fascia',
+    'Bottom Bar': 'Bottom Bar',
+    'Headrail': 'Headrail',
+    'Slat Size': 'Slat Size',
+    'Tilt Mechanism': 'Tilt Mechanism',
+    'Cord Position': 'Cord Position',
+    'Spring Assist': 'Spring Assist',
+    'Motor Side': 'Motor Side',
+    'Remote Type': 'Remote Type',
+    'Valance': 'Valance',
+    'Pelmets': 'Pelmets',
+    'Woven Tape': 'Woven Tape',
+    'Acorn': 'Acorn',
+    'Cut Out': 'Cut Out',
+    'Ladder Tape': 'Ladder Tape',
   };
-  
+
+  // Set of valid TWC API field names - only these get sent
+  const VALID_TWC_FIELDS = new Set(Object.values(OPTION_TO_TWC_MAPPING));
+
   // Helper function to strip TWC item suffixes from option keys
   // e.g., "control_type_ce115355" → "control_type"
+  // Template IDs are first 8 hex chars of UUID - match any 8-char hex suffix
   const stripTwcSuffix = (key: string): string => {
-    return key.replace(/_[a-z]{2}\d+$/i, '');
+    return key.replace(/_[a-f0-9]{8}$/i, '');
+  };
+
+  // Helper: extract colour name from potentially combined "CODE NAME" format
+  // TWC API expects just the colour name, not the code
+  const extractColourName = (rawColour: string): string => {
+    if (!rawColour || rawColour === 'TO CONFIRM') return rawColour;
+    // Strip leading numeric code: "3095 LIGHT CREAM" → "LIGHT CREAM"
+    const codeNameMatch = rawColour.match(/^\d+\s+(.+)$/);
+    if (codeNameMatch) return codeNameMatch[1].trim();
+    // Strip "CODE - NAME" format: "3095 - LIGHT CREAM" → "LIGHT CREAM"
+    const dashMatch = rawColour.match(/^\d+\s*-\s*(.+)$/);
+    if (dashMatch) return dashMatch[1].trim();
+    return rawColour;
   };
 
   // Map your option values to TWC expected values (where different)
@@ -163,11 +208,13 @@ export function TWCSubmitDialog({
         const location = `${roomName} - ${surfaceName}`;
         
         // Get colour - check material/fabric details as well
-        const colour = productDetails.twc_selected_colour || 
+        // Then strip any leading numeric code (TWC expects name only, not "3095 LIGHT CREAM")
+        const rawColour = productDetails.twc_selected_colour ||
                        metadata.selected_colour ||
                        productDetails.selected_color ||
-                       breakdown.color || 
+                       breakdown.color ||
                        'TO CONFIRM';
+        const colour = extractColourName(rawColour);
         
         // MAP YOUR OPTIONS TO TWC FORMAT
         // First, try to get custom fields from existing twc_custom_fields
@@ -175,10 +222,13 @@ export function TWCSubmitDialog({
         
         const twcFields = productDetails.twc_custom_fields || metadata.twc_custom_fields || [];
         if (Array.isArray(twcFields) && twcFields.length > 0) {
-          customFieldValues = twcFields.map((field: any) => ({
-            name: field.name,
-            value: field.value
-          }));
+          // Only include fields that TWC recognizes - filter out invalid/unknown fields
+          customFieldValues = twcFields
+            .filter((field: any) => field.name && VALID_TWC_FIELDS.has(field.name))
+            .map((field: any) => ({
+              name: field.name,
+              value: field.value
+            }));
         }
         
         // Then, map your selected_options to TWC format (fills in any missing fields)
@@ -186,27 +236,39 @@ export function TWCSubmitDialog({
         if (Array.isArray(selectedOptions)) {
           selectedOptions.forEach((opt: any) => {
             const optionKey = opt.optionKey || opt.key || '';
-            const optionValue = opt.value || opt.selectedValue || opt.label || '';
-            
+            const optionName = opt.name || opt.label || '';
+            const optionValue = opt.value || opt.selectedValue || '';
+
+            // Skip base items (fabric, lining, heading) - not TWC custom fields
+            if (optionKey === 'fabric_base' || optionKey === 'lining_base' || optionKey === 'heading_base') {
+              return;
+            }
+
             // Skip N/A, empty, or null values - TWC doesn't want them
-            if (!optionValue || 
-                optionValue === 'N/A' || 
-                optionValue === 'n/a' || 
+            if (!optionValue ||
+                optionValue === 'N/A' ||
+                optionValue === 'n/a' ||
                 optionValue === 'NA' ||
                 optionValue === 'None' ||
                 optionValue === 'none') {
               return;
             }
-            
-            // Strip TWC item suffix (e.g., "control_type_ce115355" → "control_type")
+
+            // Strip TWC item suffix (e.g., "control_type_a1b2c3d4" → "control_type")
             const baseKey = stripTwcSuffix(optionKey);
-            
-            // Check if this option maps to a TWC field (try multiple key formats)
-            const twcFieldName = OPTION_TO_TWC_MAPPING[baseKey] || 
+
+            // Try to find TWC field name from multiple sources:
+            // 1. Base key (after stripping suffix)
+            // 2. Lowercase base key
+            // 3. Original option key (unchanged)
+            // 4. Option name/label (TWC question label like "Control Type")
+            const twcFieldName = OPTION_TO_TWC_MAPPING[baseKey] ||
                                  OPTION_TO_TWC_MAPPING[baseKey.toLowerCase()] ||
                                  OPTION_TO_TWC_MAPPING[optionKey] ||
-                                 OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()];
-            
+                                 OPTION_TO_TWC_MAPPING[optionKey.toLowerCase()] ||
+                                 OPTION_TO_TWC_MAPPING[optionName] ||
+                                 OPTION_TO_TWC_MAPPING[optionName.toLowerCase()];
+
             if (twcFieldName) {
               // Check if we already have this field
               const existingField = customFieldValues.find(f => f.name === twcFieldName);
@@ -214,7 +276,7 @@ export function TWCSubmitDialog({
                 // Apply value mapping if needed
                 const valueMap = VALUE_MAPPINGS[twcFieldName];
                 const mappedValue = valueMap?.[optionValue] || optionValue;
-                
+
                 customFieldValues.push({
                   name: twcFieldName,
                   value: mappedValue
@@ -271,6 +333,19 @@ export function TWCSubmitDialog({
     return issues;
   }, [twcItems]);
 
+  // Group TWC items by itemNumber (product type) - TWC requires one product type per order
+  const itemGroups = useMemo(() => {
+    const groups: Record<string, { itemNumber: string; itemName: string; items: any[] }> = {};
+    twcItems.forEach((item: any) => {
+      const key = item.itemNumber;
+      if (!groups[key]) {
+        groups[key] = { itemNumber: key, itemName: item.itemName, items: [] };
+      }
+      groups[key].items.push(item);
+    });
+    return Object.values(groups);
+  }, [twcItems]);
+
   const handleSubmit = async () => {
     if (twcItems.length === 0) {
       toast({
@@ -291,62 +366,94 @@ export function TWCSubmitDialog({
     }
 
     setIsSubmitting(true);
-    
+
+    const successfulOrders: string[] = [];
+    const failedOrders: string[] = [];
+
     try {
-      // Clean items for API (remove validation helpers)
-      const cleanItems = twcItems.map((item: any) => ({
-        itemNumber: item.itemNumber,
-        itemName: item.itemName,
-        location: item.location,
-        quantity: item.quantity,
-        width: item.width,
-        drop: item.drop,
-        material: item.material,
-        colour: item.colour,
-        customFieldValues: item.customFieldValues,
-      }));
+      // Submit each product type group as a separate order (TWC requirement)
+      for (let groupIdx = 0; groupIdx < itemGroups.length; groupIdx++) {
+        const group = itemGroups[groupIdx];
 
-      // Call TWC submit order edge function
-      const { data, error } = await supabase.functions.invoke('twc-submit-order', {
-        body: {
-          quoteId,
-          orderDescription: `Order for ${clientData?.name || 'Client'} - Quote ${quoteId.slice(0, 8)}`,
-          purchaseOrderNumber: formData.purchaseOrderNumber,
-          address1: formData.address1,
-          address2: formData.address2,
-          city: formData.city,
-          state: formData.state,
-          postcode: formData.postcode,
-          phone: formData.phone,
-          email: formData.email,
-          contactName: formData.contactName,
-          items: cleanItems,
-        },
-      });
+        // Clean items for API (remove validation helpers)
+        const cleanItems = group.items.map((item: any) => ({
+          itemNumber: item.itemNumber,
+          itemName: item.itemName,
+          location: item.location,
+          quantity: item.quantity,
+          width: item.width,
+          drop: item.drop,
+          material: item.material,
+          colour: item.colour,
+          customFieldValues: item.customFieldValues,
+        }));
 
-      if (error) {
-        console.error('TWC submission error:', error);
-        throw error;
+        // Append group suffix to PO number if multiple groups
+        const poNumber = itemGroups.length > 1
+          ? `${formData.purchaseOrderNumber}-${groupIdx + 1}`
+          : formData.purchaseOrderNumber;
+
+        try {
+          const { data, error } = await supabase.functions.invoke('twc-submit-order', {
+            body: {
+              quoteId,
+              orderDescription: `Order for ${clientData?.name || 'Client'} - Quote ${quoteId.slice(0, 8)} (${group.itemName})`,
+              purchaseOrderNumber: poNumber,
+              address1: formData.address1,
+              address2: formData.address2,
+              city: formData.city,
+              state: formData.state,
+              postcode: formData.postcode,
+              phone: formData.phone,
+              email: formData.email,
+              contactName: formData.contactName,
+              items: cleanItems,
+            },
+          });
+
+          if (error) {
+            console.error(`TWC submission error for group ${group.itemName}:`, error);
+            failedOrders.push(`${group.itemName}: ${error.message}`);
+            continue;
+          }
+
+          if (data?.success) {
+            successfulOrders.push(`${group.itemName}: Order #${data.orderId}`);
+          } else {
+            const errorDetails = data?.message || data?.error || 'Unknown error';
+            failedOrders.push(`${group.itemName}: ${errorDetails}`);
+          }
+        } catch (groupError: any) {
+          failedOrders.push(`${group.itemName}: ${groupError.message}`);
+        }
       }
 
-      if (data?.success) {
+      // Show results
+      if (successfulOrders.length > 0 && failedOrders.length === 0) {
         toast({
-          title: "Order Submitted to TWC",
-          description: `TWC Order ID: ${data.orderId}`,
+          title: "Orders Submitted to TWC",
+          description: successfulOrders.join('\n'),
         });
         onOpenChange(false);
+      } else if (successfulOrders.length > 0 && failedOrders.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Submitted: ${successfulOrders.join(', ')}\nFailed: ${failedOrders.join(', ')}`,
+          variant: "destructive",
+        });
       } else {
-        // TWC returns detailed validation in 'message' field
-        const errorDetails = data?.message || data?.error || 'Failed to submit order';
-        throw new Error(errorDetails);
+        const formattedErrors = failedOrders.join('\n').replace(/\s*\/n\s*/g, '\n');
+        toast({
+          title: "Submission Failed",
+          description: formattedErrors,
+          variant: "destructive",
+          importance: 'important',
+        });
       }
     } catch (error: any) {
       console.error('Error submitting to TWC:', error);
-      
-      // Format multi-line errors for readability (TWC uses "/n" as separator)
       const errorMessage = error.message || "Failed to submit order to TWC. Please try again.";
       const formattedMessage = errorMessage.replace(/\s*\/n\s*/g, '\n');
-      
       toast({
         title: "Submission Failed",
         description: formattedMessage,
@@ -469,8 +576,18 @@ export function TWCSubmitDialog({
             <div className="text-sm text-muted-foreground space-y-1">
               <p>
                 <span className="font-medium">Items:</span>{" "}
-                {twcItems.length} TWC products
+                {twcItems.length} TWC product{twcItems.length !== 1 ? 's' : ''}
               </p>
+              {itemGroups.length > 1 && (
+                <p className="text-xs text-amber-600">
+                  {itemGroups.length} separate orders will be submitted (TWC requires one product type per order)
+                </p>
+              )}
+              {itemGroups.map((group: any) => (
+                <p key={group.itemNumber} className="text-xs">
+                  {group.itemName}: {group.items.length} item{group.items.length !== 1 ? 's' : ''}
+                </p>
+              ))}
               <p>
                 <span className="font-medium">Quote Total:</span>{" "}
                 {quotationData.currency} {(quotationData.total_amount ?? quotationData.total)?.toFixed(2) || "0.00"}

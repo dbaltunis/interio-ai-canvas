@@ -95,6 +95,22 @@ export interface GoogleCalendarIntegration extends BaseIntegration {
   };
 }
 
+export interface OutlookCalendarIntegration extends BaseIntegration {
+  integration_type: 'outlook_calendar';
+  api_credentials: {
+    access_token: string;
+    refresh_token: string;
+    expires_at?: string;
+  };
+  configuration: {
+    calendar_id: string;
+    sync_enabled: boolean;
+    sync_appointments: boolean;
+    auto_create_events: boolean;
+    sync_direction: 'app_to_calendar' | 'calendar_to_app' | 'both';
+  };
+}
+
 export interface TwilioIntegration extends BaseIntegration {
   integration_type: 'twilio';
   api_credentials: {
@@ -134,7 +150,7 @@ export interface TWCIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration;
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration;
 
 export interface IntegrationSyncLog {
   id: string;

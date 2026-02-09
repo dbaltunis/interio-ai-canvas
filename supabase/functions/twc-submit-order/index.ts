@@ -168,11 +168,23 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('TWC order submitted:', result);
 
     // Store TWC order ID in database for tracking
+    // Append to existing order IDs (multiple orders per quote when product types differ)
     if (result.success && result.orderId) {
+      const { data: existingQuote } = await supabaseClient
+        .from('quotes')
+        .select('twc_order_id')
+        .eq('id', orderData.quoteId)
+        .single();
+
+      const existingOrderId = existingQuote?.twc_order_id;
+      const newOrderId = existingOrderId
+        ? `${existingOrderId}, ${result.orderId}`
+        : String(result.orderId);
+
       await supabaseClient
         .from('quotes')
-        .update({ 
-          twc_order_id: result.orderId,
+        .update({
+          twc_order_id: newOrderId,
           twc_order_status: 'submitted',
           twc_submitted_at: new Date().toISOString()
         })

@@ -1,4 +1,5 @@
 import { GoogleCalendarSetup } from "@/components/calendar/GoogleCalendarSetup";
+import { OutlookCalendarSetup } from "@/components/calendar/OutlookCalendarSetup";
 
 export const GoogleCalendarTab = () => {
   return (
@@ -6,11 +7,12 @@ export const GoogleCalendarTab = () => {
       <div>
         <h1 className="text-3xl font-bold">Calendar Integration</h1>
         <p className="text-muted-foreground mt-2">
-          Connect your Google Calendar to sync appointments automatically.
+          Connect your calendars to sync appointments automatically. You can connect both Google and Outlook calendars simultaneously.
         </p>
       </div>
 
       <GoogleCalendarSetup />
+      <OutlookCalendarSetup />
     </div>
   );
 };

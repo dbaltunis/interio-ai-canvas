@@ -63,14 +63,9 @@ export function WindowSummaryCard({
   const canEditJobs = canEditAllJobs || canEditAssignedJobs;
   const canDeleteJobs = useHasPermission('delete_jobs');
   
-  // Add defensive check for surface data
-  if (!surface || !surface.id) {
-    console.error('WindowSummaryCard: Invalid surface data', surface);
-    return null;
-  }
-  
   // Use surface.id directly as the window_id - single source of truth
-  const windowId = surface.id;
+  // NOTE: surface?.id used defensively so hooks are always called (Rules of Hooks)
+  const windowId = surface?.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const { compact } = useCompactMode();
@@ -436,6 +431,12 @@ export function WindowSummaryCard({
     console.log('💰 [DISPLAY] Window card retail price (fallback):', { costTotal, markup: markupResult.percentage, retailPrice });
     return retailPrice;
   }, [summary, enrichedBreakdown, markupSettings]);
+
+  // Defensive check for surface data - AFTER all hooks to avoid breaking Rules of Hooks
+  if (!surface || !surface.id) {
+    console.error('WindowSummaryCard: Invalid surface data', surface);
+    return null;
+  }
 
   const displayName = treatmentLabel || surface.name;
 

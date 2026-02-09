@@ -12,42 +12,42 @@ serve(async (req) => {
 
   try {
     const { userId } = await req.json();
-    
+
     if (!userId) {
       throw new Error('User ID is required');
     }
 
-    const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+    const clientId = Deno.env.get('MICROSOFT_CLIENT_ID');
     if (!clientId) {
-      throw new Error('Google Client ID not configured');
+      throw new Error('Microsoft Client ID not configured');
     }
 
-    const redirectUri = `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/google-oauth-callback`;
-    const scope = 'https://www.googleapis.com/auth/calendar';
-    
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/outlook-oauth-callback`;
+    const scope = 'Calendars.ReadWrite offline_access User.Read';
+
+    const microsoftAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
       `client_id=${clientId}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `scope=${encodeURIComponent(scope)}&` +
       `response_type=code&` +
-      `access_type=offline&` +
+      `response_mode=query&` +
       `prompt=consent&` +
       `state=${userId}`;
 
     return new Response(
-      JSON.stringify({ authUrl: googleAuthUrl }),
-      { 
+      JSON.stringify({ authUrl: microsoftAuthUrl }),
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
   } catch (error) {
-    console.error('Error generating OAuth URL:', error);
+    console.error('Error generating Outlook OAuth URL:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: 400
       }
     );
   }

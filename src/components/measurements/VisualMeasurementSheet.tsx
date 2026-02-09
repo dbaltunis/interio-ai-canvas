@@ -139,11 +139,6 @@ export const VisualMeasurementSheet = ({
     measurementLabels
   });
 
-  // Handle invalid treatment config - render after hooks to avoid breaking Rules of Hooks
-  if (!treatmentConfig) {
-    console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
-    return <div className="p-4 text-destructive">Invalid treatment type: {treatmentType}</div>;
-  }
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
       console.log(`🔥🔥🔥 LEVEL 0: VisualMeasurementSheet handleInputChange:`, {
@@ -600,6 +595,12 @@ export const VisualMeasurementSheet = ({
       onFabricCalculationChange(fabricCalculation);
     }
   }, [fabricCalculation, onFabricCalculationChange]);
+
+  // Handle invalid treatment config - AFTER all hooks to avoid breaking Rules of Hooks
+  if (!treatmentConfig) {
+    console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
+    return <div className="p-4 text-destructive">Invalid treatment type: {treatmentType}</div>;
+  }
 
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {

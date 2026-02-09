@@ -122,6 +122,10 @@ export const useQuotationSync = ({
     let totalCostPrice = 0; // Track total cost for profit calculation
     let totalSellingPrice = 0; // Track total selling for profit calculation
 
+    // Per-job custom markup override (from current quote)
+    const latestQuote = quotes.length > 0 ? quotes[0] : null;
+    const quoteMarkupOverride = (latestQuote as any)?.custom_markup_percentage ?? null;
+
     // Get the most accurate cost data - prioritize window summaries over treatments
     const summariesTotal = projectSummaries?.projectTotal || 0;
     const treatmentTotal = treatments.reduce((sum, treatment) => {
@@ -278,18 +282,19 @@ export const useQuotationSync = ({
           
           // Resolve markup for fallback and metadata purposes
           const markupResult = resolveMarkup({
+            quoteMarkupOverride,
             productMarkup: undefined,
             gridMarkup: summary.pricing_grid_markup || undefined,
             category: treatmentCategory,
             subcategory: summary.subcategory || undefined,
             markupSettings: markupSettings || undefined
           });
-          
+
           // Use stored total_selling if available (has per-item markups already applied)
-          // Only fallback to recalculation for legacy data without total_selling
-          const sellingPrice = storedSelling > 0 
-            ? storedSelling 
-            : applyMarkup(costPrice, markupResult.percentage);
+          // BUT: if per-job custom markup is set, recalculate from cost to apply the override
+          const sellingPrice = quoteMarkupOverride != null
+            ? applyMarkup(costPrice, markupResult.percentage)
+            : (storedSelling > 0 ? storedSelling : applyMarkup(costPrice, markupResult.percentage));
           
           const grossMargin = calculateGrossMargin(costPrice, sellingPrice);
           
@@ -774,10 +779,40 @@ export const useQuotationSync = ({
       roomProductsSellingTotal += productSelling;
     });
 
-    // Include room products in totals - CRITICAL for consistency
-    const combinedCostTotal = totalCostPrice + roomProductsCostTotal;
-    const combinedSellingTotal = totalSellingPrice + roomProductsSellingTotal;
-    const combinedSubtotal = baseSubtotal + roomProductsSellingTotal;
+    // Auto-inject call-out fee if enabled in pricing settings
+    let calloutFeeCost = 0;
+    let calloutFeeSelling = 0;
+    const pricingSettingsRaw = businessSettings?.pricing_settings as any;
+    if (pricingSettingsRaw?.callout_fee_enabled && pricingSettingsRaw?.callout_fee_amount > 0) {
+      const feeAmount = pricingSettingsRaw.callout_fee_amount;
+      const feeName = pricingSettingsRaw.callout_fee_name || 'Call-Out Fee';
+      calloutFeeCost = feeAmount;
+      calloutFeeSelling = feeAmount;
+
+      items.push({
+        id: 'callout-fee',
+        name: feeName,
+        description: 'Automatic service charge',
+        quantity: 1,
+        cost_price: feeAmount,
+        unit_price: feeAmount,
+        total: feeAmount,
+        cost_total: feeAmount,
+        currency: (() => {
+          if (!businessSettings?.measurement_units) return 'USD';
+          const units = typeof businessSettings.measurement_units === 'string'
+            ? JSON.parse(businessSettings.measurement_units)
+            : businessSettings.measurement_units;
+          return units?.currency || 'USD';
+        })(),
+        isCalloutFee: true,
+      });
+    }
+
+    // Include room products + call-out fee in totals - CRITICAL for consistency
+    const combinedCostTotal = totalCostPrice + roomProductsCostTotal + calloutFeeCost;
+    const combinedSellingTotal = totalSellingPrice + roomProductsSellingTotal + calloutFeeSelling;
+    const combinedSubtotal = baseSubtotal + roomProductsSellingTotal + calloutFeeSelling;
 
     // Calculate tax based on tax_inclusive setting
     const pricingSettings = businessSettings?.pricing_settings as any;

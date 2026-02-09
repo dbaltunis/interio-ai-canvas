@@ -302,6 +302,61 @@ export const GlobalMarkupSettings: React.FC = () => {
 
         <Separator />
 
+        {/* Call-Out Fee */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base font-medium">Automatic Call-Out Fee</Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically add a call-out / service fee to every quote
+              </p>
+            </div>
+            <Switch
+              checked={localSettings.callout_fee_enabled || false}
+              onCheckedChange={(checked) => handleChange('callout_fee_enabled', checked)}
+            />
+          </div>
+
+          {localSettings.callout_fee_enabled && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="callout-fee-name" className="text-sm font-medium">
+                  Fee Name
+                </Label>
+                <Input
+                  id="callout-fee-name"
+                  value={localSettings.callout_fee_name || 'Call-Out Fee'}
+                  onChange={(e) => handleChange('callout_fee_name', e.target.value)}
+                  placeholder="Call-Out Fee"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="callout-fee-amount" className="text-sm font-medium">
+                  Fee Amount
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="callout-fee-amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={localSettings.callout_fee_amount || 0}
+                    onChange={(e) => handleChange('callout_fee_amount', parseFloat(e.target.value) || 0)}
+                    className="pr-8 h-9"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Fixed amount added as a separate line item
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
         {/* Staff Visibility */}
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">

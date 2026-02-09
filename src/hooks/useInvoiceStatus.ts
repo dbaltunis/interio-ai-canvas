@@ -59,9 +59,13 @@ export const useInvoiceStatus = () => {
     },
   });
 
-  // Record a payment and auto-calculate status
+  // Record a payment and auto-calculate status + log to payment_records
   const recordPayment = useMutation({
-    mutationFn: async ({ quoteId, paymentAmount, totalAmount }: RecordPaymentParams) => {
+    mutationFn: async ({ quoteId, paymentAmount, totalAmount, paymentMethod, reference, notes }: RecordPaymentParams & {
+      paymentMethod?: string;
+      reference?: string;
+      notes?: string;
+    }) => {
       // Get current amount paid
       const { data: quote, error: fetchError } = await supabase
         .from('quotes')
@@ -73,7 +77,7 @@ export const useInvoiceStatus = () => {
 
       const currentPaid = (quote?.amount_paid as number) || 0;
       const newAmountPaid = currentPaid + paymentAmount;
-      
+
       // Determine payment status
       let paymentStatus: PaymentStatus;
       if (newAmountPaid >= totalAmount) {
@@ -96,6 +100,25 @@ export const useInvoiceStatus = () => {
         .single();
 
       if (error) throw error;
+
+      // Log to payment_records for audit trail (best-effort, don't block on failure)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await (supabase.from('payment_records' as any) as any).insert({
+            quote_id: quoteId,
+            user_id: user.id,
+            amount: paymentAmount,
+            payment_method: paymentMethod || 'manual',
+            reference: reference || null,
+            notes: notes || null,
+          });
+        }
+      } catch (logError) {
+        // Don't fail the payment recording if audit log fails
+        console.warn('Failed to log payment record:', logError);
+      }
+
       return data;
     },
     onSuccess: () => {

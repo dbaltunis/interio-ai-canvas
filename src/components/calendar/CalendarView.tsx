@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
-import { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
+import { useState, useEffect, useCallback } from "react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -90,7 +90,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         .select('permission_name')
         .eq('user_id', user.id);
       if (error) {
-        console.error('[CalendarView] Error fetching explicit permissions:', error);
         return [];
       }
       return data || [];
@@ -134,6 +133,57 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       setView('week');
     }
   }, [isTablet, view]);
+
+  // Keyboard shortcuts for calendar navigation
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Don't handle shortcuts when typing in inputs or dialogs are open
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+    if (showCreateEventDialog || showEditDialog) return;
+
+    switch (e.key) {
+      case 't':
+      case 'T':
+        e.preventDefault();
+        setCurrentDate(new Date());
+        break;
+      case 'd':
+      case 'D':
+        e.preventDefault();
+        setView('day');
+        break;
+      case 'w':
+      case 'W':
+        e.preventDefault();
+        setView('week');
+        break;
+      case 'm':
+      case 'M':
+        if (!isTablet) {
+          e.preventDefault();
+          setView('month');
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (view === 'day') setCurrentDate(prev => addDays(prev, -1));
+        else if (view === 'week') setCurrentDate(prev => subWeeks(prev, 1));
+        else setCurrentDate(prev => subMonths(prev, 1));
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (view === 'day') setCurrentDate(prev => addDays(prev, 1));
+        else if (view === 'week') setCurrentDate(prev => addWeeks(prev, 1));
+        else setCurrentDate(prev => addMonths(prev, 1));
+        break;
+    }
+  }, [view, isTablet, showCreateEventDialog, showEditDialog]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
@@ -151,6 +201,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     eventTypes: [],
     statuses: []
   });
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   
   // Enable real-time updates
   useRealtimeBookings();
@@ -228,20 +279,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return <MobileCalendarView />;
   }
 
-  const getEventsForDate = (date: Date) => {
-    if (!appointments) return [];
-    return appointments.filter(appointment => {
-      // Format both dates in user's timezone for comparison
+  const getEventsForDate = (date: Date, useFiltered = true) => {
+    const source = useFiltered ? filteredAppointments : appointments;
+    if (!source) return [];
+    return source.filter(appointment => {
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, displayTimezone, 'yyyy-MM-dd');
       const filterDateStr = TimezoneUtils.formatInTimezone(date.toISOString(), displayTimezone, 'yyyy-MM-dd');
-      console.log('[CalendarView] Filtering for date:', {
-        title: appointment.title,
-        utcTime: appointment.start_time,
-        displayTimezone,
-        appointmentDateStr,
-        filterDateStr,
-        matches: appointmentDateStr === filterDateStr
-      });
       return appointmentDateStr === filterDateStr;
     });
   };
@@ -327,15 +370,15 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                   isWeekend && isCurrentMonth ? 'bg-muted/20' : 'bg-background'
                 } hover:bg-accent/30`}
                 onClick={() => {
-                  setSelectedDate(day);
-                  setShowCreateEventDialog(true);
+                  setCurrentDate(day);
+                  setView('day');
                 }}
               >
-                {/* Day number - refined today indicator */}
+                {/* Day number */}
                 <div className={`text-xs font-medium mb-0.5 flex-shrink-0 ${
-                  dayIsToday 
-                    ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]' 
-                    : ''
+                  dayIsToday
+                    ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-[11px] font-bold'
+                    : isCurrentMonth ? 'text-foreground' : ''
                 }`}>
                   {format(day, 'd')}
                 </div>
@@ -354,7 +397,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                         transition={{ delay: idx * 0.05, duration: 0.15 }}
                         className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
                         style={{
-                          backgroundColor: event.color ? `${event.color}20` : 'hsl(var(--primary) / 0.1)',
+                          backgroundColor: event.color ? `${event.color}30` : 'hsl(var(--primary) / 0.15)',
                           borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
                         }}
                         onClick={(e) => {
@@ -372,7 +415,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     </EventHoverCard>
                   ))}
                   {events.length > 3 && (
-                    <div className="text-[10px] text-muted-foreground font-medium px-1">
+                    <div
+                      className="text-[10px] text-primary font-medium px-1 cursor-pointer hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentDate(day);
+                        setView('day');
+                      }}
+                    >
                       +{events.length - 3} more
                     </div>
                   )}
@@ -396,13 +446,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       return clickDateTime >= eventStart && clickDateTime < eventEnd;
     });
 
-    // If there's a conflict, show a dialog asking what to do
+    // If there's a conflict, show a toast warning but still proceed
     if (hasConflict) {
-      if (confirm("There's already an event at this time. Do you want to create an overlapping event anyway? Click OK to proceed or Cancel to choose a different time.")) {
-        // Proceed with creating the event
-        proceedWithEventCreation(date, time);
-      }
-      return;
+      toast({
+        title: "Time slot overlap",
+        description: "There's already an event at this time. Creating overlapping event.",
+      });
     }
 
     // No conflict, proceed normally
@@ -495,6 +544,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       }
     }
 
+    // Staff member filter - show only events for selected staff member
+    if (selectedStaffId) {
+      const isStaffOwner = appointment.user_id === selectedStaffId;
+      const isStaffTeamMember = appointment.team_member_ids?.includes(selectedStaffId);
+      if (!isStaffOwner && !isStaffTeamMember) return false;
+    }
+
     // Search term filter
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
@@ -523,19 +579,22 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return true;
   });
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentDate(subWeeks(currentDate, 1));
+  const navigateCalendar = (direction: 'prev' | 'next') => {
+    const delta = direction === 'prev' ? -1 : 1;
+    if (view === 'day') {
+      setCurrentDate(addDays(currentDate, delta));
+    } else if (view === 'week') {
+      setCurrentDate(delta === -1 ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
     } else {
-      setCurrentDate(addWeeks(currentDate, 1));
+      setCurrentDate(addMonths(currentDate, delta));
     }
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      {/* Collapsible Sidebar - Hidden on desktop and tablets */}
-      {!isDesktop && !isTablet && (
-        <CalendarSidebar 
+    <div className="h-[calc(100dvh-3.5rem)] flex overflow-hidden">
+      {/* Collapsible Sidebar - Desktop only */}
+      {isDesktop && (
+        <CalendarSidebar
           currentDate={currentDate}
           onDateChange={setCurrentDate}
           onBookingLinks={() => setShowSchedulerSlider(true)}
@@ -550,10 +609,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             currentDate={currentDate}
             view={view}
             onTodayClick={() => setCurrentDate(new Date())}
-            onPrevClick={() => navigateWeek('prev')}
-            onNextClick={() => navigateWeek('next')}
+            onPrevClick={() => navigateCalendar('prev')}
+            onNextClick={() => navigateCalendar('next')}
             onViewChange={(value: CalendarView) => setView(value)}
+            filters={filters}
             onFiltersChange={setFilters}
+            onStaffFilterChange={setSelectedStaffId}
+            selectedStaffId={selectedStaffId}
             onSchedulerClick={() => setShowSchedulerSlider(true)}
             onDateChange={setCurrentDate}
             onManageTemplates={() => setShowSchedulerManagement(true)}
@@ -573,10 +635,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           ) : (
             <>
               {view === 'week' && (
-                <WeeklyCalendarView 
+                <WeeklyCalendarView
                   currentDate={currentDate}
                   onEventClick={handleEventClick}
                   onTimeSlotClick={handleTimeSlotClick}
+                  onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
                   filteredAppointments={filteredAppointments}
                 />
               )}
@@ -586,10 +649,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                 </div>
               )}
               {view === 'day' && (
-                <DailyCalendarView 
+                <DailyCalendarView
                   currentDate={currentDate}
                   onEventClick={handleEventClick}
                   onTimeSlotClick={handleTimeSlotClick}
+                  filteredAppointments={filteredAppointments}
                 />
               )}
             </>

@@ -66,31 +66,9 @@ export const DynamicCurtainOptions = ({
     twc_fabrics_and_colours: any;
     twc_item_number: string;
   } | null>(null);
-  
-  // Early returns MUST come before hooks to prevent violations
-  if (!template) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        Please select a curtain template first
-      </div>
-    );
-  }
-  
-  // ✅ CRITICAL: Validate template has an ID (exists in database)
-  if (!template?.id) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Template configuration error: Template ID is missing. Please re-select the template or contact support.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
-  // Hooks MUST be called unconditionally after early returns
+  // Hooks MUST be called unconditionally (React Rules of Hooks)
   const { units } = useMeasurementUnits();
-  // ✅ CRITICAL FIX: Force refresh inventory when worksheet loads to get fresh heading data
   const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory({ forceRefresh: true });
   // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
   const treatmentCategory = template?.treatment_category || 'curtains';
@@ -854,6 +832,26 @@ export const DynamicCurtainOptions = ({
     // ✅ FIX: Pass enabledOptionIds to validation so it only validates enabled options
     return validateTreatmentOptions(treatmentOptions, treatmentOptionSelections, enabledOptionIds);
   }, [treatmentOptions, treatmentOptionSelections, treatmentOptionsLoading, settingsLoading, enabledOptionIds]);
+
+  // Early returns for missing template - MUST be after all hooks
+  if (!template) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Please select a curtain template first
+      </div>
+    );
+  }
+
+  if (!template?.id) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Template configuration error: Template ID is missing. Please re-select the template or contact support.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (headingsLoading || treatmentOptionsLoading) {
     return (

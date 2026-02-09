@@ -22,10 +22,11 @@ interface WeeklyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
+  onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -38,14 +39,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const archiveCompletedTasks = useArchiveCompletedTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // Debug logging for data fetching
-  console.log('Calendar data status:', { 
-    appointments: displayAppointments?.length, 
-    bookedAppointments: bookedAppointments?.length,
-    schedulerSlots: schedulerSlots?.length,
-    loading: { bookingsLoading }
-  });
-  
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -54,37 +47,25 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
   const [schedulerSlotDialog, setSchedulerSlotDialog] = useState<{ open: boolean; slot: any }>({ open: false, slot: null });
   
-  // Get current user ID
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    getCurrentUser();
-  }, []);
-
-  // Auto-scroll to 7 AM on mount for better UX
-  // useLayoutEffect runs BEFORE browser paints - no visible scroll animation
-  useLayoutEffect(() => {
-    if (scrollContainerRef.current) {
-      // Each time slot is 32px high, and slots are every 30 minutes
-      // 7 AM = 7 hours from midnight = 14 slots (00:00, 00:30, 01:00... 07:00)
-      const slotHeight = 32;
-      const sevenAMSlotIndex = 14; // 7:00 AM is the 14th slot (0-indexed: slot 14)
-      const scrollPosition = sevenAMSlotIndex * slotHeight;
-      
-      // Instant scroll - no animation, positioned before paint
-      scrollContainerRef.current.scrollTop = scrollPosition;
-    }
-  }, []); // Empty dependency array = only run on mount
-  
   // Event creation state
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
   const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
-  
+
   // Drag and drop state
   const [activeEvent, setActiveEvent] = useState<any>(null);
+
+  // Get week days starting from Sunday
+  const getWeekDays = () => {
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(startOfCurrentWeek, i));
+    }
+    return days;
+  };
+
+  const weekDays = getWeekDays();
 
   // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
@@ -103,17 +84,30 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [showExtendedHours, setShowExtendedHours] = useState(true);
   const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
 
-  // Get week days starting from Sunday
-  const getWeekDays = () => {
-    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 0 });
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(addDays(startOfCurrentWeek, i));
-    }
-    return days;
-  };
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
-  const weekDays = getWeekDays();
+  // Auto-scroll to current time (or 8 AM if not today) on mount
+  useLayoutEffect(() => {
+    if (scrollContainerRef.current) {
+      const slotHeight = 32;
+      const now = new Date();
+      const hasToday = weekDays.some(d => isToday(d));
+
+      // Scroll 1 hour before current time if today is visible, else 8 AM
+      const scrollHour = hasToday ? Math.max(0, now.getHours() - 1) : 8;
+      const scrollMinutes = hasToday ? now.getMinutes() : 0;
+      const scrollPosition = ((scrollHour * 60 + scrollMinutes) * slotHeight) / 30;
+
+      scrollContainerRef.current.scrollTop = scrollPosition;
+    }
+  }, [currentDate]); // Re-run when navigating weeks
 
   // Get events for a specific date with date validation
   const getEventsForDate = (date: Date) => {
@@ -126,7 +120,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         // Skip invalid dates or appointments where end time is before start time
         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
-          console.warn('Invalid appointment dates detected:', appointment);
           return false;
         }
         
@@ -159,7 +152,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         // Validate times
         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-          console.warn('Invalid booking times:', booking);
           return null;
         }
         
@@ -281,13 +273,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL FIX: Validate that end time is after start time
+    // Validate that end time is after start time - default to 1-hour duration
     if (endTime <= startTime) {
-      console.warn('Invalid appointment: end time before start time', { 
-        start: startTime.toISOString(), 
-        end: endTime.toISOString() 
-      });
-      // Default to 1-hour duration for invalid appointments
       endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
     }
     
@@ -376,56 +363,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const { active, over } = event;
     setActiveEvent(null);
     
-    console.log('Drag end:', { active: active?.id, over: over?.id, overData: over?.data?.current });
 
-    if (!over || !active) {
-      console.log('No drop target or active element');
-      return;
-    }
+    if (!over || !active) return;
 
     const eventId = active.id as string;
     const dropData = over.data.current;
-    
-    if (!dropData) {
-      console.log('No drop data found');
-      return;
-    }
+
+    if (!dropData) return;
 
     const { day, timeSlotIndex } = dropData;
     const eventToUpdate = displayAppointments?.find(apt => apt.id === eventId);
-    
-    if (!eventToUpdate) {
-      console.log('Event to update not found:', eventId);
-      return;
-    }
 
-    console.log('Updating event:', eventId, 'to day:', day, 'timeSlot:', timeSlotIndex);
+    if (!eventToUpdate) return;
 
     // Calculate new start time
     const originalDuration = new Date(eventToUpdate.end_time).getTime() - new Date(eventToUpdate.start_time).getTime();
     const [hours, minutes] = timeSlots[timeSlotIndex].split(':').map(Number);
-    
+
     const newStartTime = new Date(day);
     newStartTime.setHours(hours, minutes, 0, 0);
-    
+
     const newEndTime = new Date(newStartTime.getTime() + originalDuration);
 
-    console.log('Calling updateAppointment.mutateAsync with:', {
-      id: eventId,
-      start_time: newStartTime.toISOString(),
-      end_time: newEndTime.toISOString()
-    });
-
-    // Use the proper React Query mutation
     try {
       await updateAppointment.mutateAsync({
         id: eventId,
         start_time: newStartTime.toISOString(),
         end_time: newEndTime.toISOString()
       });
-      console.log('Successfully updated appointment via mutation');
     } catch (error) {
-      console.error('Failed to update appointment via mutation:', error);
+      // Error handled by React Query's onError
     }
   };
 
@@ -434,7 +401,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
         {/* Week header - minimal and clean */}
         <div className="flex bg-background flex-shrink-0 sticky top-0 z-10 border-b border-border/20">
-          <div className="w-12 flex-shrink-0"></div>
+          <div className="w-14 flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
               {weekDays.map(day => {
@@ -442,13 +409,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 
                 return (
-                  <div key={day.toString()} className={`py-1.5 text-center ${isWeekend ? 'bg-muted/10' : ''}`}>
+                  <div
+                    key={day.toString()}
+                    className={`py-1.5 text-center cursor-pointer hover:bg-accent/30 transition-colors ${isWeekend ? 'bg-muted/10' : ''}`}
+                    onClick={() => onDayHeaderClick?.(day)}
+                  >
                     <div className="text-[9px] font-medium text-muted-foreground">
                       {format(day, 'EEE')}
                     </div>
                     <div className={`text-xs font-medium mt-0.5 ${
-                      isCurrentDay 
-                        ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto text-[11px]' 
+                      isCurrentDay
+                        ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto text-[11px]'
                         : 'text-foreground'
                     }`}>
                       {format(day, 'd')}
@@ -463,34 +434,39 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Scrollable time grid */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
           <div className="flex bg-card">
-            {/* Time labels - narrower */}
-            <div className="w-12 bg-card flex-shrink-0">
-              {timeSlots.map((time, index) => (
-                <div 
-                  key={time} 
-                  className="h-[32px] pr-1 text-right flex items-start justify-end"
-                >
-                  {index % 2 === 0 && (
-                    <span className="text-[9px] font-medium text-muted-foreground -mt-1.5">{time}</span>
-                  )}
-                </div>
-              ))}
+            {/* Time labels - show all hours with better readability */}
+            <div className="w-14 bg-card flex-shrink-0">
+              {timeSlots.map((time, index) => {
+                const [h, m] = time.split(':').map(Number);
+                const isBizHour = h >= 9 && h < 17;
+                const isHour = m === 0;
+                return (
+                  <div
+                    key={time}
+                    className="h-[32px] pr-2 text-right flex items-start justify-end"
+                  >
+                    {isHour && (
+                      <span className={`text-[10px] font-medium -mt-1.5 tabular-nums ${isBizHour ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>
+                        {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {/* Day columns */}
             <div className="flex-1 relative bg-card">
-              {/* Hour lines - very subtle */}
+              {/* Hour lines - clear at hours, subtle at half-hours */}
               {timeSlots.map((time, index) => {
-                if (index % 2 === 0) {
-                  return (
-                    <div 
-                      key={time} 
-                      className="absolute left-0 right-0 border-t border-border/10" 
-                      style={{ top: `${index * 32}px` }}
-                    />
-                  );
-                }
-                return null;
+                const isHour = index % 2 === 0;
+                return (
+                  <div
+                    key={`line-${time}`}
+                    className={`absolute left-0 right-0 border-t ${isHour ? 'border-border/30' : 'border-border/8'}`}
+                    style={{ top: `${index * 32}px` }}
+                  />
+                );
               })}
               
               <div className="grid grid-cols-7 h-full bg-card">
@@ -507,7 +483,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* Empty time slots - clickable areas (NO availability indicators in internal calendar) */}
                       {timeSlots.map((time, index) => {
                         const isOccupied = isTimeSlotOccupied(day, time);
-                        
+                        const [slotH] = time.split(':').map(Number);
+                        const isBusinessHour = slotH >= 9 && slotH < 17;
+
                         const DroppableTimeSlot = () => {
                           const { setNodeRef, isOver } = useDroppable({
                             id: `${day.toISOString()}-${index}`,
@@ -515,14 +493,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           });
 
                           return (
-                            <div 
+                            <div
                               ref={setNodeRef}
                               className={`h-[32px] transition-colors relative ${
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
-                                isOccupied 
-                                  ? 'bg-muted/30 cursor-default' 
-                                  : 'hover:bg-accent/50 cursor-pointer'
+                                isOccupied
+                                  ? 'bg-muted/30 cursor-default'
+                                  : isBusinessHour
+                                    ? 'hover:bg-accent/50 cursor-pointer'
+                                    : 'bg-muted/10 hover:bg-accent/30 cursor-pointer'
                               }`}
                               onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
                               onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
@@ -569,21 +549,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           // Each 30-minute slot is 32px, so each minute is 32/30 = 1.0667px
                           const top = (totalMinutesFromMidnight * 32) / 30;
                          
-                         // Debug logging
-                         console.log('Current time debug:', {
-                           hour: currentHour,
-                           minutes: currentMinutes,
-                           totalMinutesFromMidnight,
-                           calculatedTop: top,
-                           showExtendedHours
-                         });
-                         
                             return (
-                              <div 
-                                className="absolute left-0 right-0 h-px bg-destructive z-20"
+                              <div
+                                className="absolute left-0 right-0 z-20 pointer-events-none"
                                 style={{ top: `${top}px` }}
                               >
-                                <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
+                                <div className="h-[2px] bg-red-500 w-full" />
+                                <div className="absolute -left-1.5 -top-[5px] w-3 h-3 bg-red-500 rounded-full shadow-sm" />
                               </div>
                             );
                        })()}
@@ -595,7 +567,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         // Skip events with completely invalid times
                         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                          console.warn('Skipping event with invalid date:', event);
                           return null;
                         }
                         
@@ -742,7 +713,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   style={eventStyle}
                                   onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : event.isTask ? 'Task' : 'Personal Event', event);
                                   if (event.isTask) {
                                     // Handle task click - open edit dialog
                                     setSelectedTask(event.taskData as Task);
