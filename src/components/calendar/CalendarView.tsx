@@ -540,9 +540,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Collapsible Sidebar - Hidden on desktop and tablets */}
-      {!isDesktop && !isTablet && (
-        <CalendarSidebar 
+      {/* Collapsible Sidebar - Desktop only */}
+      {isDesktop && (
+        <CalendarSidebar
           currentDate={currentDate}
           onDateChange={setCurrentDate}
           onBookingLinks={() => setShowSchedulerSlider(true)}

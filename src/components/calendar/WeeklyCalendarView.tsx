@@ -407,7 +407,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
         {/* Week header - minimal and clean */}
         <div className="flex bg-background flex-shrink-0 sticky top-0 z-10 border-b border-border/20">
-          <div className="w-12 flex-shrink-0"></div>
+          <div className="w-14 flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
               {weekDays.map(day => {
@@ -436,18 +436,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Scrollable time grid */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
           <div className="flex bg-card">
-            {/* Time labels - narrower */}
-            <div className="w-12 bg-card flex-shrink-0">
+            {/* Time labels - show all hours with better readability */}
+            <div className="w-14 bg-card flex-shrink-0">
               {timeSlots.map((time, index) => {
-                const [h] = time.split(':').map(Number);
+                const [h, m] = time.split(':').map(Number);
                 const isBizHour = h >= 9 && h < 17;
+                const isHour = m === 0;
                 return (
                   <div
                     key={time}
-                    className="h-[32px] pr-1 text-right flex items-start justify-end"
+                    className="h-[32px] pr-2 text-right flex items-start justify-end"
                   >
-                    {index % 2 === 0 && (
-                      <span className={`text-[9px] font-medium -mt-1.5 ${isBizHour ? 'text-foreground/70' : 'text-muted-foreground/50'}`}>{time}</span>
+                    {isHour && (
+                      <span className={`text-[10px] font-medium -mt-1.5 tabular-nums ${isBizHour ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>
+                        {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+                      </span>
                     )}
                   </div>
                 );
@@ -456,18 +459,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             
             {/* Day columns */}
             <div className="flex-1 relative bg-card">
-              {/* Hour lines - very subtle */}
+              {/* Hour lines - clear at hours, subtle at half-hours */}
               {timeSlots.map((time, index) => {
-                if (index % 2 === 0) {
-                  return (
-                    <div 
-                      key={time} 
-                      className="absolute left-0 right-0 border-t border-border/10" 
-                      style={{ top: `${index * 32}px` }}
-                    />
-                  );
-                }
-                return null;
+                const isHour = index % 2 === 0;
+                return (
+                  <div
+                    key={`line-${time}`}
+                    className={`absolute left-0 right-0 border-t ${isHour ? 'border-border/30' : 'border-border/8'}`}
+                    style={{ top: `${index * 32}px` }}
+                  />
+                );
               })}
               
               <div className="grid grid-cols-7 h-full bg-card">
@@ -551,11 +552,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const top = (totalMinutesFromMidnight * 32) / 30;
                          
                             return (
-                              <div 
-                                className="absolute left-0 right-0 h-px bg-destructive z-20"
+                              <div
+                                className="absolute left-0 right-0 z-20 pointer-events-none"
                                 style={{ top: `${top}px` }}
                               >
-                                <div className="absolute -left-1 -top-1 w-2 h-2 bg-destructive rounded-full"></div>
+                                <div className="h-[2px] bg-red-500 w-full" />
+                                <div className="absolute -left-1.5 -top-[5px] w-3 h-3 bg-red-500 rounded-full shadow-sm" />
                               </div>
                             );
                        })()}
