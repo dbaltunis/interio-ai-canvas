@@ -1,20 +1,12 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
-import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
-import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckCheck, Archive } from "lucide-react";
+import { Video, CheckCheck } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
-import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
-import { EventHoverCard } from "./EventHoverCard";
-import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
-import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useMyTasks, Task, useUpdateTask, useArchiveCompletedTasks } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
@@ -30,22 +22,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
-  const { data: schedulerSlots } = useSchedulerSlots(weekStart);
   const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings();
-  const { data: schedulers } = useAppointmentSchedulers();
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
   const updateTask = useUpdateTask();
   const archiveCompletedTasks = useArchiveCompletedTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  
-  const { data: currentUserProfile } = useCurrentUserProfile();
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   
   const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
-  const [schedulerSlotDialog, setSchedulerSlotDialog] = useState<{ open: boolean; slot: any }>({ open: false, slot: null });
   
   // Event creation state
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
@@ -176,42 +163,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       .filter(Boolean); // Remove null values from invalid bookings
   };
 
-  // Get available scheduler slots for a specific date
-  const getSchedulerSlotsForDate = (date: Date) => {
-    if (!schedulerSlots || !schedulers) return [];
-    
-    return schedulerSlots
-      .filter(slot => {
-        if (!slot.date) return false;
-        const slotDate = new Date(slot.date);
-        return isSameDay(slotDate, date) && !slot.isBooked; // Only show available slots
-      })
-      .map(slot => {
-        // Find the scheduler to get the slug
-        const scheduler = schedulers.find(s => s.id === slot.schedulerId);
-        
-        const [hours, minutes] = slot.startTime.split(':').map(Number);
-        const startTime = new Date(date);
-        startTime.setHours(hours, minutes, 0, 0);
-        
-        const [endHours, endMinutes] = slot.endTime.split(':').map(Number);
-        const endTime = new Date(date);
-        endTime.setHours(endHours, endMinutes, 0, 0);
-        
-        return {
-          id: slot.id,
-          title: slot.schedulerName,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          duration: slot.duration,
-          isAvailableSlot: true,
-          schedulerName: slot.schedulerName,
-          schedulerId: slot.schedulerId,
-          slug: scheduler?.slug || ''
-        };
-      });
-  };
-
   // Get tasks for a specific date
   const getTasksForDate = (date: Date) => {
     if (!tasks) return [];
@@ -245,13 +196,35 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       });
   };
 
-  // Combine regular events, booked appointments, available scheduler slots, and tasks
+  // Deduplicate events - when Google sync creates a duplicate of a manually-created event,
+  // prefer the one with google_event_id (synced version has richer data)
+  const deduplicateEvents = (events: any[]) => {
+    const seen = new Map<string, any>();
+    for (const event of events) {
+      // Create a key from title + approximate start time (within 5 min)
+      const startTime = new Date(event.start_time);
+      const roundedMinutes = Math.round(startTime.getTime() / (5 * 60 * 1000));
+      const key = `${(event.title || '').toLowerCase().trim()}_${roundedMinutes}`;
+
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, event);
+      } else {
+        // Keep the one with google_event_id (synced version)
+        if (event.google_event_id && !existing.google_event_id) {
+          seen.set(key, event);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  };
+
+  // Combine regular events, booked appointments, and tasks (scheduler slots hidden from main grid)
   const getAllEventsForDate = (date: Date) => {
-    const regularEvents = getEventsForDate(date);
+    const regularEvents = deduplicateEvents(getEventsForDate(date));
     const bookedEvents = getBookedEventsForDate(date);
-    const availableSlots = getSchedulerSlotsForDate(date);
     const dateTasks = getTasksForDate(date);
-    return [...regularEvents, ...bookedEvents, ...availableSlots, ...dateTasks];
+    return [...regularEvents, ...bookedEvents, ...dateTasks];
   };
 
   // Check if a time slot is occupied by booked appointments or events
@@ -649,7 +622,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         };
                         
                         const eventStyling = getEventStyling(event);
-                        const isUserEvent = currentUserId && event.user_id === currentUserId;
                         
                         const DraggableEvent = () => {
                           const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -657,87 +629,43 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             disabled: event.isBooking, // Disable dragging for booked appointments
                           });
 
-                           // Special styling for available slots and bookings - make them more visible
-                           const finalHeight = event.isAvailableSlot 
-                             ? 28  // Increased for better clickability
-                             : event.isBooking
-                             ? Math.max(style.height, 45)  // Minimum 45px for booked appointments
+                           const finalHeight = event.isBooking
+                             ? Math.max(style.height, 40)
                              : Math.max(style.height, eventStyling.minHeight);
 
                             const eventStyle: React.CSSProperties = {
-                             top: event.isAvailableSlot ? `${style.top}px` : `${style.top}px`,
+                             top: `${style.top}px`,
                              height: `${finalHeight}px`,
-                             width: event.isAvailableSlot || event.isBooking || event.isTask ? '96%' : eventWidth,
-                             left: event.isAvailableSlot || event.isBooking || event.isTask ? '2%' : eventLeft,
-                             zIndex: event.isAvailableSlot ? 20 : event.isBooking ? 15 + eventIndex : event.isTask ? 12 + eventIndex : 10 + eventIndex,
-                             background: event.isAvailableSlot 
-                               ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.5), hsl(142 76% 70% / 0.6))'
-                               : event.isBooking
+                             width: event.isBooking || event.isTask ? '96%' : eventWidth,
+                             left: event.isBooking || event.isTask ? '2%' : eventLeft,
+                             zIndex: event.isBooking ? 15 + eventIndex : event.isTask ? 12 + eventIndex : 10 + eventIndex,
+                             background: event.isBooking
                                ? 'hsl(217 91% 60% / 0.9)'
                                : event.isTask
                                ? eventStyling.background
                                : eventStyling.background,
-                             borderLeftColor: event.isAvailableSlot ? 'hsl(142 76% 50%)' : event.isBooking ? 'hsl(217 91% 70%)' : event.isTask ? eventStyling.border : eventStyling.border,
-                             borderColor: event.isAvailableSlot 
-                               ? 'hsl(142 76% 50% / 0.6)'
-                               : event.isBooking
-                               ? 'hsl(217 91% 70% / 0.8)'
-                               : event.isTask
-                               ? eventStyling.border
-                               : 'hsl(var(--border))',
-                             borderRadius: event.isAvailableSlot ? '4px' : '6px',
-                             borderStyle: event.isAvailableSlot ? 'dashed' : 'solid',
-                             borderWidth: event.isAvailableSlot ? '2px' : event.isBooking || event.isTask ? '1px 1px 1px 4px' : '1px 1px 1px 4px',
-                             boxShadow: event.isAvailableSlot
-                               ? '0 1px 3px hsl(142 76% 50% / 0.3)'
-                               : event.isBooking
-                               ? '0 3px 10px -2px hsl(217 91% 60% / 0.4), 0 2px 6px -1px hsl(217 91% 60% / 0.3)'
-                               : event.isTask
-                               ? '0 2px 8px -2px hsl(var(--foreground) / 0.15)'
-                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
+                             borderLeft: `3px solid ${event.isBooking ? 'hsl(217 91% 70%)' : eventStyling.border}`,
+                             borderRadius: '4px',
                              transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
                              opacity: isDragging ? 0.85 : 1,
-                             cursor: (event.isBooking || event.isAvailableSlot || event.isTask) ? 'pointer' : 'grab',
+                             cursor: (event.isBooking || event.isTask) ? 'pointer' : 'grab',
                              pointerEvents: 'auto',
                            };
 
                             return (
                               <div
                                 ref={setNodeRef}
-                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-1.5'} text-xs overflow-hidden group
-                                  transition-all duration-100 border rounded-md
-                                  ${event.isAvailableSlot ? 'hover:bg-green-500/30' : ''}
-                                  ${event.isBooking ? 'hover:shadow-md text-white' : !event.isAvailableSlot ? 'hover:shadow-md' : ''}
-                                  ${!event.isBooking && !event.isAvailableSlot && !event.isTask ? 'hover:ring-1 hover:ring-primary/30' : ''}
+                                className={`absolute p-1 px-1.5 text-xs overflow-hidden group
+                                  transition-all duration-100
+                                  hover:brightness-95 hover:shadow-sm
                                   ${event.isBooking ? 'text-white' : eventStyling.textClass}`}
                                   style={eventStyle}
                                   onClick={(e) => {
                                   e.stopPropagation();
                                   if (event.isTask) {
-                                    // Handle task click - open edit dialog
                                     setSelectedTask(event.taskData as Task);
                                   } else if (event.isBooking) {
-                                    // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
-                                  } else if (event.isAvailableSlot) {
-                                    // Open scheduler slot dialog to share booking link
-                                    // Transform event to match SchedulerSlot interface
-                                    const startTime = new Date(event.start_time);
-                                    const endTime = new Date(event.end_time);
-                                    setSchedulerSlotDialog({ 
-                                      open: true, 
-                                      slot: {
-                                        id: event.id,
-                                        schedulerId: event.schedulerId,
-                                        schedulerName: event.schedulerName || event.title,
-                                        date: startTime,
-                                        startTime: format(startTime, 'HH:mm'),
-                                        endTime: format(endTime, 'HH:mm'),
-                                        duration: event.duration || 60,
-                                        isBooked: false,
-                                        slug: event.slug
-                                      }
-                                    });
                                   } else {
                                     // Handle personal event click - open edit dialog
                                     onEventClick?.(event.id);
@@ -745,43 +673,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 }}
                                  title={
                                    event.isTask
-                                     ? `✅ TASK\n${event.title}\n📅 Due: ${format(startTime, 'HH:mm')}\n${event.description || ''}\n🔸 Priority: ${event.priority}\n✏️ Click to edit`
-                                     : event.isAvailableSlot
-                                     ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
-                                     : event.isBooking 
-                                     ? `👤 CUSTOMER BOOKING\n${event.bookingData?.customer_name || 'Customer'}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details and video link`
-                                     : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
+                                     ? `${event.title}\n${format(startTime, 'H:mm')} · ${event.priority}`
+                                     : event.isBooking
+                                     ? `${event.bookingData?.customer_name || 'Customer'}\n${event.scheduler_name}\n${format(startTime, 'H:mm')} - ${format(endTime, 'H:mm')}`
+                                     : `${event.title}\n${format(startTime, 'H:mm')} - ${format(endTime, 'H:mm')}${event.location ? '\n' + event.location : ''}`
                                  }
                              >
-                                {/* Drag Handle - only for personal events, not for tasks, bookings, or slots */}
+                                {/* Drag Handle - only for personal events, hidden until hover */}
                                 {!event.isBooking && !event.isAvailableSlot && !event.isTask && (
-                                  <div 
+                                  <div
                                     {...listeners}
                                     {...attributes}
-                                    className="absolute top-0.5 right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
+                                    className="absolute top-0 right-0 w-4 h-4 opacity-0 group-hover:opacity-100 cursor-move z-20 flex items-center justify-center transition-opacity"
                                     title="Drag to move event"
-                                  >
-                                    <div className="flex flex-col gap-px">
-                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
-                                    </div>
-                                  </div>
+                                  />
                                  )}
 
-                                  <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
-                                   {/* Available slot content - compact display */}
-                                    {event.isAvailableSlot && (
-                                      <div className="flex items-center justify-between gap-1.5 w-full">
-                                        <span className="text-[10px] font-semibold text-green-700 dark:text-green-300 truncate">
-                                          📅 {event.schedulerName}
-                                        </span>
-                                        <span className="text-[9px] font-medium text-green-600 dark:text-green-400 whitespace-nowrap">
-                                          {format(startTime, 'HH:mm')}
-                                        </span>
-                                      </div>
-                                    )}
-
+                                  <div className="flex flex-col h-full overflow-hidden">
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
                                       <div className="flex items-center gap-1.5 h-full px-2">
@@ -821,20 +729,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                       </div>
                                     )}
                                    
-                                   {/* Event content - only show for non-available-slot and non-task events */}
-                                   {!event.isAvailableSlot && !event.isTask && (
+                                   {/* Event content - for appointments and bookings */}
+                                   {!event.isTask && (
                                      <>
                                        <div className="flex items-start justify-between gap-1 mb-0.5">
                                          {/* Title and time - adaptive based on screen size */}
                                          <div className="flex-1 min-w-0">
-                                             {/* Event title - bolder for bookings */}
-                                             <div 
-                                               className={`${event.isBooking ? 'font-semibold text-[12px]' : isNarrowEvent ? 'font-normal text-[10px]' : 'font-medium text-[11px]'} leading-tight ${event.isBooking ? 'text-white' : 'text-foreground dark:text-white'} break-words overflow-hidden`}
-                                               style={{ 
+                                             {/* Event title */}
+                                             <div
+                                               className={`${event.isBooking ? 'font-semibold text-[11px]' : 'font-medium text-[11px]'} leading-tight ${event.isBooking ? 'text-white' : 'text-foreground dark:text-white'} overflow-hidden`}
+                                               style={{
                                                  display: '-webkit-box',
-                                                 WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
+                                                 WebkitLineClamp: finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
                                                  WebkitBoxOrient: 'vertical',
-                                                 lineHeight: '1.3'
+                                                 lineHeight: '1.3',
+                                                 wordBreak: 'break-word',
+                                                 overflowWrap: 'break-word',
                                                }}>
                                               {event.isBooking 
                                                 ? `${event.bookingData?.customer_name || 'Customer'}` 
@@ -842,73 +752,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                               }
                                              </div>
                                             
-                                              {/* Time display - compact with lead time for bookings */}
-                                              <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal ${event.isBooking ? 'text-white/90' : 'text-foreground/70 dark:text-white/70'} mt-0.5`}>
-                                                <span className="font-medium">{format(startTime, 'HH:mm')}</span>
-                                                {!isNarrowEvent && (
-                                                  <>
-                                                    <span>-</span>
-                                                    <span>{format(endTime, 'HH:mm')}</span>
-                                                  </>
-                                                )}
-                                                {event.isBooking && event.scheduler_name && finalHeight > 35 && (
-                                                  <span className="text-[9px] text-white/80 ml-1 truncate font-medium">
-                                                    • {event.scheduler_name}
-                                                  </span>
-                                                )}
-                                                {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
-                                                  <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
-                                                )}
+                                              {/* Time display */}
+                                              <div className={`flex items-center gap-0.5 text-[9px] leading-tight font-normal ${event.isBooking ? 'text-white/90' : 'text-foreground/60 dark:text-white/60'} mt-0.5`}>
+                                                <span>{format(startTime, 'H:mm')}</span>
+                                                <span>-</span>
+                                                <span>{format(endTime, 'H:mm')}</span>
                                                 {(event.video_meeting_link || event.video_provider) && (
-                                                  <Video className="w-3 h-3 text-blue-500 ml-0.5" />
+                                                  <Video className="w-2.5 h-2.5 text-blue-500 ml-0.5" />
                                                 )}
                                               </div>
                                          </div>
                                          
-                                         {/* User avatar - hide on tablet and narrow events, only show on desktop */}
-                                         {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
-                                           <div className="hidden xl:flex flex-shrink-0 mr-5">
-                                             <Avatar className="h-5 w-5">
-                                               <AvatarImage src="" alt="" />
-                                               <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">
-                                                 {event.isBooking 
-                                                   ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
-                                                   : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
-                                                 }
-                                               </AvatarFallback>
-                                             </Avatar>
-                                           </div>
-                                         )}
                                        </div>
                                        
-                                       {/* Additional info - only for taller and wider events */}
-                                       {finalHeight > 50 && !isNarrowEvent && (
-                                         <div className="mt-1 space-y-1 flex-1 overflow-hidden">
-                                           {/* Secondary info line */}
-                                           <div className="text-[10px] leading-tight text-foreground/70 dark:text-white/70 truncate">
-                                             {event.isBooking 
-                                               ? event.scheduler_name 
-                                               : event.isAvailableSlot
-                                               ? `${event.duration} min slot`
-                                               : event.location
-                                             }
-                                           </div>
-                                           
-                                           {/* Description for even taller events - multiline */}
-                                           {finalHeight > 80 && (event.description || event.customer_phone) && (
-                                             <div className="text-[9px] leading-relaxed text-foreground/60 dark:text-white/60 break-words overflow-hidden"
-                                                  style={{ 
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: finalHeight > 120 ? 4 : 2,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    lineHeight: '1.4'
-                                                  }}>
-                                               {event.isBooking 
-                                                 ? event.customer_phone 
-                                                 : event.description
-                                               }
-                                             </div>
-                                           )}
+                                       {/* Location or description for taller events */}
+                                       {finalHeight > 55 && (event.location || event.description) && (
+                                         <div className="text-[9px] leading-tight text-foreground/50 dark:text-white/50 truncate mt-0.5">
+                                           {event.location || event.description}
                                          </div>
                                        )}
                                      </>
@@ -961,12 +821,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         open={bookedAppointmentDialog.open}
         onOpenChange={(open) => setBookedAppointmentDialog({ ...bookedAppointmentDialog, open })}
         appointment={bookedAppointmentDialog.appointment}
-      />
-      
-      <SchedulerSlotDialog
-        open={schedulerSlotDialog.open}
-        onOpenChange={(open) => setSchedulerSlotDialog({ ...schedulerSlotDialog, open })}
-        slot={schedulerSlotDialog.slot}
       />
       
       <UnifiedTaskDialog
