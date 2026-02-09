@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
-import { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
+import { useState, useEffect, useCallback } from "react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -134,6 +134,57 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       setView('week');
     }
   }, [isTablet, view]);
+
+  // Keyboard shortcuts for calendar navigation
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Don't handle shortcuts when typing in inputs or dialogs are open
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+    if (showCreateEventDialog || showEditDialog) return;
+
+    switch (e.key) {
+      case 't':
+      case 'T':
+        e.preventDefault();
+        setCurrentDate(new Date());
+        break;
+      case 'd':
+      case 'D':
+        e.preventDefault();
+        setView('day');
+        break;
+      case 'w':
+      case 'W':
+        e.preventDefault();
+        setView('week');
+        break;
+      case 'm':
+      case 'M':
+        if (!isTablet) {
+          e.preventDefault();
+          setView('month');
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (view === 'day') setCurrentDate(prev => addDays(prev, -1));
+        else if (view === 'week') setCurrentDate(prev => subWeeks(prev, 1));
+        else setCurrentDate(prev => subMonths(prev, 1));
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (view === 'day') setCurrentDate(prev => addDays(prev, 1));
+        else if (view === 'week') setCurrentDate(prev => addWeeks(prev, 1));
+        else setCurrentDate(prev => addMonths(prev, 1));
+        break;
+    }
+  }, [view, isTablet, showCreateEventDialog, showEditDialog]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
