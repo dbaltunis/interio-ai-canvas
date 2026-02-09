@@ -111,10 +111,26 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   // Debug logging removed for production
 
-  // Get today's events (sorted by time)
-  const todayEvents = appointments?.filter(appointment => {
-    return isToday(new Date(appointment.start_time));
-  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
+  // Get today's events (sorted by time, deduplicated)
+  const todayEvents = (() => {
+    const filtered = appointments?.filter(appointment => {
+      const startTime = new Date(appointment.start_time);
+      return !isNaN(startTime.getTime()) && isToday(startTime);
+    }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
+
+    // Deduplicate: same title + same time = synced duplicate
+    const seen = new Map<string, typeof filtered[0]>();
+    for (const event of filtered) {
+      const startTime = new Date(event.start_time);
+      const roundedMinutes = Math.round(startTime.getTime() / (5 * 60 * 1000));
+      const key = `${(event.title || '').toLowerCase().trim()}_${roundedMinutes}`;
+      const existing = seen.get(key);
+      if (!existing || (event.google_event_id && !existing.google_event_id)) {
+        seen.set(key, event);
+      }
+    }
+    return Array.from(seen.values());
+  })();
 
   // Find the next upcoming event (first future event today, or first event tomorrow+)
   const now = new Date();
