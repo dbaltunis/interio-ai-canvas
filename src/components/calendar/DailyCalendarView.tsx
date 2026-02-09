@@ -84,6 +84,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
   const getDayEvents = () => {
     if (!displayAppointments) return [];
     return displayAppointments.filter(appointment => {
+      const startTime = new Date(appointment.start_time);
+      const endTime = new Date(appointment.end_time);
+      // Skip invalid dates
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
+        return false;
+      }
       // Format both dates in the same timezone for comparison
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
       const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
@@ -98,6 +104,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
       .filter(task => {
         if (!task.due_date) return false;
         const taskDate = new Date(task.due_date);
+        if (isNaN(taskDate.getTime())) return false;
         return isSameDay(taskDate, currentDate);
       })
       .map(task => {

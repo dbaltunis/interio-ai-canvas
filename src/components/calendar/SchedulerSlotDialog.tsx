@@ -33,7 +33,6 @@ export const SchedulerSlotDialog = ({ slot, open, onOpenChange }: SchedulerSlotD
   
   // Validate the date
   if (isNaN(slotDate.getTime())) {
-    console.error('Invalid date in scheduler slot:', slot);
     return null;
   }
 
