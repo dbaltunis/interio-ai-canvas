@@ -22,10 +22,11 @@ interface WeeklyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
+  onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -415,13 +416,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 
                 return (
-                  <div key={day.toString()} className={`py-1.5 text-center ${isWeekend ? 'bg-muted/10' : ''}`}>
+                  <div
+                    key={day.toString()}
+                    className={`py-1.5 text-center cursor-pointer hover:bg-accent/30 transition-colors ${isWeekend ? 'bg-muted/10' : ''}`}
+                    onClick={() => onDayHeaderClick?.(day)}
+                  >
                     <div className="text-[9px] font-medium text-muted-foreground">
                       {format(day, 'EEE')}
                     </div>
                     <div className={`text-xs font-medium mt-0.5 ${
-                      isCurrentDay 
-                        ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto text-[11px]' 
+                      isCurrentDay
+                        ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto text-[11px]'
                         : 'text-foreground'
                     }`}>
                       {format(day, 'd')}

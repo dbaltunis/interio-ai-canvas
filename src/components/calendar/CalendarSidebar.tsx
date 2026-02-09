@@ -274,7 +274,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   return (
     <div className="w-[360px] min-w-[360px] max-w-[360px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
-      <ScrollArea className="flex-1 pointer-events-auto">
+      <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 px-3 py-4">
           {/* Header with Calendar title and Collapse Button */}
           <div className="flex items-center justify-between border-b pb-3">
@@ -418,14 +418,14 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           )}
 
           {/* Appointment Scheduling */}
-          <Card className="flex-shrink-0 pointer-events-auto">
-            <CardHeader className="pb-2 pt-4 px-4 pointer-events-auto">
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-2 pt-4 px-4">
               <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Manage booking templates and view appointments
               </p>
             </CardHeader>
-            <CardContent className="space-y-3 px-3 pb-4 pointer-events-auto">
+            <CardContent className="space-y-3 px-3 pb-4">
               {/* Primary Action - Create New Scheduler */}
               {(() => {
                 // Calculate if button should be disabled
@@ -449,7 +449,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                       }
                       onBookingLinks();
                     }}
-                    className="w-full pointer-events-auto relative z-10"
+                    className="w-full"
                     size="sm"
                     disabled={shouldDisable}
                     title={shouldDisable ? "You don't have permission to create appointments" : undefined}
@@ -467,7 +467,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                     onClick={() => {
                       setShowSchedulerManagement(true);
                     }}
-                    className="w-full justify-start pointer-events-auto relative z-10"
+                    className="w-full justify-start"
                     variant="outline"
                     size="sm"
                   >
@@ -479,7 +479,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                   
                   <Button 
                     onClick={() => setShowBookingManagement(true)}
-                    className="w-full justify-start pointer-events-auto relative z-10"
+                    className="w-full justify-start"
                     variant="outline"
                     size="sm"
                   >
@@ -491,7 +491,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                   
                   <Button 
                     onClick={() => setShowAnalytics(true)}
-                    className="w-full justify-start pointer-events-auto relative z-10"
+                    className="w-full justify-start"
                     variant="outline"
                     size="sm"
                   >

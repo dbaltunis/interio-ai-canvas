@@ -538,7 +538,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-[calc(100dvh-3.5rem)] flex overflow-hidden">
       {/* Collapsible Sidebar - Desktop only */}
       {isDesktop && (
         <CalendarSidebar
@@ -581,10 +581,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           ) : (
             <>
               {view === 'week' && (
-                <WeeklyCalendarView 
+                <WeeklyCalendarView
                   currentDate={currentDate}
                   onEventClick={handleEventClick}
                   onTimeSlotClick={handleTimeSlotClick}
+                  onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
                   filteredAppointments={filteredAppointments}
                 />
               )}
