@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Minus, Palette, Video, UserPlus, Bell, AlertCircle, Copy, Check, Mail, ChevronDown, Settings2 } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Minus, Palette, Video, UserPlus, Bell, AlertCircle, Copy, Check, Mail, ChevronDown, Settings2, Briefcase, Users } from "lucide-react";
 import { TimeSelect, DurationBadge } from "./TimeSelect";
 import { DatePickerButton } from "./DatePickerButton";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
@@ -19,6 +19,7 @@ import { useSendCalendarInvitation } from "@/hooks/useSendCalendarInvitation";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
+import { useProjects } from "@/hooks/useProjects";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useVideoMeetingProviders } from "@/hooks/useVideoMeetingProviders";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -68,7 +69,9 @@ export const UnifiedAppointmentDialog = ({
     notification_enabled: false,
     notification_minutes: 15,
     visibility: "private" as "private" | "team" | "organization",
-    shared_with_organization: false
+    shared_with_organization: false,
+    client_id: "" as string,
+    project_id: "" as string,
   });
 
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -91,6 +94,7 @@ export const UnifiedAppointmentDialog = ({
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
+  const { data: projects } = useProjects();
   const { defaultColors, colorOptions } = useCalendarColors();
   const { providers, generateMeetingLink, isGenerating } = useVideoMeetingProviders();
   const { data: preferences } = useCalendarPreferences();
@@ -131,6 +135,13 @@ export const UnifiedAppointmentDialog = ({
       : (isOwner || isAdmin)
           ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
           : hasCreateAppointmentsPermission;
+
+  // Filter projects by selected client (if one is selected)
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    if (!event.client_id) return projects;
+    return projects.filter((p: any) => p.client_id === event.client_id);
+  }, [projects, event.client_id]);
 
   const connectedProviders = providers.filter(p => p.connected);
   const selectedProvider = providers.find(p => p.provider === videoProvider);
@@ -176,7 +187,9 @@ export const UnifiedAppointmentDialog = ({
           notification_enabled: appointment.notification_enabled || false,
           notification_minutes: appointment.notification_minutes || 15,
           visibility: appointment.visibility || "private",
-          shared_with_organization: appointment.shared_with_organization || false
+          shared_with_organization: appointment.shared_with_organization || false,
+          client_id: appointment.client_id || "",
+          project_id: appointment.project_id || "",
         });
         
         // Expand more options if editing and there's data
@@ -204,7 +217,9 @@ export const UnifiedAppointmentDialog = ({
         notification_enabled: true,
         notification_minutes: 15,
         visibility: preferences?.default_event_visibility || "private",
-        shared_with_organization: false
+        shared_with_organization: false,
+        client_id: "",
+        project_id: "",
       });
       setShowMoreOptions(false);
       setShowAdvanced(false);
@@ -300,7 +315,9 @@ export const UnifiedAppointmentDialog = ({
       notification_enabled: event.notification_enabled,
       notification_minutes: event.notification_minutes,
       visibility: event.visibility,
-      shared_with_organization: event.visibility === 'organization' || event.shared_with_organization
+      shared_with_organization: event.visibility === 'organization' || event.shared_with_organization,
+      client_id: event.client_id || null,
+      project_id: event.project_id || null,
     };
 
     try {
@@ -374,7 +391,9 @@ export const UnifiedAppointmentDialog = ({
       notification_enabled: false,
       notification_minutes: 15,
       visibility: "private",
-      shared_with_organization: false
+      shared_with_organization: false,
+      client_id: "",
+      project_id: "",
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -502,6 +521,66 @@ export const UnifiedAppointmentDialog = ({
                 {minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}
               </Button>
             ))}
+          </div>
+
+          {/* Client & Job Linking */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                Client
+              </Label>
+              <Select
+                value={event.client_id || "none"}
+                onValueChange={(value) => {
+                  const newClientId = value === "none" ? "" : value;
+                  setEvent(prev => ({
+                    ...prev,
+                    client_id: newClientId,
+                    // Clear project if client changes
+                    project_id: newClientId !== prev.client_id ? "" : prev.project_id,
+                  }));
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">None</span>
+                  </SelectItem>
+                  {clients?.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                <Briefcase className="h-3 w-3" />
+                Job
+              </Label>
+              <Select
+                value={event.project_id || "none"}
+                onValueChange={(value) => setEvent(prev => ({ ...prev, project_id: value === "none" ? "" : value }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">None</span>
+                  </SelectItem>
+                  {filteredProjects?.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name || project.title || `Job #${project.id.slice(0, 8)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {!isValidDateRange && (

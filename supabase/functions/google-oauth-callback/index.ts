@@ -62,7 +62,7 @@ serve(async (req) => {
           client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
           code: code,
           grant_type: 'authorization_code',
-          redirect_uri: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`,
+          redirect_uri: `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/google-oauth-callback`,
         }),
     });
 
@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Create Supabase client with service role key
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co',
+      Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 

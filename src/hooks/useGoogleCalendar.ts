@@ -452,12 +452,10 @@ export const useGoogleCalendarSync = () => {
             return { imported: 0, skipped: 0 };
           }
           
-          // For 500 errors specifically, assume it might be a "not connected" error if we can't determine
-          // This is a fallback to prevent error spam when calendar is not connected
+          // For 500 errors, log and surface to user so real server errors aren't hidden
           if (error.status === 500 || error.statusCode === 500) {
-            // Silently handle 500 errors as they're likely "not connected" errors
-            console.log('Google Calendar sync returned 500, assuming not connected');
-            return { imported: 0, skipped: 0 };
+            console.error('Google Calendar sync returned 500:', errorMessage || errorString);
+            throw new Error(errorMessage || 'Google Calendar sync failed (server error). Try reconnecting your calendar.');
           }
           
           throw error;
@@ -469,10 +467,10 @@ export const useGoogleCalendarSync = () => {
         const errorMessage = err?.message || err?.error || JSON.stringify(err) || '';
         const errorStatus = err?.status || err?.statusCode || err?.code;
         
-        // Handle 500 errors silently (likely "not connected")
+        // For 500 errors, surface the real error instead of silently swallowing
         if (errorStatus === 500 || errorStatus === '500') {
-          console.log('Google Calendar sync error (500), silently handling as "not connected"');
-          return { imported: 0, skipped: 0 };
+          console.error('Google Calendar sync error (500):', errorMessage);
+          throw new Error(errorMessage || 'Google Calendar sync failed. Try reconnecting your calendar.');
         }
         
         if (errorMessage.includes('Google Calendar not connected') || 
@@ -502,29 +500,20 @@ export const useGoogleCalendarSync = () => {
       }
     },
     onError: (error: Error) => {
-      // Check if it's a 500 error (likely "not connected")
-      const errorStatus = (error as any)?.status || (error as any)?.statusCode || (error as any)?.code;
-      if (errorStatus === 500 || errorStatus === '500') {
-        // Silently ignore 500 errors
+      const errorMessage = error.message || '';
+
+      // Silently ignore "not connected" errors (expected when calendar not linked)
+      if (errorMessage.includes('Google Calendar not connected') ||
+          errorMessage.includes('not connected')) {
         return;
       }
-      
-      // Only show error toast if it's not a "not connected" error
-      const errorMessage = error.message || '';
-      const errorString = JSON.stringify(error);
-      
-      // Check various error message formats
-      if (!errorMessage.includes('Google Calendar not connected') && 
-          !errorMessage.includes('not connected') &&
-          !errorString.includes('Google Calendar not connected') &&
-          !errorString.includes('not connected')) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sync from Google Calendar",
-          variant: "destructive",
-        });
-      }
-      // Silently ignore "not connected" errors
+
+      // Show all other errors including 500s so users know something is wrong
+      toast({
+        title: "Google Calendar Sync Error",
+        description: errorMessage || "Failed to sync from Google Calendar. Try reconnecting.",
+        variant: "destructive",
+      });
     },
   });
 
