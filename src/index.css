@@ -1091,3 +1091,19 @@ html {
 .animate-attention-ring {
   animation: attention-ring 2s ease-out infinite;
 }
+
+/* Calendar mini-calendar event dot indicators */
+.has-event-dot {
+  position: relative;
+}
+.has-event-dot::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+}

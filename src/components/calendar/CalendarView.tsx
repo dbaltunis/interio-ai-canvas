@@ -4,7 +4,7 @@ import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronL
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useState, useEffect, useCallback } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
+import { format, addDays, isToday, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -28,12 +28,12 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
 import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
+import { MonthlyCalendarView } from "./MonthlyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-import { EventHoverCard } from "./EventHoverCard";
+import { QuickAddPopover } from "./QuickAddPopover";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { DurationPicker } from "./TimePicker";
 // CalDAV imports removed - using Google Calendar OAuth only
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
@@ -202,6 +202,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     statuses: []
   });
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+
+  // Quick add popover state
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickAddDate, setQuickAddDate] = useState<Date>(new Date());
+  const [quickAddStartTime, setQuickAddStartTime] = useState("09:00");
+  const [quickAddEndTime, setQuickAddEndTime] = useState<string | undefined>();
   
   // Enable real-time updates
   useRealtimeBookings();
@@ -279,183 +285,32 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return <MobileCalendarView />;
   }
 
-  const getEventsForDate = (date: Date, useFiltered = true) => {
-    const source = useFiltered ? filteredAppointments : appointments;
-    if (!source) return [];
-    return source.filter(appointment => {
-      const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, displayTimezone, 'yyyy-MM-dd');
-      const filterDateStr = TimezoneUtils.formatInTimezone(date.toISOString(), displayTimezone, 'yyyy-MM-dd');
-      return appointmentDateStr === filterDateStr;
-    });
-  };
-
-  const getWeekDays = () => {
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-    
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const timeSlots = [
-    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
-  ];
-
-  const renderMonthView = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    
-    // Get the first day of the week that contains the first day of the month
-    const calendarStart = new Date(monthStart);
-    calendarStart.setDate(monthStart.getDate() - monthStart.getDay());
-    
-    // Calculate minimum weeks needed for the current month
-    const weeksNeeded = Math.ceil((monthEnd.getDate() + monthStart.getDay()) / 7);
-    const daysToShow = Math.min(weeksNeeded * 7, 35); // Max 5 weeks to prevent overflow
-    
-    // Get only the necessary days to prevent scrolling
-    const days = [];
-    for (let i = 0; i < daysToShow; i++) {
-      const day = new Date(calendarStart);
-      day.setDate(calendarStart.getDate() + i);
-      days.push(day);
-    }
-
-    // Get color dot for event type or custom color
-    const getEventDotColor = (event: any) => {
-      if (event.color) {
-        return '';
-      }
-      
-      switch (event.appointment_type) {
-        case 'meeting': return 'bg-blue-500';
-        case 'consultation': return 'bg-green-500';
-        case 'call': return 'bg-primary';
-        case 'follow-up': return 'bg-orange-500';
-        default: return 'bg-primary';
-      }
-    };
-
-    return (
-      <div className="h-full flex flex-col overflow-hidden">
-        {/* Month header - lighter styling */}
-        <div className="grid grid-cols-7 flex-shrink-0">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
-              {day}
-            </div>
-          ))}
-        </div>
-        
-        {/* Calendar grid - cleaner with lighter borders */}
-        <div className={`flex-1 grid grid-cols-7 min-h-0`} style={{gridTemplateRows: `repeat(${Math.ceil(daysToShow / 7)}, 1fr)`}}>
-          {days.map(day => {
-            const events = getEventsForDate(day);
-            const isSelected = selectedDate && isSameDay(day, selectedDate);
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const dayIsToday = isToday(day);
-            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-            
-            return (
-              <div
-                key={day.toString()}
-                className={`border-r border-b border-border/20 cursor-pointer transition-colors p-1.5 flex flex-col min-h-0 ${
-                  isSelected ? 'bg-primary/5 ring-1 ring-primary/30 ring-inset' : ''
-                } ${!isCurrentMonth ? 'text-muted-foreground/50' : ''} ${
-                  isWeekend && isCurrentMonth ? 'bg-muted/20' : 'bg-background'
-                } hover:bg-accent/30`}
-                onClick={() => {
-                  setCurrentDate(day);
-                  setView('day');
-                }}
-              >
-                {/* Day number */}
-                <div className={`text-xs font-medium mb-0.5 flex-shrink-0 ${
-                  dayIsToday
-                    ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-[11px] font-bold'
-                    : isCurrentMonth ? 'text-foreground' : ''
-                }`}>
-                  {format(day, 'd')}
-                </div>
-                
-                {/* Events list - with hover cards */}
-                <div className="flex-1 space-y-0.5 overflow-hidden">
-                  {events.slice(0, 3).map((event, idx) => (
-                    <EventHoverCard
-                      key={event.id}
-                      event={event}
-                      onEdit={(id) => handleEventClick(id)}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, y: 2 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05, duration: 0.15 }}
-                        className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity rounded px-1 py-0.5 truncate"
-                        style={{
-                          backgroundColor: event.color ? `${event.color}30` : 'hsl(var(--primary) / 0.15)',
-                          borderLeft: `2px solid ${event.color || 'hsl(var(--primary))'}`,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEventClick(event.id);
-                        }}
-                      >
-                        <span className="font-medium text-foreground/70">
-                          {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
-                        </span>
-                        <span className="ml-1 text-foreground">
-                          {event.title}
-                        </span>
-                      </motion.div>
-                    </EventHoverCard>
-                  ))}
-                  {events.length > 3 && (
-                    <div
-                      className="text-[10px] text-primary font-medium px-1 cursor-pointer hover:underline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentDate(day);
-                        setView('day');
-                      }}
-                    >
-                      +{events.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   const handleTimeSlotClick = (date: Date, time: string) => {
-    // Check if there are existing events or booked slots at this time
-    const existingEvents = getEventsForDate(date);
-    const clickDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${time.split('-')[0]}:00`);
-    
-    const hasConflict = existingEvents.some(event => {
-      const eventStart = new Date(event.start_time);
-      const eventEnd = new Date(event.end_time);
-      return clickDateTime >= eventStart && clickDateTime < eventEnd;
-    });
-
-    // If there's a conflict, show a toast warning but still proceed
-    if (hasConflict) {
-      toast({
-        title: "Time slot overlap",
-        description: "There's already an event at this time. Creating overlapping event.",
-      });
+    // Permission check
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canCreateAppointments) {
+      toast({ title: "Permission Denied", description: "You don't have permission to create appointments.", variant: "destructive" });
+      return;
+    }
+    if (!isPermissionLoaded) {
+      toast({ title: "Loading", description: "Please wait while permissions are being checked..." });
+      return;
     }
 
-    // No conflict, proceed normally
-    proceedWithEventCreation(date, time);
+    // Parse time range (from drag creation) or single time
+    let startT = time;
+    let endT: string | undefined;
+    if (time.includes('-')) {
+      const [s, e] = time.split('-');
+      startT = s;
+      endT = e;
+    }
+
+    // Open QuickAddPopover
+    setQuickAddDate(date);
+    setQuickAddStartTime(startT);
+    setQuickAddEndTime(endT);
+    setQuickAddOpen(true);
   };
 
   const proceedWithEventCreation = (date: Date, time: string) => {
@@ -511,6 +366,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     if (appointment) {
       handleAppointmentClick(appointment);
     }
+  };
+
+  const handleQuickAddMoreOptions = (prefill: { title: string; date: Date; startTime: string; endTime: string }) => {
+    setSelectedDate(prefill.date);
+    setSelectedStartTime(prefill.startTime);
+    setSelectedEndTime(prefill.endTime);
+    setShowCreateEventDialog(true);
   };
 
   const handleFiltersChange = (newFilters: CalendarFilterState) => {
@@ -630,34 +492,55 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
         {/* Scrollable Content - Calendar or Tasks */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-          {showTasksView ? (
-            <TaskListView />
-          ) : (
-            <>
-              {view === 'week' && (
-                <WeeklyCalendarView
-                  currentDate={currentDate}
-                  onEventClick={handleEventClick}
-                  onTimeSlotClick={handleTimeSlotClick}
-                  onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
-                  filteredAppointments={filteredAppointments}
-                />
-              )}
-              {view === 'month' && (
-                <div className="h-full flex flex-col overflow-hidden">
-                  {renderMonthView()}
-                </div>
-              )}
-              {view === 'day' && (
-                <DailyCalendarView
-                  currentDate={currentDate}
-                  onEventClick={handleEventClick}
-                  onTimeSlotClick={handleTimeSlotClick}
-                  filteredAppointments={filteredAppointments}
-                />
-              )}
-            </>
-          )}
+          <AnimatePresence mode="wait">
+            {showTasksView ? (
+              <motion.div
+                key="tasks"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="h-full"
+              >
+                <TaskListView />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`calendar-${view}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="h-full"
+              >
+                {view === 'week' && (
+                  <WeeklyCalendarView
+                    currentDate={currentDate}
+                    onEventClick={handleEventClick}
+                    onTimeSlotClick={handleTimeSlotClick}
+                    onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
+                    filteredAppointments={filteredAppointments}
+                  />
+                )}
+                {view === 'month' && (
+                  <MonthlyCalendarView
+                    currentDate={currentDate}
+                    filteredAppointments={filteredAppointments}
+                    onEventClick={handleEventClick}
+                    onDayClick={(date) => { setCurrentDate(date); setView('day'); }}
+                  />
+                )}
+                {view === 'day' && (
+                  <DailyCalendarView
+                    currentDate={currentDate}
+                    onEventClick={handleEventClick}
+                    onTimeSlotClick={handleTimeSlotClick}
+                    filteredAppointments={filteredAppointments}
+                  />
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -688,6 +571,16 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           <AnalyticsDashboard />
         </DialogContent>
       </Dialog>
+
+      {/* Quick Add Popover for fast event creation */}
+      <QuickAddPopover
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        date={quickAddDate}
+        startTime={quickAddStartTime}
+        endTime={quickAddEndTime}
+        onMoreOptions={handleQuickAddMoreOptions}
+      />
 
       {/* Unified Appointment Dialog for both create and edit */}
       <UnifiedAppointmentDialog

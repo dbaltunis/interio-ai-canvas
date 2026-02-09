@@ -1,16 +1,42 @@
-import { format, isSameDay, isToday } from "date-fns";
+import { format, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
-import { useState, useRef, useEffect } from "react";
-import { Clock, MapPin, CheckCheck, Video } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useClients } from "@/hooks/useClients";
-import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useMyTasks, Task } from "@/hooks/useTasks";
+import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Video, CheckCheck, MapPin } from "lucide-react";
+import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
-import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { TimezoneUtils } from "@/utils/timezoneUtils";
-import { EventHoverCard } from "./EventHoverCard";
-import { motion } from "framer-motion";
+import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
+import { EventDetailPopover } from "./EventDetailPopover";
+import {
+  SLOT_HEIGHT, PX_PER_MINUTE, ALL_TIME_SLOTS, WORKING_HOURS_SLOTS,
+  getAllEventsForDate, calculateEventPosition, calculateOverlapLayout,
+  getEventStyling, isTimeSlotOccupied,
+} from "./utils/calendarHelpers";
+
+// --- Current time hook (same as WeeklyCalendarView) ---
+
+const useCurrentTimePosition = (showExtendedHours: boolean) => {
+  const [position, setPosition] = useState<number | null>(null);
+
+  useEffect(() => {
+    const calculate = () => {
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const offset = showExtendedHours ? 0 : 360;
+      const adjusted = totalMinutes - offset;
+      if (adjusted < 0) { setPosition(null); return; }
+      setPosition(adjusted * PX_PER_MINUTE);
+    };
+    calculate();
+    const interval = setInterval(calculate, 60000);
+    return () => clearInterval(interval);
+  }, [showExtendedHours]);
+
+  return position;
+};
+
+// --- Main component ---
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -22,405 +48,317 @@ interface DailyCalendarViewProps {
 export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
-  const { data: clients } = useClients();
-  const { data: currentUserProfile } = useCurrentUserProfile();
+  const { data: bookedAppointments } = useAppointmentBookings();
   const { data: tasks } = useMyTasks();
+  const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { data: userPreferences } = useUserPreferences();
-  
-  // Get user's timezone
-  const userTimezone = userPreferences?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
 
-  // Helper function to get client name
-  const getClientName = (clientId?: string) => {
-    if (!clientId || !clients) return null;
-    const client = clients.find(c => c.id === clientId);
-    if (!client) return null;
-    return client.client_type === 'B2B' ? client.company_name : client.name;
-  };
+  // Drag-to-create state
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [eventCreationStart, setEventCreationStart] = useState<number | null>(null);
+  const [eventCreationEnd, setEventCreationEnd] = useState<number | null>(null);
 
-  // Helper function to get attendee info with avatar data
-  const getAttendeeInfo = (event: any) => {
-    const attendees = [];
-    
-    // Add organizer (current user)
-    if (currentUserProfile) {
-      attendees.push({
-        id: currentUserProfile.user_id,
-        name: currentUserProfile.display_name || 'You',
-        avatar: currentUserProfile.avatar_url,
-        isOwner: true
-      });
-    }
-    
-    // Add client if exists
-    const clientName = getClientName(event.client_id);
-    if (clientName) {
-      attendees.push({
-        id: event.client_id,
-        name: clientName,
-        avatar: null,
-        isOwner: false
-      });
-    }
-    
-    return attendees;
-  };
+  const [showExtendedHours] = useState(true);
+  const timeSlots = useMemo(() => showExtendedHours ? ALL_TIME_SLOTS : WORKING_HOURS_SLOTS, [showExtendedHours]);
+  const currentTimePosition = useCurrentTimePosition(showExtendedHours);
 
-  // Generate extended time slots from 6 AM to 10 PM
-  const timeSlots = (() => {
-    const slots = [];
-    for (let hour = 6; hour <= 22; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < 22) {
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
-      }
-    }
-    return slots;
-  })();
-
-  // Get events for the current day
-  const getDayEvents = () => {
-    if (!displayAppointments) return [];
-    return displayAppointments.filter(appointment => {
-      const startTime = new Date(appointment.start_time);
-      const endTime = new Date(appointment.end_time);
-      // Skip invalid dates
-      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
-        return false;
-      }
-      // Format both dates in the same timezone for comparison
-      const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
-      const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
-      return appointmentDateStr === currentDateStr;
-    });
-  };
-
-  // Get tasks for the current day
-  const getDayTasks = () => {
-    if (!tasks) return [];
-    return tasks
-      .filter(task => {
-        if (!task.due_date) return false;
-        const taskDate = new Date(task.due_date);
-        if (isNaN(taskDate.getTime())) return false;
-        return isSameDay(taskDate, currentDate);
-      })
-      .map(task => {
-        // Display tasks at 9 AM on their due date
-        const startTime = new Date(currentDate);
-        startTime.setHours(9, 0, 0, 0);
-        
-        const endTime = new Date(startTime);
-        endTime.setMinutes(endTime.getMinutes() + 30);
-        
-        return {
-          id: task.id,
-          title: task.title,
-          description: task.description,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          isTask: true,
-          taskData: task,
-          priority: task.priority,
-          status: task.status
-        };
-      });
-  };
-
-  const dayEvents = [...getDayEvents(), ...getDayTasks()];
-
-  // Calculate event position and styling
-  const calculateEventStyle = (startTime: Date, endTime: Date) => {
-    const startHour = startTime.getHours();
-    const startMinutes = startTime.getMinutes();
-    const endHour = endTime.getHours();
-    const endMinutes = endTime.getMinutes();
-
-    // Find the start slot index (each slot is 30 minutes)
-    const startSlotIndex = timeSlots.findIndex(slot => {
-      const [slotHour, slotMinute] = slot.split(':').map(Number);
-      return slotHour === startHour && (
-        (slotMinute === 0 && startMinutes < 30) ||
-        (slotMinute === 30 && startMinutes >= 30)
-      );
-    });
-
-    if (startSlotIndex === -1) return { top: 0, height: 48, visible: false };
-
-    // Calculate exact position within the slot
-    const slotHeight = 48; // 12rem / 2 = 48px per 30-min slot
-    const minutesFromSlotStart = startMinutes % 30;
-    const top = startSlotIndex * slotHeight + (minutesFromSlotStart / 30) * slotHeight;
-
-    // Calculate duration and height
-    const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 24);
-
-    return { top, height, visible: true };
-  };
-
-  // Auto-scroll to current time on mount
   useEffect(() => {
-    if (scrollContainerRef.current && isToday(currentDate)) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 96; // Each hour is 96px (2 slots * 48px)
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
-    }
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id || null));
+  }, []);
+
+  // Auto-scroll to current time
+  useLayoutEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const hasToday = isToday(currentDate);
+    const now = new Date();
+    const scrollHour = hasToday ? Math.max(0, now.getHours() - 1) : 8;
+    const scrollMinutes = hasToday ? now.getMinutes() : 0;
+    scrollContainerRef.current.scrollTop = (scrollHour * 60 + scrollMinutes) * PX_PER_MINUTE;
   }, [currentDate]);
+
+  // Memoized events for the day
+  const dayEvents = useMemo(() => {
+    return getAllEventsForDate(displayAppointments, bookedAppointments, tasks, currentDate, currentUserId);
+  }, [displayAppointments, bookedAppointments, tasks, currentDate, currentUserId]);
+
+  // Overlap layout
+  const overlapLayout = useMemo(() => calculateOverlapLayout(dayEvents), [dayEvents]);
+
+  // Creation handlers
+  const handleMouseDown = useCallback((idx: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsCreatingEvent(true);
+    setEventCreationStart(idx);
+    setEventCreationEnd(idx);
+  }, []);
+
+  const handleMouseMove = useCallback((idx: number) => {
+    if (isCreatingEvent && eventCreationStart !== null) {
+      setEventCreationEnd(idx);
+    }
+  }, [isCreatingEvent, eventCreationStart]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isCreatingEvent && eventCreationStart !== null && eventCreationEnd !== null) {
+      const minSlot = Math.min(eventCreationStart, eventCreationEnd);
+      const maxSlot = Math.max(eventCreationStart, eventCreationEnd);
+      onTimeSlotClick?.(currentDate, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`);
+    }
+    setIsCreatingEvent(false);
+    setEventCreationStart(null);
+    setEventCreationEnd(null);
+  }, [isCreatingEvent, eventCreationStart, eventCreationEnd, timeSlots, currentDate, onTimeSlotClick]);
+
+  // Preview style for drag-to-create
+  const previewStyle = useMemo(() => {
+    if (!isCreatingEvent || eventCreationStart === null || eventCreationEnd === null) return null;
+    const minSlot = Math.min(eventCreationStart, eventCreationEnd);
+    const maxSlot = Math.max(eventCreationStart, eventCreationEnd);
+    return { top: minSlot * SLOT_HEIGHT, height: (maxSlot - minSlot + 1) * SLOT_HEIGHT };
+  }, [isCreatingEvent, eventCreationStart, eventCreationEnd]);
+
+  const gridHeight = timeSlots.length * SLOT_HEIGHT;
+  const offsetMinutes = showExtendedHours ? 0 : 360;
 
   return (
     <>
-    <div className="h-full flex flex-col">
-      {/* Header - more compact */}
-      <div className="border-b bg-background/95 backdrop-blur sticky top-0 z-10 py-2 px-3">
-        <div className="flex items-center justify-center gap-3">
-          <div className="text-xs font-medium text-muted-foreground">
-            {format(currentDate, 'EEE')}
+      <div className="h-full flex flex-col" onMouseUp={handleMouseUp}>
+        {/* Day header — Apple style */}
+        <div className="border-b bg-background sticky top-0 z-10 py-2.5 px-4 flex items-center justify-center gap-3">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            {format(currentDate, 'EEEE')}
           </div>
           <div className={`text-lg font-semibold ${
-            isToday(currentDate) 
-              ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center' 
+            isToday(currentDate)
+              ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center'
               : ''
           }`}>
             {format(currentDate, 'd')}
           </div>
           <div className="text-xs text-muted-foreground">
-            {format(currentDate, 'MMM yyyy')}
+            {format(currentDate, 'MMMM yyyy')}
           </div>
         </div>
-      </div>
-      
-      {/* Scrollable time grid - cleaner styling */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-card pb-32">
-        <div className="relative">
-          {timeSlots.map((time, index) => {
-            const isHourSlot = index % 2 === 0;
-            const [slotH] = time.split(':').map(Number);
-            const isBusinessHour = slotH >= 9 && slotH < 17;
 
-            return (
-              <div
-                key={time}
-                className={`h-12 flex ${
-                  isHourSlot ? 'border-b border-border/20' : ''
-                }`}
-              >
-                {/* Time label */}
-                <div className="w-14 py-2 px-1 text-right flex-shrink-0">
-                  {isHourSlot && (() => {
-                    const h = slotH;
-                    const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
-                    return (
-                      <span className={`text-[10px] font-medium tabular-nums ${isBusinessHour ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>{label}</span>
-                    );
-                  })()}
-                </div>
-
-                {/* Time slot */}
-                <div
-                  className={`flex-1 cursor-pointer transition-colors relative border-l border-border/10 ${
-                    isBusinessHour ? 'hover:bg-accent/30' : 'bg-muted/10 hover:bg-accent/20'
-                  }`}
-                  onClick={() => onTimeSlotClick?.(currentDate, time)}
-                  title={`Click to create event at ${time}`}
-                >
-                  {/* Current time indicator - cleaner */}
-                  {isToday(currentDate) && (() => {
-                    const now = new Date();
-                    const currentHour = now.getHours();
-                    const currentMinutes = now.getMinutes();
-                    
-                    if (currentHour >= 6 && currentHour <= 22) {
-                      const [slotHour, slotMinute] = time.split(':').map(Number);
-                      if (slotHour === currentHour && 
-                          ((slotMinute === 0 && currentMinutes < 30) ||
-                           (slotMinute === 30 && currentMinutes >= 30))) {
-                        const minutesFromSlotStart = currentMinutes % 30;
-                        const top = (minutesFromSlotStart / 30) * 48;
-                        
-                        return (
-                          <div
-                            className="absolute left-0 right-0 z-20 pointer-events-none"
-                            style={{ top: `${top}px` }}
-                          >
-                            <div className="h-[2px] bg-red-500 w-full" />
-                            <div className="absolute -left-1.5 -top-[5px] w-3 h-3 bg-red-500 rounded-full shadow-sm" />
-                          </div>
-                        );
-                      }
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Events overlay */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="relative ml-14"> {/* Offset for time labels (matches w-14) */}
-              {dayEvents.map((event: any, eventIndex) => {
-                // Parse times directly in user's timezone for calculations
-                // Extract hour and minute from the formatted time string
-                const startTimeStr = TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm');
-                const endTimeStr = TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm');
-                
-                const [startHour, startMin] = startTimeStr.split(':').map(Number);
-                const [endHour, endMin] = endTimeStr.split(':').map(Number);
-
-                // Create Date objects with these time components for style calculation
-                const startTime = new Date(currentDate);
-                startTime.setHours(startHour, startMin, 0, 0);
-                const endTime = new Date(currentDate);
-                endTime.setHours(endHour, endMin, 0, 0);
-                const style = calculateEventStyle(startTime, endTime);
-                
-                if (!style.visible) return null;
-
-                // Render tasks differently
-                if (event.isTask) {
-                  return (
-                    <div
-                      key={event.id}
-                      className="absolute left-2 right-2 rounded-lg border border-border bg-card shadow-md hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden"
-                      style={{
-                        top: `${style.top}px`,
-                        height: `${Math.max(style.height, 48)}px`, // Slightly smaller minimum height
-                        zIndex: 10 + eventIndex,
-                      }}
-                      onClick={() => setSelectedTask(event.taskData as Task)}
-                      title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
-                    >
-                       <div className="px-2 h-full flex items-center gap-2">
-                         {/* Circular checkbox */}
-                         <button
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             // Toggle task completion here if needed
-                           }}
-                           className={`
-                             flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                             transition-all duration-200
-                             ${event.status === 'completed' 
-                               ? "border-primary bg-primary" 
-                               : "border-muted-foreground bg-white hover:border-primary"
-                             }
-                           `}
-                         >
-                           {event.status === 'completed' && (
-                             <CheckCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                           )}
-                         </button>
-                         <div className="flex-1 min-w-0">
-                           <div className="font-medium text-[10px] leading-[1.2] line-clamp-1 text-foreground">
-                             {event.title}
-                           </div>
-                           {event.description && (
-                             <div className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">
-                               {event.description}
-                             </div>
-                           )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-                
-                const attendees = getAttendeeInfo(event);
-                const eventColor = event.color || '#3b82f6'; // Default blue
-                
+        {/* Scrollable time grid */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-20"
+          style={{ overscrollBehavior: 'contain' }}
+        >
+          <div className="flex">
+            {/* Time labels */}
+            <div className="w-16 flex-shrink-0">
+              {timeSlots.map((time) => {
+                const [h, m] = time.split(':').map(Number);
+                const isBiz = h >= 9 && h < 17;
                 return (
-                  <EventHoverCard
-                    key={event.id}
-                    event={event}
-                    onEdit={(id) => onEventClick?.(id)}
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, x: -4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: eventIndex * 0.03, duration: 0.15 }}
-                      className="absolute left-1 right-1 rounded-md overflow-hidden pointer-events-auto cursor-pointer group transition-all hover:shadow-md"
-                      style={{
-                        top: `${style.top}px`,
-                        height: `${style.height}px`,
-                        zIndex: 10 + eventIndex,
-                        backgroundColor: eventColor ? `${eventColor}30` : 'hsl(var(--muted) / 0.3)',
-                        borderLeft: `3px solid ${eventColor}`,
-                      }}
-                      onClick={() => onEventClick?.(event.id)}
-                  >
-                    <div className="px-2 py-1 h-full flex flex-col justify-center">
-                      {/* Title */}
-                      <div className="font-medium text-xs leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
-                        {event.title}
-                      </div>
-                      
-                      {/* Time - compact */}
-                      {style.height > 40 && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - {TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}
-                        </div>
-                      )}
-                      
-                      {/* Location - compact */}
-                      {style.height > 60 && event.location && (
-                        <div className="flex items-center text-[10px] text-muted-foreground mt-0.5">
-                          <MapPin className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                      )}
-                      
-                      {/* Video icon inline */}
-                      {style.height > 40 && (event.video_meeting_link || event.video_provider) && (
-                        <Video className="h-3 w-3 text-blue-500 mt-0.5" />
-                      )}
-                      
-                      {/* Attendees - only show if there's enough height */}
-                      {style.height > 90 && attendees.length > 0 && (
-                        <div className="flex items-center mt-2 gap-1">
-                          <div className="flex -space-x-1">
-                            {attendees.slice(0, 3).map((attendee) => (
-                              <Avatar key={attendee.id} className="w-5 h-5 border border-background">
-                                <AvatarImage src={attendee.avatar || undefined} />
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                  {attendee.name.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {attendees.length > 3 && (
-                              <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
-                                <span className="text-xs text-muted-foreground">+{attendees.length - 3}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Color dot indicator in top right */}
-                    <div 
-                      className="absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-white shadow-sm"
-                      style={{ backgroundColor: eventColor }}
-                    />
-                    </motion.div>
-                  </EventHoverCard>
+                  <div key={time} className="flex items-start justify-end pr-3" style={{ height: `${SLOT_HEIGHT}px` }}>
+                    {m === 0 && (
+                      <span className={`text-[11px] font-medium -mt-2 tabular-nums ${isBiz ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+                        {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+                      </span>
+                    )}
+                  </div>
                 );
               })}
+            </div>
+
+            {/* Content column */}
+            <div className="flex-1 relative">
+              {/* Grid lines */}
+              {timeSlots.map((time, index) => (
+                <div
+                  key={`line-${time}`}
+                  className={`absolute left-0 right-0 ${index % 2 === 0 ? 'border-t border-border/30' : 'border-t border-border/10 border-dashed'}`}
+                  style={{ top: `${index * SLOT_HEIGHT}px` }}
+                />
+              ))}
+
+              {/* Clickable time slots */}
+              <div className="relative" style={{ height: `${gridHeight}px` }}>
+                {timeSlots.map((time, index) => {
+                  const [slotH] = time.split(':').map(Number);
+                  const isBusinessHour = slotH >= 9 && slotH < 17;
+                  const occupied = isTimeSlotOccupied(dayEvents, time, currentDate);
+
+                  return (
+                    <div
+                      key={time}
+                      className={`absolute left-0 right-0 transition-colors ${
+                        occupied ? 'cursor-default'
+                          : isBusinessHour ? 'hover:bg-accent/40 cursor-pointer'
+                          : 'hover:bg-accent/20 cursor-pointer'
+                      }`}
+                      style={{ top: `${index * SLOT_HEIGHT}px`, height: `${SLOT_HEIGHT}px` }}
+                      onMouseDown={(e) => !occupied && handleMouseDown(index, e)}
+                      onMouseMove={() => !occupied && handleMouseMove(index)}
+                      onClick={() => !isCreatingEvent && !occupied && onTimeSlotClick?.(currentDate, time)}
+                    />
+                  );
+                })}
+
+                {/* Drag-to-create preview */}
+                {previewStyle && (
+                  <div
+                    className="absolute left-2 right-2 bg-primary/15 border border-primary/30 z-[16] rounded-lg flex items-center px-3"
+                    style={{ top: `${previewStyle.top}px`, height: `${previewStyle.height}px` }}
+                  >
+                    <span className="text-xs font-medium text-primary">New Event</span>
+                  </div>
+                )}
+
+                {/* Current time indicator */}
+                {isToday(currentDate) && currentTimePosition !== null && (
+                  <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${currentTimePosition}px` }}>
+                    <div className="h-[2px] bg-red-500 w-full opacity-80" />
+                    <div className="absolute -left-1.5 -top-[4px] w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-red-500/20" />
+                  </div>
+                )}
+
+                {/* Events */}
+                {dayEvents.map((event, eventIndex) => {
+                  const startTime = new Date(event.start_time);
+                  const endTime = new Date(event.end_time);
+                  if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return null;
+                  const pos = calculateEventPosition(startTime, endTime, offsetMinutes);
+                  if (!pos.visible) return null;
+                  const layout = overlapLayout.get(event.id) || { column: 0, totalColumns: 1 };
+                  const styling = getEventStyling(event);
+                  const finalHeight = Math.max(pos.height, styling.minHeight);
+
+                  const eventWidth = layout.totalColumns > 1 ? `${96 / layout.totalColumns}%` : '96%';
+                  const eventLeft = layout.totalColumns > 1 ? `${(96 / layout.totalColumns) * layout.column + 2}%` : '2%';
+
+                  const handleClick = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (event.isTask) setSelectedTask(event.taskData as Task);
+                    else if (event.isBooking) setBookedAppointmentDialog({ open: true, appointment: event });
+                    else onEventClick?.(event.id);
+                  };
+
+                  // Task rendering
+                  if (event.isTask) {
+                    return (
+                      <div
+                        key={event.id}
+                        className="absolute rounded-lg overflow-hidden cursor-pointer transition-all duration-150 hover:shadow-md"
+                        style={{
+                          top: `${pos.top}px`,
+                          height: `${finalHeight}px`,
+                          width: eventWidth,
+                          left: eventLeft,
+                          zIndex: 12 + eventIndex,
+                          backgroundColor: styling.background,
+                          pointerEvents: 'auto',
+                        }}
+                        onClick={handleClick}
+                      >
+                        <div className="absolute left-0 top-1 bottom-1 w-1 rounded-full" style={{ backgroundColor: styling.border }} />
+                        <div className="flex items-center gap-2 h-full pl-3 pr-2">
+                          <button
+                            type="button"
+                            className={`flex-shrink-0 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                              event.status === 'completed'
+                                ? "border-green-500 bg-green-500"
+                                : "border-muted-foreground/40 hover:border-primary"
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateTask.mutate({ id: event.id, status: event.status === 'completed' ? 'in_progress' : 'completed' });
+                            }}
+                          >
+                            {event.status === 'completed' && <CheckCheck className="h-2 w-2 text-white" strokeWidth={3} />}
+                          </button>
+                          <span
+                            className="text-[11px] font-medium text-foreground leading-tight truncate"
+                            style={{ textDecoration: event.status === 'completed' ? 'line-through' : 'none' }}
+                          >
+                            {event.title}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Event pill — Apple style with EventDetailPopover
+                  const title = event.isBooking ? (event.bookingData?.customer_name || 'Customer') : event.title;
+
+                  return (
+                    <EventDetailPopover
+                      key={event.id}
+                      event={event}
+                      onEdit={(id) => onEventClick?.(id)}
+                      disabled={event.isBooking}
+                    >
+                      <div
+                        className="absolute rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer"
+                        style={{
+                          top: `${pos.top}px`,
+                          height: `${finalHeight}px`,
+                          width: eventWidth,
+                          left: eventLeft,
+                          zIndex: event.isBooking ? 15 + eventIndex : 10 + eventIndex,
+                          pointerEvents: 'auto',
+                        }}
+                        onClick={event.isBooking ? handleClick : undefined}
+                      >
+                        <div className="absolute left-0 top-1 bottom-1 w-1 rounded-full" style={{ backgroundColor: styling.border }} />
+                        <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: styling.background }} />
+                        <div className="relative pl-3 pr-1.5 py-1 h-full flex flex-col overflow-hidden">
+                          <div
+                            className="text-[11px] font-semibold text-foreground leading-tight overflow-hidden"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
+                              WebkitBoxOrient: 'vertical',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                            }}
+                          >
+                            {title}
+                          </div>
+                          {finalHeight > 28 && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                              <span className="tabular-nums">{format(startTime, 'H:mm')}</span>
+                              <span className="opacity-50">&ndash;</span>
+                              <span className="tabular-nums">{format(endTime, 'H:mm')}</span>
+                              {(event.video_meeting_link || event.video_provider) && (
+                                <Video className="w-2.5 h-2.5 text-blue-500 ml-0.5" />
+                              )}
+                            </div>
+                          )}
+                          {finalHeight > 65 && (event.location || event.description) && (
+                            <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-0.5">
+                              {event.location && <MapPin className="w-2.5 h-2.5 flex-shrink-0" />}
+                              {event.location || event.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </EventDetailPopover>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <UnifiedTaskDialog
-      open={!!selectedTask}
-      onOpenChange={(open) => !open && setSelectedTask(null)}
-      task={selectedTask}
-    />
+
+      <BookedAppointmentDialog
+        open={bookedAppointmentDialog.open}
+        onOpenChange={(open) => setBookedAppointmentDialog({ ...bookedAppointmentDialog, open })}
+        appointment={bookedAppointmentDialog.appointment}
+      />
+
+      <UnifiedTaskDialog
+        open={!!selectedTask}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+        task={selectedTask}
+      />
     </>
   );
 };
