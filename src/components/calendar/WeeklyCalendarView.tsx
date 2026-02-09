@@ -120,7 +120,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         // Skip invalid dates or appointments where end time is before start time
         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
-          console.warn('Invalid appointment dates detected:', appointment);
           return false;
         }
         
@@ -153,7 +152,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         // Validate times
         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-          console.warn('Invalid booking times:', booking);
           return null;
         }
         
@@ -275,13 +273,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL FIX: Validate that end time is after start time
+    // Validate that end time is after start time - default to 1-hour duration
     if (endTime <= startTime) {
-      console.warn('Invalid appointment: end time before start time', { 
-        start: startTime.toISOString(), 
-        end: endTime.toISOString() 
-      });
-      // Default to 1-hour duration for invalid appointments
       endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
     }
     
@@ -574,7 +567,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         // Skip events with completely invalid times
                         if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                          console.warn('Skipping event with invalid date:', event);
                           return null;
                         }
                         
