@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInvoiceStatus } from "@/hooks/useInvoiceStatus";
 import { formatCurrency } from "@/utils/formatters";
-import { CreditCard, CheckCircle2, AlertCircle } from "lucide-react";
+import { CreditCard, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface RecordPaymentDialogProps {
   open: boolean;
@@ -31,24 +34,51 @@ export const RecordPaymentDialog = ({
 }: RecordPaymentDialogProps) => {
   const { recordPayment, markAsPaid, getEffectiveStatus, calculateBalanceDue } = useInvoiceStatus();
   const [paymentAmount, setPaymentAmount] = useState<string>('');
-  
+  const [paymentMethod, setPaymentMethod] = useState<string>('bank_transfer');
+  const [reference, setReference] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+
+  // Fetch payment history (gracefully handles missing table)
+  const { data: paymentHistory = [] } = useQuery({
+    queryKey: ['payment-records', quoteId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await (supabase.from('payment_records' as any) as any)
+          .select('id, amount, payment_method, reference, notes, created_at')
+          .eq('quote_id', quoteId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch {
+        // Table may not exist yet (migration not run) - return empty
+        return [];
+      }
+    },
+    enabled: open && !!quoteId,
+  });
+
   const balanceDue = calculateBalanceDue(total, amountPaid);
   const effectiveStatus = getEffectiveStatus(paymentStatus || 'unpaid', dueDate || null);
-  
+
   const handleRecordPayment = async () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) return;
-    
+
     await recordPayment.mutateAsync({
       quoteId,
       paymentAmount: amount,
-      totalAmount: total
+      totalAmount: total,
+      paymentMethod,
+      reference: reference || undefined,
+      notes: notes || undefined,
     });
-    
+
     setPaymentAmount('');
+    setReference('');
+    setNotes('');
     onOpenChange(false);
   };
-  
+
   const handleMarkAsPaid = async () => {
     await markAsPaid.mutateAsync({
       quoteId,
@@ -56,7 +86,7 @@ export const RecordPaymentDialog = ({
     });
     onOpenChange(false);
   };
-  
+
   const getStatusBadge = () => {
     switch (effectiveStatus) {
       case 'paid':
@@ -69,12 +99,24 @@ export const RecordPaymentDialog = ({
         return <Badge variant="secondary">Unpaid</Badge>;
     }
   };
-  
+
+  const getMethodLabel = (method: string) => {
+    const labels: Record<string, string> = {
+      bank_transfer: 'Bank Transfer',
+      cash: 'Cash',
+      card: 'Card',
+      cheque: 'Cheque',
+      stripe: 'Stripe',
+      other: 'Other',
+    };
+    return labels[method] || method;
+  };
+
   const isPaid = effectiveStatus === 'paid';
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Record Payment</span>
@@ -132,9 +174,46 @@ export const RecordPaymentDialog = ({
                     className="pl-8"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Enter the amount received. Maximum: {formatCurrency(balanceDue, currency)}
-                </p>
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label htmlFor="payment-method">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="stripe">Stripe</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Reference */}
+              <div className="space-y-2">
+                <Label htmlFor="payment-reference">Reference (optional)</Label>
+                <Input
+                  id="payment-reference"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="e.g., Transaction ID, cheque number"
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="payment-notes">Notes (optional)</Label>
+                <Input
+                  id="payment-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g., Deposit payment"
+                />
               </div>
 
               {effectiveStatus === 'overdue' && (
@@ -146,6 +225,42 @@ export const RecordPaymentDialog = ({
                 </div>
               )}
             </>
+          )}
+
+          {/* Payment History */}
+          {paymentHistory.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Payment History
+              </Label>
+              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                {paymentHistory.map((record: any) => (
+                  <div key={record.id} className="p-3 text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-green-600">
+                        +{formatCurrency(record.amount, currency)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(record.created_at).toLocaleDateString(undefined, {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-xs h-5">
+                        {getMethodLabel(record.payment_method)}
+                      </Badge>
+                      {record.reference && <span>Ref: {record.reference}</span>}
+                    </div>
+                    {record.notes && (
+                      <p className="text-xs text-muted-foreground italic">{record.notes}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -163,8 +278,8 @@ export const RecordPaymentDialog = ({
               <Button
                 onClick={handleRecordPayment}
                 disabled={
-                  recordPayment.isPending || 
-                  !paymentAmount || 
+                  recordPayment.isPending ||
+                  !paymentAmount ||
                   parseFloat(paymentAmount) <= 0 ||
                   parseFloat(paymentAmount) > balanceDue
                 }

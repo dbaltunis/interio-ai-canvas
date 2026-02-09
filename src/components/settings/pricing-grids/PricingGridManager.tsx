@@ -467,7 +467,7 @@ export const PricingGridManager = () => {
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Set a markup percentage for this grid. Leave at 0 to use global markup settings.</p>
+                      <p>Set a markup percentage for this grid. Leave at 0 to use global markup settings. Use negative values for discount (e.g., -10 = 10% discount).</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -476,7 +476,7 @@ export const PricingGridManager = () => {
                 <Input
                   id="markup-percentage"
                   type="number"
-                  min="0"
+                  min="-100"
                   max="500"
                   step="0.5"
                   placeholder="0"
@@ -572,7 +572,7 @@ export const PricingGridManager = () => {
                         <div className="flex items-center gap-1">
                           <Input
                             type="number"
-                            min="0"
+                            min="-100"
                             max="500"
                             step="0.5"
                             value={editMarkupValue}
