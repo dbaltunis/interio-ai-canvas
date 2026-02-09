@@ -38,6 +38,7 @@ interface MobileBottomNavProps {
 const navItems = [
   { id: "dashboard", label: "Home", icon: Home },
   { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
+  { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "inventory", label: "Library", icon: Package, permission: "view_inventory" },
 ];
@@ -148,8 +149,9 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
   const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
 
-  // Calculate grid columns based on number of visible items
-  const gridCols = visibleNavItems.length === 4 ? "grid-cols-5" : 
+  // Calculate grid columns based on number of visible items (+ 1 for center create button)
+  const gridCols = visibleNavItems.length === 5 ? "grid-cols-6" :
+                   visibleNavItems.length === 4 ? "grid-cols-5" :
                    visibleNavItems.length === 3 ? "grid-cols-4" :
                    visibleNavItems.length === 2 ? "grid-cols-3" : "grid-cols-2";
 
@@ -158,8 +160,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
         {navPermissionsLoading ? (
           // Show skeleton while permissions are loading
-          <div className="grid grid-cols-5 h-16">
-            {[1, 2, 3, 4, 5].map((i) => (
+          <div className="grid grid-cols-6 h-16">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="flex flex-col items-center justify-center gap-1 px-2">
                 <Skeleton className="h-5 w-5 rounded-md" />
                 <Skeleton className="h-3 w-10" />

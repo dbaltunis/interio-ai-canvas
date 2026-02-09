@@ -297,6 +297,7 @@ export const CalendarSyncToolbar = ({
       <div className="flex-1" />
 
       {/* Right section - Actions */}
+      {/* Right section - simplified to 3 controls max */}
       <div className="flex items-center gap-1">
         {/* Search - expandable */}
         {onFiltersChange && (
@@ -325,24 +326,6 @@ export const CalendarSyncToolbar = ({
           </>
         )}
 
-        {/* View & Filters Popover - Combined */}
-        {onFiltersChange && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-3">
-              <div className="space-y-3">
-                <div className="text-xs font-medium text-muted-foreground">View Options</div>
-                <CalendarVisibilityFilter />
-                <CalendarFilters onFiltersChange={onFiltersChange} />
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-
         {/* View selector */}
         {view && onViewChange && (
           <Select value={view} onValueChange={onViewChange}>
@@ -357,103 +340,128 @@ export const CalendarSyncToolbar = ({
           </Select>
         )}
 
-        {/* Calendar picker for week/day views */}
-        {((isDesktop && view && view !== 'month') || isTablet) && currentDate && onDateChange && (
-          <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-background z-50" align="end">
-              <Calendar
-                mode="single"
-                selected={currentDate}
-                onSelect={(date) => {
-                  if (date) {
-                    onDateChange(date);
-                    setShowCalendarPicker(false);
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        )}
+        {/* Unified menu - filters, date picker, scheduling, sync */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-52 pointer-events-auto !z-[99999] bg-popover"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
+            {/* Filters */}
+            {onFiltersChange && (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="pointer-events-auto cursor-pointer text-xs">
+                      <Eye className="h-3.5 w-3.5 mr-2" />
+                      Filters & Visibility
+                    </DropdownMenuItem>
+                  </PopoverTrigger>
+                  <PopoverContent side="left" align="start" className="w-64 p-3">
+                    <div className="space-y-3">
+                      <div className="text-xs font-medium text-muted-foreground">View Options</div>
+                      <CalendarVisibilityFilter />
+                      <CalendarFilters onFiltersChange={onFiltersChange} />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <DropdownMenuSeparator />
+              </>
+            )}
 
-        {/* More menu - Desktop scheduling options */}
-        {isDesktop && onSchedulerClick && onManageTemplates && onViewBookings && onViewAnalytics && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
-              className="w-48 pointer-events-auto !z-[99999] bg-popover"
-              onCloseAutoFocus={(e) => e.preventDefault()}
-            >
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleSchedulerClick();
-                }}
-                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
-                className="pointer-events-auto cursor-pointer text-xs"
-              >
-                New Booking Template
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onManageTemplates?.();
-                }}
+            {/* Date picker */}
+            {currentDate && onDateChange && (
+              <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+                <PopoverTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="pointer-events-auto cursor-pointer text-xs">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-2" />
+                    Go to Date
+                  </DropdownMenuItem>
+                </PopoverTrigger>
+                <PopoverContent side="left" className="w-auto p-0 bg-background z-50" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        onDateChange(date);
+                        setShowCalendarPicker(false);
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {/* Scheduling options */}
+            {isDesktop && onSchedulerClick && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    handleSchedulerClick();
+                  }}
+                  disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
+                  className="pointer-events-auto cursor-pointer text-xs"
+                >
+                  New Booking Template
+                </DropdownMenuItem>
+              </>
+            )}
+            {isDesktop && onManageTemplates && (
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); onManageTemplates?.(); }}
                 className="pointer-events-auto cursor-pointer text-xs"
               >
                 <SettingsIcon className="h-3.5 w-3.5 mr-2" />
                 Manage Templates
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onViewBookings?.();
-                }}
+            )}
+            {isDesktop && onViewBookings && (
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); onViewBookings?.(); }}
                 className="pointer-events-auto cursor-pointer text-xs"
               >
                 <CalendarIcon className="h-3.5 w-3.5 mr-2" />
                 View Bookings
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onViewAnalytics?.();
-                }}
+            )}
+            {isDesktop && onViewAnalytics && (
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); onViewAnalytics?.(); }}
                 className="pointer-events-auto cursor-pointer text-xs"
               >
                 <BarChart3 className="h-3.5 w-3.5 mr-2" />
                 Analytics
               </DropdownMenuItem>
-              {anyCalendarConnected && (
-                <>
-                  <DropdownMenuSeparator />
-                  <div className="px-2 py-1.5 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {isConnected && isOutlookConnected ? 'Calendar Sync' : isConnected ? 'Google Sync' : 'Outlook Sync'}
-                    </span>
-                    <Switch
-                      checked={calendarSyncEnabled}
-                      onCheckedChange={handleSyncToggle}
-                      disabled={anySyncing}
-                      className="scale-75"
-                    />
-                  </div>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+            )}
+
+            {/* Sync toggle */}
+            {anyCalendarConnected && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {isConnected && isOutlookConnected ? 'Calendar Sync' : isConnected ? 'Google Sync' : 'Outlook Sync'}
+                  </span>
+                  <Switch
+                    checked={calendarSyncEnabled}
+                    onCheckedChange={handleSyncToggle}
+                    disabled={anySyncing}
+                    className="scale-75"
+                  />
+                </div>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

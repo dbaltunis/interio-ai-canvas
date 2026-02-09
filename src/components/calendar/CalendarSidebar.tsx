@@ -110,26 +110,21 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
           : hasCreateAppointmentsPermission;
 
-  // Debug logging to help troubleshoot permission issues
-  console.log('[CalendarSidebar] Permission check:', {
-    isSystemOwner: userRoleData?.isSystemOwner,
-    isOwner,
-    isAdmin,
-    hasAnyExplicitPermissions,
-    hasCreateAppointmentsPermission,
-    canCreateAppointments,
-    permissionsLoading,
-    roleLoading,
-    explicitPermissionsDefined: explicitPermissions !== undefined
-  });
+  // Debug logging removed for production
 
-  // Get upcoming events (next 7 days)
+  // Get today's events (sorted by time)
+  const todayEvents = appointments?.filter(appointment => {
+    return isToday(new Date(appointment.start_time));
+  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
+
+  // Get upcoming events (next 7 days, excluding today)
   const upcomingEvents = appointments?.filter(appointment => {
     const eventDate = new Date(appointment.start_time);
-    const today = new Date();
-    const nextWeek = addDays(today, 7);
-    return eventDate >= today && eventDate <= nextWeek;
-  }).slice(0, 5) || [];
+    const tomorrow = addDays(new Date(), 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const nextWeek = addDays(new Date(), 7);
+    return eventDate >= tomorrow && eventDate <= nextWeek;
+  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()).slice(0, 5) || [];
 
   // Helper function to get client name
   const getClientName = (clientId?: string) => {
@@ -330,87 +325,97 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </CardContent>
           </Card>
 
-          {/* Upcoming Events */}
-          <Card className="flex-1 min-h-0">
+          {/* Today's Schedule */}
+          <Card className="flex-shrink-0">
             <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
-              <CardTitle className="text-sm">Upcoming Events</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Today's Schedule</CardTitle>
+                <span className="text-xs text-muted-foreground font-normal">{todayEvents.length} event{todayEvents.length !== 1 ? 's' : ''}</span>
+              </div>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 px-3 pb-4">
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {upcomingEvents.length > 0 ? (
-                  upcomingEvents.map(event => {
-                    const attendees = getAttendeeInfo(event);
-                    const eventColor = event.color || '#3b82f6'; // Default blue
-                    
+            <CardContent className="px-3 pb-4">
+              <div className="space-y-2">
+                {todayEvents.length > 0 ? (
+                  todayEvents.map(event => {
+                    const eventColor = event.color || '#3b82f6';
+                    const startTime = new Date(event.start_time);
+                    const isPast = startTime < new Date();
+
                     return (
-                       <div 
-                          key={event.id} 
-                          className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                        {/* Enhanced color indicator */}
-                        <div 
-                          className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg opacity-80 group-hover:opacity-100 transition-opacity"
+                      <div
+                        key={event.id}
+                        className={`relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group ${isPast ? 'opacity-60' : ''}`}
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg"
                           style={{ backgroundColor: eventColor }}
                         />
-                        
-                         <div className="ml-3 flex-1 min-w-0 pr-6">
-                           <div className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors break-words">
-                             {event.title}
-                           </div>
-                          
-                          {/* Time */}
-                          <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                            {format(new Date(event.start_time), 'MMM d, HH:mm')}
+                        <div className="ml-3 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                              {format(startTime, 'HH:mm')}
+                            </span>
+                            <span className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                              {event.title}
+                            </span>
                           </div>
-                          
-                          {/* Location */}
                           {event.location && (
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                            <div className="flex items-center text-xs text-muted-foreground mt-0.5 ml-11">
                               <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                               <span className="truncate">{event.location}</span>
                             </div>
                           )}
-                          
-                          {/* Attendees with Avatars */}
-                          {attendees.length > 0 && (
-                            <div className="flex items-center mt-2 gap-1">
-                              <div className="flex -space-x-1">
-                                {attendees.slice(0, 3).map((attendee) => (
-                                  <Avatar key={attendee.id} className="w-5 h-5 border border-background">
-                                    <AvatarImage src={attendee.avatar || undefined} />
-                                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                      {attendee.name.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                                {attendees.length > 3 && (
-                                  <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
-                                    <span className="text-xs text-muted-foreground">+{attendees.length - 3}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                        
-                        {/* Color dot indicator in top right */}
-                        <div 
-                          className="absolute top-2 right-2 w-3 h-3 rounded-full border border-white/50 shadow-sm"
-                          style={{ backgroundColor: eventColor }}
-                        />
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming events
+                  <div className="text-sm text-muted-foreground text-center py-3">
+                    No events today
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Coming Up */}
+          {upcomingEvents.length > 0 && (
+            <Card className="flex-shrink-0">
+              <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
+                <CardTitle className="text-sm text-muted-foreground">Coming Up</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-4">
+                <div className="space-y-2">
+                  {upcomingEvents.map(event => {
+                    const eventColor = event.color || '#3b82f6';
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group"
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg opacity-60"
+                          style={{ backgroundColor: eventColor }}
+                        />
+                        <div className="ml-3 min-w-0">
+                          <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                            {event.title}
+                          </div>
+                          <div className="flex items-center text-xs text-muted-foreground mt-0.5">
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            {format(new Date(event.start_time), 'EEE, MMM d')} at {format(new Date(event.start_time), 'HH:mm')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Appointment Scheduling */}
           <Card className="flex-shrink-0 pointer-events-auto">

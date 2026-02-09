@@ -523,66 +523,6 @@ export const UnifiedAppointmentDialog = ({
             ))}
           </div>
 
-          {/* Client & Job Linking */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                Client
-              </Label>
-              <Select
-                value={event.client_id || "none"}
-                onValueChange={(value) => {
-                  const newClientId = value === "none" ? "" : value;
-                  setEvent(prev => ({
-                    ...prev,
-                    client_id: newClientId,
-                    // Clear project if client changes
-                    project_id: newClientId !== prev.client_id ? "" : prev.project_id,
-                  }));
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="None" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
-                    <span className="text-muted-foreground">None</span>
-                  </SelectItem>
-                  {clients?.map((client: any) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                <Briefcase className="h-3 w-3" />
-                Job
-              </Label>
-              <Select
-                value={event.project_id || "none"}
-                onValueChange={(value) => setEvent(prev => ({ ...prev, project_id: value === "none" ? "" : value }))}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="None" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
-                    <span className="text-muted-foreground">None</span>
-                  </SelectItem>
-                  {filteredProjects?.map((project: any) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name || project.title || `Job #${project.id.slice(0, 8)}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           {!isValidDateRange && (
             <Alert variant="destructive" className="py-2">
               <AlertCircle className="h-3.5 w-3.5" />
@@ -621,6 +561,57 @@ export const UnifiedAppointmentDialog = ({
                   rows={2}
                   className="resize-none text-xs"
                 />
+              </div>
+
+              {/* Client & Job Linking */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                    <Users className="h-3 w-3" /> Client
+                  </Label>
+                  <Select
+                    value={event.client_id || "none"}
+                    onValueChange={(value) => {
+                      const newClientId = value === "none" ? "" : value;
+                      setEvent(prev => ({
+                        ...prev,
+                        client_id: newClientId,
+                        project_id: newClientId !== prev.client_id ? "" : prev.project_id,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                      {clients?.map((client: any) => (
+                        <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" /> Job
+                  </Label>
+                  <Select
+                    value={event.project_id || "none"}
+                    onValueChange={(value) => setEvent(prev => ({ ...prev, project_id: value === "none" ? "" : value }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                      {filteredProjects?.map((project: any) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name || project.title || `Job #${project.id.slice(0, 8)}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Video Meeting Toggle */}
