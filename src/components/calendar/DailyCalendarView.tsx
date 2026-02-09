@@ -85,14 +85,6 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       // Format both dates in the same timezone for comparison
       const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
       const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
-      console.log('[DailyCalendarView] Filtering appointment:', {
-        title: appointment.title,
-        utcStartTime: appointment.start_time,
-        userTimezone,
-        appointmentDateStr,
-        currentDateStr,
-        matches: appointmentDateStr === currentDateStr
-      });
       return appointmentDateStr === currentDateStr;
     });
   };
@@ -198,10 +190,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
-            
+            const [slotH] = time.split(':').map(Number);
+            const isBusinessHour = slotH >= 9 && slotH < 17;
+
             return (
-              <div 
-                key={time} 
+              <div
+                key={time}
                 className={`h-12 flex ${
                   isHourSlot ? 'border-b border-border/20' : ''
                 }`}
@@ -209,13 +203,15 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 {/* Time label - narrower */}
                 <div className="w-14 py-2 px-1 text-right flex-shrink-0">
                   {isHourSlot && (
-                    <span className="text-[10px] font-medium text-muted-foreground">{time}</span>
+                    <span className={`text-[10px] font-medium ${isBusinessHour ? 'text-foreground/70' : 'text-muted-foreground/50'}`}>{time}</span>
                   )}
                 </div>
-                
+
                 {/* Time slot */}
-                <div 
-                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative border-l border-border/10"
+                <div
+                  className={`flex-1 cursor-pointer transition-colors relative border-l border-border/10 ${
+                    isBusinessHour ? 'hover:bg-accent/30' : 'bg-muted/10 hover:bg-accent/20'
+                  }`}
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
                   title={`Click to create event at ${time}`}
                 >
@@ -259,32 +255,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 const startTimeStr = TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm');
                 const endTimeStr = TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm');
                 
-                console.log('[DailyCalendarView] Event timezone conversion:', {
-                  title: event.title,
-                  utcStartTime: event.start_time,
-                  utcEndTime: event.end_time,
-                  userTimezone,
-                  startTimeStr,
-                  endTimeStr,
-                  step1_parsedStartTime: new Date(event.start_time).toISOString(),
-                  step2_formattedInTimezone: startTimeStr
-                });
-                
                 const [startHour, startMin] = startTimeStr.split(':').map(Number);
                 const [endHour, endMin] = endTimeStr.split(':').map(Number);
-                
+
                 // Create Date objects with these time components for style calculation
                 const startTime = new Date(currentDate);
                 startTime.setHours(startHour, startMin, 0, 0);
                 const endTime = new Date(currentDate);
                 endTime.setHours(endHour, endMin, 0, 0);
-                
-                console.log('[DailyCalendarView] Final display times:', {
-                  title: event.title,
-                  displayStartHour: startHour,
-                  displayStartMin: startMin,
-                  displayStartTime: format(startTime, 'HH:mm')
-                });
                 const style = calculateEventStyle(startTime, endTime);
                 
                 if (!style.visible) return null;

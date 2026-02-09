@@ -38,14 +38,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const archiveCompletedTasks = useArchiveCompletedTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // Debug logging for data fetching
-  console.log('Calendar data status:', { 
-    appointments: displayAppointments?.length, 
-    bookedAppointments: bookedAppointments?.length,
-    schedulerSlots: schedulerSlots?.length,
-    loading: { bookingsLoading }
-  });
-  
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -63,20 +55,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     getCurrentUser();
   }, []);
 
-  // Auto-scroll to 7 AM on mount for better UX
-  // useLayoutEffect runs BEFORE browser paints - no visible scroll animation
+  // Auto-scroll to current time (or 8 AM if not today) on mount
   useLayoutEffect(() => {
     if (scrollContainerRef.current) {
-      // Each time slot is 32px high, and slots are every 30 minutes
-      // 7 AM = 7 hours from midnight = 14 slots (00:00, 00:30, 01:00... 07:00)
       const slotHeight = 32;
-      const sevenAMSlotIndex = 14; // 7:00 AM is the 14th slot (0-indexed: slot 14)
-      const scrollPosition = sevenAMSlotIndex * slotHeight;
-      
-      // Instant scroll - no animation, positioned before paint
+      const now = new Date();
+      const hasToday = weekDays.some(d => isToday(d));
+
+      // Scroll 1 hour before current time if today is visible, else 8 AM
+      const scrollHour = hasToday ? Math.max(0, now.getHours() - 1) : 8;
+      const scrollMinutes = hasToday ? now.getMinutes() : 0;
+      const scrollPosition = ((scrollHour * 60 + scrollMinutes) * slotHeight) / 30;
+
       scrollContainerRef.current.scrollTop = scrollPosition;
     }
-  }, []); // Empty dependency array = only run on mount
+  }, [currentDate]); // Re-run when navigating weeks
   
   // Event creation state
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
@@ -376,56 +369,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const { active, over } = event;
     setActiveEvent(null);
     
-    console.log('Drag end:', { active: active?.id, over: over?.id, overData: over?.data?.current });
 
-    if (!over || !active) {
-      console.log('No drop target or active element');
-      return;
-    }
+    if (!over || !active) return;
 
     const eventId = active.id as string;
     const dropData = over.data.current;
-    
-    if (!dropData) {
-      console.log('No drop data found');
-      return;
-    }
+
+    if (!dropData) return;
 
     const { day, timeSlotIndex } = dropData;
     const eventToUpdate = displayAppointments?.find(apt => apt.id === eventId);
-    
-    if (!eventToUpdate) {
-      console.log('Event to update not found:', eventId);
-      return;
-    }
 
-    console.log('Updating event:', eventId, 'to day:', day, 'timeSlot:', timeSlotIndex);
+    if (!eventToUpdate) return;
 
     // Calculate new start time
     const originalDuration = new Date(eventToUpdate.end_time).getTime() - new Date(eventToUpdate.start_time).getTime();
     const [hours, minutes] = timeSlots[timeSlotIndex].split(':').map(Number);
-    
+
     const newStartTime = new Date(day);
     newStartTime.setHours(hours, minutes, 0, 0);
-    
+
     const newEndTime = new Date(newStartTime.getTime() + originalDuration);
 
-    console.log('Calling updateAppointment.mutateAsync with:', {
-      id: eventId,
-      start_time: newStartTime.toISOString(),
-      end_time: newEndTime.toISOString()
-    });
-
-    // Use the proper React Query mutation
     try {
       await updateAppointment.mutateAsync({
         id: eventId,
         start_time: newStartTime.toISOString(),
         end_time: newEndTime.toISOString()
       });
-      console.log('Successfully updated appointment via mutation');
     } catch (error) {
-      console.error('Failed to update appointment via mutation:', error);
+      console.error('Failed to update appointment:', error);
     }
   };
 
@@ -465,16 +438,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           <div className="flex bg-card">
             {/* Time labels - narrower */}
             <div className="w-12 bg-card flex-shrink-0">
-              {timeSlots.map((time, index) => (
-                <div 
-                  key={time} 
-                  className="h-[32px] pr-1 text-right flex items-start justify-end"
-                >
-                  {index % 2 === 0 && (
-                    <span className="text-[9px] font-medium text-muted-foreground -mt-1.5">{time}</span>
-                  )}
-                </div>
-              ))}
+              {timeSlots.map((time, index) => {
+                const [h] = time.split(':').map(Number);
+                const isBizHour = h >= 9 && h < 17;
+                return (
+                  <div
+                    key={time}
+                    className="h-[32px] pr-1 text-right flex items-start justify-end"
+                  >
+                    {index % 2 === 0 && (
+                      <span className={`text-[9px] font-medium -mt-1.5 ${isBizHour ? 'text-foreground/70' : 'text-muted-foreground/50'}`}>{time}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {/* Day columns */}
@@ -507,7 +484,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* Empty time slots - clickable areas (NO availability indicators in internal calendar) */}
                       {timeSlots.map((time, index) => {
                         const isOccupied = isTimeSlotOccupied(day, time);
-                        
+                        const [slotH] = time.split(':').map(Number);
+                        const isBusinessHour = slotH >= 9 && slotH < 17;
+
                         const DroppableTimeSlot = () => {
                           const { setNodeRef, isOver } = useDroppable({
                             id: `${day.toISOString()}-${index}`,
@@ -515,14 +494,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           });
 
                           return (
-                            <div 
+                            <div
                               ref={setNodeRef}
                               className={`h-[32px] transition-colors relative ${
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
-                                isOccupied 
-                                  ? 'bg-muted/30 cursor-default' 
-                                  : 'hover:bg-accent/50 cursor-pointer'
+                                isOccupied
+                                  ? 'bg-muted/30 cursor-default'
+                                  : isBusinessHour
+                                    ? 'hover:bg-accent/50 cursor-pointer'
+                                    : 'bg-muted/10 hover:bg-accent/30 cursor-pointer'
                               }`}
                               onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
                               onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
@@ -568,15 +549,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                          
                           // Each 30-minute slot is 32px, so each minute is 32/30 = 1.0667px
                           const top = (totalMinutesFromMidnight * 32) / 30;
-                         
-                         // Debug logging
-                         console.log('Current time debug:', {
-                           hour: currentHour,
-                           minutes: currentMinutes,
-                           totalMinutesFromMidnight,
-                           calculatedTop: top,
-                           showExtendedHours
-                         });
                          
                             return (
                               <div 
@@ -742,7 +714,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   style={eventStyle}
                                   onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : event.isTask ? 'Task' : 'Personal Event', event);
                                   if (event.isTask) {
                                     // Handle task click - open edit dialog
                                     setSelectedTask(event.taskData as Task);
