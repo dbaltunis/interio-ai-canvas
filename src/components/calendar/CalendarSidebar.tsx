@@ -1,36 +1,14 @@
-
-import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, Trash2, Bell, Video, Palette, Edit3, UserPlus, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { AppointmentEditSidebar } from './AppointmentEditSidebar';
-import { UnifiedAppointmentDialog } from './UnifiedAppointmentDialog';
-import { useAppointmentEdit } from '@/hooks/useAppointmentEdit';
-import { SchedulerManagement } from "./SchedulerManagement";
-import { BookingManagement } from "./BookingManagement";
-import { AnalyticsDashboard } from "./AnalyticsDashboard";
-import { format, isToday, addDays } from "date-fns";
-import { useAppointments, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
-import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useClients } from "@/hooks/useClients";
-import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useMemo } from "react";
+import { format, isToday, isSameDay } from "date-fns";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
+import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
+import { useOutlookCalendarIntegration } from "@/hooks/useOutlookCalendar";
+import { useNylasCalendarIntegration } from "@/hooks/useNylasCalendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
 
 interface CalendarSidebarProps {
   currentDate: Date;
@@ -38,8 +16,15 @@ interface CalendarSidebarProps {
   onBookingLinks: () => void;
 }
 
+// Calendar source definition
+interface CalendarSource {
+  id: string;
+  label: string;
+  color: string;
+  connected: boolean;
+}
+
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
-  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return localStorage.getItem("calendar.sidebarCollapsed") === "true";
@@ -48,149 +33,38 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     }
   });
 
+  const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
+  const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("calendar.hiddenSources");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const { data: appointments } = useAppointments();
+  const { data: bookedAppointments } = useAppointmentBookings();
+  const { isConnected: googleConnected } = useGoogleCalendarIntegration();
+  const { isConnected: outlookConnected } = useOutlookCalendarIntegration();
+  const { isConnected: nylasConnected } = useNylasCalendarIntegration();
+
   const toggleCollapse = () => {
     setIsCollapsed(prev => {
       const next = !prev;
-      try {
-        localStorage.setItem("calendar.sidebarCollapsed", String(next));
-      } catch {}
+      try { localStorage.setItem("calendar.sidebarCollapsed", String(next)); } catch {}
       return next;
     });
   };
-  const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
-  const [showBookingManagement, setShowBookingManagement] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const appointmentEdit = useAppointmentEdit();
-  const { data: appointments } = useAppointments();
-  const { data: schedulers } = useAppointmentSchedulers();
-  const { data: clients } = useClients();
-  const { data: currentUserProfile } = useCurrentUserProfile();
-  const { toast } = useToast();
-  const updateAppointment = useUpdateAppointment();
-  const deleteAppointment = useDeleteAppointment();
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-calendar-sidebar', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if create_appointments is explicitly in user_permissions table
-  const hasCreateAppointmentsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
-  const canCreateAppointments =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
-          : hasCreateAppointmentsPermission;
-
-  // Debug logging removed for production
-
-  // Get today's events (sorted by time, deduplicated)
-  const todayEvents = (() => {
-    const filtered = appointments?.filter(appointment => {
-      const startTime = new Date(appointment.start_time);
-      return !isNaN(startTime.getTime()) && isToday(startTime);
-    }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
-
-    // Deduplicate: same title + same time = synced duplicate
-    const seen = new Map<string, typeof filtered[0]>();
-    for (const event of filtered) {
-      const startTime = new Date(event.start_time);
-      const roundedMinutes = Math.round(startTime.getTime() / (5 * 60 * 1000));
-      const key = `${(event.title || '').toLowerCase().trim()}_${roundedMinutes}`;
-      const existing = seen.get(key);
-      if (!existing || (event.google_event_id && !existing.google_event_id)) {
-        seen.set(key, event);
-      }
-    }
-    return Array.from(seen.values());
-  })();
-
-  // Find the next upcoming event (first future event today, or first event tomorrow+)
-  const now = new Date();
-  const nextUpEvent = todayEvents.find(e => new Date(e.end_time) > now);
-
-  // Get upcoming events (next 7 days, excluding today)
-  const upcomingEvents = appointments?.filter(appointment => {
-    const eventDate = new Date(appointment.start_time);
-    const tomorrow = addDays(new Date(), 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const nextWeek = addDays(new Date(), 7);
-    return eventDate >= tomorrow && eventDate <= nextWeek;
-  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()).slice(0, 5) || [];
-
-  // Helper function to get client name
-  const getClientName = (clientId?: string) => {
-    if (!clientId || !clients) return null;
-    const client = clients.find(c => c.id === clientId);
-    if (!client) return null;
-    return client.client_type === 'B2B' ? client.company_name : client.name;
-  };
-
-  // Helper function to get attendee info with avatar data
-  const getAttendeeInfo = (event: any) => {
-    const attendees = [];
-    
-    // Add organizer (current user)
-    if (currentUserProfile) {
-      attendees.push({
-        id: currentUserProfile.user_id,
-        name: currentUserProfile.display_name || 'You',
-        avatar: currentUserProfile.avatar_url,
-        isOwner: true
-      });
-    }
-    
-    // Add client if exists (clients don't have avatars in user_profiles)
-    const clientName = getClientName(event.client_id);
-    if (clientName) {
-      attendees.push({
-        id: event.client_id,
-        name: clientName,
-        avatar: null,
-        isClient: true
-      });
-    }
-    
-    // Add invited emails (these are external, no avatars)
-    if (event.invited_client_emails?.length > 0) {
-      event.invited_client_emails.forEach((email: string, index: number) => {
-        attendees.push({
-          id: `email-${index}`,
-          name: email,
-          avatar: null,
-          isInvited: true
-        });
-      });
-    }
-    
-    return attendees;
+  const toggleSource = (sourceId: string) => {
+    setHiddenSources(prev => {
+      const next = new Set(prev);
+      if (next.has(sourceId)) next.delete(sourceId);
+      else next.add(sourceId);
+      try { localStorage.setItem("calendar.hiddenSources", JSON.stringify([...next])); } catch {}
+      return next;
+    });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -200,59 +74,45 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     }
   };
 
-  // Handler functions for event actions - Updated for hybrid approach
-  const handleEditEvent = () => {
-    if (selectedEvent) {
-      appointmentEdit.openQuickEdit(selectedEvent);
-      setSelectedEvent(null); // Close details dialog
-    }
-  };
-
-  const handleAdvancedOptions = () => {
-    appointmentEdit.openAdvancedEdit();
-  };
-
-  const handleManageAttendees = () => {
-    toast({
-      title: "Manage Attendees",
-      description: "Attendee management functionality will open here.",
-      importance: 'silent',
+  // Dates that have events (for mini calendar dot indicators)
+  const eventDates = useMemo(() => {
+    const dates = new Set<string>();
+    appointments?.forEach(apt => {
+      const d = new Date(apt.start_time);
+      if (!isNaN(d.getTime())) dates.add(format(d, 'yyyy-MM-dd'));
     });
-  };
-
-  const handleDeleteEvent = async () => {
-    // Prevent multiple simultaneous delete calls
-    if (!selectedEvent || deleteAppointment.isPending) return;
-    
-    try {
-      await deleteAppointment.mutateAsync(selectedEvent.id);
-      
-      // Close dialog and clear selection AFTER successful deletion
-      setShowDeleteDialog(false);
-      setSelectedEvent(null);
-      
-      toast({
-        title: "Event Deleted",
-        description: "The event has been successfully deleted.",
-        importance: 'silent',
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete the event. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSendReminder = () => {
-    toast({
-      title: "Reminder Sent",
-      description: "Notification reminder has been sent to all attendees.",
-      importance: 'important',
+    bookedAppointments?.forEach(b => {
+      if (b.appointment_date) dates.add(b.appointment_date);
     });
-  };
+    return dates;
+  }, [appointments, bookedAppointments]);
 
+  // Next up event
+  const nextUpEvent = useMemo(() => {
+    if (!appointments) return null;
+    const now = new Date();
+    const todayEvents = appointments
+      .filter(a => {
+        const s = new Date(a.start_time);
+        return !isNaN(s.getTime()) && isToday(s) && new Date(a.end_time) > now;
+      })
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+    return todayEvents[0] || null;
+  }, [appointments]);
+
+  // Calendar sources list
+  const calendarSources: CalendarSource[] = useMemo(() => {
+    const sources: CalendarSource[] = [
+      { id: 'personal', label: 'My Calendar', color: '#6366F1', connected: true },
+      { id: 'bookings', label: 'Bookings', color: '#3B82F6', connected: (bookedAppointments?.length ?? 0) > 0 },
+    ];
+    if (googleConnected) sources.push({ id: 'google', label: 'Google Calendar', color: '#4285F4', connected: true });
+    if (outlookConnected) sources.push({ id: 'outlook', label: 'Outlook', color: '#0078D4', connected: true });
+    if (nylasConnected) sources.push({ id: 'nylas', label: 'Nylas Calendar', color: '#0052CC', connected: true });
+    return sources;
+  }, [googleConnected, outlookConnected, nylasConnected, bookedAppointments]);
+
+  // Collapsed state
   if (isCollapsed) {
     return (
       <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
@@ -267,25 +127,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex flex-col items-center gap-4 p-2 mt-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBookingLinks}
-            title="Create Schedule"
-            className="w-8 h-8"
-          >
-            <Link2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Settings"
-            className="w-8 h-8"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     );
   }
@@ -293,428 +134,138 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   return (
     <div className="w-[280px] min-w-[280px] max-w-[280px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col space-y-4 px-3 py-4">
-          {/* Header with Calendar title and Collapse Button */}
-          <div className="flex items-center justify-between border-b pb-3">
-            <h1 className="text-xl font-bold text-primary">Calendar</h1>
+        <div className="flex flex-col px-3 py-4">
+          {/* Header with collapse */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-foreground">Calendar</h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleCollapse}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
               title="Collapse sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
-          {/* Mini Calendar */}
-          <Card className="flex-shrink-0">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm">Calendar</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-4">
-              <Calendar
-                mode="single"
-                selected={sidebarDate}
-                onSelect={handleDateSelect}
-                className="rounded-md border-0 p-0 w-full"
-                classNames={{
-                  months: "flex flex-col space-y-4 w-full",
-                  month: "space-y-4 w-full",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-medium",
-                  nav: "space-x-1 flex items-center",
-                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse space-y-1",
-                  head_row: "flex w-full justify-between",
-                  head_cell: "text-muted-foreground rounded-md flex-1 text-center font-normal text-[0.75rem]",
-                  row: "flex w-full justify-between mt-1.5",
-                  cell: "relative p-0 text-center text-sm flex-1 min-w-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
-                  day: "h-8 w-8 p-0 text-xs font-normal hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100 mx-auto",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "bg-accent text-accent-foreground",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
-                  day_hidden: "invisible",
-                }}
-              />
-            </CardContent>
-          </Card>
 
-          {/* Next Up - prominent highlight */}
-          {nextUpEvent && (
-            <div
-              className="flex-shrink-0 rounded-lg p-3 cursor-pointer hover:opacity-90 transition-opacity"
-              style={{
-                backgroundColor: `${nextUpEvent.color || '#3b82f6'}15`,
-                border: `1px solid ${nextUpEvent.color || '#3b82f6'}30`,
+          {/* Mini Calendar — no card wrapper, cleaner look */}
+          <div className="mb-4">
+            <Calendar
+              mode="single"
+              selected={sidebarDate}
+              onSelect={handleDateSelect}
+              className="rounded-lg border-0 p-0 w-full"
+              modifiers={{
+                hasEvent: (date) => eventDates.has(format(date, 'yyyy-MM-dd')),
               }}
-              onClick={() => setSelectedEvent(nextUpEvent)}
-            >
-              <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: nextUpEvent.color || '#3b82f6' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next up</span>
+              modifiersClassNames={{
+                hasEvent: 'has-event-dot',
+              }}
+              classNames={{
+                months: "flex flex-col space-y-3 w-full",
+                month: "space-y-3 w-full",
+                caption: "flex justify-center pt-0.5 relative items-center",
+                caption_label: "text-sm font-semibold",
+                nav: "space-x-1 flex items-center",
+                nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-md hover:bg-accent",
+                nav_button_previous: "absolute left-0",
+                nav_button_next: "absolute right-0",
+                table: "w-full border-collapse",
+                head_row: "flex w-full justify-between",
+                head_cell: "text-muted-foreground/60 rounded-md flex-1 text-center font-medium text-[10px] uppercase tracking-wider",
+                row: "flex w-full justify-between mt-1",
+                cell: "relative p-0 text-center text-sm flex-1 min-w-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/10 [&:has([aria-selected])]:rounded-md",
+                day: "h-8 w-8 p-0 text-xs font-normal hover:bg-accent hover:text-accent-foreground rounded-md aria-selected:opacity-100 mx-auto transition-colors",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                day_today: "bg-accent text-accent-foreground font-semibold",
+                day_outside: "text-muted-foreground/30",
+                day_disabled: "text-muted-foreground/30",
+                day_hidden: "invisible",
+              }}
+            />
+          </div>
+
+          {/* Next Up */}
+          {nextUpEvent && (
+            <div className="mb-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-1.5 px-0.5">
+                Next Up
               </div>
-              <div className="font-semibold text-sm">{nextUpEvent.title}</div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                <Clock className="h-3 w-3" />
-                {format(new Date(nextUpEvent.start_time), 'h:mm a')}
-                {nextUpEvent.end_time && ` – ${format(new Date(nextUpEvent.end_time), 'h:mm a')}`}
-              </div>
-              {nextUpEvent.location && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                  <MapPin className="h-3 w-3" />
-                  <span className="truncate">{nextUpEvent.location}</span>
+              <div
+                className="rounded-lg p-2.5 cursor-pointer hover:bg-accent/40 transition-colors"
+                style={{
+                  backgroundColor: `${nextUpEvent.color || '#6366F1'}08`,
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 animate-pulse"
+                    style={{ backgroundColor: nextUpEvent.color || '#6366F1' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{nextUpEvent.title}</div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="tabular-nums">
+                        {format(new Date(nextUpEvent.start_time), 'h:mm a')}
+                        {nextUpEvent.end_time && ` – ${format(new Date(nextUpEvent.end_time), 'h:mm a')}`}
+                      </span>
+                    </div>
+                    {nextUpEvent.location && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{nextUpEvent.location}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
-          {/* Today's Schedule */}
-          <Card className="flex-shrink-0">
-            <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Today's Schedule</CardTitle>
-                <span className="text-xs text-muted-foreground font-normal">{todayEvents.length} event{todayEvents.length !== 1 ? 's' : ''}</span>
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 pb-4">
-              <div className="space-y-2">
-                {todayEvents.length > 0 ? (
-                  todayEvents.map(event => {
-                    const eventColor = event.color || '#3b82f6';
-                    const startTime = new Date(event.start_time);
-                    const isPast = startTime < new Date();
-
-                    return (
-                      <div
-                        key={event.id}
-                        className={`relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group ${isPast ? 'opacity-60' : ''}`}
-                        onClick={() => setSelectedEvent(event)}
-                      >
-                        <div
-                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg"
-                          style={{ backgroundColor: eventColor }}
-                        />
-                        <div className="ml-3 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
-                              {format(startTime, 'HH:mm')}
-                            </span>
-                            <span className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                              {event.title}
-                            </span>
-                          </div>
-                          {event.location && (
-                            <div className="flex items-center text-xs text-muted-foreground mt-0.5 ml-11">
-                              <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-sm text-muted-foreground text-center py-3">
-                    No events today
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Coming Up */}
-          {upcomingEvents.length > 0 && (
-            <Card className="flex-shrink-0">
-              <CardHeader className="pb-2 pt-4 px-4 flex-shrink-0">
-                <CardTitle className="text-sm text-muted-foreground">Coming Up</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-4">
-                <div className="space-y-2">
-                  {upcomingEvents.map(event => {
-                    const eventColor = event.color || '#3b82f6';
-
-                    return (
-                      <div
-                        key={event.id}
-                        className="relative p-2.5 rounded-lg border hover:bg-card transition-colors cursor-pointer group"
-                        onClick={() => setSelectedEvent(event)}
-                      >
-                        <div
-                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg opacity-60"
-                          style={{ backgroundColor: eventColor }}
-                        />
-                        <div className="ml-3 min-w-0">
-                          <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                            {event.title}
-                          </div>
-                          <div className="flex items-center text-xs text-muted-foreground mt-0.5">
-                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                            {format(new Date(event.start_time), 'EEE, MMM d')} at {format(new Date(event.start_time), 'HH:mm')}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Quick Actions */}
-          <div className="flex-shrink-0 space-y-2">
-            <div className="text-xs font-medium text-muted-foreground px-1">Quick Actions</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {(() => {
-                const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-                const shouldDisable = isPermissionLoaded && !canCreateAppointments;
+          {/* Calendars List - Apple/Google style source toggles */}
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2 px-0.5">
+              Calendars
+            </div>
+            <div className="space-y-0.5">
+              {calendarSources.map(source => {
+                const isVisible = !hiddenSources.has(source.id);
                 return (
-                  <Button
-                    onClick={() => {
-                      if (!isPermissionLoaded) return;
-                      if (!canCreateAppointments) {
-                        toast({ title: "Permission Denied", description: "You don't have permission to create appointments.", variant: "destructive" });
-                        return;
-                      }
-                      onBookingLinks();
-                    }}
-                    variant="outline"
-                    size="sm"
-                    disabled={shouldDisable}
-                    className="h-8 text-xs"
+                  <button
+                    key={source.id}
+                    type="button"
+                    className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md hover:bg-accent/40 transition-colors text-left group"
+                    onClick={() => toggleSource(source.id)}
                   >
-                    <UserPlus className="h-3.5 w-3.5 mr-1.5" />
-                    Template
-                  </Button>
+                    {/* Checkbox with source color */}
+                    <div
+                      className={`w-3.5 h-3.5 rounded flex-shrink-0 border transition-all flex items-center justify-center ${
+                        isVisible ? 'border-transparent' : 'border-muted-foreground/30 bg-transparent'
+                      }`}
+                      style={isVisible ? { backgroundColor: source.color } : {}}
+                    >
+                      {isVisible && (
+                        <svg width="8" height="8" viewBox="0 0 10 10" className="text-white">
+                          <path d="M2 5l2.5 2.5L8 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm flex-1 ${isVisible ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+                      {source.label}
+                    </span>
+                    {/* Connected indicator dot */}
+                    {source.connected && source.id !== 'personal' && source.id !== 'bookings' && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </button>
                 );
-              })()}
-              <Button onClick={() => setShowBookingManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
-                <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
-                Bookings
-              </Button>
-              <Button onClick={() => setShowSchedulerManagement(true)} variant="outline" size="sm" className="h-8 text-xs">
-                <Settings className="h-3.5 w-3.5 mr-1.5" />
-                Manage
-              </Button>
-              <Button onClick={() => setShowAnalytics(true)} variant="outline" size="sm" className="h-8 text-xs">
-                <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
-                Analytics
-              </Button>
+              })}
             </div>
           </div>
         </div>
       </ScrollArea>
-
-      {/* Dialogs */}
-      <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Appointment Schedulers</DialogTitle>
-          </DialogHeader>
-          <SchedulerManagement />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showBookingManagement} onOpenChange={setShowBookingManagement}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Booking Management</DialogTitle>
-          </DialogHeader>
-          <BookingManagement />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Analytics Dashboard</DialogTitle>
-          </DialogHeader>
-          <AnalyticsDashboard />
-        </DialogContent>
-      </Dialog>
-
-      {/* Event Details Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Event Details
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedEvent && (
-            <div className="space-y-6">
-              {/* Event Header */}
-              <div className="flex items-start gap-3">
-                <div 
-                  className="w-4 h-4 rounded-full mt-1 flex-shrink-0 ring-2 ring-background"
-                  style={{ backgroundColor: selectedEvent.color || '#3b82f6' }}
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{selectedEvent.title}</h3>
-                  {selectedEvent.description && (
-                    <p className="text-muted-foreground text-sm mt-1">{selectedEvent.description}</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Event Details */}
-              <div className="grid grid-cols-1 gap-3 pt-4 border-t">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {format(new Date(selectedEvent.start_time), 'PPP p')} - {format(new Date(selectedEvent.end_time), 'p')}
-                  </span>
-                </div>
-                
-                {selectedEvent.location && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{selectedEvent.location}</span>
-                  </div>
-                )}
-                
-                {selectedEvent.appointment_type && (
-                  <div className="flex items-center gap-3">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm capitalize">{selectedEvent.appointment_type}</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Attendees */}
-              {getAttendeeInfo(selectedEvent).length > 0 && (
-                <div className="pt-4 border-t">
-                  <h4 className="font-medium text-sm mb-3">Attendees</h4>
-                  <div className="space-y-2">
-                    {getAttendeeInfo(selectedEvent).map((attendee) => (
-                      <div key={attendee.id} className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={attendee.avatar || undefined} />
-                          <AvatarFallback className="text-sm bg-primary/10 text-primary">
-                            {attendee.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{attendee.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {attendee.isOwner ? 'Organizer' : attendee.isClient ? 'Client' : 'Invited'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Notifications & Settings */}
-              <div className="pt-4 border-t">
-                <h4 className="font-medium text-sm mb-3">Notifications & Settings</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Notification Status</div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm">Enabled</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Reminder Time</div>
-                    <span className="text-sm">15 minutes before</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Event Status</div>
-                    <span className="text-sm capitalize">{selectedEvent.status || 'confirmed'}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Visibility</div>
-                    <span className="text-sm">Private</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between pt-4 border-t">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleEditEvent}>
-                    <Settings className="h-4 w-4 mr-1" />
-                    Edit Event
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleManageAttendees}>
-                    <User className="h-4 w-4 mr-1" />
-                    Manage Attendees
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-destructive hover:bg-destructive/10"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                  <Button size="sm" onClick={handleSendReminder}>
-                    <Bell className="h-4 w-4 mr-1" />
-                    Send Reminder
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Event</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{selectedEvent?.title}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteAppointment.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e) => {
-                e.preventDefault();
-                handleDeleteEvent();
-              }}
-              disabled={deleteAppointment.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteAppointment.isPending ? "Deleting..." : "Delete Event"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Quick Edit Sidebar */}
-      {appointmentEdit.isQuickEditOpen && (
-        <div className="fixed inset-y-0 right-0 w-96 z-50">
-          <AppointmentEditSidebar
-            appointment={appointmentEdit.selectedAppointment}
-            onSave={appointmentEdit.saveAppointment}
-            onCancel={appointmentEdit.closeEdit}
-            onAdvancedOptions={handleAdvancedOptions}
-          />
-        </div>
-      )}
-
-      {/* Advanced Edit Dialog */}
-      <UnifiedAppointmentDialog
-        open={appointmentEdit.isAdvancedEditOpen}
-        onOpenChange={appointmentEdit.closeEdit}
-        appointment={appointmentEdit.selectedAppointment}
-      />
     </div>
   );
 };
