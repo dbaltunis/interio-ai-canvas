@@ -253,10 +253,10 @@ export const CalendarSyncToolbar = ({
               <SelectItem value="all">All Staff</SelectItem>
               <SelectItem value={user?.id || "me"}>My Calendar</SelectItem>
               {teamMembers
-                .filter((m: any) => m.user_id !== user?.id)
+                .filter((m: any) => m.id !== user?.id)
                 .map((member: any) => (
-                  <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.full_name || member.email || 'Team Member'}
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name || member.email || 'Team Member'}
                   </SelectItem>
                 ))}
             </SelectContent>

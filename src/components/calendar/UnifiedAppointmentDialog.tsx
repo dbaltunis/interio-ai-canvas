@@ -508,7 +508,7 @@ export const UnifiedAppointmentDialog = ({
 
           {/* Quick duration chips */}
           <div className="flex items-center gap-1">
-            {[30, 60, 90].map((minutes) => (
+            {[25, 30, 45, 60, 90].map((minutes) => (
               <Button
                 key={minutes}
                 type="button"
@@ -529,12 +529,124 @@ export const UnifiedAppointmentDialog = ({
             </Alert>
           )}
 
+          {/* Event Type & Color — always visible for easy categorization */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
+              <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="consultation">Consultation</SelectItem>
+                  <SelectItem value="measurement">Measurement</SelectItem>
+                  <SelectItem value="installation">Installation</SelectItem>
+                  <SelectItem value="follow_up">Follow-up</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="call">Call</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 block">Color</Label>
+              <Select
+                value={event.color || defaultColors[0]}
+                onValueChange={(value) => setEvent({ ...event, color: value })}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-4 h-4 rounded-full border"
+                        style={{ backgroundColor: event.color || defaultColors[0] }}
+                      />
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {colorOptions.map((color) => (
+                    <SelectItem key={color.value} value={color.value}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded-full border"
+                          style={{ backgroundColor: color.value }}
+                        />
+                        <span className="text-xs">{color.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Client & Job Linking — always visible for reception workflow */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                <Users className="h-3 w-3" /> Client
+              </Label>
+              <Select
+                value={event.client_id || "none"}
+                onValueChange={(value) => {
+                  const newClientId = value === "none" ? "" : value;
+                  setEvent(prev => ({
+                    ...prev,
+                    client_id: newClientId,
+                    project_id: newClientId !== prev.client_id ? "" : prev.project_id,
+                  }));
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                  {clients?.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                <Briefcase className="h-3 w-3" /> Job
+              </Label>
+              <Select
+                value={event.project_id || "none"}
+                onValueChange={(value) => setEvent(prev => ({ ...prev, project_id: value === "none" ? "" : value }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                  {filteredProjects?.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name || project.title || `Job #${project.id.slice(0, 8)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Team Members — always visible for delegation */}
+          <div>
+            <TeamMemberPicker
+              selectedMembers={event.selectedTeamMembers}
+              onChange={(members) => setEvent(prev => ({ ...prev, selectedTeamMembers: members }))}
+            />
+          </div>
+
           {/* More Details - Collapsible */}
           <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
                 <Plus className="h-3.5 w-3.5" />
-                {showMoreOptions ? 'Less options' : 'Add location, description...'}
+                {showMoreOptions ? 'Less options' : 'Location, description, video...'}
                 <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showMoreOptions ? 'rotate-180' : ''}`} />
               </Button>
             </CollapsibleTrigger>
@@ -560,57 +672,6 @@ export const UnifiedAppointmentDialog = ({
                   rows={2}
                   className="resize-none text-xs"
                 />
-              </div>
-
-              {/* Client & Job Linking */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                    <Users className="h-3 w-3" /> Client
-                  </Label>
-                  <Select
-                    value={event.client_id || "none"}
-                    onValueChange={(value) => {
-                      const newClientId = value === "none" ? "" : value;
-                      setEvent(prev => ({
-                        ...prev,
-                        client_id: newClientId,
-                        project_id: newClientId !== prev.client_id ? "" : prev.project_id,
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
-                      {clients?.map((client: any) => (
-                        <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                    <Briefcase className="h-3 w-3" /> Job
-                  </Label>
-                  <Select
-                    value={event.project_id || "none"}
-                    onValueChange={(value) => setEvent(prev => ({ ...prev, project_id: value === "none" ? "" : value }))}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
-                      {filteredProjects?.map((project: any) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name || project.title || `Job #${project.id.slice(0, 8)}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               {/* Video Meeting Toggle */}
@@ -670,8 +731,8 @@ export const UnifiedAppointmentDialog = ({
                 </div>
                 <div className="flex items-center gap-2">
                   {event.notification_enabled && (
-                    <Select 
-                      value={event.notification_minutes.toString()} 
+                    <Select
+                      value={event.notification_minutes.toString()}
                       onValueChange={(v) => setEvent(prev => ({ ...prev, notification_minutes: parseInt(v) }))}
                     >
                       <SelectTrigger className="h-7 w-20 text-[10px]">
@@ -691,92 +752,15 @@ export const UnifiedAppointmentDialog = ({
                   />
                 </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Advanced Options - Collapsible */}
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
-                <Settings2 className="h-3.5 w-3.5" />
-                Advanced options
-                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-2">
-              {/* Event Type & Color */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
-                  <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                      <SelectItem value="consultation">Consultation</SelectItem>
-                      <SelectItem value="measurement">Measurement</SelectItem>
-                      <SelectItem value="installation">Installation</SelectItem>
-                      <SelectItem value="follow_up">Follow-up</SelectItem>
-                      <SelectItem value="reminder">Reminder</SelectItem>
-                      <SelectItem value="call">Call</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Color</Label>
-                  <Select 
-                    value={event.color || defaultColors[0]} 
-                    onValueChange={(value) => setEvent({ ...event, color: value })}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded-full border"
-                            style={{ backgroundColor: event.color || defaultColors[0] }}
-                          />
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colorOptions.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-4 h-4 rounded-full border"
-                              style={{ backgroundColor: color.value }}
-                            />
-                            <span className="text-xs">{color.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
               {/* Visibility */}
               <div>
-                <Label className="text-[10px] text-muted-foreground mb-1 block">Visibility</Label>
                 <EventVisibilitySelector
                   value={event.visibility}
                   onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
                   hasTeamMembers={event.selectedTeamMembers.length > 0}
                 />
               </div>
-
-              {/* Team Members */}
-              {(event.visibility === 'team' || event.visibility === 'organization') && (
-                <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Team Members</Label>
-                  <TeamMemberPicker
-                    selectedMembers={event.selectedTeamMembers}
-                    onChange={(members) => setEvent(prev => ({ ...prev, selectedTeamMembers: members }))}
-                  />
-                </div>
-              )}
 
               {/* Invite Clients */}
               <div className="flex items-center gap-2">

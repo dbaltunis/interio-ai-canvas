@@ -431,9 +431,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       if (!matchesSearch) return false;
     }
 
-    // User filter
-    if (filters.userIds.length > 0 && appointment.user_id) {
-      if (!filters.userIds.includes(appointment.user_id)) return false;
+    // User filter — check both creator and assigned team members
+    if (filters.userIds.length > 0) {
+      const isCreator = appointment.user_id && filters.userIds.includes(appointment.user_id);
+      const isAssigned = appointment.team_member_ids?.some((id: string) => filters.userIds.includes(id));
+      if (!isCreator && !isAssigned) return false;
     }
 
     // Event type filter
