@@ -193,3 +193,21 @@ verify_jwt = true
 [functions.create-invited-user]
 verify_jwt = false
 
+[functions.nylas-auth-url]
+verify_jwt = true
+
+[functions.nylas-oauth-callback]
+verify_jwt = false
+
+[functions.nylas-sync-calendar]
+verify_jwt = false
+
+[functions.delete-calendar-event]
+verify_jwt = false
+
+[functions.sync-to-outlook-calendar]
+verify_jwt = false
+
+[functions.sync-from-outlook-calendar]
+verify_jwt = true
+
