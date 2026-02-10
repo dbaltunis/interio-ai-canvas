@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, startOfWeek, endOfWeek, isSameMonth } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -81,8 +81,12 @@ export const CalendarSyncToolbar = ({
 
   // Calendar sync toggle state
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(() => {
-    const saved = localStorage.getItem('googleSyncEnabled');
-    return saved !== null ? JSON.parse(saved) : true;
+    try {
+      const saved = localStorage.getItem('googleSyncEnabled');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
   });
 
   useEffect(() => {
@@ -98,7 +102,20 @@ export const CalendarSyncToolbar = ({
     }
   };
 
-  // Auto-sync interval
+  // Stable refs for sync functions so the interval doesn't reset on every render
+  const syncFnsRef = useRef({ syncFromGoogle, syncAllToGoogle, syncFromOutlook, syncAllToOutlook, syncFromNylas, syncToNylas });
+  useEffect(() => {
+    syncFnsRef.current = { syncFromGoogle, syncAllToGoogle, syncFromOutlook, syncAllToOutlook, syncFromNylas, syncToNylas };
+  });
+
+  const runSync = useCallback(() => {
+    const fns = syncFnsRef.current;
+    if (isConnected) { fns.syncFromGoogle(); fns.syncAllToGoogle(); }
+    if (isOutlookConnected) { fns.syncFromOutlook(); fns.syncAllToOutlook(); }
+    if (isNylasConnected) { fns.syncFromNylas(); fns.syncToNylas(); }
+  }, [isConnected, isOutlookConnected, isNylasConnected]);
+
+  // Auto-sync: initial sync on mount + stable 5-minute interval
   useEffect(() => {
     if ((!isConnected && !isOutlookConnected && !isNylasConnected) || !calendarSyncEnabled) return;
 
@@ -111,21 +128,15 @@ export const CalendarSyncToolbar = ({
       (lastNylasSync && Date.now() - new Date(lastNylasSync).getTime() > 5 * 60 * 1000);
 
     if (shouldSyncNow) {
-      if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
-      if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
-      if (isNylasConnected) { syncFromNylas(); syncToNylas(); }
+      runSync();
     }
 
     const interval = setInterval(() => {
-      if (calendarSyncEnabled) {
-        if (isConnected) { syncFromGoogle(); syncAllToGoogle(); }
-        if (isOutlookConnected) { syncFromOutlook(); syncAllToOutlook(); }
-        if (isNylasConnected) { syncFromNylas(); syncToNylas(); }
-      }
+      if (calendarSyncEnabled) runSync();
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isConnected, isOutlookConnected, isNylasConnected, calendarSyncEnabled, integration?.last_sync, outlookIntegration?.last_sync, nylasIntegration?.last_sync, syncFromGoogle, syncAllToGoogle, syncFromOutlook, syncAllToOutlook, syncFromNylas, syncToNylas]);
+  }, [isConnected, isOutlookConnected, isNylasConnected, calendarSyncEnabled, integration?.last_sync, outlookIntegration?.last_sync, nylasIntegration?.last_sync, runSync]);
 
   const handleSchedulerClick = () => {
     if (isPermissionLoaded && !canCreateAppointments) {

@@ -35,6 +35,12 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onH
   });
 
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
+
+  // Keep sidebar mini-calendar in sync when parent navigates (toolbar arrows, Today button)
+  useEffect(() => {
+    setSidebarDate(currentDate);
+  }, [currentDate]);
+
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem("calendar.hiddenSources");
