@@ -65,6 +65,43 @@ export const useAppointments = () => {
   });
 };
 
+/** Notify team members when they are added to an appointment */
+async function notifyTeamMembers(
+  appointmentData: any,
+  appointmentId: string,
+  creatorId: string
+) {
+  const teamMemberIds: string[] = appointmentData.team_member_ids || [];
+  if (teamMemberIds.length === 0) return;
+
+  // Don't notify the creator
+  const membersToNotify = teamMemberIds.filter(id => id !== creatorId);
+  if (membersToNotify.length === 0) return;
+
+  const title = appointmentData.title || 'Untitled Event';
+  const startTime = appointmentData.start_time
+    ? new Date(appointmentData.start_time).toLocaleString()
+    : '';
+
+  const notifications = membersToNotify.map(memberId => ({
+    user_id: memberId,
+    title: 'New Calendar Event',
+    message: `You've been invited to "${title}"${startTime ? ` on ${startTime}` : ''}`,
+    type: 'calendar_invite',
+    category: 'calendar',
+    source_type: 'appointment',
+    source_id: appointmentId,
+    action_url: `/calendar`,
+    read: false,
+  }));
+
+  try {
+    await supabase.from('notifications').insert(notifications as any);
+  } catch (err) {
+    console.error('Failed to notify team members:', err);
+  }
+}
+
 /** Sync to all connected calendars (Google, Outlook, Nylas) */
 async function syncToConnectedCalendars(appointmentId: string, userId: string) {
   const { data: integrations } = await supabase
@@ -131,12 +168,15 @@ export const useCreateAppointment = () => {
       if (error) throw error;
       return insertData;
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment created successfully",
       });
+
+      // Notify team members added to this event
+      notifyTeamMembers(variables, data.id, data.user_id);
 
       // Auto-sync to all connected calendars (Google + Outlook + Nylas)
       try {
@@ -183,6 +223,15 @@ export const useUpdateAppointment = () => {
         title: "Success",
         description: "Appointment updated successfully",
       });
+
+      // Notify newly added team members
+      if (variables.team_member_ids) {
+        notifyTeamMembers(
+          { ...data, ...variables },
+          data.id,
+          data.user_id
+        );
+      }
 
       // Auto-sync to connected calendars if appointment details changed
       const timeFieldsChanged = variables.start_time || variables.end_time || variables.title || variables.description || variables.location;

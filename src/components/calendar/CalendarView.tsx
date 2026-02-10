@@ -372,7 +372,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     }
   };
 
-  const handleQuickAddMoreOptions = (prefill: { title: string; date: Date; startTime: string; endTime: string }) => {
+  const handleQuickAddMoreOptions = (prefill: { title: string; date: Date; startTime: string; endTime: string; [key: string]: any }) => {
     setSelectedDate(prefill.date);
     setSelectedStartTime(prefill.startTime);
     setSelectedEndTime(prefill.endTime);
