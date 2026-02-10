@@ -303,6 +303,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     // Capture click position for popover anchoring
     if (event) {
       setQuickAddAnchorPosition({ x: event.clientX, y: event.clientY });
+    } else {
+      // Fallback: center of viewport if no mouse event
+      setQuickAddAnchorPosition({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 3 });
     }
 
     // Open QuickAddPopover
