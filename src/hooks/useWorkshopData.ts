@@ -268,7 +268,7 @@ export const useWorkshopData = (projectId?: string) => {
       const hems = {
         header: summary?.measurements_details?.header_hem || summary?.measurements_details?.header_allowance_cm || summary?.template_details?.header_allowance || 0,
         bottom: summary?.measurements_details?.bottom_hem || summary?.measurements_details?.bottom_hem_cm || summary?.template_details?.bottom_hem || 0,
-        side: summary?.measurements_details?.side_hem || summary?.measurements_details?.side_hems_cm || summary?.template_details?.side_hems || 0,
+        side: summary?.measurements_details?.side_hem || summary?.measurements_details?.side_hems_cm || summary?.measurements_details?.side_hems || summary?.template_details?.side_hems || 0,
         seam: summary?.measurements_details?.seam_hem || summary?.measurements_details?.seam_hems_cm || summary?.template_details?.seam_hems || 0,
       };
 

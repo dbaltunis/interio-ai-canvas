@@ -11,7 +11,11 @@ import { WorkshopInformationLandscape } from "./WorkshopInformationLandscape";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
-
+import {
+  detectTreatmentCategory,
+  isManufacturedItem,
+  shouldShowHemAllowances
+} from "@/utils/treatmentTypeUtils";
 interface WorkshopInformationProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
@@ -218,17 +222,18 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
               <table className="w-full text-xs">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left p-2 font-semibold border-r">Item</th>
-                    <th className="text-left p-2 font-semibold border-r">Fabric & Specs</th>
-                    <th className="text-left p-2 font-semibold border-r">Measurements</th>
-                    <th className="text-left p-2 font-semibold">Notes</th>
+                    <th className="text-left p-2 font-semibold border-r w-[15%]">Item</th>
+                    <th className="text-left p-2 font-semibold border-r w-[25%]">Fabric & Specs</th>
+                    <th className="text-left p-2 font-semibold border-r w-[15%]">Measurements</th>
+                    <th className="text-left p-2 font-semibold border-r w-[25%]">Sewing Details</th>
+                    <th className="text-left p-2 font-semibold w-[20%]">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {room.items.map((item) => (
                     <tr key={item.id} className="border-t">
                       {/* Item Column */}
-                      <td className="p-2 border-r align-top w-[20%]">
+                      <td className="p-2 border-r align-top">
                         <div className="font-medium mb-1">{item.location}</div>
                         <div className="text-[10px] text-muted-foreground mb-2">
                           {item.treatmentType || 'No treatment'}
@@ -243,7 +248,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                       </td>
                       
                       {/* Fabric & Specs Column */}
-                      <td className="p-2 border-r align-top w-[30%]">
+                      <td className="p-2 border-r align-top">
                         {item.fabricDetails && (
                           <div className="mb-2">
                             <div className="font-medium text-blue-700 mb-1">{item.fabricDetails.name}</div>
@@ -263,31 +268,10 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                             <div>Widths: {item.fabricUsage.widthsRequired} | Seams: {item.fabricUsage.seamsRequired}</div>
                           </div>
                         )}
-                        
-                        {item.fullness && (
-                          <div className="bg-purple-50 p-1.5 rounded text-[10px]">
-                            <div className="font-semibold">{item.fullness.headingType}</div>
-                            <div>Fullness: {item.fullness.ratio}x</div>
-                          </div>
-                        )}
-                        
-                        {item.hems && (
-                          <div className="mt-2 text-[10px]">
-                            <div className="font-semibold mb-0.5">Hems:</div>
-                            <div>H:{formatFromCM(item.hems.header, units.length)} | B:{formatFromCM(item.hems.bottom, units.length)} | S:{formatFromCM(item.hems.side, units.length)}</div>
-                          </div>
-                        )}
-
-                        {item.returns && (item.returns.left > 0 || item.returns.right > 0) && (
-                          <div className="mt-2 text-[10px]">
-                            <div className="font-semibold mb-0.5">Returns:</div>
-                            <div>L:{formatFromCM(item.returns.left, units.length)} | R:{formatFromCM(item.returns.right, units.length)}</div>
-                          </div>
-                        )}
                       </td>
 
                       {/* Measurements Column */}
-                      <td className="p-2 border-r align-top w-[15%]">
+                      <td className="p-2 border-r align-top">
                         {item.measurements && (
                           <div className="space-y-1 text-[10px] font-mono">
                             {item.measurements.width && (
@@ -307,13 +291,81 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                             )}
                           </div>
                         )}
-                        
-                        {item.liningDetails && (
-                          <div className="mt-2 text-[10px]">
-                            <div className="font-semibold">Lining:</div>
-                            <div>{item.liningDetails.name}</div>
-                          </div>
-                        )}
+                      </td>
+
+                      {/* Sewing Details Column */}
+                      <td className="p-2 border-r align-top">
+                        {(() => {
+                          const detectedCategory = detectTreatmentCategory({
+                            treatmentType: item.treatmentType,
+                            summary: item.summary
+                          });
+                          const isBlindTreatment = isManufacturedItem(detectedCategory);
+                          const showHems = shouldShowHemAllowances(detectedCategory);
+
+                          const hasFullness = item.fullness && item.fullness.ratio > 0 && item.fullness.ratio !== 1;
+                          const hasHems = item.hems && (item.hems.header > 0 || item.hems.bottom > 0 || item.hems.side > 0);
+
+                          return (
+                            <div className="space-y-1 text-[10px]">
+                              {/* Fullness & heading */}
+                              {!isBlindTreatment && hasFullness && (
+                                <div className="font-medium text-purple-700">
+                                  {item.fullness!.ratio}x {item.fullness!.headingType}
+                                </div>
+                              )}
+
+                              {/* Hem Allowances */}
+                              {showHems && hasHems && (
+                                <div className="space-y-0.5">
+                                  <div className="font-semibold">Hems:</div>
+                                  {item.hems!.header > 0 && (
+                                    <div>• Header: {formatFromCM(item.hems!.header, units.length)}</div>
+                                  )}
+                                  {item.hems!.bottom > 0 && (
+                                    <div>• Bottom: {formatFromCM(item.hems!.bottom, units.length)}</div>
+                                  )}
+                                  {item.hems!.side > 0 && (
+                                    <div>• Side: {formatFromCM(item.hems!.side, units.length)} (each)</div>
+                                  )}
+                                  {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && item.hems!.seam && item.hems!.seam > 0 && (
+                                    <div className="text-orange-600 font-medium">
+                                      • Seam: {formatFromCM(item.hems!.seam, units.length)} (×{item.fabricUsage.seamsRequired})
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Returns */}
+                              {!isBlindTreatment && item.returns && (item.returns.left > 0 || item.returns.right > 0) && (
+                                <div className="space-y-0.5">
+                                  <div className="font-semibold">Returns:</div>
+                                  {item.returns.left > 0 && (
+                                    <div>• Left: {formatFromCM(item.returns.left, units.length)}</div>
+                                  )}
+                                  {item.returns.right > 0 && (
+                                    <div>• Right: {formatFromCM(item.returns.right, units.length)}</div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Lining */}
+                              {!isBlindTreatment && item.liningDetails && (
+                                <div>
+                                  <span className="font-semibold">Lining:</span> {item.liningDetails.name}
+                                </div>
+                              )}
+
+                              {/* Blinds manufacturing summary */}
+                              {isBlindTreatment && (
+                                <div className="text-muted-foreground">
+                                  <div className="font-semibold">Manufacturing:</div>
+                                  <div>Standard blind assembly</div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       
                       {/* Notes Column */}
