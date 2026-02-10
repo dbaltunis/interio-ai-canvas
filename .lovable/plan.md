@@ -1,73 +1,46 @@
 
 
-## Fix: Missing Sewing/Manufacturing Details in Work Order Views
+## Unify Event Creation with the Inline Edit Experience
 
 ### Problem
-
-The **portrait** work order view (`WorkshopInformation.tsx`) has **no dedicated "Sewing Details" column**. It uses 4 columns: Item | Fabric & Specs | Measurements | Notes. Hem values are buried in the "Fabric & Specs" column as a compact one-liner (`H:8cm | B:15cm | S:0cm`), and critical manufacturing details like **fullness/heading type, seam allowances, returns, and lining** are either hidden or absent.
-
-The **landscape** view already has a proper "Sewing Details" column, but it conditionally hides details when values are zero, which can suppress valid information like side hems that are stored as `null` in the database.
-
-### What Makers Need to See
-
-For curtains/romans:
-- Fullness ratio and heading type (e.g., "2.5x Pinch pleat")
-- Hem allowances: Header, Bottom, Side (each)
-- Seam allowance (per join x count)
-- Returns: Left / Right
-- Lining type
-
-For blinds/shutters:
-- Mounting type, control side, bracket type
-- Slat/louver size
-- Manufacturing notes
+The **new event creation** currently uses a `Dialog` component (modal overlay with blurred/dimmed backdrop), which feels disconnected from the calendar. The **inline edit** mode on `EventDetailPopover` uses a `Popover` that appears sharp and attached directly next to the event on the calendar -- this is the experience you prefer.
 
 ### Solution
+Convert `QuickAddPopover` from a `Dialog` (modal with backdrop blur) to a `Popover` that appears inline on the calendar, matching the same sharp, clean look as the edit mode in `EventDetailPopover`. Both creation and editing will then share the same visual style.
 
-**1. Portrait view (`WorkshopInformation.tsx`) -- Add a "Sewing Details" column**
+### Technical Changes
 
-Restructure the table from 4 columns to 5 columns:
-- Item (15%) | Fabric & Details (30%) | Measurements (15%) | **Sewing Details (20%)** | Notes (20%)
+**1. `src/components/calendar/QuickAddPopover.tsx` -- Switch from Dialog to Popover**
 
-The new "Sewing Details" column will mirror the landscape view's logic:
-- Show fullness ratio and heading type for curtains/romans
-- Show hem allowances (header, bottom, side) with proper unit formatting
-- Show seam allowance when seams are present
-- Show returns (left/right) when non-zero
-- Show lining type
-- For blinds: show mounting type, control side, and other relevant manufacturing details
+- Replace `Dialog`/`DialogContent` with `Popover`/`PopoverContent`
+- Accept an anchor position (click coordinates or a ref) so the popover appears near where the user clicked on the calendar grid
+- Keep all the existing form content (title, duration chips, type pills, color, save/more options) exactly the same
+- Add the colored header bar (`h-2` with selected color) matching the edit popover
+- Use the same styling: `p-0 overflow-hidden`, `w-80`, rounded corners, shadow
 
-Move hems and fullness OUT of the "Fabric & Specs" column (lines 267-279) into the new column.
+**2. `src/components/calendar/CalendarView.tsx` -- Pass click position**
 
-**2. Landscape view (`WorkshopInformationLandscape.tsx`) -- Ensure completeness**
+- When the user clicks a time slot, capture the click event coordinates or the clicked element
+- Store a ref/position so the popover can anchor to the click location
+- Pass anchor info to QuickAddPopover
 
-Minor fixes:
-- Show lining details in the sewing details column (currently only shown in portrait measurements column)
-- Ensure side hems display even when stored under alternative keys (`side_hems_cm` vs `side_hem`)
+**3. Shared constants**
 
-**3. Data layer (`useWorkshopData.ts`) -- Improve side hem resolution**
+- The `DURATION_CHIPS`, `EVENT_TYPES`, and `COLOR_DOTS` arrays are already duplicated between both files. Extract them into a shared `calendarConstants.ts` file for consistency.
 
-The `side_hem` field is `null` in the database for some treatments. The fallback chain (line 271) tries `side_hem -> side_hems_cm -> template_details.side_hems`, but the template_details also has no value. Need to also check `measurements_details.side_hems` (plural) as an additional fallback.
+### What Will Change Visually
 
-### Technical Details
+- No more blurred backdrop overlay when creating an event
+- The creation form appears as a sharp, clean popover anchored to the calendar grid (just like the edit popover)
+- Same color header bar, same typography, same button styles
+- Users can still see the calendar behind the popover
+- Clicking outside dismisses it (same as edit)
+- "More options" still opens the full advanced dialog
 
-**File: `src/components/workroom/templates/WorkshopInformation.tsx`**
+### What Stays the Same
 
-- Change table header from 4 to 5 columns: add "Sewing Details" between "Measurements" and "Notes"
-- Add new `<td>` with sewing details logic (matching landscape view pattern):
-  - Use `detectTreatmentCategory` and `isManufacturedItem` from `treatmentTypeUtils`
-  - Show fullness, hems, returns, seams, lining conditionally
-  - For blinds: show manufacturing summary
-- Remove duplicate hem/fullness display from "Fabric & Specs" column
-- Adjust column widths: Item 15%, Fabric 25%, Measurements 15%, Sewing 25%, Notes 20%
-
-**File: `src/components/workroom/templates/WorkshopInformationLandscape.tsx`**
-
-- Add lining details display in the sewing details column
-- Add seam allowance info alongside hem allowances
-
-**File: `src/hooks/useWorkshopData.ts`**
-
-- Expand side hem fallback chain (line 271) to also check `side_hems` (plural form) in measurements_details
-- Pass through lining details to the sewing section data
+- All form fields (title, duration, type, color, save, more options)
+- Keyboard shortcuts (Enter to save, Escape to close)
+- Permission checks
+- The "More options" flow to UnifiedAppointmentDialog
 
