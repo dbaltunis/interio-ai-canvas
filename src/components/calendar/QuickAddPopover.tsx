@@ -7,6 +7,7 @@ import { Clock, Palette, ChevronRight } from "lucide-react";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 const DURATION_CHIPS = [
   { label: "25m", minutes: 25 },
@@ -14,15 +15,6 @@ const DURATION_CHIPS = [
   { label: "45m", minutes: 45 },
   { label: "1h", minutes: 60 },
   { label: "1.5h", minutes: 90 },
-];
-
-const EVENT_TYPES = [
-  { value: "meeting", label: "Meeting", color: "#3B82F6" },
-  { value: "consultation", label: "Consult", color: "#22C55E" },
-  { value: "installation", label: "Install", color: "#F59E0B" },
-  { value: "call", label: "Call", color: "#EF4444" },
-  { value: "measurement", label: "Measure", color: "#8B5CF6" },
-  { value: "follow-up", label: "Follow-up", color: "#06B6D4" },
 ];
 
 const COLOR_DOTS = [
@@ -36,7 +28,7 @@ interface QuickAddPopoverProps {
   date: Date;
   startTime: string;
   endTime?: string;
-  onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string }) => void;
+  onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string; note: string; visibility: string; teamMemberIds: string[] }) => void;
   children?: React.ReactNode;
 }
 
@@ -50,13 +42,15 @@ export const QuickAddPopover = ({
 }: QuickAddPopoverProps) => {
   const [title, setTitle] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(30);
-  const [selectedType, setSelectedType] = useState("meeting");
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [note, setNote] = useState("");
+  const [selectedCalendar, setSelectedCalendar] = useState("personal");
   const inputRef = useRef<HTMLInputElement>(null);
   const createAppointment = useCreateAppointment();
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
+  const { data: teamMembers } = useTeamMembers();
 
   // Calculate initial duration from startTime-endTime range
   useEffect(() => {
@@ -77,9 +71,10 @@ export const QuickAddPopover = ({
     } else {
       setTitle("");
       setSelectedDuration(30);
-      setSelectedType("meeting");
       setSelectedColor("#6366F1");
       setShowColorPicker(false);
+      setNote("");
+      setSelectedCalendar("personal");
     }
   }, [open]);
 
@@ -107,22 +102,27 @@ export const QuickAddPopover = ({
     const dateStr = format(date, 'yyyy-MM-dd');
     const end = computedEndTime();
 
-    // Create proper Date objects in browser local timezone, then convert to UTC ISO
-    // This matches how the calendar grid displays events (using browser local time)
     const [year, month, day] = dateStr.split('-').map(Number);
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
     const startDate = new Date(year, month - 1, day, startH || 0, startM || 0, 0);
     const endDate = new Date(year, month - 1, day, endH || 0, endM || 0, 0);
 
+    // Determine team members and visibility based on selected calendar
+    const isTeamCalendar = selectedCalendar !== "personal";
+    const teamMemberIds = isTeamCalendar ? (teamMembers || []).map(m => m.id) : [];
+    const visibility = isTeamCalendar ? 'team' : 'private';
+
     try {
       await createAppointment.mutateAsync({
         title: title.trim(),
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
-        appointment_type: selectedType as any,
         color: selectedColor,
-      });
+        description: note.trim() || undefined,
+        team_member_ids: teamMemberIds.length > 0 ? teamMemberIds : undefined,
+        visibility,
+      } as any);
       onOpenChange(false);
     } catch {
       // Error handled by mutation
@@ -140,22 +140,33 @@ export const QuickAddPopover = ({
   };
 
   const handleMoreOptions = () => {
+    const isTeamCalendar = selectedCalendar !== "personal";
+    const teamMemberIds = isTeamCalendar ? (teamMembers || []).map(m => m.id) : [];
+
     onMoreOptions?.({
       title: title.trim(),
       date,
       startTime,
       endTime: computedEndTime(),
       color: selectedColor,
-      type: selectedType,
+      type: "meeting",
+      note: note.trim(),
+      visibility: isTeamCalendar ? 'team' : 'private',
+      teamMemberIds,
     });
     onOpenChange(false);
   };
 
   const endTimeStr = computedEndTime();
 
+  // Build calendar options from sidebar sources
+  const calendarOptions = [
+    { id: "personal", label: "My Calendar", color: "#6366F1" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[360px] p-0 gap-0 overflow-hidden rounded-xl border shadow-xl [&>button]:hidden">
+      <DialogContent className="sm:max-w-[360px] p-0 gap-0 overflow-hidden rounded-xl border shadow-xl [&>button]:hidden" style={{ top: '30%', transform: 'translate(-50%, -50%)' }}>
         {/* Header with date/time */}
         <div className="bg-muted/40 px-4 py-3 border-b flex items-center gap-2 text-sm">
           <Clock className="h-4 w-4 text-muted-foreground" />
@@ -197,35 +208,6 @@ export const QuickAddPopover = ({
             </div>
           </div>
 
-          {/* Event type pills */}
-          <div>
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
-            <div className="flex flex-wrap gap-1.5">
-              {EVENT_TYPES.map(type => (
-                <button
-                  key={type.value}
-                  type="button"
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                    selectedType === type.value
-                      ? 'ring-2 ring-offset-1 shadow-sm'
-                      : 'opacity-50 hover:opacity-80'
-                  }`}
-                  style={{
-                    backgroundColor: `${type.color}20`,
-                    color: type.color,
-                    ...(selectedType === type.value ? { ringColor: type.color } : {}),
-                  }}
-                  onClick={() => {
-                    setSelectedType(type.value);
-                    setSelectedColor(type.color);
-                  }}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Color selector */}
           <div>
             <button
@@ -252,6 +234,43 @@ export const QuickAddPopover = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Calendar selector */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Calendar</div>
+            <div className="flex flex-wrap gap-1.5">
+              {calendarOptions.map(cal => (
+                <button
+                  key={cal.id}
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                    selectedCalendar === cal.id
+                      ? 'bg-foreground text-background shadow-sm'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  onClick={() => setSelectedCalendar(cal.id)}
+                >
+                  {selectedCalendar !== cal.id && (
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cal.color }} />
+                  )}
+                  {cal.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Note */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note</div>
+            <Input
+              placeholder="Add a note..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-9 text-sm border rounded-md"
+              autoComplete="off"
+            />
           </div>
 
           {/* Actions */}

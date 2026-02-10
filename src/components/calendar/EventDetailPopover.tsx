@@ -24,15 +24,6 @@ const DURATION_CHIPS = [
   { label: "1.5h", minutes: 90 },
 ];
 
-const EVENT_TYPES = [
-  { value: "meeting", label: "Meeting", color: "#3B82F6" },
-  { value: "consultation", label: "Consult", color: "#22C55E" },
-  { value: "installation", label: "Install", color: "#F59E0B" },
-  { value: "call", label: "Call", color: "#EF4444" },
-  { value: "measurement", label: "Measure", color: "#8B5CF6" },
-  { value: "follow-up", label: "Follow-up", color: "#06B6D4" },
-];
-
 const COLOR_DOTS = [
   "#6366F1", "#3B82F6", "#22C55E", "#F59E0B",
   "#EF4444", "#EC4899", "#8B5CF6", "#14B8A6",
@@ -224,35 +215,6 @@ export const EventDetailPopover = ({
                       onClick={() => setEditDuration(chip.minutes)}
                     >
                       {chip.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Event type pills */}
-              <div>
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {EVENT_TYPES.map(type => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                        editType === type.value
-                          ? 'ring-2 ring-offset-1 shadow-sm'
-                          : 'opacity-50 hover:opacity-80'
-                      }`}
-                      style={{
-                        backgroundColor: `${type.color}20`,
-                        color: type.color,
-                        ...(editType === type.value ? { ringColor: type.color } : {}),
-                      }}
-                      onClick={() => {
-                        setEditType(type.value);
-                        setEditColor(type.color);
-                      }}
-                    >
-                      {type.label}
                     </button>
                   ))}
                 </div>
