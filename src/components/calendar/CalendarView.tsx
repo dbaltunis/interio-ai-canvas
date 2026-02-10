@@ -201,6 +201,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [quickAddDate, setQuickAddDate] = useState<Date>(new Date());
   const [quickAddStartTime, setQuickAddStartTime] = useState("09:00");
   const [quickAddEndTime, setQuickAddEndTime] = useState<string | undefined>();
+  const [quickAddAnchorPosition, setQuickAddAnchorPosition] = useState<{ x: number; y: number } | undefined>();
   
   // Enable real-time updates
   useRealtimeBookings();
@@ -278,7 +279,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return <MobileCalendarView />;
   }
 
-  const handleTimeSlotClick = (date: Date, time: string) => {
+  const handleTimeSlotClick = (date: Date, time: string, event?: React.MouseEvent) => {
     // Permission check
     const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
     if (isPermissionLoaded && !canCreateAppointments) {
@@ -297,6 +298,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       const [s, e] = time.split('-');
       startT = s;
       endT = e;
+    }
+
+    // Capture click position for popover anchoring
+    if (event) {
+      setQuickAddAnchorPosition({ x: event.clientX, y: event.clientY });
     }
 
     // Open QuickAddPopover
@@ -590,6 +596,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         startTime={quickAddStartTime}
         endTime={quickAddEndTime}
         onMoreOptions={handleQuickAddMoreOptions}
+        anchorPosition={quickAddAnchorPosition}
       />
 
       {/* Unified Appointment Dialog for both create and edit */}

@@ -27,7 +27,7 @@ interface DroppableSlotProps {
   isOccupied: boolean;
   onMouseDown: (date: Date, idx: number, e: React.MouseEvent) => void;
   onMouseMove: (date: Date, idx: number) => void;
-  onClick: (date: Date, time: string) => void;
+  onClick: (date: Date, time: string, e?: React.MouseEvent) => void;
   isCreating: boolean;
 }
 
@@ -46,7 +46,7 @@ const DroppableSlot = memo(({ id, day, timeSlotIndex, time, isBusinessHour, isOc
       style={{ height: `${SLOT_HEIGHT}px` }}
       onMouseDown={(e) => !isOccupied && onMouseDown(day, timeSlotIndex, e)}
       onMouseMove={() => !isOccupied && onMouseMove(day, timeSlotIndex)}
-      onClick={() => !isCreating && !isOccupied && onClick(day, time)}
+      onClick={(e) => !isCreating && !isOccupied && onClick(day, time, e)}
     />
   );
 });
@@ -228,7 +228,7 @@ const useCurrentTimePosition = (showExtendedHours: boolean) => {
 interface WeeklyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
-  onTimeSlotClick?: (date: Date, time: string) => void;
+  onTimeSlotClick?: (date: Date, time: string, event?: React.MouseEvent) => void;
   onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
   hiddenSources?: Set<string>;
@@ -320,8 +320,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     setEventCreationEnd(null);
   }, [isCreatingEvent, eventCreationStart, eventCreationEnd, timeSlots, onTimeSlotClick]);
 
-  const handleSlotClick = useCallback((date: Date, time: string) => {
-    onTimeSlotClick?.(date, time);
+  const handleSlotClick = useCallback((date: Date, time: string, e?: React.MouseEvent) => {
+    onTimeSlotClick?.(date, time, e);
   }, [onTimeSlotClick]);
 
   // Drag and drop
