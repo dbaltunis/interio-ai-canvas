@@ -439,7 +439,7 @@ export class CalculationEngine {
     // PRIORITY 1: Grid pricing
     if (fabric.pricing_method === 'pricing_grid' && fabric.pricing_grid_data) {
       if (width_cm && drop_cm) {
-        const gridMarkup = (fabric as any).pricing_grid_markup || 0;
+        const gridMarkup = (fabric as any).pricing_grid_markup ?? 0;
         console.log('📊 FABRIC GRID LOOKUP (CalculationEngine):', {
           widthCm: width_cm,
           dropCm: drop_cm,

@@ -594,6 +594,7 @@ export const CostCalculationSummary = ({
     const fabricMarkupResult = resolveMarkup({
       impliedMarkup, // Implied from cost_price vs selling_price
       gridMarkup: fabricToUse?.pricing_grid_markup, // Grid-level markup if exists
+      usesPricingGrid: hasValidPricingGrid(fabricToUse?.pricing_grid_data), // Respect grid pricing precedence
       productMarkup: fabricToUse?.markup_percentage, // Product-level markup if exists
       category: 'blinds',
       markupSettings
@@ -800,7 +801,7 @@ export const CostCalculationSummary = ({
     gridPriceForCurtain = getPriceFromGrid(fabricToUse.pricing_grid_data, effectiveWidthCm, effectiveDropCm);
     
     // Apply markup if set
-    const gridMarkup = fabricToUse.pricing_grid_markup || 0;
+    const gridMarkup = fabricToUse.pricing_grid_markup ?? 0;
     if (gridMarkup > 0) {
       gridPriceForCurtain = gridPriceForCurtain * (1 + gridMarkup / 100);
     }
@@ -1053,6 +1054,7 @@ export const CostCalculationSummary = ({
   const fabricMarkupResult = resolveMarkup({
     impliedMarkup: curtainImpliedMarkup, // Pass implied markup to prevent double-markup
     gridMarkup: fabricToUse?.pricing_grid_markup, // Pass grid markup if exists
+    usesPricingGrid: !!hasCurtainPricingGrid, // Respect grid pricing precedence
     productMarkup: fabricToUse?.markup_percentage, // Pass product markup if exists
     category: treatmentCategory || 'curtains',
     markupSettings

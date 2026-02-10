@@ -262,8 +262,9 @@ export function calculateTreatment(input: TreatmentCalculationInput): TreatmentC
 
   // Build formula breakdown for transparency
   const formulaSteps: string[] = [];
-  if (engineResult.formula) {
-    formulaSteps.push(...(engineResult.formula.steps || []));
+  const formulaData = engineResult.formula_breakdown || engineResult.formula;
+  if (formulaData) {
+    formulaSteps.push(...(formulaData.steps || []));
   }
   formulaSteps.push(`Cost total: ${total_cost.toFixed(2)}`);
   formulaSteps.push(`Markup: ${markupPercentage}% (source: ${markupSource})`);

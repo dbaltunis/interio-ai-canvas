@@ -343,7 +343,7 @@ export const AdaptiveFabricPricingDisplay = ({
       {/* Grid Price - Simple Display */}
       {(() => {
         // ✅ FIX: Apply markup to grid price for display
-        const gridMarkup = fabricToUse?.pricing_grid_markup || 0;
+        const gridMarkup = fabricToUse?.pricing_grid_markup ?? 0;
         const markupMultiplier = gridMarkup > 0 ? (1 + gridMarkup / 100) : 1;
         const gridPriceWithMarkup = gridPrice * markupMultiplier;
         

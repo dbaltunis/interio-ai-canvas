@@ -68,7 +68,10 @@ export async function resyncWindowTotalSelling(
   // Get fabric details to check for product markup
   const fabricDetails = summary.fabric_details as any;
   const productMarkup = fabricDetails?.markup_percentage;
-  const gridMarkup = fabricDetails?.pricing_grid_markup;
+  const gridMarkup = fabricDetails?.pricing_grid_markup ?? undefined;
+  const usesPricingGrid = fabricDetails?.pricing_method === 'pricing_grid' ||
+                          fabricDetails?.pricing_method === 'price_grid' ||
+                          gridMarkup != null;
 
   // Recalculate component selling prices
   const fabricCost = summary.fabric_cost || 0;
@@ -81,6 +84,7 @@ export async function resyncWindowTotalSelling(
   const fabricSelling = applyMarkup(fabricCost, resolveMarkup({
     productMarkup,
     gridMarkup,
+    usesPricingGrid,
     category: treatmentCat,
     markupSettings
   }).percentage);

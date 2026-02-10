@@ -312,32 +312,43 @@ export const useGoogleCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Step 1: Get all sync records to identify events pulled FROM Google
-      const { data: syncRecords } = await supabase
-        .from('google_calendar_sync_events' as any)
-        .select('appointment_id, sync_direction')
-        .eq('user_id', user.id);
+      // Step 1: Find the integration record to get integration_id
+      const { data: integration } = await supabase
+        .from('integration_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('integration_type', 'google_calendar')
+        .maybeSingle();
 
-      // Step 2: Delete appointments that were pulled FROM Google (not user-created)
-      const fromGoogleIds = (syncRecords || [])
-        .filter((r: any) => r.sync_direction === 'from_google')
-        .map((r: any) => r.appointment_id);
+      // Step 2: Get sync records to identify events pulled FROM Google
+      // Table uses integration_id (not user_id) as per schema
+      if (integration?.id) {
+        const { data: syncRecords } = await supabase
+          .from('google_calendar_sync_events' as any)
+          .select('appointment_id, sync_direction')
+          .eq('integration_id', integration.id);
 
-      if (fromGoogleIds.length > 0) {
-        await supabase
-          .from('appointments')
-          .delete()
-          .in('id', fromGoogleIds);
+        // Step 3: Delete appointments that were pulled FROM Google (not user-created)
+        const fromGoogleIds = (syncRecords || [])
+          .filter((r: any) => r.sync_direction === 'from_google')
+          .map((r: any) => r.appointment_id);
+
+        if (fromGoogleIds.length > 0) {
+          await supabase
+            .from('appointments')
+            .delete()
+            .in('id', fromGoogleIds);
+        }
       }
 
-      // Step 3: Clear google_event_id from remaining appointments (user-created events pushed to Google)
+      // Step 4: Clear google_event_id from remaining appointments (user-created events pushed to Google)
       await supabase
         .from('appointments')
         .update({ google_event_id: null } as any)
         .eq('user_id', user.id)
         .not('google_event_id', 'is', null);
 
-      // Step 4: Delete the integration (CASCADE will clean up sync records)
+      // Step 5: Delete the integration (CASCADE will clean up sync records)
       const { error } = await supabase
         .from('integration_settings')
         .delete()

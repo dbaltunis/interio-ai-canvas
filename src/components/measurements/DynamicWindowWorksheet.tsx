@@ -2227,7 +2227,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   color: fabricColor,
                   // ✅ CRITICAL: Save markup sources for proper resolution when loading saved data
                   markup_percentage: selectedItems.fabric?.markup_percentage || selectedItems.material?.markup_percentage || undefined,
-                  pricing_grid_markup: selectedItems.fabric?.pricing_grid_markup || selectedItems.material?.pricing_grid_markup || undefined,
+                  pricing_grid_markup: selectedItems.fabric?.pricing_grid_markup ?? selectedItems.material?.pricing_grid_markup ?? undefined,
                   pricing_grid_discount: selectedItems.fabric?.pricing_grid_discount || selectedItems.material?.pricing_grid_discount || 0,
                   // Implied markup from library pricing (cost_price vs selling_price)
                   implied_markup: (() => {
