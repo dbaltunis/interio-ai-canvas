@@ -150,7 +150,7 @@ async function syncFromProvider(
       continue;
     }
 
-    const appointmentData = {
+    const appointmentData: any = {
       user_id: userId,
       title: event.title || 'No Title',
       description: event.description || '',
@@ -161,6 +161,13 @@ async function syncFromProvider(
       appointment_type: 'personal',
       color: event.organizer_email ? undefined : '#3b82f6',
     };
+
+    // Sync participants/attendees
+    if (event.participants && event.participants.length > 0) {
+      appointmentData.invited_client_emails = event.participants
+        .map((p: any) => p.email)
+        .filter(Boolean);
+    }
 
     const existing = existingByNylasId.get(event.id);
 
@@ -270,6 +277,13 @@ async function syncToProvider(
 
       if (apt.location) {
         eventData.location = apt.location;
+      }
+
+      // Include participants/attendees
+      if (apt.invited_client_emails && apt.invited_client_emails.length > 0) {
+        eventData.participants = apt.invited_client_emails
+          .filter(Boolean)
+          .map((email: string) => ({ email }));
       }
 
       if (apt.nylas_event_id) {

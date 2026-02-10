@@ -211,3 +211,9 @@ verify_jwt = false
 [functions.sync-from-outlook-calendar]
 verify_jwt = true
 
+[functions.nylas-webhook]
+verify_jwt = false
+
+[functions.nylas-setup-webhook]
+verify_jwt = true
+

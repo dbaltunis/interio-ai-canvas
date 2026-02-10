@@ -8,26 +8,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useHasPermission, useUserPermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsDealer } from '@/hooks/useIsDealer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-// TeachingHelpButton moved to TeamCollaborationCenter
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  FolderOpen, 
-  Package, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  FolderOpen,
+  Package,
   Calendar,
   Menu,
   X,
   MessageCircle,
-  Store
+  Store,
+  Bell,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,15 +52,38 @@ const navItems = [
   { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "has_online_store" },
 ];
 
+function formatNotifTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  
+  const [toastNotifications, setToastNotifications] = useState<any[]>([]);
+  const [notifPopoverOpen, setNotifPopoverOpen] = useState(false);
+
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
   const { toast } = useToast();
+  const {
+    notifications: appNotifications,
+    unreadCount: notifUnreadCount,
+    markAsRead,
+    markAllAsRead,
+    dismissNotification,
+    clearAll: clearAllNotifications,
+  } = useNotifications();
   
   // Check if user is a dealer - they have restricted navigation
   const { data: isDealer } = useIsDealer();
@@ -291,8 +320,135 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               })
             )}
           </nav>
-          {/* Right: User Profile */}
+          {/* Right: Notifications + User Profile */}
           <div className="flex items-center gap-2">
+            <Popover open={notifPopoverOpen} onOpenChange={setNotifPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative h-9 w-9 rounded-full"
+                >
+                  <Bell className="h-4 w-4" />
+                  {notifUnreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+                      {notifUnreadCount > 9 ? '9+' : notifUnreadCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-96 p-0"
+                sideOffset={8}
+              >
+                <div className="p-3 border-b border-border/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      <span className="font-semibold text-sm">Notifications</span>
+                      {notifUnreadCount > 0 && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                          {notifUnreadCount}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {notifUnreadCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => markAllAsRead()}
+                          className="text-xs h-7"
+                        >
+                          Mark all read
+                        </Button>
+                      )}
+                      {appNotifications.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => clearAllNotifications()}
+                          className="text-xs h-7 text-muted-foreground"
+                        >
+                          Clear all
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {appNotifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No notifications</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border/30">
+                      {appNotifications.map((notif) => {
+                        const iconMap: Record<string, React.ElementType> = {
+                          info: Info,
+                          success: CheckCircle,
+                          warning: AlertTriangle,
+                          error: AlertTriangle,
+                        };
+                        const NotifIcon = iconMap[notif.type || 'info'] || Info;
+                        return (
+                          <div
+                            key={notif.id}
+                            className={cn(
+                              'flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 cursor-pointer transition-colors',
+                              !notif.read && 'bg-primary/5'
+                            )}
+                            onClick={() => {
+                              markAsRead(notif.id);
+                              if (notif.action_url) {
+                                onTabChange(notif.action_url.replace('/?tab=', ''));
+                                setNotifPopoverOpen(false);
+                              }
+                            }}
+                          >
+                            <div className={cn(
+                              'mt-0.5 p-1.5 rounded-md shrink-0',
+                              notif.type === 'success' && 'bg-green-500/10 text-green-600',
+                              notif.type === 'warning' && 'bg-amber-500/10 text-amber-600',
+                              notif.type === 'error' && 'bg-red-500/10 text-red-600',
+                              (!notif.type || notif.type === 'info') && 'bg-blue-500/10 text-blue-600',
+                            )}>
+                              <NotifIcon className="h-3.5 w-3.5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium leading-tight">{notif.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.message}</p>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Clock className="h-3 w-3 text-muted-foreground/60" />
+                                <span className="text-[10px] text-muted-foreground/60">
+                                  {formatNotifTime(notif.created_at)}
+                                </span>
+                                {!notif.read && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 shrink-0 opacity-0 group-hover:opacity-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dismissNotification(notif.id);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
             <UserProfile
               onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
               showCollaborationIndicator={hasActivity}
@@ -321,12 +477,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
       />
 
       <AINotificationToast
-        notifications={notifications}
-        onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))}
+        notifications={toastNotifications}
+        onDismiss={(id) => setToastNotifications(prev => prev.filter(n => n.id !== id))}
         onAction={(id) => {
-          // Handle notification action
           setMessageDialogOpen(true);
-          setNotifications(prev => prev.filter(n => n.id !== id));
+          setToastNotifications(prev => prev.filter(n => n.id !== id));
         }}
       />
     </>
