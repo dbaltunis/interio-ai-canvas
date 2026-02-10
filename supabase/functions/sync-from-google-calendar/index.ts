@@ -43,7 +43,7 @@ serve(async (req) => {
     // If no integration found for user, check account owner's integration
     if (integrationError || !integration) {
       console.log('No integration found for user, checking account owner...');
-      
+
       // Get user's profile to find account owner
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -53,7 +53,7 @@ serve(async (req) => {
 
       if (profile?.parent_account_id) {
         console.log('User has parent account, checking owner integration:', profile.parent_account_id);
-        
+
         // Try to get account owner's integration
         const { data: ownerIntegration, error: ownerError } = await supabase
           .from('integration_settings')
@@ -81,7 +81,7 @@ serve(async (req) => {
     console.log('Found integration:', integration.id);
 
     let accessToken = integration.api_credentials?.access_token;
-    
+
     // Check if token needs refresh
     if (integration.api_credentials?.expires_at && new Date(integration.api_credentials.expires_at) <= new Date()) {
       console.log('Refreshing expired token...');
@@ -118,7 +118,7 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', integration.id);
-      
+
       console.log('Token refreshed successfully');
     }
 
@@ -131,7 +131,7 @@ serve(async (req) => {
 
     console.log(`Fetching events from calendar: ${calendarId}`);
     const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=250`,
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=250&showDeleted=true`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -149,74 +149,117 @@ serve(async (req) => {
     const events = data.items || [];
     console.log(`Found ${events.length} events from Google Calendar`);
 
-    // Get existing appointments with google_event_id to avoid duplicates
+    // Get ALL existing appointments with google_event_id (for update + delete detection)
     const { data: existingAppointments } = await supabase
       .from('appointments')
-      .select('google_event_id')
+      .select('id, google_event_id, title, start_time, end_time, description, location')
       .eq('user_id', user.id)
       .not('google_event_id', 'is', null);
 
-    const existingEventIds = new Set(existingAppointments?.map(a => a.google_event_id) || []);
-    console.log(`Already synced ${existingEventIds.size} events`);
+    const existingByGoogleId = new Map(
+      (existingAppointments || []).map(a => [a.google_event_id, a])
+    );
+    console.log(`Already synced ${existingByGoogleId.size} events`);
+
+    // Track which google_event_ids we see in this sync (for deletion detection)
+    const seenGoogleEventIds = new Set<string>();
 
     let imported = 0;
+    let updated = 0;
+    let deleted = 0;
     const errors: string[] = [];
-    
+
     for (const event of events) {
-      // Skip if already synced
-      if (existingEventIds.has(event.id)) {
+      // Handle cancelled/deleted events
+      if (event.status === 'cancelled') {
+        const existing = existingByGoogleId.get(event.id);
+        if (existing) {
+          console.log(`Deleting cancelled event: ${existing.title}`);
+          await supabase.from('appointments').delete().eq('id', existing.id);
+          await supabase.from('google_calendar_sync_events').delete().eq('google_event_id', event.id);
+          deleted++;
+        }
         continue;
       }
+
+      seenGoogleEventIds.add(event.id);
 
       // Skip all-day events or events without proper time info
       if (!event.start?.dateTime || !event.end?.dateTime) {
         continue;
       }
 
+      const existing = existingByGoogleId.get(event.id);
+
       try {
         const startDateTime = new Date(event.start.dateTime);
         const endDateTime = new Date(event.end.dateTime);
 
-        // Create appointment from Google event
-        const { data: appointment, error: appointmentError } = await supabase
-          .from('appointments')
-          .insert({
-            user_id: user.id,
-            title: event.summary || 'Imported Event',
-            description: event.description || '',
-            start_time: startDateTime.toISOString(),
-            end_time: endDateTime.toISOString(),
-            location: event.location || '',
-            status: 'scheduled',
-            appointment_type: 'consultation',
-            google_event_id: event.id,
-          })
-          .select()
-          .single();
+        if (existing) {
+          // UPDATE existing appointment if Google event changed
+          const hasChanged =
+            existing.title !== (event.summary || 'Imported Event') ||
+            existing.start_time !== startDateTime.toISOString() ||
+            existing.end_time !== endDateTime.toISOString() ||
+            existing.description !== (event.description || '') ||
+            existing.location !== (event.location || '');
 
-        if (appointmentError) {
-          console.error('Failed to create appointment:', appointmentError);
-          errors.push(`Event "${event.summary}": ${appointmentError.message}`);
-          continue;
-        }
-
-        if (appointment) {
-          // Create sync record
-          const { error: syncError } = await supabase
-            .from('google_calendar_sync_events')
+          if (hasChanged) {
+            console.log(`Updating event: ${event.summary}`);
+            await supabase
+              .from('appointments')
+              .update({
+                title: event.summary || 'Imported Event',
+                description: event.description || '',
+                start_time: startDateTime.toISOString(),
+                end_time: endDateTime.toISOString(),
+                location: event.location || '',
+              })
+              .eq('id', existing.id);
+            updated++;
+          }
+        } else {
+          // CREATE new appointment from Google event
+          const { data: appointment, error: appointmentError } = await supabase
+            .from('appointments')
             .insert({
-              integration_id: integration.id,
-              appointment_id: appointment.id,
+              user_id: user.id,
+              title: event.summary || 'Imported Event',
+              description: event.description || '',
+              start_time: startDateTime.toISOString(),
+              end_time: endDateTime.toISOString(),
+              location: event.location || '',
+              status: 'scheduled',
+              appointment_type: 'consultation',
               google_event_id: event.id,
-              sync_direction: 'from_google',
-              last_synced_at: new Date().toISOString(),
-            });
+            })
+            .select()
+            .single();
 
-          if (syncError) {
-            console.error('Failed to create sync record:', syncError);
-          } else {
-            imported++;
-            console.log(`Imported event: ${event.summary}`);
+          if (appointmentError) {
+            console.error('Failed to create appointment:', appointmentError);
+            errors.push(`Event "${event.summary}": ${appointmentError.message}`);
+            continue;
+          }
+
+          if (appointment) {
+            // Create sync record
+            const { error: syncError } = await supabase
+              .from('google_calendar_sync_events')
+              .insert({
+                integration_id: integration.id,
+                appointment_id: appointment.id,
+                google_event_id: event.id,
+                sync_direction: 'from_google',
+                last_synced_at: new Date().toISOString(),
+              });
+
+            if (syncError) {
+              console.error('Failed to create sync record:', syncError);
+            } else {
+              imported++;
+              console.log(`Imported event: ${event.summary}`);
+            }
           }
         }
       } catch (err) {
@@ -225,7 +268,27 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Import complete: ${imported} events imported, ${errors.length} errors`);
+    // Delete local appointments whose Google events no longer exist
+    // (only for events that were synced FROM Google, not created locally and pushed)
+    for (const [googleEventId, apt] of existingByGoogleId) {
+      if (!seenGoogleEventIds.has(googleEventId)) {
+        // Check if this was originally synced FROM google (not pushed TO google)
+        const { data: syncRecord } = await supabase
+          .from('google_calendar_sync_events')
+          .select('sync_direction')
+          .eq('google_event_id', googleEventId)
+          .single();
+
+        if (syncRecord?.sync_direction === 'from_google') {
+          console.log(`Deleting locally: Google event ${googleEventId} no longer exists (${apt.title})`);
+          await supabase.from('appointments').delete().eq('id', apt.id);
+          await supabase.from('google_calendar_sync_events').delete().eq('google_event_id', googleEventId);
+          deleted++;
+        }
+      }
+    }
+
+    console.log(`Sync complete: ${imported} imported, ${updated} updated, ${deleted} deleted, ${errors.length} errors`);
 
     // Update last_sync timestamp
     await supabase
@@ -234,11 +297,13 @@ serve(async (req) => {
       .eq('id', integration.id);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        imported, 
+      JSON.stringify({
+        success: true,
+        imported,
+        updated,
+        deleted,
         total: events.length,
-        alreadySynced: existingEventIds.size,
+        alreadySynced: existingByGoogleId.size,
         errors: errors.length > 0 ? errors : undefined
       }),
       {

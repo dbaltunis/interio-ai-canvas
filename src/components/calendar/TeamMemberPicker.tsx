@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, X, UserCheck } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { getInitials, getAvatarColor } from "@/lib/avatar-utils";
 
 interface TeamMemberPickerProps {
@@ -17,7 +18,13 @@ interface TeamMemberPickerProps {
 type SelectionMode = "all" | "individual";
 
 export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPickerProps) => {
-  const { data: teamMembers = [] } = useTeamMembers();
+  const { data: allTeamMembers = [] } = useTeamMembers();
+  const { user } = useAuth();
+  // Filter out the current user — you don't need to add yourself as a team member
+  const teamMembers = useMemo(
+    () => allTeamMembers.filter(m => m.id !== user?.id),
+    [allTeamMembers, user?.id]
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<SelectionMode>("individual");
 

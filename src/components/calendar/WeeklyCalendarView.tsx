@@ -216,12 +216,14 @@ interface WeeklyCalendarViewProps {
   onTimeSlotClick?: (date: Date, time: string) => void;
   onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
+  hiddenSources?: Set<string>;
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments, hiddenSources }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
+  const displayBookings = hiddenSources?.has('bookings') ? undefined : bookedAppointments;
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
   const updateTask = useUpdateTask();
@@ -262,10 +264,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const dayEventsMap = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const day of weekDays) {
-      map.set(day.toISOString(), getAllEventsForDate(displayAppointments, bookedAppointments, tasks, day, currentUserId));
+      map.set(day.toISOString(), getAllEventsForDate(displayAppointments, displayBookings, tasks, day, currentUserId));
     }
     return map;
-  }, [weekDays, displayAppointments, bookedAppointments, tasks, currentUserId]);
+  }, [weekDays, displayAppointments, displayBookings, tasks, currentUserId]);
 
   // Memoize overlap layouts
   const overlapLayouts = useMemo(() => {
