@@ -1,7 +1,19 @@
 import { memo } from "react";
 import { format } from "date-fns";
-import { Video, CheckCheck, MapPin, Calendar } from "lucide-react";
+import { Video, CheckCheck, MapPin, Calendar, Users, Phone, Wrench, Ruler, RefreshCw, MessageSquare, Bell } from "lucide-react";
 import { getEventStyling } from "./utils/calendarHelpers";
+import { getEventTypeConfig } from "./utils/eventTypeConfig";
+
+const EVENT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  meeting: <Users className="w-2.5 h-2.5" />,
+  consultation: <MessageSquare className="w-2.5 h-2.5" />,
+  installation: <Wrench className="w-2.5 h-2.5" />,
+  measurement: <Ruler className="w-2.5 h-2.5" />,
+  'follow-up': <RefreshCw className="w-2.5 h-2.5" />,
+  'follow_up': <RefreshCw className="w-2.5 h-2.5" />,
+  call: <Phone className="w-2.5 h-2.5" />,
+  reminder: <Bell className="w-2.5 h-2.5" />,
+};
 
 // --- Shared EventPill component used by Week, Day, and Month views ---
 
@@ -103,18 +115,25 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
 
       {/* Content */}
       <div className="relative pl-3 pr-1.5 py-1 h-full flex flex-col overflow-hidden">
-        {/* Title - adaptive clamping based on height */}
-        <div
-          className="text-[11px] font-semibold text-foreground leading-tight overflow-hidden"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: height > 70 ? 3 : height > 45 ? 2 : 1,
-            WebkitBoxOrient: 'vertical',
-            wordBreak: 'break-word',
-            overflowWrap: 'break-word',
-          }}
-        >
-          {title}
+        {/* Title with type icon */}
+        <div className="flex items-center gap-1">
+          {event.appointment_type && EVENT_TYPE_ICONS[event.appointment_type] && (
+            <span className="flex-shrink-0 opacity-60">
+              {EVENT_TYPE_ICONS[event.appointment_type]}
+            </span>
+          )}
+          <div
+            className="text-[11px] font-semibold text-foreground leading-tight overflow-hidden"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: height > 70 ? 3 : height > 45 ? 2 : 1,
+              WebkitBoxOrient: 'vertical',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+            }}
+          >
+            {title}
+          </div>
         </div>
 
         {/* Time row */}
@@ -129,7 +148,15 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
           </div>
         )}
 
-        {/* Location / description - only if tall enough */}
+        {/* Team group indicator */}
+        {height > 50 && event.calendar_group_name && (
+          <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
+            <Users className="w-2.5 h-2.5 flex-shrink-0" />
+            <span>{event.calendar_group_name}</span>
+          </div>
+        )}
+
+        {/* Location / note - only if tall enough */}
         {height > 65 && (event.location || event.description) && (
           <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-0.5">
             {event.location && <MapPin className="w-2.5 h-2.5 flex-shrink-0" />}

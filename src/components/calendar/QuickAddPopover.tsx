@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Clock, Palette, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight } from "lucide-react";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
-import { DURATION_CHIPS, EVENT_TYPES, COLOR_DOTS } from "./calendarConstants";
+import { DURATION_CHIPS, EVENT_TYPES } from "./calendarConstants";
 import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface QuickAddPopoverProps {
   open: boolean;
@@ -30,10 +32,9 @@ export const QuickAddPopover = ({
   anchorPosition,
 }: QuickAddPopoverProps) => {
   const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [selectedType, setSelectedType] = useState("meeting");
-  const [selectedColor, setSelectedColor] = useState("#6366F1");
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -41,6 +42,11 @@ export const QuickAddPopover = ({
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
   const { data: teamGroups = [] } = useCalendarTeamGroups();
+
+  // Determine effective color: team color takes priority, otherwise event type color
+  const selectedGroup = teamGroups.find(g => g.id === selectedGroupId);
+  const typeConfig = EVENT_TYPES.find(t => t.value === selectedType);
+  const effectiveColor = selectedGroup?.color || typeConfig?.color || "#6366F1";
 
   // Calculate initial duration from startTime-endTime range
   useEffect(() => {
@@ -60,10 +66,9 @@ export const QuickAddPopover = ({
       setTimeout(() => inputRef.current?.focus(), 150);
     } else {
       setTitle("");
+      setNote("");
       setSelectedDuration(30);
       setSelectedType("meeting");
-      setSelectedColor("#6366F1");
-      setShowColorPicker(false);
       setSelectedGroupId(null);
     }
   }, [open]);
@@ -76,7 +81,6 @@ export const QuickAddPopover = ({
         onOpenChange(false);
       }
     };
-    // Delay to avoid the opening click from immediately closing
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 50);
@@ -127,13 +131,13 @@ export const QuickAddPopover = ({
     const endDate = new Date(year, month - 1, day, endH || 0, endM || 0, 0);
 
     try {
-      const selectedGroup = teamGroups.find(g => g.id === selectedGroupId);
       await createAppointment.mutateAsync({
         title: title.trim(),
+        description: note.trim() || undefined,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         appointment_type: selectedType as any,
-        color: selectedColor,
+        color: effectiveColor,
         team_member_ids: selectedGroup?.member_ids || [],
         visibility: selectedGroup ? 'team' : 'private',
         calendar_group_id: selectedGroupId || undefined,
@@ -160,7 +164,7 @@ export const QuickAddPopover = ({
       date,
       startTime,
       endTime: computedEndTime(),
-      color: selectedColor,
+      color: effectiveColor,
       type: selectedType,
     });
     onOpenChange(false);
@@ -172,7 +176,7 @@ export const QuickAddPopover = ({
 
   // Calculate position: anchor to click position, ensure it stays in viewport
   const popoverWidth = 320;
-  const popoverHeight = 420;
+  const popoverHeight = 480;
   let left = anchorPosition?.x ?? 200;
   let top = anchorPosition?.y ?? 200;
 
@@ -189,166 +193,150 @@ export const QuickAddPopover = ({
   return (
     <div
       ref={popoverRef}
-      className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
-      style={{ left, top }}
+      className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
+      style={{ left, top, maxHeight: `${popoverHeight}px` }}
     >
       {/* Color header bar */}
-      <div className="h-2" style={{ backgroundColor: selectedColor }} />
+      <div className="h-2 flex-shrink-0" style={{ backgroundColor: effectiveColor }} />
 
       {/* Date/time header */}
-      <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm">
+      <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm flex-shrink-0">
         <Clock className="h-4 w-4 text-muted-foreground" />
         <span className="font-semibold text-foreground">{format(date, 'EEE, MMM d')}</span>
         <span className="text-muted-foreground">&middot;</span>
         <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
       </div>
 
-      <div className="px-3 pb-3 space-y-3">
-        {/* Title input */}
-        <Input
-          ref={inputRef}
-          placeholder="Event title..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
-          autoComplete="off"
-        />
+      {/* Scrollable content */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-3 pb-3 space-y-3">
+          {/* Title input */}
+          <Input
+            ref={inputRef}
+            placeholder="Event title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+            autoComplete="off"
+          />
 
-        {/* Duration chips */}
-        <div>
-          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
-          <div className="flex gap-1.5">
-            {DURATION_CHIPS.map(chip => (
-              <button
-                key={chip.minutes}
-                type="button"
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                  selectedDuration === chip.minutes
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-                onClick={() => setSelectedDuration(chip.minutes)}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Event type pills */}
-        <div>
-          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
-          <div className="flex flex-wrap gap-1.5">
-            {EVENT_TYPES.map(type => (
-              <button
-                key={type.value}
-                type="button"
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                  selectedType === type.value
-                    ? 'ring-2 ring-offset-1 shadow-sm'
-                    : 'opacity-50 hover:opacity-80'
-                }`}
-                style={{
-                  backgroundColor: `${type.color}20`,
-                  color: type.color,
-                  ...(selectedType === type.value ? { ringColor: type.color } : {}),
-                }}
-                onClick={() => {
-                  setSelectedType(type.value);
-                  setSelectedColor(type.color);
-                }}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Calendar Group Selector */}
-        {teamGroups.length > 0 && (
+          {/* Duration chips */}
           <div>
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Calendar</div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                  !selectedGroupId
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-                onClick={() => setSelectedGroupId(null)}
-              >
-                My Calendar
-              </button>
-              {teamGroups.map(group => (
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
+            <div className="flex gap-1.5">
+              {DURATION_CHIPS.map(chip => (
                 <button
-                  key={group.id}
+                  key={chip.minutes}
                   type="button"
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                    selectedGroupId === group.id
-                      ? 'ring-2 ring-offset-1 shadow-sm'
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                    selectedDuration === chip.minutes
+                      ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
-                  style={selectedGroupId === group.id ? { backgroundColor: `${group.color}20`, color: group.color } : {}}
-                  onClick={() => setSelectedGroupId(group.id)}
+                  onClick={() => setSelectedDuration(chip.minutes)}
                 >
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
-                  {group.name}
+                  {chip.label}
                 </button>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Color selector */}
-        <div>
-          <button
-            type="button"
-            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setShowColorPicker(!showColorPicker)}
-          >
-            <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: selectedColor }} />
-            <Palette className="h-3.5 w-3.5" />
-            <span>Color</span>
-          </button>
-          {showColorPicker && (
-            <div className="flex gap-2 mt-2">
-              {COLOR_DOTS.map(color => (
+          {/* Event type pills */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
+            <div className="flex flex-wrap gap-1.5">
+              {EVENT_TYPES.map(type => (
                 <button
-                  key={color}
+                  key={type.value}
                   type="button"
-                  className={`w-6 h-6 rounded-full transition-all ${
-                    selectedColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                    selectedType === type.value
+                      ? 'ring-2 ring-offset-1 shadow-sm'
+                      : 'opacity-50 hover:opacity-80'
                   }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setSelectedColor(color)}
-                />
+                  style={{
+                    backgroundColor: `${type.color}20`,
+                    color: type.color,
+                    ...(selectedType === type.value ? { ringColor: type.color } : {}),
+                  }}
+                  onClick={() => setSelectedType(type.value)}
+                >
+                  {type.label}
+                </button>
               ))}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 pt-1">
-          <Button
-            size="default"
-            className="flex-1 h-9"
-            onClick={handleSave}
-            disabled={createAppointment.isPending || !title.trim()}
-          >
-            {createAppointment.isPending ? 'Creating...' : 'Save'}
-          </Button>
-          <Button
-            size="default"
-            variant="ghost"
-            className="h-9 text-sm text-muted-foreground"
-            onClick={handleMoreOptions}
-          >
-            More options
-            <ChevronRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+          {/* Calendar Group Selector */}
+          {teamGroups.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Calendar</div>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                    !selectedGroupId
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  onClick={() => setSelectedGroupId(null)}
+                >
+                  My Calendar
+                </button>
+                {teamGroups.map(group => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                      selectedGroupId === group.id
+                        ? 'ring-2 ring-offset-1 shadow-sm'
+                        : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                    style={selectedGroupId === group.id ? { backgroundColor: `${group.color}20`, color: group.color } : {}}
+                    onClick={() => setSelectedGroupId(group.id)}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                    {group.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Note */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note</div>
+            <Textarea
+              placeholder="Add a note..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="resize-none text-xs min-h-[52px]"
+            />
+          </div>
         </div>
+      </ScrollArea>
+
+      {/* Actions - sticky at bottom */}
+      <div className="px-3 py-2 border-t bg-popover flex items-center gap-2 flex-shrink-0">
+        <Button
+          size="default"
+          className="flex-1 h-9"
+          onClick={handleSave}
+          disabled={createAppointment.isPending || !title.trim()}
+        >
+          {createAppointment.isPending ? 'Creating...' : 'Save'}
+        </Button>
+        <Button
+          size="default"
+          variant="ghost"
+          className="h-9 text-sm text-muted-foreground"
+          onClick={handleMoreOptions}
+        >
+          More options
+          <ChevronRight className="h-3.5 w-3.5 ml-1" />
+        </Button>
       </div>
     </div>
   );

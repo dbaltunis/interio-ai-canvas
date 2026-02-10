@@ -424,13 +424,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             {/* Day columns */}
             <div className="flex-1 relative">
               {/* Grid lines */}
-              {timeSlots.map((time, index) => (
-                <div
-                  key={`line-${time}`}
-                  className={`absolute left-0 right-0 ${index % 2 === 0 ? 'border-t border-border/30' : 'border-t border-border/10 border-dashed'}`}
-                  style={{ top: `${index * SLOT_HEIGHT}px` }}
-                />
-              ))}
+              {timeSlots.map((time, index) => {
+                const [, m] = time.split(':').map(Number);
+                const lineClass = m === 0
+                  ? 'border-t border-border/30'
+                  : m === 30
+                    ? 'border-t border-border/15'
+                    : 'border-t border-border/[0.06]';
+                return (
+                  <div
+                    key={`line-${time}`}
+                    className={`absolute left-0 right-0 ${lineClass}`}
+                    style={{ top: `${index * SLOT_HEIGHT}px` }}
+                  />
+                );
+              })}
 
               <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day) => {

@@ -1,8 +1,8 @@
 import { isSameDay } from "date-fns";
 
 // Slot height constant used across all calendar views
-export const SLOT_HEIGHT = 56; // px per 30-minute slot
-export const MINUTES_PER_SLOT = 30;
+export const SLOT_HEIGHT = 28; // px per 15-minute slot
+export const MINUTES_PER_SLOT = 15;
 export const PX_PER_MINUTE = SLOT_HEIGHT / MINUTES_PER_SLOT;
 
 // --- Event filtering ---
@@ -227,7 +227,9 @@ export const generateTimeSlots = (startHour: number = 0, endHour: number = 24): 
   const slots: string[] = [];
   for (let hour = startHour; hour < endHour; hour++) {
     slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    slots.push(`${hour.toString().padStart(2, '0')}:15`);
     slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    slots.push(`${hour.toString().padStart(2, '0')}:45`);
   }
   return slots;
 };
