@@ -52,6 +52,12 @@ export const EventDetailPopover = ({
 
   const startTime = new Date(event.start_time);
   const endTime = new Date(event.end_time);
+
+  // Guard: if dates are invalid, just render children without popover
+  if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+    return <>{children}</>;
+  }
+
   const eventColor = event.color || '#6366F1';
   const durationMins = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 
