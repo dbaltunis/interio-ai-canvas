@@ -54,6 +54,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const canViewCalendar = useHasPermission('view_calendar');
+  const canViewOwnCalendar = useHasPermission('view_own_calendar');
+  const hasCalendarAccess = canViewCalendar !== false || canViewOwnCalendar !== false;
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isDesktop = !isMobile && !isTablet;
@@ -249,11 +251,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   // Check permissions BEFORE returning any view
   // Return null to let Suspense skeleton persist (single loading state)
-  if (canViewCalendar === undefined) {
+  if (canViewCalendar === undefined && canViewOwnCalendar === undefined) {
     return null;
   }
 
-  if (!canViewCalendar) {
+  if (!hasCalendarAccess) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <Card className="w-96">

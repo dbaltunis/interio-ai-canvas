@@ -107,11 +107,19 @@ export const QuickAddPopover = ({
     const dateStr = format(date, 'yyyy-MM-dd');
     const end = computedEndTime();
 
+    // Create proper Date objects in browser local timezone, then convert to UTC ISO
+    // This matches how the calendar grid displays events (using browser local time)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    const startDate = new Date(year, month - 1, day, startH || 0, startM || 0, 0);
+    const endDate = new Date(year, month - 1, day, endH || 0, endM || 0, 0);
+
     try {
       await createAppointment.mutateAsync({
         title: title.trim(),
-        start_time: `${dateStr}T${startTime}:00`,
-        end_time: `${dateStr}T${end}:00`,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
         appointment_type: selectedType as any,
         color: selectedColor,
       });

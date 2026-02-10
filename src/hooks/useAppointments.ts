@@ -30,33 +30,35 @@ export interface Appointment {
 
 export const useAppointments = () => {
   const canViewCalendar = useHasPermission('view_calendar');
-  
+  const canViewOwnCalendar = useHasPermission('view_own_calendar');
+  // Allow fetch if user has EITHER view_calendar OR view_own_calendar
+  const hasCalendarAccess = canViewCalendar === true || canViewOwnCalendar === true;
+
   return useQuery({
     queryKey: ['appointments'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) return [];
 
-      const { data, error } = await supabase
+      const { data: appointments, error } = await supabase
         .from('appointments')
         .select('*')
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      
-      // Filter out any invalid appointments (just in case)
-      const validAppointments = (data as Appointment[]).filter(appointment => {
+
+      const validAppointments = (appointments as Appointment[]).filter(appointment => {
         const startTime = new Date(appointment.start_time);
         const endTime = new Date(appointment.end_time);
         return !isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime;
       });
-      
+
       return validAppointments;
     },
-    // Reduce cache time to ensure fresh data
-    staleTime: 1000 * 60, // 1 minute
-    gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
-    enabled: canViewCalendar === true, // Only fetch if user has calendar permission
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 5,
+    enabled: hasCalendarAccess,
   });
 };
 
@@ -66,10 +68,11 @@ export const useCreateAppointment = () => {
 
   return useMutation({
     mutationFn: async (appointmentData: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) throw new Error("No authenticated user");
 
-      const { data, error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('appointments')
         .insert({
           ...appointmentData,
@@ -79,7 +82,7 @@ export const useCreateAppointment = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return insertData;
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });

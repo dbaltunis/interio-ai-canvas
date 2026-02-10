@@ -87,14 +87,14 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
       )}
 
       {/* Team Member Picker Popover */}
-      <Popover open={isOpen} onOpenChange={setIsOpen} modal={true}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-start gap-2">
             <Users className="h-4 w-4" />
             {isAllSelected ? "All members" : `Individual (${selectedMembers.length})`}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 z-[9999]" align="start">
+        <PopoverContent className="w-80" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
           <div className="space-y-4">
             <div>
               <h4 className="font-medium mb-1">Share with Team</h4>
@@ -133,10 +133,10 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
                     </p>
                   ) : (
                     teamMembers.map((member) => (
-                      <div
+                      <label
                         key={member.id}
+                        htmlFor={`member-${member.id}`}
                         className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => handleToggle(member.id)}
                       >
                         <Checkbox
                           id={`member-${member.id}`}
@@ -159,7 +159,7 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
                             {member.email}
                           </p>
                         </div>
-                      </div>
+                      </label>
                     ))
                   )}
                 </div>

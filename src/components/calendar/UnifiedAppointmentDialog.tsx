@@ -255,13 +255,14 @@ export const UnifiedAppointmentDialog = ({
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return;
+    const currentUser = authData.user;
 
     const { data: prefs } = await supabase
       .from('user_preferences')
       .select('timezone')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUser.id)
       .maybeSingle();
 
     const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -399,15 +400,6 @@ export const UnifiedAppointmentDialog = ({
     setInviteName("");
     setShowMoreOptions(false);
     setShowAdvanced(false);
-  };
-
-  const handleTeamMemberToggle = (memberId: string, checked: boolean) => {
-    setEvent(prev => ({
-      ...prev,
-      selectedTeamMembers: checked 
-        ? [...prev.selectedTeamMembers, memberId]
-        : prev.selectedTeamMembers.filter(id => id !== memberId)
-    }));
   };
 
   const adjustTime = (field: 'startTime' | 'endTime', minutes: number) => {

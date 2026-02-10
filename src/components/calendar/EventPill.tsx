@@ -32,7 +32,7 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
           borderLeft: `2.5px solid ${styling.border}`,
           ...style,
         }}
-        onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+        onClick={() => onClick?.()}
       >
         <span className="font-medium text-foreground/60 tabular-nums">
           {format(startTime, 'H:mm')}
@@ -56,7 +56,7 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
           padding: '2px 8px 2px 10px',
           ...style,
         }}
-        onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+        onClick={() => onClick?.()}
       >
         <button
           type="button"
@@ -89,7 +89,7 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
     <div
       className={`rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer h-full relative ${className}`}
       style={style}
-      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onClick={() => onClick?.()}
       title={title}
     >
       {/* Left color accent bar */}
