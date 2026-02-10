@@ -28,7 +28,7 @@
 import { CalculationEngine, CalculationInput, LinearCalculationResult, AreaCalculationResult } from '@/engine/CalculationEngine';
 import { resolveMarkup, applyMarkup, MarkupResult } from '@/utils/pricing/markupResolver';
 import { mmToCm, roundTo } from '@/utils/lengthUnits';
-import { TreatmentCategoryDbValue, CalculationResultContract } from '@/contracts/TreatmentContract';
+import { TreatmentCategoryDbValue, CalculationResultContract, FabricContract, MaterialContract } from '@/contracts/TreatmentContract';
 
 // ============================================================
 // Types
@@ -174,21 +174,17 @@ export function calculateTreatment(input: TreatmentCalculationInput): TreatmentC
     },
     template: {
       fullness_ratio: input.template.fullness_ratio ?? 1,
-      side_hems_cm: input.template.side_hems ?? 0,
+      side_hem_cm: input.template.side_hems ?? 0,
       bottom_hem_cm: input.template.bottom_hem ?? 0,
       header_hem_cm: input.template.header_hem ?? 0,
-      returns_cm: input.template.returns ?? 0,
-      seam_allowance_cm: input.template.seam_allowance ?? 0,
-      fabric_orientation: input.template.fabric_orientation ?? 'vertical',
+      default_returns_cm: input.template.returns ?? 0,
+      seam_hem_cm: input.template.seam_allowance ?? 0,
       waste_percentage: input.template.waste_percentage ?? 0,
-      includes_fabric_price: input.template.includes_fabric_price ?? false,
-      machine_price_per_metre: input.template.machine_price_per_metre ?? 0,
-      hand_price_per_metre: input.template.hand_price_per_metre ?? 0,
-      heading_type: input.template.heading_type,
-    },
+    } as any,
     fabric: input.fabric ? {
       id: input.fabric.id,
       name: input.fabric.name,
+      width_cm: input.fabric.fabric_width_cm,
       fabric_width_cm: input.fabric.fabric_width_cm,
       cost_price: input.fabric.cost_price,
       selling_price: input.fabric.selling_price,
@@ -198,13 +194,13 @@ export function calculateTreatment(input: TreatmentCalculationInput): TreatmentC
       pricing_grid_markup: input.fabric.pricing_grid_markup,
       pattern_repeat_vertical_cm: input.fabric.pattern_repeat_vertical_cm,
       pattern_repeat_horizontal_cm: input.fabric.pattern_repeat_horizontal_cm,
-    } : undefined,
+    } as FabricContract : undefined,
     material: input.material ? {
       id: input.material.id,
       name: input.material.name,
       cost_price: input.material.cost_price,
       selling_price: input.material.selling_price,
-      pricing_method: input.material.pricing_method,
+      pricing_method: input.material.pricing_method as MaterialContract['pricing_method'],
       pricing_grid_data: input.material.pricing_grid_data,
     } : undefined,
     options: input.options?.map(opt => ({
@@ -266,8 +262,9 @@ export function calculateTreatment(input: TreatmentCalculationInput): TreatmentC
 
   // Build formula breakdown for transparency
   const formulaSteps: string[] = [];
-  if (engineResult.formula) {
-    formulaSteps.push(...(engineResult.formula.steps || []));
+  const formulaData = engineResult.formula_breakdown || engineResult.formula;
+  if (formulaData) {
+    formulaSteps.push(...(formulaData.steps || []));
   }
   formulaSteps.push(`Cost total: ${total_cost.toFixed(2)}`);
   formulaSteps.push(`Markup: ${markupPercentage}% (source: ${markupSource})`);

@@ -731,7 +731,7 @@ export const QuotationTab = ({
     // Update treatment with new image URL
     await supabase
       .from('treatments')
-      .update({ image_url: publicUrl })
+      .update({ image_url: publicUrl } as any)
       .eq('id', itemId);
 
     toast({

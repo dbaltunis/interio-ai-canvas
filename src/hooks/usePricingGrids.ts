@@ -39,7 +39,7 @@ export const usePricingGrids = () => {
         .order('name');
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as PricingGrid[];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
@@ -62,7 +62,7 @@ export const usePricingGrid = (gridId: string) => {
         console.error('Error fetching pricing grid:', error);
         return null;
       }
-      return data;
+      return data as unknown as PricingGrid;
     },
     enabled: !!gridId,
     staleTime: 5 * 60 * 1000,
@@ -95,12 +95,12 @@ export const useCreatePricingGrid = () => {
           user_id: user.id,
           name: gridData.name,
           grid_code: gridCode,
-          grid_data: gridData.grid_data,
+          grid_data: gridData.grid_data as any,
           supplier_id: gridData.supplier_id || null,
           product_type: gridData.product_type || null,
           price_group: gridData.price_group || null,
           active: true,
-        }])
+        } as any])
         .select()
         .single();
 
@@ -109,7 +109,7 @@ export const useCreatePricingGrid = () => {
         throw error;
       }
 
-      return data;
+      return data as unknown as PricingGrid;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });

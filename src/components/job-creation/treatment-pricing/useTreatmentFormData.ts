@@ -23,6 +23,8 @@ export interface TreatmentFormData {
   notes: string;
   images: File[];
   system_type: string; // For pricing grid selection (e.g., "cassette", "open", "motorized")
+  curtain_type?: string; // 'single' | 'pair' for panel configuration
+  window_covering?: any;
 }
 
 export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any, existingData?: any) => {

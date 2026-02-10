@@ -421,7 +421,7 @@ export function WindowSummaryCard({
     const summaryAny = summary as any;
     
     const markupResult = resolveMarkup({
-      gridMarkup: summaryAny.pricing_grid_markup || undefined,
+      gridMarkup: summaryAny.pricing_grid_markup ?? undefined,
       category: summary.treatment_category || summary.treatment_type,
       subcategory: summaryAny.subcategory || undefined,
       markupSettings: markupSettings || undefined

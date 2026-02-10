@@ -85,6 +85,9 @@ export const useMarkupSettings = () => {
           dynamic_pricing_enabled: pricingSettings.dynamic_pricing_enabled ?? defaultMarkupSettings.dynamic_pricing_enabled,
           quantity_discounts_enabled: pricingSettings.quantity_discounts_enabled ?? defaultMarkupSettings.quantity_discounts_enabled,
           show_markup_to_staff: pricingSettings.show_markup_to_staff ?? defaultMarkupSettings.show_markup_to_staff,
+          callout_fee_enabled: pricingSettings.callout_fee_enabled ?? defaultMarkupSettings.callout_fee_enabled,
+          callout_fee_amount: pricingSettings.callout_fee_amount ?? defaultMarkupSettings.callout_fee_amount,
+          callout_fee_name: pricingSettings.callout_fee_name ?? defaultMarkupSettings.callout_fee_name,
           category_markups: {
             ...defaultMarkupSettings.category_markups,
             ...(pricingSettings.category_markups || {})

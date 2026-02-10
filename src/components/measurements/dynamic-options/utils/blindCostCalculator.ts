@@ -77,7 +77,7 @@ export const calculateBlindCosts = (
   
   if (fabricHasPricingGrid) {
     // ✅ FIX: Capture grid markup for pass-through (NOT applied here - applied in display/save layer)
-    gridMarkupPercentage = fabricItem?.pricing_grid_markup || 0;
+    gridMarkupPercentage = fabricItem?.pricing_grid_markup ?? 0;
 
     // UNIVERSAL: Fabric pricing grid = TOTAL PRODUCT PRICE (not just fabric cost)
     // Works for ALL blind types and ALL SaaS client accounts automatically

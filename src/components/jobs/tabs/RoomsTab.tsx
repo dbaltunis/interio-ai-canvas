@@ -125,7 +125,7 @@ export const RoomsTab = ({
     // Fallback for old data without total_selling
     const costPrice = Number(w.summary.total_cost || 0);
     const markupResult = resolveMarkup({
-      gridMarkup: w.summary.pricing_grid_markup || undefined,
+      gridMarkup: w.summary.pricing_grid_markup ?? undefined,
       category: w.summary.treatment_category || w.summary.treatment_type,
       subcategory: w.summary.subcategory || undefined,
       markupSettings: markupSettings || undefined
