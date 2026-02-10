@@ -436,59 +436,67 @@ export const useGoogleCalendarSync = () => {
         
         // Check network/connection errors (including 500 errors)
         if (error) {
-          // For 500 errors, try to get the error message from the response
-          let errorMessage = error.message || '';
-          let errorString = JSON.stringify(error);
-          
-          // Try to extract error from response body if available
-          if (error.context && typeof error.context === 'object') {
-            const contextString = JSON.stringify(error.context);
-            errorString += ' ' + contextString;
-            
-            // Check if context has error message
-            if ('error' in error.context) {
-              const contextError = (error.context as any).error;
-              errorMessage += ' ' + (typeof contextError === 'string' ? contextError : JSON.stringify(contextError));
+          // When edge function returns non-2xx, supabase puts response body in error.context
+          // Try to parse reconnect_required from the error context
+          let errorBody: any = null;
+          try {
+            if (error.context && typeof error.context === 'object') {
+              errorBody = error.context;
             }
-          }
+          } catch {}
           
-          // Check various error formats
+          // Check for reconnect_required in error body
+          if (errorBody?.reconnect_required || errorBody?.error?.includes?.('reconnect') || errorBody?.error?.includes?.('token expired')) {
+            queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
+            toast({
+              title: "Calendar Disconnected",
+              description: "Your Google Calendar token expired. Please reconnect in Settings.",
+              variant: "destructive",
+            });
+            return { imported: 0, skipped: 0 };
+          }
+
+          const errorMessage = error.message || '';
+          const errorString = JSON.stringify(error);
+          
+          // Silently handle "not connected" errors
           if (errorMessage.includes('Google Calendar not connected') || 
               errorMessage.includes('not connected') ||
               errorString.includes('Google Calendar not connected') ||
               errorString.includes('not connected')) {
-            // Silently handle "not connected" errors - don't show error toast
+            return { imported: 0, skipped: 0 };
+          }
+
+          // Handle token refresh failures gracefully
+          if (errorMessage.includes('refresh') || errorMessage.includes('token') ||
+              errorString.includes('refresh') || errorString.includes('Failed to refresh')) {
+            queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
+            toast({
+              title: "Calendar Disconnected",
+              description: "Your Google Calendar token is invalid. Please reconnect in Settings.",
+              variant: "destructive",
+            });
             return { imported: 0, skipped: 0 };
           }
           
-          // For 500 errors, log and surface to user so real server errors aren't hidden
-          if (error.status === 500 || error.statusCode === 500) {
-            console.error('Google Calendar sync returned 500:', errorMessage || errorString);
-            throw new Error(errorMessage || 'Google Calendar sync failed (server error). Try reconnecting your calendar.');
-          }
-          
-          throw error;
+          // For any other 500 errors, show toast but don't crash
+          console.error('Google Calendar sync error:', errorMessage || errorString);
+          throw new Error(errorMessage || 'Google Calendar sync failed. Try reconnecting your calendar.');
         }
         
         return data;
       } catch (err: any) {
-        // Catch any errors and check if they're about "not connected"
         const errorMessage = err?.message || err?.error || JSON.stringify(err) || '';
-        const errorStatus = err?.status || err?.statusCode || err?.code;
         
-        // For 500 errors, surface the real error instead of silently swallowing
-        if (errorStatus === 500 || errorStatus === '500') {
-          console.error('Google Calendar sync error (500):', errorMessage);
-          throw new Error(errorMessage || 'Google Calendar sync failed. Try reconnecting your calendar.');
-        }
-        
+        // Silently handle "not connected" and token errors
         if (errorMessage.includes('Google Calendar not connected') || 
-            errorMessage.includes('not connected')) {
-          // Silently handle "not connected" errors
+            errorMessage.includes('not connected') ||
+            errorMessage.includes('refresh') ||
+            errorMessage.includes('token')) {
           return { imported: 0, skipped: 0 };
         }
         
-        // Re-throw other errors
+        // Re-throw other errors (will be caught by onError)
         throw err;
       }
     },
@@ -511,13 +519,15 @@ export const useGoogleCalendarSync = () => {
     onError: (error: Error) => {
       const errorMessage = error.message || '';
 
-      // Silently ignore "not connected" errors (expected when calendar not linked)
+      // Silently ignore "not connected" and token errors (already handled above)
       if (errorMessage.includes('Google Calendar not connected') ||
-          errorMessage.includes('not connected')) {
+          errorMessage.includes('not connected') ||
+          errorMessage.includes('refresh') ||
+          errorMessage.includes('token')) {
         return;
       }
 
-      // Show all other errors including 500s so users know something is wrong
+      // Show other errors as toast (not crash)
       toast({
         title: "Google Calendar Sync Error",
         description: errorMessage || "Failed to sync from Google Calendar. Try reconnecting.",
