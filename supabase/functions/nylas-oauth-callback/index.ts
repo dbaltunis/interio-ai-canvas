@@ -44,7 +44,11 @@ serve(async (req) => {
     const apiUri = Deno.env.get('NYLAS_API_URI') || 'https://api.eu.nylas.com';
     const clientId = Deno.env.get('NYLAS_CLIENT_ID') || '';
     const apiKey = Deno.env.get('NYLAS_API_KEY') || '';
-    const redirectUri = `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/nylas-oauth-callback`;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL not configured');
+    }
+    const redirectUri = `${supabaseUrl}/functions/v1/nylas-oauth-callback`;
 
     const tokenResponse = await fetch(`${apiUri}/v3/connect/token`, {
       method: 'POST',
