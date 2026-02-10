@@ -174,7 +174,41 @@ export interface NetSuiteIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration | NetSuiteIntegration;
+export interface CWSystemsIntegration extends BaseIntegration {
+  integration_type: 'cw_systems';
+  api_credentials: {
+    account_code: string;
+    account_name: string;
+    supplier_email: string;
+    contact_name?: string;
+    contact_phone?: string;
+  };
+  configuration: {
+    default_delivery_address: string;
+    default_payment_terms: string;
+    notes_template?: string;
+    order_method: 'email';
+  };
+}
+
+export interface NormanAustraliaIntegration extends BaseIntegration {
+  integration_type: 'norman_australia';
+  api_credentials: {
+    account_number: string;
+    account_name: string;
+    supplier_email: string;
+    contact_name?: string;
+    contact_phone?: string;
+  };
+  configuration: {
+    default_delivery_address: string;
+    default_payment_terms: string;
+    notes_template?: string;
+    order_method: 'email';
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration | NetSuiteIntegration | CWSystemsIntegration | NormanAustraliaIntegration;
 
 export interface IntegrationSyncLog {
   id: string;

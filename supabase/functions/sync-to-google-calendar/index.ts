@@ -94,7 +94,23 @@ serve(async (req) => {
       if (!refreshResponse.ok) {
         const errorText = await refreshResponse.text();
         console.error('Token refresh failed:', errorText);
-        throw new Error('Failed to refresh Google token');
+
+        // Mark integration as inactive so user is prompted to reconnect
+        await supabase
+          .from('integration_settings')
+          .update({ active: false, updated_at: new Date().toISOString() })
+          .eq('id', integration.id);
+
+        return new Response(
+          JSON.stringify({
+            error: 'Google Calendar token expired. Please reconnect your calendar in Settings.',
+            reconnect_required: true
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          }
+        );
       }
 
       const refreshData = await refreshResponse.json();
@@ -170,9 +186,18 @@ serve(async (req) => {
         isUpdate = true;
         console.log('Successfully updated Google Calendar event:', googleEvent.id);
       } else if (response.status === 404 || response.status === 410) {
-        // Event was deleted from Google — create a new one
-        console.log('Google event not found (deleted?), creating new one');
-        existingGoogleEventId && null; // clear reference
+        // Event was deleted from Google — clear stale reference and create a new one
+        console.log('Google event not found (deleted?), clearing reference and creating new');
+        await supabase
+          .from('appointments')
+          .update({ google_event_id: null })
+          .eq('id', appointmentId);
+
+        // Clean up orphaned sync record
+        await supabase
+          .from('google_calendar_sync_events')
+          .delete()
+          .eq('google_event_id', existingGoogleEventId);
       } else {
         const error = await response.text();
         console.error('Google Calendar PATCH error:', error);

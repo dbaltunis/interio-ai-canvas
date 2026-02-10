@@ -10,6 +10,8 @@ import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrat
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
 import { NetSuiteIntegrationTab } from "@/components/integrations/NetSuiteIntegrationTab";
 import { TWCIntegrationTab } from "@/components/integrations/TWCIntegrationTab";
+import { CWSystemsIntegrationTab } from "@/components/integrations/CWSystemsIntegrationTab";
+import { NormanIntegrationTab } from "@/components/integrations/NormanIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { ShopifyStatusManagementTab } from "./ShopifyStatusManagementTab";
@@ -166,7 +168,15 @@ export const IntegrationsTab = () => {
           </TabsTrigger>
           <TabsTrigger value="suppliers" className="flex items-center gap-2">
             <Truck className="h-4 w-4" />
-            Suppliers
+            TWC
+          </TabsTrigger>
+          <TabsTrigger value="cw_systems" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            CW Systems
+          </TabsTrigger>
+          <TabsTrigger value="norman" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            Norman
           </TabsTrigger>
           <TabsTrigger 
             value="shopify" 
@@ -231,6 +241,14 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="suppliers">
           <TWCIntegrationTab />
+        </TabsContent>
+
+        <TabsContent value="cw_systems">
+          <CWSystemsIntegrationTab />
+        </TabsContent>
+
+        <TabsContent value="norman">
+          <NormanIntegrationTab />
         </TabsContent>
 
         {canViewShopify && (
