@@ -744,6 +744,7 @@ export type Database = {
       appointments: {
         Row: {
           appointment_type: string | null
+          calendar_group_id: string | null
           client_id: string | null
           color: string | null
           created_at: string
@@ -771,6 +772,7 @@ export type Database = {
         }
         Insert: {
           appointment_type?: string | null
+          calendar_group_id?: string | null
           client_id?: string | null
           color?: string | null
           created_at?: string
@@ -798,6 +800,7 @@ export type Database = {
         }
         Update: {
           appointment_type?: string | null
+          calendar_group_id?: string | null
           client_id?: string | null
           color?: string | null
           created_at?: string
@@ -824,6 +827,13 @@ export type Database = {
           visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_calendar_group_id_fkey"
+            columns: ["calendar_group_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_team_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_client_id_fkey"
             columns: ["client_id"]
@@ -1790,6 +1800,39 @@ export type Database = {
           user_id?: string
           work_hours_end?: string | null
           work_hours_start?: string | null
+        }
+        Relationships: []
+      }
+      calendar_team_groups: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_default: boolean
+          member_ids: string[]
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          member_ids?: string[]
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          member_ids?: string[]
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
