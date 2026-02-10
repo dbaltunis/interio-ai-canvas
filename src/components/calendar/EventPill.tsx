@@ -20,6 +20,9 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
   const startTime = new Date(event.start_time);
   const endTime = new Date(event.end_time);
 
+  // Guard against invalid dates — return null instead of crashing format()
+  if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return null;
+
   if (variant === "month") {
     return (
       <div
@@ -84,7 +87,7 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
 
   return (
     <div
-      className={`rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer h-full ${className}`}
+      className={`rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer h-full relative ${className}`}
       style={style}
       onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       title={title}

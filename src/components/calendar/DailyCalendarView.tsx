@@ -66,7 +66,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
   const currentTimePosition = useCurrentTimePosition(showExtendedHours);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id || null));
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id || null));
   }, []);
 
   // Auto-scroll to current time

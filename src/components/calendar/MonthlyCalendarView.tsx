@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, isSameMonth, isSameDay, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
@@ -31,8 +31,8 @@ export const MonthlyCalendarView = ({
   const [morePopoverDay, setMorePopoverDay] = useState<Date | null>(null);
 
   // Get user ID
-  useMemo(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id || null));
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id || null));
   }, []);
 
   // Generate month grid days
