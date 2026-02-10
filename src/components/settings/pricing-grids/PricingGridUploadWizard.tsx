@@ -64,6 +64,7 @@ export const PricingGridUploadWizard = ({
       if (hasTWCVendor) return;
 
       // Check if user has any TWC products
+      // @ts-ignore - deep type instantiation
       const { data: twcProducts } = await supabase
         .from('inventory_items')
         .select('id')
@@ -232,14 +233,14 @@ export const PricingGridUploadWizard = ({
           user_id: user.id,
           name: gridName,
           grid_code: gridCode,
-          grid_data: gridData,
-          supplier_id: supplierId || null, // Allow null for small businesses without suppliers
+          grid_data: gridData as any,
+          supplier_id: supplierId || null,
           product_type: productType,
           price_group: priceGroup.toUpperCase().trim(),
           markup_percentage: parseFloat(markupPercentage) || 0,
           includes_fabric_price: includesFabricPrice,
           active: true
-        });
+        } as any);
 
       if (error) throw error;
 

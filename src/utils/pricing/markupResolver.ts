@@ -16,6 +16,9 @@ export interface MarkupContext {
   impliedMarkup?: number;
   // Grid-level (from pricing_grids.markup_percentage)
   gridMarkup?: number;
+  // Whether the product uses pricing_grid pricing method
+  // When true, grid markup takes precedence even if 0 (meaning grid price includes margin)
+  usesPricingGrid?: boolean;
   // Category/Subcategory
   category?: string;
   subcategory?: string;
@@ -64,12 +67,22 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     };
   }
   
-  // 3. Check grid-level markup (0 = use default/fall through)
+  // 3. Check grid-level markup
+  // When usesPricingGrid is true, the grid markup takes precedence even if 0
+  // (because grid price already includes the supplier's margin)
   if (context.gridMarkup != null && context.gridMarkup > 0) {
     return {
       percentage: context.gridMarkup,
       source: 'grid',
       sourceName: 'Pricing Grid'
+    };
+  }
+  // If product uses pricing grid and gridMarkup is explicitly 0, respect that (no additional markup)
+  if (context.usesPricingGrid && context.gridMarkup != null) {
+    return {
+      percentage: context.gridMarkup,
+      source: 'grid',
+      sourceName: 'Pricing Grid (price list)'
     };
   }
   
@@ -239,6 +252,9 @@ export function calculateGrossMargin(costPrice: number, sellingPrice: number): n
   if (sellingPrice <= 0) return 0;
   return ((sellingPrice - costPrice) / sellingPrice) * 100;
 }
+
+/** @deprecated Use ResolvedMarkup instead */
+export type MarkupResult = ResolvedMarkup;
 
 /**
  * Get profit status based on margin percentage

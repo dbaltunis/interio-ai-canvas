@@ -74,6 +74,7 @@ export interface TemplateContract {
   seam_hem_cm: number;
   
   // Curtain-specific - REQUIRED for curtains
+  fullness_ratio?: number;
   default_fullness_ratio?: number;
   default_returns_cm?: number;
   
@@ -97,16 +98,23 @@ export interface FabricContract {
   name: string;
   /** Fabric width in centimeters - REQUIRED */
   width_cm: number;
-  
+  /** Alias for width_cm (used by CalculationEngine) */
+  fabric_width_cm?: number;
+
   // Pricing - REQUIRED
   price_per_meter?: number;
   price_per_sqm?: number;
+  cost_price?: number;
+  selling_price?: number;
   pricing_method: 'per_running_meter' | 'per_sqm' | 'pricing_grid' | 'fixed';
-  
+  pricing_grid_markup?: number;
+
   // Pattern info
   pattern_repeat_cm?: number;
+  pattern_repeat_vertical_cm?: number;
+  pattern_repeat_horizontal_cm?: number;
   railroading_allowed?: boolean;
-  
+
   // Grid pricing (for fabrics with assigned grids)
   pricing_grid_data?: PricingGridContract;
 }
@@ -117,16 +125,18 @@ export interface FabricContract {
 export interface MaterialContract {
   id: string;
   name: string;
-  
+
   // Pricing
   price?: number;
+  cost_price?: number;
+  selling_price?: number;
   pricing_method: 'per_sqm' | 'pricing_grid' | 'fixed';
-  
+
   // Specifications
   slat_width_mm?: number;
   material_type?: string;
   color?: string;
-  
+
   // Grid pricing
   pricing_grid_data?: PricingGridContract;
 }
@@ -135,22 +145,28 @@ export interface MaterialContract {
  * Selected option with pricing - strictly typed
  */
 export interface SelectedOptionContract {
-  option_id: string;
+  option_id?: string;
   option_key: string;
-  value_id: string;
-  value_label: string;
+  value_id?: string;
+  value_label?: string;
   value_code?: string;
-  
+
+  // Additional fields used by the algorithm layer
+  id?: string;
+  name?: string;
+  cost_price?: number;
+  quantity?: number;
+
   // Pricing - REQUIRED, no defaults
   price: number;
-  pricing_method: 'fixed' | 'per_unit' | 'per_meter' | 'per_sqm' | 'percentage' | 'pricing_grid';
-  
+  pricing_method: string;
+
   // For percentage-based pricing
   percentage_of?: 'base' | 'fabric' | 'total';
-  
+
   // Grid data if applicable
   pricing_grid_data?: PricingGridContract;
-  
+
   // Source tracking
   source?: 'manual' | 'twc' | 'template_default';
 }
@@ -182,28 +198,31 @@ export interface CalculationResultContract {
   // Dimensions used (in CM for display)
   width_cm: number;
   drop_cm: number;
-  
+
   // For curtains/romans
   linear_meters?: number;
   widths_required?: number;
   drops_per_width?: number;
-  
+
   // For blinds
   sqm?: number;
-  
+
   // Pricing breakdown
   fabric_cost: number;
   material_cost: number;
+  manufacturing_cost?: number;
   options_cost: number;
   base_cost: number;
-  
+
   // Totals
   subtotal: number;
   waste_amount: number;
   total: number;
-  
+
   // Formula transparency
   formula_breakdown: FormulaBreakdown;
+  /** Alias for formula_breakdown (used by some older code paths) */
+  formula?: FormulaBreakdown;
 }
 
 export interface FormulaBreakdown {

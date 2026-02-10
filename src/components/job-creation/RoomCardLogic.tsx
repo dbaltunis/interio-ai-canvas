@@ -60,7 +60,7 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
       } else {
         // Fallback for old data without total_selling - NEEDS RE-SAVE
         const markupResult = resolveMarkup({
-          gridMarkup: w.summary.pricing_grid_markup || undefined,
+          gridMarkup: w.summary.pricing_grid_markup ?? undefined,
           category: w.summary.treatment_category || w.summary.treatment_type,
           subcategory: w.summary.subcategory || undefined,
           markupSettings: markupSettings || undefined

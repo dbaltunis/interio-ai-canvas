@@ -90,12 +90,13 @@ export const ExampleVisualMeasurementReplacement = ({
   };
 
   // Extract project data
-  const projectData = useProjectDataExtractor({
-    project,
-    client,
-    room,
-    window: windowData
-  });
+  const projectData: ProjectData = {
+    id: project?.id,
+    name: project?.name,
+    client: client ? { id: client.id, name: client.name } : undefined,
+    room: room ? { id: room.id, name: room.name } : undefined,
+    window: windowData ? { id: windowData.id, type: windowData.type } : undefined,
+  };
 
   const handleTreatmentChange = (changes: Partial<TreatmentData>) => {
     if (changes.fabric && onFabricChange) {

@@ -284,7 +284,7 @@ export const useQuotationSync = ({
           const markupResult = resolveMarkup({
             quoteMarkupOverride,
             productMarkup: undefined,
-            gridMarkup: summary.pricing_grid_markup || undefined,
+            gridMarkup: summary.pricing_grid_markup ?? undefined,
             category: treatmentCategory,
             subcategory: summary.subcategory || undefined,
             markupSettings: markupSettings || undefined

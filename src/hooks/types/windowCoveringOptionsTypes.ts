@@ -2,28 +2,32 @@
 export interface WindowCoveringOption {
   id: string;
   name: string;
+  label?: string;
   description?: string;
   base_price: number;
-  base_cost: number; // Added for compatibility
-  cost_type: string; // Added for compatibility
-  option_type: string; // Added for compatibility
-  window_covering_id: string; // Added for compatibility
+  base_cost: number;
+  cost_type: string;
+  option_type: string;
+  window_covering_id: string;
   image_url?: string;
   is_required?: boolean;
   is_default: boolean;
   active: boolean;
   sort_order: number;
   pricing_method?: string;
-  key?: string; // Treatment option key
-  option_values?: any[]; // Associated option values from database
+  pricing_grid_data?: any;
+  key?: string;
+  option_values?: any[];
 }
 
 export interface SubSubCategory {
   id: string;
   name: string;
+  label?: string;
   description?: string;
   base_price: number;
-  pricing_method: string; // Made required
+  pricing_method: string;
+  pricing_grid_data?: any;
   image_url?: string;
   extras?: WindowCoveringOption[];
 }

@@ -53,7 +53,7 @@ export const TreatmentPricingForm = ({
   const { calculateFabricUsage, costs: curtainCosts, isCalculating: isCurtainCalculating } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
   // Get user's preferred measurement unit (default to mm)
-  const userUnit = businessSettings?.measurement_unit || 'mm';
+  const userUnit = (businessSettings as any)?.measurement_units || (businessSettings as any)?.measurement_unit || 'mm';
 
   // CRITICAL: Detect treatment category using centralized utility
   const treatmentCategory = windowCovering?.treatment_category || windowCovering?.category || '';

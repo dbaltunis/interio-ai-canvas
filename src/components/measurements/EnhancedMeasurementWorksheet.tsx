@@ -898,7 +898,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
       inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
       pricingGridData, // CRITICAL: Pass grid data for pricing_grid type templates
-      pricingGridDiscount: fabricItem?.pricing_grid_discount || 0,
+      pricingGridDiscount: (fabricItem as any)?.pricing_grid_discount || 0,
     });
     
     console.log('🔍 calculateTreatmentPricing returned (WHAT GETS SAVED):', {
@@ -1111,9 +1111,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
          // This ensures the selling price is stored and never recalculated
          const markupResult = resolveMarkup({
            productMarkup: (fabricItem as any)?.markup_percentage,
-           categoryMarkup: markupSettings?.category_markups?.[generalCategory],
-           subcategoryMarkup: markupSettings?.subcategory_markups?.[specificTreatmentType],
-           globalMarkup: markupSettings?.global_markup,
+           category: generalCategory,
+           subcategory: specificTreatmentType,
+           markupSettings: markupSettings || undefined,
          });
          const totalSelling = applyMarkup(breakdownTotal, markupResult.percentage);
 
@@ -1596,7 +1596,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   unitsCurrency: units.currency,
                   selectedOptions,
                   inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
-                  pricingGridDiscount: fabricItem?.pricing_grid_discount || 0,
+                  pricingGridDiscount: (fabricItem as any)?.pricing_grid_discount || 0,
                 });
 
                 console.log('💰 Passing calculated costs to display:', {

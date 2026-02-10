@@ -311,11 +311,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     }
   }, [curtainTemplatesLoading, onlyOneTypeAvailable, selectedWindowType, hasWallpaperTemplates]);
 
-  // Combined loading state - optimized for faster initial render
-  // Only wait for essential data: curtain templates (for treatment selection) and window summary (for existing data)
-  // Heading inventory and options load in background for later tabs
-  const isInitialLoading = curtainTemplatesLoading || (surfaceId && windowSummaryLoading);
-
   // Helper function to get heading name from ID
   const getHeadingName = (headingId: string) => {
     if (headingId === 'standard') return 'Standard';
@@ -357,6 +352,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     refetchOnMount: true,
     staleTime: 0
   });
+
+  // Combined loading state - optimized for faster initial render
+  // Only wait for essential data: curtain templates (for treatment selection) and window summary (for existing data)
+  // Heading inventory and options load in background for later tabs
+  const isInitialLoading = curtainTemplatesLoading || (surfaceId && windowSummaryLoading);
 
   // Keep latestSummaryRef updated but don't trigger state resets
   useEffect(() => {
@@ -1729,7 +1729,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             // Hierarchy: Product markup > Implied markup (from library pricing) > Grid markup > Category markup > Global
             const fabricItem = enrichedFabric || selectedItems.fabric || selectedItems.material;
             const productMarkup = fabricItem?.markup_percentage || undefined;
-            const gridMarkup = fabricItem?.pricing_grid_markup || undefined;
+            const gridMarkup = fabricItem?.pricing_grid_markup ?? undefined;
+            const usesPricingGrid = fabricItem?.pricing_method === 'pricing_grid' || fabricItem?.pricing_method === 'price_grid';
             
             // ✅ CRITICAL FIX: Calculate implied markup from library pricing
             // If fabric has both cost_price and selling_price defined, the difference IS the markup
@@ -1779,6 +1780,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               productMarkup, // ✅ Pass explicit product-level markup from inventory item
               impliedMarkup, // ✅ Pass implied markup from cost vs selling difference
               gridMarkup,    // ✅ Pass grid-level markup from pricing grid
+              usesPricingGrid, // ✅ When true, grid markup takes precedence over category
               category: treatmentCat,
               markupSettings: markupSettings || undefined
             });
@@ -2239,9 +2241,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   })(),
                   // ✅ CRITICAL: Save display formula for consistent rendering across all views
                   // This ensures live view, saved view, work orders, and quotes show IDENTICAL formulas
-                  display_formula: liveCurtainCalcResult?.fabricDisplayFormula || liveBlindCalcResult?.fabricDisplayFormula || undefined,
-                  pricing_method_label: liveCurtainCalcResult?.fabricPricingMethodLabel || liveBlindCalcResult?.fabricPricingMethodLabel || undefined,
-                  quantity_display: liveCurtainCalcResult?.fabricQuantityDisplay || liveBlindCalcResult?.fabricQuantityDisplay || undefined,
+                  display_formula: (liveCurtainCalcResult as any)?.fabricDisplayFormula || (liveBlindCalcResult as any)?.fabricDisplayFormula || undefined,
+                  pricing_method_label: (liveCurtainCalcResult as any)?.fabricPricingMethodLabel || (liveBlindCalcResult as any)?.fabricPricingMethodLabel || undefined,
+                  quantity_display: (liveCurtainCalcResult as any)?.fabricQuantityDisplay || (liveBlindCalcResult as any)?.fabricQuantityDisplay || undefined,
                 }] : []),
                 // Lining
                 ...(finalLiningCost > 0 ? [{
@@ -2414,7 +2416,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   return {
                     ...opt,
                     // CRITICAL: Save calculatedPrice so it can be restored on edit
-                    calculatedPrice: liveDetail?.cost ?? opt.calculatedPrice ?? opt.price ?? 0
+                    calculatedPrice: liveDetail?.cost ?? (opt as any).calculatedPrice ?? opt.price ?? 0
                   };
                 });
               })(),

@@ -24,6 +24,9 @@ export interface Appointment {
   notification_minutes?: number;
   visibility?: 'private' | 'team' | 'organization';
   shared_with_organization?: boolean;
+  google_event_id?: string;
+  outlook_event_id?: string;
+  nylas_event_id?: string;
   created_at: string;
   updated_at: string;
 }

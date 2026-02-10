@@ -132,12 +132,12 @@ export const BulkGridUploader = ({ onComplete }: BulkGridUploaderProps) => {
               user_id: user.id,
               name: gridName,
               grid_code: gridCode,
-              grid_data: gridData,
+              grid_data: gridData as any,
               supplier_id: supplierId,
               product_type: productType,
               price_group: entry.priceGroup.toUpperCase().trim(),
               active: true
-            });
+            } as any);
 
           if (error) throw error;
 
