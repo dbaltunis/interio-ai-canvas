@@ -1,43 +1,46 @@
 
+## Fix: 5.10m vs 5.08m Linear Meters Discrepancy
 
-## Fix: False "Unsaved Changes" Dialog on Window Close
+### Root Cause
 
-### Problem
-The "Unsaved Changes" popup appears even when no edits were made. This happens because the dirty-state comparison uses mismatched data shapes between the **initial baseline** and the **current state snapshot**.
+Two different calculators compute fabric linear meters using slightly different rounding:
 
-Specifically, when a window is opened and data loads from the database:
-- The baseline (`lastSavedState`) is set using raw database field values (e.g., `fabricDetails?.fabric_id`, `measurementsDetails`, `selected_heading_id || 'none'`)
-- The current state snapshot uses processed React state values (e.g., `selectedItems.fabric?.id`, `measurements`, `selectedHeading`)
+1. **`calculateTreatmentPricing.ts`** (the "engine") -- computes the **exact** value (e.g., 5.08m) with no rounding
+2. **`orientationCalculator.ts`** (used by `fabricCalculation`) -- applies `Math.ceil(totalMeters * 10) / 10` on line 241, which **rounds UP** to the nearest 0.1m, turning 5.08m into 5.10m
 
-These resolve to different strings even though they represent the same data, so the comparison falsely reports changes.
+The pricing display (`AdaptiveFabricPricingDisplay.tsx`) reads from `fabricCalculation.linearMeters` (rounded = 5.10m), while the Quote Summary (`CostCalculationSummary.tsx`) reads from `engineResult.linear_meters` (exact = 5.08m). This creates the mismatch.
 
-### Solution
-Instead of initializing the baseline from raw database values, set `lastSavedState.current` **after** the React state has been hydrated, using the exact same field accessors as the comparison. This ensures the baseline and current state always use the same shape.
+### Why the Rounding Exists (and Why It Should Be Removed)
 
-### Technical Changes
+The `Math.ceil` rounding in `orientationCalculator.ts` was likely intended as a "safe ordering buffer." However:
+- It inflates the price (5.10 x 26.50 = 135.15 vs 5.08 x 26.50 = 134.62 -- a 0.53 overcharge)
+- It conflicts with the engine's exact calculation, creating user-visible inconsistency
+- The engine (`calculateTreatmentPricing.ts`) is the authoritative pricing source and does not round
 
-**File: `src/components/measurements/DynamicWindowWorksheet.tsx`**
+### Fix
 
-1. **Remove the premature baseline initialization** (lines ~812-822) that sets `lastSavedState.current` from raw database fields during data load.
+**File: `src/components/job-creation/treatment-pricing/fabric-calculation/orientationCalculator.ts`**
 
-2. **Add a one-time deferred baseline sync** -- after initial data has loaded and React state has settled, capture the baseline using the same fields the comparison uses:
-   ```
-   useEffect(() => {
-     if (hasLoadedInitialData.current && !lastSavedState.current) {
-       lastSavedState.current = {
-         templateId: selectedTemplate?.id,
-         fabricId: selectedItems.fabric?.id,
-         hardwareId: selectedItems.hardware?.id,
-         materialId: selectedItems.material?.id,
-         measurements: JSON.stringify(measurements),
-         heading: selectedHeading,
-         lining: selectedLining
-       };
-     }
-   }, [hasLoadedInitialData.current, selectedTemplate, selectedItems, measurements, selectedHeading, selectedLining]);
-   ```
+Remove the `Math.ceil` rounding on line 241 so `totalMeters` is returned as the exact value, matching the engine:
 
-This guarantees the baseline snapshot is taken from the exact same state accessors used in the comparison, eliminating false positives.
+```
+// Before (line 241):
+totalMeters: Math.ceil(totalMeters * 10) / 10,
 
-The save path (line ~2690) already uses the correct accessors, so no change is needed there.
+// After:
+totalMeters,
+```
 
+Also apply the same fix to `totalYards` on line 240 for consistency:
+
+```
+// Before (line 240):
+totalYards: Math.ceil(totalYards * 10) / 10,
+
+// After:
+totalYards,
+```
+
+This is a 2-line change in a single file. Both display locations will now show the same exact value (5.08m), and the price will be mathematically accurate.
+
+This fix applies to **all treatment types** that use the orientation calculator, not just curtains.
