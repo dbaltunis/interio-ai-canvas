@@ -7,6 +7,7 @@ import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
 import { DURATION_CHIPS, EVENT_TYPES, COLOR_DOTS } from "./calendarConstants";
+import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
 
 interface QuickAddPopoverProps {
   open: boolean;
@@ -33,11 +34,13 @@ export const QuickAddPopover = ({
   const [selectedType, setSelectedType] = useState("meeting");
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const createAppointment = useCreateAppointment();
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
 
   // Calculate initial duration from startTime-endTime range
   useEffect(() => {
@@ -61,6 +64,7 @@ export const QuickAddPopover = ({
       setSelectedType("meeting");
       setSelectedColor("#6366F1");
       setShowColorPicker(false);
+      setSelectedGroupId(null);
     }
   }, [open]);
 
@@ -123,13 +127,17 @@ export const QuickAddPopover = ({
     const endDate = new Date(year, month - 1, day, endH || 0, endM || 0, 0);
 
     try {
+      const selectedGroup = teamGroups.find(g => g.id === selectedGroupId);
       await createAppointment.mutateAsync({
         title: title.trim(),
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         appointment_type: selectedType as any,
         color: selectedColor,
-      });
+        team_member_ids: selectedGroup?.member_ids || [],
+        visibility: selectedGroup ? 'team' : 'private',
+        calendar_group_id: selectedGroupId || undefined,
+      } as any);
       onOpenChange(false);
     } catch {
       // Error handled by mutation
@@ -256,6 +264,42 @@ export const QuickAddPopover = ({
             ))}
           </div>
         </div>
+
+        {/* Calendar Group Selector */}
+        {teamGroups.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Calendar</div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  !selectedGroupId
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+                onClick={() => setSelectedGroupId(null)}
+              >
+                My Calendar
+              </button>
+              {teamGroups.map(group => (
+                <button
+                  key={group.id}
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                    selectedGroupId === group.id
+                      ? 'ring-2 ring-offset-1 shadow-sm'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  style={selectedGroupId === group.id ? { backgroundColor: `${group.color}20`, color: group.color } : {}}
+                  onClick={() => setSelectedGroupId(group.id)}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                  {group.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Color selector */}
         <div>

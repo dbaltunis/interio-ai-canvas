@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
 import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCreateAppointment } from "@/hooks/useAppointments";
@@ -207,6 +208,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   useRealtimeBookings();
   
   const { data: appointments } = useAppointments();
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
   useAppointmentSchedulers(); // prefetch for child components
   useTeamMembers(); // prefetch for child components
   useClients(); // prefetch for child components
@@ -395,11 +397,19 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       if (visibility === 'organization' || appointment.shared_with_organization) {
         if (!preferences.show_organization_events) return false;
       }
-      // Team events - visible to team members
+      // Team events - visible to team members or group members
       else if (visibility === 'team') {
         if (!preferences.show_team_events) return false;
-        // Only show if user is owner or in team_member_ids
-        if (!isOwner && !isTeamMember) return false;
+        // Check if user is in any team group that this event's members overlap with
+        const isInGroupWithEvent = teamGroups.some(group => {
+          const groupSourceId = `team-group-${group.id}`;
+          if (hiddenSources.has(groupSourceId)) return false;
+          const userInGroup = group.member_ids?.includes(currentUserId);
+          const eventMembersInGroup = appointment.team_member_ids?.some((id: string) => group.member_ids?.includes(id));
+          return userInGroup && eventMembersInGroup;
+        });
+        // Only show if user is owner, in team_member_ids, or in a shared group
+        if (!isOwner && !isTeamMember && !isInGroupWithEvent) return false;
       }
       // Personal events - only visible to owner
       else if (visibility === 'private') {

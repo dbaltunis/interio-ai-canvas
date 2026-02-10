@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, X, UserCheck } from "lucide-react";
+import { Users, X, UserCheck, FolderOpen } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getInitials, getAvatarColor } from "@/lib/avatar-utils";
 
@@ -15,10 +16,11 @@ interface TeamMemberPickerProps {
   onChange: (members: string[]) => void;
 }
 
-type SelectionMode = "all" | "individual";
+type SelectionMode = "all" | "group" | "individual";
 
 export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPickerProps) => {
   const { data: allTeamMembers = [] } = useTeamMembers();
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
   const { user } = useAuth();
   // Filter out the current user — you don't need to add yourself as a team member
   const teamMembers = useMemo(
@@ -120,6 +122,16 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
                 <UserCheck className="h-4 w-4" />
                 All members
               </Button>
+              {teamGroups.length > 0 && (
+                <Button
+                  variant={mode === "group" ? "default" : "outline"}
+                  className="w-full justify-start gap-2"
+                  onClick={() => setMode("group")}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  By Group
+                </Button>
+              )}
               <Button
                 variant={mode === "individual" ? "default" : "outline"}
                 className="w-full justify-start gap-2"
@@ -129,6 +141,37 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
                 Individual selection
               </Button>
             </div>
+
+            {/* Group Selection */}
+            {mode === "group" && (
+              <div className="space-y-1.5 border-t pt-3">
+                {teamGroups.map(group => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    className="flex items-center gap-2.5 w-full px-2 py-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
+                    onClick={() => {
+                      // Toggle: if all group members are selected, deselect them; otherwise add them
+                      const groupMemberIds = group.member_ids || [];
+                      const allSelected = groupMemberIds.every(id => selectedMembers.includes(id));
+                      if (allSelected) {
+                        onChange(selectedMembers.filter(id => !groupMemberIds.includes(id)));
+                      } else {
+                        const merged = [...new Set([...selectedMembers, ...groupMemberIds])];
+                        onChange(merged);
+                      }
+                    }}
+                  >
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                    <span className="text-sm font-medium flex-1">{group.name}</span>
+                    <span className="text-xs text-muted-foreground">{group.member_ids?.length || 0}</span>
+                    {(group.member_ids || []).every(id => selectedMembers.includes(id)) && group.member_ids?.length > 0 && (
+                      <UserCheck className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Individual Selection List */}
             {mode === "individual" && (

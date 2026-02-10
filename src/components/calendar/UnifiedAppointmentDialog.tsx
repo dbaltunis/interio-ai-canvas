@@ -23,7 +23,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useVideoMeetingProviders } from "@/hooks/useVideoMeetingProviders";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { EventVisibilitySelector } from "./EventVisibilitySelector";
+// EventVisibilitySelector removed - visibility auto-determined by team selection
 import { TeamMemberPicker } from "./TeamMemberPicker";
 import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
@@ -309,8 +309,8 @@ export const UnifiedAppointmentDialog = ({
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
       notification_minutes: event.notification_minutes,
-      visibility: event.visibility,
-      shared_with_organization: event.visibility === 'organization' || event.shared_with_organization,
+      visibility: event.selectedTeamMembers.length > 0 ? 'team' : 'private',
+      shared_with_organization: event.shared_with_organization,
       client_id: event.client_id || null,
       project_id: event.project_id || null,
     };
@@ -740,14 +740,7 @@ export const UnifiedAppointmentDialog = ({
                 </div>
               </div>
 
-              {/* Visibility */}
-              <div>
-                <EventVisibilitySelector
-                  value={event.visibility}
-                  onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
-                  hasTeamMembers={event.selectedTeamMembers.length > 0}
-                />
-              </div>
+              {/* Visibility auto-determined by team member selection */}
 
               {/* Send Email Invitation */}
               <div className="flex items-center gap-2">
