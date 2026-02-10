@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -7,28 +7,7 @@ import { Clock, Palette, ChevronRight } from "lucide-react";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
-
-const DURATION_CHIPS = [
-  { label: "25m", minutes: 25 },
-  { label: "30m", minutes: 30 },
-  { label: "45m", minutes: 45 },
-  { label: "1h", minutes: 60 },
-  { label: "1.5h", minutes: 90 },
-];
-
-const EVENT_TYPES = [
-  { value: "meeting", label: "Meeting", color: "#3B82F6" },
-  { value: "consultation", label: "Consult", color: "#22C55E" },
-  { value: "installation", label: "Install", color: "#F59E0B" },
-  { value: "call", label: "Call", color: "#EF4444" },
-  { value: "measurement", label: "Measure", color: "#8B5CF6" },
-  { value: "follow-up", label: "Follow-up", color: "#06B6D4" },
-];
-
-const COLOR_DOTS = [
-  "#6366F1", "#3B82F6", "#22C55E", "#F59E0B",
-  "#EF4444", "#EC4899", "#8B5CF6", "#14B8A6",
-];
+import { DURATION_CHIPS, EVENT_TYPES, COLOR_DOTS } from "./calendarConstants";
 
 interface QuickAddPopoverProps {
   open: boolean;
@@ -37,6 +16,8 @@ interface QuickAddPopoverProps {
   startTime: string;
   endTime?: string;
   onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string }) => void;
+  anchorRef?: React.RefObject<HTMLDivElement>;
+  anchorPosition?: { x: number; y: number };
   children?: React.ReactNode;
 }
 
@@ -47,6 +28,8 @@ export const QuickAddPopover = ({
   startTime,
   endTime: initialEndTime,
   onMoreOptions,
+  anchorRef,
+  anchorPosition,
 }: QuickAddPopoverProps) => {
   const [title, setTitle] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(30);
@@ -54,6 +37,7 @@ export const QuickAddPopover = ({
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const virtualTriggerRef = useRef<HTMLDivElement>(null);
   const createAppointment = useCreateAppointment();
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
@@ -70,7 +54,7 @@ export const QuickAddPopover = ({
     }
   }, [startTime, initialEndTime]);
 
-  // Auto-focus input when dialog opens
+  // Auto-focus input when popover opens
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 150);
@@ -82,6 +66,15 @@ export const QuickAddPopover = ({
       setShowColorPicker(false);
     }
   }, [open]);
+
+  // Position the virtual trigger based on anchorPosition
+  useEffect(() => {
+    if (anchorPosition && virtualTriggerRef.current) {
+      virtualTriggerRef.current.style.position = 'fixed';
+      virtualTriggerRef.current.style.left = `${anchorPosition.x}px`;
+      virtualTriggerRef.current.style.top = `${anchorPosition.y}px`;
+    }
+  }, [anchorPosition]);
 
   const computedEndTime = useCallback(() => {
     const parts = startTime.split(':').map(Number);
@@ -107,8 +100,6 @@ export const QuickAddPopover = ({
     const dateStr = format(date, 'yyyy-MM-dd');
     const end = computedEndTime();
 
-    // Create proper Date objects in browser local timezone, then convert to UTC ISO
-    // This matches how the calendar grid displays events (using browser local time)
     const [year, month, day] = dateStr.split('-').map(Number);
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
@@ -154,17 +145,37 @@ export const QuickAddPopover = ({
   const endTimeStr = computedEndTime();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[360px] p-0 gap-0 overflow-hidden rounded-xl border shadow-xl [&>button]:hidden">
-        {/* Header with date/time */}
-        <div className="bg-muted/40 px-4 py-3 border-b flex items-center gap-2 text-sm">
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <div
+          ref={virtualTriggerRef}
+          className="pointer-events-none"
+          style={{
+            position: 'fixed',
+            width: 1,
+            height: 1,
+            ...(anchorPosition ? { left: anchorPosition.x, top: anchorPosition.y } : {}),
+          }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-0 overflow-hidden"
+        side="right"
+        align="start"
+        sideOffset={8}
+      >
+        {/* Color header bar */}
+        <div className="h-2" style={{ backgroundColor: selectedColor }} />
+
+        {/* Date/time header */}
+        <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <span className="font-semibold text-foreground">{format(date, 'EEE, MMM d')}</span>
           <span className="text-muted-foreground">&middot;</span>
           <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="px-3 pb-3 space-y-3">
           {/* Title input */}
           <Input
             ref={inputRef}
@@ -275,7 +286,7 @@ export const QuickAddPopover = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 };

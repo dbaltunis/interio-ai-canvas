@@ -41,7 +41,7 @@ const useCurrentTimePosition = (showExtendedHours: boolean) => {
 interface DailyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
-  onTimeSlotClick?: (date: Date, time: string) => void;
+  onTimeSlotClick?: (date: Date, time: string, event?: React.MouseEvent) => void;
   filteredAppointments?: any[];
   hiddenSources?: Set<string>;
 }
@@ -198,7 +198,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                       style={{ top: `${index * SLOT_HEIGHT}px`, height: `${SLOT_HEIGHT}px` }}
                       onMouseDown={(e) => !occupied && handleMouseDown(index, e)}
                       onMouseMove={() => !occupied && handleMouseMove(index)}
-                      onClick={() => !isCreatingEvent && !occupied && onTimeSlotClick?.(currentDate, time)}
+                      onClick={(e) => !isCreatingEvent && !occupied && onTimeSlotClick?.(currentDate, time, e)}
                     />
                   );
                 })}
