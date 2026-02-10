@@ -176,9 +176,67 @@ const handler = async (req: Request): Promise<Response> => {
             }
           }
 
-          // TODO: Send SMS if enabled and configured
+          // Send SMS reminder if enabled and configured
           if (shouldSendSMS) {
-            console.log('SMS notifications not yet implemented');
+            try {
+              // Get user phone number from profile
+              const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('phone')
+                .eq('user_id', appointment.user_id)
+                .single();
+
+              const phoneNumber = profile?.phone;
+
+              if (phoneNumber) {
+                // Get Twilio credentials
+                const { data: twilioSettings } = await supabase
+                  .from('integration_settings')
+                  .select('*')
+                  .eq('account_owner_id', ownerId)
+                  .eq('integration_type', 'twilio')
+                  .eq('active', true)
+                  .single();
+
+                const twilioAccountSid = twilioSettings?.api_credentials?.account_sid || Deno.env.get('TWILIO_ACCOUNT_SID');
+                const twilioAuthToken = twilioSettings?.api_credentials?.auth_token || Deno.env.get('TWILIO_AUTH_TOKEN');
+                const twilioPhoneNumber = twilioSettings?.configuration?.phone_number || Deno.env.get('TWILIO_PHONE_NUMBER');
+
+                if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+                  const smsBody = `Reminder: ${appointment.title} is ${timeUntil} at ${timeStr}${appointment.location ? ` - ${appointment.location}` : ''}`;
+
+                  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+                  const credentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+
+                  const formData = new URLSearchParams();
+                  formData.append('From', twilioPhoneNumber);
+                  formData.append('To', phoneNumber);
+                  formData.append('Body', smsBody);
+
+                  const smsResponse = await fetch(twilioUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Basic ${credentials}`,
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData,
+                  });
+
+                  if (smsResponse.ok) {
+                    console.log(`SMS reminder sent for appointment ${appointment.id} to ${phoneNumber}`);
+                  } else {
+                    const errText = await smsResponse.text();
+                    console.error(`Failed to send SMS for appointment ${appointment.id}: ${smsResponse.status} ${errText}`);
+                  }
+                } else {
+                  console.log(`Twilio not configured for user ${appointment.user_id}, skipping SMS`);
+                }
+              } else {
+                console.log(`No phone number for user ${appointment.user_id}, skipping SMS`);
+              }
+            } catch (smsError) {
+              console.error(`Error sending SMS for appointment ${appointment.id}:`, smsError);
+            }
           }
 
           // Always create in-app notification

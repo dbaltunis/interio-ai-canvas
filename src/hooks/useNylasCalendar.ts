@@ -271,6 +271,32 @@ export const useNylasCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // 1. Delete appointments imported from Nylas (have nylas_event_id, default consultation type)
+      const { data: importedEvents } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('user_id', user.id)
+        .not('nylas_event_id', 'is', null)
+        .eq('appointment_type', 'consultation')
+        .is('google_event_id', null)
+        .is('outlook_event_id', null);
+
+      if (importedEvents && importedEvents.length > 0) {
+        const ids = importedEvents.map(e => e.id);
+        await supabase
+          .from('appointments')
+          .delete()
+          .in('id', ids);
+      }
+
+      // 2. Clear nylas_event_id from remaining appointments (user-created, pushed to Nylas)
+      await supabase
+        .from('appointments')
+        .update({ nylas_event_id: null } as any)
+        .eq('user_id', user.id)
+        .not('nylas_event_id', 'is', null);
+
+      // 3. Delete the integration setting
       const { error } = await supabase
         .from('integration_settings')
         .delete()
@@ -281,6 +307,7 @@ export const useNylasCalendarIntegration = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nylas-calendar-integration'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Nylas calendar disconnected successfully",
