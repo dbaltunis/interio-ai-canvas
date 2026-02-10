@@ -1,69 +1,43 @@
 
-# Fix: Staff Users Can't Edit Jobs (Permission Check Bug)
 
-## Problem Found
+## Fix: False "Unsaved Changes" Dialog on Window Close
 
-The "Permission needed" message is appearing because there's a **bug in the job edit permission check**. Here's what's happening:
+### Problem
+The "Unsaved Changes" popup appears even when no edits were made. This happens because the dirty-state comparison uses mismatched data shapes between the **initial baseline** and the **current state snapshot**.
 
-### Root Cause
-The `useJobEditPermissions.ts` hook checks permissions **only from the database**, ignoring the role-based default permissions defined in `constants/permissions.ts`.
+Specifically, when a window is opened and data loads from the database:
+- The baseline (`lastSavedState`) is set using raw database field values (e.g., `fabricDetails?.fabric_id`, `measurementsDetails`, `selected_heading_id || 'none'`)
+- The current state snapshot uses processed React state values (e.g., `selectedItems.fabric?.id`, `measurements`, `selectedHeading`)
 
-- The Staff role has `edit_assigned_jobs` in its default permissions (this is correct)
-- But `useCanEditJob` fetches from the `user_permissions` table directly, which may be empty for Staff users
-- Since there are no explicit DB records, the hook returns `canEditJob: false`
+These resolve to different strings even though they represent the same data, so the comparison falsely reports changes.
 
-### Why It Broke
-This likely worked before because either:
-1. Staff users had explicit permission records in the database
-2. Or the permission check was using a different approach that included role-based defaults
+### Solution
+Instead of initializing the baseline from raw database values, set `lastSavedState.current` **after** the React state has been hydrated, using the exact same field accessors as the comparison. This ensures the baseline and current state always use the same shape.
 
-## Technical Details
+### Technical Changes
 
-**Current broken logic in `useJobEditPermissions.ts`:**
-```text
-1. Fetch user_permissions table for user → returns []
-2. Check if user is Owner → No (Staff)
-3. hasAnyExplicitPermissions = 0 > 0 = false
-4. canEditAssignedJobs = isOwner && !hasAnyExplicitPermissions = false
-5. Result: canEditJob = false ❌
-```
+**File: `src/components/measurements/DynamicWindowWorksheet.tsx`**
 
-**Correct logic should be:**
-```text
-1. Get role-based permissions (Staff has edit_assigned_jobs)
-2. Add any custom database permissions on top
-3. Check if edit_assigned_jobs exists in merged set → YES
-4. Result: canEditJob = true ✅
-```
+1. **Remove the premature baseline initialization** (lines ~812-822) that sets `lastSavedState.current` from raw database fields during data load.
 
-## Solution
+2. **Add a one-time deferred baseline sync** -- after initial data has loaded and React state has settled, capture the baseline using the same fields the comparison uses:
+   ```
+   useEffect(() => {
+     if (hasLoadedInitialData.current && !lastSavedState.current) {
+       lastSavedState.current = {
+         templateId: selectedTemplate?.id,
+         fabricId: selectedItems.fabric?.id,
+         hardwareId: selectedItems.hardware?.id,
+         materialId: selectedItems.material?.id,
+         measurements: JSON.stringify(measurements),
+         heading: selectedHeading,
+         lining: selectedLining
+       };
+     }
+   }, [hasLoadedInitialData.current, selectedTemplate, selectedItems, measurements, selectedHeading, selectedLining]);
+   ```
 
-Refactor `useJobEditPermissions.ts` to use the unified permission system instead of querying the database directly:
+This guarantees the baseline snapshot is taken from the exact same state accessors used in the comparison, eliminating false positives.
 
-### Step 1: Update the Hook to Use Unified Permissions
-Replace direct database queries with the `useHasPermission` hook that already handles role+custom permission merging correctly.
+The save path (line ~2690) already uses the correct accessors, so no change is needed there.
 
-### Step 2: Simplify the Logic
-The hook will check:
-- `useHasPermission('edit_all_jobs')` → can edit any job
-- `useHasPermission('edit_assigned_jobs')` → can edit assigned jobs only
-
-### Step 3: Keep Assignment Check Logic
-When only `edit_assigned_jobs` is granted, verify the user is assigned to the specific project/client.
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/hooks/useJobEditPermissions.ts` | Refactor to use `useHasPermission` instead of direct DB query |
-
-## Expected Outcome
-
-After this fix:
-- Staff users will be able to add rooms, windows, and treatments to jobs assigned to them
-- The role-based default permissions will be respected
-- Custom permission overrides will still work for accounts that need them
-
-## No Database Changes Required
-
-This is purely a frontend logic fix - the permission constants are already correct.
