@@ -1,8 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart, Package } from "lucide-react";
+import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, Package } from "lucide-react";
 import { useUserPermissions, useHasPermission } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +15,7 @@ interface CreateActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTabChange: (tab: string) => void;
-  queueCount?: number;
+  queueCount?: number; // kept for API compatibility
   onOpenSettings?: () => void;
   onOpenTeamHub?: () => void;
 }
@@ -67,30 +66,22 @@ export const CreateActionDialog = ({
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewOwnCalendar = useHasPermission('view_own_calendar');
   const canViewInventory = useHasPermission('view_inventory');
-  const canViewPurchasing = useHasPermission('view_purchasing');
   const canViewClients = useHasPermission('view_clients');
   const canViewJobs = useHasPermission('view_jobs');
-  
+
   // Combined calendar permission
   const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
-  
+
   // Check if user has ANY main page permission (for smart menu visibility)
-  // Include view_clients and view_jobs so "New Client" shows for users with those permissions
   const hasAnyMainPagePermission = useMemo(() => {
-    // Always true for owners/admins without explicit restrictions
     if (userRoleData?.isSystemOwner) return true;
     if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
-    // Otherwise check if they can access at least one main area (including clients and jobs)
     return canViewClients !== false ||
            canViewJobs !== false ||
-           canViewCalendar !== false || 
-           canViewOwnCalendar !== false || 
-           canViewInventory !== false || 
-           canViewPurchasing !== false;
-  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory, canViewPurchasing]);
-  
-  // Determine if we should show inventory/purchasing separator
-  const showInventorySeparator = canViewInventory !== false || (canViewPurchasing !== false && !isDealer);
+           canViewCalendar !== false ||
+           canViewOwnCalendar !== false ||
+           canViewInventory !== false;
+  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory]);
   
   const canViewSettings = userRoleData?.isSystemOwner
     ? true
@@ -133,8 +124,6 @@ export const CreateActionDialog = ({
       }, 150);
     } else if (action === "library") {
       onTabChange("inventory");
-    } else if (action === "purchasing") {
-      onTabChange("ordering-hub");
     } else if (action === "settings") {
       if (canViewSettings === false) {
         toast({
@@ -228,33 +217,8 @@ export const CreateActionDialog = ({
             </Button>
           )}
           
-          {/* Material Purchasing - only if can view purchasing AND not a dealer */}
-          {canViewPurchasing !== false && !isDealer && (
-            <Button
-                onClick={() => handleAction("purchasing")}
-                variant="outline"
-                className="h-16 justify-start gap-4 text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                  {queueCount && queueCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
-                    >
-                      {queueCount}
-                    </Badge>
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold">Material Purchasing</div>
-                  <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
-                </div>
-              </Button>
-          )}
-          
-          {/* Separator - only show if there's content above (inventory/purchasing section) */}
-          {showInventorySeparator && <Separator className="my-2" />}
+          {/* Separator before utility items */}
+          <Separator className="my-1" />
           
           <Button
             onClick={() => handleAction("team")}

@@ -176,6 +176,17 @@ const Index = () => {
   // Ensure default number sequences exist for all new users
   useEnsureDefaultSequences();
 
+  // Preload core tabs after initial render — eliminates skeleton flash on tab switch
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("@/components/jobs/JobsPage");
+      import("@/components/calendar/CalendarView");
+      import("@/components/jobs/ClientManagement");
+      import("@/components/library/LibraryPage");
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   console.log('Index: Rendering with activeTab =', activeTab, 'canViewInventory =', canViewInventory, 'hasAnyExplicitPermissions =', hasAnyExplicitPermissions, 'hasViewInventoryPermission =', hasViewInventoryPermission, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());
 

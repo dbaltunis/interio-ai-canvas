@@ -10,6 +10,7 @@ export const PX_PER_MINUTE = SLOT_HEIGHT / MINUTES_PER_SLOT;
 export const getEventsForDate = (appointments: any[] | undefined, date: Date): any[] => {
   if (!appointments) return [];
   return appointments.filter(appointment => {
+    if (!appointment || !appointment.start_time || !appointment.end_time) return false;
     const startTime = new Date(appointment.start_time);
     const endTime = new Date(appointment.end_time);
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) return false;
@@ -28,8 +29,9 @@ export const getBookedEventsForDate = (
   if (!bookedAppointments) return [];
   return bookedAppointments
     .filter(booking => {
+      if (!booking || !booking.appointment_date) return false;
       const bookingDate = new Date(booking.appointment_date);
-      return isSameDay(bookingDate, date);
+      return !isNaN(bookingDate.getTime()) && isSameDay(bookingDate, date);
     })
     .map(booking => {
       const schedulerInfo = booking.scheduler;
@@ -92,8 +94,10 @@ export const getTasksForDate = (tasks: any[] | undefined, date: Date): any[] => 
 // --- Deduplication ---
 
 export const deduplicateEvents = (events: any[]): any[] => {
+  if (!events || events.length === 0) return [];
   const seen = new Map<string, any>();
   for (const event of events) {
+    if (!event || !event.start_time) continue;
     const startTime = new Date(event.start_time);
     const roundedMinutes = Math.round(startTime.getTime() / (5 * 60 * 1000));
     const key = `${(event.title || '').toLowerCase().trim()}_${roundedMinutes}`;
