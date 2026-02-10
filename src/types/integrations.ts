@@ -49,10 +49,14 @@ export interface RFMSIntegration extends BaseIntegration {
   integration_type: 'rfms';
   api_credentials: {
     api_url: string;
+    store_queue: string;
     api_key: string;
-    client_id: string;
+    session_token?: string;
+    session_started_at?: string;
   };
   configuration: {
+    sync_customers: boolean;
+    sync_quotes: boolean;
     sync_measurements: boolean;
     sync_scheduling: boolean;
     auto_update_job_status: boolean;

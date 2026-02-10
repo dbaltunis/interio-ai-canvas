@@ -22,7 +22,11 @@ serve(async (req) => {
       throw new Error('Google Client ID not configured');
     }
 
-    const redirectUri = `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/google-oauth-callback`;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL not configured');
+    }
+    const redirectUri = `${supabaseUrl}/functions/v1/google-oauth-callback`;
     const scope = 'https://www.googleapis.com/auth/calendar';
     
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
