@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -16,7 +15,6 @@ interface QuickAddPopoverProps {
   startTime: string;
   endTime?: string;
   onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string }) => void;
-  anchorRef?: React.RefObject<HTMLDivElement>;
   anchorPosition?: { x: number; y: number };
   children?: React.ReactNode;
 }
@@ -28,7 +26,6 @@ export const QuickAddPopover = ({
   startTime,
   endTime: initialEndTime,
   onMoreOptions,
-  anchorRef,
   anchorPosition,
 }: QuickAddPopoverProps) => {
   const [title, setTitle] = useState("");
@@ -37,7 +34,7 @@ export const QuickAddPopover = ({
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const virtualTriggerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const createAppointment = useCreateAppointment();
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
@@ -67,14 +64,33 @@ export const QuickAddPopover = ({
     }
   }, [open]);
 
-  // Position the virtual trigger based on anchorPosition
+  // Close on click outside
   useEffect(() => {
-    if (anchorPosition && virtualTriggerRef.current) {
-      virtualTriggerRef.current.style.position = 'fixed';
-      virtualTriggerRef.current.style.left = `${anchorPosition.x}px`;
-      virtualTriggerRef.current.style.top = `${anchorPosition.y}px`;
-    }
-  }, [anchorPosition]);
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onOpenChange(false);
+      }
+    };
+    // Delay to avoid the opening click from immediately closing
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onOpenChange]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open, onOpenChange]);
 
   const computedEndTime = useCallback(() => {
     const parts = startTime.split(':').map(Number);
@@ -142,151 +158,154 @@ export const QuickAddPopover = ({
     onOpenChange(false);
   };
 
+  if (!open) return null;
+
   const endTimeStr = computedEndTime();
 
+  // Calculate position: anchor to click position, ensure it stays in viewport
+  const popoverWidth = 320;
+  const popoverHeight = 420;
+  let left = anchorPosition?.x ?? 200;
+  let top = anchorPosition?.y ?? 200;
+
+  // Keep within viewport bounds
+  if (typeof window !== 'undefined') {
+    if (left + popoverWidth > window.innerWidth - 16) {
+      left = Math.max(16, (anchorPosition?.x ?? 200) - popoverWidth - 8);
+    }
+    if (top + popoverHeight > window.innerHeight - 16) {
+      top = Math.max(16, window.innerHeight - popoverHeight - 16);
+    }
+  }
+
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <div
-          ref={virtualTriggerRef}
-          className="pointer-events-none"
-          style={{
-            position: 'fixed',
-            width: 1,
-            height: 1,
-            ...(anchorPosition ? { left: anchorPosition.x, top: anchorPosition.y } : {}),
-          }}
+    <div
+      ref={popoverRef}
+      className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
+      style={{ left, top }}
+    >
+      {/* Color header bar */}
+      <div className="h-2" style={{ backgroundColor: selectedColor }} />
+
+      {/* Date/time header */}
+      <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        <span className="font-semibold text-foreground">{format(date, 'EEE, MMM d')}</span>
+        <span className="text-muted-foreground">&middot;</span>
+        <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
+      </div>
+
+      <div className="px-3 pb-3 space-y-3">
+        {/* Title input */}
+        <Input
+          ref={inputRef}
+          placeholder="Event title..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+          autoComplete="off"
         />
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-80 p-0 overflow-hidden"
-        side="right"
-        align="start"
-        sideOffset={8}
-      >
-        {/* Color header bar */}
-        <div className="h-2" style={{ backgroundColor: selectedColor }} />
 
-        {/* Date/time header */}
-        <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold text-foreground">{format(date, 'EEE, MMM d')}</span>
-          <span className="text-muted-foreground">&middot;</span>
-          <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
-        </div>
-
-        <div className="px-3 pb-3 space-y-3">
-          {/* Title input */}
-          <Input
-            ref={inputRef}
-            placeholder="Event title..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
-            autoComplete="off"
-          />
-
-          {/* Duration chips */}
-          <div>
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
-            <div className="flex gap-1.5">
-              {DURATION_CHIPS.map(chip => (
-                <button
-                  key={chip.minutes}
-                  type="button"
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                    selectedDuration === chip.minutes
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                  onClick={() => setSelectedDuration(chip.minutes)}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Event type pills */}
-          <div>
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
-            <div className="flex flex-wrap gap-1.5">
-              {EVENT_TYPES.map(type => (
-                <button
-                  key={type.value}
-                  type="button"
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                    selectedType === type.value
-                      ? 'ring-2 ring-offset-1 shadow-sm'
-                      : 'opacity-50 hover:opacity-80'
-                  }`}
-                  style={{
-                    backgroundColor: `${type.color}20`,
-                    color: type.color,
-                    ...(selectedType === type.value ? { ringColor: type.color } : {}),
-                  }}
-                  onClick={() => {
-                    setSelectedType(type.value);
-                    setSelectedColor(type.color);
-                  }}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Color selector */}
-          <div>
-            <button
-              type="button"
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setShowColorPicker(!showColorPicker)}
-            >
-              <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: selectedColor }} />
-              <Palette className="h-3.5 w-3.5" />
-              <span>Color</span>
-            </button>
-            {showColorPicker && (
-              <div className="flex gap-2 mt-2">
-                {COLOR_DOTS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-6 h-6 rounded-full transition-all ${
-                      selectedColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setSelectedColor(color)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="default"
-              className="flex-1 h-9"
-              onClick={handleSave}
-              disabled={createAppointment.isPending || !title.trim()}
-            >
-              {createAppointment.isPending ? 'Creating...' : 'Save'}
-            </Button>
-            <Button
-              size="default"
-              variant="ghost"
-              className="h-9 text-sm text-muted-foreground"
-              onClick={handleMoreOptions}
-            >
-              More options
-              <ChevronRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
+        {/* Duration chips */}
+        <div>
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
+          <div className="flex gap-1.5">
+            {DURATION_CHIPS.map(chip => (
+              <button
+                key={chip.minutes}
+                type="button"
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                  selectedDuration === chip.minutes
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+                onClick={() => setSelectedDuration(chip.minutes)}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+
+        {/* Event type pills */}
+        <div>
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
+          <div className="flex flex-wrap gap-1.5">
+            {EVENT_TYPES.map(type => (
+              <button
+                key={type.value}
+                type="button"
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                  selectedType === type.value
+                    ? 'ring-2 ring-offset-1 shadow-sm'
+                    : 'opacity-50 hover:opacity-80'
+                }`}
+                style={{
+                  backgroundColor: `${type.color}20`,
+                  color: type.color,
+                  ...(selectedType === type.value ? { ringColor: type.color } : {}),
+                }}
+                onClick={() => {
+                  setSelectedType(type.value);
+                  setSelectedColor(type.color);
+                }}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color selector */}
+        <div>
+          <button
+            type="button"
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setShowColorPicker(!showColorPicker)}
+          >
+            <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: selectedColor }} />
+            <Palette className="h-3.5 w-3.5" />
+            <span>Color</span>
+          </button>
+          {showColorPicker && (
+            <div className="flex gap-2 mt-2">
+              {COLOR_DOTS.map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`w-6 h-6 rounded-full transition-all ${
+                    selectedColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setSelectedColor(color)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1">
+          <Button
+            size="default"
+            className="flex-1 h-9"
+            onClick={handleSave}
+            disabled={createAppointment.isPending || !title.trim()}
+          >
+            {createAppointment.isPending ? 'Creating...' : 'Save'}
+          </Button>
+          <Button
+            size="default"
+            variant="ghost"
+            className="h-9 text-sm text-muted-foreground"
+            onClick={handleMoreOptions}
+          >
+            More options
+            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
