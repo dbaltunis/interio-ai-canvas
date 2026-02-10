@@ -103,11 +103,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
     }
   }, [isCreatingEvent, eventCreationStart]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e?: React.MouseEvent) => {
     if (isCreatingEvent && eventCreationStart !== null && eventCreationEnd !== null) {
       const minSlot = Math.min(eventCreationStart, eventCreationEnd);
       const maxSlot = Math.max(eventCreationStart, eventCreationEnd);
-      onTimeSlotClick?.(currentDate, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`);
+      onTimeSlotClick?.(currentDate, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`, e);
     }
     setIsCreatingEvent(false);
     setEventCreationStart(null);

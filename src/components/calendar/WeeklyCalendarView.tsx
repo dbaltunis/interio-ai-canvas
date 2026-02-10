@@ -307,12 +307,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     }
   }, [isCreatingEvent, eventCreationStart]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e?: React.MouseEvent) => {
     if (isCreatingEvent && eventCreationStart && eventCreationEnd) {
       if (isSameDay(eventCreationStart.date, eventCreationEnd.date)) {
         const minSlot = Math.min(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
         const maxSlot = Math.max(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
-        onTimeSlotClick?.(eventCreationStart.date, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`);
+        // Create a synthetic React-like event with clientX/clientY for popover positioning
+        const syntheticEvent = e ? { clientX: e.clientX, clientY: e.clientY } as unknown as React.MouseEvent : undefined;
+        onTimeSlotClick?.(eventCreationStart.date, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`, syntheticEvent);
       }
     }
     setIsCreatingEvent(false);
