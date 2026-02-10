@@ -43,12 +43,14 @@ interface DailyCalendarViewProps {
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
   filteredAppointments?: any[];
+  hiddenSources?: Set<string>;
 }
 
-export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: DailyCalendarViewProps) => {
+export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments, hiddenSources }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
+  const displayBookings = hiddenSources?.has('bookings') ? undefined : bookedAppointments;
   const { data: tasks } = useMyTasks();
   const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -81,8 +83,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
 
   // Memoized events for the day
   const dayEvents = useMemo(() => {
-    return getAllEventsForDate(displayAppointments, bookedAppointments, tasks, currentDate, currentUserId);
-  }, [displayAppointments, bookedAppointments, tasks, currentDate, currentUserId]);
+    return getAllEventsForDate(displayAppointments, displayBookings, tasks, currentDate, currentUserId);
+  }, [displayAppointments, displayBookings, tasks, currentDate, currentUserId]);
 
   // Overlap layout
   const overlapLayout = useMemo(() => calculateOverlapLayout(dayEvents), [dayEvents]);

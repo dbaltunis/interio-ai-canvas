@@ -7,7 +7,9 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Calendar as CalendarIcon, Hash, Phone, Tag, Plus } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Calendar as CalendarIcon, Hash, Phone, Tag, Plus, Clock } from "lucide-react";
+import { UnifiedAppointmentDialog } from "@/components/calendar/UnifiedAppointmentDialog";
+import { useAppointments } from "@/hooks/useAppointments";
 import { syncSequenceCounter, getEntityTypeFromStatus, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
 import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -712,6 +714,9 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </div>
       )}
 
+      {/* Upcoming Appointments for this Project */}
+      <ProjectAppointmentsCard projectId={project.id} clientId={formData.client_id} />
+
       {/* Project Notes & Activity - Side by Side on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ProjectNotesCard projectId={project.id} />
@@ -741,5 +746,75 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </div>
       )}
     </div>
+  );
+};
+
+/** Mini appointments card for project detail page */
+const ProjectAppointmentsCard = ({ projectId, clientId }: { projectId: string; clientId?: string }) => {
+  const { data: appointments } = useAppointments();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Filter appointments for this project or client
+  const projectAppointments = useMemo(() => {
+    if (!appointments) return [];
+    return appointments
+      .filter(a => a.project_id === projectId || (clientId && a.client_id === clientId))
+      .filter(a => new Date(a.start_time) >= new Date())
+      .slice(0, 5);
+  }, [appointments, projectId, clientId]);
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              Upcoming Appointments
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => setDialogOpen(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Schedule
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 pt-0">
+          {projectAppointments.length > 0 ? (
+            <div className="space-y-2">
+              {projectAppointments.map(apt => (
+                <div key={apt.id} className="flex items-center gap-3 py-1.5 px-2 rounded-md bg-muted/30">
+                  <div className="w-1 h-8 rounded-full" style={{ backgroundColor: apt.color || '#6366F1' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{apt.title}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {format(new Date(apt.start_time), 'MMM d, h:mm a')}
+                    </p>
+                  </div>
+                  {apt.appointment_type && (
+                    <Badge variant="secondary" className="text-[10px] h-4 capitalize">
+                      {apt.appointment_type}
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              No upcoming appointments for this project
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <UnifiedAppointmentDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
+    </>
   );
 };

@@ -15,6 +15,7 @@ interface MonthlyCalendarViewProps {
   filteredAppointments?: any[];
   onEventClick?: (eventId: string) => void;
   onDayClick?: (date: Date) => void;
+  hiddenSources?: Set<string>;
 }
 
 export const MonthlyCalendarView = ({
@@ -22,10 +23,12 @@ export const MonthlyCalendarView = ({
   filteredAppointments,
   onEventClick,
   onDayClick,
+  hiddenSources,
 }: MonthlyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
+  const displayBookings = hiddenSources?.has('bookings') ? undefined : bookedAppointments;
   const { data: tasks } = useMyTasks();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [morePopoverDay, setMorePopoverDay] = useState<Date | null>(null);
@@ -60,10 +63,10 @@ export const MonthlyCalendarView = ({
     const map = new Map<string, any[]>();
     for (const day of days) {
       const key = format(day, 'yyyy-MM-dd');
-      map.set(key, getAllEventsForDate(displayAppointments, bookedAppointments, tasks, day, currentUserId));
+      map.set(key, getAllEventsForDate(displayAppointments, displayBookings, tasks, day, currentUserId));
     }
     return map;
-  }, [days, displayAppointments, bookedAppointments, tasks, currentUserId]);
+  }, [days, displayAppointments, displayBookings, tasks, currentUserId]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

@@ -749,52 +749,42 @@ export const UnifiedAppointmentDialog = ({
                 />
               </div>
 
-              {/* Invite Clients */}
+              {/* Send Email Invitation */}
               <div className="flex items-center gap-2">
                 <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
-                  placeholder="Invite clients (email)"
-                  value={event.inviteClientEmail}
-                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, inviteClientEmail: e.target.value })), [])}
-                  className="h-8 text-xs"
+                  type="email"
+                  placeholder="Invite by email..."
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="h-8 text-xs flex-1"
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (inviteEmail && appointment?.id) {
+                      sendInvitation.mutate({
+                        appointmentId: appointment.id,
+                        recipientEmail: inviteEmail,
+                        recipientName: inviteName || undefined
+                      });
+                      setInviteEmail("");
+                      setInviteName("");
+                    } else if (inviteEmail) {
+                      // Store for later — will be used when appointment is saved
+                      setEvent(prev => ({ ...prev, inviteClientEmail: inviteEmail }));
+                      setInviteEmail("");
+                      toast({ title: "Email added", description: "Invitation will be sent when the event is saved." });
+                    }
+                  }}
+                  disabled={!inviteEmail || sendInvitation.isPending}
+                  className="h-8 text-xs"
+                >
+                  {sendInvitation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
+                </Button>
               </div>
-
-              {/* Email Invitation for existing appointments */}
-              {isEditing && appointment?.id && (
-                <div className="p-2 rounded bg-muted/50 space-y-2">
-                  <Label className="text-[10px] text-muted-foreground">Send Email Invitation</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="recipient@email.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="h-8 text-xs flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (inviteEmail && appointment?.id) {
-                          sendInvitation.mutate({
-                            appointmentId: appointment.id,
-                            recipientEmail: inviteEmail,
-                            recipientName: inviteName || undefined
-                          });
-                          setInviteEmail("");
-                          setInviteName("");
-                        }
-                      }}
-                      disabled={!inviteEmail || sendInvitation.isPending}
-                      className="h-8 text-xs"
-                    >
-                      {sendInvitation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CollapsibleContent>
           </Collapsible>
         </div>

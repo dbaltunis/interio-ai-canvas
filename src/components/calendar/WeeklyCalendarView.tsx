@@ -7,6 +7,7 @@ import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } fro
 import { Video, CheckCheck } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
+import { EventDetailPopover } from "./EventDetailPopover";
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import {
@@ -90,10 +91,10 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
     e.stopPropagation();
     if (event.isTask) onTaskClick(event.taskData as Task);
     else if (event.isBooking) onBookingClick(event);
-    else onEventClick?.(event.id);
+    // Regular events: handled by EventDetailPopover wrapper
   };
 
-  return (
+  const cardContent = (
     <div
       ref={setNodeRef}
       className="absolute rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97]"
@@ -183,6 +184,20 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
       </div>
     </div>
   );
+
+  // Wrap regular events in EventDetailPopover for card-style view
+  if (!event.isBooking && !event.isTask) {
+    return (
+      <EventDetailPopover
+        event={event}
+        onEdit={(id) => onEventClick?.(id)}
+      >
+        {cardContent}
+      </EventDetailPopover>
+    );
+  }
+
+  return cardContent;
 });
 DraggableEventCard.displayName = 'DraggableEventCard';
 
@@ -216,12 +231,14 @@ interface WeeklyCalendarViewProps {
   onTimeSlotClick?: (date: Date, time: string) => void;
   onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
+  hiddenSources?: Set<string>;
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments, hiddenSources }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
+  const displayBookings = hiddenSources?.has('bookings') ? undefined : bookedAppointments;
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
   const updateTask = useUpdateTask();
@@ -262,10 +279,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const dayEventsMap = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const day of weekDays) {
-      map.set(day.toISOString(), getAllEventsForDate(displayAppointments, bookedAppointments, tasks, day, currentUserId));
+      map.set(day.toISOString(), getAllEventsForDate(displayAppointments, displayBookings, tasks, day, currentUserId));
     }
     return map;
-  }, [weekDays, displayAppointments, bookedAppointments, tasks, currentUserId]);
+  }, [weekDays, displayAppointments, displayBookings, tasks, currentUserId]);
 
   // Memoize overlap layouts
   const overlapLayouts = useMemo(() => {

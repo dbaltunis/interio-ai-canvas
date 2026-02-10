@@ -66,7 +66,7 @@ export const CalendarSyncToolbar = ({
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   const { integration: outlookIntegration, isConnected: isOutlookConnected } = useOutlookCalendarIntegration();
   const { syncFromOutlook, syncAllToOutlook, isSyncingFromOutlook, isSyncingAll: isSyncingAllOutlook } = useOutlookCalendarSync();
-  const { integration: nylasIntegration, isConnected: isNylasConnected } = useNylasCalendarIntegration();
+  const { integration: nylasIntegration, isConnected: isNylasConnected, setupWebhook, isSettingUpWebhook, webhookActive } = useNylasCalendarIntegration();
   const { syncFromNylas, syncToNylas, isSyncingFromNylas, isSyncingToNylas } = useNylasCalendarSync();
   const isTablet = useIsTablet();
   const isMobile = useIsMobile();
@@ -440,6 +440,24 @@ export const CalendarSyncToolbar = ({
                     className="scale-75"
                   />
                 </div>
+                {isNylasConnected && (
+                  <div className="px-2 py-1.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Real-time Sync</span>
+                    {webhookActive ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => setupWebhook()}
+                        disabled={isSettingUpWebhook}
+                      >
+                        {isSettingUpWebhook ? 'Setting up...' : 'Enable'}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </DropdownMenuContent>

@@ -45,11 +45,11 @@ serve(async (req) => {
     if (endTime <= startTime) {
       console.error('Invalid date range for appointment:', appointment.id);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Invalid date range: end time must be after start time',
           appointmentId: appointment.id
         }),
-        { 
+        {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
@@ -74,7 +74,7 @@ serve(async (req) => {
     }
 
     let accessToken = integration.api_credentials?.access_token;
-    
+
     // Check if token needs refresh
     if (integration.api_credentials?.expires_at && new Date(integration.api_credentials.expires_at) <= new Date()) {
       console.log('Refreshing expired token...');
@@ -111,15 +111,15 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', integration.id);
-      
+
       console.log('Token refreshed successfully');
     }
 
     // Get calendar ID from configuration or use 'primary'
     const calendarId = integration.configuration?.calendar_id || 'primary';
 
-    // Create Google Calendar event with conference data for Meet link
-    const event = {
+    // Build event data — only add video meeting if explicitly requested
+    const event: any = {
       summary: appointment.title,
       description: appointment.description || '',
       location: appointment.location || '',
@@ -131,51 +131,92 @@ serve(async (req) => {
         dateTime: appointment.end_time,
         timeZone: 'UTC'
       },
-      conferenceData: {
+    };
+
+    // Only add conferenceData if the appointment explicitly has a video meeting
+    if (appointment.video_provider === 'google_meet' ||
+        (appointment.video_meeting_link && appointment.video_meeting_link.includes('meet.google.com'))) {
+      event.conferenceData = {
         createRequest: {
           requestId: `appointment-${appointmentId}-${Date.now()}`,
           conferenceSolutionKey: { type: 'hangoutsMeet' }
         }
-      }
-    };
-
-    console.log('Creating event in Google Calendar:', event.summary);
-
-    // Call Google Calendar API with conferenceDataVersion to generate Meet link
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?conferenceDataVersion=1`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(event)
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Google Calendar API error:', error);
-      throw new Error(`Google Calendar API error: ${response.status}`);
+      };
     }
 
-    const googleEvent = await response.json();
-    console.log('Successfully created Google Calendar event:', googleEvent.id);
+    const existingGoogleEventId = appointment.google_event_id;
+
+    let googleEvent: any;
+    let isUpdate = false;
+
+    if (existingGoogleEventId) {
+      // UPDATE existing Google Calendar event (PATCH)
+      console.log('Updating existing Google Calendar event:', existingGoogleEventId);
+      const conferenceParam = event.conferenceData ? '&conferenceDataVersion=1' : '';
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${existingGoogleEventId}?sendUpdates=none${conferenceParam}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(event)
+        }
+      );
+
+      if (response.ok) {
+        googleEvent = await response.json();
+        isUpdate = true;
+        console.log('Successfully updated Google Calendar event:', googleEvent.id);
+      } else if (response.status === 404 || response.status === 410) {
+        // Event was deleted from Google — create a new one
+        console.log('Google event not found (deleted?), creating new one');
+        existingGoogleEventId && null; // clear reference
+      } else {
+        const error = await response.text();
+        console.error('Google Calendar PATCH error:', error);
+        throw new Error(`Google Calendar API error: ${response.status}`);
+      }
+    }
+
+    if (!googleEvent) {
+      // CREATE new Google Calendar event (POST)
+      console.log('Creating new event in Google Calendar:', event.summary);
+      const conferenceParam = event.conferenceData ? '?conferenceDataVersion=1' : '';
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events${conferenceParam}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(event)
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Google Calendar API error:', error);
+        throw new Error(`Google Calendar API error: ${response.status}`);
+      }
+
+      googleEvent = await response.json();
+      console.log('Successfully created Google Calendar event:', googleEvent.id);
+    }
 
     // Extract Google Meet link if generated
     const meetLink = googleEvent.conferenceData?.entryPoints?.find(
       (ep: any) => ep.entryPointType === 'video'
     )?.uri;
 
-    console.log('Generated Google Meet link:', meetLink);
-
-    // Update appointment with google_event_id and Meet link
+    // Update appointment with google_event_id (and Meet link only if we requested one)
     const updateData: any = {
       google_event_id: googleEvent.id
     };
 
-    if (meetLink) {
+    if (meetLink && event.conferenceData) {
       updateData.video_meeting_link = meetLink;
       updateData.video_provider = 'google_meet';
       updateData.video_meeting_data = {
@@ -193,28 +234,37 @@ serve(async (req) => {
       console.error('Failed to update appointment with google_event_id:', updateError);
     }
 
-    // Store sync event record
-    const { error: syncError } = await supabase
-      .from('google_calendar_sync_events')
-      .insert({
-        integration_id: integration.id,
-        appointment_id: appointmentId,
-        google_event_id: googleEvent.id,
-        sync_direction: 'to_google',
-        last_synced_at: new Date().toISOString(),
-      });
+    // Store sync event record (upsert to handle re-syncs)
+    if (!isUpdate) {
+      const { error: syncError } = await supabase
+        .from('google_calendar_sync_events')
+        .insert({
+          integration_id: integration.id,
+          appointment_id: appointmentId,
+          google_event_id: googleEvent.id,
+          sync_direction: 'to_google',
+          last_synced_at: new Date().toISOString(),
+        });
 
-    if (syncError) {
-      console.error('Failed to store sync record:', syncError);
+      if (syncError) {
+        console.error('Failed to store sync record:', syncError);
+      }
+    } else {
+      // Update existing sync record
+      await supabase
+        .from('google_calendar_sync_events')
+        .update({ last_synced_at: new Date().toISOString() })
+        .eq('appointment_id', appointmentId)
+        .eq('google_event_id', googleEvent.id);
     }
 
-    console.log('Successfully synced to Google Calendar:', googleEvent.id);
+    console.log(`Successfully ${isUpdate ? 'updated' : 'created'} Google Calendar event:`, googleEvent.id);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         googleEventId: googleEvent.id,
-        message: 'Event synced to Google Calendar'
+        message: `Event ${isUpdate ? 'updated in' : 'synced to'} Google Calendar`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -223,7 +273,7 @@ serve(async (req) => {
     console.error('Error in sync-to-google-calendar:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }),
-      { 
+      {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }

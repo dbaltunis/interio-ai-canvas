@@ -295,6 +295,51 @@ export const useNylasCalendarIntegration = () => {
     },
   });
 
+  const setupWebhook = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('nylas-setup-webhook', {
+        body: { userId: user.id, action: 'create' }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['nylas-calendar-integration'] });
+      toast({
+        title: "Real-time Sync Enabled",
+        description: "You'll now receive instant calendar updates via webhooks.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Webhook Setup Failed",
+        description: error.message || "Could not enable real-time sync",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const webhookStatus = useQuery({
+    queryKey: ['nylas-webhook-status'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { active: false };
+
+      const { data, error } = await supabase.functions.invoke('nylas-setup-webhook', {
+        body: { userId: user.id, action: 'status' }
+      });
+      if (error) return { active: false };
+      return data || { active: false };
+    },
+    enabled: !!integration?.active,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return {
     integration,
     accountOwnerIntegration,
@@ -304,6 +349,9 @@ export const useNylasCalendarIntegration = () => {
     disconnect: disconnect.mutate,
     isConnecting: connect.isPending,
     isDisconnecting: disconnect.isPending,
+    setupWebhook: setupWebhook.mutate,
+    isSettingUpWebhook: setupWebhook.isPending,
+    webhookActive: webhookStatus.data?.active || false,
   };
 };
 

@@ -62,6 +62,50 @@ export const useAppointments = () => {
   });
 };
 
+/** Sync to all connected calendars (Google, Outlook, Nylas) */
+async function syncToConnectedCalendars(appointmentId: string, userId: string) {
+  const { data: integrations } = await supabase
+    .from('integration_settings')
+    .select('integration_type, active')
+    .eq('user_id', userId)
+    .in('integration_type', ['google_calendar', 'outlook_calendar', 'nylas_calendar'])
+    .eq('active', true);
+
+  const syncPromises: Promise<void>[] = [];
+
+  if (integrations?.some(i => i.integration_type === 'google_calendar')) {
+    syncPromises.push(
+      supabase.functions.invoke('sync-to-google-calendar', {
+        body: { appointmentId }
+      }).then(({ error }) => {
+        if (error) console.error('Google sync error:', error);
+      })
+    );
+  }
+
+  if (integrations?.some(i => i.integration_type === 'outlook_calendar')) {
+    syncPromises.push(
+      supabase.functions.invoke('sync-to-outlook-calendar', {
+        body: { appointmentId }
+      }).then(({ error }) => {
+        if (error) console.error('Outlook sync error:', error);
+      })
+    );
+  }
+
+  if (integrations?.some(i => i.integration_type === 'nylas_calendar')) {
+    syncPromises.push(
+      supabase.functions.invoke('nylas-sync-calendar', {
+        body: { userId, direction: 'to' }
+      }).then(({ error }) => {
+        if (error) console.error('Nylas sync error:', error);
+      })
+    );
+  }
+
+  return syncPromises;
+}
+
 export const useCreateAppointment = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -91,36 +135,9 @@ export const useCreateAppointment = () => {
         description: "Appointment created successfully",
       });
 
-      // Auto-sync to connected calendars (Google + Outlook in parallel)
+      // Auto-sync to all connected calendars (Google + Outlook + Nylas)
       try {
-        const { data: integrations } = await supabase
-          .from('integration_settings')
-          .select('integration_type, active')
-          .eq('user_id', data.user_id)
-          .in('integration_type', ['google_calendar', 'outlook_calendar'])
-          .eq('active', true);
-
-        const syncPromises: Promise<void>[] = [];
-
-        if (integrations?.some(i => i.integration_type === 'google_calendar')) {
-          syncPromises.push(
-            supabase.functions.invoke('sync-to-google-calendar', {
-              body: { appointmentId: data.id }
-            }).then(({ error }) => {
-              if (error) console.error('Google sync error:', error);
-            })
-          );
-        }
-
-        if (integrations?.some(i => i.integration_type === 'outlook_calendar')) {
-          syncPromises.push(
-            supabase.functions.invoke('sync-to-outlook-calendar', {
-              body: { appointmentId: data.id }
-            }).then(({ error }) => {
-              if (error) console.error('Outlook sync error:', error);
-            })
-          );
-        }
+        const syncPromises = await syncToConnectedCalendars(data.id, data.user_id);
 
         if (syncPromises.length > 0) {
           toast({ title: "Syncing...", description: "Syncing to connected calendars" });
@@ -169,34 +186,7 @@ export const useUpdateAppointment = () => {
 
       if (timeFieldsChanged) {
         try {
-          const { data: integrations } = await supabase
-            .from('integration_settings')
-            .select('integration_type, active')
-            .eq('user_id', data.user_id)
-            .in('integration_type', ['google_calendar', 'outlook_calendar'])
-            .eq('active', true);
-
-          const syncPromises: Promise<void>[] = [];
-
-          if (integrations?.some(i => i.integration_type === 'google_calendar')) {
-            syncPromises.push(
-              supabase.functions.invoke('sync-to-google-calendar', {
-                body: { appointmentId: data.id }
-              }).then(({ error }) => {
-                if (error) console.error('Google sync error:', error);
-              })
-            );
-          }
-
-          if (integrations?.some(i => i.integration_type === 'outlook_calendar')) {
-            syncPromises.push(
-              supabase.functions.invoke('sync-to-outlook-calendar', {
-                body: { appointmentId: data.id }
-              }).then(({ error }) => {
-                if (error) console.error('Outlook sync error:', error);
-              })
-            );
-          }
+          const syncPromises = await syncToConnectedCalendars(data.id, data.user_id);
 
           if (syncPromises.length > 0) {
             toast({ title: "Syncing...", description: "Updating connected calendars" });
@@ -224,6 +214,16 @@ export const useDeleteAppointment = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First, delete from external calendars BEFORE deleting from DB
+      try {
+        await supabase.functions.invoke('delete-calendar-event', {
+          body: { appointmentId: id }
+        });
+      } catch (err) {
+        console.error('External calendar delete error (non-blocking):', err);
+      }
+
+      // Now delete from our database
       const { error } = await supabase
         .from('appointments')
         .delete()

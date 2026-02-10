@@ -111,8 +111,8 @@ serve(async (req) => {
       accessToken = await refreshMicrosoftToken(supabase, integration);
     }
 
-    // Create Outlook Calendar event via Microsoft Graph API
-    const event = {
+    // Build Outlook event data — only add video meeting if explicitly requested
+    const event: any = {
       subject: appointment.title,
       body: {
         contentType: 'text',
@@ -129,39 +129,75 @@ serve(async (req) => {
       location: {
         displayName: appointment.location || '',
       },
-      isOnlineMeeting: true,
-      onlineMeetingProvider: 'teamsForBusiness',
     };
 
-    console.log('Creating event in Outlook Calendar:', event.subject);
-
-    const response = await fetch('https://graph.microsoft.com/v1.0/me/events', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(event),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Microsoft Graph API error:', errorText);
-      throw new Error(`Microsoft Graph API error: ${response.status}`);
+    // Only add Teams meeting if the appointment explicitly requests one
+    if (appointment.video_provider === 'microsoft_teams') {
+      event.isOnlineMeeting = true;
+      event.onlineMeetingProvider = 'teamsForBusiness';
     }
 
-    const outlookEvent = await response.json();
-    console.log('Successfully created Outlook event:', outlookEvent.id);
+    const existingOutlookEventId = appointment.outlook_event_id;
+    let outlookEvent: any;
+    let isUpdate = false;
+
+    if (existingOutlookEventId) {
+      // UPDATE existing Outlook event (PATCH)
+      console.log('Updating existing Outlook event:', existingOutlookEventId);
+      const response = await fetch(`https://graph.microsoft.com/v1.0/me/events/${existingOutlookEventId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event),
+      });
+
+      if (response.ok) {
+        outlookEvent = await response.json();
+        isUpdate = true;
+        console.log('Successfully updated Outlook event:', outlookEvent.id);
+      } else if (response.status === 404) {
+        // Event was deleted from Outlook — create a new one
+        console.log('Outlook event not found (deleted?), creating new one');
+      } else {
+        const errorText = await response.text();
+        console.error('Microsoft Graph PATCH error:', errorText);
+        throw new Error(`Microsoft Graph API error: ${response.status}`);
+      }
+    }
+
+    if (!outlookEvent) {
+      // CREATE new Outlook event (POST)
+      console.log('Creating event in Outlook Calendar:', event.subject);
+      const response = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Microsoft Graph API error:', errorText);
+        throw new Error(`Microsoft Graph API error: ${response.status}`);
+      }
+
+      outlookEvent = await response.json();
+      console.log('Successfully created Outlook event:', outlookEvent.id);
+    }
 
     // Extract Teams meeting link if generated
     const teamsLink = outlookEvent.onlineMeeting?.joinUrl;
 
-    // Update appointment with outlook_event_id and Teams link
+    // Update appointment with outlook_event_id (and Teams link only if we requested one)
     const updateData: any = {
       outlook_event_id: outlookEvent.id,
     };
 
-    if (teamsLink) {
+    if (teamsLink && event.isOnlineMeeting) {
       updateData.video_meeting_link = teamsLink;
       updateData.video_provider = 'microsoft_teams';
       updateData.video_meeting_data = {
@@ -183,7 +219,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         outlookEventId: outlookEvent.id,
-        message: 'Event synced to Outlook Calendar',
+        message: `Event ${isUpdate ? 'updated in' : 'synced to'} Outlook Calendar`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

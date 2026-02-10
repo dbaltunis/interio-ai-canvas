@@ -110,22 +110,36 @@ async function syncFromProvider(
   // Get existing appointments with nylas_event_id to avoid duplicates
   const { data: existingAppointments } = await supabase
     .from('appointments')
-    .select('id, nylas_event_id, google_event_id')
+    .select('id, nylas_event_id, title, start_time, end_time, description, location')
     .eq('user_id', userId)
     .not('nylas_event_id', 'is', null);
 
-  const existingNylasIds = new Set(existingAppointments?.map((a: any) => a.nylas_event_id) || []);
+  const existingByNylasId = new Map(
+    (existingAppointments || []).map((a: any) => [a.nylas_event_id, a])
+  );
+
+  // Track seen event IDs for deletion detection
+  const seenNylasEventIds = new Set<string>();
 
   let synced = 0;
   let updated = 0;
+  let deleted = 0;
   let skipped = 0;
 
   for (const event of allEvents) {
-    // Skip cancelled events
+    // Handle cancelled events — delete locally
     if (event.status === 'cancelled') {
+      const existing = existingByNylasId.get(event.id);
+      if (existing) {
+        console.log(`Deleting cancelled Nylas event: ${existing.title}`);
+        await supabase.from('appointments').delete().eq('id', existing.id);
+        deleted++;
+      }
       skipped++;
       continue;
     }
+
+    seenNylasEventIds.add(event.id);
 
     // Parse event times
     const startTime = parseNylasTime(event.when);
@@ -136,7 +150,7 @@ async function syncFromProvider(
       continue;
     }
 
-    const appointmentData = {
+    const appointmentData: any = {
       user_id: userId,
       title: event.title || 'No Title',
       description: event.description || '',
@@ -148,10 +162,25 @@ async function syncFromProvider(
       color: event.organizer_email ? undefined : '#3b82f6',
     };
 
-    if (existingNylasIds.has(event.id)) {
-      // Update existing
-      const existing = existingAppointments?.find((a: any) => a.nylas_event_id === event.id);
-      if (existing) {
+    // Sync participants/attendees
+    if (event.participants && event.participants.length > 0) {
+      appointmentData.invited_client_emails = event.participants
+        .map((p: any) => p.email)
+        .filter(Boolean);
+    }
+
+    const existing = existingByNylasId.get(event.id);
+
+    if (existing) {
+      // UPDATE existing — check if anything changed
+      const hasChanged =
+        existing.title !== appointmentData.title ||
+        existing.start_time !== appointmentData.start_time ||
+        existing.end_time !== appointmentData.end_time ||
+        existing.description !== appointmentData.description ||
+        existing.location !== appointmentData.location;
+
+      if (hasChanged) {
         await supabase
           .from('appointments')
           .update({
@@ -168,6 +197,15 @@ async function syncFromProvider(
       // Insert new
       await supabase.from('appointments').insert(appointmentData);
       synced++;
+    }
+  }
+
+  // Delete local appointments whose Nylas events no longer exist
+  for (const [nylasEventId, apt] of existingByNylasId) {
+    if (!seenNylasEventIds.has(nylasEventId)) {
+      console.log(`Deleting locally: Nylas event ${nylasEventId} no longer exists (${apt.title})`);
+      await supabase.from('appointments').delete().eq('id', apt.id);
+      deleted++;
     }
   }
 
@@ -191,6 +229,7 @@ async function syncFromProvider(
       success: true,
       synced,
       updated,
+      deleted,
       skipped,
       total: allEvents.length,
     }),
@@ -204,13 +243,13 @@ async function syncToProvider(
   const now = new Date();
   const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
-  // Get local appointments without nylas_event_id (created locally)
+  // Get local appointments that need syncing:
+  // 1. Appointments WITHOUT nylas_event_id and WITHOUT google_event_id (new local events)
+  // 2. Appointments WITH nylas_event_id that may need updating
   const { data: localAppointments, error } = await supabase
     .from('appointments')
     .select('*')
     .eq('user_id', userId)
-    .is('nylas_event_id', null)
-    .is('google_event_id', null)
     .gte('start_time', now.toISOString())
     .lte('start_time', futureDate.toISOString());
 
@@ -219,6 +258,7 @@ async function syncToProvider(
   }
 
   let synced = 0;
+  let updated = 0;
   let failed = 0;
 
   for (const apt of localAppointments) {
@@ -239,29 +279,85 @@ async function syncToProvider(
         eventData.location = apt.location;
       }
 
-      const response = await fetch(
-        `${apiUri}/v3/grants/${grantId}/events?calendar_id=primary`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(eventData),
-        }
-      );
+      // Include participants/attendees
+      if (apt.invited_client_emails && apt.invited_client_emails.length > 0) {
+        eventData.participants = apt.invited_client_emails
+          .filter(Boolean)
+          .map((email: string) => ({ email }));
+      }
 
-      if (response.ok) {
-        const created = await response.json();
-        // Store the Nylas event ID back
-        await supabase
-          .from('appointments')
-          .update({ nylas_event_id: created.data?.id })
-          .eq('id', apt.id);
-        synced++;
-      } else {
-        failed++;
+      if (apt.nylas_event_id) {
+        // UPDATE existing Nylas event (PUT)
+        const response = await fetch(
+          `${apiUri}/v3/grants/${grantId}/events/${apt.nylas_event_id}?calendar_id=primary`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(eventData),
+          }
+        );
+
+        if (response.ok) {
+          updated++;
+        } else if (response.status === 404) {
+          // Event deleted from provider — create a new one
+          console.log(`Nylas event ${apt.nylas_event_id} not found, creating new`);
+          const createResponse = await fetch(
+            `${apiUri}/v3/grants/${grantId}/events?calendar_id=primary`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify(eventData),
+            }
+          );
+
+          if (createResponse.ok) {
+            const created = await createResponse.json();
+            await supabase
+              .from('appointments')
+              .update({ nylas_event_id: created.data?.id })
+              .eq('id', apt.id);
+            synced++;
+          } else {
+            failed++;
+          }
+        } else {
+          failed++;
+        }
+      } else if (!apt.google_event_id) {
+        // New local event — create in Nylas
+        const response = await fetch(
+          `${apiUri}/v3/grants/${grantId}/events?calendar_id=primary`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(eventData),
+          }
+        );
+
+        if (response.ok) {
+          const created = await response.json();
+          // Store the Nylas event ID back
+          await supabase
+            .from('appointments')
+            .update({ nylas_event_id: created.data?.id })
+            .eq('id', apt.id);
+          synced++;
+        } else {
+          failed++;
+        }
       }
     } catch (_) {
       failed++;
@@ -269,7 +365,7 @@ async function syncToProvider(
   }
 
   return new Response(
-    JSON.stringify({ success: true, synced, failed, total: localAppointments.length }),
+    JSON.stringify({ success: true, synced, updated, failed, total: localAppointments.length }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
   );
 }

@@ -8,10 +8,12 @@ import {
   Loader2,
   MessageSquare,
   Edit,
+  Calendar,
 } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
 import { MessagePreviewDrawer } from '@/components/messaging/MessagePreviewDrawer';
+import { UnifiedAppointmentDialog } from '@/components/calendar/UnifiedAppointmentDialog';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +42,7 @@ export const ClientQuickActionsBar = ({
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [messageDrawerOpen, setMessageDrawerOpen] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   const navigate = useNavigate();
@@ -175,6 +178,17 @@ export const ClientQuickActionsBar = ({
           <span className="hidden sm:inline">WhatsApp</span>
         </Button>
 
+        {/* Schedule Event */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setScheduleDialogOpen(true)}
+          className="gap-1.5"
+        >
+          <Calendar className="h-4 w-4" />
+          <span className="hidden sm:inline">Schedule</span>
+        </Button>
+
         {/* Log Activity */}
         {canEditClient && (
           <Button
@@ -244,6 +258,10 @@ export const ClientQuickActionsBar = ({
         clientName={displayName || client.name}
         clientPhone={client.phone}
         channelFilter="whatsapp"
+      />
+      <UnifiedAppointmentDialog
+        open={scheduleDialogOpen}
+        onOpenChange={setScheduleDialogOpen}
       />
     </>
   );
