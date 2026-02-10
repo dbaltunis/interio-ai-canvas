@@ -101,7 +101,23 @@ serve(async (req) => {
       if (!refreshResponse.ok) {
         const errorText = await refreshResponse.text();
         console.error('Token refresh failed:', errorText);
-        throw new Error('Failed to refresh Google token');
+        
+        // Mark integration as inactive so user is prompted to reconnect
+        await supabase
+          .from('integration_settings')
+          .update({ active: false, updated_at: new Date().toISOString() })
+          .eq('id', integration.id);
+
+        return new Response(
+          JSON.stringify({ 
+            error: 'Google Calendar token expired. Please reconnect your calendar in Settings.',
+            reconnect_required: true 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          }
+        );
       }
 
       const refreshData = await refreshResponse.json();

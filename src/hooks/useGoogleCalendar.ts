@@ -415,10 +415,19 @@ export const useGoogleCalendarSync = () => {
           const responseError = (data as any).error;
           const errorMessage = typeof responseError === 'string' ? responseError : JSON.stringify(responseError);
           
-          // Check if error is about Google Calendar not being connected
+          // Check if error is about Google Calendar not being connected or needing reconnection
           if (errorMessage.includes('Google Calendar not connected') || 
-              errorMessage.includes('not connected')) {
-            // Silently handle "not connected" errors - don't show error toast
+              errorMessage.includes('not connected') ||
+              (data as any).reconnect_required) {
+            // Invalidate integration query so UI updates to show disconnected state
+            queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
+            if ((data as any).reconnect_required) {
+              toast({
+                title: "Calendar Disconnected",
+                description: "Your Google Calendar token expired. Please reconnect in Settings.",
+                variant: "destructive",
+              });
+            }
             return { imported: 0, skipped: 0 };
           }
           // If it's a different error, throw it
