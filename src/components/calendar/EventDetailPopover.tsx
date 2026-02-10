@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { Clock, MapPin, Video, Edit, Trash2, ExternalLink, Calendar, Palette, ChevronRight, Check, X } from "lucide-react";
+import { Clock, MapPin, Video, Edit, Trash2, ExternalLink, Calendar, Palette, ChevronRight } from "lucide-react";
 import { useDeleteAppointment, useUpdateAppointment } from "@/hooks/useAppointments";
 import {
   AlertDialog,
@@ -15,20 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const DURATION_CHIPS = [
-  { label: "25m", minutes: 25 },
-  { label: "30m", minutes: 30 },
-  { label: "45m", minutes: 45 },
-  { label: "1h", minutes: 60 },
-  { label: "1.5h", minutes: 90 },
-];
-
-const COLOR_DOTS = [
-  "#6366F1", "#3B82F6", "#22C55E", "#F59E0B",
-  "#EF4444", "#EC4899", "#8B5CF6", "#14B8A6",
-];
-import { DURATION_CHIPS, EVENT_TYPES, COLOR_DOTS } from "./calendarConstants";
+import { DURATION_CHIPS, COLOR_DOTS } from "./calendarConstants";
 
 interface EventDetailPopoverProps {
   children: React.ReactNode;
