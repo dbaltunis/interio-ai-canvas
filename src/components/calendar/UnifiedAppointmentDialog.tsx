@@ -75,11 +75,15 @@ export const UnifiedAppointmentDialog = ({
   });
 
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [addVideoMeeting, setAddVideoMeeting] = useState(false);
   const [videoProvider, setVideoProvider] = useState<string>('google_meet');
   const [videoLink, setVideoLink] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
+  const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
+  const [syncToCalendars, setSyncToCalendars] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();

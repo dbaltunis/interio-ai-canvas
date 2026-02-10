@@ -5838,6 +5838,47 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          quote_id: string
+          reference: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          quote_id: string
+          reference?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          quote_id?: string
+          reference?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_audit_log: {
         Row: {
           action: string
@@ -6128,6 +6169,7 @@ export type Database = {
           active: boolean | null
           created_at: string | null
           description: string | null
+          discount_percentage: number | null
           grid_code: string
           grid_data: Json
           id: string
@@ -6146,6 +6188,7 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           description?: string | null
+          discount_percentage?: number | null
           grid_code: string
           grid_data?: Json
           id?: string
@@ -6164,6 +6207,7 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           description?: string | null
+          discount_percentage?: number | null
           grid_code?: string
           grid_data?: Json
           id?: string
@@ -7113,6 +7157,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           currency: string | null
+          custom_markup_percentage: number | null
           discount_amount: number | null
           discount_scope: string | null
           discount_type: string | null
@@ -7157,6 +7202,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           currency?: string | null
+          custom_markup_percentage?: number | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
@@ -7201,6 +7247,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           currency?: string | null
+          custom_markup_percentage?: number | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
