@@ -232,9 +232,13 @@ interface WeeklyCalendarViewProps {
   onDayHeaderClick?: (date: Date) => void;
   filteredAppointments?: any[];
   hiddenSources?: Set<string>;
+  quickAddOpen?: boolean;
+  quickAddDate?: Date;
+  quickAddStartTime?: string;
+  quickAddColor?: string;
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments, hiddenSources }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, onDayHeaderClick, filteredAppointments, hiddenSources, quickAddOpen, quickAddDate, quickAddStartTime, quickAddColor }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
@@ -365,7 +369,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
+      <div className="flex flex-col h-full" onMouseUp={(e) => {
+        // Don't intercept clicks on the QuickAddPopover (fixed z-[10000] element)
+        const target = e.target as HTMLElement;
+        if (target.closest('[class*="z-[10000]"]')) return;
+        handleMouseUp(e);
+      }}>
         {/* Apple-style week header */}
         <div className="flex bg-background flex-shrink-0 sticky top-0 z-10 border-b">
           <div className="w-16 flex-shrink-0" />
@@ -484,6 +493,28 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           <span className="text-xs font-medium text-primary">New Event</span>
                         </div>
                       )}
+
+                      {/* Ghost event preview when QuickAddPopover is open */}
+                      {!isCreatingEvent && quickAddOpen && quickAddDate && quickAddStartTime && isSameDay(day, quickAddDate) && (() => {
+                        const [gh, gm] = quickAddStartTime.split(':').map(Number);
+                        const ghostSlotIndex = timeSlots.findIndex(t => t === quickAddStartTime);
+                        if (ghostSlotIndex < 0) return null;
+                        const ghostTop = ghostSlotIndex * SLOT_HEIGHT;
+                        const ghostHeight = 2 * SLOT_HEIGHT; // 30min default
+                        return (
+                          <div
+                            className="absolute left-1 right-1 rounded-lg flex items-center px-3 z-[15] border border-dashed pointer-events-none animate-pulse"
+                            style={{
+                              top: `${ghostTop}px`,
+                              height: `${ghostHeight}px`,
+                              backgroundColor: `${quickAddColor || '#6366F1'}15`,
+                              borderColor: `${quickAddColor || '#6366F1'}40`,
+                            }}
+                          >
+                            <span className="text-xs font-medium" style={{ color: quickAddColor || '#6366F1' }}>New Event</span>
+                          </div>
+                        );
+                      })()}
 
                       {isCurrentDay && currentTimePosition !== null && (
                         <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${currentTimePosition}px` }}>
