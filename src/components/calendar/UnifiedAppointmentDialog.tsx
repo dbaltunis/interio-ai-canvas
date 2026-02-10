@@ -541,7 +541,13 @@ export const UnifiedAppointmentDialog = ({
                     backgroundColor: `${type.color}20`,
                     color: type.color,
                   }}
-                  onClick={() => setEvent(prev => ({ ...prev, appointment_type: type.value as any, color: type.color }))}
+                  onClick={() => setEvent(prev => ({
+                    ...prev,
+                    appointment_type: type.value as any,
+                    // Only set color from type when no team group is selected
+                    ...(prev.selectedTeamMembers.length === 0 ? { color: type.color } : {}),
+                  }))}
+
                 >
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
                   {type.label}

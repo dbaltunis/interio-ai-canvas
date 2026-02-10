@@ -547,6 +547,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
                     filteredAppointments={filteredAppointments}
                     hiddenSources={hiddenSources}
+                    quickAddOpen={quickAddOpen}
+                    quickAddDate={quickAddDate}
+                    quickAddStartTime={quickAddStartTime}
                   />
                 )}
                 {view === 'month' && (
@@ -565,6 +568,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     onTimeSlotClick={handleTimeSlotClick}
                     filteredAppointments={filteredAppointments}
                     hiddenSources={hiddenSources}
+                    quickAddOpen={quickAddOpen}
+                    quickAddStartTime={quickAddStartTime}
                   />
                 )}
               </motion.div>

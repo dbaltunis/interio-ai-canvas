@@ -115,11 +115,21 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
 
       {/* Content */}
       <div className="relative pl-3 pr-1.5 py-1 h-full flex flex-col overflow-hidden">
-        {/* Title with type icon */}
+        {/* Title with type icon and group badge */}
         <div className="flex items-center gap-1">
           {event.appointment_type && EVENT_TYPE_ICONS[event.appointment_type] && (
             <span className="flex-shrink-0 opacity-60">
               {EVENT_TYPE_ICONS[event.appointment_type]}
+            </span>
+          )}
+          {/* Group initial badge */}
+          {event.calendar_group_name && height > 28 && (
+            <span
+              className="flex-shrink-0 w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center text-white"
+              style={{ backgroundColor: event.calendar_group_color || styling.border }}
+              title={event.calendar_group_name}
+            >
+              {event.calendar_group_name.charAt(0).toUpperCase()}
             </span>
           )}
           <div
@@ -148,10 +158,10 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
           </div>
         )}
 
-        {/* Team group indicator */}
+        {/* Team group name */}
         {height > 50 && event.calendar_group_name && (
           <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
-            <Users className="w-2.5 h-2.5 flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.calendar_group_color || styling.border }} />
             <span>{event.calendar_group_name}</span>
           </div>
         )}

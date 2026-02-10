@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff, Plus, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff, Plus, MoreHorizontal, Users } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
@@ -377,14 +377,14 @@ const TeamGroupsSidebar = ({
         })}
 
         {teamGroups.length === 0 && (
-          <button
-            type="button"
-            className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent/40"
+          <div
+            className="rounded-lg border border-dashed border-border/60 p-3 text-center cursor-pointer hover:bg-accent/30 transition-colors"
             onClick={() => { setEditingGroup(null); setShowGroupManager(true); }}
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Group</span>
-          </button>
+            <Users className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1.5" />
+            <div className="text-xs font-medium text-foreground/70">Create a team group</div>
+            <div className="text-[10px] text-muted-foreground/50 mt-0.5">Share events with your team automatically</div>
+          </div>
         )}
       </div>
 

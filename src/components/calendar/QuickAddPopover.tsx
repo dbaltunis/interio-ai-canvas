@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +48,9 @@ export const QuickAddPopover = ({
   const typeConfig = EVENT_TYPES.find(t => t.value === selectedType);
   const effectiveColor = selectedGroup?.color || typeConfig?.color || "#6366F1";
 
+  // Dynamic positioning state
+  const [position, setPosition] = useState({ left: 0, top: 0, maxH: 480 });
+
   // Calculate initial duration from startTime-endTime range
   useEffect(() => {
     if (initialEndTime && startTime) {
@@ -72,6 +75,36 @@ export const QuickAddPopover = ({
       setSelectedGroupId(null);
     }
   }, [open]);
+
+  // Measure popover and clamp to viewport after render
+  useLayoutEffect(() => {
+    if (!open || !popoverRef.current) return;
+    const popoverWidth = 320;
+    const footerHeight = 52; // px for sticky footer
+    const padding = 16;
+
+    let left = anchorPosition?.x ?? 200;
+    let top = anchorPosition?.y ?? 200;
+
+    if (typeof window !== 'undefined') {
+      // Horizontal clamping
+      if (left + popoverWidth > window.innerWidth - padding) {
+        left = Math.max(padding, (anchorPosition?.x ?? 200) - popoverWidth - 8);
+      }
+
+      // Vertical clamping: ensure footer stays in viewport
+      const availableHeight = window.innerHeight - top - padding;
+      const maxH = Math.max(200, availableHeight);
+      
+      // If not enough space even with clamped height, move popover up
+      if (maxH < 280) {
+        top = Math.max(padding, window.innerHeight - 400 - padding);
+        setPosition({ left, top, maxH: Math.min(480, window.innerHeight - top - padding) });
+      } else {
+        setPosition({ left, top, maxH: Math.min(480, maxH) });
+      }
+    }
+  }, [open, anchorPosition]);
 
   // Close on click outside
   useEffect(() => {
@@ -174,27 +207,14 @@ export const QuickAddPopover = ({
 
   const endTimeStr = computedEndTime();
 
-  // Calculate position: anchor to click position, ensure it stays in viewport
-  const popoverWidth = 320;
-  const popoverHeight = 480;
-  let left = anchorPosition?.x ?? 200;
-  let top = anchorPosition?.y ?? 200;
-
-  // Keep within viewport bounds
-  if (typeof window !== 'undefined') {
-    if (left + popoverWidth > window.innerWidth - 16) {
-      left = Math.max(16, (anchorPosition?.x ?? 200) - popoverWidth - 8);
-    }
-    if (top + popoverHeight > window.innerHeight - 16) {
-      top = Math.max(16, window.innerHeight - popoverHeight - 16);
-    }
-  }
-
   return (
     <div
       ref={popoverRef}
       className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
-      style={{ left, top, maxHeight: `${popoverHeight}px` }}
+      style={{ left: position.left, top: position.top, maxHeight: `${position.maxH}px` }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Color header bar */}
       <div className="h-2 flex-shrink-0" style={{ backgroundColor: effectiveColor }} />
@@ -242,7 +262,7 @@ export const QuickAddPopover = ({
             </div>
           </div>
 
-          {/* Event type pills */}
+          {/* Event type pills - informational only when group selected */}
           <div>
             <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
             <div className="flex flex-wrap gap-1.5">
@@ -252,14 +272,20 @@ export const QuickAddPopover = ({
                   type="button"
                   className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
                     selectedType === type.value
-                      ? 'ring-2 ring-offset-1 shadow-sm'
+                      ? selectedGroup
+                        ? 'ring-1 ring-border bg-muted/80 text-foreground'
+                        : 'ring-2 ring-offset-1 shadow-sm'
                       : 'opacity-50 hover:opacity-80'
                   }`}
-                  style={{
-                    backgroundColor: `${type.color}20`,
-                    color: type.color,
-                    ...(selectedType === type.value ? { ringColor: type.color } : {}),
-                  }}
+                  style={
+                    selectedGroup
+                      ? (selectedType === type.value ? {} : {})
+                      : {
+                          backgroundColor: `${type.color}20`,
+                          color: type.color,
+                          ...(selectedType === type.value ? { ringColor: type.color } : {}),
+                        }
+                  }
                   onClick={() => setSelectedType(type.value)}
                 >
                   {type.label}
@@ -323,7 +349,11 @@ export const QuickAddPopover = ({
         <Button
           size="default"
           className="flex-1 h-9"
-          onClick={handleSave}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleSave();
+          }}
           disabled={createAppointment.isPending || !title.trim()}
         >
           {createAppointment.isPending ? 'Creating...' : 'Save'}
@@ -332,7 +362,11 @@ export const QuickAddPopover = ({
           size="default"
           variant="ghost"
           className="h-9 text-sm text-muted-foreground"
-          onClick={handleMoreOptions}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleMoreOptions();
+          }}
         >
           More options
           <ChevronRight className="h-3.5 w-3.5 ml-1" />
