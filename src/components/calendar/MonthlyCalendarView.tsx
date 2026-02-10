@@ -125,11 +125,11 @@ export const MonthlyCalendarView = ({
                       initial={{ opacity: 0, y: 2 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03, duration: 0.15 }}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <EventPill
                         event={event}
                         variant="month"
-                        onClick={() => {}}
                       />
                     </motion.div>
                   </EventDetailPopover>
@@ -163,11 +163,10 @@ export const MonthlyCalendarView = ({
                             event={event}
                             onEdit={(id) => onEventClick?.(id)}
                           >
-                            <div>
+                            <div onClick={(e) => e.stopPropagation()}>
                               <EventPill
                                 event={event}
                                 variant="month"
-                                onClick={() => {}}
                               />
                             </div>
                           </EventDetailPopover>
