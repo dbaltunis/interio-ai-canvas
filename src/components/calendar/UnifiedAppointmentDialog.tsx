@@ -23,7 +23,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useVideoMeetingProviders } from "@/hooks/useVideoMeetingProviders";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { EventVisibilitySelector } from "./EventVisibilitySelector";
+// EventVisibilitySelector removed - visibility auto-determined by team selection
 import { TeamMemberPicker } from "./TeamMemberPicker";
 import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
@@ -309,8 +309,8 @@ export const UnifiedAppointmentDialog = ({
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
       notification_minutes: event.notification_minutes,
-      visibility: event.visibility,
-      shared_with_organization: event.visibility === 'organization' || event.shared_with_organization,
+      visibility: event.selectedTeamMembers.length > 0 ? 'team' : 'private',
+      shared_with_organization: event.shared_with_organization,
       client_id: event.client_id || null,
       project_id: event.project_id || null,
     };
@@ -516,56 +516,43 @@ export const UnifiedAppointmentDialog = ({
             </Alert>
           )}
 
-          {/* Event Type & Color — always visible for easy categorization */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
-              <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="consultation">Consultation</SelectItem>
-                  <SelectItem value="measurement">Measurement</SelectItem>
-                  <SelectItem value="installation">Installation</SelectItem>
-                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                  <SelectItem value="reminder">Reminder</SelectItem>
-                  <SelectItem value="call">Call</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Event Type & Color indicator */}
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { value: "meeting", label: "Meeting", color: "#3B82F6" },
+                { value: "consultation", label: "Consult", color: "#22C55E" },
+                { value: "measurement", label: "Measure", color: "#8B5CF6" },
+                { value: "installation", label: "Install", color: "#F59E0B" },
+                { value: "follow_up", label: "Follow-up", color: "#06B6D4" },
+                { value: "reminder", label: "Reminder", color: "#F97316" },
+                { value: "call", label: "Call", color: "#EF4444" },
+              ].map(type => (
+                <button
+                  key={type.value}
+                  type="button"
+                  className={`px-2.5 py-1 text-[11px] rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                    event.appointment_type === type.value
+                      ? 'ring-2 ring-offset-1 shadow-sm'
+                      : 'opacity-50 hover:opacity-80'
+                  }`}
+                  style={{
+                    backgroundColor: `${type.color}20`,
+                    color: type.color,
+                  }}
+                  onClick={() => setEvent(prev => ({
+                    ...prev,
+                    appointment_type: type.value as any,
+                    // Only set color from type when no team group is selected
+                    ...(prev.selectedTeamMembers.length === 0 ? { color: type.color } : {}),
+                  }))}
 
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 block">Color</Label>
-              <Select
-                value={event.color || defaultColors[0]}
-                onValueChange={(value) => setEvent({ ...event, color: value })}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded-full border"
-                        style={{ backgroundColor: event.color || defaultColors[0] }}
-                      />
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {colorOptions.map((color) => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: color.value }}
-                        />
-                        <span className="text-xs">{color.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                >
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
+                  {type.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -633,7 +620,7 @@ export const UnifiedAppointmentDialog = ({
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
                 <Plus className="h-3.5 w-3.5" />
-                {showMoreOptions ? 'Less options' : 'Location, description, video...'}
+                {showMoreOptions ? 'Less options' : 'Location, note, video...'}
                 <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showMoreOptions ? 'rotate-180' : ''}`} />
               </Button>
             </CollapsibleTrigger>
@@ -649,11 +636,11 @@ export const UnifiedAppointmentDialog = ({
                 />
               </div>
 
-              {/* Description */}
+              {/* Note */}
               <div className="flex items-start gap-2">
                 <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
                 <Textarea
-                  placeholder="Add description"
+                  placeholder="Add a note..."
                   value={event.description}
                   onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
                   rows={2}
@@ -740,14 +727,7 @@ export const UnifiedAppointmentDialog = ({
                 </div>
               </div>
 
-              {/* Visibility */}
-              <div>
-                <EventVisibilitySelector
-                  value={event.visibility}
-                  onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
-                  hasTeamMembers={event.selectedTeamMembers.length > 0}
-                />
-              </div>
+              {/* Visibility auto-determined by team member selection */}
 
               {/* Send Email Invitation */}
               <div className="flex items-center gap-2">

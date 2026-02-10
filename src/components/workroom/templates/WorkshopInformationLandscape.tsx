@@ -474,6 +474,13 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                               )}
                             </div>
                           )}
+
+                          {/* Lining - for curtains/romans */}
+                          {!isBlindTreatment && item.liningDetails && (
+                            <div className="text-[9px] mt-1">
+                              <span className="font-medium">Lining:</span> {item.liningDetails.name}
+                            </div>
+                          )}
                           
                           {/* Returns - ONLY for curtains with return values */}
                           {!isBlindTreatment && item.returns && (item.returns.left > 0 || item.returns.right > 0) && (

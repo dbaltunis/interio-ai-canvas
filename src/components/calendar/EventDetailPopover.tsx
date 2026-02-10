@@ -28,6 +28,7 @@ const COLOR_DOTS = [
   "#6366F1", "#3B82F6", "#22C55E", "#F59E0B",
   "#EF4444", "#EC4899", "#8B5CF6", "#14B8A6",
 ];
+import { DURATION_CHIPS, EVENT_TYPES, COLOR_DOTS } from "./calendarConstants";
 
 interface EventDetailPopoverProps {
   children: React.ReactNode;

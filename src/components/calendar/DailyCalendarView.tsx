@@ -41,12 +41,15 @@ const useCurrentTimePosition = (showExtendedHours: boolean) => {
 interface DailyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
-  onTimeSlotClick?: (date: Date, time: string) => void;
+  onTimeSlotClick?: (date: Date, time: string, event?: React.MouseEvent) => void;
   filteredAppointments?: any[];
   hiddenSources?: Set<string>;
+  quickAddOpen?: boolean;
+  quickAddStartTime?: string;
+  quickAddColor?: string;
 }
 
-export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments, hiddenSources }: DailyCalendarViewProps) => {
+export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments, hiddenSources, quickAddOpen, quickAddStartTime, quickAddColor }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: bookedAppointments } = useAppointmentBookings();
@@ -103,11 +106,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
     }
   }, [isCreatingEvent, eventCreationStart]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e?: React.MouseEvent) => {
     if (isCreatingEvent && eventCreationStart !== null && eventCreationEnd !== null) {
       const minSlot = Math.min(eventCreationStart, eventCreationEnd);
       const maxSlot = Math.max(eventCreationStart, eventCreationEnd);
-      onTimeSlotClick?.(currentDate, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`);
+      onTimeSlotClick?.(currentDate, `${timeSlots[minSlot]}-${timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)]}`, e);
     }
     setIsCreatingEvent(false);
     setEventCreationStart(null);
@@ -127,7 +130,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
 
   return (
     <>
-      <div className="h-full flex flex-col" onMouseUp={handleMouseUp}>
+      <div className="h-full flex flex-col" onMouseUp={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('[class*="z-[10000]"]')) return;
+        handleMouseUp(e);
+      }}>
         {/* Day header — Apple style */}
         <div className="border-b bg-background sticky top-0 z-10 py-2.5 px-4 flex items-center justify-center gap-3">
           <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
@@ -172,13 +179,21 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
             {/* Content column */}
             <div className="flex-1 relative">
               {/* Grid lines */}
-              {timeSlots.map((time, index) => (
-                <div
-                  key={`line-${time}`}
-                  className={`absolute left-0 right-0 ${index % 2 === 0 ? 'border-t border-border/30' : 'border-t border-border/10 border-dashed'}`}
-                  style={{ top: `${index * SLOT_HEIGHT}px` }}
-                />
-              ))}
+              {timeSlots.map((time, index) => {
+                const [, m] = time.split(':').map(Number);
+                const lineClass = m === 0
+                  ? 'border-t border-border/30'
+                  : m === 30
+                    ? 'border-t border-border/15'
+                    : 'border-t border-border/[0.06]';
+                return (
+                  <div
+                    key={`line-${time}`}
+                    className={`absolute left-0 right-0 ${lineClass}`}
+                    style={{ top: `${index * SLOT_HEIGHT}px` }}
+                  />
+                );
+              })}
 
               {/* Clickable time slots */}
               <div className="relative" style={{ height: `${gridHeight}px` }}>
@@ -198,7 +213,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                       style={{ top: `${index * SLOT_HEIGHT}px`, height: `${SLOT_HEIGHT}px` }}
                       onMouseDown={(e) => !occupied && handleMouseDown(index, e)}
                       onMouseMove={() => !occupied && handleMouseMove(index)}
-                      onClick={() => !isCreatingEvent && !occupied && onTimeSlotClick?.(currentDate, time)}
+                      onClick={(e) => !isCreatingEvent && !occupied && onTimeSlotClick?.(currentDate, time, e)}
                     />
                   );
                 })}
@@ -212,6 +227,27 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                     <span className="text-xs font-medium text-primary">New Event</span>
                   </div>
                 )}
+
+                {/* Ghost event preview when QuickAddPopover is open */}
+                {!isCreatingEvent && quickAddOpen && quickAddStartTime && (() => {
+                  const ghostSlotIndex = timeSlots.findIndex(t => t === quickAddStartTime);
+                  if (ghostSlotIndex < 0) return null;
+                  const ghostTop = ghostSlotIndex * SLOT_HEIGHT;
+                  const ghostHeight = 2 * SLOT_HEIGHT;
+                  return (
+                    <div
+                      className="absolute left-2 right-2 rounded-lg flex items-center px-3 z-[15] border border-dashed pointer-events-none animate-pulse"
+                      style={{
+                        top: `${ghostTop}px`,
+                        height: `${ghostHeight}px`,
+                        backgroundColor: `${quickAddColor || '#6366F1'}15`,
+                        borderColor: `${quickAddColor || '#6366F1'}40`,
+                      }}
+                    >
+                      <span className="text-xs font-medium" style={{ color: quickAddColor || '#6366F1' }}>New Event</span>
+                    </div>
+                  );
+                })()}
 
                 {/* Current time indicator */}
                 {isToday(currentDate) && currentTimePosition !== null && (

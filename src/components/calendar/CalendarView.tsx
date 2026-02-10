@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
 import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCreateAppointment } from "@/hooks/useAppointments";
@@ -201,11 +202,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [quickAddDate, setQuickAddDate] = useState<Date>(new Date());
   const [quickAddStartTime, setQuickAddStartTime] = useState("09:00");
   const [quickAddEndTime, setQuickAddEndTime] = useState<string | undefined>();
+  const [quickAddAnchorPosition, setQuickAddAnchorPosition] = useState<{ x: number; y: number } | undefined>();
   
   // Enable real-time updates
   useRealtimeBookings();
   
   const { data: appointments } = useAppointments();
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
   useAppointmentSchedulers(); // prefetch for child components
   useTeamMembers(); // prefetch for child components
   useClients(); // prefetch for child components
@@ -278,7 +281,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return <MobileCalendarView />;
   }
 
-  const handleTimeSlotClick = (date: Date, time: string) => {
+  const handleTimeSlotClick = (date: Date, time: string, event?: React.MouseEvent) => {
     // Permission check
     const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
     if (isPermissionLoaded && !canCreateAppointments) {
@@ -297,6 +300,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       const [s, e] = time.split('-');
       startT = s;
       endT = e;
+    }
+
+    // Capture click position for popover anchoring
+    if (event) {
+      setQuickAddAnchorPosition({ x: event.clientX, y: event.clientY });
+    } else {
+      // Fallback: center of viewport if no mouse event
+      setQuickAddAnchorPosition({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 3 });
     }
 
     // Open QuickAddPopover
@@ -386,11 +397,19 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       if (visibility === 'organization' || appointment.shared_with_organization) {
         if (!preferences.show_organization_events) return false;
       }
-      // Team events - visible to team members
+      // Team events - visible to team members or group members
       else if (visibility === 'team') {
         if (!preferences.show_team_events) return false;
-        // Only show if user is owner or in team_member_ids
-        if (!isOwner && !isTeamMember) return false;
+        // Check if user is in any team group that this event's members overlap with
+        const isInGroupWithEvent = teamGroups.some(group => {
+          const groupSourceId = `team-group-${group.id}`;
+          if (hiddenSources.has(groupSourceId)) return false;
+          const userInGroup = group.member_ids?.includes(currentUserId);
+          const eventMembersInGroup = appointment.team_member_ids?.some((id: string) => group.member_ids?.includes(id));
+          return userInGroup && eventMembersInGroup;
+        });
+        // Only show if user is owner, in team_member_ids, or in a shared group
+        if (!isOwner && !isTeamMember && !isInGroupWithEvent) return false;
       }
       // Personal events - only visible to owner
       else if (visibility === 'private') {
@@ -528,6 +547,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     onDayHeaderClick={(date) => { setCurrentDate(date); setView('day'); }}
                     filteredAppointments={filteredAppointments}
                     hiddenSources={hiddenSources}
+                    quickAddOpen={quickAddOpen}
+                    quickAddDate={quickAddDate}
+                    quickAddStartTime={quickAddStartTime}
                   />
                 )}
                 {view === 'month' && (
@@ -546,6 +568,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     onTimeSlotClick={handleTimeSlotClick}
                     filteredAppointments={filteredAppointments}
                     hiddenSources={hiddenSources}
+                    quickAddOpen={quickAddOpen}
+                    quickAddStartTime={quickAddStartTime}
                   />
                 )}
               </motion.div>
@@ -590,6 +614,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         startTime={quickAddStartTime}
         endTime={quickAddEndTime}
         onMoreOptions={handleQuickAddMoreOptions}
+        anchorPosition={quickAddAnchorPosition}
       />
 
       {/* Unified Appointment Dialog for both create and edit */}

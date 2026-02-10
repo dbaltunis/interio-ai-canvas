@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Clock, Palette, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight } from "lucide-react";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,9 @@ const COLOR_DOTS = [
   "#6366F1", "#3B82F6", "#22C55E", "#F59E0B",
   "#EF4444", "#EC4899", "#8B5CF6", "#14B8A6",
 ];
+import { DURATION_CHIPS, EVENT_TYPES } from "./calendarConstants";
+import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface QuickAddPopoverProps {
   open: boolean;
@@ -29,6 +32,8 @@ interface QuickAddPopoverProps {
   startTime: string;
   endTime?: string;
   onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string; note: string; visibility: string; teamMemberIds: string[] }) => void;
+  onMoreOptions?: (prefill: { title: string; date: Date; startTime: string; endTime: string; color: string; type: string }) => void;
+  anchorPosition?: { x: number; y: number };
   children?: React.ReactNode;
 }
 
@@ -39,18 +44,32 @@ export const QuickAddPopover = ({
   startTime,
   endTime: initialEndTime,
   onMoreOptions,
+  anchorPosition,
 }: QuickAddPopoverProps) => {
   const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [note, setNote] = useState("");
   const [selectedCalendar, setSelectedCalendar] = useState("personal");
+  const [selectedType, setSelectedType] = useState("meeting");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const createAppointment = useCreateAppointment();
   const { canCreateAppointments, isPermissionLoaded } = useCalendarPermissions();
   const { toast } = useToast();
   const { data: teamMembers } = useTeamMembers();
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
+
+  // Determine effective color: team color takes priority, otherwise event type color
+  const selectedGroup = teamGroups.find(g => g.id === selectedGroupId);
+  const typeConfig = EVENT_TYPES.find(t => t.value === selectedType);
+  const effectiveColor = selectedGroup?.color || typeConfig?.color || "#6366F1";
+
+  // Dynamic positioning state
+  const [position, setPosition] = useState({ left: 0, top: 0, maxH: 480 });
 
   // Calculate initial duration from startTime-endTime range
   useEffect(() => {
@@ -64,19 +83,79 @@ export const QuickAddPopover = ({
     }
   }, [startTime, initialEndTime]);
 
-  // Auto-focus input when dialog opens
+  // Auto-focus input when popover opens
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 150);
     } else {
       setTitle("");
+      setNote("");
       setSelectedDuration(30);
       setSelectedColor("#6366F1");
       setShowColorPicker(false);
       setNote("");
       setSelectedCalendar("personal");
+      setSelectedType("meeting");
+      setSelectedGroupId(null);
     }
   }, [open]);
+
+  // Measure popover and clamp to viewport after render
+  useLayoutEffect(() => {
+    if (!open || !popoverRef.current) return;
+    const popoverWidth = 320;
+    const footerHeight = 52; // px for sticky footer
+    const padding = 16;
+
+    let left = anchorPosition?.x ?? 200;
+    let top = anchorPosition?.y ?? 200;
+
+    if (typeof window !== 'undefined') {
+      // Horizontal clamping
+      if (left + popoverWidth > window.innerWidth - padding) {
+        left = Math.max(padding, (anchorPosition?.x ?? 200) - popoverWidth - 8);
+      }
+
+      // Vertical clamping: ensure footer stays in viewport
+      const availableHeight = window.innerHeight - top - padding;
+      const maxH = Math.max(200, availableHeight);
+      
+      // If not enough space even with clamped height, move popover up
+      if (maxH < 280) {
+        top = Math.max(padding, window.innerHeight - 400 - padding);
+        setPosition({ left, top, maxH: Math.min(480, window.innerHeight - top - padding) });
+      } else {
+        setPosition({ left, top, maxH: Math.min(480, maxH) });
+      }
+    }
+  }, [open, anchorPosition]);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onOpenChange(false);
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onOpenChange]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open, onOpenChange]);
 
   const computedEndTime = useCallback(() => {
     const parts = startTime.split(':').map(Number);
@@ -116,12 +195,18 @@ export const QuickAddPopover = ({
     try {
       await createAppointment.mutateAsync({
         title: title.trim(),
+        description: note.trim() || undefined,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         color: selectedColor,
         description: note.trim() || undefined,
         team_member_ids: teamMemberIds.length > 0 ? teamMemberIds : undefined,
         visibility,
+        appointment_type: selectedType as any,
+        color: effectiveColor,
+        team_member_ids: selectedGroup?.member_ids || [],
+        visibility: selectedGroup ? 'team' : 'private',
+        calendar_group_id: selectedGroupId || undefined,
       } as any);
       onOpenChange(false);
     } catch {
@@ -153,9 +238,13 @@ export const QuickAddPopover = ({
       note: note.trim(),
       visibility: isTeamCalendar ? 'team' : 'private',
       teamMemberIds,
+      color: effectiveColor,
+      type: selectedType,
     });
     onOpenChange(false);
   };
+
+  if (!open) return null;
 
   const endTimeStr = computedEndTime();
 
@@ -174,8 +263,28 @@ export const QuickAddPopover = ({
           <span className="text-muted-foreground">&middot;</span>
           <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
         </div>
+    <div
+      ref={popoverRef}
+      className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
+      style={{ left: position.left, top: position.top, maxHeight: `${position.maxH}px` }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Color header bar */}
+      <div className="h-2 flex-shrink-0" style={{ backgroundColor: effectiveColor }} />
 
-        <div className="p-4 space-y-4">
+      {/* Date/time header */}
+      <div className="px-3 pt-3 pb-2 flex items-center gap-2 text-sm flex-shrink-0">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        <span className="font-semibold text-foreground">{format(date, 'EEE, MMM d')}</span>
+        <span className="text-muted-foreground">&middot;</span>
+        <span className="tabular-nums text-muted-foreground">{startTime} &ndash; {endTimeStr}</span>
+      </div>
+
+      {/* Scrollable content */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-3 pb-3 space-y-3">
           {/* Title input */}
           <Input
             ref={inputRef}
@@ -222,19 +331,73 @@ export const QuickAddPopover = ({
             {showColorPicker && (
               <div className="flex gap-2 mt-2">
                 {COLOR_DOTS.map(color => (
+          {/* Event type pills - informational only when group selected */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</div>
+            <div className="flex flex-wrap gap-1.5">
+              {EVENT_TYPES.map(type => (
+                <button
+                  key={type.value}
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                    selectedType === type.value
+                      ? selectedGroup
+                        ? 'ring-1 ring-border bg-muted/80 text-foreground'
+                        : 'ring-2 ring-offset-1 shadow-sm'
+                      : 'opacity-50 hover:opacity-80'
+                  }`}
+                  style={
+                    selectedGroup
+                      ? (selectedType === type.value ? {} : {})
+                      : {
+                          backgroundColor: `${type.color}20`,
+                          color: type.color,
+                          ...(selectedType === type.value ? { ringColor: type.color } : {}),
+                        }
+                  }
+                  onClick={() => setSelectedType(type.value)}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Calendar Group Selector */}
+          {teamGroups.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Calendar</div>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                    !selectedGroupId
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  onClick={() => setSelectedGroupId(null)}
+                >
+                  My Calendar
+                </button>
+                {teamGroups.map(group => (
                   <button
-                    key={color}
+                    key={group.id}
                     type="button"
-                    className={`w-6 h-6 rounded-full transition-all ${
-                      selectedColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
+                    className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                      selectedGroupId === group.id
+                        ? 'ring-2 ring-offset-1 shadow-sm'
+                        : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setSelectedColor(color)}
-                  />
+                    style={selectedGroupId === group.id ? { backgroundColor: `${group.color}20`, color: group.color } : {}}
+                    onClick={() => setSelectedGroupId(group.id)}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                    {group.name}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Calendar selector */}
           <div>
@@ -292,9 +455,48 @@ export const QuickAddPopover = ({
               More options
               <ChevronRight className="h-3.5 w-3.5 ml-1" />
             </Button>
+          {/* Note */}
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note</div>
+            <Textarea
+              placeholder="Add a note..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="resize-none text-xs min-h-[52px]"
+            />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ScrollArea>
+
+      {/* Actions - sticky at bottom */}
+      <div className="px-3 py-2 border-t bg-popover flex items-center gap-2 flex-shrink-0">
+        <Button
+          size="default"
+          className="flex-1 h-9"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleSave();
+          }}
+          disabled={createAppointment.isPending || !title.trim()}
+        >
+          {createAppointment.isPending ? 'Creating...' : 'Save'}
+        </Button>
+        <Button
+          size="default"
+          variant="ghost"
+          className="h-9 text-sm text-muted-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleMoreOptions();
+          }}
+        >
+          More options
+          <ChevronRight className="h-3.5 w-3.5 ml-1" />
+        </Button>
+      </div>
+    </div>
   );
 };

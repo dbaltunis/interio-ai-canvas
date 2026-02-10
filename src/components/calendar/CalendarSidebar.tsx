@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Eye, EyeOff, Plus, MoreHorizontal, Users } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
@@ -9,6 +9,9 @@ import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
 import { useOutlookCalendarIntegration } from "@/hooks/useOutlookCalendar";
 import { useNylasCalendarIntegration } from "@/hooks/useNylasCalendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCalendarTeamGroups, type CalendarTeamGroup } from "@/hooks/useCalendarTeamGroups";
+import { TeamGroupManager } from "./TeamGroupManager";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface CalendarSidebarProps {
   currentDate: Date;
@@ -279,8 +282,117 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onH
               })}
             </div>
           </div>
+
+          {/* My Teams - Apple Calendar style groups */}
+          <TeamGroupsSidebar
+            hiddenSources={hiddenSources}
+            toggleSource={toggleSource}
+          />
         </div>
       </ScrollArea>
+    </div>
+  );
+};
+
+// Sub-component for team groups section
+const TeamGroupsSidebar = ({
+  hiddenSources,
+  toggleSource,
+}: {
+  hiddenSources: Set<string>;
+  toggleSource: (id: string) => void;
+}) => {
+  const { data: teamGroups = [] } = useCalendarTeamGroups();
+  const [showGroupManager, setShowGroupManager] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<CalendarTeamGroup | null>(null);
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2 px-0.5">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          My Teams
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+          onClick={() => { setEditingGroup(null); setShowGroupManager(true); }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      <div className="space-y-0.5">
+        {teamGroups.map(group => {
+          const sourceId = `team-group-${group.id}`;
+          const isVisible = !hiddenSources.has(sourceId);
+          return (
+            <div
+              key={group.id}
+              className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md hover:bg-accent/40 transition-colors group"
+            >
+              <button
+                type="button"
+                className="flex items-center gap-2.5 flex-1 text-left"
+                onClick={() => toggleSource(sourceId)}
+              >
+                <div
+                  className={`w-3.5 h-3.5 rounded flex-shrink-0 border transition-all flex items-center justify-center ${
+                    isVisible ? 'border-transparent' : 'border-muted-foreground/30 bg-transparent'
+                  }`}
+                  style={isVisible ? { backgroundColor: group.color } : {}}
+                >
+                  {isVisible && (
+                    <svg width="8" height="8" viewBox="0 0 10 10" className="text-white">
+                      <path d="M2 5l2.5 2.5L8 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className={`text-sm flex-1 ${isVisible ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+                  {group.name}
+                </span>
+                <span className="text-[10px] text-muted-foreground/50 tabular-nums">
+                  {group.member_ids?.length || 0}
+                </span>
+              </button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuItem onClick={() => { setEditingGroup(group); setShowGroupManager(true); }}>
+                    Edit group
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        })}
+
+        {teamGroups.length === 0 && (
+          <div
+            className="rounded-lg border border-dashed border-border/60 p-3 text-center cursor-pointer hover:bg-accent/30 transition-colors"
+            onClick={() => { setEditingGroup(null); setShowGroupManager(true); }}
+          >
+            <Users className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1.5" />
+            <div className="text-xs font-medium text-foreground/70">Create a team group</div>
+            <div className="text-[10px] text-muted-foreground/50 mt-0.5">Share events with your team automatically</div>
+          </div>
+        )}
+      </div>
+
+      <TeamGroupManager
+        open={showGroupManager}
+        onOpenChange={setShowGroupManager}
+        editGroup={editingGroup}
+      />
     </div>
   );
 };
