@@ -1,46 +1,102 @@
 
 
-## Unify Event Creation with the Inline Edit Experience
+## Calendar Team Groups -- Apple/Google Style
 
-### Problem
-The **new event creation** currently uses a `Dialog` component (modal overlay with blurred/dimmed backdrop), which feels disconnected from the calendar. The **inline edit** mode on `EventDetailPopover` uses a `Popover` that appears sharp and attached directly next to the event on the calendar -- this is the experience you prefer.
+### What This Builds
 
-### Solution
-Convert `QuickAddPopover` from a `Dialog` (modal with backdrop blur) to a `Popover` that appears inline on the calendar, matching the same sharp, clean look as the edit mode in `EventDetailPopover`. Both creation and editing will then share the same visual style.
+A sidebar calendar groups system inspired by Apple Calendar (as shown in your screenshot), where you create named sub-calendars like "Sales Team" or "Installers", assign team members to them, and any event placed on that calendar is automatically visible to all group members.
 
-### Technical Changes
+### How It Works for You
 
-**1. `src/components/calendar/QuickAddPopover.tsx` -- Switch from Dialog to Popover**
+1. In the sidebar, under the existing "Calendars" section, you'll see a new "My Teams" section
+2. Click "+ New Group" to create a group like "Sales Team" with a color
+3. Add John, Mike, Sarah to that group
+4. When creating an event, pick which calendar/group it belongs to (instead of manually selecting 8 people)
+5. All members of that group automatically see the event -- no manual sharing needed
+6. Toggle groups on/off in the sidebar to show/hide their events (like Apple Calendar checkboxes)
 
-- Replace `Dialog`/`DialogContent` with `Popover`/`PopoverContent`
-- Accept an anchor position (click coordinates or a ref) so the popover appears near where the user clicked on the calendar grid
-- Keep all the existing form content (title, duration chips, type pills, color, save/more options) exactly the same
-- Add the colored header bar (`h-2` with selected color) matching the edit popover
-- Use the same styling: `p-0 overflow-hidden`, `w-80`, rounded corners, shadow
+### What Gets Removed
 
-**2. `src/components/calendar/CalendarView.tsx` -- Pass click position**
+- **EventVisibilitySelector** (Private/Team/Organization radio group) -- redundant, visibility is now determined by which calendar group the event belongs to
+- Manual individual team member selection for basic sharing (still available as override in advanced options)
 
-- When the user clicks a time slot, capture the click event coordinates or the clicked element
-- Store a ref/position so the popover can anchor to the click location
-- Pass anchor info to QuickAddPopover
+### Database
 
-**3. Shared constants**
+**New table: `calendar_team_groups`**
 
-- The `DURATION_CHIPS`, `EVENT_TYPES`, and `COLOR_DOTS` arrays are already duplicated between both files. Extract them into a shared `calendarConstants.ts` file for consistency.
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| name | TEXT | Group name (e.g., "Sales Team") |
+| user_id | UUID | Account owner (multi-tenant scoped) |
+| member_ids | UUID[] | Array of team member user IDs |
+| color | TEXT | Hex color for the group |
+| is_default | BOOLEAN | Whether events go here by default |
+| created_at | TIMESTAMPTZ | Timestamp |
 
-### What Will Change Visually
+RLS policy uses `get_effective_account_owner(auth.uid())` for multi-tenant support.
 
-- No more blurred backdrop overlay when creating an event
-- The creation form appears as a sharp, clean popover anchored to the calendar grid (just like the edit popover)
-- Same color header bar, same typography, same button styles
-- Users can still see the calendar behind the popover
-- Clicking outside dismisses it (same as edit)
-- "More options" still opens the full advanced dialog
+**Appointments table update:**
+- Add `calendar_group_id` column (nullable UUID) to link events to a group
+- When set, event is automatically visible to all group members (no need for `team_member_ids` manual array)
 
-### What Stays the Same
+### File Changes
 
-- All form fields (title, duration, type, color, save, more options)
-- Keyboard shortcuts (Enter to save, Escape to close)
-- Permission checks
-- The "More options" flow to UnifiedAppointmentDialog
+**New files:**
+| File | Purpose |
+|------|---------|
+| `src/hooks/useCalendarTeamGroups.ts` | CRUD hook for team groups with multi-tenant scoping |
+| `src/components/calendar/TeamGroupManager.tsx` | Dialog to create/edit/delete groups and assign members |
+
+**Modified files:**
+| File | Change |
+|------|--------|
+| `src/components/calendar/CalendarSidebar.tsx` | Add "My Teams" section with colored checkboxes (Apple-style), "+ New Group" button |
+| `src/components/calendar/QuickAddPopover.tsx` | Add calendar group selector (dropdown showing group names with colors) |
+| `src/components/calendar/UnifiedAppointmentDialog.tsx` | Remove `EventVisibilitySelector`, add group picker, auto-set visibility |
+| `src/components/calendar/TeamMemberPicker.tsx` | Add "By Group" selection mode alongside "All" and "Individual" |
+| `src/components/calendar/CalendarView.tsx` | Update event filtering to include events from groups the user belongs to |
+
+### Sidebar Layout (Apple Calendar style)
+
+```text
+Calendar
++---------------------------------+
+|  [Mini calendar]                |
++---------------------------------+
+|  Next Up                        |
+|  [Event preview]                |
++---------------------------------+
+|  CALENDARS                      |
+|  [x] My Calendar                |
+|  [x] Bookings                   |
+|  [x] Google Calendar            |
++---------------------------------+
+|  MY TEAMS                       |
+|  [x] Sales Team      (3)  [...]|
+|  [x] Installers      (2)  [...]|
+|  [x] Office Staff     (4)  [...]|
+|  + New Group                    |
++---------------------------------+
+```
+
+### Quick Add Event Flow
+
+When creating a new event, a small dropdown appears showing:
+- "My Calendar" (default/personal)
+- "Sales Team" (auto-shares with John, Mike, Sarah)
+- "Installers" (auto-shares with Phoebe, Sam)
+
+Selecting a group automatically assigns the event to all members -- no manual picking needed.
+
+### Cross-Team Sharing
+
+An installer can create an event on the "Installers" calendar, then also share it with "Sales Team" -- similar to how job sharing works with team assignments. The event shows up on both groups' calendars.
+
+### What This Does NOT Include (Future Work)
+
+- Push/phone notifications when events are created or changed (requires service worker infrastructure)
+- Edit permission enforcement (preventing shared members from modifying events they don't own)
+- Reminder delivery at scheduled times (requires cron/scheduled edge function)
+- These are noted as future enhancements to build on top of this foundation
 
