@@ -8,6 +8,7 @@ import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
+import { NetSuiteIntegrationTab } from "@/components/integrations/NetSuiteIntegrationTab";
 import { TWCIntegrationTab } from "@/components/integrations/TWCIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
@@ -147,6 +148,10 @@ export const IntegrationsTab = () => {
             <Database className="h-4 w-4" />
             RFMS
           </TabsTrigger>
+          <TabsTrigger value="netsuite" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            NetSuite
+          </TabsTrigger>
           <TabsTrigger value="automation" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
             Automation
@@ -192,6 +197,10 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="rfms">
           <RFMSIntegrationTab integration={getIntegrationByType('rfms') as any} />
+        </TabsContent>
+
+        <TabsContent value="netsuite">
+          <NetSuiteIntegrationTab integration={getIntegrationByType('netsuite') as any} />
         </TabsContent>
 
         <TabsContent value="automation">

@@ -154,7 +154,27 @@ export interface TWCIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration;
+export interface NetSuiteIntegration extends BaseIntegration {
+  integration_type: 'netsuite';
+  api_credentials: {
+    account_id: string;
+    consumer_key: string;
+    consumer_secret: string;
+    token_id: string;
+    token_secret: string;
+  };
+  configuration: {
+    sync_customers: boolean;
+    sync_estimates: boolean;
+    sync_sales_orders: boolean;
+    sync_invoices: boolean;
+    auto_create_customers: boolean;
+    default_subsidiary?: string;
+    default_currency?: string;
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration | NetSuiteIntegration;
 
 export interface IntegrationSyncLog {
   id: string;

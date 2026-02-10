@@ -10,7 +10,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { RFMSIntegration } from "@/types/integrations";
-import { RefreshCw, Users, ArrowUpDown } from "lucide-react";
+import { RefreshCw, Users, ArrowUpDown, FileText } from "lucide-react";
 
 interface RFMSIntegrationTabProps {
   integration?: RFMSIntegration | null;
@@ -104,6 +104,34 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
       });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleSyncQuotes = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('rfms-sync-quotes', {
+        body: { direction: 'push' },
+      });
+
+      if (error) throw error;
+
+      const parts = [];
+      if (data.exported > 0) parts.push(`${data.exported} exported`);
+      if (data.updated > 0) parts.push(`${data.updated} updated`);
+
+      toast({
+        title: "Quote Sync Complete",
+        description: parts.length > 0 ? parts.join(', ') : 'No quotes to sync',
+      });
+    } catch (err: any) {
+      toast({
+        title: "Quote Sync Failed",
+        description: err.message || "Quote sync failed",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -353,6 +381,15 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                 Full Sync
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncQuotes}
+                disabled={isSyncing}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export Quotes
               </Button>
             </div>
           </CardContent>
