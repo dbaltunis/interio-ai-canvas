@@ -809,18 +809,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         // PHASE 6: Exit restore mode - template callbacks can now apply defaults normally
         isRestoringData.current = false;
 
-        // CRITICAL FIX: Initialize lastSavedState with loaded data to prevent false "unsaved changes" dialog
-        // This ensures the comparison baseline matches what was loaded from database
-        lastSavedState.current = {
-          templateId: templateDetails?.id || existingWindowSummary.template_id,
-          fabricId: fabricDetails?.fabric_id || fabricDetails?.id,
-          hardwareId: existingWindowSummary.selected_hardware_id,
-          materialId: existingWindowSummary.selected_material_id,
-          measurements: JSON.stringify(measurementsDetails || {}),
-          heading: existingWindowSummary.selected_heading_id || 'none',
-          lining: existingWindowSummary.selected_lining_type || 'none'
-        };
-        console.log('✅ Initial data load complete - lastSavedState initialized to prevent false unsaved changes');
+        // Baseline will be captured by the deferred sync effect below, after React state settles
+        lastSavedState.current = null;
+        console.log('✅ Initial data load complete - deferred baseline sync will capture state after hydration');
         console.log('🔓 [RESTORE MODE OFF] Data restore complete - template defaults now allowed');
         
         // Set fabric calculation if available - CRITICAL: Include hems and returns AND totalWidthWithAllowances
@@ -1108,6 +1099,23 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     selectedLining,
     treatmentCategory
   ]);
+
+  // DEFERRED BASELINE SYNC: Capture lastSavedState from hydrated React state (not raw DB values)
+  // This ensures the baseline uses the exact same accessors as the comparison, eliminating false positives
+  useEffect(() => {
+    if (hasLoadedInitialData.current && !lastSavedState.current) {
+      lastSavedState.current = {
+        templateId: selectedTemplate?.id,
+        fabricId: selectedItems.fabric?.id,
+        hardwareId: selectedItems.hardware?.id,
+        materialId: selectedItems.material?.id,
+        measurements: JSON.stringify(measurements),
+        heading: selectedHeading,
+        lining: selectedLining
+      };
+      console.log('🔒 Deferred baseline captured from hydrated React state');
+    }
+  }, [selectedTemplate, selectedItems, measurements, selectedHeading, selectedLining]);
 
   // Track unsaved changes - compare with last saved state
   useEffect(() => {
