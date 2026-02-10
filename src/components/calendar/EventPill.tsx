@@ -20,6 +20,9 @@ export const EventPill = memo(({ event, variant, height = 40, onClick, onTaskTog
   const startTime = new Date(event.start_time);
   const endTime = new Date(event.end_time);
 
+  // Guard against invalid dates — return null instead of crashing format()
+  if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return null;
+
   if (variant === "month") {
     return (
       <div

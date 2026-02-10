@@ -1,28 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useState, useEffect, useCallback } from "react";
-import { format, addDays, isToday, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
+import { addDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useAppointments, Appointment } from "@/hooks/useAppointments";
+import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useBookedAppointments } from "@/hooks/useBookedAppointments";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
@@ -32,34 +22,27 @@ import { MonthlyCalendarView } from "./MonthlyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { QuickAddPopover } from "./QuickAddPopover";
-import { motion, AnimatePresence } from "framer-motion";
-
-// CalDAV imports removed - using Google Calendar OAuth only
+import { AnimatePresence, motion } from "framer-motion";
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
 import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
-import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
+import { CalendarFilterState } from "./CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { supabase } from "@/integrations/supabase/client";
-// Two-way sync removed - using Google Calendar OAuth only
 import { ConflictDialog } from "./ConflictDialog";
-import { useCompactMode } from "@/hooks/useCompactMode";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { useAutoTimezone } from "@/hooks/useAutoTimezone";
-import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useTimezoneToast } from "./TimezoneToastNotification";
 import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
-import { formatUserTime, formatUserDate } from "@/utils/dateFormatUtils";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { Shield, ListTodo } from "lucide-react";
 import { TaskListView } from "@/components/tasks/TaskListView";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -220,10 +203,10 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   // Enable real-time updates
   useRealtimeBookings();
   
-  const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
-  const { data: schedulers } = useAppointmentSchedulers();
-  const { data: teamMembers } = useTeamMembers();
-  const { data: clients } = useClients();
+  const { data: appointments } = useAppointments();
+  useAppointmentSchedulers(); // prefetch for child components
+  useTeamMembers(); // prefetch for child components
+  useClients(); // prefetch for child components
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
   const createAppointment = useCreateAppointment();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
@@ -257,8 +240,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data?.user?.id || null);
     });
   }, []);
 

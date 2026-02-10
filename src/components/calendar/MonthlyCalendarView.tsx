@@ -32,7 +32,7 @@ export const MonthlyCalendarView = ({
 
   // Get user ID
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id || null));
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id || null));
   }, []);
 
   // Generate month grid days

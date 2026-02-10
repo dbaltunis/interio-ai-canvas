@@ -84,7 +84,9 @@ export const QuickAddPopover = ({
   }, [open]);
 
   const computedEndTime = useCallback(() => {
-    const [h, m] = startTime.split(':').map(Number);
+    const parts = startTime.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
     const totalMinutes = h * 60 + m + selectedDuration;
     const endH = Math.floor(totalMinutes / 60) % 24;
     const endM = totalMinutes % 60;

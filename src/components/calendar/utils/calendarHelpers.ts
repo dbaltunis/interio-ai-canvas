@@ -35,9 +35,9 @@ export const getBookedEventsForDate = (
       const schedulerInfo = booking.scheduler;
       const duration = schedulerInfo?.duration || 60;
       const schedulerName = schedulerInfo?.name || 'Customer Appointment';
-      const [hours, minutes] = booking.appointment_time.split(':');
+      const timeParts = (booking.appointment_time || '09:00').split(':');
       const startTime = new Date(booking.appointment_date);
-      startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      startTime.setHours(parseInt(timeParts[0]) || 9, parseInt(timeParts[1]) || 0, 0, 0);
       const endTime = new Date(startTime);
       endTime.setMinutes(endTime.getMinutes() + duration);
       if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return null;

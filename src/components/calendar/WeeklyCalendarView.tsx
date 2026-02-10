@@ -245,7 +245,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, [currentDate]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id || null));
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id || null));
   }, []);
 
   // Auto-scroll to current time

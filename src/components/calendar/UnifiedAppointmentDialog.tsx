@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Minus, Palette, Video, UserPlus, Bell, AlertCircle, Copy, Check, Mail, ChevronDown, Settings2, Briefcase, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Video, UserPlus, Bell, AlertCircle, Mail, ChevronDown, Briefcase, Users } from "lucide-react";
 import { TimeSelect, DurationBadge } from "./TimeSelect";
 import { DatePickerButton } from "./DatePickerButton";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
@@ -75,13 +75,9 @@ export const UnifiedAppointmentDialog = ({
   });
 
   const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
-  const [syncToCalendars, setSyncToCalendars] = useState(false);
   const [addVideoMeeting, setAddVideoMeeting] = useState(false);
   const [videoProvider, setVideoProvider] = useState<string>('google_meet');
   const [videoLink, setVideoLink] = useState("");
-  const [copiedLink, setCopiedLink] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
 
@@ -145,16 +141,11 @@ export const UnifiedAppointmentDialog = ({
   const connectedProviders = providers.filter(p => p.connected);
   const selectedProvider = providers.find(p => p.provider === videoProvider);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   useEffect(() => {
     const loadAppointment = async () => {
       if (appointment) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase.auth.getUser();
+        const user = data?.user;
         if (!user) return;
 
         const { data: prefs } = await supabase
