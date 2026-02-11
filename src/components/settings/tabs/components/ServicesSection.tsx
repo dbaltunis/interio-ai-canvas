@@ -76,10 +76,10 @@ export const ServicesSection = () => {
       price: service.price,
       unit: service.unit,
       description: service.description || "",
-      category: (service as any).category || "other",
-      estimated_duration_minutes: (service as any).estimated_duration_minutes || 60,
-      is_schedulable: (service as any).is_schedulable || false,
-      cost_price: (service as any).cost_price || 0,
+      category: service.category || "other",
+      estimated_duration_minutes: service.estimated_duration_minutes || 60,
+      is_schedulable: service.is_schedulable || false,
+      cost_price: service.cost_price || 0,
     });
     setIsAddingService(true);
   };
@@ -94,6 +94,10 @@ export const ServicesSection = () => {
         price: Number(newService.price) || 0,
         unit: newService.unit,
         description: newService.description.trim() || null,
+        category: newService.category,
+        estimated_duration_minutes: newService.estimated_duration_minutes || null,
+        is_schedulable: newService.is_schedulable,
+        cost_price: Number(newService.cost_price) || null,
       });
 
       resetServiceForm();
@@ -361,12 +365,12 @@ export const ServicesSection = () => {
                             <h5 className="font-medium text-brand-primary truncate">
                               {service.name}
                             </h5>
-                            {(service as any).category && (service as any).category !== 'other' && (
+                            {service.category && service.category !== 'other' && (
                               <Badge variant="secondary" className="text-xs capitalize">
-                                {getCategoryLabel((service as any).category)}
+                                {getCategoryLabel(service.category)}
                               </Badge>
                             )}
-                            {(service as any).is_schedulable && (
+                            {service.is_schedulable && (
                               <Badge variant="outline" className="text-xs">
                                 <Calendar className="h-3 w-3 mr-1" />
                                 Schedulable
@@ -377,10 +381,10 @@ export const ServicesSection = () => {
                             <span className="font-medium">
                               {currencySymbol}{Number(service.price).toFixed(2)} {getUnitLabel(service.unit).toLowerCase()}
                             </span>
-                            {(service as any).estimated_duration_minutes > 0 && (
+                            {service.estimated_duration_minutes > 0 && (
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {(service as any).estimated_duration_minutes}min
+                                {service.estimated_duration_minutes}min
                               </span>
                             )}
                           </div>
