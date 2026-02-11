@@ -115,6 +115,10 @@ export const useCreateServiceOption = () => {
         description: option.description || null,
         active: option.active !== false,
         user_id: effectiveOwnerId,
+        category: option.category || 'other',
+        estimated_duration_minutes: option.estimated_duration_minutes || null,
+        is_schedulable: option.is_schedulable || false,
+        cost_price: option.cost_price || null,
       };
 
       const { data, error } = await supabase
