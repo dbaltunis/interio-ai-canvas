@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <circle cx="25" cy="30" r="20" fill="#4A7C8F" opacity="0.8"/>
+  <circle cx="18" cy="35" r="12" fill="#4A7C8F" opacity="0.5"/>
+  <circle cx="32" cy="25" r="8" fill="#C4A95A" opacity="0.6"/>
+  <text x="55" y="25" font-family="Arial, sans-serif" font-weight="300" font-size="13" fill="#3D6B7E" letter-spacing="1">ORACLE</text>
+  <text x="55" y="48" font-family="Arial, sans-serif" font-weight="700" font-size="24" fill="#3D6B7E">NetSuite</text>
+</svg>

@@ -128,11 +128,12 @@ export const useGoogleCalendarIntegration = () => {
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        
+
+        // Open blank window first to avoid Safari COOP blocking cross-origin navigation
         const popup = window.open(
-          googleAuthUrl,
+          'about:blank',
           'Google Calendar Authorization',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,popup=yes`
         );
 
         // If popup is blocked, automatically redirect instead
@@ -140,6 +141,9 @@ export const useGoogleCalendarIntegration = () => {
           window.location.href = googleAuthUrl;
           return new Promise(() => {}); // Never resolves as page redirects
         }
+
+        // Navigate the popup to the OAuth URL after opening
+        popup.location.href = googleAuthUrl;
 
         // Listen for messages from the popup with multiple fallback methods
         return new Promise((resolve, reject) => {
@@ -296,12 +300,20 @@ export const useGoogleCalendarIntegration = () => {
     onError: (error: Error) => {
       const errorMessage = error.message || "Failed to connect Google Calendar";
       const isUserCancelled = errorMessage.includes('cancelled') || errorMessage.includes('canceled');
-      
+      const isRedirectMismatch = errorMessage.includes('redirect_uri_mismatch');
+
+      let description = "Please try again. If you see a security warning, click 'Advanced' → 'Go to InterioApp' to proceed.";
+      if (isUserCancelled) {
+        description = "You can try connecting again anytime.";
+      } else if (isRedirectMismatch) {
+        description = "Redirect URI mismatch. Check that the correct callback URL is configured in Google Cloud Console.";
+      } else if (errorMessage !== "Failed to connect Google Calendar") {
+        description = errorMessage;
+      }
+
       toast({
         title: isUserCancelled ? "Connection Cancelled" : "Connection Failed",
-        description: isUserCancelled 
-          ? "You can try connecting again anytime."
-          : "Please try again. If you see a security warning, click 'Advanced' → 'Go to InterioApp' to proceed.",
+        description,
         variant: isUserCancelled ? "default" : "destructive",
       });
     },

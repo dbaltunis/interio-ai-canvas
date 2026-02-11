@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { RFMSIntegration } from "@/types/integrations";
 import { RefreshCw, Users, ArrowUpDown, FileText } from "lucide-react";
+import rfmsLogo from "@/assets/rfms-logo.svg";
 
 interface RFMSIntegrationTabProps {
   integration?: RFMSIntegration | null;
@@ -167,11 +168,14 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">RFMS Integration</h3>
-          <p className="text-sm text-muted-foreground">
-            Connect to RFMS (Retail Floor Management System) for customer and order management
-          </p>
+        <div className="flex items-center gap-3">
+          <img src={rfmsLogo} alt="RFMS" className="h-12 w-auto" />
+          <div>
+            <h3 className="text-lg font-medium">RFMS Integration</h3>
+            <p className="text-sm text-muted-foreground">
+              Connect to RFMS (Retail Floor Management System) for customer and order management
+            </p>
+          </div>
         </div>
         {integration && (
           <Badge variant={integration.active ? "default" : "secondary"}>
