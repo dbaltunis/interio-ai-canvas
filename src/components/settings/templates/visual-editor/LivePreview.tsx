@@ -360,13 +360,14 @@ interface LivePreviewBlockProps {
   isExclusionEditMode?: boolean;
   // Image override props
   onItemImageChange?: (itemId: string, imageUrl: string | null) => void;
+  isImageEditMode?: boolean;
 }
 
-const LivePreviewBlock = ({ 
-  block, 
-  projectData, 
-  isEditable, 
-  isPrintMode = false, 
+const LivePreviewBlock = ({
+  block,
+  projectData,
+  isEditable,
+  isPrintMode = false,
   documentType = 'quote',
   userBusinessSettings,
   userPreferences,
@@ -380,7 +381,8 @@ const LivePreviewBlock = ({
   excludedItems = [],
   onToggleExclusion,
   isExclusionEditMode = false,
-  onItemImageChange
+  onItemImageChange,
+  isImageEditMode = false
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
@@ -1237,7 +1239,8 @@ const LivePreviewBlock = ({
                             )}
                             <td style={{ padding: '6px 6px', fontSize: '15px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                {showImages && !isPrintMode && onItemImageChange && (
+                                {/* Image edit mode: show picker for all items (with or without existing image) */}
+                                {showImages && !isPrintMode && isImageEditMode && onItemImageChange && (
                                   <QuoteItemImagePicker
                                     currentImageUrl={item.image_url_override || item.image_url || null}
                                     itemId={item.id || `${roomName}-${itemIndex}`}
@@ -1247,7 +1250,8 @@ const LivePreviewBlock = ({
                                     size={80}
                                   />
                                 )}
-                                {showImages && !isPrintMode && !onItemImageChange && (item.image_url_override || item.image_url) && (
+                                {/* View mode (not editing): show static image if one exists */}
+                                {showImages && !isPrintMode && !isImageEditMode && (item.image_url_override || item.image_url) && (
                                   <img
                                     src={item.image_url_override || item.image_url}
                                     alt={item.name || 'Product'}
@@ -1263,6 +1267,7 @@ const LivePreviewBlock = ({
                                     }}
                                   />
                                 )}
+                                {/* Print mode: show static image if one exists */}
                                 {showImages && isPrintMode && (item.image_url_override || item.image_url) && (
                                   <img
                                     src={item.image_url_override || item.image_url}
@@ -1302,56 +1307,37 @@ const LivePreviewBlock = ({
                           {/* Detailed breakdown rows - only show in detailed mode */}
                           {breakdown.length > 0 && effectiveShowDetailed && breakdown.map((breakdownItem: any, bidx: number) => (
                             breakdownItem.isHardwareGroup ? (
-                              // Hardware Group - render summary row + sub-items
+                              // Hardware Group - render each hardware item as a flat row matching regular breakdown style
                               <React.Fragment key={`hw-group-${bidx}`}>
-                                {/* Hardware Group Summary Row - with option image (NOT hardcoded emoji) */}
-                                <tr className="avoid-page-break" style={{ 
-                                  backgroundColor: '#f8fafc',
-                                  borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0'
-                                }}>
-                                  <td style={{ padding: '4px 6px 4px 20px', fontSize: '12px', fontWeight: '600', color: '#334155', backgroundColor: '#f8fafc' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      {/* Show option image if available (NOT emoji) */}
-                                      {showImages && breakdownItem.image_url && (
-                                        <ProductImageWithColorFallback
-                                          imageUrl={breakdownItem.image_url}
-                                          productName={breakdownItem.name || 'Hardware'}
-                                          size={26}
-                                          rounded="sm"
-                                          category="hardware"
-                                        />
-                                      )}
-                                      <span>{breakdownItem.name}</span>
-                                    </div>
-                                  </td>
-                                  <td style={{ padding: '4px 6px', fontSize: '12px', color: '#64748b', backgroundColor: '#f8fafc' }}>
-                                    {breakdownItem.description}
-                                  </td>
-                                  <td style={{ padding: '4px 6px', fontSize: '12px', textAlign: 'center', color: '#64748b', backgroundColor: '#f8fafc' }}>-</td>
-                                  <td style={{ padding: '4px 6px', fontSize: '12px', textAlign: 'right', color: '#64748b', backgroundColor: '#f8fafc' }}>-</td>
-                                  <td style={{ padding: '4px 6px', fontSize: '12px', fontWeight: '600', textAlign: 'right', color: '#334155', backgroundColor: '#f8fafc' }}>
-                                    {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
-                                  </td>
-                                </tr>
-                                {/* Hardware Sub-items */}
                                 {breakdownItem.hardwareItems?.map((hwItem: any, hIdx: number) => (
-                                  <tr key={`hw-item-${hIdx}`} className="avoid-page-break" style={{ 
+                                  <tr key={`hw-item-${hIdx}`} className="avoid-page-break" style={{
                                     backgroundColor: '#fff',
-                                    borderBottom: isPrintMode ? 'none' : (hIdx === breakdownItem.hardwareItems.length - 1 && bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #f1f5f9')
+                                    borderBottom: isPrintMode ? 'none' : (hIdx === (breakdownItem.hardwareItems?.length || 0) - 1 && bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                                   }}>
-                                    <td style={{ padding: '2px 6px 2px 32px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#ffffff' }}>
-                                      └ {(hwItem.name || '').replace(/^(Select Rod|Select Track|Hardware Type):\s*/i, '').replace(/^└\s*/, '')}
+                                    <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {showImages && hwItem.image_url && (
+                                          <ProductImageWithColorFallback
+                                            imageUrl={hwItem.image_url}
+                                            productName={hwItem.name || 'Hardware'}
+                                            size={30}
+                                            rounded="sm"
+                                            category="hardware"
+                                          />
+                                        )}
+                                        <span>{(hwItem.name || '').replace(/^(Select Rod|Select Track|Hardware Type):\s*/i, '').replace(/^└\s*/, '')}</span>
+                                      </div>
                                     </td>
-                                    <td style={{ padding: '2px 6px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#ffffff' }}>
+                                    <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
                                       {hwItem.description || hwItem.pricingDetails || '-'}
                                     </td>
-                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'center', color: '#94a3b8', backgroundColor: '#ffffff' }}>
+                                    <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', textAlign: 'center', backgroundColor: '#ffffff' }}>
                                       {hwItem.quantity > 0 ? hwItem.quantity : '-'}
                                     </td>
-                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'right', color: '#94a3b8', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                    <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
                                       {hwItem.unit_price > 0 ? formatCurrency(hwItem.unit_price, projectData?.currency || getDefaultCurrency()) : '-'}
                                     </td>
-                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'right', color: '#94a3b8', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                    <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
                                       {formatCurrency(hwItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
                                     </td>
                                   </tr>
@@ -1934,11 +1920,12 @@ interface LivePreviewProps {
   isExclusionEditMode?: boolean;
   // Image override props
   onItemImageChange?: (itemId: string, imageUrl: string | null) => void;
+  isImageEditMode?: boolean;
 }
 
-export const LivePreview = ({ 
-  blocks, 
-  projectData, 
+export const LivePreview = ({
+  blocks,
+  projectData,
   isEditable = false,
   isPrintMode = false,
   documentType = 'quote',
@@ -1954,7 +1941,8 @@ export const LivePreview = ({
   excludedItems = [],
   onToggleExclusion,
   isExclusionEditMode = false,
-  onItemImageChange
+  onItemImageChange,
+  isImageEditMode = false
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
@@ -2022,6 +2010,7 @@ export const LivePreview = ({
             onToggleExclusion={onToggleExclusion}
             isExclusionEditMode={isExclusionEditMode}
             onItemImageChange={onItemImageChange}
+            isImageEditMode={isImageEditMode}
           />
         ))}
       </div>

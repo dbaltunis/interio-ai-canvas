@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Edit2, Save } from "lucide-react";
+import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Edit2, Save, Pencil } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(true);
   const [showImages, setShowImages] = useState(false);
+  const [isImageEditMode, setIsImageEditMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -272,13 +273,27 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                   <Switch
                     id="show-images"
                     checked={showImages}
-                    onCheckedChange={setShowImages}
+                    onCheckedChange={(checked) => {
+                      setShowImages(checked);
+                      if (!checked) setIsImageEditMode(false);
+                    }}
                   />
                   <Label htmlFor="show-images" className="text-sm cursor-pointer">
                     <ImageIcon className="h-4 w-4 inline mr-1" />
                     Show Images
                   </Label>
                 </div>
+                {showImages && (
+                  <Button
+                    variant={isImageEditMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setIsImageEditMode(!isImageEditMode)}
+                    className="flex items-center gap-1.5 h-8"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span className="text-xs">{isImageEditMode ? 'Done Editing' : 'Edit Images'}</span>
+                  </Button>
+                )}
                 {/* Edit Mode Toggle - Only for Homekaara template */}
                 {useHomekaaraTemplate && (
                   <div className="flex items-center gap-2">
@@ -425,6 +440,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                   if (settings.showImages !== undefined) setShowImages(settings.showImages);
                 }}
                 onItemImageChange={handleItemImageChange}
+                isImageEditMode={isImageEditMode}
               />
             )}
           </div>
