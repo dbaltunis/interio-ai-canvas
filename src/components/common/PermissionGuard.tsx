@@ -12,37 +12,47 @@ interface PermissionGuardProps {
   requireAll?: boolean; // For multiple permissions, require all vs any
 }
 
-export const PermissionGuard = ({ 
-  permission, 
-  permissions, 
-  fallback, 
-  children, 
-  requireAll = false 
+export const PermissionGuard = ({
+  permission,
+  permissions,
+  fallback,
+  children,
+  requireAll = false
 }: PermissionGuardProps) => {
   const { user, loading: authLoading } = useAuth();
   const { data: roleData } = useUserRole();
   const [showAccessDialog, setShowAccessDialog] = useState(false);
-  
+
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL
+  // Call all permission hooks unconditionally with safe defaults
+  const singlePermissionResult = useHasPermission(permission || '');
+  const allPermissionsResult = useHasAllPermissions(permissions || []);
+  const anyPermissionResult = useHasAnyPermission(permissions || []);
+
   // If authentication is still loading, don't render anything
   if (authLoading) {
     return null;
   }
-  
+
   // If user is not authenticated, don't show protected content
   if (!user) {
     return (fallback || null) as JSX.Element;
   }
 
+  // Determine permission result based on props AFTER hooks are called
   let hasPermission: boolean | undefined = false;
 
   if (permission) {
-    hasPermission = useHasPermission(permission);
-  } else if (permissions) {
+    hasPermission = singlePermissionResult;
+  } else if (permissions && permissions.length > 0) {
     if (requireAll) {
-      hasPermission = useHasAllPermissions(permissions);
+      hasPermission = allPermissionsResult;
     } else {
-      hasPermission = useHasAnyPermission(permissions);
+      hasPermission = anyPermissionResult;
     }
+  } else {
+    // No permission specified - allow access
+    hasPermission = true;
   }
 
   // Show loading state while permissions are being checked

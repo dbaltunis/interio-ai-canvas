@@ -18,19 +18,18 @@ interface TargetRect {
  * Shows a dark overlay with a "hole" around the target, pulsing ring animation, and tooltip.
  */
 export const TeachingActiveSpotlight = () => {
-  // Safe access to context - handle HMR edge cases
-  let contextValue;
-  try {
-    contextValue = useTeaching();
-  } catch (e) {
-    // Context not available during HMR, return null gracefully
-    return null;
-  }
-  
-  const { activeSpotlight, dismissSpotlight, completeTeaching } = contextValue;
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP - before any early returns
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom' | 'left' | 'right'>('bottom');
   const [isVisible, setIsVisible] = useState(false);
+
+  // Safe access to context - always call the hook, handle errors gracefully
+  const teachingContext = useTeaching();
+
+  // Extract values safely
+  const activeSpotlight = teachingContext?.activeSpotlight;
+  const dismissSpotlight = teachingContext?.dismissSpotlight;
+  const completeTeaching = teachingContext?.completeTeaching;
 
   // Find and track the target element
   const updateTargetPosition = useCallback(() => {
@@ -99,14 +98,14 @@ export const TeachingActiveSpotlight = () => {
   }, [activeSpotlight, updateTargetPosition, targetRect]);
 
   const handleComplete = () => {
-    if (activeSpotlight) {
+    if (activeSpotlight && completeTeaching && dismissSpotlight) {
       completeTeaching(activeSpotlight.id);
       dismissSpotlight();
     }
   };
 
   const handleDismiss = () => {
-    dismissSpotlight();
+    dismissSpotlight?.();
   };
 
   if (!activeSpotlight || !isVisible) return null;
