@@ -217,3 +217,6 @@ verify_jwt = false
 [functions.nylas-setup-webhook]
 verify_jwt = true
 
+[functions.calendar-diagnose]
+verify_jwt = true
+
