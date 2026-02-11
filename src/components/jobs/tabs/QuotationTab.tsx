@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PixelDocumentIcon } from "@/components/icons/PixelArtIcons";
 import { useSearchParams } from "react-router-dom";
@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown, Edit, Check } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown, Edit, Check, Pencil } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -128,6 +128,7 @@ export const QuotationTab = ({
 
   // Edit mode for Homekaara template
   const [isHomekaaraEditable, setIsHomekaaraEditable] = useState(false);
+  const [isImageEditMode, setIsImageEditMode] = useState(false);
   
   // Quote item exclusions hook
   const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
@@ -326,10 +327,10 @@ export const QuotationTab = ({
   const templateSettings = useMemo(() => {
     const blocks = selectedTemplate?.blocks;
     if (!blocks || typeof blocks === 'string') return {
-      showImages: true,
+      showImages: false,
       showDetailedBreakdown: false,
       groupByRoom: false,
-      layout: 'detailed' as 'simple' | 'detailed'
+      layout: 'simple' as 'simple' | 'detailed'
     };
     const blocksArray = Array.isArray(blocks) ? blocks : [];
     // Match all product/items block types that LivePreview handles
@@ -337,11 +338,11 @@ export const QuotationTab = ({
       b?.type === 'products' || b?.type === 'product' || b?.type === 'line-items' || b?.type === 'items'
     ) as any;
 
-    // Get layout from content, defaulting to 'detailed'
-    const layout = (productsBlock?.content?.layout || 'detailed') as 'simple' | 'detailed';
+    // Get layout from content, defaulting to 'simple'
+    const layout = (productsBlock?.content?.layout || 'simple') as 'simple' | 'detailed';
     return {
-      showImages: productsBlock?.content?.showImages ?? true,
-      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? true,
+      showImages: productsBlock?.content?.showImages ?? false,
+      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? false,
       groupByRoom: productsBlock?.content?.groupByRoom ?? false,
       layout
     };
@@ -401,6 +402,41 @@ export const QuotationTab = ({
       });
     }
   };
+
+  // Handle item image change (upload or library pick) for inline quote
+  const handleItemImageChange = useCallback(async (itemId: string, imageUrl: string | null) => {
+    try {
+      const targetQuoteId = activeQuoteId || quoteId;
+      if (!targetQuoteId) return;
+
+      const { data: items } = await supabase
+        .from("quote_items")
+        .select("id, product_details")
+        .eq("quote_id", targetQuoteId) as any;
+
+      if (!items) return;
+
+      const targetItem = items.find((item: any) => {
+        if (item.id === itemId) return true;
+        const pd = item.product_details as any;
+        return pd?.surface_id === itemId || pd?.item_key === itemId;
+      });
+
+      if (!targetItem) return;
+
+      const currentPd = (targetItem.product_details as any) || {};
+      await supabase
+        .from("quote_items")
+        .update({ product_details: { ...currentPd, image_url_override: imageUrl } } as any)
+        .eq("id", targetItem.id);
+
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotation"] });
+    } catch (err) {
+      console.error("Failed to update item image:", err);
+      toast({ title: "Error", description: "Failed to update product image", variant: "destructive" });
+    }
+  }, [activeQuoteId, quoteId, queryClient, toast]);
 
   // Get template blocks safely - MUST be before early returns
   const templateBlocks = useMemo(() => {
@@ -1241,11 +1277,25 @@ export const QuotationTab = ({
           </Button>
           
           <Button variant="ghost" size="sm" onClick={() => {
-          handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
+          const newVal = !templateSettings.showImages;
+          handleUpdateTemplateSettings('showImages', newVal);
+          if (!newVal) setIsImageEditMode(false);
         }} className="h-8" disabled={isReadOnly}>
             <ImageIconLucide className="h-4 w-4 mr-2" />
             {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
           </Button>
+          {templateSettings.showImages && (
+            <Button
+              variant={isImageEditMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsImageEditMode(!isImageEditMode)}
+              className="flex items-center gap-1.5 h-8"
+              disabled={isReadOnly}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span className="text-xs">{isImageEditMode ? 'Done Editing' : 'Edit Images'}</span>
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -1394,21 +1444,23 @@ export const QuotationTab = ({
                 boxSizing: 'border-box',
                 overflow: 'hidden'
               }}>
-                <LivePreview 
-                  key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} 
-                  blocks={templateBlocks} 
-                  projectData={projectData} 
-                  isEditable={false} 
-                  isPrintMode={!isExclusionEditMode} 
-                  documentType={selectedTemplate?.template_style || 'quote'} 
-                  layout={templateSettings.layout} 
-                  showDetailedBreakdown={templateSettings.layout === 'detailed'} 
-                  showImages={templateSettings.showImages} 
-                  groupByRoom={templateSettings.groupByRoom} 
-                  excludedItems={excludedItems} 
-                  onToggleExclusion={toggleExclusion} 
-                  isExclusionEditMode={isExclusionEditMode} 
-                  quoteId={activeQuoteId || quoteId} 
+                <LivePreview
+                  key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${isImageEditMode}`}
+                  blocks={templateBlocks}
+                  projectData={projectData}
+                  isEditable={false}
+                  isPrintMode={!isExclusionEditMode && !isImageEditMode}
+                  documentType={selectedTemplate?.template_style || 'quote'}
+                  layout={templateSettings.layout}
+                  showDetailedBreakdown={templateSettings.layout === 'detailed'}
+                  showImages={templateSettings.showImages}
+                  groupByRoom={templateSettings.groupByRoom}
+                  excludedItems={excludedItems}
+                  onToggleExclusion={toggleExclusion}
+                  isExclusionEditMode={isExclusionEditMode}
+                  quoteId={activeQuoteId || quoteId}
+                  onItemImageChange={handleItemImageChange}
+                  isImageEditMode={isImageEditMode}
                 />
               </div>
             </div>
