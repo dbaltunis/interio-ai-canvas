@@ -3,15 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, Loader2, XCircle, Clock, Mail } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, Loader2, XCircle, Clock, Mail, PauseCircle } from "lucide-react";
 import { format } from "date-fns";
 
 export const OutlookCalendarSetup = () => {
-  const { integration, isLoading, isConnected, connect, disconnect, isConnecting, isDisconnecting, accountOwnerIntegration } = useOutlookCalendarIntegration();
+  const { integration, isLoading, isConnected, connect, disconnect, toggleSync, isConnecting, isDisconnecting, isTogglingSyncEnabled, accountOwnerIntegration } = useOutlookCalendarIntegration();
   const { syncFromOutlook, isSyncingFromOutlook } = useOutlookCalendarSync();
 
   const displayIntegration = accountOwnerIntegration || integration;
   const isAccountOwnerConnection = !!accountOwnerIntegration && !integration;
+  const syncEnabled = displayIntegration?.sync_enabled ?? true;
 
   if (isLoading) {
     return (
@@ -41,9 +44,9 @@ export const OutlookCalendarSetup = () => {
             </CardDescription>
           </div>
           {isConnected && (
-            <Badge variant="default" className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              Auto-Sync Active
+            <Badge variant={syncEnabled ? "default" : "secondary"} className="flex items-center gap-1">
+              {syncEnabled ? <CheckCircle2 className="h-3 w-3" /> : <PauseCircle className="h-3 w-3" />}
+              {syncEnabled ? "Auto-Sync Active" : "Sync Paused"}
             </Badge>
           )}
         </div>
@@ -92,6 +95,22 @@ export const OutlookCalendarSetup = () => {
                 <li>Microsoft Teams meeting links are generated automatically</li>
               </ul>
             </div>
+
+            {!isAccountOwnerConnection && (
+              <div className="flex items-center justify-between py-2">
+                <div className="space-y-0.5">
+                  <Label>Automatic Sync</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically sync events between InterioApp and Outlook
+                  </p>
+                </div>
+                <Switch
+                  checked={syncEnabled}
+                  onCheckedChange={(checked) => toggleSync(checked)}
+                  disabled={isTogglingSyncEnabled}
+                />
+              </div>
+            )}
 
             {!isAccountOwnerConnection && (
               <div className="flex gap-2">

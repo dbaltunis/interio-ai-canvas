@@ -62,7 +62,7 @@ serve(async (req) => {
       throw new Error("Customer email is required");
     }
 
-    const origin = req.headers.get("origin") || "https://ldgrcodffsalkevafbkb.lovableproject.com";
+    const origin = req.headers.get("origin") || Deno.env.get("APP_ORIGIN") || "https://app.interioapp.com";
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({

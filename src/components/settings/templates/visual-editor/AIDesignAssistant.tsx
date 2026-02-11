@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,24 +161,18 @@ export const AIDesignAssistant = ({ onApplyDesign, currentBlocks }: AIDesignAssi
     try {
       console.log('Requesting AI design assistance...');
       
-      const response = await fetch(`https://ldgrcodffsalkevafbkb.functions.supabase.co/functions/v1/ai-design-assistant`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error: fnError } = await supabase.functions.invoke('ai-design-assistant', {
+        body: {
           prompt: designPrompt,
           documentType: 'quote',
           currentStyle: {},
           projectData: {}
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (fnError) {
+        throw new Error(fnError.message || 'AI design assistant request failed');
       }
-
-      const data = await response.json();
       console.log('AI Design Assistant response:', data);
       
       // Apply AI-generated design recommendations

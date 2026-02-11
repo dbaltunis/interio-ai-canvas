@@ -20,7 +20,10 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('NYLAS_API_KEY');
     const apiUri = Deno.env.get('NYLAS_API_URI') || 'https://api.eu.nylas.com';
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL not configured');
+    }
 
     if (!apiKey) {
       throw new Error(

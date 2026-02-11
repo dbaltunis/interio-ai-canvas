@@ -65,7 +65,7 @@ export const useAppointments = () => {
   });
 };
 
-/** Notify team members when they are added to an appointment */
+/** Notify team members when they are added to an appointment (in-app + email) */
 async function notifyTeamMembers(
   appointmentData: any,
   appointmentId: string,
@@ -83,6 +83,7 @@ async function notifyTeamMembers(
     ? new Date(appointmentData.start_time).toLocaleString()
     : '';
 
+  // 1. Create in-app notifications
   const notifications = membersToNotify.map(memberId => ({
     user_id: memberId,
     title: 'New Calendar Event',
@@ -98,7 +99,28 @@ async function notifyTeamMembers(
   try {
     await supabase.from('notifications').insert(notifications as any);
   } catch (err) {
-    console.error('Failed to notify team members:', err);
+    console.error('Failed to create in-app notifications:', err);
+  }
+
+  // 2. Send email invitations via edge function (non-blocking)
+  try {
+    supabase.functions.invoke('send-calendar-invite-emails', {
+      body: {
+        appointmentId,
+        teamMemberIds,
+        creatorId,
+        title,
+        startTime: appointmentData.start_time,
+        endTime: appointmentData.end_time,
+        location: appointmentData.location,
+        description: appointmentData.description,
+        videoMeetingLink: appointmentData.video_meeting_link,
+      },
+    }).then(({ error }) => {
+      if (error) console.error('Calendar invite email error:', error);
+    });
+  } catch (err) {
+    console.error('Failed to send calendar invite emails:', err);
   }
 }
 

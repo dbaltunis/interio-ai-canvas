@@ -28,7 +28,11 @@ serve(async (req) => {
       );
     }
 
-    const redirectUri = `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/nylas-oauth-callback`;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL not configured');
+    }
+    const redirectUri = `${supabaseUrl}/functions/v1/nylas-oauth-callback`;
 
     console.log('Nylas OAuth URL generation:');
     console.log('  Client ID:', clientId.substring(0, 8) + '...');

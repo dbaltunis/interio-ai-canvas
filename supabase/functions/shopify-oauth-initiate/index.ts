@@ -29,7 +29,11 @@ serve(async (req) => {
     // Normalize shop domain
     const normalizedShop = shopDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
     
-    const redirectUri = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-oauth-callback`;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL not configured');
+    }
+    const redirectUri = `${supabaseUrl}/functions/v1/shopify-oauth-callback`;
     const scopes = 'read_products,write_products,read_orders,read_inventory,write_inventory';
     
     const shopifyAuthUrl = `https://${normalizedShop}/admin/oauth/authorize?` +

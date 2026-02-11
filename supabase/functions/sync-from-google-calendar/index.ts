@@ -146,24 +146,35 @@ serve(async (req) => {
     const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
     console.log(`Fetching events from calendar: ${calendarId}`);
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=250&showDeleted=true`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+
+    // Paginate through all events (Google returns max 250 per page)
+    let events: any[] = [];
+    let pageToken: string | undefined;
+
+    do {
+      const pageParam = pageToken ? `&pageToken=${pageToken}` : '';
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=250&showDeleted=true${pageParam}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google Calendar API error:', errorText);
+        throw new Error(`Failed to fetch Google Calendar events: ${response.status}`);
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Calendar API error:', errorText);
-      throw new Error(`Failed to fetch Google Calendar events: ${response.status}`);
-    }
+      const data = await response.json();
+      events = events.concat(data.items || []);
+      pageToken = data.nextPageToken;
+      console.log(`Fetched ${data.items?.length || 0} events (page ${pageToken ? 'has more' : 'final'})`);
+    } while (pageToken);
 
-    const data = await response.json();
-    const events = data.items || [];
-    console.log(`Found ${events.length} events from Google Calendar`);
+    console.log(`Found ${events.length} total events from Google Calendar`);
 
     // Get ALL existing appointments with google_event_id (for update + delete detection)
     const { data: existingAppointments } = await supabase
@@ -200,16 +211,26 @@ serve(async (req) => {
 
       seenGoogleEventIds.add(event.id);
 
-      // Skip all-day events or events without proper time info
-      if (!event.start?.dateTime || !event.end?.dateTime) {
-        continue;
-      }
-
       const existing = existingByGoogleId.get(event.id);
 
       try {
-        const startDateTime = new Date(event.start.dateTime);
-        const endDateTime = new Date(event.end.dateTime);
+        // Handle both timed events (dateTime) and all-day events (date)
+        let startDateTime: Date;
+        let endDateTime: Date;
+        let isAllDay = false;
+
+        if (event.start?.dateTime && event.end?.dateTime) {
+          startDateTime = new Date(event.start.dateTime);
+          endDateTime = new Date(event.end.dateTime);
+        } else if (event.start?.date && event.end?.date) {
+          // All-day event: use date strings (YYYY-MM-DD)
+          startDateTime = new Date(event.start.date + 'T00:00:00');
+          endDateTime = new Date(event.end.date + 'T00:00:00');
+          isAllDay = true;
+        } else {
+          // Skip events without any time info
+          continue;
+        }
 
         if (existing) {
           // UPDATE existing appointment if Google event changed

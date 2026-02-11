@@ -49,10 +49,14 @@ export interface RFMSIntegration extends BaseIntegration {
   integration_type: 'rfms';
   api_credentials: {
     api_url: string;
+    store_queue: string;
     api_key: string;
-    client_id: string;
+    session_token?: string;
+    session_started_at?: string;
   };
   configuration: {
+    sync_customers: boolean;
+    sync_quotes: boolean;
     sync_measurements: boolean;
     sync_scheduling: boolean;
     auto_update_job_status: boolean;
@@ -150,7 +154,61 @@ export interface TWCIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration;
+export interface NetSuiteIntegration extends BaseIntegration {
+  integration_type: 'netsuite';
+  api_credentials: {
+    account_id: string;
+    consumer_key: string;
+    consumer_secret: string;
+    token_id: string;
+    token_secret: string;
+  };
+  configuration: {
+    sync_customers: boolean;
+    sync_estimates: boolean;
+    sync_sales_orders: boolean;
+    sync_invoices: boolean;
+    auto_create_customers: boolean;
+    default_subsidiary?: string;
+    default_currency?: string;
+  };
+}
+
+export interface CWSystemsIntegration extends BaseIntegration {
+  integration_type: 'cw_systems';
+  api_credentials: {
+    account_code: string;
+    account_name: string;
+    supplier_email: string;
+    contact_name?: string;
+    contact_phone?: string;
+  };
+  configuration: {
+    default_delivery_address: string;
+    default_payment_terms: string;
+    notes_template?: string;
+    order_method: 'email';
+  };
+}
+
+export interface NormanAustraliaIntegration extends BaseIntegration {
+  integration_type: 'norman_australia';
+  api_credentials: {
+    account_number: string;
+    account_name: string;
+    supplier_email: string;
+    contact_name?: string;
+    contact_phone?: string;
+  };
+  configuration: {
+    default_delivery_address: string;
+    default_payment_terms: string;
+    notes_template?: string;
+    order_method: 'email';
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | OutlookCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration | NetSuiteIntegration | CWSystemsIntegration | NormanAustraliaIntegration;
 
 export interface IntegrationSyncLog {
   id: string;

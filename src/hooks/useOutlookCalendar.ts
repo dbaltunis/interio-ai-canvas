@@ -275,6 +275,33 @@ export const useOutlookCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // 1. Delete appointments that were imported FROM Outlook (have outlook_event_id but no local origin)
+      // These are events pulled from Outlook that shouldn't persist after disconnect
+      const { data: importedEvents } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('user_id', user.id)
+        .not('outlook_event_id', 'is', null)
+        .eq('appointment_type', 'consultation') // Imported events default to 'consultation'
+        .is('google_event_id', null)
+        .is('nylas_event_id', null);
+
+      if (importedEvents && importedEvents.length > 0) {
+        const ids = importedEvents.map(e => e.id);
+        await supabase
+          .from('appointments')
+          .delete()
+          .in('id', ids);
+      }
+
+      // 2. Clear outlook_event_id from remaining appointments (user-created, pushed to Outlook)
+      await supabase
+        .from('appointments')
+        .update({ outlook_event_id: null } as any)
+        .eq('user_id', user.id)
+        .not('outlook_event_id', 'is', null);
+
+      // 3. Delete the integration setting
       const { error } = await supabase
         .from('integration_settings')
         .delete()
@@ -285,6 +312,7 @@ export const useOutlookCalendarIntegration = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outlook-calendar-integration'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Outlook Calendar disconnected successfully",
@@ -299,6 +327,45 @@ export const useOutlookCalendarIntegration = () => {
     },
   });
 
+  const toggleSync = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const target = integration || accountOwnerIntegration;
+      if (!target) throw new Error('No integration found');
+
+      const { error } = await supabase
+        .from('integration_settings')
+        .update({
+          configuration: {
+            ...target.configuration,
+            sync_enabled: enabled,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', target.id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, enabled) => {
+      queryClient.invalidateQueries({ queryKey: ['outlook-calendar-integration'] });
+      toast({
+        title: enabled ? "Sync Enabled" : "Sync Disabled",
+        description: enabled
+          ? "Outlook Calendar sync is now active"
+          : "Outlook Calendar sync has been paused",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update sync settings",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     integration,
     accountOwnerIntegration,
@@ -306,8 +373,10 @@ export const useOutlookCalendarIntegration = () => {
     isConnected: !!integration || !!accountOwnerIntegration,
     connect: connect.mutate,
     disconnect: disconnect.mutate,
+    toggleSync: toggleSync.mutate,
     isConnecting: connect.isPending,
     isDisconnecting: disconnect.isPending,
+    isTogglingSyncEnabled: toggleSync.isPending,
   };
 };
 

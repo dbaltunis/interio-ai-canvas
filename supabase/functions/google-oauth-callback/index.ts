@@ -62,7 +62,7 @@ serve(async (req) => {
           client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
           code: code,
           grant_type: 'authorization_code',
-          redirect_uri: `${Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}/functions/v1/google-oauth-callback`,
+          redirect_uri: `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-oauth-callback`,
         }),
     });
 
