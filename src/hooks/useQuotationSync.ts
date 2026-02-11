@@ -1083,6 +1083,35 @@ export const useQuotationSync = ({
       };
       });
 
+      // Fetch existing items to preserve user-uploaded image overrides
+      const { data: existingItems } = await supabase
+        .from("quote_items")
+        .select("name, product_details")
+        .eq("quote_id", quoteId);
+
+      // Build a map of image overrides keyed by item name + room
+      const imageOverrides: Record<string, string> = {};
+      if (existingItems) {
+        for (const existing of existingItems) {
+          const pd = existing.product_details as any;
+          if (pd?.image_url_override) {
+            const key = `${pd?.room_name || ''}::${existing.name || ''}`;
+            imageOverrides[key] = pd.image_url_override;
+          }
+        }
+      }
+
+      // Merge preserved overrides into new items
+      if (Object.keys(imageOverrides).length > 0) {
+        for (const item of itemsToSave) {
+          const pd = item.product_details as any;
+          const key = `${pd?.room_name || ''}::${item.name || ''}`;
+          if (imageOverrides[key]) {
+            (item.product_details as any).image_url_override = imageOverrides[key];
+          }
+        }
+      }
+
       // Delete existing items for this quote
       await supabase
         .from("quote_items")
