@@ -9,11 +9,12 @@ import { RoomHeader } from "./RoomHeader";
 import { cn } from "@/lib/utils";
 import { SurfaceList } from "./SurfaceList";
 import { RoomProductsList } from "./RoomProductsList";
-import { ProductServiceDialog, SelectedProduct } from "./ProductServiceDialog";
+import { ProductServiceDialog, SelectedProduct, CalendarEventRequest } from "./ProductServiceDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { useCreateRoomProducts } from "@/hooks/useRoomProducts";
+import { useCreateAppointment } from "@/hooks/useAppointments";
 
 
 interface RoomCardProps {
@@ -94,6 +95,31 @@ export const RoomCard = ({
   const [newSurface, setNewSurface] = useState<any>(null);
   
   const createRoomProducts = useCreateRoomProducts();
+  const createAppointment = useCreateAppointment();
+
+  const handleCreateCalendarEvent = (eventRequest: CalendarEventRequest) => {
+    const now = new Date();
+    // Default to tomorrow at 9 AM for the event
+    const startTime = new Date(now);
+    startTime.setDate(startTime.getDate() + 1);
+    startTime.setHours(9, 0, 0, 0);
+    const endTime = new Date(startTime);
+    endTime.setMinutes(endTime.getMinutes() + (eventRequest.durationMinutes || 60));
+
+    createAppointment.mutate({
+      title: `${eventRequest.title} - ${room.name}`,
+      description: eventRequest.description,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      appointment_type: (eventRequest.serviceCategory === 'measurement' ? 'measurement'
+        : eventRequest.serviceCategory === 'consultation' ? 'consultation'
+        : eventRequest.serviceCategory === 'installation' ? 'installation'
+        : 'follow-up') as any,
+      status: 'scheduled',
+      project_id: projectId || undefined,
+      client_id: clientId || undefined,
+    });
+  };
 
   const handleSurfaceCreation = async () => {
     setIsCreatingSurface(true);
@@ -251,7 +277,10 @@ export const RoomCard = ({
           isOpen={showProductDialog}
           onClose={() => setShowProductDialog(false)}
           roomId={room.id}
+          projectId={projectId}
+          clientId={clientId}
           onAddProducts={handleAddProducts}
+          onCreateCalendarEvent={handleCreateCalendarEvent}
         />
       </Card>
     </Collapsible>

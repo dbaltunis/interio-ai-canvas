@@ -12,6 +12,7 @@ import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { PricingRulesTab } from "./tabs/PricingRulesTab";
+import { ServicesSettingsTab } from "./tabs/ServicesSettingsTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 
@@ -387,6 +388,12 @@ export const SettingsView = () => {
         {canManageMarkup && <TabsContent value="pricing" className="animate-fade-in">
             <PricingRulesTab />
           </TabsContent>}
+
+        {canViewWindowTreatmentsForTabs && (
+          <TabsContent value="services" className="animate-fade-in">
+            <ServicesSettingsTab />
+          </TabsContent>
+        )}
 
         {canViewTeamMembers && (
           <TabsContent value="users" className="animate-fade-in">
