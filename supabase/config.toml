@@ -220,3 +220,12 @@ verify_jwt = true
 [functions.calendar-diagnose]
 verify_jwt = true
 
+[functions.execute-campaign]
+verify_jwt = true
+
+[functions.resend-webhook]
+verify_jwt = false
+
+[functions.send-whatsapp-cloud]
+verify_jwt = true
+

@@ -5,15 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { 
-  MessageSquare, 
-  Check, 
-  Loader2, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  MessageSquare,
+  Check,
+  Loader2,
   Phone,
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  Send
+  Send,
+  Cloud
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,11 @@ export const WhatsAppBYOASetup = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [testPhoneNumber, setTestPhoneNumber] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
+  // WhatsApp Cloud API (Meta direct) state
+  const [cloudPhoneNumberId, setCloudPhoneNumberId] = useState("");
+  const [cloudAccessToken, setCloudAccessToken] = useState("");
+  const [cloudBusinessAccountId, setCloudBusinessAccountId] = useState("");
+  const [activeProvider, setActiveProvider] = useState<"twilio" | "cloud">("twilio");
 
   // Fetch business settings for company name
   const { data: businessSettings } = useQuery({
@@ -86,6 +93,12 @@ export const WhatsAppBYOASetup = () => {
         setAuthToken(data.auth_token || "");
         setWhatsappNumber(data.whatsapp_number || "");
         if (data.use_own_account) setShowCredentials(true);
+        // Load Cloud API fields
+        const anyData = data as any;
+        setCloudPhoneNumberId(anyData.cloud_phone_number_id || "");
+        setCloudAccessToken(anyData.cloud_access_token || "");
+        setCloudBusinessAccountId(anyData.cloud_business_account_id || "");
+        if (anyData.cloud_phone_number_id) setActiveProvider("cloud");
       }
 
       return data as WhatsAppUserSettings | null;
@@ -153,6 +166,39 @@ export const WhatsAppBYOASetup = () => {
     }
   });
 
+  // Save Cloud API settings mutation
+  const saveCloudMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const hasCredentials = !!(cloudPhoneNumberId && cloudAccessToken);
+      const settingsData = {
+        user_id: user.id,
+        use_own_account: true,
+        cloud_phone_number_id: cloudPhoneNumberId || null,
+        cloud_access_token: cloudAccessToken || null,
+        cloud_business_account_id: cloudBusinessAccountId || null,
+        verified: hasCredentials,
+        verified_at: hasCredentials ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await (supabase
+        .from('whatsapp_user_settings')
+        .upsert(settingsData, { onConflict: 'user_id' }) as any);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('WhatsApp Cloud API settings saved');
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-user-settings'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to save Cloud API settings');
+    }
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -174,120 +220,235 @@ export const WhatsAppBYOASetup = () => {
     }
   };
 
-  // Not configured - show setup prompt
-  if (!isConfigured) {
-    return (
-      <div className="space-y-4">
-        {/* Setup Required Card */}
-        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
-          <CardContent className="py-6">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900">
-                <MessageSquare className="h-6 w-6 text-amber-600" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Connect WhatsApp Business</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  WhatsApp messaging requires a Twilio account with WhatsApp Business API enabled.
-                  Connect your Twilio credentials to start sending WhatsApp messages to clients.
-                </p>
-              </div>
-              <a 
-                href="https://console.twilio.com/us1/develop/sms/senders/whatsapp-senders" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-              >
-                Get started with Twilio WhatsApp
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+  const cloudApiConfigured = !!(cloudPhoneNumberId && cloudAccessToken);
 
-        {/* Setup Form */}
-        <Card>
-          <CardContent className="py-4">
-            <div 
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setShowCredentials(!showCredentials)}
+  // Cloud API setup form (reused in both configured and not-configured views)
+  const renderCloudApiForm = () => (
+    <div className="space-y-4">
+      <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+        <CardContent className="py-6">
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+              <Cloud className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">WhatsApp Cloud API (Meta Direct)</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Connect directly to Meta's WhatsApp Cloud API. Free tier includes 1,000 service
+                conversations/month. No Twilio fees. Requires Meta Business verification.
+              </p>
+            </div>
+            <a
+              href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
             >
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Connect Your Twilio Account</p>
-                  <p className="text-sm text-muted-foreground">Enter your WhatsApp Business credentials</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch 
-                  checked={useOwnAccount} 
-                  onCheckedChange={handleToggle}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                {showCredentials ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-            </div>
+              Get started with WhatsApp Cloud API
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </CardContent>
+      </Card>
 
-            {showCredentials && (
-              <div className="mt-4 pt-4 border-t space-y-4">
-                <div className="grid gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="accountSid" className="text-sm">Account SID</Label>
-                    <Input
-                      id="accountSid"
-                      placeholder="Enter your Twilio Account SID (starts with AC)"
-                      value={accountSid}
-                      onChange={(e) => setAccountSid(e.target.value)}
-                    />
+      <Card>
+        <CardContent className="py-4 space-y-4">
+          <div className="grid gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="cloudPhoneNumberId" className="text-sm">Phone Number ID</Label>
+              <Input
+                id="cloudPhoneNumberId"
+                placeholder="e.g., 123456789012345"
+                value={cloudPhoneNumberId}
+                onChange={(e) => setCloudPhoneNumberId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Found in Meta Developer Dashboard &gt; WhatsApp &gt; API Setup
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cloudAccessToken" className="text-sm">Permanent Access Token</Label>
+              <Input
+                id="cloudAccessToken"
+                type="password"
+                placeholder="Enter your Meta access token"
+                value={cloudAccessToken}
+                onChange={(e) => setCloudAccessToken(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Generate a permanent token in Meta Developer Dashboard &gt; System Users
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cloudBusinessAccountId" className="text-sm">Business Account ID (optional)</Label>
+              <Input
+                id="cloudBusinessAccountId"
+                placeholder="e.g., 123456789012345"
+                value={cloudBusinessAccountId}
+                onChange={(e) => setCloudBusinessAccountId(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {cloudApiConfigured && (
+            <p className="text-sm text-primary flex items-center gap-1">
+              <Check className="h-3 w-3" />
+              Cloud API configured
+            </p>
+          )}
+
+          <Button
+            onClick={() => saveCloudMutation.mutate()}
+            disabled={saveCloudMutation.isPending || !cloudPhoneNumberId || !cloudAccessToken}
+            size="sm"
+          >
+            {saveCloudMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              cloudApiConfigured ? 'Update' : 'Save & Connect'
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Not configured - show setup prompt with tabs
+  if (!isConfigured && !cloudApiConfigured) {
+    return (
+      <Tabs defaultValue="twilio" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="twilio" className="gap-2">
+            <Phone className="h-4 w-4" />
+            Twilio
+          </TabsTrigger>
+          <TabsTrigger value="cloud" className="gap-2">
+            <Cloud className="h-4 w-4" />
+            Cloud API (Meta)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="twilio">
+          <div className="space-y-4">
+            {/* Setup Required Card */}
+            <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="py-6">
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900">
+                    <MessageSquare className="h-6 w-6 text-amber-600" />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="authToken" className="text-sm">Auth Token</Label>
-                    <Input
-                      id="authToken"
-                      type="password"
-                      placeholder="Enter your Twilio Auth Token"
-                      value={authToken}
-                      onChange={(e) => setAuthToken(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="whatsappNumber" className="text-sm">WhatsApp Number</Label>
-                    <Input
-                      id="whatsappNumber"
-                      placeholder="Enter your WhatsApp number (e.g., +14155551234)"
-                      value={whatsappNumber}
-                      onChange={(e) => setWhatsappNumber(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your Twilio WhatsApp-enabled phone number in international format
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">Connect WhatsApp Business</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      WhatsApp messaging requires a Twilio account with WhatsApp Business API enabled.
+                      Connect your Twilio credentials to start sending WhatsApp messages to clients.
                     </p>
                   </div>
+                  <a
+                    href="https://console.twilio.com/us1/develop/sms/senders/whatsapp-senders"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    Get started with Twilio WhatsApp
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Setup Form */}
+            <Card>
+              <CardContent className="py-4">
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowCredentials(!showCredentials)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Connect Your Twilio Account</p>
+                      <p className="text-sm text-muted-foreground">Enter your WhatsApp Business credentials</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={useOwnAccount}
+                      onCheckedChange={handleToggle}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {showCredentials ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
 
-                <Button 
-                  onClick={() => saveMutation.mutate()}
-                  disabled={saveMutation.isPending || !accountSid || !authToken || !whatsappNumber}
-                  size="sm"
-                >
-                  {saveMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save & Connect'
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                {showCredentials && (
+                  <div className="mt-4 pt-4 border-t space-y-4">
+                    <div className="grid gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="accountSid" className="text-sm">Account SID</Label>
+                        <Input
+                          id="accountSid"
+                          placeholder="Enter your Twilio Account SID (starts with AC)"
+                          value={accountSid}
+                          onChange={(e) => setAccountSid(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="authToken" className="text-sm">Auth Token</Label>
+                        <Input
+                          id="authToken"
+                          type="password"
+                          placeholder="Enter your Twilio Auth Token"
+                          value={authToken}
+                          onChange={(e) => setAuthToken(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="whatsappNumber" className="text-sm">WhatsApp Number</Label>
+                        <Input
+                          id="whatsappNumber"
+                          placeholder="Enter your WhatsApp number (e.g., +14155551234)"
+                          value={whatsappNumber}
+                          onChange={(e) => setWhatsappNumber(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Your Twilio WhatsApp-enabled phone number in international format
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => saveMutation.mutate()}
+                      disabled={saveMutation.isPending || !accountSid || !authToken || !whatsappNumber}
+                      size="sm"
+                    >
+                      {saveMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save & Connect'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cloud">
+          {renderCloudApiForm()}
+        </TabsContent>
+      </Tabs>
     );
   }
 

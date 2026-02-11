@@ -16,7 +16,7 @@ const corsHeaders = {
 
 interface TrackingEvent {
   emailId: string;
-  eventType: 'open' | 'click' | 'download' | 'screenshot' | 'time_spent' | 'engagement' | 'session_end' | 'delete';
+  eventType: 'open' | 'click' | 'download' | 'time_spent';
   eventData?: any;
   userAgent?: string;
   ipAddress?: string;
@@ -123,11 +123,8 @@ async function trackEvent(event: TrackingEvent) {
         }
         break;
       
-      case 'engagement':
-      case 'screenshot':
-      case 'session_end':
-      case 'delete':
-        // These events don't update email counters but are tracked in analytics
+      case 'download':
+        // Downloads don't update email counters but are tracked in analytics
         break;
     }
 
@@ -181,15 +178,6 @@ function handleResponse(eventType: string, targetUrl?: string | null) {
         return redirectToUrl(targetUrl);
       }
       return new Response("Download not found", { status: 404 });
-    
-    case 'screenshot':
-      // For screenshot detection, just return success
-      return new Response(JSON.stringify({ tracked: true }), {
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      });
     
     default:
       return returnTrackingPixel();
