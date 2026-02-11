@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Eye, AlertTriangle } from "lucide-react";
+import { Send, Eye, AlertTriangle, ShieldAlert } from "lucide-react";
 
 interface EmailKPIsProps {
   kpis?: {
@@ -24,7 +24,24 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
   };
 
+  const bounceRate = kpis?.bounce_rate ?? 0;
+  const totalSent = kpis?.total_sent ?? 0;
+  const issuesCount = kpis?.issues_count ?? 0;
+
   return (
+    <div className="space-y-4">
+      {bounceRate > 5 && totalSent > 10 && (
+        <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+          <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800 dark:text-amber-300">High bounce rate detected ({bounceRate}%)</p>
+            <p className="text-amber-700 dark:text-amber-400 mt-0.5">
+              {issuesCount} emails bounced or failed. Consider setting up a custom SendGrid integration
+              with your own verified domain for better deliverability.
+            </p>
+          </div>
+        </div>
+      )}
     <div className="grid gap-4 md:grid-cols-4">
       {/* Total Sent */}
       <Card>
@@ -35,7 +52,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{kpis?.total_sent || 39}</div>
+          <div className="text-2xl font-bold">{kpis?.total_sent ?? 0}</div>
           <p className="text-xs text-muted-foreground">Total emails sent</p>
         </CardContent>
       </Card>
@@ -49,7 +66,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{kpis?.open_rate ? `${kpis.open_rate}%` : '33%'}</div>
+          <div className="text-2xl font-bold">{kpis?.open_rate ? `${kpis.open_rate}%` : '0%'}</div>
           <p className="text-xs text-muted-foreground">Emails opened</p>
         </CardContent>
       </Card>
@@ -63,7 +80,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{kpis?.total_opened || 25}</div>
+          <div className="text-2xl font-bold">{kpis?.total_opened ?? 0}</div>
           <p className="text-xs text-muted-foreground">Number of times opened</p>
         </CardContent>
       </Card>
@@ -77,10 +94,11 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{kpis?.issues_count || 1}</div>
+          <div className="text-2xl font-bold">{kpis?.issues_count ?? 0}</div>
           <p className="text-xs text-muted-foreground">Bounced or failed</p>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 };

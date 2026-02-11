@@ -122,231 +122,25 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Add tracking pixel and wrap links only if we have an emailData record
+    // Uses industry-standard approaches: 1x1 pixel (opens) + link redirect (clicks)
+    // No JavaScript injection - email clients strip <script> tags and flag them as spam
     let finalContent = emailContent;
     if (emailData) {
-      console.log("Adding enhanced tracking to email content for email ID:", emailData.id);
-      
-      // Create enhanced tracking pixel with JavaScript for advanced tracking
-      const enhancedTrackingScript = `
-        <script>
-          (function() {
-            const emailId = "${emailData.id}";
-            const trackingBaseUrl = "${supabaseUrl}/functions/v1/track-email-enhanced";
-            let startTime = Date.now();
-            let isVisible = true;
-            let totalTimeSpent = 0;
-            
-            // Track email open with device info
-            const deviceInfo = {
-              userAgent: navigator.userAgent,
-              screenRes: screen.width + "x" + screen.height,
-              platform: navigator.platform,
-              language: navigator.language,
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            };
-            
-            fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + deviceInfo.screenRes + "&platform=" + encodeURIComponent(deviceInfo.platform) + "&language=" + deviceInfo.language);
-            
-            // Track time spent more accurately
-            function trackTimeSpent() {
-              if (isVisible) {
-                const sessionTime = Math.floor((Date.now() - startTime) / 1000);
-                totalTimeSpent += sessionTime;
-                if (sessionTime > 3) { // Track if viewed for more than 3 seconds
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=time_spent&time_spent=" + totalTimeSpent);
-                }
-              }
-            }
-            
-            // Track visibility changes
-            document.addEventListener('visibilitychange', function() {
-              if (document.hidden) {
-                isVisible = false;
-                trackTimeSpent();
-              } else {
-                isVisible = true;
-                startTime = Date.now();
-                // Track re-open
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + deviceInfo.screenRes);
-              }
-            });
-            
-            // Track scrolling engagement
-            let maxScroll = 0;
-            window.addEventListener('scroll', function() {
-              const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
-              if (scrollPercent > maxScroll) {
-                maxScroll = scrollPercent;
-                if (scrollPercent > 50) { // Track significant engagement
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=engagement&scroll_percent=" + scrollPercent);
-                }
-              }
-            });
-            
-            
-            // Enhanced screenshot detection
-            let screenshotAttempts = 0;
-            let lastVisibilityChange = 0;
-            
-            // Comprehensive keyboard shortcuts for screenshots
-            document.addEventListener('keydown', function(e) {
-              let isScreenshot = false;
-              
-              // Windows/Linux screenshot shortcuts
-              if ((e.ctrlKey && e.shiftKey && e.key === 'S') || 
-                  (e.altKey && e.key === 'PrintScreen') || 
-                  e.key === 'PrintScreen' || 
-                  e.keyCode === 44 ||
-                  e.key === 'F12' || // Developer tools (often used before screenshots)
-                  (e.ctrlKey && e.shiftKey && e.key === 'I')) { // Developer tools
-                isScreenshot = true;
-              }
-              
-              // Mac screenshot shortcuts
-              if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5' || e.key === '6')) {
-                isScreenshot = true;
-              }
-              
-              // Browser extensions screenshot shortcuts
-              if ((e.ctrlKey && e.shiftKey && e.key === 'X') || // Common extension shortcut
-                  (e.altKey && e.shiftKey && e.key === 'S') || // Another common shortcut
-                  (e.ctrlKey && e.key === 'F12')) { // Developer tools
-                isScreenshot = true;
-              }
-              
-              if (isScreenshot) {
-                screenshotAttempts++;
-                const timestamp = Date.now();
-                const deviceInfo = {
-                  userAgent: navigator.userAgent,
-                  platform: navigator.platform,
-                  language: navigator.language,
-                  screenRes: screen.width + "x" + screen.height,
-                  timestamp: timestamp
-                };
-                
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&attempt=" + screenshotAttempts + 
-                      "&device=" + encodeURIComponent(deviceInfo.platform) + 
-                      "&screen_res=" + deviceInfo.screenRes +
-                      "&timestamp=" + timestamp);
-                
-                console.log('Screenshot detected via keyboard:', e.key, 'Platform:', deviceInfo.platform);
-              }
-            });
-            
-            // Enhanced mobile screenshot detection
-            let isAppInBackground = false;
-            let lastBlurTime = 0;
-            
-            // Detect app going to background (mobile screenshot behavior)
-            window.addEventListener('blur', function() {
-              lastBlurTime = Date.now();
-              isAppInBackground = true;
-              
-              setTimeout(function() {
-                if (isAppInBackground && document.hidden) {
-                  screenshotAttempts++;
-                  const timestamp = Date.now();
-                  
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&mobile=true&attempt=" + screenshotAttempts + 
-                        "&blur_duration=" + (timestamp - lastBlurTime) + 
-                        "&timestamp=" + timestamp);
-                  
-                  console.log('Mobile screenshot detected via blur/hidden');
-                }
-              }, 200);
-            });
-            
-            window.addEventListener('focus', function() {
-              isAppInBackground = false;
-            });
-            
-            // Detect visibility changes that might indicate screenshots
-            document.addEventListener('visibilitychange', function() {
-              const now = Date.now();
-              const timeSinceLastChange = now - lastVisibilityChange;
-              lastVisibilityChange = now;
-              
-              // Quick visibility changes often indicate screenshot activity
-              if (document.hidden && timeSinceLastChange < 300) {
-                screenshotAttempts++;
-                
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&visibility_change=true&attempt=" + screenshotAttempts + 
-                      "&change_speed=" + timeSinceLastChange + 
-                      "&timestamp=" + now);
-                
-                console.log('Screenshot detected via rapid visibility change:', timeSinceLastChange + 'ms');
-              }
-            });
-            
-            // Detect context menu (right-click) which might precede screenshot
-            document.addEventListener('contextmenu', function(e) {
-              setTimeout(function() {
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=context_menu&timestamp=" + Date.now());
-                console.log('Context menu detected - potential screenshot preparation');
-              }, 100);
-            });
-            
-            // Detect developer tools opening (often used before screenshots)
-            let devtools = {
-              open: false,
-              orientation: null
-            };
-            
-            setInterval(function() {
-              if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
-                if (!devtools.open) {
-                  devtools.open = true;
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=devtools_opened&timestamp=" + Date.now());
-                  console.log('Developer tools opened - potential screenshot activity');
-                }
-              } else {
-                devtools.open = false;
-              }
-            }, 1000);
-            
-            // Track when user leaves
-            window.addEventListener('beforeunload', function() {
-              trackTimeSpent();
-              fetch(trackingBaseUrl + "?id=" + emailId + "&type=session_end&total_time=" + totalTimeSpent);
-            });
-            
-            // Periodic time tracking every 30 seconds
-            setInterval(function() {
-              if (isVisible) {
-                trackTimeSpent();
-                startTime = Date.now(); // Reset for next interval
-              }
-            }, 30000);
-          })();
-        </script>
-      `;
-      
-      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=open" width="1" height="1" style="display: none;" />`;
-      
-      // Convert plain text to HTML if needed and wrap links with tracking
+      console.log("Adding email tracking for email ID:", emailData.id);
+
+      // Standard 1x1 tracking pixel (works in all email clients - same as SendGrid/Mailchimp)
+      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=open" width="1" height="1" style="display:none;" alt="" />`;
+
+      // Convert plain text to HTML if needed
       let processedContent = emailContent;
-      
-      // Check if content contains HTML tags
       const isHtml = /<[a-z][\s\S]*>/i.test(emailContent || '');
-      
+
       if (!isHtml) {
-        // Convert plain text to HTML, preserving line breaks
         processedContent = (emailContent || '').replace(/\n/g, '<br>');
-        // Wrap the content in basic HTML structure
-        processedContent = `<html><head>${enhancedTrackingScript}</head><body>${processedContent}</body></html>`;
-      } else {
-        // Insert tracking script into existing HTML
-        if (processedContent && processedContent.includes('</head>')) {
-          processedContent = processedContent.replace('</head>', `${enhancedTrackingScript}</head>`);
-        } else if (processedContent && processedContent.includes('<body>')) {
-          processedContent = processedContent.replace('<body>', `<body>${enhancedTrackingScript}`);
-        } else {
-          processedContent = `${enhancedTrackingScript}${processedContent}`;
-        }
+        processedContent = `<html><body>${processedContent}</body></html>`;
       }
-      
-      // Wrap existing links with tracking URLs
+
+      // Wrap existing links with tracking URLs (redirect-based click tracking)
       const contentWithTracking = processedContent.replace(
         /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
         (match, url) => {
@@ -355,12 +149,16 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
 
-      // Add tracking pixel to the end of the email content
-      finalContent = contentWithTracking.replace('</body>', `${trackingPixel}</body>`);
-      
-      console.log("Enhanced email content with advanced tracking");
-      
-      // Update the email record with the enhanced content
+      // Add tracking pixel before </body>
+      if (contentWithTracking.includes('</body>')) {
+        finalContent = contentWithTracking.replace('</body>', `${trackingPixel}</body>`);
+      } else {
+        finalContent = contentWithTracking + trackingPixel;
+      }
+
+      console.log("Email content prepared with standard tracking (pixel + link wrapping)");
+
+      // Update the email record with the tracked content
       await supabase
         .from("emails")
         .update({
