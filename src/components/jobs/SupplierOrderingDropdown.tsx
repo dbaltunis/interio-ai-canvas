@@ -255,7 +255,6 @@ export function SupplierOrderingDropdown({
                   disabled={
                     supplier.isOrdered ||
                     isTestMode ||
-                    (supplier.type === "vendor" && !hasTwcProduction) ||
                     !isApprovedStatus
                   }
                   onClick={() => handleSupplierClick(supplier)}
@@ -281,13 +280,6 @@ export function SupplierOrderingDropdown({
                       >
                         <Check className="h-3 w-3 mr-1" />
                         Ordered
-                      </Badge>
-                    ) : supplier.type === "vendor" ? (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-muted text-muted-foreground"
-                      >
-                        Coming Soon
                       </Badge>
                     ) : (
                       <Badge
