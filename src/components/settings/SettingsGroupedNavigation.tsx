@@ -1,4 +1,4 @@
-import { LucideIcon, User, CreditCard, Building2, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Bell, Zap, ChevronDown, Check } from "lucide-react";
+import { LucideIcon, User, CreditCard, Building2, Ruler, Package, Calculator, Users, FileText, Globe, MessageCircle, Bell, Zap, ChevronDown, Check, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -135,10 +135,18 @@ export const SettingsGroupedNavigation = ({
           disabled: isDisabled(canViewWindowTreatmentsForTabs),
           tooltip: isDisabled(canViewWindowTreatmentsForTabs) ? "You don't have permission to view products & templates" : undefined
         },
-        { 
-          value: 'pricing', 
-          label: 'Pricing & Tax', 
-          icon: Calculator, 
+        {
+          value: 'services',
+          label: 'Services',
+          icon: Wrench,
+          canView: canViewWindowTreatmentsForTabs,
+          disabled: isDisabled(canViewWindowTreatmentsForTabs),
+          tooltip: isDisabled(canViewWindowTreatmentsForTabs) ? "You don't have permission to manage services" : undefined
+        },
+        {
+          value: 'pricing',
+          label: 'Pricing & Tax',
+          icon: Calculator,
           canView: canManageMarkup,
           disabled: !canManageMarkup,
         },

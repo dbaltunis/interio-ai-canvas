@@ -1,79 +1,198 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffectiveAccountOwner } from "./useEffectiveAccountOwner";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
 export interface ServiceOption {
   id: string;
+  user_id: string;
   name: string;
   price: number;
   unit: string;
-  description?: string;
+  description?: string | null;
   active: boolean;
+  category?: string | null;
+  estimated_duration_minutes?: number | null;
+  is_schedulable?: boolean;
+  cost_price?: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
-// Mock data
-const mockServiceOptions: ServiceOption[] = [
-  {
-    id: "1",
-    name: "Installation Service",
-    price: 50,
-    unit: "per-window",
-    description: "Professional curtain installation",
-    active: true
-  },
-  {
-    id: "2",
-    name: "Measurement Service",
-    price: 30,
-    unit: "per-room",
-    description: "Accurate window measurements",
-    active: true
-  }
-];
+export type ServiceOptionInsert = Omit<ServiceOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
+
+// Common service categories for made-to-measure blinds & curtains industry
+export const SERVICE_CATEGORIES = [
+  { value: 'measurement', label: 'Measurement / Survey' },
+  { value: 'consultation', label: 'Consultation' },
+  { value: 'installation', label: 'Installation' },
+  { value: 'removal', label: 'Removal' },
+  { value: 'alteration', label: 'Alteration / Repair' },
+  { value: 'delivery', label: 'Delivery' },
+  { value: 'motorisation', label: 'Motorisation Retrofit' },
+  { value: 'child_safety', label: 'Child Safety Audit' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+export const SERVICE_UNITS = [
+  { value: 'per-window', label: 'Per Window' },
+  { value: 'per-room', label: 'Per Room' },
+  { value: 'per-job', label: 'Per Job' },
+  { value: 'per-hour', label: 'Per Hour' },
+  { value: 'flat-rate', label: 'Flat Rate' },
+  { value: 'per-metre', label: 'Per Metre' },
+] as const;
+
+// Schedulable categories that typically need calendar events
+export const SCHEDULABLE_CATEGORIES = ['measurement', 'consultation', 'installation', 'removal'];
 
 export const useServiceOptions = () => {
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+
   return useQuery({
-    queryKey: ['service-options'],
-    queryFn: async () => mockServiceOptions
+    queryKey: ['service-options', effectiveOwnerId],
+    enabled: !!effectiveOwnerId && !ownerLoading,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!effectiveOwnerId) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('service_options')
+        .select('*')
+        .eq('user_id', effectiveOwnerId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[useServiceOptions] Error fetching services:', error);
+        throw error;
+      }
+
+      return (data || []) as ServiceOption[];
+    },
+  });
+};
+
+export const useActiveServiceOptions = () => {
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+
+  return useQuery({
+    queryKey: ['service-options-active', effectiveOwnerId],
+    enabled: !!effectiveOwnerId && !ownerLoading,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!effectiveOwnerId) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('service_options')
+        .select('*')
+        .eq('user_id', effectiveOwnerId)
+        .eq('active', true)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('[useServiceOptions] Error fetching active services:', error);
+        throw error;
+      }
+
+      return (data || []) as ServiceOption[];
+    },
   });
 };
 
 export const useCreateServiceOption = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (option: Omit<ServiceOption, 'id'>) => {
-      const newOption = { ...option, id: Date.now().toString() };
-      return newOption;
+    mutationFn: async (option: Omit<ServiceOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+
+      const insertData: Record<string, any> = {
+        name: option.name,
+        price: option.price || 0,
+        unit: option.unit || 'per-window',
+        description: option.description || null,
+        active: option.active !== false,
+        user_id: effectiveOwnerId,
+      };
+
+      const { data, error } = await supabase
+        .from('service_options')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[useCreateServiceOption] Error:', error);
+        throw error;
+      }
+      return data as ServiceOption;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
-      toast.success('Service option created');
-    }
+      queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
+      toast.success('Service created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create service: ${error.message}`);
+    },
   });
 };
 
 export const useUpdateServiceOption = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (option: Partial<ServiceOption> & { id: string }) => {
-      return option;
+      const { id, user_id, created_at, updated_at, ...updates } = option;
+
+      const { data, error } = await supabase
+        .from('service_options')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[useUpdateServiceOption] Error:', error);
+        throw error;
+      }
+      return data as ServiceOption;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
-      toast.success('Service option updated');
-    }
+      queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
+      toast.success('Service updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update service: ${error.message}`);
+    },
   });
 };
 
 export const useDeleteServiceOption = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
-      return Promise.resolve();
+      const { error } = await supabase
+        .from('service_options')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('[useDeleteServiceOption] Error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
-      toast.success('Service option deleted');
-    }
+      queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
+      toast.success('Service deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete service: ${error.message}`);
+    },
   });
 };
