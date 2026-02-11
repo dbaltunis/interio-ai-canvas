@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Edit2, Save } from "lucide-react";
@@ -14,6 +14,8 @@ import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
 import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
 import { useQuoteTemplateData } from "@/hooks/useQuoteTemplateData";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -56,6 +58,58 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [showImages, setShowImages] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Handle item image change (upload or library pick)
+  const handleItemImageChange = useCallback(async (itemId: string, imageUrl: string | null) => {
+    try {
+      // Find the quote item by matching itemId against quote_items
+      const quoteId = project?.quotes?.[0]?.id;
+      if (!quoteId) return;
+
+      // Fetch current item to get product_details
+      const { data: items } = await supabase
+        .from("quote_items")
+        .select("id, product_details")
+        .eq("quote_id", quoteId) as any;
+
+      if (!items) return;
+
+      // Find item by id or by matching surface_name in product_details
+      const targetItem = items.find((item: any) => {
+        if (item.id === itemId) return true;
+        const pd = item.product_details as any;
+        return pd?.surface_id === itemId || pd?.item_key === itemId;
+      });
+
+      if (!targetItem) {
+        console.warn("Could not find quote item for image change:", itemId);
+        return;
+      }
+
+      const currentPd = (targetItem.product_details as any) || {};
+      const updatedPd = {
+        ...currentPd,
+        image_url_override: imageUrl,
+      };
+
+      await supabase
+        .from("quote_items")
+        .update({ product_details: updatedPd } as any)
+        .eq("id", targetItem.id);
+
+      // Invalidate quote items cache to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotation"] });
+    } catch (err) {
+      console.error("Failed to update item image:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update product image",
+        variant: "destructive",
+      });
+    }
+  }, [project, queryClient, toast]);
 
   // Get document type and quote info
   const documentType = selectedTemplate?.template_style || 'quote';
@@ -358,8 +412,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                 }}
               />
             ) : (
-              <LivePreview 
-                blocks={templateBlocks} 
+              <LivePreview
+                blocks={templateBlocks}
                 projectData={projectData}
                 isEditable={false}
                 isPrintMode={false}
@@ -370,6 +424,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                   if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
                   if (settings.showImages !== undefined) setShowImages(settings.showImages);
                 }}
+                onItemImageChange={handleItemImageChange}
               />
             )}
           </div>

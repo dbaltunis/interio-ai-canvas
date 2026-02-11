@@ -38,6 +38,7 @@ import { SignatureCanvas } from './SignatureCanvas';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
+import { QuoteItemImagePicker } from "@/components/quotes/QuoteItemImagePicker";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
@@ -357,6 +358,8 @@ interface LivePreviewBlockProps {
   excludedItems?: string[];
   onToggleExclusion?: (itemId: string) => void;
   isExclusionEditMode?: boolean;
+  // Image override props
+  onItemImageChange?: (itemId: string, imageUrl: string | null) => void;
 }
 
 const LivePreviewBlock = ({ 
@@ -376,7 +379,8 @@ const LivePreviewBlock = ({
   onDataChange,
   excludedItems = [],
   onToggleExclusion,
-  isExclusionEditMode = false
+  isExclusionEditMode = false,
+  onItemImageChange
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
@@ -1127,11 +1131,11 @@ const LivePreviewBlock = ({
             <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%', backgroundColor: '#ffffff' }}>
               <colgroup>
                 {isExclusionEditMode && <col style={{ width: '40px' }} />}
-                <col style={{ width: isExclusionEditMode ? '18%' : '20%' }} />
+                <col style={{ width: isExclusionEditMode ? '23%' : '25%' }} />
                 <col style={{ width: 'auto' }} />
                 <col style={{ width: '80px' }} />
                 <col style={{ width: '100px' }} />
-                <col style={{ width: '170px' }} />
+                <col style={{ width: '140px' }} />
               </colgroup>
               <thead style={{ backgroundColor: '#ffffff' }}>
                 <tr style={{ borderBottom: isPrintMode ? 'none' : '1px solid #333', backgroundColor: '#ffffff' }}>
@@ -1168,26 +1172,26 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr style={{ backgroundColor: '#ffffff' }}>
-                        <td 
-                          colSpan={isExclusionEditMode ? 5 : 4} 
-                          style={{ 
-                            padding: '8px 6px 4px 6px', 
-                            fontSize: '14px', 
-                            fontWeight: '500', 
-                            color: '#000', 
-                            borderTop: '1px solid rgba(0,0,0,0.15)', 
-                            backgroundColor: '#fff' 
+                        <td
+                          colSpan={isExclusionEditMode ? 5 : 4}
+                          style={{
+                            padding: '10px 6px 6px 6px',
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            color: '#000',
+                            borderTop: '1px solid rgba(0,0,0,0.2)',
+                            backgroundColor: '#fff'
                           }}
                         >
                           {roomName}
                         </td>
-                        <td 
-                          style={{ 
-                            padding: '8px 6px 4px 6px', 
-                            fontSize: '14px', 
-                            fontWeight: '600', 
-                            color: '#000', 
-                            borderTop: '1px solid rgba(0,0,0,0.15)', 
+                        <td
+                          style={{
+                            padding: '10px 6px 6px 6px',
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            color: '#000',
+                            borderTop: '1px solid rgba(0,0,0,0.2)',
                             backgroundColor: '#fff',
                             textAlign: 'right',
                             whiteSpace: 'nowrap'
@@ -1223,7 +1227,7 @@ const LivePreviewBlock = ({
                           }}>
                             {/* Checkbox column for exclusion */}
                             {isExclusionEditMode && (
-                              <td style={{ padding: '5px 4px', verticalAlign: 'top', textAlign: 'center', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                              <td style={{ padding: '5px 4px', verticalAlign: 'middle', textAlign: 'center', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                                 <Checkbox
                                   checked={!isItemExcluded}
                                   onCheckedChange={() => onToggleExclusion?.(item.id)}
@@ -1231,42 +1235,66 @@ const LivePreviewBlock = ({
                                 />
                               </td>
                             )}
-                            <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', verticalAlign: 'top', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {showImages && item.image_url && (
-                                  <img 
-                                    src={item.image_url} 
-                                    alt={item.name || 'Product'} 
+                            <td style={{ padding: '6px 6px', fontSize: '15px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {showImages && !isPrintMode && onItemImageChange && (
+                                  <QuoteItemImagePicker
+                                    currentImageUrl={item.image_url_override || item.image_url || null}
+                                    itemId={item.id || `${roomName}-${itemIndex}`}
+                                    itemName={item.name || item.surface_name || 'Product'}
+                                    onImageChange={(url) => onItemImageChange(item.id || `${roomName}-${itemIndex}`, url)}
+                                    disabled={isItemExcluded}
+                                    size={80}
+                                  />
+                                )}
+                                {showImages && !isPrintMode && !onItemImageChange && (item.image_url_override || item.image_url) && (
+                                  <img
+                                    src={item.image_url_override || item.image_url}
+                                    alt={item.name || 'Product'}
                                     className="print-image"
-                                    style={{ 
-                                      width: '35px', 
-                                      height: '35px', 
-                                      objectFit: 'cover', 
-                                      borderRadius: '2px',
-                                      border: isPrintMode ? 'none' : '1px solid #ddd',
+                                    style={{
+                                      width: '80px',
+                                      height: '80px',
+                                      objectFit: 'cover',
+                                      borderRadius: '4px',
+                                      border: '1px solid #ddd',
                                       flexShrink: 0,
                                       opacity: isItemExcluded ? 0.5 : 1
                                     }}
                                   />
                                 )}
+                                {showImages && isPrintMode && (item.image_url_override || item.image_url) && (
+                                  <img
+                                    src={item.image_url_override || item.image_url}
+                                    alt={item.name || 'Product'}
+                                    className="print-image"
+                                    style={{
+                                      width: '80px',
+                                      height: '80px',
+                                      objectFit: 'cover',
+                                      borderRadius: '4px',
+                                      flexShrink: 0
+                                    }}
+                                  />
+                                )}
                                 <span>
-                                  {item.treatment_type ? 
-                                    item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : 
+                                  {item.treatment_type ?
+                                    item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) :
                                     (item.name || item.surface_name || 'Window Treatment')
                                   }
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '13px', color: isItemExcluded ? '#9ca3af' : '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                            <td style={{ padding: '6px 6px', fontSize: '13px', color: isItemExcluded ? '#9ca3af' : '#000', fontWeight: '400', verticalAlign: 'middle', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.description || item.notes || '-'}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                            <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.quantity || 1}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                            <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {formatCurrency((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
+                            <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
                             </td>
                           </tr>
@@ -1288,7 +1316,7 @@ const LivePreviewBlock = ({
                                         <ProductImageWithColorFallback
                                           imageUrl={breakdownItem.image_url}
                                           productName={breakdownItem.name || 'Hardware'}
-                                          size={22}
+                                          size={26}
                                           rounded="sm"
                                           category="hardware"
                                         />
@@ -1342,7 +1370,7 @@ const LivePreviewBlock = ({
                                         imageUrl={breakdownItem.image_url}
                                         color={breakdownItem.color}
                                         productName={breakdownItem.name || 'Component'}
-                                        size={25}
+                                        size={30}
                                         rounded="sm"
                                         category={breakdownItem.category}
                                       />
@@ -1904,6 +1932,8 @@ interface LivePreviewProps {
   excludedItems?: string[];
   onToggleExclusion?: (itemId: string) => void;
   isExclusionEditMode?: boolean;
+  // Image override props
+  onItemImageChange?: (itemId: string, imageUrl: string | null) => void;
 }
 
 export const LivePreview = ({ 
@@ -1923,7 +1953,8 @@ export const LivePreview = ({
   quoteId,
   excludedItems = [],
   onToggleExclusion,
-  isExclusionEditMode = false
+  isExclusionEditMode = false,
+  onItemImageChange
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
@@ -1990,6 +2021,7 @@ export const LivePreview = ({
             excludedItems={excludedItems}
             onToggleExclusion={onToggleExclusion}
             isExclusionEditMode={isExclusionEditMode}
+            onItemImageChange={onItemImageChange}
           />
         ))}
       </div>
