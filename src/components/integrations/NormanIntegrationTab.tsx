@@ -9,6 +9,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Mail, FileText, Save } from "lucide-react";
+import normanLogo from "@/assets/norman-logo.svg";
 
 export const NormanIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration } = useIntegrations();
@@ -100,11 +101,14 @@ export const NormanIntegrationTab = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Norman Australia</h3>
-          <p className="text-sm text-muted-foreground">
-            Premium shutters, blinds, and awnings supplier
-          </p>
+        <div className="flex items-center gap-3">
+          <img src={normanLogo} alt="Norman" className="h-12 w-auto" />
+          <div>
+            <h3 className="text-lg font-medium">Norman Australia</h3>
+            <p className="text-sm text-muted-foreground">
+              Premium shutters, blinds, and awnings supplier
+            </p>
+          </div>
         </div>
         {integration && (
           <Badge variant={integration.active ? "default" : "secondary"}>

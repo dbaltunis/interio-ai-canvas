@@ -7,11 +7,8 @@ import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
 import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
-import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
 import { NetSuiteIntegrationTab } from "@/components/integrations/NetSuiteIntegrationTab";
-import { TWCIntegrationTab } from "@/components/integrations/TWCIntegrationTab";
-import { CWSystemsIntegrationTab } from "@/components/integrations/CWSystemsIntegrationTab";
-import { NormanIntegrationTab } from "@/components/integrations/NormanIntegrationTab";
+import { SuppliersIntegrationTab } from "@/components/integrations/SuppliersIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { ShopifyStatusManagementTab } from "./ShopifyStatusManagementTab";
@@ -146,9 +143,9 @@ export const IntegrationsTab = () => {
             <Building className="h-4 w-4" />
             ERP
           </TabsTrigger>
-          <TabsTrigger value="rfms" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            RFMS
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Suppliers
           </TabsTrigger>
           <TabsTrigger value="netsuite" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
@@ -165,18 +162,6 @@ export const IntegrationsTab = () => {
           <TabsTrigger value="website" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             Website API
-          </TabsTrigger>
-          <TabsTrigger value="suppliers" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
-            TWC
-          </TabsTrigger>
-          <TabsTrigger value="cw_systems" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            CW Systems
-          </TabsTrigger>
-          <TabsTrigger value="norman" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            Norman
           </TabsTrigger>
           <TabsTrigger 
             value="shopify" 
@@ -205,8 +190,8 @@ export const IntegrationsTab = () => {
           <MYOBExoIntegrationTab integration={getIntegrationByType('myob_exo') as any} />
         </TabsContent>
 
-        <TabsContent value="rfms">
-          <RFMSIntegrationTab integration={getIntegrationByType('rfms') as any} />
+        <TabsContent value="suppliers">
+          <SuppliersIntegrationTab />
         </TabsContent>
 
         <TabsContent value="netsuite">
@@ -239,17 +224,6 @@ export const IntegrationsTab = () => {
           <WebsiteAPIIntegrationTab integration={getIntegrationByType('website_api') as any} />
         </TabsContent>
 
-        <TabsContent value="suppliers">
-          <TWCIntegrationTab />
-        </TabsContent>
-
-        <TabsContent value="cw_systems">
-          <CWSystemsIntegrationTab />
-        </TabsContent>
-
-        <TabsContent value="norman">
-          <NormanIntegrationTab />
-        </TabsContent>
 
         {canViewShopify && (
           <TabsContent value="shopify">

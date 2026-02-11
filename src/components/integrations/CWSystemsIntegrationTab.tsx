@@ -9,6 +9,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Mail, FileText, Save } from "lucide-react";
+import cwsystemsLogo from "@/assets/cwsystems-logo.svg";
 
 export const CWSystemsIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration } = useIntegrations();
@@ -100,11 +101,14 @@ export const CWSystemsIntegrationTab = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">CW Systems</h3>
-          <p className="text-sm text-muted-foreground">
-            Australian supplier of roller blinds, curtain tracks, and motorisation via CORA Trade Hub
-          </p>
+        <div className="flex items-center gap-3">
+          <img src={cwsystemsLogo} alt="CW Systems" className="h-12 w-auto" />
+          <div>
+            <h3 className="text-lg font-medium">CW Systems</h3>
+            <p className="text-sm text-muted-foreground">
+              Australian supplier of roller blinds, curtain tracks, and motorisation via CORA Trade Hub
+            </p>
+          </div>
         </div>
         {integration && (
           <Badge variant={integration.active ? "default" : "secondary"}>

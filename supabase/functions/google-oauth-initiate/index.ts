@@ -38,11 +38,13 @@ serve(async (req) => {
       `prompt=consent&` +
       `state=${userId}`;
 
+    console.log('Google OAuth redirect_uri:', redirectUri);
+
     return new Response(
-      JSON.stringify({ authUrl: googleAuthUrl }),
-      { 
+      JSON.stringify({ authUrl: googleAuthUrl, redirectUri }),
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
   } catch (error) {

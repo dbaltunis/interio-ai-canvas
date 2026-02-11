@@ -115,16 +115,16 @@ export const useNylasCalendarIntegration = () => {
 
       const nylasAuthUrl = urlData.authUrl;
 
-      // Open popup for OAuth
+      // Open popup for OAuth — open blank first to avoid Safari COOP blocking
       const width = 600;
       const height = 700;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
 
       const popup = window.open(
-        nylasAuthUrl,
+        'about:blank',
         'Nylas Calendar Authorization',
-        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,popup=yes`
       );
 
       // If popup is blocked, redirect
@@ -132,6 +132,9 @@ export const useNylasCalendarIntegration = () => {
         window.location.href = nylasAuthUrl;
         return new Promise(() => {});
       }
+
+      // Navigate after opening to avoid COOP issues
+      popup.location.href = nylasAuthUrl;
 
       return new Promise((resolve, reject) => {
         let resolved = false;

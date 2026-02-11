@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cross-Origin-Opener-Policy': 'unsafe-none',
 };
 
 serve(async (req) => {
@@ -69,14 +70,37 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Token exchange failed:', errorText);
+
+      // Parse Google's error for a user-friendly message
+      let errorDetail = 'Token exchange failed';
+      let debugInfo = '';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.error_description || errorJson.error || errorDetail;
+        debugInfo = errorJson.error || '';
+      } catch (_) {
+        errorDetail = errorText.substring(0, 200);
+      }
+
+      // Log redirect_uri for debugging redirect_uri_mismatch
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-oauth-callback`;
+      console.error('Redirect URI used:', redirectUri);
+      console.error('Client ID prefix:', (Deno.env.get('GOOGLE_CLIENT_ID') || '').substring(0, 20) + '...');
+
+      const safeError = errorDetail.replace(/'/g, "\\'").replace(/</g, '&lt;');
+      const safeDebug = debugInfo.replace(/'/g, "\\'");
+
       return new Response(
         `<html><body><script>
           console.log('Sending token exchange error to parent');
           if (window.opener) {
-            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'Failed to exchange authorization code' }, '*');
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: '${safeError}' }, '*');
           }
           window.close();
-        </script><p>Authentication failed: Token exchange failed</p></body></html>`,
+        </script>
+        <p>Authentication failed: ${safeError}</p>
+        ${safeDebug === 'redirect_uri_mismatch' ? '<p style="margin-top:10px;font-size:12px;color:#666;">The redirect URI configured in Google Cloud Console does not match.<br/>Expected: <code>' + redirectUri + '</code><br/>Please add this URL to your Google Cloud Console → Credentials → OAuth 2.0 Client → Authorized redirect URIs.</p>' : ''}
+        </body></html>`,
         { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
       );
     }

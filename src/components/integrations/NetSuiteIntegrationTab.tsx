@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { NetSuiteIntegration } from "@/types/integrations";
 import { RefreshCw, Users, ArrowUpDown, FileText, ShieldCheck } from "lucide-react";
+import netsuiteLogo from "@/assets/netsuite-logo.svg";
 
 interface NetSuiteIntegrationTabProps {
   integration?: NetSuiteIntegration | null;
@@ -177,11 +178,14 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">NetSuite Integration</h3>
-          <p className="text-sm text-muted-foreground">
-            Connect to Oracle NetSuite for customer, estimate, and sales order synchronization
-          </p>
+        <div className="flex items-center gap-3">
+          <img src={netsuiteLogo} alt="NetSuite" className="h-12 w-auto" />
+          <div>
+            <h3 className="text-lg font-medium">NetSuite Integration</h3>
+            <p className="text-sm text-muted-foreground">
+              Connect to Oracle NetSuite for customer, estimate, and sales order synchronization
+            </p>
+          </div>
         </div>
         {integration && (
           <Badge variant={integration.active ? "default" : "secondary"}>
