@@ -134,7 +134,18 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
             </div>
             {!isDealer && (
               <CardDescription className="mt-1 text-xs">
-                {order.supplier_id ? (order.vendors?.name || 'Unknown Supplier') : (
+                {order.supplier_id ? (
+                  order.vendors?.name || order.supplier_name || 'Unknown Supplier'
+                ) : order.integration_type || order.supplier_name || order.metadata?.supplier_name ? (
+                  <span className="flex items-center gap-1">
+                    {order.supplier_name || order.metadata?.supplier_name || order.integration_type}
+                    {(order.integration_type || order.metadata?.integration_type) && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1">
+                        {order.order_method || order.metadata?.order_method || 'API'}
+                      </Badge>
+                    )}
+                  </span>
+                ) : (
                   <span className="flex items-center gap-1">
                     <Package className="h-3 w-3" />
                     Stock / No Supplier

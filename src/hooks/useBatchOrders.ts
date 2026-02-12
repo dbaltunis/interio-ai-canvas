@@ -6,7 +6,11 @@ export interface BatchOrder {
   id: string;
   user_id: string;
   batch_number: string;
-  supplier_id: string;
+  supplier_id: string | null;
+  integration_type?: string | null;
+  supplier_name?: string | null;
+  order_method?: string | null;
+  purchase_order_ref?: string | null;
   status: 'draft' | 'ready' | 'sent' | 'acknowledged' | 'in_transit' | 'delivered' | 'completed' | 'cancelled';
   order_schedule_date?: string;
   total_items: number;

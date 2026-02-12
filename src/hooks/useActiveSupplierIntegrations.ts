@@ -3,23 +3,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface SupplierIntegration {
-  type: 'twc' | 'rfms' | 'tig_pim' | string;
+  type: 'twc' | 'rfms' | 'tig_pim' | 'cw_systems' | 'norman_australia' | 'netsuite' | string;
   name: string;
   isProduction: boolean;
   apiUrl?: string;
 }
+
+// All supplier-type integration types that can be used for ordering
+const SUPPLIER_INTEGRATION_TYPES = [
+  "twc",
+  "rfms",
+  "tig_pim",
+  "cw_systems",
+  "norman_australia",
+  "netsuite",
+];
 
 function getIntegrationName(type: string): string {
   switch (type) {
     case "twc":
       return "TWC Online";
     case "rfms":
-      return "RFMS Core";
+      return "RFMS";
     case "tig_pim":
       return "TIG PIM";
+    case "cw_systems":
+      return "CW Systems";
+    case "norman_australia":
+      return "Norman Australia";
+    case "netsuite":
+      return "NetSuite";
     default:
       return type.toUpperCase();
   }
+}
+
+/**
+ * Determine if an integration is in production mode.
+ * API-based integrations (TWC, RFMS) use environment field.
+ * Email-based integrations (CW Systems, Norman) are production when they have account details.
+ */
+function isProductionMode(type: string, creds: Record<string, any> | null): boolean {
+  if (type === 'cw_systems' || type === 'norman_australia') {
+    // Email-based: production if account code/number is filled in
+    return !!(creds?.account_code || creds?.account_number || creds?.account_name);
+  }
+  // API-based: check environment field
+  return creds?.environment === "production";
 }
 
 /**
@@ -37,22 +67,21 @@ export const useAllSupplierIntegrations = () => {
       const { data, error } = await supabase
         .from("integration_settings")
         .select("integration_type, api_credentials, configuration")
-        .eq("user_id", effectiveOwnerId)
+        .eq("account_owner_id", effectiveOwnerId)
         .eq("active", true)
-        .in("integration_type", ["twc", "rfms", "tig_pim"]);
+        .in("integration_type", SUPPLIER_INTEGRATION_TYPES);
 
       if (error) {
         console.error("Error fetching supplier integrations:", error);
         return [];
       }
 
-      // Map ALL active integrations, marking production vs test mode
       const integrations: SupplierIntegration[] = (data || []).map((i) => {
         const creds = i.api_credentials as Record<string, any> | null;
         return {
           type: i.integration_type,
           name: getIntegrationName(i.integration_type),
-          isProduction: creds?.environment === "production",
+          isProduction: isProductionMode(i.integration_type, creds),
           apiUrl: creds?.api_url,
         };
       });
@@ -78,9 +107,9 @@ export const useActiveSupplierIntegrations = () => {
       const { data, error } = await supabase
         .from("integration_settings")
         .select("integration_type, api_credentials, configuration")
-        .eq("user_id", effectiveOwnerId)
+        .eq("account_owner_id", effectiveOwnerId)
         .eq("active", true)
-        .in("integration_type", ["twc", "rfms", "tig_pim"]);
+        .in("integration_type", SUPPLIER_INTEGRATION_TYPES);
 
       if (error) {
         console.error("Error fetching supplier integrations:", error);
@@ -91,7 +120,7 @@ export const useActiveSupplierIntegrations = () => {
       const integrations: SupplierIntegration[] = (data || [])
         .filter((i) => {
           const creds = i.api_credentials as Record<string, any> | null;
-          return creds?.environment === "production";
+          return isProductionMode(i.integration_type, creds);
         })
         .map((i) => {
           const creds = i.api_credentials as Record<string, any> | null;
@@ -114,7 +143,7 @@ export const useActiveSupplierIntegrations = () => {
  */
 export const useHasProductionIntegration = (supplierType: string) => {
   const { data: integrations = [], isLoading } = useActiveSupplierIntegrations();
-  
+
   return {
     hasIntegration: integrations.some((i) => i.type === supplierType),
     isLoading,
