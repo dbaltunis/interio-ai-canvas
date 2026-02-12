@@ -122,10 +122,10 @@ export const useCreateStitchingPrice = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stitching-prices'] });
-      toast.success('Stitching price created');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
-      toast.error(`Error creating stitching price: ${error.message}`);
+      toast.error("Could not create stitching price. Check the name is unique and all fields are filled.");
     }
   });
 };
@@ -160,10 +160,10 @@ export const useUpdateStitchingPrice = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stitching-prices'] });
-      toast.success('Stitching price updated');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
-      toast.error(`Error updating stitching price: ${error.message}`);
+      toast.error("Could not update stitching price. Please refresh and try again.");
     }
   });
 };
@@ -186,10 +186,10 @@ export const useDeleteStitchingPrice = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stitching-prices'] });
-      toast.success('Stitching price deleted');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
-      toast.error(`Error deleting stitching price: ${error.message}`);
+      toast.error("Could not delete stitching price. It may be linked to active headings.");
     }
   });
 };

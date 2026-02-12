@@ -137,7 +137,7 @@ export const useCreateServiceOption = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
       queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
-      toast.success('Service created successfully');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
       showFriendlyError(error, 'create service');
@@ -168,7 +168,7 @@ export const useUpdateServiceOption = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
       queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
-      toast.success('Service updated successfully');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
       showFriendlyError(error, 'update service');
@@ -194,7 +194,7 @@ export const useDeleteServiceOption = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
       queryClient.invalidateQueries({ queryKey: ['service-options-active'] });
-      toast.success('Service deleted successfully');
+      // No success toast - UI updates visually
     },
     onError: (error) => {
       showFriendlyError(error, 'delete service');
