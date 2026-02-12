@@ -21,6 +21,7 @@ import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { ProjectActivityCard } from "../ProjectActivityCard";
 import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+import { IntegrationSyncStatus } from "@/components/integrations/IntegrationSyncStatus";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -713,6 +714,9 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
           )}
         </div>
       )}
+
+      {/* ERP Integration Sync Status */}
+      <IntegrationSyncStatus project={project as any} />
 
       {/* Upcoming Appointments for this Project */}
       <ProjectAppointmentsCard projectId={project.id} clientId={formData.client_id} />
