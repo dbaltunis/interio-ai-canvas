@@ -42,6 +42,7 @@ import { QuotationTab } from "./tabs/QuotationTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 
 import { JobStatusDropdown } from "./JobStatusDropdown";
+import { IntegrationSyncStatus } from "@/components/integrations/IntegrationSyncStatus";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { supabase } from "@/integrations/supabase/client";
@@ -1056,7 +1057,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   // Status updated via mutation
                 }}
               />
-              
+
+              <IntegrationSyncStatus project={project as any} compact />
+
               <ThreeDotMenu
                 items={[
                   {
