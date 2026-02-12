@@ -160,7 +160,7 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     // Try common category mappings
     const categoryMappings: Record<string, string[]> = {
       fabric: ['curtain', 'roman', 'drape', 'sheer'],
-      blinds: ['roller', 'venetian', 'cellular', 'vertical', 'honeycomb'],
+      blinds: ['roller', 'venetian', 'cellular', 'vertical', 'honeycomb', 'zebra', 'panel_glide', 'awning'],
       shutters: ['shutter', 'plantation'],
       hardware: ['track', 'rod', 'pole', 'rail'],
       installation: ['install', 'fitting', 'service']
