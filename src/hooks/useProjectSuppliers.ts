@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { useVendors } from "@/hooks/useVendors";
 
 export interface DetectedSupplier {
   id: string;
@@ -168,6 +169,22 @@ export const useProjectSuppliers = ({
     return Array.from(supplierMap.values());
   }, [quoteItems, inventoryWithVendors, quoteData, supplierOrders]);
 
+  // Fetch ALL vendors from Settings so the dropdown shows every configured supplier
+  const { data: allSettingsVendors = [] } = useVendors();
+
+  // Build list of all vendors not already detected from quote items
+  const allVendors = useMemo<DetectedSupplier[]>(() => {
+    return allSettingsVendors
+      .filter((v) => !suppliers.some((s) => s.id === v.id))
+      .map((v) => ({
+        id: v.id,
+        name: v.name,
+        type: 'vendor' as const,
+        items: [],
+        isOrdered: false,
+      }));
+  }, [allSettingsVendors, suppliers]);
+
   const hasTwcProducts = suppliers.some((s) => s.id === 'twc');
   const hasVendorProducts = suppliers.some((s) => s.type === 'vendor');
   const allOrdersSubmitted = suppliers.length > 0 && suppliers.every((s) => s.isOrdered);
@@ -175,6 +192,7 @@ export const useProjectSuppliers = ({
 
   return {
     suppliers,
+    allVendors,
     hasTwcProducts,
     hasVendorProducts,
     allOrdersSubmitted,

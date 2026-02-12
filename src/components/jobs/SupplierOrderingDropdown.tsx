@@ -84,8 +84,8 @@ export function SupplierOrderingDropdown({
   // Get job statuses to check action type
   const { data: jobStatuses = [] } = useJobStatuses();
 
-  // Detect suppliers from quote items
-  const { suppliers, allOrdersSubmitted } = useProjectSuppliers({
+  // Detect suppliers from quote items + all vendors from Settings
+  const { suppliers, allVendors, allOrdersSubmitted } = useProjectSuppliers({
     quoteItems,
     quoteData,
     supplierOrders,
@@ -101,7 +101,7 @@ export function SupplierOrderingDropdown({
   const hasAnyIntegration = allIntegrations.length > 0;
   const hasProductionIntegration = productionIntegrations.length > 0;
   const allTestMode = hasAnyIntegration && !hasProductionIntegration;
-  const hasProducts = suppliers.length > 0;
+  const hasProducts = suppliers.length > 0 || allVendors.length > 0;
   const isLoading = allIntegrationsLoading || productionLoading;
 
   // Determine if dropdown should be enabled based on status
@@ -410,6 +410,39 @@ Best regards`;
               </div>
             );
           })}
+
+          {/* All vendors from Settings (not already detected in this job) */}
+          {allVendors.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                All suppliers
+              </div>
+              <DropdownMenuSeparator />
+              {allVendors.map((vendor) => (
+                <DropdownMenuItem
+                  key={vendor.id}
+                  disabled={!isApprovedStatus}
+                  onClick={() => handleSupplierClick(vendor)}
+                  className="flex flex-col items-start gap-1 py-2"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-medium">{vendor.name}</span>
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-teal-50 text-teal-700 border-teal-300"
+                    >
+                      <Send className="h-3 w-3 mr-1" />
+                      Send Order
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    No items detected • <Mail className="h-3 w-3 inline" /> Email order
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
 
           {/* Show test mode integrations that don't have products */}
           {testModeIntegrations
