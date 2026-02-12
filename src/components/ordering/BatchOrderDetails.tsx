@@ -44,7 +44,17 @@ export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
               <CardTitle>Batch Order #{batchOrder.batch_number}</CardTitle>
               {!isDealer && (
                 <CardDescription>
-                  {batchOrder.vendors?.name}
+                  {batchOrder.vendors?.name || batchOrder.supplier_name || batchOrder.metadata?.supplier_name || (batchOrder.integration_type ? batchOrder.integration_type.toUpperCase() : 'No Supplier')}
+                  {(batchOrder.order_method || batchOrder.metadata?.order_method) && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({batchOrder.order_method || batchOrder.metadata?.order_method})
+                    </span>
+                  )}
+                  {batchOrder.purchase_order_ref && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      PO: {batchOrder.purchase_order_ref}
+                    </span>
+                  )}
                 </CardDescription>
               )}
             </div>

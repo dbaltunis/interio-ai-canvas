@@ -26,6 +26,9 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { SupplierOrderConfirmDialog } from "./SupplierOrderConfirmDialog";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SupplierOrderingDropdownProps {
   projectId: string;
@@ -65,6 +68,8 @@ export function SupplierOrderingDropdown({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<DetectedSupplier | null>(null);
   const [twcDialogOpen, setTwcDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Get ALL supplier integrations (production + test mode)
   const { data: allIntegrations = [], isLoading: allIntegrationsLoading } =
@@ -143,15 +148,67 @@ export function SupplierOrderingDropdown({
     setConfirmDialogOpen(true);
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     setConfirmDialogOpen(false);
     if (!selectedSupplier) return;
 
     if (selectedSupplier.type === "twc") {
       setTwcDialogOpen(true);
-    } else {
-      // Future: Handle other supplier types
-      console.log("Order to vendor:", selectedSupplier);
+      return;
+    }
+
+    // Handle vendor-type supplier orders — record in supplier_orders JSON
+    setIsSubmitting(true);
+    try {
+      // Get current quote to merge supplier_orders
+      const { data: quote, error: fetchErr } = await supabase
+        .from("quotes")
+        .select("supplier_orders")
+        .eq("id", quoteId)
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      const existingOrders = (quote?.supplier_orders as Record<string, any>) || {};
+      const orderId = `VO-${Date.now()}`;
+      const now = new Date().toISOString();
+
+      const updatedOrders = {
+        ...existingOrders,
+        [selectedSupplier.id]: {
+          status: "submitted",
+          order_id: orderId,
+          submitted_at: now,
+          supplier_name: selectedSupplier.name,
+          items: selectedSupplier.items.map(i => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+          })),
+        },
+      };
+
+      const { error: updateErr } = await supabase
+        .from("quotes")
+        .update({ supplier_orders: updatedOrders })
+        .eq("id", quoteId);
+
+      if (updateErr) throw updateErr;
+
+      // Invalidate queries so the UI refreshes
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["project-suppliers"] });
+
+      toast.success(`Order sent to ${selectedSupplier.name}`, {
+        description: `${selectedSupplier.items.length} items marked as ordered (${orderId})`,
+      });
+    } catch (error: any) {
+      console.error("Failed to record vendor order:", error);
+      toast.error("Failed to record order", {
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

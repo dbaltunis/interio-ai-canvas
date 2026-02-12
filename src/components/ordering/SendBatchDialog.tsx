@@ -91,7 +91,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         <DialogHeader>
           <DialogTitle>Send Batch Order</DialogTitle>
           <DialogDescription>
-            Send batch order #{batchOrder.batch_number}{!isDealer && ` to ${batchOrder.vendors?.name || 'Unknown Supplier'}`}
+            Send batch order #{batchOrder.batch_number}{!isDealer && ` to ${batchOrder.vendors?.name || batchOrder.supplier_name || batchOrder.metadata?.supplier_name || 'Unknown Supplier'}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -102,7 +102,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
             {!isDealer && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Supplier:</span>
-                <span className="font-medium">{batchOrder.vendors?.name}</span>
+                <span className="font-medium">{batchOrder.vendors?.name || batchOrder.supplier_name || batchOrder.metadata?.supplier_name || 'N/A'}</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
