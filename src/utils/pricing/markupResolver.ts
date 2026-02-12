@@ -34,7 +34,11 @@ export interface ResolvedMarkup {
 
 /**
  * Resolves the markup percentage following hierarchy:
- * Product → Grid → Subcategory → Category → Global → Minimum
+ * Quote Override → Grid (when usesPricingGrid) → Product → Implied → Grid → Subcategory → Category → Global → Minimum
+ *
+ * CRITICAL: When a product uses pricing grid pricing, grid markup takes priority
+ * over product/implied markups. This prevents double-markup on grid-priced products
+ * and matches the documented behavior: "pricing grid markups are used first".
  */
 export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
   const settings = context.markupSettings || defaultMarkupSettings;
@@ -48,7 +52,29 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
     };
   }
 
-  // 1. Check product-level markup (explicit markup_percentage on inventory item)
+  // 1. Grid markup takes FIRST priority when product uses pricing grid
+  // This matches the documented behavior: "pricing grid markups are used first,
+  // global or category specific markups are only used if the pricing grid markup is not set."
+  if (context.usesPricingGrid) {
+    if (context.gridMarkup != null && context.gridMarkup > 0) {
+      return {
+        percentage: context.gridMarkup,
+        source: 'grid',
+        sourceName: 'Pricing Grid'
+      };
+    }
+    // If gridMarkup is explicitly 0, respect that (grid price already includes margin)
+    if (context.gridMarkup != null) {
+      return {
+        percentage: context.gridMarkup,
+        source: 'grid',
+        sourceName: 'Pricing Grid (price list)'
+      };
+    }
+    // If usesPricingGrid but no gridMarkup is set, fall through to other sources
+  }
+
+  // 2. Check product-level markup (explicit markup_percentage on inventory item)
   if (context.productMarkup && context.productMarkup > 0) {
     return {
       percentage: context.productMarkup,
@@ -56,8 +82,8 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
       sourceName: 'Product'
     };
   }
-  
-  // 2. Check implied markup (calculated from cost_price vs selling_price in library)
+
+  // 3. Check implied markup (calculated from cost_price vs selling_price in library)
   // This prevents double-markup when fabric library has pre-defined retail pricing
   if (context.impliedMarkup && context.impliedMarkup > 0) {
     return {
@@ -66,10 +92,8 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
       sourceName: 'Library Pricing (implied from cost vs selling)'
     };
   }
-  
-  // 3. Check grid-level markup
-  // When usesPricingGrid is true, the grid markup takes precedence even if 0
-  // (because grid price already includes the supplier's margin)
+
+  // 4. Check grid-level markup for non-grid products that still have a grid reference
   if (context.gridMarkup != null && context.gridMarkup > 0) {
     return {
       percentage: context.gridMarkup,
@@ -77,16 +101,8 @@ export function resolveMarkup(context: MarkupContext): ResolvedMarkup {
       sourceName: 'Pricing Grid'
     };
   }
-  // If product uses pricing grid and gridMarkup is explicitly 0, respect that (no additional markup)
-  if (context.usesPricingGrid && context.gridMarkup != null) {
-    return {
-      percentage: context.gridMarkup,
-      source: 'grid',
-      sourceName: 'Pricing Grid (price list)'
-    };
-  }
-  
-  // 3. Check subcategory markup (normalize key)
+
+  // 5. Check subcategory markup (normalize key)
   if (context.subcategory) {
     const subKey = context.subcategory.toLowerCase().replace(/[\s-]/g, '_');
     const subMarkup = settings.category_markups?.[subKey];

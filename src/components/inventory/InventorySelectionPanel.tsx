@@ -841,11 +841,12 @@ export const InventorySelectionPanel = ({
       <div className="flex gap-2 items-center flex-wrap animate-fade-in">
         <div className="relative flex-1 min-w-[120px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-transform" />
-          <Input 
-            placeholder="Search fabrics, materials..." 
+          <Input
+            placeholder="Type to search fabrics, materials..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)} 
+            onChange={e => setSearchTerm(e.target.value)}
             className="pl-9 h-10 text-sm transition-all duration-200"
+            autoFocus
           />
           {isFabricsFetching && (
             <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />

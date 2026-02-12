@@ -16,6 +16,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Info,
+  Mail,
 } from "lucide-react";
 import { useProjectSuppliers, type DetectedSupplier } from "@/hooks/useProjectSuppliers";
 import {
@@ -23,6 +24,7 @@ import {
   useAllSupplierIntegrations,
 } from "@/hooks/useActiveSupplierIntegrations";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useVendors } from "@/hooks/useVendors";
 import { SupplierOrderConfirmDialog } from "./SupplierOrderConfirmDialog";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { cn } from "@/lib/utils";
@@ -88,6 +90,9 @@ export function SupplierOrderingDropdown({
     quoteData,
     supplierOrders,
   });
+
+  // Get vendor details for email ordering
+  const { data: vendors = [] } = useVendors();
 
   // Check if TWC integration is active in production mode
   const hasTwcProduction = productionIntegrations.some((i) => i.type === "twc");
@@ -157,7 +162,7 @@ export function SupplierOrderingDropdown({
       return;
     }
 
-    // Handle vendor-type supplier orders — record in supplier_orders JSON
+    // Handle vendor-type supplier orders — record in supplier_orders JSON + generate email
     setIsSubmitting(true);
     try {
       // Get current quote to merge supplier_orders
@@ -195,17 +200,56 @@ export function SupplierOrderingDropdown({
 
       if (updateErr) throw updateErr;
 
+      // Generate order email for vendor-type suppliers
+      const vendor = vendors.find(v => v.id === selectedSupplier.id);
+      const vendorEmail = vendor?.email || '';
+      const vendorContact = vendor?.contact_person || selectedSupplier.name;
+      const projectRef = projectData?.name || projectData?.address || quoteId;
+      const clientName = clientData?.name || clientData?.full_name || '';
+      const orderDate = new Date().toLocaleDateString();
+
+      const itemsList = selectedSupplier.items
+        .map(i => `  - ${i.name}${i.twcItemNumber ? ` (Item #${i.twcItemNumber})` : ''}: Qty ${i.quantity}`)
+        .join('\n');
+
+      const subject = `Purchase Order ${orderId} - ${projectRef}`;
+      const body = `Dear ${vendorContact},
+
+Please find our purchase order below:
+
+Order Reference: ${orderId}
+Date: ${orderDate}
+Project: ${projectRef}
+${clientName ? `Client: ${clientName}` : ''}
+
+Items Required:
+${itemsList}
+
+Please confirm availability and expected delivery date.
+
+Best regards`;
+
+      // Open email client with pre-filled order
+      if (vendorEmail) {
+        window.open(
+          `mailto:${vendorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+          '_blank'
+        );
+      }
+
       // Invalidate queries so the UI refreshes
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["project-suppliers"] });
 
-      toast.success(`Order sent to ${selectedSupplier.name}`, {
-        description: `${selectedSupplier.items.length} items marked as ordered (${orderId})`,
+      toast.success(`Order ${vendorEmail ? 'email opened' : 'recorded'} for ${selectedSupplier.name}`, {
+        description: vendorEmail
+          ? `${selectedSupplier.items.length} items — email client opened (${orderId})`
+          : `${selectedSupplier.items.length} items marked as ordered (${orderId}). Add supplier email in Vendor settings to auto-generate order emails.`,
       });
     } catch (error: any) {
       console.error("Failed to record vendor order:", error);
       toast.error("Failed to record order", {
-        description: error.message,
+        description: error?.message || 'An unexpected error occurred',
       });
     } finally {
       setIsSubmitting(false);
@@ -351,6 +395,11 @@ export function SupplierOrderingDropdown({
                   <div className="text-xs text-muted-foreground">
                     {supplier.items.length}{" "}
                     {supplier.items.length === 1 ? "item" : "items"}
+                    {supplier.type === 'vendor' && !supplier.isOrdered && (
+                      <span className="ml-2 inline-flex items-center gap-1">
+                        • <Mail className="h-3 w-3" /> Email order
+                      </span>
+                    )}
                     {supplier.orderInfo && (
                       <span className="ml-2">
                         • ID: {supplier.orderInfo.orderId}

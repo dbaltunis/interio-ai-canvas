@@ -79,6 +79,7 @@ export interface CurtainFormulaInputs {
   poolingCm: number;       // Default: 0
   returnLeftCm: number;
   returnRightCm: number;
+  overlapCm: number;       // Default: 0 (center meeting point, added BEFORE fullness)
 }
 
 export interface CurtainFormulaResult {
@@ -94,11 +95,14 @@ export interface CurtainFormulaResult {
 /**
  * CURTAIN VERTICAL (Standard) FORMULA
  * Fabric runs TOP to BOTTOM (normal orientation)
- * 
- * Formula:
+ *
+ * Formula (industry standard):
  *   totalDropCm = drop + headerHem + bottomHem + pooling
  *   returnsCm = returnLeft + returnRight
- *   widthPerPanelCm = ((railWidth × fullness) + returns) / quantity
+ *   finishedWidthCm = (railWidth + overlap) × fullness  (overlap before fullness - industry standard)
+ *   totalSideHemsCm = sideHem × 2 × quantity  (both sides of each panel)
+ *   totalWidthCm = finishedWidthCm + returns + totalSideHems
+ *   widthPerPanelCm = totalWidthCm / quantity
  *   dropsPerPanel = ceil(widthPerPanelCm / fabricWidth)
  *   widthsRequired = dropsPerPanel × quantity
  *   seamsCount = widthsRequired - 1
@@ -109,21 +113,29 @@ export interface CurtainFormulaResult {
 export const CURTAIN_VERTICAL_FORMULA = {
   name: 'Curtain Linear Meters (Vertical/Standard)',
   description: 'Standard orientation - fabric runs top to bottom',
-  
+
   calculate: (inputs: CurtainFormulaInputs): CurtainFormulaResult => {
     // Step 1: Total drop with all allowances (in CM)
     const totalDropCm = inputs.dropCm + inputs.headerHemCm + inputs.bottomHemCm + inputs.poolingCm;
-    
+
     // Step 2: Returns - EXPLICITLY DEFINED
     const returnsCm = inputs.returnLeftCm + inputs.returnRightCm;
-    
-    // Step 3: Width needed per panel (including fullness and returns split across panels)
-    const widthPerPanelCm = ((inputs.railWidthCm * inputs.fullness) + returnsCm) / inputs.quantity;
-    
-    // Step 4: How many fabric widths (drops) needed per panel
+
+    // Step 3: Finished width with overlap BEFORE fullness (industry standard)
+    const overlapCm = inputs.overlapCm || 0;
+    const finishedWidthCm = (inputs.railWidthCm + overlapCm) * inputs.fullness;
+
+    // Step 4: Side hems - per panel side × 2 sides × quantity
+    const totalSideHemsCm = inputs.sideHemCm * 2 * inputs.quantity;
+
+    // Step 5: Total width = finished width + returns + side hems
+    const totalWidthCm = finishedWidthCm + returnsCm + totalSideHemsCm;
+    const widthPerPanelCm = totalWidthCm / inputs.quantity;
+
+    // Step 6: How many fabric widths (drops) needed per panel
     const dropsPerPanel = Math.ceil(widthPerPanelCm / inputs.fabricWidthCm);
-    
-    // Step 5: Total widths of fabric required
+
+    // Step 7: Total widths of fabric required
     const widthsRequired = dropsPerPanel * inputs.quantity;
     
     // Step 6: Seams (one less than number of widths joined)
@@ -151,11 +163,12 @@ export const CURTAIN_VERTICAL_FORMULA = {
 /**
  * CURTAIN HORIZONTAL (Railroaded) FORMULA
  * Fabric runs SIDE to SIDE (rotated 90°)
- * 
- * Formula:
+ *
+ * Formula (industry standard):
  *   totalDropCm = drop + headerHem + bottomHem + pooling
  *   returnsCm = returnLeft + returnRight
- *   totalWidthCm = (railWidth × fullness) + returns + (sideHem × 2)
+ *   finishedWidthCm = (railWidth + overlap) × fullness  (overlap before fullness)
+ *   totalWidthCm = finishedWidthCm + returns + (sideHem × 2)
  *   horizontalPieces = ceil(totalDrop / fabricWidth)  (drop split across fabric widths)
  *   seamsCount = horizontalPieces - 1
  *   seamAllowanceCm = seamsCount × seamHem × 2
@@ -165,16 +178,20 @@ export const CURTAIN_VERTICAL_FORMULA = {
 export const CURTAIN_HORIZONTAL_FORMULA = {
   name: 'Curtain Linear Meters (Horizontal/Railroaded)',
   description: 'Railroaded orientation - fabric runs side to side',
-  
+
   calculate: (inputs: CurtainFormulaInputs): CurtainFormulaResult => {
     // Step 1: Total drop with allowances (in CM)
     const totalDropCm = inputs.dropCm + inputs.headerHemCm + inputs.bottomHemCm + inputs.poolingCm;
-    
+
     // Step 2: Returns - EXPLICITLY DEFINED
     const returnsCm = inputs.returnLeftCm + inputs.returnRightCm;
-    
-    // Step 3: Total width needed (including fullness, returns, and side hems)
-    const totalWidthCm = (inputs.railWidthCm * inputs.fullness) + returnsCm + (inputs.sideHemCm * 2);
+
+    // Step 3: Finished width with overlap BEFORE fullness (industry standard)
+    const overlapCm = inputs.overlapCm || 0;
+    const finishedWidthCm = (inputs.railWidthCm + overlapCm) * inputs.fullness;
+
+    // Step 4: Total width needed (including fullness, returns, and side hems)
+    const totalWidthCm = finishedWidthCm + returnsCm + (inputs.sideHemCm * 2);
     
     // Step 4: Horizontal pieces needed (fabric runs sideways, so height is split by fabric width)
     const horizontalPieces = Math.ceil(totalDropCm / inputs.fabricWidthCm);
