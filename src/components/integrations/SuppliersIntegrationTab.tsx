@@ -4,11 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import twcLogo from "@/assets/twc-logo.png";
-import rfmsLogo from "@/assets/rfms-logo.svg";
 import cwsystemsLogo from "@/assets/cwsystems-logo.svg";
 import normanLogo from "@/assets/norman-logo.svg";
 import { TWCIntegrationTab } from "./TWCIntegrationTab";
-import { RFMSIntegrationTab } from "./RFMSIntegrationTab";
 import { CWSystemsIntegrationTab } from "./CWSystemsIntegrationTab";
 import { NormanIntegrationTab } from "./NormanIntegrationTab";
 import { SupplierManagement } from "@/components/inventory/SupplierManagement";
@@ -17,7 +15,6 @@ export const SuppliersIntegrationTab = () => {
   const { integrations } = useIntegrations();
 
   const twcIntegration = integrations.find(i => i.integration_type === 'twc') as any;
-  const rfmsIntegration = integrations.find(i => i.integration_type === 'rfms') as any;
   const cwIntegration = integrations.find(i => i.integration_type === 'cw_systems') as any;
   const normanIntegration = integrations.find(i => i.integration_type === 'norman_australia') as any;
 
@@ -30,15 +27,6 @@ export const SuppliersIntegrationTab = () => {
       logoClass: "h-10 w-10 rounded-lg object-contain",
       integration: twcIntegration,
       component: <TWCIntegrationTab />,
-    },
-    {
-      id: "rfms",
-      name: "RFMS Australasia",
-      description: "Retail Floor Management System integration",
-      logo: rfmsLogo,
-      logoClass: "h-10 w-auto object-contain",
-      integration: rfmsIntegration,
-      component: <RFMSIntegrationTab integration={rfmsIntegration} />,
     },
     {
       id: "cw_systems",
