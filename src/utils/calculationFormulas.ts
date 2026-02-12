@@ -1,318 +1,250 @@
 /**
- * CENTRALIZED CALCULATION FORMULAS
- * This is THE ONLY place formulas are defined - ALL calculation files MUST import from here.
- * 
- * UNIT STANDARD:
- * - All inputs must specify unit suffix: Cm, Mm, M, Percent
- * - All outputs document their units in JSDoc
- * - Internal calculations use CM for fabric, MM for measurements
+ * LEGACY CALCULATION FORMULAS - DELEGATES TO src/engine/formulas/
+ *
+ * This file is a BACKWARD-COMPATIBLE WRAPPER around the new formulas folder.
+ * All actual math lives in src/engine/formulas/ (the single source of truth).
+ *
+ * Used by:
+ * - orientationCalculator.ts (legacy path)
+ * - blindCalculationDefaults.ts (legacy path)
+ *
+ * DO NOT add new calculation logic here.
+ * New code should import directly from '@/engine/formulas'.
  */
 
+import {
+  calculateCurtainVertical,
+  calculateCurtainHorizontal,
+  calculateBlindSqm as formulaBlindSqm,
+  type CurtainInput,
+} from '@/engine/formulas';
+
 // ============================================
-// BLIND FORMULAS (SQM-based)
+// BLIND FORMULAS (SQM-based) - delegates to formulas/
 // ============================================
 
 export interface BlindFormulaInputs {
   railWidthCm: number;
   dropCm: number;
-  headerHemCm: number;  // Default: 8
-  bottomHemCm: number;  // Default: 10
-  sideHemCm: number;    // Default: 4 per side
-  wastePercent: number; // Default: 0
+  headerHemCm: number;
+  bottomHemCm: number;
+  sideHemCm: number;
+  wastePercent: number;
 }
 
 export interface BlindFormulaResult {
-  sqmRaw: number;       // Raw calculation before rounding
-  sqm: number;          // Rounded to 2 decimals for display
+  sqmRaw: number;
+  sqm: number;
   effectiveWidthCm: number;
   effectiveHeightCm: number;
-  formula: string;      // Human-readable formula string
+  formula: string;
   widthCalcNote: string;
   heightCalcNote: string;
 }
 
-/**
- * BLIND SQM FORMULA
- * Formula:
- *   effectiveWidth = railWidth + (sideHem × 2)
- *   effectiveHeight = drop + headerHem + bottomHem
- *   sqm = (effectiveWidth × effectiveHeight) / 10000 × (1 + waste%)
- */
 export const BLIND_FORMULA = {
   name: 'Blind SQM Calculation',
   description: 'Calculate square meters for blinds with hem allowances',
-  
+
   calculate: (inputs: BlindFormulaInputs): BlindFormulaResult => {
-    const effectiveWidthCm = inputs.railWidthCm + (inputs.sideHemCm * 2);
-    const effectiveHeightCm = inputs.dropCm + inputs.headerHemCm + inputs.bottomHemCm;
-    
-    const sqmRaw = (effectiveWidthCm * effectiveHeightCm) / 10000;
-    const sqm = sqmRaw * (1 + inputs.wastePercent / 100);
-    const sqmRounded = Math.round(sqm * 100) / 100;
-    
+    const result = formulaBlindSqm({
+      railWidthCm: inputs.railWidthCm,
+      dropCm: inputs.dropCm,
+      headerHemCm: inputs.headerHemCm,
+      bottomHemCm: inputs.bottomHemCm,
+      sideHemCm: inputs.sideHemCm,
+      wastePercent: inputs.wastePercent,
+    });
+
     return {
-      sqmRaw,
-      sqm: sqmRounded,
-      effectiveWidthCm,
-      effectiveHeightCm,
-      formula: `${effectiveWidthCm}cm × ${effectiveHeightCm}cm = ${sqmRounded.toFixed(2)} sqm`,
-      widthCalcNote: `width: ${inputs.railWidthCm} + ${inputs.sideHemCm} + ${inputs.sideHemCm} = ${effectiveWidthCm} cm`,
-      heightCalcNote: `height: ${inputs.dropCm} + ${inputs.headerHemCm} + ${inputs.bottomHemCm} = ${effectiveHeightCm} cm`
+      sqmRaw: result.sqmRaw,
+      sqm: result.sqm,
+      effectiveWidthCm: result.effectiveWidthCm,
+      effectiveHeightCm: result.effectiveHeightCm,
+      formula: result.breakdown.summary,
+      widthCalcNote: `width: ${inputs.railWidthCm} + ${inputs.sideHemCm} + ${inputs.sideHemCm} = ${result.effectiveWidthCm} cm`,
+      heightCalcNote: `height: ${inputs.dropCm} + ${inputs.headerHemCm} + ${inputs.bottomHemCm} = ${result.effectiveHeightCm} cm`,
     };
-  }
+  },
 };
 
 // ============================================
-// CURTAIN FORMULAS (Linear Meter based)
+// CURTAIN FORMULAS (Linear Meter based) - delegates to formulas/
 // ============================================
 
 export interface CurtainFormulaInputs {
   railWidthCm: number;
   dropCm: number;
-  fullness: number;        // Default: 2.0 (e.g., 2.0 = 200% fullness)
-  fabricWidthCm: number;   // From fabric inventory item
-  quantity: number;        // Number of panels (e.g., 2 for pair)
-  headerHemCm: number;     // Default: 15
-  bottomHemCm: number;     // Default: 10
-  sideHemCm: number;       // Default: 5 per panel side
-  seamHemCm: number;       // Default: 3 (cm taken from EACH width at seam join)
-  poolingCm: number;       // Default: 0
+  fullness: number;
+  fabricWidthCm: number;
+  quantity: number;
+  headerHemCm: number;
+  bottomHemCm: number;
+  sideHemCm: number;
+  seamHemCm: number;
+  poolingCm: number;
   returnLeftCm: number;
   returnRightCm: number;
-  overlapCm: number;       // Default: 0 (center meeting point, added BEFORE fullness)
+  overlapCm: number;
 }
 
 export interface CurtainFormulaResult {
-  linearMeters: number;    // Rounded to 2 decimals
-  linearMetersCm: number;  // Raw value in cm before conversion
+  linearMeters: number;
+  linearMetersCm: number;
   widthsRequired: number;
   totalDropCm: number;
   seamsCount: number;
   seamAllowanceCm: number;
-  formula: string;         // Human-readable formula string
+  formula: string;
+}
+
+/**
+ * Convert legacy CurtainFormulaInputs to new CurtainInput format
+ */
+function toFormulaInput(inputs: CurtainFormulaInputs): CurtainInput {
+  return {
+    railWidthCm: inputs.railWidthCm,
+    dropCm: inputs.dropCm,
+    fullness: inputs.fullness,
+    fabricWidthCm: inputs.fabricWidthCm,
+    panelCount: inputs.quantity,
+    headerHemCm: inputs.headerHemCm,
+    bottomHemCm: inputs.bottomHemCm,
+    sideHemCm: inputs.sideHemCm,
+    seamHemCm: inputs.seamHemCm,
+    returnLeftCm: inputs.returnLeftCm,
+    returnRightCm: inputs.returnRightCm,
+    overlapCm: inputs.overlapCm || 0,
+    poolingCm: inputs.poolingCm,
+    wastePercent: 0, // Legacy path applies waste separately
+  };
+}
+
+/**
+ * Convert new CurtainResult to legacy CurtainFormulaResult format
+ */
+function toLegacyResult(result: ReturnType<typeof calculateCurtainVertical>): CurtainFormulaResult {
+  // linearMetersCm: convert back from meters
+  const linearMetersCm = result.linearMeters * 100;
+  return {
+    linearMeters: result.linearMeters,
+    linearMetersCm,
+    widthsRequired: result.widthsRequired,
+    totalDropCm: result.totalDropCm,
+    seamsCount: result.seamsCount,
+    seamAllowanceCm: result.seamAllowanceCm,
+    formula: result.breakdown.summary,
+  };
 }
 
 /**
  * CURTAIN VERTICAL (Standard) FORMULA
- * Fabric runs TOP to BOTTOM (normal orientation)
- *
- * Formula (industry standard):
- *   totalDropCm = drop + headerHem + bottomHem + pooling
- *   returnsCm = returnLeft + returnRight
- *   finishedWidthCm = (railWidth + overlap) × fullness  (overlap before fullness - industry standard)
- *   totalSideHemsCm = sideHem × 2 × quantity  (both sides of each panel)
- *   totalWidthCm = finishedWidthCm + returns + totalSideHems
- *   widthPerPanelCm = totalWidthCm / quantity
- *   dropsPerPanel = ceil(widthPerPanelCm / fabricWidth)
- *   widthsRequired = dropsPerPanel × quantity
- *   seamsCount = widthsRequired - 1
- *   seamAllowanceCm = seamsCount × seamHem × 2  (×2 because seam consumes from BOTH sides)
- *   linearMetersCm = (widthsRequired × totalDrop) + seamAllowance
- *   linearMeters = linearMetersCm / 100
+ * Now delegates to src/engine/formulas/curtain.formulas.ts
  */
 export const CURTAIN_VERTICAL_FORMULA = {
   name: 'Curtain Linear Meters (Vertical/Standard)',
   description: 'Standard orientation - fabric runs top to bottom',
-
   calculate: (inputs: CurtainFormulaInputs): CurtainFormulaResult => {
-    // Step 1: Total drop with all allowances (in CM)
-    const totalDropCm = inputs.dropCm + inputs.headerHemCm + inputs.bottomHemCm + inputs.poolingCm;
-
-    // Step 2: Returns - EXPLICITLY DEFINED
-    const returnsCm = inputs.returnLeftCm + inputs.returnRightCm;
-
-    // Step 3: Finished width with overlap BEFORE fullness (industry standard)
-    const overlapCm = inputs.overlapCm || 0;
-    const finishedWidthCm = (inputs.railWidthCm + overlapCm) * inputs.fullness;
-
-    // Step 4: Side hems - per panel side × 2 sides × quantity
-    const totalSideHemsCm = inputs.sideHemCm * 2 * inputs.quantity;
-
-    // Step 5: Total width = finished width + returns + side hems
-    const totalWidthCm = finishedWidthCm + returnsCm + totalSideHemsCm;
-    const widthPerPanelCm = totalWidthCm / inputs.quantity;
-
-    // Step 6: How many fabric widths (drops) needed per panel
-    const dropsPerPanel = Math.ceil(widthPerPanelCm / inputs.fabricWidthCm);
-
-    // Step 7: Total widths of fabric required
-    const widthsRequired = dropsPerPanel * inputs.quantity;
-    
-    // Step 6: Seams (one less than number of widths joined)
-    const seamsCount = Math.max(0, widthsRequired - 1);
-    // seamHemCm is taken from EACH width at seam join, so × 2
-    const seamAllowanceCm = seamsCount * inputs.seamHemCm * 2;
-    
-    // Step 7: Total linear length needed (all in CM, divide by 100 at end)
-    const linearMetersCm = (widthsRequired * totalDropCm) + seamAllowanceCm;
-    const linearMeters = linearMetersCm / 100;
-    const linearMetersRounded = Math.round(linearMeters * 100) / 100;
-    
-    return {
-      linearMeters: linearMetersRounded,
-      linearMetersCm,
-      widthsRequired,
-      totalDropCm,
-      seamsCount,
-      seamAllowanceCm,
-      formula: `${widthsRequired} width(s) × ${totalDropCm.toFixed(0)}cm + ${seamAllowanceCm.toFixed(0)}cm seams = ${linearMetersRounded.toFixed(2)}m`
-    };
-  }
+    const result = calculateCurtainVertical(toFormulaInput(inputs));
+    return toLegacyResult(result);
+  },
 };
 
 /**
  * CURTAIN HORIZONTAL (Railroaded) FORMULA
- * Fabric runs SIDE to SIDE (rotated 90°)
- *
- * Formula (industry standard):
- *   totalDropCm = drop + headerHem + bottomHem + pooling
- *   returnsCm = returnLeft + returnRight
- *   finishedWidthCm = (railWidth + overlap) × fullness  (overlap before fullness)
- *   totalWidthCm = finishedWidthCm + returns + (sideHem × 2)
- *   horizontalPieces = ceil(totalDrop / fabricWidth)  (drop split across fabric widths)
- *   seamsCount = horizontalPieces - 1
- *   seamAllowanceCm = seamsCount × seamHem × 2
- *   linearMetersCm = (horizontalPieces × totalWidth) + seamAllowance
- *   linearMeters = linearMetersCm / 100
+ * Now delegates to src/engine/formulas/curtain.formulas.ts
  */
 export const CURTAIN_HORIZONTAL_FORMULA = {
   name: 'Curtain Linear Meters (Horizontal/Railroaded)',
   description: 'Railroaded orientation - fabric runs side to side',
-
   calculate: (inputs: CurtainFormulaInputs): CurtainFormulaResult => {
-    // Step 1: Total drop with allowances (in CM)
-    const totalDropCm = inputs.dropCm + inputs.headerHemCm + inputs.bottomHemCm + inputs.poolingCm;
-
-    // Step 2: Returns - EXPLICITLY DEFINED
-    const returnsCm = inputs.returnLeftCm + inputs.returnRightCm;
-
-    // Step 3: Finished width with overlap BEFORE fullness (industry standard)
-    const overlapCm = inputs.overlapCm || 0;
-    const finishedWidthCm = (inputs.railWidthCm + overlapCm) * inputs.fullness;
-
-    // Step 4: Total width needed (including fullness, returns, and side hems)
-    const totalWidthCm = finishedWidthCm + returnsCm + (inputs.sideHemCm * 2);
-    
-    // Step 4: Horizontal pieces needed (fabric runs sideways, so height is split by fabric width)
-    const horizontalPieces = Math.ceil(totalDropCm / inputs.fabricWidthCm);
-    
-    // Step 5: Seams for horizontal joins
-    const seamsCount = Math.max(0, horizontalPieces - 1);
-    const seamAllowanceCm = seamsCount * inputs.seamHemCm * 2;
-    
-    // Step 6: Total linear length needed (pieces × width + seams)
-    const linearMetersCm = (horizontalPieces * totalWidthCm) + seamAllowanceCm;
-    const linearMeters = linearMetersCm / 100;
-    const linearMetersRounded = Math.round(linearMeters * 100) / 100;
-    
-    return {
-      linearMeters: linearMetersRounded,
-      linearMetersCm,
-      widthsRequired: horizontalPieces, // For horizontal, "widths" = horizontal pieces
-      totalDropCm,
-      seamsCount,
-      seamAllowanceCm,
-      formula: `${horizontalPieces} piece(s) × ${totalWidthCm.toFixed(0)}cm + ${seamAllowanceCm.toFixed(0)}cm seams = ${linearMetersRounded.toFixed(2)}m`
-    };
-  }
+    const result = calculateCurtainHorizontal(toFormulaInput(inputs));
+    return toLegacyResult(result);
+  },
 };
 
 // ============================================
-// PRICING FORMULAS
+// PRICING FORMULAS (unchanged, thin wrappers)
 // ============================================
 
 export const PRICING_FORMULAS = {
-  /**
-   * Per Running Meter/Yard pricing
-   * totalCost = linearMeters × pricePerMeter
-   */
   per_running_meter: {
     name: 'Per Running Meter/Yard',
     formula: 'totalCost = linearMeters × pricePerMeter',
     calculate: (linearMeters: number, pricePerMeter: number): number => {
       return linearMeters * pricePerMeter;
-    }
+    },
   },
-  
-  /**
-   * Per Square Meter pricing
-   * totalCost = sqm × pricePerSqm
-   */
   per_sqm: {
     name: 'Per Square Meter',
     formula: 'totalCost = sqm × pricePerSqm',
     calculate: (sqm: number, pricePerSqm: number): number => {
       return sqm * pricePerSqm;
-    }
+    },
   },
-  
-  /**
-   * Per Drop Height pricing (uses drop ranges)
-   * totalCost = matchingDropRange.price × quantity
-   */
   per_drop: {
     name: 'Per Drop Height',
     formula: 'totalCost = matchingDropRange.price × quantity',
-    calculate: (dropCm: number, dropRanges: Array<{ minDrop: number; maxDrop: number; price: number }>, quantity: number = 1): number => {
-      const matchingRange = dropRanges.find(range => dropCm >= range.minDrop && dropCm <= range.maxDrop);
+    calculate: (
+      dropCm: number,
+      dropRanges: Array<{ minDrop: number; maxDrop: number; price: number }>,
+      quantity: number = 1
+    ): number => {
+      const matchingRange = dropRanges.find(
+        (range) => dropCm >= range.minDrop && dropCm <= range.maxDrop
+      );
       return matchingRange ? matchingRange.price * quantity : 0;
-    }
+    },
   },
-  
-  /**
-   * Pricing Grid (Width × Drop lookup)
-   * Grid keys should be in CM, rounded to nearest grid step
-   * totalCost = grid[width][drop]
-   */
   pricing_grid: {
     name: 'Pricing Grid (Width × Drop)',
     formula: 'totalCost = grid[width][drop]',
-    description: 'Grid dimensions should be in CM, lookup finds closest match'
-  }
+    description: 'Grid dimensions should be in CM, lookup finds closest match',
+  },
 };
 
 // ============================================
 // HELPER: Get formula by category
-// NO DEFAULTS - all values must come from template/settings
 // ============================================
 
 export const getFormulasByCategory = (category: string) => {
   const categoryLower = category.toLowerCase();
-  
+
   if (categoryLower.includes('blind') || categoryLower.includes('shade')) {
     return {
       type: 'sqm' as const,
       formula: BLIND_FORMULA,
     };
   }
-  
-  if (categoryLower.includes('curtain') || categoryLower.includes('drape') || categoryLower.includes('roman')) {
+
+  if (
+    categoryLower.includes('curtain') ||
+    categoryLower.includes('drape') ||
+    categoryLower.includes('roman')
+  ) {
     return {
       type: 'linear' as const,
       verticalFormula: CURTAIN_VERTICAL_FORMULA,
       horizontalFormula: CURTAIN_HORIZONTAL_FORMULA,
     };
   }
-  
-  // Unknown categories must be handled explicitly - no silent fallback
-  throw new Error(`Unknown treatment category: ${category}. Cannot determine formula type.`);
+
+  throw new Error(
+    `Unknown treatment category: ${category}. Cannot determine formula type.`
+  );
 };
 
-/**
- * Find applicable formula based on treatment category and orientation
- * THROWS if category is unknown - no silent fallbacks
- */
 export const findApplicableFormula = (
   treatmentCategory: string,
   orientation: 'vertical' | 'horizontal' = 'vertical'
 ) => {
   const formulas = getFormulasByCategory(treatmentCategory);
-  
+
   if (formulas.type === 'linear') {
-    return orientation === 'horizontal' 
-      ? formulas.horizontalFormula 
+    return orientation === 'horizontal'
+      ? formulas.horizontalFormula
       : formulas.verticalFormula;
   }
-  
+
   return formulas.formula;
 };

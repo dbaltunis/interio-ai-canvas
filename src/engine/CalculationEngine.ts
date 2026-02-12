@@ -1,16 +1,19 @@
 /**
  * CalculationEngine.ts
- * 
- * SINGLE SOURCE OF TRUTH for all treatment calculations.
+ *
+ * Treatment calculation orchestrator.
+ * Delegates all math to src/engine/formulas/ (the single source of truth).
  * Pure functions - no Supabase, no hooks, no window/document access.
- * 
+ *
  * Unit standards:
  * - Input measurements: MM (from database)
  * - Template values: CM (from template records)
  * - Fabric widths: CM (industry standard)
  * - Output: appropriate units with formula transparency
- * 
+ *
  * CRITICAL: No hidden defaults. All values must come from validated inputs.
+ * CRITICAL: All calculation math lives in src/engine/formulas/. Do NOT add
+ *           inline formulas here - import from formulas/ instead.
  */
 
 import {
@@ -31,13 +34,23 @@ import {
 
 import { mmToCm, cmToM, roundTo } from '@/utils/lengthUnits';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
-import { 
-  CalculationError, 
-  ConfigurationError, 
+import {
+  CalculationError,
+  ConfigurationError,
   ValidationError,
   assertRequired,
-  assertPositive 
+  assertPositive
 } from '@/utils/errorHandling';
+
+// Import calculations from the SINGLE SOURCE OF TRUTH
+import {
+  calculateCurtainVertical,
+  calculateCurtainHorizontal,
+  calculateBlindSqm as formulaBlindSqm,
+  type CurtainInput,
+  type CurtainResult,
+  type BlindInput,
+} from '@/engine/formulas';
 
 // ============================================================
 // Types
@@ -199,15 +212,6 @@ export class CalculationEngine {
     template: TemplateContract,
     fabric: FabricContract
   ): LinearCalculationResult {
-    const steps: string[] = [];
-    const values: Record<string, number | string> = {};
-    
-    const rail_width_cm = mmToCm(measurements.rail_width_mm);
-    const drop_cm = mmToCm(measurements.drop_mm);
-    
-    values['rail_width_cm'] = rail_width_cm;
-    values['drop_cm'] = drop_cm;
-    
     // Fullness: user override > template default > error
     const fullness = measurements.heading_fullness ?? template.default_fullness_ratio;
     if (!fullness) {
@@ -217,158 +221,71 @@ export class CalculationEngine {
         ['fullness_ratio', 'default_fullness_ratio']
       );
     }
-    values['fullness'] = fullness;
-    steps.push(`Fullness ratio: ${fullness}`);
-    
-    // Template values (already validated, no defaults here)
-    const header_hem_cm = template.header_hem_cm;
-    const bottom_hem_cm = template.bottom_hem_cm;
-    const side_hem_cm = template.side_hem_cm;
-    const seam_hem_cm = template.seam_hem_cm; // Total per join, NOT per side
-    
-    values['header_hem_cm'] = header_hem_cm;
-    values['bottom_hem_cm'] = bottom_hem_cm;
-    values['side_hem_cm'] = side_hem_cm;
-    values['seam_hem_cm'] = seam_hem_cm;
-    
-    // Returns (convert from mm if provided)
-    const return_left_cm = measurements.return_left_mm 
-      ? mmToCm(measurements.return_left_mm) 
-      : (template.default_returns_cm ?? 0);
-    const return_right_cm = measurements.return_right_mm 
-      ? mmToCm(measurements.return_right_mm) 
-      : (template.default_returns_cm ?? 0);
-    const total_returns_cm = return_left_cm + return_right_cm;
-    values['total_returns_cm'] = total_returns_cm;
-    
-    // Pooling
-    const pooling_cm = measurements.pooling_mm ? mmToCm(measurements.pooling_mm) : 0;
-    values['pooling_cm'] = pooling_cm;
 
-    // Overlap (center meeting point) - added to rail width BEFORE fullness (industry standard)
+    // Returns (convert from mm if provided)
+    const return_left_cm = measurements.return_left_mm
+      ? mmToCm(measurements.return_left_mm)
+      : (template.default_returns_cm ?? 0);
+    const return_right_cm = measurements.return_right_mm
+      ? mmToCm(measurements.return_right_mm)
+      : (template.default_returns_cm ?? 0);
+
+    // Overlap (center meeting point)
     const overlap_cm = measurements.overlap_mm
       ? mmToCm(measurements.overlap_mm)
       : (template.default_overlap_cm ?? 0);
-    values['overlap_cm'] = overlap_cm;
 
-    // Fabric width
-    const fabric_width_cm = fabric.width_cm;
-    values['fabric_width_cm'] = fabric_width_cm;
-
-    // Total drop with hems and pooling
-    const total_drop_cm = drop_cm + header_hem_cm + bottom_hem_cm + pooling_cm;
-    values['total_drop_cm'] = total_drop_cm;
-    steps.push(`Total drop: ${drop_cm} + ${header_hem_cm} + ${bottom_hem_cm} + ${pooling_cm} = ${total_drop_cm}cm`);
-
-    // Finished width: (rail + overlap) × fullness (industry standard - overlap before fullness)
-    const finished_width_cm = (rail_width_cm + overlap_cm) * fullness;
-    values['finished_width_cm'] = finished_width_cm;
-    steps.push(`Finished width: (${rail_width_cm} + ${overlap_cm} overlap) × ${fullness} = ${finished_width_cm}cm`);
-
-    // Panel count: 'pair' = 2 curtains (4 side hems), 'single' = 1 curtain (2 side hems)
-    // CRITICAL FIX: This was previously always using 2 side hems, causing 15cm discrepancy for pairs
+    // Panel count
     const panel_count = measurements.panel_configuration === 'pair' ? 2 : 1;
-    const total_side_hems_cm = side_hem_cm * 2 * panel_count;  // 2 sides per curtain × number of curtains
-    values['panel_count'] = panel_count;
-    values['total_side_hems_cm'] = total_side_hems_cm;
 
-    // Total width with returns and side hems
-    const total_width_cm = finished_width_cm + total_returns_cm + total_side_hems_cm;
-    values['total_width_cm'] = total_width_cm;
-    steps.push(`Total width: ${finished_width_cm} + ${total_returns_cm} + ${total_side_hems_cm} (${panel_count} panel${panel_count > 1 ? 's' : ''} × 2 sides × ${side_hem_cm}cm) = ${total_width_cm}cm`);
-    
-    // Check if fabric is railroaded/horizontal
+    // Orientation
     const is_railroaded = measurements.fabric_rotated === true;
+
+    // Build input for formulas (SINGLE SOURCE OF TRUTH)
+    const curtainInput: CurtainInput = {
+      railWidthCm: mmToCm(measurements.rail_width_mm),
+      dropCm: mmToCm(measurements.drop_mm),
+      fullness,
+      fabricWidthCm: fabric.width_cm,
+      panelCount: panel_count,
+      headerHemCm: template.header_hem_cm,
+      bottomHemCm: template.bottom_hem_cm,
+      sideHemCm: template.side_hem_cm,
+      seamHemCm: template.seam_hem_cm,
+      returnLeftCm: return_left_cm,
+      returnRightCm: return_right_cm,
+      overlapCm: overlap_cm,
+      poolingCm: measurements.pooling_mm ? mmToCm(measurements.pooling_mm) : 0,
+      wastePercent: template.waste_percentage || 0,
+    };
+
+    // Delegate to formulas/
+    const result = is_railroaded
+      ? calculateCurtainHorizontal(curtainInput)
+      : calculateCurtainVertical(curtainInput);
+
+    // Convert formula breakdown format for backward compatibility
+    const steps: string[] = result.breakdown.steps.map(
+      s => `${s.label}: ${s.formula} = ${s.result}${s.unit}`
+    );
+    const values: Record<string, number | string> = {};
+    for (const [k, v] of Object.entries(result.breakdown.values)) {
+      values[k] = v;
+    }
     values['is_railroaded'] = is_railroaded ? 'yes' : 'no';
-    steps.push(`Fabric orientation: ${is_railroaded ? 'RAILROADED (horizontal)' : 'VERTICAL'}`);
-    
-    let linear_meters_raw: number;
-    let linear_meters: number;
-    let widths_required: number;
-    let seams_count: number;
-    let seam_allowance_cm: number;
-    let total_fabric_cm: number;
-    
-    if (is_railroaded) {
-      // RAILROADED/HORIZONTAL: Fabric width covers drop, buy length for curtain width
-      // horizontal_pieces = ceil(total_drop_cm / fabric_width_cm)
-      // total_fabric_cm = total_width_cm * horizontal_pieces + seam allowance
-      
-      const horizontal_pieces = Math.ceil(total_drop_cm / fabric_width_cm);
-      values['horizontal_pieces'] = horizontal_pieces;
-      steps.push(`Horizontal pieces: ceil(${total_drop_cm} / ${fabric_width_cm}) = ${horizontal_pieces}`);
-      
-      seams_count = Math.max(0, horizontal_pieces - 1);
-      seam_allowance_cm = seams_count * seam_hem_cm;
-      values['seams_count'] = seams_count;
-      values['seam_allowance_cm'] = seam_allowance_cm;
-      steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
-      
-      // Total fabric = total width × horizontal pieces + seam allowance
-      total_fabric_cm = (total_width_cm * horizontal_pieces) + seam_allowance_cm;
-      values['total_fabric_cm'] = total_fabric_cm;
-      steps.push(`Total fabric (railroaded): (${total_width_cm} × ${horizontal_pieces}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
-      
-      widths_required = horizontal_pieces; // For railroaded, "widths" are horizontal pieces
-
-      linear_meters_raw = cmToM(total_fabric_cm);
-      linear_meters = roundTo(linear_meters_raw, 2);
-      values['linear_meters_before_waste'] = linear_meters;
-      steps.push(`Linear meters (raw): ${total_fabric_cm} / 100 = ${linear_meters}m`);
-
-    } else {
-      // VERTICAL: Standard calculation - fabric width covers curtain width, buy length for drop
-      // widths_required = ceil(total_width_cm / fabric_width_cm)
-      // total_fabric_cm = widths_required × total_drop_cm + seam allowance
-      
-      widths_required = Math.ceil(total_width_cm / fabric_width_cm);
-      values['widths_required'] = widths_required;
-      steps.push(`Widths required: ceil(${total_width_cm} / ${fabric_width_cm}) = ${widths_required}`);
-      
-      seams_count = Math.max(0, widths_required - 1);
-      seam_allowance_cm = seams_count * seam_hem_cm;
-      values['seams_count'] = seams_count;
-      values['seam_allowance_cm'] = seam_allowance_cm;
-      steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
-      
-      total_fabric_cm = (widths_required * total_drop_cm) + seam_allowance_cm;
-      values['total_fabric_cm'] = total_fabric_cm;
-      steps.push(`Total fabric (vertical): (${widths_required} × ${total_drop_cm}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
-      
-      linear_meters_raw = cmToM(total_fabric_cm);
-      linear_meters = roundTo(linear_meters_raw, 2);
-      values['linear_meters_before_waste'] = linear_meters;
-      steps.push(`Linear meters (raw): ${total_fabric_cm} / 100 = ${linear_meters}m`);
-    }
-
-    // Apply waste percentage to linear_meters (for ordering purposes)
-    // CRITICAL: Waste is applied to FABRIC METERS, not cost
-    // This matches useFabricCalculator behavior and reflects what needs to be ordered
-    const waste_percentage = template.waste_percentage || 0;
-    const waste_multiplier = 1 + (waste_percentage / 100);
-    const linear_meters_with_waste = roundTo(linear_meters * waste_multiplier, 2);
-    values['waste_percentage'] = waste_percentage;
-    values['linear_meters'] = linear_meters_with_waste;
-    if (waste_percentage > 0) {
-      steps.push(`With ${waste_percentage}% waste: ${linear_meters} × ${waste_multiplier} = ${linear_meters_with_waste}m`);
-    }
-
-    const formula_string = is_railroaded
-      ? `RAILROADED: (${total_width_cm}cm × ${values['horizontal_pieces']} pieces) + ${seam_allowance_cm}cm seams = ${linear_meters_with_waste}m`
-      : `VERTICAL: (${widths_required} widths × ${total_drop_cm}cm drop) + ${seam_allowance_cm}cm seams = ${linear_meters_with_waste}m`;
 
     return {
-      linear_meters: linear_meters_with_waste,  // Return with waste for ordering
-      linear_meters_raw,  // Keep raw for reference
-      widths_required,
+      linear_meters: result.linearMeters,
+      linear_meters_raw: result.linearMetersRaw / 100, // cm to m for raw
+      widths_required: result.widthsRequired,
       drops_per_width: 1,
-      total_drop_cm,
-      total_width_cm,
-      seams_count,
+      total_drop_cm: result.totalDropCm,
+      total_width_cm: result.totalWidthCm,
+      seams_count: result.seamsCount,
       formula: {
         steps,
         values,
-        formula_string,
+        formula_string: result.breakdown.summary,
       },
     };
   }
@@ -381,49 +298,37 @@ export class CalculationEngine {
     measurements: MeasurementsContract,
     template: TemplateContract
   ): AreaCalculationResult {
-    const steps: string[] = [];
+    // Build input for formulas (SINGLE SOURCE OF TRUTH)
+    const blindInput: BlindInput = {
+      railWidthCm: mmToCm(measurements.rail_width_mm),
+      dropCm: mmToCm(measurements.drop_mm),
+      headerHemCm: template.header_hem_cm,
+      bottomHemCm: template.bottom_hem_cm,
+      sideHemCm: template.side_hem_cm,
+      wastePercent: template.waste_percentage || 0,
+    };
+
+    // Delegate to formulas/
+    const result = formulaBlindSqm(blindInput);
+
+    // Convert formula breakdown format for backward compatibility
+    const steps: string[] = result.breakdown.steps.map(
+      s => `${s.label}: ${s.formula} = ${s.result}${s.unit}`
+    );
     const values: Record<string, number | string> = {};
-    
-    const rail_width_cm = mmToCm(measurements.rail_width_mm);
-    const drop_cm = mmToCm(measurements.drop_mm);
-    
-    values['rail_width_cm'] = rail_width_cm;
-    values['drop_cm'] = drop_cm;
-    
-    // Template values (already validated)
-    const header_hem_cm = template.header_hem_cm;
-    const bottom_hem_cm = template.bottom_hem_cm;
-    const side_hem_cm = template.side_hem_cm;
-    
-    values['header_hem_cm'] = header_hem_cm;
-    values['bottom_hem_cm'] = bottom_hem_cm;
-    values['side_hem_cm'] = side_hem_cm;
-    
-    // Effective dimensions
-    const effective_width_cm = rail_width_cm + (side_hem_cm * 2);
-    const effective_height_cm = drop_cm + header_hem_cm + bottom_hem_cm;
-    
-    values['effective_width_cm'] = effective_width_cm;
-    values['effective_height_cm'] = effective_height_cm;
-    steps.push(`Effective width: ${rail_width_cm} + (${side_hem_cm} × 2) = ${effective_width_cm}cm`);
-    steps.push(`Effective height: ${drop_cm} + ${header_hem_cm} + ${bottom_hem_cm} = ${effective_height_cm}cm`);
-    
-    // Square meters
-    const sqm_raw = (effective_width_cm / 100) * (effective_height_cm / 100);
-    const sqm = roundTo(sqm_raw, 2);
-    
-    values['sqm'] = sqm;
-    steps.push(`Area: (${effective_width_cm}/100) × (${effective_height_cm}/100) = ${sqm}m²`);
-    
+    for (const [k, v] of Object.entries(result.breakdown.values)) {
+      values[k] = v;
+    }
+
     return {
-      sqm,
-      sqm_raw,
-      effective_width_cm,
-      effective_height_cm,
+      sqm: result.sqm,
+      sqm_raw: result.sqmRaw,
+      effective_width_cm: result.effectiveWidthCm,
+      effective_height_cm: result.effectiveHeightCm,
       formula: {
         steps,
         values,
-        formula_string: `(${effective_width_cm}cm × ${effective_height_cm}cm) / 10000 = ${sqm}m²`,
+        formula_string: result.breakdown.summary,
       },
     };
   }
