@@ -1,14 +1,13 @@
 
 import { useState } from "react";
 import { useAllVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from "@/hooks/useVendors";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Edit, Trash2, X, Mail, Phone, Globe } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Mail, Phone, Globe } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const emptyForm = {

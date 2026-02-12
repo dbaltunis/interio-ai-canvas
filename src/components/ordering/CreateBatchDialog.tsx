@@ -127,10 +127,12 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
     try {
       const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
-      // For integration-type suppliers, we store null supplier_id
-      // and record the integration type in metadata
+      // For integration-type suppliers, store null supplier_id
+      // and record the integration type in dedicated columns
       const isIntegration = supplierId.startsWith('integration-');
       const actualSupplierId = isIntegration || supplierId === 'none' || !supplierId ? null : supplierId;
+      const selectedSupplierEntry = allSuppliers.find(s => s.id === supplierId);
+      const integrationType = isIntegration ? supplierId.replace('integration-', '') : null;
 
       const batch = await createBatch.mutateAsync({
         user_id: effectiveOwnerId,
@@ -138,13 +140,18 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
         status: 'draft',
         order_schedule_date: orderDate?.toISOString().split('T')[0],
         notes,
+        // Use dedicated columns for industry-standard fields
+        integration_type: integrationType,
+        supplier_name: selectedSupplierEntry?.name || null,
+        order_method: orderMethod,
+        purchase_order_ref: purchaseOrderRef || null,
         metadata: {
           order_method: orderMethod,
           purchase_order_ref: purchaseOrderRef || undefined,
-          integration_type: isIntegration ? supplierId.replace('integration-', '') : undefined,
-          supplier_name: allSuppliers.find(s => s.id === supplierId)?.name,
+          integration_type: integrationType,
+          supplier_name: selectedSupplierEntry?.name,
         },
-      });
+      } as any);
 
       // Add selected items to batch
       if (selectedItemIds.length > 0 && batch) {
