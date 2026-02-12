@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { showFriendlyError } from "@/hooks/use-friendly-toast";
 import { useEffectiveAccountOwner } from "./useEffectiveAccountOwner";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 
@@ -139,7 +140,7 @@ export const useCreateServiceOption = () => {
       toast.success('Service created successfully');
     },
     onError: (error) => {
-      toast.error(`Failed to create service: ${error.message}`);
+      showFriendlyError(error, 'create service');
     },
   });
 };
@@ -170,7 +171,7 @@ export const useUpdateServiceOption = () => {
       toast.success('Service updated successfully');
     },
     onError: (error) => {
-      toast.error(`Failed to update service: ${error.message}`);
+      showFriendlyError(error, 'update service');
     },
   });
 };
@@ -196,7 +197,7 @@ export const useDeleteServiceOption = () => {
       toast.success('Service deleted successfully');
     },
     onError: (error) => {
-      toast.error(`Failed to delete service: ${error.message}`);
+      showFriendlyError(error, 'delete service');
     },
   });
 };

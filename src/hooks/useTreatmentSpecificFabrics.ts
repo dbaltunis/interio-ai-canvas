@@ -5,7 +5,7 @@ import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCATEGORIES } from "@/constants/inventorySubcategories";
 import { hasValidPricingGrid } from "@/utils/pricing/gridValidation";
 
-const PAGE_SIZE = 100; // Increased for large TWC inventories
+const PAGE_SIZE = 30; // Reduced for faster initial load — user can search or load more
 
 /**
  * Supplier filter for server-side filtering

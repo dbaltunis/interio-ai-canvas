@@ -244,20 +244,26 @@ export class CalculationEngine {
     // Pooling
     const pooling_cm = measurements.pooling_mm ? mmToCm(measurements.pooling_mm) : 0;
     values['pooling_cm'] = pooling_cm;
-    
+
+    // Overlap (center meeting point) - added to rail width BEFORE fullness (industry standard)
+    const overlap_cm = measurements.overlap_mm
+      ? mmToCm(measurements.overlap_mm)
+      : (template.default_overlap_cm ?? 0);
+    values['overlap_cm'] = overlap_cm;
+
     // Fabric width
     const fabric_width_cm = fabric.width_cm;
     values['fabric_width_cm'] = fabric_width_cm;
-    
+
     // Total drop with hems and pooling
     const total_drop_cm = drop_cm + header_hem_cm + bottom_hem_cm + pooling_cm;
     values['total_drop_cm'] = total_drop_cm;
     steps.push(`Total drop: ${drop_cm} + ${header_hem_cm} + ${bottom_hem_cm} + ${pooling_cm} = ${total_drop_cm}cm`);
-    
-    // Finished width with fullness
-    const finished_width_cm = rail_width_cm * fullness;
+
+    // Finished width: (rail + overlap) × fullness (industry standard - overlap before fullness)
+    const finished_width_cm = (rail_width_cm + overlap_cm) * fullness;
     values['finished_width_cm'] = finished_width_cm;
-    steps.push(`Finished width: ${rail_width_cm} × ${fullness} = ${finished_width_cm}cm`);
+    steps.push(`Finished width: (${rail_width_cm} + ${overlap_cm} overlap) × ${fullness} = ${finished_width_cm}cm`);
 
     // Panel count: 'pair' = 2 curtains (4 side hems), 'single' = 1 curtain (2 side hems)
     // CRITICAL FIX: This was previously always using 2 side hems, causing 15cm discrepancy for pairs
@@ -662,6 +668,7 @@ export function calculateCurtain(
     seam_hem_cm: number;
     waste_percentage: number;
     default_returns_cm?: number;
+    default_overlap_cm?: number;
   }
 ): LinearCalculationResult {
   return CalculationEngine.calculateLinear(
@@ -682,6 +689,7 @@ export function calculateCurtain(
       waste_percentage: template.waste_percentage,
       default_fullness_ratio: fullness,
       default_returns_cm: template.default_returns_cm,
+      default_overlap_cm: template.default_overlap_cm,
     },
     {
       id: 'test',

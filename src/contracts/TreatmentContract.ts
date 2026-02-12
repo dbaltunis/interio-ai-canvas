@@ -40,6 +40,8 @@ export interface MeasurementsContract {
   return_right_mm?: number;
   /** Pooling/puddle allowance in millimeters */
   pooling_mm?: number;
+  /** Overlap (center meeting point) in millimeters */
+  overlap_mm?: number;
 
   /** Fabric orientation: true = railroaded/horizontal (width covers drop) */
   fabric_rotated?: boolean;
@@ -77,7 +79,9 @@ export interface TemplateContract {
   fullness_ratio?: number;
   default_fullness_ratio?: number;
   default_returns_cm?: number;
-  
+  /** Default overlap (center meeting point) in centimeters */
+  default_overlap_cm?: number;
+
   // Waste factor as percentage (e.g., 5 = 5%)
   waste_percentage: number;
   

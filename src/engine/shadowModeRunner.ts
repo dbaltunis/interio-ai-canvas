@@ -144,6 +144,14 @@ export function buildMeasurements(
       }
     }
 
+    // Overlap (center meeting point) - stored in user's display unit, convert to MM
+    if (measurements.overlap != null) {
+      const val = parseFloat(measurements.overlap);
+      if (!isNaN(val)) {
+        result.overlap_mm = convertLength(val, userUnit, 'mm');
+      }
+    }
+
     // Panel configuration - 'pair' means 2 curtains (4 side hems), 'single' means 1 curtain (2 side hems)
     if (measurements.curtain_type != null) {
       result.panel_configuration = measurements.curtain_type === 'pair' ? 'pair' : 'single';
@@ -244,7 +252,11 @@ export function buildTemplate(
     if (template.default_returns_cm != null) {
       result.default_returns_cm = parseFloat(template.default_returns_cm);
     }
-    
+
+    if (template.overlap != null || template.default_overlap_cm != null) {
+      result.default_overlap_cm = parseFloat(template.overlap ?? template.default_overlap_cm);
+    }
+
     if (template.pricing_grid_data) {
       result.pricing_grid_data = template.pricing_grid_data;
     }

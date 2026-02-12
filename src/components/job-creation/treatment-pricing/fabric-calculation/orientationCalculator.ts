@@ -65,6 +65,7 @@ export const calculateOrientation = (
     seamHem,
     returnLeft = 0,
     returnRight = 0,
+    overlap = 0,
     verticalPatternRepeatCm = 0,
     horizontalPatternRepeatCm = 0,
   } = params;
@@ -90,7 +91,8 @@ export const calculateOrientation = (
     seamHemCm: seamHem!,
     poolingCm: pooling,
     returnLeftCm: returnLeft,
-    returnRightCm: returnRight
+    returnRightCm: returnRight,
+    overlapCm: overlap,
   };
 
   // Use centralized formulas
@@ -103,7 +105,8 @@ export const calculateOrientation = (
   const totalDropRaw = formulaResult.totalDropCm;
   const numberOfSideHems = quantity * 2;
   const totalSideHemAllowance = sideHem! * numberOfSideHems;
-  const totalWidthRaw = railWidth * fullness! + returnLeft + returnRight;
+  // Industry standard: overlap added BEFORE fullness, returns and side hems after
+  const totalWidthRaw = (railWidth + overlap) * fullness! + returnLeft + returnRight;
 
   let horizontalPiecesNeeded: number | undefined;
   let leftoverFromLastPiece: number | undefined;
@@ -163,8 +166,8 @@ export const calculateOrientation = (
     const requiredPanelLength = vRepeat > 0 ? Math.ceil(requiredPanelLengthUnrounded / vRepeat) * vRepeat : requiredPanelLengthUnrounded;
     requiredLength = requiredPanelLength;
 
-    // Width per panel
-    const widthPerPanel = (totalWidthRaw / quantity) + (sideHem! * 2);
+    // Width per panel - side hems are already included by centralized formula
+    const widthPerPanel = (totalWidthRaw + totalSideHemAllowance) / quantity;
     const requiredWidthUnrounded = widthPerPanel;
     requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     

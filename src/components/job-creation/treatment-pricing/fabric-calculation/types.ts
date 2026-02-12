@@ -15,6 +15,7 @@ export interface FabricCalculationParams {
   horizontalPatternRepeatCm?: number;
   returnLeft?: number;
   returnRight?: number;
+  overlap?: number;  // center meeting point in cm
 }
 
 export interface OrientationResult {

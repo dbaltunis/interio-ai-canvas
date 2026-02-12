@@ -25,6 +25,9 @@ export interface FabricCalculationInput {
   bottomHemCm?: number;
   sideHemCm?: number;
   wastePercent?: number;
+  returnLeftCm?: number;
+  returnRightCm?: number;
+  overlapCm?: number;
 }
 
 export interface FabricCalculationOutput {
@@ -110,9 +113,13 @@ export const CalculationService = {
       const bottomHem = input.bottomHemCm ?? 0;
       const sideHem = input.sideHemCm ?? 0;
       const wastePercent = input.wastePercent ?? 0;
+      const returnLeft = input.returnLeftCm ?? 0;
+      const returnRight = input.returnRightCm ?? 0;
+      const overlap = input.overlapCm ?? 0;
 
       const totalDropCm = dropCm + headerHem + bottomHem;
-      const totalWidthCm = (widthCm * input.fullness) + (sideHem * 2);
+      // Industry standard: overlap added BEFORE fullness, returns and side hems added after
+      const totalWidthCm = ((widthCm + overlap) * input.fullness) + returnLeft + returnRight + (sideHem * 2);
 
       let linearMeters: number;
       let widthsRequired: number;

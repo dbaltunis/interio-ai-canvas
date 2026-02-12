@@ -40,16 +40,43 @@ function getIntegrationName(type: string): string {
 
 /**
  * Determine if an integration is in production mode.
- * API-based integrations (TWC, RFMS) use environment field.
- * Email-based integrations (CW Systems, Norman) are production when they have account details.
+ * Each supplier type has different criteria for "ready to use":
+ * - TWC: Explicit environment toggle (has staging/production switch)
+ * - RFMS: API key and store queue configured
+ * - NetSuite: OAuth credentials (account_id, consumer_key, token_id)
+ * - CW Systems / Norman: Account details filled in (email-based ordering)
+ * - TIG PIM: API URL and credentials
  */
 function isProductionMode(type: string, creds: Record<string, any> | null): boolean {
+  if (!creds) return false;
+
+  if (type === 'twc') {
+    // TWC explicitly uses environment toggle
+    return creds.environment === 'production';
+  }
+
   if (type === 'cw_systems' || type === 'norman_australia') {
     // Email-based: production if account code/number is filled in
-    return !!(creds?.account_code || creds?.account_number || creds?.account_name);
+    return !!(creds.account_code || creds.account_number || creds.account_name);
   }
-  // API-based: check environment field
-  return creds?.environment === "production";
+
+  if (type === 'rfms') {
+    // RFMS is production-ready when API key and store queue are configured
+    return !!(creds.api_key && (creds.store_queue || creds.api_url));
+  }
+
+  if (type === 'netsuite') {
+    // NetSuite is production-ready when OAuth credentials are filled
+    return !!(creds.account_id && creds.consumer_key && creds.token_id);
+  }
+
+  if (type === 'tig_pim') {
+    // TIG PIM: check for API URL and credentials
+    return !!(creds.api_url && (creds.api_key || creds.token));
+  }
+
+  // Fallback for any future integration types
+  return creds.environment === 'production';
 }
 
 /**
