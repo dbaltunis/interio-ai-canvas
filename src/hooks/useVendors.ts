@@ -11,7 +11,7 @@ type VendorUpdate = TablesUpdate<"vendors">;
 
 export const useVendors = () => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
+
   return useQuery({
     queryKey: ["vendors", effectiveOwnerId],
     queryFn: async () => {
@@ -22,6 +22,28 @@ export const useVendors = () => {
         .select("*")
         .eq("user_id", effectiveOwnerId)
         .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!effectiveOwnerId,
+  });
+};
+
+/** Returns all vendors including inactive ones - for supplier management UI */
+export const useAllVendors = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+
+  return useQuery({
+    queryKey: ["vendors-all", effectiveOwnerId],
+    queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("user_id", effectiveOwnerId)
         .order("name");
 
       if (error) throw error;
@@ -54,6 +76,7 @@ export const useCreateVendor = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["vendors-all"] });
       toast({
         title: "Success",
         description: "Vendor created successfully",
@@ -80,6 +103,7 @@ export const useUpdateVendor = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["vendors-all"] });
       toast({
         title: "Success",
         description: "Vendor updated successfully",
@@ -106,6 +130,7 @@ export const useDeleteVendor = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["vendors-all"] });
       toast({
         title: "Success",
         description: "Vendor deleted successfully",

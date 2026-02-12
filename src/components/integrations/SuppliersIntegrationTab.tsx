@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import twcLogo from "@/assets/twc-logo.png";
 import rfmsLogo from "@/assets/rfms-logo.svg";
@@ -10,6 +11,7 @@ import { TWCIntegrationTab } from "./TWCIntegrationTab";
 import { RFMSIntegrationTab } from "./RFMSIntegrationTab";
 import { CWSystemsIntegrationTab } from "./CWSystemsIntegrationTab";
 import { NormanIntegrationTab } from "./NormanIntegrationTab";
+import { SupplierManagement } from "@/components/inventory/SupplierManagement";
 
 export const SuppliersIntegrationTab = () => {
   const { integrations } = useIntegrations();
@@ -61,12 +63,18 @@ export const SuppliersIntegrationTab = () => {
   const activeCount = suppliers.filter(s => s.integration?.active).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Manual Supplier Management */}
+      <SupplierManagement />
+
+      <Separator />
+
+      {/* Integration-based Suppliers */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Supplier Integrations</h3>
           <p className="text-sm text-muted-foreground">
-            Connect with your product suppliers for ordering and product sync
+            Connect with your product suppliers for automated ordering and product sync
           </p>
         </div>
         <Badge variant={activeCount > 0 ? "default" : "secondary"}>

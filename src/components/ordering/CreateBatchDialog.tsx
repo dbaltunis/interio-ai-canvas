@@ -1,18 +1,24 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, Truck, Globe, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useVendors, useCreateVendor } from "@/hooks/useVendors";
+import { useAllSupplierIntegrations } from "@/hooks/useActiveSupplierIntegrations";
 import { useCreateBatchOrder, useAddItemsToBatch } from "@/hooks/useBatchOrders";
 import { useMaterialQueue } from "@/hooks/useMaterialQueue";
+import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface CreateBatchDialogProps {
   open: boolean;
@@ -21,27 +27,64 @@ interface CreateBatchDialogProps {
   onSuccess?: () => void;
 }
 
+// Industry-standard order methods following TWC, RFMS, NetSuite workflows
+const ORDER_METHODS = [
+  { value: 'api', label: 'API (Automated)' },
+  { value: 'email', label: 'Email Order' },
+  { value: 'portal', label: 'Supplier Portal' },
+  { value: 'phone', label: 'Phone Order' },
+  { value: 'fax', label: 'Fax Order' },
+] as const;
+
 export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], onSuccess }: CreateBatchDialogProps) => {
   const [supplierId, setSupplierId] = useState("");
   const [orderDate, setOrderDate] = useState<Date>();
   const [notes, setNotes] = useState("");
+  const [orderMethod, setOrderMethod] = useState("email");
+  const [purchaseOrderRef, setPurchaseOrderRef] = useState("");
+  const [showAddVendor, setShowAddVendor] = useState(false);
+  const [newVendorName, setNewVendorName] = useState("");
 
-  const { data: suppliers } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
+  const { data: vendors = [] } = useVendors();
+  const { data: integrations = [] } = useAllSupplierIntegrations();
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const createBatch = useCreateBatchOrder();
   const addItems = useAddItemsToBatch();
+  const createVendor = useCreateVendor();
+  const { units } = useMeasurementUnits();
+  const currencySymbol = getCurrencySymbol(units.currency);
+
+  // Merge vendors and active integrations into a unified supplier list
+  const allSuppliers = useMemo(() => {
+    const list: { id: string; name: string; type: 'vendor' | 'integration'; method: string; email?: string }[] = [];
+
+    // Add manual vendors
+    vendors.forEach(v => {
+      list.push({
+        id: v.id,
+        name: v.name,
+        type: 'vendor',
+        method: 'email',
+        email: v.email || undefined,
+      });
+    });
+
+    // Add active supplier integrations (TWC, RFMS, CW Systems, Norman, etc.)
+    integrations.forEach(integration => {
+      // Don't duplicate if a vendor with the same name exists
+      const exists = list.some(s => s.name.toLowerCase() === integration.name.toLowerCase());
+      if (!exists) {
+        list.push({
+          id: `integration-${integration.type}`,
+          name: integration.name,
+          type: 'integration',
+          method: integration.isProduction ? 'api' : 'email',
+        });
+      }
+    });
+
+    return list;
+  }, [vendors, integrations]);
 
   const selectedMaterials = queueItems?.filter(item => selectedItemIds.includes(item.id)) || [];
 
@@ -55,17 +98,52 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
     }
   }, [selectedMaterials]);
 
+  // Auto-set order method when supplier changes
+  useEffect(() => {
+    const selected = allSuppliers.find(s => s.id === supplierId);
+    if (selected) {
+      setOrderMethod(selected.method);
+    }
+  }, [supplierId, allSuppliers]);
+
   const totalAmount = selectedMaterials.reduce((sum, item) => sum + Number(item.total_cost || 0), 0);
+
+  const handleAddVendor = async () => {
+    if (!newVendorName.trim()) return;
+    try {
+      const vendor = await createVendor.mutateAsync({
+        name: newVendorName.trim(),
+        active: true,
+      });
+      setSupplierId(vendor.id);
+      setNewVendorName('');
+      setShowAddVendor(false);
+    } catch (error) {
+      console.error('Failed to create vendor:', error);
+    }
+  };
 
   const handleCreate = async () => {
     try {
-      // Create batch order
+      const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
+
+      // For integration-type suppliers, we store null supplier_id
+      // and record the integration type in metadata
+      const isIntegration = supplierId.startsWith('integration-');
+      const actualSupplierId = isIntegration || supplierId === 'none' || !supplierId ? null : supplierId;
+
       const batch = await createBatch.mutateAsync({
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        supplier_id: supplierId === 'none' || !supplierId ? null : supplierId,
+        user_id: effectiveOwnerId,
+        supplier_id: actualSupplierId,
         status: 'draft',
         order_schedule_date: orderDate?.toISOString().split('T')[0],
         notes,
+        metadata: {
+          order_method: orderMethod,
+          purchase_order_ref: purchaseOrderRef || undefined,
+          integration_type: isIntegration ? supplierId.replace('integration-', '') : undefined,
+          supplier_name: allSuppliers.find(s => s.id === supplierId)?.name,
+        },
       });
 
       // Add selected items to batch
@@ -89,15 +167,19 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
 
       onSuccess?.();
       onOpenChange(false);
-      
+
       // Reset form
       setSupplierId("");
       setOrderDate(undefined);
       setNotes("");
+      setOrderMethod("email");
+      setPurchaseOrderRef("");
     } catch (error) {
       console.error('Failed to create batch:', error);
     }
   };
+
+  const selectedSupplier = allSuppliers.find(s => s.id === supplierId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,30 +187,121 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
         <DialogHeader>
           <DialogTitle>Create Batch Order</DialogTitle>
           <DialogDescription>
-            Group materials for ordering from a supplier
+            Group materials for ordering from a supplier. Supports TWC, RFMS, and manual ordering workflows.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Supplier Selection */}
           <div className="space-y-2">
-            <Label>Supplier</Label>
-            <Select value={supplierId} onValueChange={setSupplierId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select supplier (optional for stock items)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Supplier (Stock/Internal)</SelectItem>
-                {suppliers?.map((supplier) => (
-                  <SelectItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Leave empty or select "No Supplier" for stock items that don't need ordering
-            </p>
+            <div className="flex items-center justify-between">
+              <Label>Supplier</Label>
+              {!showAddVendor && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setShowAddVendor(true)}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add New
+                </Button>
+              )}
+            </div>
+
+            {showAddVendor ? (
+              <div className="flex gap-2">
+                <Input
+                  value={newVendorName}
+                  onChange={(e) => setNewVendorName(e.target.value)}
+                  placeholder="Supplier name"
+                  className="flex-1"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddVendor()}
+                />
+                <Button size="sm" onClick={handleAddVendor} disabled={!newVendorName.trim() || createVendor.isPending}>
+                  Add
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { setShowAddVendor(false); setNewVendorName(''); }}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Select value={supplierId} onValueChange={setSupplierId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select supplier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Supplier (Stock/Internal)</SelectItem>
+
+                  {/* Integrated suppliers */}
+                  {integrations.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1.5">
+                        <Globe className="h-3 w-3" />
+                        Integrated Suppliers
+                      </SelectLabel>
+                      {allSuppliers.filter(s => s.type === 'integration').map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          <span className="flex items-center gap-2">
+                            {supplier.name}
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">API</Badge>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+
+                  {/* Manual vendors */}
+                  {vendors.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1.5">
+                        <Truck className="h-3 w-3" />
+                        Your Suppliers
+                      </SelectLabel>
+                      {allSuppliers.filter(s => s.type === 'vendor').map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+
+            {allSuppliers.length === 0 && !showAddVendor && (
+              <p className="text-xs text-muted-foreground">
+                No suppliers found. Add a supplier above, or configure integrations in Settings &rarr; Integrations.
+              </p>
+            )}
+          </div>
+
+          {/* Order Method & PO Reference - industry standard fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Order Method</Label>
+              <Select value={orderMethod} onValueChange={setOrderMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_METHODS.map((method) => (
+                    <SelectItem key={method.value} value={method.value}>
+                      {method.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>PO Reference</Label>
+              <Input
+                value={purchaseOrderRef}
+                onChange={(e) => setPurchaseOrderRef(e.target.value)}
+                placeholder="e.g., PO-2026-0001"
+              />
+            </div>
           </div>
 
           {/* Order Date */}
@@ -179,8 +352,20 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
               </div>
               <div className="pt-2 border-t flex justify-between font-medium">
                 <span>Total Amount:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>{currencySymbol}{totalAmount.toFixed(2)}</span>
               </div>
+            </div>
+          )}
+
+          {/* Supplier Info */}
+          {selectedSupplier?.type === 'integration' && (
+            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm">
+              <p className="font-medium text-blue-800 dark:text-blue-300">
+                {selectedSupplier.name} - Integrated Ordering
+              </p>
+              <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">
+                Order will be submitted via {selectedSupplier.name} API. Configure credentials in Settings &rarr; Integrations.
+              </p>
             </div>
           )}
 
