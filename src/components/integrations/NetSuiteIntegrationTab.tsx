@@ -73,9 +73,9 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         await createIntegration.mutateAsync(integrationData);
       }
 
-      toast({ title: "Saved", description: "NetSuite configuration saved successfully" });
+      toast({ title: "NetSuite Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to save", variant: "destructive" });
+      toast({ title: "Could not save NetSuite settings", description: err.message || "Check your credentials are correct and try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -105,9 +105,13 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         throw new Error(data?.error || "Connection test failed");
       }
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError") || msg.includes("non-2xx");
       toast({
-        title: "Connection Failed",
-        description: err.message || "Could not connect to NetSuite",
+        title: "NetSuite Connection Failed",
+        description: isEdgeFnMissing
+          ? "The NetSuite backend service is not deployed yet. Please deploy the Edge Functions via Supabase CLI first."
+          : `Could not connect to NetSuite. ${msg}. Check your Account ID and TBA credentials are correct.`,
         variant: "destructive",
       });
     } finally {
@@ -134,9 +138,13 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: parts.length > 0 ? parts.join(', ') : 'No changes needed',
       });
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
         title: "Customer Sync Failed",
-        description: err.message || "Customer sync failed",
+        description: isEdgeFnMissing
+          ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
+          : `Customer sync failed. ${msg}`,
         variant: "destructive",
       });
     } finally {
@@ -163,9 +171,13 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: parts.length > 0 ? parts.join(', ') : `No ${label.toLowerCase()}s to sync`,
       });
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
         title: "Order Sync Failed",
-        description: err.message || "Order sync failed",
+        description: isEdgeFnMissing
+          ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
+          : `Order sync failed. ${msg}`,
         variant: "destructive",
       });
     } finally {

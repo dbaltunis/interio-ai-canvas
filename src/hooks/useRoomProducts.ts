@@ -96,11 +96,11 @@ export const useCreateRoomProduct = () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      toast.success("Product added to room");
+      // No success toast - product appears visually in room
     },
     onError: (error) => {
       console.error("Error adding room product:", error);
-      toast.error("Failed to add product");
+      toast.error("Could not add product to room. Check your connection and try again.");
     },
   });
 };
@@ -136,11 +136,11 @@ export const useCreateRoomProducts = () => {
         queryClient.invalidateQueries({ queryKey: ["quote-items"] });
         queryClient.invalidateQueries({ queryKey: ["quotes"] });
       }
-      toast.success(`${variables.length} product(s) added to room`);
+      // No success toast - products appear visually in room
     },
     onError: (error) => {
       console.error("Error adding room products:", error);
-      toast.error("Failed to add products");
+      toast.error("Could not add products to room. Check your connection and try again.");
     },
   });
 };
@@ -208,11 +208,11 @@ export const useDeleteRoomProduct = () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      toast.success("Product removed");
+      // No success toast - product disappears visually from room
     },
     onError: (error) => {
       console.error("Error deleting room product:", error);
-      toast.error("Failed to remove product");
+      toast.error("Could not remove product. Please refresh and try again.");
     },
   });
 };

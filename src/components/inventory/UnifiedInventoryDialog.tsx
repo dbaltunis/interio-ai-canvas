@@ -355,10 +355,10 @@ export const UnifiedInventoryDialog = ({
 
       setFormData(prev => ({ ...prev, image_url: publicUrl }));
       console.log('✅ FormData updated with image_url');
-      toast({ title: "Image uploaded successfully" });
+      // No success toast - image preview appears visually
     } catch (error: any) {
       console.error('💥 Image upload error:', error);
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      toast({ title: "Image upload failed", description: "Check the file is under 5MB and is a JPG, PNG, or WebP image.", variant: "destructive" });
     } finally {
       setUploadingImage(false);
     }
@@ -385,15 +385,15 @@ export const UnifiedInventoryDialog = ({
 
     // Validate required fields
     if (!formData.name || !formData.name.trim()) {
-      toast({ title: "Error", description: "Product name is required", variant: "destructive" });
+      toast({ title: "Missing product name", description: "Please enter a name for this product.", variant: "destructive" });
       return;
     }
     if (!formData.category) {
-      toast({ title: "Error", description: "Category is required", variant: "destructive" });
+      toast({ title: "Missing category", description: "Please select a category (e.g. Fabric, Hardware, Service).", variant: "destructive" });
       return;
     }
     if (!formData.subcategory) {
-      toast({ title: "Error", description: "Subcategory is required", variant: "destructive" });
+      toast({ title: "Missing subcategory", description: "Please select a subcategory for this product.", variant: "destructive" });
       return;
     }
 
@@ -437,7 +437,7 @@ export const UnifiedInventoryDialog = ({
         const result = await createMutation.mutateAsync(itemData);
         console.log('✅ Create mutation result:', result);
         localStorage.removeItem(STORAGE_KEY);
-        toast({ title: "Item created successfully" });
+        // No success toast - dialog closes and list refreshes visually
       } else {
         console.log('📤 Calling update mutation...');
         const result = await updateMutation.mutateAsync({ id: item.id, ...itemData });
@@ -468,13 +468,13 @@ export const UnifiedInventoryDialog = ({
         // Update tracking to prevent useEffect from overwriting
         initializedItemId.current = result.id;
         
-        toast({ title: "Item updated successfully" });
+        // No success toast - dialog closes and list refreshes visually
       }
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
       console.error('❌ Save error:', error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Could not save item", description: "Please check all required fields are filled and try again.", variant: "destructive" });
     }
   };
 
@@ -482,11 +482,11 @@ export const UnifiedInventoryDialog = ({
     if (!confirm("Are you sure you want to delete this item?")) return;
     try {
       await deleteMutation.mutateAsync(item.id);
-      toast({ title: "Item deleted successfully" });
+      // No success toast - dialog closes and item disappears from list
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Could not delete item", description: "This item may be in use by active quotes. Remove it from quotes first.", variant: "destructive" });
     }
   };
 

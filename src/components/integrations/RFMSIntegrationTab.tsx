@@ -68,9 +68,9 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         await createIntegration.mutateAsync(integrationData);
       }
 
-      toast({ title: "Saved", description: "RFMS configuration saved successfully" });
+      toast({ title: "RFMS Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to save", variant: "destructive" });
+      toast({ title: "Could not save RFMS settings", description: err.message || "Check your credentials are correct and try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +98,13 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Connection test failed");
       }
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError") || msg.includes("non-2xx");
       toast({
-        title: "Connection Failed",
-        description: err.message || "Could not connect to RFMS",
+        title: "RFMS Connection Failed",
+        description: isEdgeFnMissing
+          ? "The RFMS backend service is not deployed yet. Please deploy the Edge Functions via Supabase CLI first."
+          : `Could not connect to RFMS. ${msg}. Check your Store Queue token and API key are correct.`,
         variant: "destructive",
       });
     } finally {
@@ -126,9 +130,13 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         description: parts.length > 0 ? parts.join(', ') : 'No quotes to sync',
       });
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
         title: "Quote Sync Failed",
-        description: err.message || "Quote sync failed",
+        description: isEdgeFnMissing
+          ? "The RFMS sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
+          : `Quote sync failed. ${msg}`,
         variant: "destructive",
       });
     } finally {
@@ -155,9 +163,13 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         description: parts.length > 0 ? parts.join(', ') : 'No changes needed',
       });
     } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
-        title: "Sync Failed",
-        description: err.message || "Customer sync failed",
+        title: "Customer Sync Failed",
+        description: isEdgeFnMissing
+          ? "The RFMS sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
+          : `Customer sync failed. ${msg}`,
         variant: "destructive",
       });
     } finally {

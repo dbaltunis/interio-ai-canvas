@@ -61,11 +61,10 @@ export const useCreateProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-variants'] });
-      toast.success("Variant created successfully");
     },
     onError: (error) => {
       console.error("Error creating variant:", error);
-      toast.error("Failed to create variant");
+      toast.error("Could not create variant. Check the name is unique and try again.");
     }
   });
 };
@@ -87,11 +86,10 @@ export const useUpdateProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-variants'] });
-      toast.success("Variant updated successfully");
     },
     onError: (error) => {
       console.error("Error updating variant:", error);
-      toast.error("Failed to update variant");
+      toast.error("Could not update variant. Please refresh and try again.");
     }
   });
 };
@@ -110,11 +108,10 @@ export const useDeleteProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-variants'] });
-      toast.success("Variant deleted successfully");
     },
     onError: (error) => {
       console.error("Error deleting variant:", error);
-      toast.error("Failed to delete variant");
+      toast.error("Could not delete variant. It may be in use by existing products.");
     }
   });
 };
