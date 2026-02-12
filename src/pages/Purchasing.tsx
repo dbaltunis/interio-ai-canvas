@@ -2,7 +2,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { VendorOrderingView } from "@/components/inventory/VendorOrderingView";
+import { VendorDashboard } from "@/components/vendors/VendorDashboard";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -76,7 +76,7 @@ export const Purchasing = () => {
         </Alert>
       )}
 
-      <VendorOrderingView />
+      <VendorDashboard />
     </div>
   );
 };
