@@ -151,7 +151,7 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
           integration_type: integrationType,
           supplier_name: selectedSupplierEntry?.name,
         },
-      } as any);
+      });
 
       // Add selected items to batch
       if (selectedItemIds.length > 0 && batch) {

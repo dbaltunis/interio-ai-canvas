@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, Trash2, X } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Plus, Trash2, X, Globe, Truck } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useVendors } from "@/hooks/useVendors";
+import { useAllSupplierIntegrations } from "@/hooks/useActiveSupplierIntegrations";
 import { useUpdateBatchOrder, useAddItemsToBatch, useBatchOrderItems } from "@/hooks/useBatchOrders";
 import { useMaterialQueue } from "@/hooks/useMaterialQueue";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,16 @@ interface EditBatchDialogProps {
 }
 
 export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: EditBatchDialogProps) => {
-  const [supplierId, setSupplierId] = useState(batchOrder?.supplier_id || "");
+  // Determine initial supplier selection — could be a vendor ID or integration-xxx
+  const getInitialSupplierId = () => {
+    if (batchOrder?.supplier_id) return batchOrder.supplier_id;
+    if (batchOrder?.integration_type || batchOrder?.metadata?.integration_type) {
+      return `integration-${batchOrder.integration_type || batchOrder.metadata.integration_type}`;
+    }
+    return "";
+  };
+
+  const [supplierId, setSupplierId] = useState(getInitialSupplierId());
   const [orderDate, setOrderDate] = useState<Date | undefined>(
     batchOrder?.order_schedule_date ? new Date(batchOrder.order_schedule_date) : undefined
   );
@@ -34,18 +44,18 @@ export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: E
   const [showAddMaterials, setShowAddMaterials] = useState(false);
   const [selectedNewItems, setSelectedNewItems] = useState<string[]>([]);
 
-  const { data: suppliers } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: vendors = [] } = useVendors();
+  const { data: integrations = [] } = useAllSupplierIntegrations();
+
+  const allSuppliers = useMemo(() => {
+    const list: { id: string; name: string; type: 'vendor' | 'integration' }[] = [];
+    vendors.forEach(v => list.push({ id: v.id, name: v.name, type: 'vendor' }));
+    integrations.forEach(i => {
+      const exists = list.some(s => s.name.toLowerCase() === i.name.toLowerCase());
+      if (!exists) list.push({ id: `integration-${i.type}`, name: i.name, type: 'integration' });
+    });
+    return list;
+  }, [vendors, integrations]);
 
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const { data: currentItems } = useBatchOrderItems(batchOrder?.id);
@@ -55,7 +65,7 @@ export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: E
   // Reset form when batch changes
   useEffect(() => {
     if (batchOrder) {
-      setSupplierId(batchOrder.supplier_id || "");
+      setSupplierId(getInitialSupplierId());
       setOrderDate(batchOrder.order_schedule_date ? new Date(batchOrder.order_schedule_date) : undefined);
       setNotes(batchOrder.notes || "");
     }
@@ -63,10 +73,17 @@ export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: E
 
   const handleUpdate = async () => {
     try {
+      const isIntegration = supplierId.startsWith('integration-');
+      const actualSupplierId = isIntegration || supplierId === 'none' || !supplierId ? null : supplierId;
+      const selectedEntry = allSuppliers.find(s => s.id === supplierId);
+      const integrationType = isIntegration ? supplierId.replace('integration-', '') : null;
+
       await updateBatch.mutateAsync({
         id: batchOrder.id,
         updates: {
-          supplier_id: supplierId || null,
+          supplier_id: actualSupplierId,
+          integration_type: integrationType,
+          supplier_name: selectedEntry?.name || null,
           order_schedule_date: orderDate?.toISOString().split('T')[0],
           notes,
         },
@@ -170,20 +187,41 @@ export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: E
               <Label>Supplier</Label>
               <Select value={supplierId} onValueChange={setSupplierId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select supplier (optional for stock items)" />
+                  <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No Supplier (Stock/Internal)</SelectItem>
-                  {suppliers?.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
+                  {integrations.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1.5">
+                        <Globe className="h-3 w-3" />
+                        Integrated Suppliers
+                      </SelectLabel>
+                      {allSuppliers.filter(s => s.type === 'integration').map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          <span className="flex items-center gap-2">
+                            {s.name}
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">API</Badge>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {vendors.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1.5">
+                        <Truck className="h-3 w-3" />
+                        Your Suppliers
+                      </SelectLabel>
+                      {allSuppliers.filter(s => s.type === 'vendor').map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Leave empty or select "No Supplier" for stock items that don't need ordering
-              </p>
             </div>
 
             {/* Order Date */}

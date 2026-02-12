@@ -1235,15 +1235,19 @@ export type Database = {
           expected_completion_days: number | null
           expected_delivery_date: string | null
           id: string
+          integration_type: string | null
           locked_at: string | null
           metadata: Json | null
           notes: string | null
+          order_method: string | null
           order_schedule_date: string | null
           progress_start_date: string | null
           project_id: string | null
+          purchase_order_ref: string | null
           sent_date: string | null
           status: string | null
-          supplier_id: string
+          supplier_id: string | null
+          supplier_name: string | null
           total_amount: number | null
           total_items: number | null
           tracking_number: string | null
@@ -1261,15 +1265,19 @@ export type Database = {
           expected_completion_days?: number | null
           expected_delivery_date?: string | null
           id?: string
+          integration_type?: string | null
           locked_at?: string | null
           metadata?: Json | null
           notes?: string | null
+          order_method?: string | null
           order_schedule_date?: string | null
           progress_start_date?: string | null
           project_id?: string | null
+          purchase_order_ref?: string | null
           sent_date?: string | null
           status?: string | null
-          supplier_id: string
+          supplier_id?: string | null
+          supplier_name?: string | null
           total_amount?: number | null
           total_items?: number | null
           tracking_number?: string | null
@@ -1287,15 +1295,19 @@ export type Database = {
           expected_completion_days?: number | null
           expected_delivery_date?: string | null
           id?: string
+          integration_type?: string | null
           locked_at?: string | null
           metadata?: Json | null
           notes?: string | null
+          order_method?: string | null
           order_schedule_date?: string | null
           progress_start_date?: string | null
           project_id?: string | null
+          purchase_order_ref?: string | null
           sent_date?: string | null
           status?: string | null
-          supplier_id?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
           total_amount?: number | null
           total_items?: number | null
           tracking_number?: string | null
