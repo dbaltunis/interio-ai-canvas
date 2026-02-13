@@ -160,6 +160,26 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResult.data?.id);
 
+    // Also create an in-app notification for the assigned user
+    try {
+      await supabase
+        .from("notifications")
+        .insert({
+          user_id: assignedUserId,
+          type: "info",
+          title: "New Project Assignment",
+          message: `${assignedByName} assigned you to "${projectName}"${clientName ? ` (Client: ${clientName})` : ''}`,
+          category: "project",
+          source_type: "project",
+          source_id: projectId,
+          action_url: `/?jobId=${projectId}`,
+        });
+      console.log("In-app notification created for assigned user");
+    } catch (notifError: any) {
+      // Non-fatal: email was already sent
+      console.warn("Failed to create in-app notification:", notifError.message);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
