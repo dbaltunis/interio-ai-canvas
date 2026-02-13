@@ -294,16 +294,19 @@ export const useUpdateProject = () => {
       // Invalidate dashboard stats when project status changes (affects revenue/active projects)
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats-critical"] });
       queryClient.invalidateQueries({ queryKey: ["revenue-history"] });
-      
+
       // Trigger inventory deduction event for external handling
       if (statusChanged && newStatusName && project.status_id) {
         window.dispatchEvent(new CustomEvent('project-status-changed', {
-          detail: { 
-            projectId: project.id, 
+          detail: {
+            projectId: project.id,
             newStatus: newStatusName,
             newStatusId: project.status_id
           }
         }));
+        // Note: Account owner notification for status changes is handled by the
+        // notify_owner_on_status_change DB trigger (migration 20260213110000)
+        // which catches all status changes including those from Edge Functions.
       }
     },
     onError: (error: any) => {

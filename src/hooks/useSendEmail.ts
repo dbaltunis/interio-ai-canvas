@@ -154,6 +154,31 @@ export const useSendEmail = () => {
         // Status updates now come from Resend webhooks (resend-webhook edge function)
         // No more guessing - real delivery events update the status
 
+        // Notify account owner when a team member sends an email (don't self-notify)
+        try {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("parent_account_id, display_name")
+            .eq("user_id", user.id)
+            .single();
+
+          if (profile?.parent_account_id && profile.parent_account_id !== user.id) {
+            const senderName = profile.display_name || user.email || 'Team member';
+            await supabase.from("notifications").insert({
+              user_id: profile.parent_account_id,
+              title: "Email Sent by Team Member",
+              message: `${senderName} sent an email to ${emailData.to}: "${emailData.subject}"`,
+              type: "info",
+              category: "email",
+              source_type: "email",
+              source_id: emailRecord.id,
+              action_url: "/emails",
+            });
+          }
+        } catch (notifErr) {
+          console.error("Failed to send email notification:", notifErr);
+        }
+
         // Final refresh to show updated status
         await queryClient.invalidateQueries({ queryKey: ['emails'] });
         await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });

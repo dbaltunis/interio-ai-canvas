@@ -97,6 +97,27 @@ serve(async (req) => {
 
     logStep("Quote updated", { paymentStatus });
 
+    // Notify the quote owner about payment
+    if (paymentStatus === "paid" || paymentStatus === "deposit_paid") {
+      try {
+        const amount = session.amount_total ? (session.amount_total / 100).toFixed(2) : '0.00';
+        const label = paymentStatus === "deposit_paid" ? "Deposit" : "Full payment";
+        await supabaseClient.from("notifications").insert({
+          user_id: quote.user_id,
+          title: "Payment Received",
+          message: `${label} of $${amount} received for quote #${quote_id.substring(0, 8)}`,
+          type: "success",
+          category: "payment",
+          source_type: "quote",
+          source_id: quote_id,
+          action_url: `/?tab=quotes&quoteId=${quote_id}`,
+        });
+        logStep("Payment notification created");
+      } catch (notifErr) {
+        logStep("Failed to create payment notification (non-blocking)", { error: String(notifErr) });
+      }
+    }
+
     return new Response(JSON.stringify({ 
       status: paymentStatus,
       amount: session.amount_total ? session.amount_total / 100 : 0,
