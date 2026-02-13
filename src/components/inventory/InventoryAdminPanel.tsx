@@ -169,27 +169,38 @@ export const InventoryAdminPanel = () => {
     });
   }, [inventory]);
 
-  // Export to CSV
-  const exportToCSV = () => {
-    const headers = [
-      'SKU', 'Name', 'Category', 'Subcategory', 'Supplier', 
-      'Quantity', 'Unit', 'Cost Price', 'Total Cost Value', 
-      'Retail Price', 'Total Retail Value', 'Margin %', 'Location', 'Last Updated'
-    ];
+  const canViewCosts = userRoleData?.canViewVendorCosts ?? false;
 
-    const rows = valuationData.map(item => [
-      item.sku, item.name, item.category, item.subcategory, item.supplier,
-      item.quantity, item.unit, item.costPrice.toFixed(2), item.totalCostValue.toFixed(2),
-      item.retailPrice.toFixed(2), item.totalRetailValue.toFixed(2), item.marginPercent.toFixed(1),
-      item.location, item.lastUpdated
-    ]);
+  // Export to CSV - strips cost data if user doesn't have cost visibility
+  const exportToCSV = () => {
+    const headers = canViewCosts
+      ? ['SKU', 'Name', 'Category', 'Subcategory', 'Supplier',
+         'Quantity', 'Unit', 'Cost Price', 'Total Cost Value',
+         'Retail Price', 'Total Retail Value', 'Margin %', 'Location', 'Last Updated']
+      : ['SKU', 'Name', 'Category', 'Subcategory', 'Supplier',
+         'Quantity', 'Unit', 'Retail Price', 'Total Retail Value', 'Location', 'Last Updated'];
+
+    const rows = valuationData.map(item => canViewCosts
+      ? [item.sku, item.name, item.category, item.subcategory, item.supplier,
+         item.quantity, item.unit, item.costPrice.toFixed(2), item.totalCostValue.toFixed(2),
+         item.retailPrice.toFixed(2), item.totalRetailValue.toFixed(2), item.marginPercent.toFixed(1),
+         item.location, item.lastUpdated]
+      : [item.sku, item.name, item.category, item.subcategory, item.supplier,
+         item.quantity, item.unit,
+         item.retailPrice.toFixed(2), item.totalRetailValue.toFixed(2),
+         item.location, item.lastUpdated]
+    );
 
     rows.push([]);
     rows.push(['SUMMARY']);
     rows.push(['Total Items', financialSummary.itemCount.toString()]);
-    rows.push(['Total Cost Value', financialSummary.totalCost.toFixed(2)]);
+    if (canViewCosts) {
+      rows.push(['Total Cost Value', financialSummary.totalCost.toFixed(2)]);
+    }
     rows.push(['Total Retail Value', financialSummary.totalRetail.toFixed(2)]);
-    rows.push(['Expected Profit', financialSummary.expectedProfit.toFixed(2)]);
+    if (canViewCosts) {
+      rows.push(['Expected Profit', financialSummary.expectedProfit.toFixed(2)]);
+    }
     rows.push(['Export Date', new Date().toISOString()]);
 
     const csvContent = [

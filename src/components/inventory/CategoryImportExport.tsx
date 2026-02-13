@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors, useCreateVendor } from "@/hooks/useVendors";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Download, Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { 
   parseFabricCSV, 
@@ -68,6 +70,9 @@ export const CategoryImportExport = ({ category, onImportComplete }: CategoryImp
   const { data: existingVendors } = useVendors();
   const createVendorMutation = useCreateVendor();
   const { toast } = useToast();
+  const { data: roleData } = useUserRole();
+  const canExportInventory = useHasPermission('export_inventory');
+  const canViewCosts = roleData?.canViewVendorCosts ?? false;
   
   const config = CATEGORY_CONFIG[category];
 
@@ -193,9 +198,18 @@ export const CategoryImportExport = ({ category, onImportComplete }: CategoryImp
 
   const handleExport = () => {
     if (!inventory) return;
-    
+
+    if (canExportInventory === false) {
+      toast({
+        title: "Export not allowed",
+        description: "You don't have permission to export inventory data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const categoryItems = inventory.filter(item => item.category === config.dbCategory);
-    
+
     if (categoryItems.length === 0) {
       toast({
         title: "No Data",
@@ -205,7 +219,7 @@ export const CategoryImportExport = ({ category, onImportComplete }: CategoryImp
       return;
     }
 
-    const csvContent = exportCategoryInventory(categoryItems, category);
+    const csvContent = exportCategoryInventory(categoryItems, category, { stripCostPrice: !canViewCosts });
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

@@ -11,13 +11,19 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const SystemMaintenanceCard = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showBackupDialog, setShowBackupDialog] = useState(false);
   const [showSecurityDialog, setShowSecurityDialog] = useState(false);
+  const { data: roleData } = useUserRole();
 
   const handleExportData = async () => {
+    if (!roleData?.isOwner && !roleData?.isSystemOwner) {
+      toast.error('Only account owners can export all data.');
+      return;
+    }
     setIsExporting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
