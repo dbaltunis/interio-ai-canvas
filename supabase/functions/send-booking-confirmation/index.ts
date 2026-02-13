@@ -214,6 +214,26 @@ serve(async (req) => {
       });
     }
 
+    // Create in-app notification for the business owner
+    if (scheduler.user_id) {
+      try {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: scheduler.user_id,
+            type: 'info',
+            title: 'New Booking Received',
+            message: `${customer_name} booked "${scheduler.name}" for ${appointment_date} at ${appointment_time}`,
+            category: 'appointment',
+            source_type: 'appointment',
+            source_id: booking_id,
+            action_url: '/?tab=calendar',
+          });
+      } catch (notifError) {
+        console.warn('Failed to create booking in-app notification:', notifError);
+      }
+    }
+
     // Schedule reminder emails
     const appointmentDateTime = new Date(`${appointment_date}T${appointment_time}`);
     
