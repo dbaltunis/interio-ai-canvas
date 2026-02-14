@@ -3,7 +3,7 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, CheckCheck, MapPin } from "lucide-react";
+import { Video, CheckCheck, MapPin, Users } from "lucide-react";
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
@@ -348,7 +348,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                         <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: styling.background }} />
                         <div className="relative pl-3 pr-1.5 py-1 h-full flex flex-col overflow-hidden">
                           <div
-                            className="text-[11px] font-semibold text-foreground leading-tight overflow-hidden"
+                            className={`font-semibold text-foreground leading-tight overflow-hidden ${finalHeight < 35 ? 'text-[9px]' : 'text-[11px]'}`}
                             style={{
                               display: '-webkit-box',
                               WebkitLineClamp: finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
@@ -360,13 +360,19 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                             {title}
                           </div>
                           {finalHeight > 28 && (
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                            <div className={`flex items-center gap-1 text-muted-foreground mt-0.5 ${finalHeight < 35 ? 'text-[8px]' : 'text-[10px]'}`}>
                               <span className="tabular-nums">{format(startTime, 'H:mm')}</span>
                               <span className="opacity-50">&ndash;</span>
                               <span className="tabular-nums">{format(endTime, 'H:mm')}</span>
                               {(event.video_meeting_link || event.video_provider) && (
                                 <Video className="w-2.5 h-2.5 text-blue-500 ml-0.5" />
                               )}
+                            </div>
+                          )}
+                          {finalHeight > 50 && event.team_member_ids?.length > 0 && (
+                            <div className="text-[9px] text-muted-foreground/80 truncate mt-0.5 flex items-center gap-0.5">
+                              <Users className="w-2.5 h-2.5 shrink-0" />
+                              <span>{event.team_member_ids.length} member{event.team_member_ids.length > 1 ? 's' : ''}</span>
                             </div>
                           )}
                           {finalHeight > 65 && (event.location || event.description) && (

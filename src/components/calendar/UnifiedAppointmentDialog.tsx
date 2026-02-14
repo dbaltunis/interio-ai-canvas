@@ -10,8 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Plus, Video, UserPlus, Bell, AlertCircle, Mail, ChevronDown, Briefcase, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Video, UserPlus, Bell, AlertCircle, Mail, Briefcase, Users } from "lucide-react";
 import { TimeSelect, DurationBadge } from "./TimeSelect";
 import { DatePickerButton } from "./DatePickerButton";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
@@ -74,8 +73,7 @@ export const UnifiedAppointmentDialog = ({
     project_id: "" as string,
   });
 
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // All form fields are always visible (no collapsible sections)
   const [addVideoMeeting, setAddVideoMeeting] = useState(false);
   const [videoProvider, setVideoProvider] = useState<string>('google_meet');
   const [videoLink, setVideoLink] = useState("");
@@ -186,10 +184,7 @@ export const UnifiedAppointmentDialog = ({
           project_id: appointment.project_id || "",
         });
         
-        // Expand more options if editing and there's data
-        if (appointment.location || appointment.description) {
-          setShowMoreOptions(true);
-        }
+        // All fields always visible - no expand needed
       }
     };
     
@@ -201,7 +196,7 @@ export const UnifiedAppointmentDialog = ({
         description: "",
         date: format(selectedDate, 'yyyy-MM-dd'),
         startTime: selectedStartTime || "09:00",
-        endTime: selectedEndTime || "10:00",
+        endTime: selectedEndTime || "09:30",
         location: "",
         appointment_type: "meeting",
         color: defaultColors[0],
@@ -215,8 +210,6 @@ export const UnifiedAppointmentDialog = ({
         client_id: "",
         project_id: "",
       });
-      setShowMoreOptions(false);
-      setShowAdvanced(false);
     }
   }, [appointment, selectedDate, selectedStartTime, selectedEndTime, defaultColors, preferences]);
 
@@ -398,8 +391,6 @@ export const UnifiedAppointmentDialog = ({
     setCopiedLink(false);
     setInviteEmail("");
     setInviteName("");
-    setShowMoreOptions(false);
-    setShowAdvanced(false);
   };
 
   const adjustTime = (field: 'startTime' | 'endTime', minutes: number) => {
@@ -615,158 +606,143 @@ export const UnifiedAppointmentDialog = ({
             />
           </div>
 
-          {/* More Details - Collapsible */}
-          <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
-                <Plus className="h-3.5 w-3.5" />
-                {showMoreOptions ? 'Less options' : 'Location, note, video...'}
-                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showMoreOptions ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-2">
-              {/* Location */}
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+          {/* Location */}
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              placeholder="Add location"
+              value={event.location}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* Note */}
+          <div className="flex items-start gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
+            <Textarea
+              placeholder="Add a note..."
+              value={event.description}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
+              rows={2}
+              className="resize-none text-xs"
+            />
+          </div>
+
+          {/* Video Meeting Toggle */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs">Add video conferencing</span>
+            </div>
+            <Switch
+              checked={addVideoMeeting}
+              onCheckedChange={setAddVideoMeeting}
+            />
+          </div>
+
+          {addVideoMeeting && (
+            <div className="pl-6 space-y-2">
+              <Select value={videoProvider} onValueChange={setVideoProvider}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <span>{selectedProvider?.icon}</span>
+                      <span>{selectedProvider?.name}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {connectedProviders.map((provider) => (
+                    <SelectItem key={provider.provider} value={provider.provider!}>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span>{provider.icon}</span>
+                        <span>{provider.name}</span>
+                        {provider.connected && provider.provider !== 'manual' && (
+                          <Badge variant="secondary" className="text-[10px] h-4">Auto</Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {videoProvider === 'manual' && (
                 <Input
-                  placeholder="Add location"
-                  value={event.location}
-                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+                  placeholder="Paste meeting link..."
+                  value={videoLink}
+                  onChange={(e) => setVideoLink(e.target.value)}
                   className="h-8 text-xs"
                 />
-              </div>
-
-              {/* Note */}
-              <div className="flex items-start gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
-                <Textarea
-                  placeholder="Add a note..."
-                  value={event.description}
-                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
-                  rows={2}
-                  className="resize-none text-xs"
-                />
-              </div>
-
-              {/* Video Meeting Toggle */}
-              <div className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-2">
-                  <Video className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs">Add video conferencing</span>
-                </div>
-                <Switch
-                  checked={addVideoMeeting}
-                  onCheckedChange={setAddVideoMeeting}
-                />
-              </div>
-
-              {addVideoMeeting && (
-                <div className="pl-6 space-y-2">
-                  <Select value={videoProvider} onValueChange={setVideoProvider}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          <span>{selectedProvider?.icon}</span>
-                          <span>{selectedProvider?.name}</span>
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {connectedProviders.map((provider) => (
-                        <SelectItem key={provider.provider} value={provider.provider!}>
-                          <div className="flex items-center gap-2 text-xs">
-                            <span>{provider.icon}</span>
-                            <span>{provider.name}</span>
-                            {provider.connected && provider.provider !== 'manual' && (
-                              <Badge variant="secondary" className="text-[10px] h-4">Auto</Badge>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {videoProvider === 'manual' && (
-                    <Input
-                      placeholder="Paste meeting link..."
-                      value={videoLink}
-                      onChange={(e) => setVideoLink(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  )}
-                </div>
               )}
+            </div>
+          )}
 
-              {/* Notifications Toggle */}
-              <div className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs">Reminder</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {event.notification_enabled && (
-                    <Select
-                      value={event.notification_minutes.toString()}
-                      onValueChange={(v) => setEvent(prev => ({ ...prev, notification_minutes: parseInt(v) }))}
-                    >
-                      <SelectTrigger className="h-7 w-20 text-[10px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5 min</SelectItem>
-                        <SelectItem value="15">15 min</SelectItem>
-                        <SelectItem value="30">30 min</SelectItem>
-                        <SelectItem value="60">1 hour</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <Switch
-                    checked={event.notification_enabled}
-                    onCheckedChange={(checked) => setEvent(prev => ({ ...prev, notification_enabled: checked }))}
-                  />
-                </div>
-              </div>
-
-              {/* Visibility auto-determined by team member selection */}
-
-              {/* Send Email Invitation */}
-              <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input
-                  type="email"
-                  placeholder="Invite by email..."
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="h-8 text-xs flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (inviteEmail && appointment?.id) {
-                      sendInvitation.mutate({
-                        appointmentId: appointment.id,
-                        recipientEmail: inviteEmail,
-                        recipientName: inviteName || undefined
-                      });
-                      setInviteEmail("");
-                      setInviteName("");
-                    } else if (inviteEmail) {
-                      // Store for later — will be used when appointment is saved
-                      setEvent(prev => ({ ...prev, inviteClientEmail: inviteEmail }));
-                      setInviteEmail("");
-                      toast({ title: "Email added", description: "Invitation will be sent when the event is saved." });
-                    }
-                  }}
-                  disabled={!inviteEmail || sendInvitation.isPending}
-                  className="h-8 text-xs"
+          {/* Notifications Toggle */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs">Reminder</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {event.notification_enabled && (
+                <Select
+                  value={event.notification_minutes.toString()}
+                  onValueChange={(v) => setEvent(prev => ({ ...prev, notification_minutes: parseInt(v) }))}
                 >
-                  {sendInvitation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
-                </Button>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+                  <SelectTrigger className="h-7 w-20 text-[10px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 min</SelectItem>
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <Switch
+                checked={event.notification_enabled}
+                onCheckedChange={(checked) => setEvent(prev => ({ ...prev, notification_enabled: checked }))}
+              />
+            </div>
+          </div>
+
+          {/* Send Email Invitation */}
+          <div className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              type="email"
+              placeholder="Invite by email..."
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="h-8 text-xs flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (inviteEmail && appointment?.id) {
+                  sendInvitation.mutate({
+                    appointmentId: appointment.id,
+                    recipientEmail: inviteEmail,
+                    recipientName: inviteName || undefined
+                  });
+                  setInviteEmail("");
+                  setInviteName("");
+                } else if (inviteEmail) {
+                  setEvent(prev => ({ ...prev, inviteClientEmail: inviteEmail }));
+                  setInviteEmail("");
+                  toast({ title: "Email added", description: "Invitation will be sent when the event is saved." });
+                }
+              }}
+              disabled={!inviteEmail || sendInvitation.isPending}
+              className="h-8 text-xs"
+            >
+              {sendInvitation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
+            </Button>
+          </div>
         </div>
 
         {/* Footer Actions - Clean and minimal */}

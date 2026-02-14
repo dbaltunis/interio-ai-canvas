@@ -540,10 +540,10 @@ export function WindowSummaryCard({
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
                     measurements={{
-                      measurement_a: surface.measurement_a || surface.width || 200,
-                      measurement_b: surface.measurement_b || surface.height || 250,
-                      rail_width: surface.rail_width || surface.width || 200,
-                      drop: surface.drop || surface.height || 250,
+                      measurement_a: surface.measurement_a || surface.width || 0,
+                      measurement_b: surface.measurement_b || surface.height || 0,
+                      rail_width: surface.rail_width || surface.width || 0,
+                      drop: surface.drop || surface.height || 0,
                       ...surface
                     }}
                     template={{

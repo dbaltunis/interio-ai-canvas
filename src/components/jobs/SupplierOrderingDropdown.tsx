@@ -148,7 +148,13 @@ export function SupplierOrderingDropdown({
 
   const handleSupplierClick = (supplier: DetectedSupplier) => {
     if (supplier.isOrdered) return;
-    if (getIsTestMode(supplier.type)) return; // Don't allow clicking test mode suppliers
+    if (getIsTestMode(supplier.type)) return;
+    if (!supplier.items || supplier.items.length === 0) {
+      toast.info(`No items to order from ${supplier.name}`, {
+        description: 'Add products from this supplier to the quote first.',
+      });
+      return;
+    }
     setSelectedSupplier(supplier);
     setConfirmDialogOpen(true);
   };

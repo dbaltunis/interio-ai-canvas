@@ -4,7 +4,7 @@ import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
-import { Video, CheckCheck } from "lucide-react";
+import { Video, CheckCheck, Users } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { EventDetailPopover } from "./EventDetailPopover";
@@ -155,7 +155,7 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
         ) : (
           <>
             <div
-              className="text-[11px] font-semibold text-foreground leading-tight overflow-hidden"
+              className={`font-semibold text-foreground leading-tight overflow-hidden ${finalHeight < 35 ? 'text-[9px]' : 'text-[11px]'}`}
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
@@ -166,7 +166,7 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
             >
               {event.isBooking ? (event.bookingData?.customer_name || 'Customer') : event.title}
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+            <div className={`flex items-center gap-1 text-muted-foreground mt-0.5 ${finalHeight < 35 ? 'text-[8px]' : 'text-[10px]'}`}>
               <span className="tabular-nums">{format(startTime, 'H:mm')}</span>
               <span className="opacity-50">–</span>
               <span className="tabular-nums">{format(endTime, 'H:mm')}</span>
@@ -174,6 +174,12 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
                 <Video className="w-2.5 h-2.5 text-blue-500 ml-0.5" />
               )}
             </div>
+            {finalHeight > 50 && event.team_member_ids?.length > 0 && (
+              <div className="text-[9px] text-muted-foreground/80 truncate mt-0.5 flex items-center gap-0.5">
+                <Users className="w-2.5 h-2.5 shrink-0" />
+                <span>{event.team_member_ids.length} member{event.team_member_ids.length > 1 ? 's' : ''}</span>
+              </div>
+            )}
             {finalHeight > 65 && (event.location || event.description) && (
               <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
                 {event.location || event.description}

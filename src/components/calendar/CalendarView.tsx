@@ -100,7 +100,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [selectedStartTime, setSelectedStartTime] = useState<string>("09:00");
-  const [selectedEndTime, setSelectedEndTime] = useState<string>("10:00");
+  const [selectedEndTime, setSelectedEndTime] = useState<string>("09:30");
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showTasksView, setShowTasksView] = useState(false); // Toggle between calendar and tasks
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
@@ -341,17 +341,18 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     
     // Parse time range if it contains a dash (from drag creation)
     let startTime = time;
-    let endTime = '10:00';
-    
+    let endTime = '09:30';
+
     if (time.includes('-')) {
       const [start, end] = time.split('-');
       startTime = start;
       endTime = end;
     } else {
-      // For single time slot clicks, default to 1 hour duration
+      // For single time slot clicks, default to 30 min duration
       const hour = parseInt(time.split(':')[0]);
-      const minutes = time.split(':')[1];
-      endTime = `${(hour + 1).toString().padStart(2, '0')}:${minutes}`;
+      const mins = parseInt(time.split(':')[1]);
+      const totalMins = hour * 60 + mins + 30;
+      endTime = `${Math.floor(totalMins / 60).toString().padStart(2, '0')}:${(totalMins % 60).toString().padStart(2, '0')}`;
     }
     
     // Store the selected times
@@ -628,7 +629,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             setSelectedAppointment(null);
             setSelectedDate(undefined);
             setSelectedStartTime("09:00");
-            setSelectedEndTime("10:00");
+            setSelectedEndTime("09:30");
           }
         }}
         appointment={selectedAppointment}

@@ -170,7 +170,7 @@ export const WindowManagementDialog = ({
   const handleInventorySelect = (item: any) => {
     setSelectedInventoryItem(item);
     // Calculate preliminary cost based on surface dimensions and item pricing
-    const surfaceArea = (surface.width || 60) * (surface.height || 48) / 144; // sq ft
+    const surfaceArea = (surface.width || 0) * (surface.height || 0) / 144; // sq ft
     const estimatedCost = surfaceArea * (item.selling_price || item.unit_price || 0);
     setCalculatedCost(estimatedCost);
   };
