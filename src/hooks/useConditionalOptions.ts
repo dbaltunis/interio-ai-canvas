@@ -251,12 +251,63 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
     return null; // null means no filtering, show all
   };
 
+  // Build display order: options activated by rules appear right after their trigger option
+  const getDisplayOrder = (optionKeys: string[]): string[] => {
+    // Build a map: target_option_key -> trigger_option_key (from show_option rules)
+    const triggerMap: Record<string, string> = {};
+    rules.forEach(rule => {
+      if (rule.effect.action === 'show_option' || rule.effect.action === 'require_option') {
+        const triggerKey = rule.condition.option_key;
+        const targetKey = rule.effect.target_option_key;
+        // Only map if the condition is currently met (option is visible)
+        if (!conditionalState.hiddenOptions.includes(targetKey)) {
+          triggerMap[targetKey] = triggerKey;
+        }
+      }
+    });
+
+    // Separate: base options (not triggered by a rule) vs rule-activated options
+    const baseOptions: string[] = [];
+    const triggeredOptions: Record<string, string[]> = {}; // triggerKey -> [targetKeys]
+
+    optionKeys.forEach(key => {
+      if (triggerMap[key]) {
+        const trigger = triggerMap[key];
+        if (!triggeredOptions[trigger]) triggeredOptions[trigger] = [];
+        triggeredOptions[trigger].push(key);
+      } else {
+        baseOptions.push(key);
+      }
+    });
+
+    // Build final order: insert triggered options right after their trigger
+    const result: string[] = [];
+    baseOptions.forEach(key => {
+      result.push(key);
+      if (triggeredOptions[key]) {
+        result.push(...triggeredOptions[key]);
+      }
+    });
+
+    // Add any orphaned triggered options at the end (trigger not in list)
+    Object.entries(triggeredOptions).forEach(([trigger, targets]) => {
+      if (!baseOptions.includes(trigger)) {
+        targets.forEach(t => {
+          if (!result.includes(t)) result.push(t);
+        });
+      }
+    });
+
+    return result;
+  };
+
   return {
     ...conditionalState,
     isOptionVisible,
     isOptionRequired,
     getDefaultValue,
     getAllowedValues,
+    getDisplayOrder,
     rules,
   };
 };

@@ -69,7 +69,7 @@ export const ProjectStatusProvider: React.FC<ProjectStatusProviderProps> = ({
       return data;
     },
     enabled: !!projectId,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 1000,
   });
 
   // Fetch status details
@@ -93,7 +93,7 @@ export const ProjectStatusProvider: React.FC<ProjectStatusProviderProps> = ({
       return data as StatusInfo;
     },
     enabled: !!project?.status_id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 1000,
   });
 
   const value = useMemo(() => {

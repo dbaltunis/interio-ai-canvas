@@ -83,8 +83,8 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
       name: surface.name,
       surface_type: surface.surface_type,
       room_id: surface.room_id,
-      width: surface.width || 60,
-      height: surface.height || 48
+      width: surface.width || '',
+      height: surface.height || ''
     });
   };
 
@@ -210,7 +210,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
                           {getRoomName(surface.room_id)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {surface.width || 60}" × {surface.height || 48}"
+                          {surface.width && surface.height ? `${surface.width}" × ${surface.height}"` : 'Not measured'}
                         </p>
                       </div>
                     </div>

@@ -71,10 +71,20 @@ export const SectionHelpButton = ({
           </div>
           
           {/* Key Points */}
-          {content.keyPoints && content.keyPoints.length > 0}
-          
+          {content.keyPoints && content.keyPoints.length > 0 && (
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+              {content.keyPoints.map((point: string, i: number) => (
+                <li key={i}>{point}</li>
+              ))}
+            </ul>
+          )}
+
           {/* Related Sections */}
-          {content.relatedSections && content.relatedSections.length > 0}
+          {content.relatedSections && content.relatedSections.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Related:</span> {content.relatedSections.join(', ')}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>;

@@ -294,6 +294,12 @@ export const useUpdateProject = () => {
       // Invalidate dashboard stats when project status changes (affects revenue/active projects)
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats-critical"] });
       queryClient.invalidateQueries({ queryKey: ["revenue-history"] });
+      // Invalidate lock/unlock status so UI reacts instantly without page refresh
+      if (statusChanged) {
+        queryClient.invalidateQueries({ queryKey: ["project-status-context", project.id] });
+        queryClient.invalidateQueries({ queryKey: ["status-info"] });
+        queryClient.invalidateQueries({ queryKey: ["status_permissions"] });
+      }
 
       // Trigger inventory deduction event for external handling
       if (statusChanged && newStatusName && project.status_id) {

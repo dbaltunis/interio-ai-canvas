@@ -161,7 +161,7 @@ export const DynamicCurtainOptions = ({
     return result;
   }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining, treatmentOptions]);
   
-  const { isOptionVisible, getDefaultValue, getAllowedValues, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
+  const { isOptionVisible, getDefaultValue, getAllowedValues, getDisplayOrder, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
   
   console.log('🔧 DynamicCurtainOptions - Conditional Rules Debug:', {
     templateId: template?.id,
@@ -1373,7 +1373,18 @@ export const DynamicCurtainOptions = ({
         });
         return null;
       })()}
-      {treatmentOptions.length > 0 && treatmentOptions.map(option => {
+      {treatmentOptions.length > 0 && (() => {
+        // Reorder options so rule-activated ones appear right after their trigger
+        const orderedKeys = getDisplayOrder(treatmentOptions.map(o => o.key));
+        const orderedOptions = orderedKeys
+          .map(key => treatmentOptions.find(o => o.key === key))
+          .filter(Boolean) as typeof treatmentOptions;
+        // Add any options not in the ordered list (safety fallback)
+        treatmentOptions.forEach(o => {
+          if (!orderedOptions.includes(o)) orderedOptions.push(o);
+        });
+        return orderedOptions;
+      })().map(option => {
         // Filter: check visibility AND has option values
         // NOTE: Since we now fetch by template ID, only enabled options are returned
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
