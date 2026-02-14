@@ -153,13 +153,32 @@ export const PERMISSION_DETAILS: Record<string, {
     required: [],
     scope: 'own'
   },
-  create_appointments: { 
-    label: 'Create Appointments', 
-    description: 'Schedule new appointments', 
-    category: 'calendar', 
-    required: ['view_own_calendar'] 
+  create_appointments: {
+    label: 'Create Appointments',
+    description: 'Schedule new appointments',
+    category: 'calendar',
+    required: ['view_own_calendar']
   },
-  
+  delete_appointments: {
+    label: 'Delete Appointments',
+    description: 'Remove appointments from the calendar',
+    category: 'calendar',
+    required: ['view_own_calendar'],
+    warning: true
+  },
+  manage_calendar: {
+    label: 'Manage Calendar',
+    description: 'Full calendar control including settings and integrations',
+    category: 'calendar',
+    required: ['view_own_calendar']
+  },
+  schedule_services: {
+    label: 'Schedule Services',
+    description: 'Create calendar events from service selections in jobs',
+    category: 'calendar',
+    required: ['create_appointments']
+  },
+
   // ===== INVENTORY & PRODUCTS =====
   view_inventory: { 
     label: 'View Inventory', 
@@ -192,11 +211,23 @@ export const PERMISSION_DETAILS: Record<string, {
     category: 'inventory', 
     required: ['view_templates'] 
   },
-  view_window_treatments: { 
-    label: 'View Products & Templates', 
-    description: 'Access Settings > Products tab for templates and treatment configuration', 
-    category: 'inventory', 
-    required: [] 
+  view_window_treatments: {
+    label: 'View Products & Templates',
+    description: 'Access Settings > Products tab for templates and treatment configuration',
+    category: 'inventory',
+    required: []
+  },
+  view_services: {
+    label: 'View Services',
+    description: 'Browse available services and service offerings',
+    category: 'inventory',
+    required: []
+  },
+  manage_services: {
+    label: 'Manage Services',
+    description: 'Create, edit, and configure service offerings',
+    category: 'inventory',
+    required: ['view_services']
   },
   
   // ===== TEAM =====
@@ -324,13 +355,14 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'edit_all_clients', 'edit_assigned_clients', 'edit_clients',
     'delete_clients',
     'export_clients', 'import_clients',
-    // Calendar (6)
+    // Calendar (8)
     'view_all_calendar', 'view_own_calendar', 'view_calendar',
-    'create_appointments', 'delete_appointments', 'manage_calendar',
-    // Inventory & Products (14)
+    'create_appointments', 'delete_appointments', 'manage_calendar', 'schedule_services',
+    // Inventory & Products (16)
     'view_inventory', 'manage_inventory', 'manage_inventory_admin',
     'view_templates', 'manage_templates',
     'view_window_treatments', 'manage_window_treatments',
+    'view_services', 'manage_services',
     'view_vendors', 'manage_vendors',
     'view_materials',
     'export_inventory', 'import_inventory',
@@ -365,13 +397,14 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'edit_all_clients', 'edit_assigned_clients', 'edit_clients',
     'delete_clients',
     'export_clients', 'import_clients',
-    // Calendar (6)
+    // Calendar (8)
     'view_all_calendar', 'view_own_calendar', 'view_calendar',
-    'create_appointments', 'delete_appointments', 'manage_calendar',
-    // Inventory & Products (14)
+    'create_appointments', 'delete_appointments', 'manage_calendar', 'schedule_services',
+    // Inventory & Products (16)
     'view_inventory', 'manage_inventory', 'manage_inventory_admin',
     'view_templates', 'manage_templates',
     'view_window_treatments', 'manage_window_treatments',
+    'view_services', 'manage_services',
     'view_vendors', 'manage_vendors',
     'view_materials',
     'export_inventory', 'import_inventory',
@@ -399,7 +432,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs', 'delete_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
+    'delete_appointments', 'manage_calendar', 'schedule_services',
     'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates', 'view_window_treatments',
+    'view_services', 'manage_services',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings',
     // Additional permissions
@@ -411,8 +446,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // Team oversight, can see costs but not manage all settings
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients',
-    'view_all_calendar', 'view_own_calendar', 'create_appointments',
+    'view_all_calendar', 'view_own_calendar', 'create_appointments', 'schedule_services',
     'view_inventory', 'manage_inventory', 'view_templates', 'view_window_treatments',
+    'view_services',
     'view_team_members', 'view_team_performance', 'send_team_messages',
     'view_settings',
     // Additional permissions
@@ -424,8 +460,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // Limited to assigned work only, no cost visibility
     'view_assigned_jobs', 'create_jobs', 'edit_assigned_jobs',
     'view_assigned_clients', 'create_clients', 'edit_assigned_clients',
-    'view_own_calendar', 'create_appointments',
+    'view_own_calendar', 'create_appointments', 'schedule_services',
     'view_inventory', 'view_templates', 'view_window_treatments',
+    'view_services',
     'view_team_members', 'send_team_messages',
     'view_settings',
     // Additional permissions

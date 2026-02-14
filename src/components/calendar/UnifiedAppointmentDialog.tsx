@@ -35,6 +35,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
+interface EventPrefill {
+  title?: string;
+  description?: string;
+  appointment_type?: string;
+  client_id?: string;
+  project_id?: string;
+}
+
 interface UnifiedAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,15 +50,17 @@ interface UnifiedAppointmentDialogProps {
   selectedStartTime?: string;
   selectedEndTime?: string;
   appointment?: any;
+  prefill?: EventPrefill;
 }
 
-export const UnifiedAppointmentDialog = ({ 
-  open, 
-  onOpenChange, 
+export const UnifiedAppointmentDialog = ({
+  open,
+  onOpenChange,
   selectedDate,
   selectedStartTime,
   selectedEndTime,
-  appointment 
+  appointment,
+  prefill,
 }: UnifiedAppointmentDialogProps) => {
   const isEditing = !!appointment;
   const [event, setEvent] = useState({
@@ -192,13 +202,13 @@ export const UnifiedAppointmentDialog = ({
     
     if (!appointment && selectedDate) {
       setEvent({
-        title: "",
-        description: "",
+        title: prefill?.title || "",
+        description: prefill?.description || "",
         date: format(selectedDate, 'yyyy-MM-dd'),
         startTime: selectedStartTime || "09:00",
         endTime: selectedEndTime || "09:30",
         location: "",
-        appointment_type: "meeting",
+        appointment_type: (prefill?.appointment_type || "meeting") as any,
         color: defaultColors[0],
         video_meeting_link: "",
         selectedTeamMembers: [],
@@ -207,11 +217,11 @@ export const UnifiedAppointmentDialog = ({
         notification_minutes: 15,
         visibility: preferences?.default_event_visibility || "private",
         shared_with_organization: false,
-        client_id: "",
-        project_id: "",
+        client_id: prefill?.client_id || "",
+        project_id: prefill?.project_id || "",
       });
     }
-  }, [appointment, selectedDate, selectedStartTime, selectedEndTime, defaultColors, preferences]);
+  }, [appointment, selectedDate, selectedStartTime, selectedEndTime, defaultColors, preferences, prefill]);
 
   const isValidDateRange = useMemo(() => {
     if (!event.date || !event.startTime || !event.endTime) return true;
