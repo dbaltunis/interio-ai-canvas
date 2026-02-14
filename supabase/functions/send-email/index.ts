@@ -30,8 +30,9 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let requestBody: any = {};
   try {
-    const requestBody = await req.json();
+    requestBody = await req.json();
     const { to, subject, content, html, client_id, user_id, bookingId, emailId, message, attachmentPaths }: EmailRequest = requestBody;
 
     console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId, emailId, attachments: attachmentPaths?.length || 0 });
@@ -176,25 +177,25 @@ const handler = async (req: Request): Promise<Response> => {
     let sendGridApiKey = null;
     
     if (user_id) {
+      // Get account owner for multi-tenant support (team members share owner's settings)
+      const { data: accountOwner } = await supabase.rpc('get_account_owner', {
+        user_id_param: user_id
+      });
+      const ownerId = accountOwner || user_id;
+
       const { data: settings } = await supabase
         .from("email_settings")
         .select("from_email, from_name, reply_to_email, signature, active, use_auto_signature, show_footer")
-        .eq("user_id", user_id)
+        .eq("account_owner_id", ownerId)
         .eq("active", true)
-        .single();
-      
+        .maybeSingle();
+
       if (settings?.from_email) {
         fromEmail = settings.from_email;
         fromName = settings.from_name || fromName;
         emailSettings = settings;
         console.log("Using user email settings:", { fromEmail, fromName, hasSignature: !!settings.signature });
       }
-
-      // Check for optional custom SendGrid integration
-      const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
-        user_id_param: user_id 
-      });
-      const ownerId = accountOwner || user_id;
 
       const { data: integrationSettings } = await supabase
         .from('integration_settings')
@@ -476,7 +477,25 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("Error in send-email function:", error);
-    
+
+    // Notify the sender about the email failure
+    if (requestBody?.user_id) {
+      try {
+        await supabase.from("notifications").insert({
+          user_id: requestBody.user_id,
+          title: "Email Delivery Failed",
+          message: `Failed to send email to ${requestBody.to || 'recipient'}: ${error.message || 'Unknown error'}`,
+          type: "error",
+          category: "email",
+          source_type: "email",
+          source_id: requestBody.emailId || null,
+          action_url: "/emails",
+        });
+      } catch (notifErr) {
+        console.error("Failed to create failure notification:", notifErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: false,

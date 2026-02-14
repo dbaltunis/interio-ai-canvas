@@ -212,6 +212,26 @@ ${order.message ? `\n**Customer Message:**\n${order.message}` : ""}
 
     logStep("Job created successfully", { jobId: job.id, clientId });
 
+    // Notify store owner about the new order
+    try {
+      const orderTotal = order.total_amount?.toFixed(2) || '0.00';
+      await supabaseClient
+        .from("notifications")
+        .insert({
+          user_id: store.user_id,
+          title: paymentStatus === "paid" ? "New Paid Order Received" : "New Store Order",
+          message: `${order.customer_name} placed an order for $${orderTotal}${paymentStatus === "paid" ? " (paid)" : " (pending payment)"}`,
+          type: paymentStatus === "paid" ? "success" : "info",
+          category: "store",
+          source_type: "store_order",
+          source_id: order.id,
+          action_url: `/?jobId=${job.id}`,
+        });
+      logStep("Store owner notified");
+    } catch (notifErr) {
+      logStep("Failed to notify store owner (non-blocking)", { error: String(notifErr) });
+    }
+
     return new Response(JSON.stringify({ 
       status: paymentStatus,
       order_id: order.id,

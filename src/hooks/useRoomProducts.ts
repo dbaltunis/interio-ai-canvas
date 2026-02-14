@@ -2,6 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
+import { checkProjectStatusAsync } from "@/contexts/ProjectStatusContext";
+
+/** Look up the project_id for a room so we can check locked status */
+async function getProjectIdForRoom(roomId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("rooms")
+    .select("project_id")
+    .eq("id", roomId)
+    .single();
+  return data?.project_id ?? null;
+}
 
 export interface RoomProduct {
   id: string;
@@ -75,6 +86,15 @@ export const useCreateRoomProduct = () => {
 
   return useMutation({
     mutationFn: async (product: RoomProductInsert) => {
+      // Check project status before adding product
+      const projectId = await getProjectIdForRoom(product.room_id);
+      if (projectId) {
+        const status = await checkProjectStatusAsync(projectId);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot add product: Project is in "${status.statusName}" status`);
+        }
+      }
+
       // FIX: Use effectiveOwnerId for multi-tenant support
       const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
@@ -111,7 +131,16 @@ export const useCreateRoomProducts = () => {
   return useMutation({
     mutationFn: async (products: RoomProductInsert[]) => {
       if (products.length === 0) return [];
-      
+
+      // Check project status before adding products
+      const projectId = await getProjectIdForRoom(products[0].room_id);
+      if (projectId) {
+        const status = await checkProjectStatusAsync(projectId);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot add products: Project is in "${status.statusName}" status`);
+        }
+      }
+
       // FIX: Use effectiveOwnerId for multi-tenant support
       const { effectiveOwnerId } = await getEffectiveOwnerForMutation();
 
@@ -150,6 +179,15 @@ export const useUpdateRoomProduct = () => {
 
   return useMutation({
     mutationFn: async ({ id, roomId, ...updates }: { id: string; roomId: string; quantity?: number; notes?: string }) => {
+      // Check project status before updating
+      const projectId = await getProjectIdForRoom(roomId);
+      if (projectId) {
+        const status = await checkProjectStatusAsync(projectId);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot update product: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const updateData: any = { ...updates };
       
       // If quantity changed, recalculate total
@@ -194,6 +232,15 @@ export const useDeleteRoomProduct = () => {
 
   return useMutation({
     mutationFn: async ({ id, roomId }: { id: string; roomId: string }) => {
+      // Check project status before deleting
+      const projectId = await getProjectIdForRoom(roomId);
+      if (projectId) {
+        const status = await checkProjectStatusAsync(projectId);
+        if (status.isLocked || status.isViewOnly) {
+          throw new Error(`Cannot remove product: Project is in "${status.statusName}" status`);
+        }
+      }
+
       const { error } = await supabase
         .from("room_products")
         .delete()

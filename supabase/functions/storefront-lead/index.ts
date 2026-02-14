@@ -165,18 +165,16 @@ Deno.serve(async (req) => {
 
     // Create notification for account owner
     await supabase
-      .from('user_notifications')
+      .from('notifications')
       .insert({
         user_id: account_id,
         title: `New ${isNewClient ? 'Lead' : 'Inquiry'}: ${name}`,
         message: `${email}${product_interest ? ` - interested in ${product_interest}` : ''}`,
-        type: 'lead',
-        priority: 'normal',
-        metadata: {
-          client_id: clientId,
-          source: source || 'storefront',
-          product_interest
-        }
+        type: 'info',
+        category: 'client',
+        source_type: 'client',
+        source_id: clientId,
+        action_url: '/clients?clientId=' + clientId,
       });
 
     console.log(`Lead processed successfully: ${clientId}, new: ${isNewClient}`);

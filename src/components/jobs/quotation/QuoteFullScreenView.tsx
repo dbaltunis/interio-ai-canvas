@@ -16,6 +16,7 @@ import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateH
 import { useQuoteTemplateData } from "@/hooks/useQuoteTemplateData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -60,6 +61,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canExportJobs = useHasPermission('export_jobs');
 
   // Handle item image change (upload or library pick)
   const handleItemImageChange = useCallback(async (itemId: string, imageUrl: string | null) => {
@@ -127,6 +129,10 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
   // Handle CSV export
   const handleExportCSV = (format: 'generic' | 'xero' | 'quickbooks') => {
+    if (canExportJobs === false) {
+      toast({ title: "Export not allowed", description: "You don't have permission to export job data.", variant: "destructive" });
+      return;
+    }
     const exportData = prepareInvoiceExportData(quote, client, quotationItems, businessSettings);
     
     switch (format) {

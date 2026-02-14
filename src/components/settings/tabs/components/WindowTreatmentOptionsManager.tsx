@@ -27,9 +27,11 @@ import { SortableOptionItem } from "./SortableOptionItem";
 import { InventorySyncDialog } from "./InventorySyncDialog";
 import { HeadingFilter, HEADING_TYPES } from "./HeadingFilter";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
+  const { data: roleData } = useUserRole();
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
   const [activeTreatment, setActiveTreatment] = useState<TreatmentCategoryDbValue>(TREATMENT_CATEGORIES.ROLLER_BLINDS.db_value);
@@ -1056,6 +1058,14 @@ export const WindowTreatmentOptionsManager = () => {
 
   // Export full option data as CSV
   const handleExportOptionsCSV = () => {
+    if (!roleData?.isOwner && !roleData?.isSystemOwner && !roleData?.isAdmin) {
+      toast({
+        title: "Export not allowed",
+        description: "Only owners and admins can export option pricing data.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (uniqueOptionValues.length === 0) {
       toast({
         title: "No options to export",

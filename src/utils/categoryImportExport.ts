@@ -631,7 +631,8 @@ const extractColorsFromTags = (tags: string[] | undefined): { colors: string[], 
 };
 
 // EXPORT FUNCTIONS
-export const exportCategoryInventory = (items: any[], category: string): string => {
+export const exportCategoryInventory = (items: any[], category: string, options?: { stripCostPrice?: boolean }): string => {
+  const hideCost = options?.stripCostPrice === true;
   if (category === 'fabrics') {
     const headers = [
       'name', 'sku', 'description', 'subcategory', 'product_category', 'compatible_treatments', 'colors', 'track_inventory',
@@ -665,7 +666,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         item.quantity ?? 0,
         `"${item.unit || 'meters'}"`,
         item.reorder_point ?? 0,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${(item as any).metadata?.priceGroup || ''}"`,
         item.fabric_width || '',
@@ -703,7 +704,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         isTracked,
         item.quantity ?? 0,
         `"${item.unit || 'pieces'}"`,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${item.supplier || ''}"`,
         `"${(item as any).metadata?.vendor_name || ''}"`,
@@ -751,7 +752,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         item.quantity ?? 0,
         `"${item.unit || 'rolls'}"`,
         item.reorder_point ?? 0,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${(item as any).metadata?.price_group || ''}"`,
         item.roll_width || '',
@@ -793,7 +794,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         isTracked,
         item.quantity ?? 0,
         `"${item.unit || 'meters'}"`,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${item.supplier || ''}"`,
         `"${(item as any).metadata?.vendor_name || ''}"`,
@@ -832,7 +833,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         isTracked,
         item.quantity ?? 0,
         `"${item.unit || 'pieces'}"`,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${item.supplier || ''}"`,
         `"${(item as any).metadata?.vendor_name || ''}"`,
@@ -868,7 +869,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         isTracked,
         item.quantity ?? 0,
         `"${item.unit || 'service'}"`,
-        item.cost_price || 0,
+        hideCost ? '' : (item.cost_price || 0),
         item.selling_price || 0,
         `"${item.supplier || ''}"`,
         `"${item.location || ''}"`

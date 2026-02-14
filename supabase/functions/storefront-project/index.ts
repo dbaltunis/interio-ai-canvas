@@ -440,19 +440,16 @@ Deno.serve(async (req) => {
       });
 
     await supabase
-      .from('user_notifications')
+      .from('notifications')
       .insert({
         user_id: account_id,
         title: `New Online Quote: ${customer.name}`,
         message: `${items.length} item(s) - ${currency} ${quoteTotal.toFixed(2)}`,
-        type: 'project',
-        priority: 'high',
-        metadata: {
-          project_id: project.id,
-          quote_id: quote.id,
-          client_id: clientId,
-          source,
-        },
+        type: 'info',
+        category: 'quote',
+        source_type: 'quote',
+        source_id: quote.id,
+        action_url: '/?jobId=' + project.id,
       });
 
     console.log(`Project completed: ${project.id}, quote total: ${quoteTotal} ${currency}`);

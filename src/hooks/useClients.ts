@@ -205,9 +205,34 @@ export const useCreateClient = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      // Removed unnecessary success toast
+
+      // Notify account owner when a team member creates a client (don't self-notify)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && currentUserId && effectiveOwnerId && currentUserId !== effectiveOwnerId) {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("display_name")
+            .eq("user_id", user.id)
+            .single();
+
+          const creatorName = profile?.display_name || user.email || 'Team member';
+          await supabase.from("notifications").insert({
+            user_id: effectiveOwnerId,
+            title: "New Client Added",
+            message: `${creatorName} added a new client: ${data.name}`,
+            type: "info",
+            category: "client",
+            source_type: "client",
+            source_id: data.id,
+            action_url: `/clients?clientId=${data.id}`,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to send new client notification:", err);
+      }
     },
     onError: (error: any) => {
       console.error("Failed to create client:", error);

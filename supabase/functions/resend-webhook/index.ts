@@ -116,6 +116,40 @@ serve(async (req: Request) => {
       }
     }
 
+    // Create in-app notification for bounce/complaint events
+    if (eventType === "email.bounced" || eventType === "email.complained") {
+      try {
+        // Get the email sender (user_id) to notify them
+        const { data: emailData } = await supabase
+          .from("emails")
+          .select("user_id, subject, recipient_email")
+          .eq("id", emailRecord.id)
+          .single();
+
+        if (emailData?.user_id) {
+          const bounceReason = eventType === "email.complained"
+            ? "Recipient marked as spam"
+            : eventData.bounce?.message || eventData.reason || "Email bounced";
+
+          await supabase
+            .from("notifications")
+            .insert({
+              user_id: emailData.user_id,
+              type: "error",
+              title: eventType === "email.complained" ? "Email Marked as Spam" : "Email Bounced",
+              message: `Email to ${emailData.recipient_email || recipientEmail}${emailData.subject ? ' ("' + emailData.subject + '")' : ''} failed: ${bounceReason}`,
+              category: "email",
+              source_type: "email",
+              source_id: emailRecord.id,
+              action_url: "/emails",
+            });
+          console.log("Bounce/complaint notification created for user:", emailData.user_id);
+        }
+      } catch (notifError: any) {
+        console.warn("Failed to create bounce notification:", notifError.message);
+      }
+    }
+
     // Log to email_analytics for all events
     await supabase
       .from("email_analytics")
