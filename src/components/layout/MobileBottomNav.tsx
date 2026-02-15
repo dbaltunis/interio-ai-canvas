@@ -15,12 +15,9 @@ import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
-import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useIsDealer } from "@/hooks/useIsDealer";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 
 interface MobileBottomNavProps {
@@ -50,38 +47,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
   
-  // Check view_settings permission
-  const { data: userRoleData } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  const { isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-mobile', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[MobileBottomNav] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasViewSettingsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_settings'
-  ) ?? false;
-  
-  const canViewSettings = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
-        : hasViewSettingsPermission;
+  // Permission check using centralized hook
+  const canViewSettings = useHasPermission('view_settings') !== false;
   // Check if user is a dealer - they have restricted navigation
   const { data: isDealer } = useIsDealer();
   

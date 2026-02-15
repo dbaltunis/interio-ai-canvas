@@ -71,7 +71,7 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
       }
     });
 
-    // Add room products/services (these already have markup applied at point of sale)
+    // Add room products/services (services include installation category markup when cost_price is set)
     const roomProductsTotal = roomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
     if (roomProductsTotal > 0) {
       console.log(`  Products/services: ${roomProductsTotal}`);

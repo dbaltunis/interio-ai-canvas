@@ -10,9 +10,7 @@ import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
@@ -27,53 +25,10 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = React.useState(false);
 
-  // Permission checks - following the same pattern as other settings
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-shopify-sync', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[ShopifySyncTab] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if manage_shopify is explicitly in user_permissions table
-  const hasManageShopifyPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'manage_shopify'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Check manage_shopify permission using the same pattern
-  const canManageShopify = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasManageShopifyPermission
-        : hasManageShopifyPermission;
-
-  const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+  // Permission check using centralized hook
+  const canManageShopify = useHasPermission('manage_shopify') !== false;
 
   const handleSyncSettingChange = async (field: string, value: boolean) => {
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
-      });
-      return;
-    }
     if (!canManageShopify) {
       toast({
         title: "Permission Denied",

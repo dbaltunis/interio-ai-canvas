@@ -11,9 +11,6 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
-import { useUserRole } from '@/hooks/useUserRole';
-import { useUserPermissions } from '@/hooks/usePermissions';
-import { useQuery } from '@tanstack/react-query';
 import { useHasPermission } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
@@ -58,60 +55,15 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-team-collab', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[TeamCollaborationCenter] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if send_team_messages is explicitly in user_permissions table
-  const hasSendTeamMessagesPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'send_team_messages'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow send if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include send_team_messages)
-  const canSendTeamMessages =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
-          : hasSendTeamMessagesPermission;
+  // Permission check using centralized hook
+  const canSendTeamMessages = useHasPermission('send_team_messages') !== false;
 
   const handleOpenMessageDialog = (userId: string) => {
-    // Check permission before opening message dialog
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canSendTeamMessages) {
+    if (!canSendTeamMessages) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to send team messages.",
         variant: "destructive",
-      });
-      return;
-    }
-    // Don't allow opening while permissions are loading
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
       });
       return;
     }
@@ -553,7 +505,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   className="group relative mb-3"
                                 >
                                   <div className={`glass-morphism rounded-xl p-4 transition-all duration-300 border border-border shadow-sm hover:shadow-md ${
-                                    explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages
+                                    !canSendTeamMessages
                                       ? 'cursor-not-allowed opacity-50'
                                       : 'cursor-pointer hover:bg-accent/30'
                                   }`}
@@ -653,7 +605,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   {offlineUsers.map((user) => (
                                       <div key={user.user_id} 
                                            className={`flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border transition-colors ${
-                                             explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages
+                                             !canSendTeamMessages
                                                ? 'cursor-not-allowed opacity-50'
                                                : 'cursor-pointer hover:bg-accent/30'
                                            }`}
@@ -724,12 +676,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.1 }}
                                     className={`glass-morphism rounded-xl p-4 transition-all duration-300 border border-border shadow-sm hover:shadow-md ${
-                                      explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages
+                                      !canSendTeamMessages
                                         ? 'cursor-not-allowed opacity-50'
                                         : 'cursor-pointer hover:bg-accent/30'
                                     }`}
                                      onClick={() => {
-                                       if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages) {
+                                       if (!canSendTeamMessages) {
                                          toast({
                                            title: "Permission Denied",
                                            description: "You don't have permission to send team messages.",
@@ -832,7 +784,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               
                               <Button 
                                 onClick={() => handleOpenMessageDialog('')}
-                                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages}
+                                disabled={!canSendTeamMessages}
                                 className="bg-accent/30 hover:bg-accent/50 text-foreground border border-border"
                               >
                                 <Send className="h-4 w-4 mr-2" />

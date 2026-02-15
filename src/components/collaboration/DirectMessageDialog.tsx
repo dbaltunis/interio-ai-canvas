@@ -10,10 +10,7 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useUserRole } from '@/hooks/useUserRole';
-import { useUserPermissions } from '@/hooks/usePermissions';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useHasPermission } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Send, MessageCircle, CheckCheck, Paperclip, X } from 'lucide-react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
@@ -53,48 +50,11 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-send-messages', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[DirectMessageDialog] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if send_team_messages is explicitly in user_permissions table
-  const hasSendTeamMessagesPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'send_team_messages'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow send if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include send_team_messages)
-  const canSendTeamMessages =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
-          : hasSendTeamMessagesPermission;
+  // Permission check using centralized hook
+  const canSendTeamMessages = useHasPermission('send_team_messages') !== false;
 
   const handleSendMessage = () => {
-    // Check permission before sending
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canSendTeamMessages) {
+    if (!canSendTeamMessages) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to send team messages.",
@@ -102,22 +62,14 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
       });
       return;
     }
-    // Don't allow sending while permissions are loading
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
-      });
-      return;
-    }
 
     if (!messageInput.trim() && selectedFiles.length === 0) return;
     if (!activeConversation) return;
-    
+
     const files = selectedFiles.map(f => f.file);
     sendMessage(activeConversation, messageInput.trim(), files.length > 0 ? files : undefined);
     setMessageInput('');
-    
+
     // Clean up file previews
     selectedFiles.forEach(f => URL.revokeObjectURL(f.url));
     setSelectedFiles([]);
@@ -476,25 +428,25 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                     size="icon"
                     className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={sendingMessage || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages)}
+                    disabled={sendingMessage || (!canSendTeamMessages)}
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   
                   <div className="flex-1">
                     <Input
-                      placeholder={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages ? "You don't have permission to send messages" : "Type a message..."}
+                      placeholder={!canSendTeamMessages ? "You don't have permission to send messages" : "Type a message..."}
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       className="h-8 text-sm border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
-                      disabled={sendingMessage || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages)}
+                      disabled={sendingMessage || (!canSendTeamMessages)}
                     />
                   </div>
                   
                   <Button
                     onClick={handleSendMessage}
-                    disabled={(!messageInput.trim() && selectedFiles.length === 0) || sendingMessage || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages)}
+                    disabled={(!messageInput.trim() && selectedFiles.length === 0) || sendingMessage || (!canSendTeamMessages)}
                     size="icon"
                     className="h-8 w-8 shrink-0 rounded-full"
                   >

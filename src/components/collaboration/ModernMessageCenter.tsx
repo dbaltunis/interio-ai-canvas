@@ -7,10 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useUserRole } from '@/hooks/useUserRole';
-import { useUserPermissions } from '@/hooks/usePermissions';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useHasPermission } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, Send, Sparkles, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,60 +24,15 @@ export const ModernMessageCenter = ({ isOpen, onClose }: ModernMessageCenterProp
   const { activeUsers = [] } = useUserPresence();
   const [messageInput, setMessageInput] = useState('');
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-modern-message-center', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[ModernMessageCenter] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if send_team_messages is explicitly in user_permissions table
-  const hasSendTeamMessagesPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'send_team_messages'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow send if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include send_team_messages)
-  const canSendTeamMessages =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
-          : hasSendTeamMessagesPermission;
+  // Permission check using centralized hook
+  const canSendTeamMessages = useHasPermission('send_team_messages') !== false;
 
   const handleSendMessage = () => {
-    // Check permission before sending
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canSendTeamMessages) {
+    if (!canSendTeamMessages) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to send team messages.",
         variant: "destructive",
-      });
-      return;
-    }
-    // Don't allow sending while permissions are loading
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
       });
       return;
     }
@@ -308,11 +260,11 @@ export const ModernMessageCenter = ({ isOpen, onClose }: ModernMessageCenterProp
                       <div className="flex gap-3">
                         <div className="flex-1 relative">
                           <Input
-                            placeholder={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages ? "You don't have permission to send messages" : "Type your message..."}
+                            placeholder={!canSendTeamMessages ? "You don't have permission to send messages" : "Type your message..."}
                             value={messageInput}
                             onChange={(e) => setMessageInput(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            disabled={sendingMessage || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages)}
+                            disabled={sendingMessage || (!canSendTeamMessages)}
                             className="glass-morphism border-white/20 text-white placeholder:text-white/50 pr-12 rounded-xl h-12"
                           />
                           <motion.div
@@ -322,7 +274,7 @@ export const ModernMessageCenter = ({ isOpen, onClose }: ModernMessageCenterProp
                           >
                             <Button
                               onClick={handleSendMessage}
-                              disabled={!messageInput.trim() || sendingMessage || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages)}
+                              disabled={!messageInput.trim() || sendingMessage || (!canSendTeamMessages)}
                               size="sm"
                               className="bg-gradient-to-r from-primary to-accent hover:from-primary/80 hover:to-accent/80 rounded-full h-8 w-8 p-0 shadow-lg"
                             >

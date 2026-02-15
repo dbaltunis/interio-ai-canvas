@@ -5,70 +5,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDealerPerformance } from "@/hooks/useDealerPerformance";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatCurrency, formatCompactCurrency } from "@/utils/formatCurrency";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Minus, 
-  Trophy, 
-  Users, 
+import { useHasPermission } from "@/hooks/usePermissions";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Trophy,
+  Users,
   DollarSign,
   Target
 } from "lucide-react";
 
 export const DealerPerformanceWidget = () => {
-  const { user } = useAuth();
   const { data, isLoading } = useDealerPerformance();
   const { units } = useMeasurementUnits();
   const currency = units?.currency || "USD";
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-team-performance', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[DealerPerformanceWidget] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
+  // Permission check using centralized hook
+  const canViewTeamPerformance = useHasPermission('view_team_performance') !== false;
 
-  // Check if view_team_performance is explicitly in user_permissions table
-  const hasViewTeamPerformancePermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_team_performance'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view_team_performance)
-  const canViewTeamPerformance =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasViewTeamPerformancePermission
-          : hasViewTeamPerformancePermission;
-
-  // Don't render if user doesn't have permission (after permissions are loaded)
-  if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canViewTeamPerformance) {
+  // Don't render if user doesn't have permission
+  if (!canViewTeamPerformance) {
     return null;
   }
 
@@ -142,7 +102,7 @@ export const DealerPerformanceWidget = () => {
               {summary?.topPerformer?.name || "-"}
             </p>
           </div>
-          
+
           <div className="rounded-lg p-2.5 border border-border/50 bg-card">
             <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
               <DollarSign className="h-3.5 w-3.5" />
@@ -152,7 +112,7 @@ export const DealerPerformanceWidget = () => {
               {formatCompactCurrency(summary?.totalTeamRevenue || 0, currency)}
             </p>
           </div>
-          
+
           <div className="rounded-lg p-2.5 border border-border/50 bg-card">
             <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 mb-1">
               <Target className="h-3.5 w-3.5" />
@@ -221,9 +181,9 @@ export const DealerPerformanceWidget = () => {
                     </div>
                     {/* Conversion Progress */}
                     <div className="flex items-center gap-2 mt-1.5">
-                      <Progress 
-                        value={dealer.conversionRate} 
-                        className="h-1.5 flex-1" 
+                      <Progress
+                        value={dealer.conversionRate}
+                        className="h-1.5 flex-1"
                       />
                       <span className="text-[10px] font-medium text-muted-foreground w-8 text-right">
                         {dealer.conversionRate.toFixed(0)}%

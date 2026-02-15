@@ -12,11 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useHasPermission, useUserPermissions } from '@/hooks/usePermissions';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useHasPermission } from '@/hooks/usePermissions';
 import { useIsDealer } from '@/hooks/useIsDealer';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   LayoutDashboard,
@@ -88,61 +85,17 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   // Check if user is a dealer - they have restricted navigation
   const { data: isDealer } = useIsDealer();
   
-  // Permission checks - these return undefined while loading
+  // Permission checks using centralized hook - returns undefined while loading
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
-  
-  // For inventory, check explicit permissions like jobs and clients
-  const { data: userRoleData } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-inventory', userRoleData?.role],
-    queryFn: async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', authUser.id);
-      if (error) {
-        console.error('[ResponsiveHeader] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!userRoleData && !permissionsLoading,
-  });
-  
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasViewInventoryPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
-  ) ?? false;
-  const hasViewEmailsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_emails'
-  ) ?? false;
-  
-  // Works like jobs and clients - check explicit permissions first
-  const canViewInventory = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
-        : hasViewInventoryPermission;
+  const canViewInventory = useHasPermission('view_inventory');
+  const canViewEmails = useHasPermission('view_emails');
 
-  const canViewEmails = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewEmailsPermission
-        : hasViewEmailsPermission;
-  
   // Check if ANY permission is still loading (undefined)
-  // Only show skeleton when truly loading, not when permissions are determined
-  const permissionsLoadingState = canViewJobs === undefined || 
-                             canViewClients === undefined || 
-                             canViewCalendar === undefined || 
-                             (explicitPermissions === undefined && !userRoleData);
+  const permissionsLoadingState = canViewJobs === undefined ||
+                             canViewClients === undefined ||
+                             canViewCalendar === undefined;
   
   // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
@@ -225,11 +178,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
-    if (item.permission === 'view_inventory') {
-      // Wait for explicit permissions to load
-      if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
-      return canViewInventory;
-    }
+    if (item.permission === 'view_inventory') return canViewInventory !== false;
     // Keep emails tab visible but will be disabled
     if (item.permission === 'view_emails') return true;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
@@ -269,11 +218,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 
                 // Check if emails tab should be disabled
                 const isEmailsTab = item.id === 'emails';
-                // Owners/Admins always have access to emails tab (they can configure providers from there)
-                const isOwnerOrAdmin = userRoleData?.isOwner || userRoleData?.isSystemOwner || userRoleData?.isAdmin;
-                const isEmailsDisabled = isEmailsTab && !isOwnerOrAdmin && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
+                const isEmailsDisabled = isEmailsTab && canViewEmails === false;
                 // Only check email configuration for non-owners/admins
-                const isEmailsNotConfigured = isEmailsTab && !isOwnerOrAdmin && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
+                const isEmailsNotConfigured = isEmailsTab && canViewEmails !== false && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
                 const shouldDisableEmails = isEmailsDisabled || isEmailsNotConfigured;
                 
                 const handleClick = () => {

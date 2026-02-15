@@ -17,11 +17,7 @@ import { StripeIntegrationTab } from "./StripeIntegrationTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
@@ -29,64 +25,20 @@ import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
 
 export const IntegrationsTab = () => {
-  const { user } = useAuth();
   const { integrations } = useIntegrations();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const [activeTab, setActiveTab] = useState("suppliers");
 
-  // Permission checks - following the same pattern as other settings
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-integrations', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[IntegrationsTab] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if view_shopify is explicitly in user_permissions table
-  const hasViewShopifyPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_shopify'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Check view_shopify permission using the same pattern
-  const canViewShopify = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewShopifyPermission
-        : hasViewShopifyPermission;
+  // Permission check using centralized hook
+  const canViewShopify = useHasPermission('view_shopify') !== false;
 
   // Handle tab change with permission check
   const handleTabChange = (value: string) => {
-    if (value === "online-sales") {
-      const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-      if (isPermissionLoaded && !canViewShopify) {
-        toast.error("Permission Denied", {
-          description: "You don't have permission to view online sales integrations.",
-        });
-        return;
-      }
-      if (!isPermissionLoaded) {
-        toast("Loading", {
-          description: "Please wait while permissions are being checked...",
-        });
-        return;
-      }
+    if (value === "online-sales" && !canViewShopify) {
+      toast.error("Permission Denied", {
+        description: "You don't have permission to view online sales integrations.",
+      });
+      return;
     }
     setActiveTab(value);
   };
@@ -108,7 +60,7 @@ export const IntegrationsTab = () => {
     {
       id: "rfms",
       name: "RFMS Australasia",
-      description: "Retail Floor Management System — quotes, measurements & job management",
+      description: "Retail Floor Management System -- quotes, measurements & job management",
       logo: rfmsLogo,
       logoClass: "h-10 w-auto object-contain",
       integration: rfmsIntegration,
@@ -117,7 +69,7 @@ export const IntegrationsTab = () => {
     {
       id: "netsuite",
       name: "Oracle NetSuite",
-      description: "Cloud ERP — accounting, inventory & order management",
+      description: "Cloud ERP -- accounting, inventory & order management",
       logo: netsuiteLogo,
       logoClass: "h-10 w-auto object-contain",
       integration: netsuiteIntegration,
@@ -126,7 +78,7 @@ export const IntegrationsTab = () => {
     {
       id: "myob_exo",
       name: "MYOB Exo",
-      description: "Business management — accounting, payroll & inventory",
+      description: "Business management -- accounting, payroll & inventory",
       logo: null,
       logoClass: "",
       integration: myobExoIntegration,
@@ -194,8 +146,8 @@ export const IntegrationsTab = () => {
           <TabsTrigger
             value="online-sales"
             className="flex items-center gap-2"
-            disabled={!canViewShopify && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-            title={!canViewShopify && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view online sales integrations" : undefined}
+            disabled={!canViewShopify}
+            title={!canViewShopify ? "You don't have permission to view online sales integrations" : undefined}
           >
             <Globe className="h-4 w-4" />
             Online Sales

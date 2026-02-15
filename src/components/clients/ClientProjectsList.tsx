@@ -12,10 +12,7 @@ import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useUnifiedClientNotes } from "@/hooks/useUnifiedClientNotes";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useFormattedDates } from "@/hooks/useFormattedDate";
@@ -27,7 +24,6 @@ interface ClientProjectsListProps {
 }
 
 export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: ClientProjectsListProps) => {
-  const { user } = useAuth();
   const { data: projects, isLoading } = useClientJobs(clientId);
   const { notesByProject } = useUnifiedClientNotes(clientId);
   const navigate = useNavigate();
@@ -35,7 +31,6 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   const createQuote = useCreateQuote();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
-  const { isLoading: permissionsLoading } = useUserPermissions();
   const { formatCurrency } = useFormattedCurrency();
   // Format dates using user preferences - useCallback prevents infinite re-render
   const getProjectDueDate = useCallback((p: any) => p.due_date, []);
@@ -44,34 +39,15 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   // Calculate project value from quotes
   const getProjectValue = (project: any): number => {
     if (!project.quotes || project.quotes.length === 0) return 0;
-    // Get the latest quote's total_amount
     const latestQuote = project.quotes[0];
     return parseFloat(latestQuote.total_amount?.toString() || '0');
   };
 
   // Calculate total value of all projects
   const totalProjectsValue = projects?.reduce((sum, project) => sum + getProjectValue(project), 0) || 0;
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[ClientProjectsList] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  // Check if create_jobs is explicitly in user_permissions table (ignores role-based)
-  const hasCreateJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
-  ) ?? false;
+
+  // Permission check — useHasPermission merges role defaults + custom permissions correctly.
+  const hasCreateJobsPermission = useHasPermission('create_jobs') !== false;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {

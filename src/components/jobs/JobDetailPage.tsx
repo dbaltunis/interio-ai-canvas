@@ -50,10 +50,10 @@ import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutati
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { DuplicateJobsSection } from "./DuplicateJobsSection";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserPermissions } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
@@ -113,93 +113,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Get user role to check if they're Owner/System Owner/Admin
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
   // Check if user is a Dealer (external reseller with restricted access)
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
-  
-  // Check view permissions explicitly
-  const { isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[JobDetailPage] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  const hasViewAllJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_all_jobs'
-  ) ?? false;
-  const hasViewAssignedJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_assigned_jobs'
-  ) ?? false;
-  
-  // Check if user has ANY explicit permissions in the user_permissions table
-  // If they do, we should respect ALL permission settings (including missing ones = disabled)
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  
-  // Check if user has explicit job view permissions ENABLED (in the table)
-  const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
-  
-  // Determine if user can view jobs and what scope they have
-  // - System Owner: ALWAYS has full access regardless of explicit permissions
-  // - Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // - Admins and Regular users: Always check explicit permissions
-  const canViewJobsExplicit = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions 
-      ? true // Owner with no explicit permissions in table at all = full access
-      : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
-  
-  // Filter by assignment if:
-  // - User is NOT a System Owner (System Owners see everything)
-  // - AND (User is not an Owner, OR Owner has ANY explicit permissions in table)
-  // - AND they only have view_assigned_jobs enabled (not view_all_jobs)
-  const shouldFilterByAssignment = !userRoleData?.isSystemOwner && (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
-  
-  // Check if delete_jobs is explicitly in user_permissions table (enabled)
-  const hasDeleteJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
-  ) ?? false;
-  
-  // System Owner: ALWAYS has full access
-  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // Admins and Regular users: Always check explicit permissions
-  const canDeleteJobsExplicit = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions 
-      ? true // Owner with no explicit permissions in table at all = full access
-      : hasDeleteJobsPermission;
-  
-  // Check if view_workroom is explicitly in user_permissions table (enabled)
-  const hasViewWorkroomPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_workroom'
-  ) ?? false;
-  
-  // System Owner: ALWAYS has full access
-  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // Dealers: NEVER have workroom access
-  // Admins and Regular users: Always check explicit permissions
-  const canViewWorkroomExplicit = isDealer
-    ? false // Dealers NEVER see workroom
-    : userRoleData?.isSystemOwner
-      ? true // System Owner ALWAYS has full access
-      : isOwner && !hasAnyExplicitPermissions 
-        ? true // Owner with no explicit permissions in table at all = full access
-        : hasViewWorkroomPermission;
+
+  // Permission checks using centralized hook
+  const canViewAllJobs = useHasPermission('view_all_jobs');
+  const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
+  const canViewJobsExplicit = canViewAllJobs !== false || canViewAssignedJobs !== false;
+  const shouldFilterByAssignment = canViewAllJobs === false && canViewAssignedJobs !== false;
+  const canDeleteJobsExplicit = useHasPermission('delete_jobs') !== false;
+  const canViewWorkroomExplicit = isDealer ? false : useHasPermission('view_workroom') !== false;
+
+  // Keep role loading for initial render gate
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const permissionsLoading = false; // useHasPermission handles loading internally
   
   // Use useProject(id) instead of useProjects() to avoid filtering issues
   // This lets RLS handle permissions properly, especially for team members
@@ -247,7 +174,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading, isDealerLoading]);
   
   // Show loading skeleton while data is being fetched
-  if (projectLoading || permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined) {
+  if (projectLoading || roleLoading || isDealerLoading || userRoleData === undefined) {
     return <JobSkeleton />;
   }
 

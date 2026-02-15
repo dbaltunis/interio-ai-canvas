@@ -2,12 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, Package } from "lucide-react";
-import { useUserPermissions, useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { useMemo } from "react";
 
@@ -28,66 +24,28 @@ export const CreateActionDialog = ({
   onOpenSettings,
   onOpenTeamHub 
 }: CreateActionDialogProps) => {
-  const { user } = useAuth();
-  const { isLoading: permissionsLoading } = useUserPermissions();
-  const { data: userRoleData } = useUserRole();
   const { data: isDealer } = useIsDealer();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[CreateActionDialog] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  // Check if create_jobs is explicitly in user_permissions table (ignores role-based)
-  const hasCreateJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
-  ) ?? false;
-  
-  // Check view_settings permission
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasViewSettingsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_settings'
-  ) ?? false;
-  
-  // Permission checks for menu items
+
+  // Permission checks using centralized hook
+  const hasCreateJobsPermission = useHasPermission('create_jobs') !== false;
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewOwnCalendar = useHasPermission('view_own_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   const canViewClients = useHasPermission('view_clients');
   const canViewJobs = useHasPermission('view_jobs');
+  const canViewSettings = useHasPermission('view_settings') !== false;
 
   // Combined calendar permission
   const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
 
   // Check if user has ANY main page permission (for smart menu visibility)
   const hasAnyMainPagePermission = useMemo(() => {
-    if (userRoleData?.isSystemOwner) return true;
-    if ((isOwner || isAdmin) && !hasAnyExplicitPermissions) return true;
     return canViewClients !== false ||
            canViewJobs !== false ||
            canViewCalendar !== false ||
            canViewOwnCalendar !== false ||
            canViewInventory !== false;
-  }, [userRoleData, isOwner, isAdmin, hasAnyExplicitPermissions, canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory]);
-  
-  const canViewSettings = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
-        : hasViewSettingsPermission;
+  }, [canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory]);
   
   const { toast } = useToast();
   

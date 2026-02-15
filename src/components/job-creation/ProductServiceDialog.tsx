@@ -15,6 +15,8 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useActiveServiceOptions, SERVICE_UNITS, type ServiceOption } from "@/hooks/useServiceOptions";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 
 interface ProductServiceDialogProps {
   isOpen: boolean;
@@ -110,6 +112,7 @@ export const ProductServiceDialog = ({
   const { data: serviceOptions = [], isLoading: servicesLoading } = useActiveServiceOptions();
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
+  const { data: markupSettings } = useMarkupSettings();
 
   // Always show all main categories, regardless of inventory content
   const categories = ['material', 'fabric', 'hardware', 'service', 'wallcovering', 'custom'];
@@ -190,8 +193,21 @@ export const ProductServiceDialog = ({
       newCalendarEvents.delete(item.id);
       setCreateCalendarEvents(newCalendarEvents);
     } else {
-      const price = item.selling_price || item.cost_price || 0;
+      let price = item.selling_price || item.cost_price || 0;
       const isServiceOption = item._source === 'service_option';
+
+      // Apply installation/service category markup when cost_price is available
+      if (isServiceOption && item.cost_price > 0 && markupSettings) {
+        const markupResult = resolveMarkup({
+          category: 'installation',
+          subcategory: item.subcategory || undefined,
+          markupSettings,
+        });
+        if (markupResult.percentage > 0) {
+          price = applyMarkup(item.cost_price, markupResult.percentage);
+        }
+      }
+
       newSelected.set(item.id, {
         inventoryItemId: item.id,
         name: item.name,
