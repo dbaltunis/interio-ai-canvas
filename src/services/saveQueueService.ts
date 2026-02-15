@@ -55,8 +55,7 @@ class SaveQueueService {
     this.queue.push(queueItem);
     this.persistQueue();
 
-    // Show loading toast
-    toast.loading(`Saving ${tableName}...`, { id: saveId });
+    // Loading indicator removed — auto-save should be silent
 
     // Process immediately
     this.processQueue();
@@ -164,9 +163,6 @@ class SaveQueueService {
       table: item.tableName,
       dataReturned: !!data
     });
-
-    // Success toast
-    toast.success(`Saved successfully! (${duration}ms)`, { id: item.id });
 
     // Clear localStorage backup
     this.clearLocalStorageBackup(item.id);

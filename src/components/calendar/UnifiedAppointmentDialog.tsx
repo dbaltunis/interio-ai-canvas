@@ -435,12 +435,12 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 overflow-hidden rounded-xl shadow-2xl border-0 gap-0">
+      <DialogContent className="max-w-md p-0 rounded-xl shadow-2xl border-0 gap-0">
         {/* Color header bar — matches EventDetailPopover design */}
-        <div className="h-2 flex-shrink-0" style={{ backgroundColor: event.color || '#6366F1' }} />
+        <div className="h-2 flex-shrink-0 rounded-t-xl" style={{ backgroundColor: event.color || '#6366F1' }} />
 
         {/* Compact Header */}
-        <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-background z-10">
+        <DialogHeader className="px-4 py-3">
           <DialogTitle className="text-sm font-medium flex items-center gap-2">
             <div
               className="w-3 h-3 rounded flex-shrink-0"
@@ -455,7 +455,7 @@ export const UnifiedAppointmentDialog = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="px-4 py-3 space-y-4">
+        <div className="px-4 py-3 space-y-3">
           {/* Permission Warning */}
           {!isEditing && (() => {
             const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;

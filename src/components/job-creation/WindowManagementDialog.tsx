@@ -375,12 +375,11 @@ export const WindowManagementDialog = ({
         .from('windows_summary')
         .delete()
         .eq('window_id', surface.id);
-      // Immediately clear cache (don't just invalidate — that waits for staleTime)
-      queryClient.setQueryData(['window-summary', surface.id], null);
-      queryClient.setQueryData(['window-summary-treatment', surface.id, dialogOpenCounter], null);
-      // Also force refetch on all matching queries so list components re-render
-      queryClient.refetchQueries({ queryKey: ['window-summary'] });
-      queryClient.refetchQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      // Remove ALL cached data for this surface — clean slate, no race condition
+      queryClient.removeQueries({ queryKey: ['window-summary', surface.id] });
+      queryClient.removeQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      // Invalidate list-level query so sidebar/list re-renders
+      queryClient.invalidateQueries({ queryKey: ['window-summary'] });
     } else {
       console.log('📌 Discarding edits on EXISTING treatment (keeping saved data):', surface?.id);
     }
