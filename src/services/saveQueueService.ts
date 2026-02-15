@@ -55,8 +55,7 @@ class SaveQueueService {
     this.queue.push(queueItem);
     this.persistQueue();
 
-    // Show loading toast
-    toast.loading(`Saving ${tableName}...`, { id: saveId });
+    // Loading indicator removed — auto-save should be silent
 
     // Process immediately
     this.processQueue();

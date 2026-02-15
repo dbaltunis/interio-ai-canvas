@@ -2706,8 +2706,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             draftService.clearDraft(surfaceId);
           }
           
-          // Show immediate success feedback
-          toast.success("Window summary saved");
+          // Auto-save success — silent (no toast)
 
           // CRITICAL: Sync to workshop_items for shared work orders
           // This ensures shared links always show current data
