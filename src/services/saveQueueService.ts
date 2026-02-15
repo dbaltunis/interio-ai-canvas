@@ -165,9 +165,6 @@ class SaveQueueService {
       dataReturned: !!data
     });
 
-    // Success toast
-    toast.success(`Saved successfully! (${duration}ms)`, { id: item.id });
-
     // Clear localStorage backup
     this.clearLocalStorageBackup(item.id);
   }
