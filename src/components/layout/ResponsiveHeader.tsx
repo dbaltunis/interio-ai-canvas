@@ -4,6 +4,8 @@ import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';

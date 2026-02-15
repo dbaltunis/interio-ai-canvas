@@ -26,7 +26,9 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
   const [isSyncing, setIsSyncing] = React.useState(false);
 
   // Permission check using centralized hook
-  const canManageShopify = useHasPermission('manage_shopify') !== false;
+  const canManageShopifyRaw = useHasPermission('manage_shopify');
+  const canManageShopify = canManageShopifyRaw !== false;
+  const isPermissionLoaded = canManageShopifyRaw !== undefined;
 
   const handleSyncSettingChange = async (field: string, value: boolean) => {
     if (!canManageShopify) {

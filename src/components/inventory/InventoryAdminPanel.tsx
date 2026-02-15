@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export const InventoryAdminPanel = () => {
 
   // Permission check using centralized hook
   const canManageInventoryAdmin = useHasPermission('manage_inventory_admin') !== false;
+  const { data: userRoleData } = useUserRole();
 
   const currencySymbol = getCurrencySymbol(units.currency);
 
