@@ -36,6 +36,9 @@ export interface SelectedProduct {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  costPrice?: number;
+  markupPercentage?: number;
+  markupSource?: string;
   imageUrl: string | null;
   unit: string;
   description?: string;
@@ -195,9 +198,13 @@ export const ProductServiceDialog = ({
     } else {
       let price = item.selling_price || item.cost_price || 0;
       const isServiceOption = item._source === 'service_option';
+      let costPrice: number | undefined;
+      let markupPct: number | undefined;
+      let markupSrc: string | undefined;
 
       // Apply installation/service category markup when cost_price is available
       if (isServiceOption && item.cost_price > 0 && markupSettings) {
+        costPrice = item.cost_price;
         const markupResult = resolveMarkup({
           category: 'installation',
           subcategory: item.subcategory || undefined,
@@ -205,7 +212,12 @@ export const ProductServiceDialog = ({
         });
         if (markupResult.percentage > 0) {
           price = applyMarkup(item.cost_price, markupResult.percentage);
+          markupPct = markupResult.percentage;
+          markupSrc = markupResult.source;
         }
+      } else if (!isServiceOption && item.cost_price > 0) {
+        // Track cost_price for inventory items too (hardware, fabric, etc.)
+        costPrice = item.cost_price;
       }
 
       newSelected.set(item.id, {
@@ -216,6 +228,9 @@ export const ProductServiceDialog = ({
         quantity: 1,
         unitPrice: price,
         totalPrice: price,
+        costPrice,
+        markupPercentage: markupPct,
+        markupSource: markupSrc,
         imageUrl: item.image_url,
         unit: item.unit || "each",
         description: item.description || "",
@@ -568,9 +583,18 @@ export const ProductServiceDialog = ({
                   )}
                   {filteredItems.map((item: any) => {
                     const isSelected = selectedItems.has(item.id);
-                    const price = item.selling_price || item.cost_price || 0;
                     const isServiceOption = item._source === 'service_option';
                     const isSchedulable = item.is_schedulable;
+                    // Show marked-up price for services with cost_price + markup settings
+                    let price = item.selling_price || item.cost_price || 0;
+                    let hasMarkup = false;
+                    if (isServiceOption && item.cost_price > 0 && markupSettings) {
+                      const mr = resolveMarkup({ category: 'installation', subcategory: item.subcategory || undefined, markupSettings });
+                      if (mr.percentage > 0) {
+                        price = applyMarkup(item.cost_price, mr.percentage);
+                        hasMarkup = true;
+                      }
+                    }
 
                     return (
                       <div
@@ -631,6 +655,11 @@ export const ProductServiceDialog = ({
                           <div className="text-xs text-muted-foreground">
                             {isServiceOption ? getUnitLabel(item.unit).toLowerCase() : `per ${item.unit || "each"}`}
                           </div>
+                          {hasMarkup && (
+                            <div className="text-xs text-green-600">
+                              cost: {currencySymbol}{item.cost_price.toFixed(2)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

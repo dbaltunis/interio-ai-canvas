@@ -22,6 +22,9 @@ export interface RoomProduct {
   quantity: number;
   unit_price: number;
   total_price: number;
+  cost_price: number | null;
+  markup_percentage: number | null;
+  markup_source: string | null;
   notes: string | null;
   name: string | null;
   description: string | null;
@@ -45,6 +48,9 @@ export interface RoomProductInsert {
   quantity: number;
   unit_price: number;
   total_price: number;
+  cost_price?: number | null;
+  markup_percentage?: number | null;
+  markup_source?: string | null;
   notes?: string;
   name?: string;
   description?: string;

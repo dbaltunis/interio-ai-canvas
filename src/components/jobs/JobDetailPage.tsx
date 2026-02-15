@@ -122,7 +122,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const canViewJobsExplicit = canViewAllJobs !== false || canViewAssignedJobs !== false;
   const shouldFilterByAssignment = canViewAllJobs === false && canViewAssignedJobs !== false;
   const canDeleteJobsExplicit = useHasPermission('delete_jobs') !== false;
-  const canViewWorkroomExplicit = isDealer ? false : useHasPermission('view_workroom') !== false;
+  const canViewWorkroomRaw = useHasPermission('view_workroom');
+  const canViewWorkroomExplicit = isDealer ? false : canViewWorkroomRaw !== false;
 
   // Keep role loading for initial render gate
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();

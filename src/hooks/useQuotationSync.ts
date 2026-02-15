@@ -749,19 +749,24 @@ export const useQuotationSync = ({
       const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
       
       // Track cost and selling totals for room products
-      // Room products: total_price is user-entered selling price, cost_price is cost (if tracked)
-      const productCost = product.cost_price || product.total_price || 0; // Fall back to total if no cost tracked
-      const productSelling = product.total_price || 0;
-      
+      // Room products: total_price is selling price (with markup), cost_price is cost (if tracked)
+      const unitCost = product.cost_price || product.unit_price || 0;
+      const productCostTotal = unitCost * product.quantity;
+      // Per-job override: recalculate selling from cost_price when override is set
+      let productSelling = product.total_price || 0;
+      if (quoteMarkupOverride != null && product.cost_price > 0) {
+        productSelling = applyMarkup(product.cost_price * product.quantity, quoteMarkupOverride);
+      }
+
       items.push({
         id: `product-${product.id}`,
         name: displayName,
         description: displayDescription,
         quantity: product.quantity,
-        cost_price: productCost,
+        cost_price: unitCost,
         unit_price: product.unit_price,
         total: productSelling,
-        cost_total: productCost,
+        cost_total: productCostTotal,
         currency: (() => {
           if (!businessSettings?.measurement_units) return 'USD';
           const units = typeof businessSettings.measurement_units === 'string' 
@@ -777,7 +782,7 @@ export const useQuotationSync = ({
         inventory_item_id: isCustom ? null : product.inventory_item_id,
       });
       
-      roomProductsCostTotal += productCost;
+      roomProductsCostTotal += productCostTotal;
       roomProductsSellingTotal += productSelling;
     });
 

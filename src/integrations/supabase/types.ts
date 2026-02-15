@@ -7489,12 +7489,15 @@ export type Database = {
       }
       room_products: {
         Row: {
+          cost_price: number | null
           created_at: string
           description: string | null
           id: string
           image_url: string | null
           inventory_item_id: string | null
           is_custom: boolean | null
+          markup_percentage: number | null
+          markup_source: string | null
           name: string | null
           notes: string | null
           quantity: number
@@ -7505,12 +7508,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cost_price?: number | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
           inventory_item_id?: string | null
           is_custom?: boolean | null
+          markup_percentage?: number | null
+          markup_source?: string | null
           name?: string | null
           notes?: string | null
           quantity?: number
@@ -7521,12 +7527,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cost_price?: number | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
           inventory_item_id?: string | null
           is_custom?: boolean | null
+          markup_percentage?: number | null
+          markup_source?: string | null
           name?: string | null
           notes?: string | null
           quantity?: number

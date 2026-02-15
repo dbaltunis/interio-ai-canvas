@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Trash2, Edit2, Check, X } from "lucide-react";
+import { Package, Trash2, Edit2, Check, X, TrendingUp } from "lucide-react";
 import { useRoomProducts, useUpdateRoomProduct, useDeleteRoomProduct, RoomProduct } from "@/hooks/useRoomProducts";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -62,6 +62,8 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
   };
 
   const total = products.reduce((sum, p) => sum + p.total_price, 0);
+  const totalCost = products.reduce((sum, p) => sum + (p.cost_price || p.total_price), 0);
+  const hasMarkupData = products.some(p => p.cost_price != null && p.cost_price > 0);
 
   return (
     <div className="border-t border-border/50">
@@ -71,8 +73,15 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
           <Package className="h-4 w-4" />
           Products & Services
         </div>
-        <div className="text-sm font-medium">
-          {currencySymbol}{total.toFixed(2)}
+        <div className="flex items-center gap-2">
+          {hasMarkupData && (
+            <span className="text-xs text-green-600" title={`Cost: ${currencySymbol}${totalCost.toFixed(2)} | Profit: ${currencySymbol}${(total - totalCost).toFixed(2)}`}>
+              +{currencySymbol}{(total - totalCost).toFixed(2)}
+            </span>
+          )}
+          <span className="text-sm font-medium">
+            {currencySymbol}{total.toFixed(2)}
+          </span>
         </div>
       </div>
 
@@ -115,6 +124,12 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
                   {displayCategory && (
                     <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
                       {displayCategory.replace(/_/g, " ")}
+                    </Badge>
+                  )}
+                  {product.markup_percentage != null && product.markup_percentage > 0 && (
+                    <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
+                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                      {product.markup_percentage}%
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground">
