@@ -87,11 +87,15 @@ export const WindowManagementDialog = ({
   const [isSavingOnClose, setIsSavingOnClose] = useState(false);
   // Counter to force MeasurementBridge remount when dialog reopens
   const [dialogOpenCounter, setDialogOpenCounter] = useState(0);
+  // Track whether a windows_summary existed when the dialog opened (for ghost cleanup on discard)
+  // null = not yet checked, true/false = result of first fetch after dialog open
+  const hadSummaryOnOpenRef = useRef<boolean | null>(null);
 
   // Increment counter when dialog opens to force MeasurementBridge remount
   // This ensures fresh state and data loading when reopening the same window
   useEffect(() => {
     if (isOpen) {
+      hadSummaryOnOpenRef.current = null; // Reset — will be set by first query result
       setDialogOpenCounter(prev => prev + 1);
     }
   }, [isOpen]);
@@ -370,30 +374,18 @@ export const WindowManagementDialog = ({
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
 
-    // Check at discard time: if a windows_summary exists but has no meaningful data
-    // (total_cost is 0/null and no template selected), it's a ghost record from auto-save
-    if (surface?.id) {
-      const { data: existing } = await supabase
+    // If NO windows_summary existed when dialog opened, this is a NEW treatment.
+    // Auto-save may have created a ghost record during editing — always clean it up on discard.
+    if (surface?.id && hadSummaryOnOpenRef.current === false) {
+      console.log('🧹 Discarding NEW treatment — cleaning up ghost windows_summary:', surface.id);
+      await supabase
         .from('windows_summary')
-        .select('total_cost, template_id, fabric_cost')
-        .eq('window_id', surface.id)
-        .maybeSingle();
-
-      const hasRealData = existing && (
-        (Number(existing.total_cost) > 0) ||
-        existing.template_id ||
-        (Number(existing.fabric_cost) > 0)
-      );
-
-      if (existing && !hasRealData) {
-        console.log('🧹 Cleaning up ghost windows_summary (no pricing data):', surface.id);
-        await supabase
-          .from('windows_summary')
-          .delete()
-          .eq('window_id', surface.id);
-        queryClient.invalidateQueries({ queryKey: ['window-summary'] });
-        queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
-      }
+        .delete()
+        .eq('window_id', surface.id);
+      queryClient.invalidateQueries({ queryKey: ['window-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+    } else {
+      console.log('📌 Discarding edits on EXISTING treatment (keeping saved data):', surface?.id);
     }
 
     onClose();
@@ -471,6 +463,15 @@ export const WindowManagementDialog = ({
     gcTime: 60000,    // 1 minute cache
   });
   
+  // Capture whether a windows_summary existed on the FIRST fetch after dialog open
+  // This runs before the user can interact (and before auto-save creates ghost records)
+  useEffect(() => {
+    if (isOpen && hadSummaryOnOpenRef.current === null && windowSummary !== undefined) {
+      hadSummaryOnOpenRef.current = !!windowSummary;
+      console.log('📌 Windows summary existed on dialog open:', !!windowSummary);
+    }
+  }, [isOpen, windowSummary]);
+
   // Track the template ID to detect when it changes
   const currentTemplateId = currentTreatment?.id || windowSummary?.template_id;
   

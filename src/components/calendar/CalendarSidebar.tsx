@@ -151,8 +151,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onH
 
   return (
     <div className="w-[280px] min-w-[280px] max-w-[280px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 overflow-hidden">
-      <ScrollArea className="flex-1 h-full">
-        <div className="flex flex-col px-3 py-4">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="flex flex-col px-3 py-4 w-full max-w-full overflow-hidden">
           {/* Header with collapse */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-foreground">Calendar</h2>
@@ -307,7 +307,7 @@ const TeamGroupsSidebar = ({
   const [editingGroup, setEditingGroup] = useState<CalendarTeamGroup | null>(null);
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 w-full overflow-hidden">
       <div className="flex items-center justify-between mb-2 px-0.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
           My Teams

@@ -7,7 +7,7 @@ import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } fro
 import { Video, CheckCheck, Users } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
-// EventDetailPopover removed - events open UnifiedAppointmentDialog directly
+import { EventDetailPopover } from "./EventDetailPopover";
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import {
@@ -191,12 +191,15 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
     </div>
   );
 
-  // Click directly opens the unified appointment dialog (no intermediate popover)
+  // Wrap regular events in EventDetailPopover for quick view/edit
   if (!event.isBooking && !event.isTask) {
     return (
-      <div onClick={(e) => { e.stopPropagation(); onEventClick?.(event.id); }} className="cursor-pointer">
+      <EventDetailPopover
+        event={event}
+        onEdit={(id) => onEventClick?.(id)}
+      >
         {cardContent}
-      </div>
+      </EventDetailPopover>
     );
   }
 
