@@ -25,6 +25,7 @@ import { ClientProjectsList } from "./ClientProjectsList";
 import { ClientMeasurementsTab } from "./ClientMeasurementsTab";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { ClientAllNotesSection } from "./ClientAllNotesSection";
+import { ClientAppointmentsTab } from "./ClientAppointmentsTab";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ClientFilesManager } from "./ClientFilesManager";
@@ -607,7 +608,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* Inquiries Panel - Shows all form submissions */}
       <ClientInquiriesPanel clientId={clientId} />
 
-      {/* Secondary Content Tabs - Notes, Activity, Measurements only */}
+      {/* Secondary Content Tabs - Notes, Activity, Measurements, Appointments */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="h-8 w-auto bg-muted/30 p-0.5">
           <TabsTrigger value="notes" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
@@ -622,6 +623,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             <Package className="h-3 w-3" />
             Measurements
           </TabsTrigger>
+          <TabsTrigger value="appointments" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
+            <CalendarDays className="h-3 w-3" />
+            Appointments
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="mt-3">
@@ -633,10 +638,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="measurements" className="mt-3">
-          <ClientMeasurementsTab 
+          <ClientMeasurementsTab
             clientId={clientId}
             canEditClient={canEditClient}
           />
+        </TabsContent>
+
+        <TabsContent value="appointments" className="mt-3">
+          <ClientAppointmentsTab clientId={clientId} />
         </TabsContent>
       </Tabs>
     </div>

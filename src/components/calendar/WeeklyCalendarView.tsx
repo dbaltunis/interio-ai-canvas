@@ -191,15 +191,12 @@ const DraggableEventCard = memo(({ event, style, eventWidth, eventLeft, eventInd
     </div>
   );
 
-  // Wrap regular events in EventDetailPopover for card-style view
+  // Click directly opens the unified appointment dialog (no intermediate popover)
   if (!event.isBooking && !event.isTask) {
     return (
-      <EventDetailPopover
-        event={event}
-        onEdit={(id) => onEventClick?.(id)}
-      >
+      <div onClick={(e) => { e.stopPropagation(); onEventClick?.(event.id); }} className="cursor-pointer">
         {cardContent}
-      </EventDetailPopover>
+      </div>
     );
   }
 

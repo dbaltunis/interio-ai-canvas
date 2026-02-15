@@ -175,10 +175,22 @@ export const SavedCostBreakdownDisplay = ({
   const manufacturingItem = costBreakdown.find(item => item.category === 'manufacturing');
   const liningItem = costBreakdown.find(item => item.category === 'lining');
   const headingItem = costBreakdown.find(item => item.category === 'heading');
-  
+
+  // Deduplicate options - saved cost_breakdown can accumulate duplicates over edit cycles
+  const seenKeys = new Set<string>();
+  const deduplicatedBreakdown = costBreakdown.filter(item => {
+    if (item.category !== 'option' && item.category !== 'hardware' && item.category !== 'hardware_accessory') {
+      return true; // Keep all non-option/hardware items
+    }
+    const key = item.name || item.id;
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
+
   // Group hardware items
-  const allHardwareAndOptions = costBreakdown.filter(item => 
-    item.category === 'hardware' || 
+  const allHardwareAndOptions = deduplicatedBreakdown.filter(item =>
+    item.category === 'hardware' ||
     item.category === 'hardware_accessory' ||
     item.category === 'option'
   );

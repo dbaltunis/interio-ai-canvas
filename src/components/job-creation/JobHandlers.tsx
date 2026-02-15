@@ -98,12 +98,12 @@ export const useJobHandlers = (project: any) => {
         project_id: projectId,
         name: `Window ${windowNumber}`,
         surface_type: surfaceType,
-        width: 60,
-        height: 48
+        width: 0,
+        height: 0
       });
 
       // Check if measurement already exists for this surface
-      const existingMeasurement = clientMeasurements?.find(m => 
+      const existingMeasurement = clientMeasurements?.find(m =>
         m.notes?.includes(surface.name) && m.project_id === projectId
       );
 
@@ -114,10 +114,10 @@ export const useJobHandlers = (project: any) => {
           project_id: projectId,
           measurement_type: 'standard_window',
           measurements: {
-            measurement_a: 60, // Window width
-            measurement_b: 48, // Window height
-            measurement_e: 48, // Total height
-            measurement_f: 60, // Total width
+            measurement_a: 0, // Window width - to be measured
+            measurement_b: 0, // Window height - to be measured
+            measurement_e: 0, // Total height - to be measured
+            measurement_f: 0, // Total width - to be measured
           },
           photos: [],
           notes: `Measurement worksheet for ${surface.name}`,

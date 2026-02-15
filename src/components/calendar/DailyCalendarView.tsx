@@ -322,17 +322,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                     );
                   }
 
-                  // Event pill — Apple style with EventDetailPopover
+                  // Event pill — Apple style, click opens unified dialog directly
                   const title = event.isBooking ? (event.bookingData?.customer_name || 'Customer') : event.title;
 
                   return (
-                    <EventDetailPopover
-                      key={event.id}
-                      event={event}
-                      onEdit={(id) => onEventClick?.(id)}
-                      disabled={event.isBooking}
-                    >
                       <div
+                        key={event.id}
                         className="absolute rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer"
                         style={{
                           top: `${pos.top}px`,
@@ -342,7 +337,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                           zIndex: event.isBooking ? 15 + eventIndex : 10 + eventIndex,
                           pointerEvents: 'auto',
                         }}
-                        onClick={event.isBooking ? handleClick : undefined}
+                        onClick={event.isBooking ? handleClick : (e) => { e.stopPropagation(); onEventClick?.(event.id); }}
                       >
                         <div className="absolute left-0 top-1 bottom-1 w-1 rounded-full" style={{ backgroundColor: styling.border }} />
                         <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: styling.background }} />
@@ -383,7 +378,6 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                           )}
                         </div>
                       </div>
-                    </EventDetailPopover>
                   );
                 })}
               </div>

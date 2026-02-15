@@ -87,14 +87,28 @@ export const WindowManagementDialog = ({
   const [isSavingOnClose, setIsSavingOnClose] = useState(false);
   // Counter to force MeasurementBridge remount when dialog reopens
   const [dialogOpenCounter, setDialogOpenCounter] = useState(0);
+  // Track whether a windows_summary existed when dialog opened (for ghost cleanup on discard)
+  const hadExistingSummaryRef = useRef(false);
 
   // Increment counter when dialog opens to force MeasurementBridge remount
   // This ensures fresh state and data loading when reopening the same window
   useEffect(() => {
     if (isOpen) {
       setDialogOpenCounter(prev => prev + 1);
+      // Check if a windows_summary already exists for this surface
+      // If not, discard will clean up any auto-created ghost records
+      if (surface?.id) {
+        supabase
+          .from('windows_summary')
+          .select('window_id')
+          .eq('window_id', surface.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            hadExistingSummaryRef.current = !!data;
+          });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, surface?.id]);
 
   // Keep windowName in sync with surface prop
   useEffect(() => {
@@ -366,17 +380,25 @@ export const WindowManagementDialog = ({
   const deleteSurface = useDeleteSurface();
 
   const handleDiscardChanges = async () => {
-    // Clear local draft only - NEVER delete database data on discard
+    // Clear local draft
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
-    
-    // CRITICAL SAFETY: Do NOT delete any database data here
-    // The "discard" action means "discard unsaved local changes" 
-    // NOT "delete the entire window from the database"
-    // This prevents data loss from RLS visibility issues and race conditions
-    console.log('📌 Discarding unsaved changes for window:', surface?.id);
-    console.log('📌 No database deletion performed - only local draft cleared');
-    
+
+    // If this was a NEW treatment (no windows_summary existed when dialog opened),
+    // clean up any auto-created ghost records from fabric/material selection
+    if (!hadExistingSummaryRef.current && surface?.id) {
+      console.log('🧹 Cleaning up ghost windows_summary for new treatment:', surface.id);
+      await supabase
+        .from('windows_summary')
+        .delete()
+        .eq('window_id', surface.id);
+      // Invalidate queries so the UI reflects the cleanup
+      queryClient.invalidateQueries({ queryKey: ['window-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+    } else {
+      console.log('📌 Discarding unsaved changes for existing treatment:', surface?.id);
+    }
+
     onClose();
   };
 
