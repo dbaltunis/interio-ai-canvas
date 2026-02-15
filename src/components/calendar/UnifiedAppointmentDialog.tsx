@@ -435,7 +435,7 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 overflow-hidden rounded-xl">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 overflow-hidden rounded-xl shadow-2xl border-0 gap-0">
         {/* Color header bar — matches EventDetailPopover design */}
         <div className="h-2 flex-shrink-0" style={{ backgroundColor: event.color || '#6366F1' }} />
 

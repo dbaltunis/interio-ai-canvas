@@ -246,16 +246,12 @@ export const DynamicCurtainOptions = ({
     });
 
     if (restoredOptions.length > 0) {
-      // REPLACE by optionKey: restored options have current labels and prices
-      // Keep any existing options that DON'T have a matching optionKey in restoredOptions
-      const restoredKeys = new Set(restoredOptions.map(o => o.optionKey).filter(Boolean));
-      const nonOverlapping = selectedOptions.filter(o => {
-        const key = (o as any).optionKey;
-        return key && !restoredKeys.has(key);
-      });
-      const finalOptions = [...nonOverlapping, ...restoredOptions];
-      console.log('📋 Synced options for Quote Summary:', finalOptions.map(o => o.name));
-      onSelectedOptionsChange(finalOptions);
+      // COMPLETE REPLACE: Use freshly built options from treatmentOptionSelections
+      // These have current prices from template, no merge needed
+      // selectedOptions was already populated from the restoration phase (Path 1)
+      // so merging would create duplicates — just replace entirely
+      console.log('📋 Synced options for Quote Summary (replace):', restoredOptions.map(o => o.name));
+      onSelectedOptionsChange(restoredOptions);
     }
 
     setHasInitialSyncCompleted(true);

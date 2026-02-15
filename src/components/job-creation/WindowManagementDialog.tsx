@@ -314,13 +314,6 @@ export const WindowManagementDialog = ({
         await worksheetRef.current.autoSave();
       }
       console.log("✅ WindowManagementDialog: Save completed successfully");
-      const {
-        toast
-      } = await import("@/hooks/use-toast");
-      toast({
-        title: "✅ Configuration Saved",
-        description: "Your measurements and selections have been saved successfully"
-      });
     } catch (error) {
       console.error("❌ WindowManagementDialog: Save failed:", error);
       const {
@@ -382,8 +375,12 @@ export const WindowManagementDialog = ({
         .from('windows_summary')
         .delete()
         .eq('window_id', surface.id);
-      queryClient.invalidateQueries({ queryKey: ['window-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      // Immediately clear cache (don't just invalidate — that waits for staleTime)
+      queryClient.setQueryData(['window-summary', surface.id], null);
+      queryClient.setQueryData(['window-summary-treatment', surface.id, dialogOpenCounter], null);
+      // Also force refetch on all matching queries so list components re-render
+      queryClient.refetchQueries({ queryKey: ['window-summary'] });
+      queryClient.refetchQueries({ queryKey: ['window-summary-treatment', surface.id] });
     } else {
       console.log('📌 Discarding edits on EXISTING treatment (keeping saved data):', surface?.id);
     }
@@ -418,10 +415,6 @@ export const WindowManagementDialog = ({
       });
       queryClient.invalidateQueries({
         queryKey: ["surfaces", projectId]
-      });
-      toast({
-        title: "Success",
-        description: "Surface name updated successfully"
       });
     } catch (error) {
       console.error('Error updating surface name:', error);
@@ -554,10 +547,6 @@ export const WindowManagementDialog = ({
       queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
       queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
       
-      toast({
-        title: 'Success',
-        description: 'Treatment name updated',
-      });
     } catch (error) {
       console.error('Failed to update treatment name:', error);
       toast({
@@ -582,10 +571,6 @@ export const WindowManagementDialog = ({
       queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
       queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
       
-      toast({
-        title: 'Success',
-        description: 'Description updated',
-      });
     } catch (error) {
       console.error('Failed to update description:', error);
       toast({

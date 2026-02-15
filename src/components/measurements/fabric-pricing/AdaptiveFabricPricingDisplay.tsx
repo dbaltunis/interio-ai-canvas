@@ -930,10 +930,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   || (fabricCalculation.linearMeters / horizontalPiecesNeeded) 
                   || 0;
                 
-                // Total linear meters (already calculated correctly in useFabricCalculator)
+                // Total linear meters — use orderedLinearMeters to match cost calculation
                 const totalLinearMeters = isCurtainEngineActive && displayLinearMeters != null
                   ? displayLinearMeters
-                  : (fabricCalculation.linearMeters || 0);
+                  : (fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0);
 
                 // ✅ CRITICAL FIX: When using leftover fabric, only charge for 1 piece
                 const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
@@ -983,9 +983,10 @@ export const AdaptiveFabricPricingDisplay = ({
 
                 // ✅ CRITICAL FIX: Use displayLinearMeters (from engineResult) as the authoritative value
                 // This was the root cause of 4.60m vs 4.55m discrepancy - vertical path was recalculating
+                // Use displayLinearMeters which already prioritizes orderedLinearMeters
                 const authoritativeLinearMeters = isCurtainEngineActive && displayLinearMeters != null
                   ? displayLinearMeters
-                  : (fabricCalculation.linearMeters || 0);
+                  : (fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0);
 
                 // Use authoritative value for pricing
                 quantity = authoritativeLinearMeters;
