@@ -14,7 +14,7 @@ import { useCompactMode } from "@/hooks/useCompactMode";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { useCreateRoomProducts } from "@/hooks/useRoomProducts";
-import { useCreateAppointment } from "@/hooks/useAppointments";
+import { UnifiedAppointmentDialog } from "@/components/calendar/UnifiedAppointmentDialog";
 
 
 interface RoomCardProps {
@@ -92,34 +92,25 @@ export const RoomCard = ({
   
   const [showWorksheetDialog, setShowWorksheetDialog] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showEventDialog, setShowEventDialog] = useState(false);
+  const [pendingEventRequest, setPendingEventRequest] = useState<CalendarEventRequest | null>(null);
   const [newSurface, setNewSurface] = useState<any>(null);
-  
+
   const createRoomProducts = useCreateRoomProducts();
-  const createAppointment = useCreateAppointment();
 
+  // Open the calendar event dialog pre-filled with service details
   const handleCreateCalendarEvent = (eventRequest: CalendarEventRequest) => {
-    const now = new Date();
-    // Default to tomorrow at 9 AM for the event
-    const startTime = new Date(now);
-    startTime.setDate(startTime.getDate() + 1);
-    startTime.setHours(9, 0, 0, 0);
-    const endTime = new Date(startTime);
-    endTime.setMinutes(endTime.getMinutes() + (eventRequest.durationMinutes || 60));
-
-    createAppointment.mutate({
-      title: `${eventRequest.title} - ${room.name}`,
-      description: eventRequest.description,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
-      appointment_type: (eventRequest.serviceCategory === 'measurement' ? 'measurement'
-        : eventRequest.serviceCategory === 'consultation' ? 'consultation'
-        : eventRequest.serviceCategory === 'installation' ? 'installation'
-        : 'follow-up') as any,
-      status: 'scheduled',
-      project_id: projectId || undefined,
-      client_id: clientId || undefined,
-    });
+    setPendingEventRequest(eventRequest);
+    setShowEventDialog(true);
   };
+
+  // Compute pre-filled date/time for the event dialog
+  const eventDate = new Date();
+  eventDate.setDate(eventDate.getDate() + 1); // default to tomorrow
+  const durationMins = pendingEventRequest?.durationMinutes || 30;
+  const eventStartTime = "09:00";
+  const endMins = 9 * 60 + durationMins;
+  const eventEndTime = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`;
 
   const handleSurfaceCreation = async () => {
     setIsCreatingSurface(true);
@@ -282,6 +273,30 @@ export const RoomCard = ({
           onAddProducts={handleAddProducts}
           onCreateCalendarEvent={handleCreateCalendarEvent}
         />
+
+        {/* Calendar Event Dialog for service scheduling */}
+        {pendingEventRequest && (
+          <UnifiedAppointmentDialog
+            open={showEventDialog}
+            onOpenChange={(open) => {
+              setShowEventDialog(open);
+              if (!open) setPendingEventRequest(null);
+            }}
+            selectedDate={eventDate}
+            selectedStartTime={eventStartTime}
+            selectedEndTime={eventEndTime}
+            prefill={{
+              title: `${pendingEventRequest.title} - ${room.name}`,
+              description: pendingEventRequest.description,
+              appointment_type: pendingEventRequest.serviceCategory === 'measurement' ? 'measurement'
+                : pendingEventRequest.serviceCategory === 'consultation' ? 'consultation'
+                : pendingEventRequest.serviceCategory === 'installation' ? 'installation'
+                : 'follow_up',
+              project_id: projectId,
+              client_id: clientId,
+            }}
+          />
+        )}
       </Card>
     </Collapsible>
   );
