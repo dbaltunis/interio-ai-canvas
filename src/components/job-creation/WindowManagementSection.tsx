@@ -27,8 +27,8 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
     name: "",
     surface_type: "window",
     room_id: "",
-    width: 60,
-    height: 48
+    width: 0,
+    height: 0
   });
 
   const handleCreateSurface = async () => {
@@ -42,7 +42,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
         surface_height: formData.height
       });
       setShowAddDialog(false);
-      setFormData({ name: "", surface_type: "window", room_id: "", width: 60, height: 48 });
+      setFormData({ name: "", surface_type: "window", room_id: "", width: 0, height: 0 });
     } catch (error) {
       console.error("Failed to create surface:", error);
     }
@@ -61,7 +61,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
         surface_height: formData.height
       });
       setEditingSurface(null);
-      setFormData({ name: "", surface_type: "window", room_id: "", width: 60, height: 48 });
+      setFormData({ name: "", surface_type: "window", room_id: "", width: 0, height: 0 });
     } catch (error) {
       console.error("Failed to update surface:", error);
     }

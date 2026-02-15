@@ -825,13 +825,13 @@ export const CostCalculationSummary = ({
       ? calculatedFabricCost
       : (fabricCalculation?.totalCost ?? fabricCalculation?.fabricCost ?? (useEngine ? engineResult.fabric_cost : 0));
   
-  // Linear meters: PRIORITY: engine > fabricDisplayData.totalMeters > fabricCalculation > 0
-  // ✅ CRITICAL FIX: Prioritize engineResult when available to prevent formula inconsistency
-  // This fixes the "5.10m vs 5.08m" display mismatch between pricing method and quote summary
-  // Engine is the authoritative source - fabricDisplayData may be stale on initial render
+  // Linear meters: PRIORITY: engine > fabricCalculation > fabricDisplayData > 0
+  // ✅ CRITICAL FIX: Use same fallback order as AdaptiveFabricPricingDisplay
+  // Both components must resolve to the same value to prevent formula discrepancy
+  // Engine is authoritative; fabricCalculation is the next-best live source
   const linearMeters = useEngine && engineResult?.linear_meters != null
     ? engineResult.linear_meters  // Engine is always authoritative when available
-    : (fabricDisplayData?.totalMeters ?? fabricCalculation?.linearMeters ?? 0);
+    : (fabricCalculation?.linearMeters ?? fabricDisplayData?.totalMeters ?? 0);
   
   // Widths required: engine > fabricCalculation > 1
   const widthsRequired = useEngine

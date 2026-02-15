@@ -22,7 +22,7 @@ import { DailyCalendarView } from "./DailyCalendarView";
 import { MonthlyCalendarView } from "./MonthlyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-import { QuickAddPopover } from "./QuickAddPopover";
+// QuickAddPopover removed - using UnifiedAppointmentDialog directly for all event creation
 import { AnimatePresence, motion } from "framer-motion";
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
@@ -302,19 +302,19 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       endT = e;
     }
 
-    // Capture click position for popover anchoring
-    if (event) {
-      setQuickAddAnchorPosition({ x: event.clientX, y: event.clientY });
+    // Open UnifiedAppointmentDialog directly (replacing old QuickAddPopover)
+    setSelectedDate(date);
+    setSelectedStartTime(startT);
+    if (endT) {
+      setSelectedEndTime(endT);
     } else {
-      // Fallback: center of viewport if no mouse event
-      setQuickAddAnchorPosition({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 3 });
+      // Default to 30 min duration for single slot click
+      const hour = parseInt(startT.split(':')[0]);
+      const mins = parseInt(startT.split(':')[1]);
+      const totalMins = hour * 60 + mins + 30;
+      setSelectedEndTime(`${Math.floor(totalMins / 60).toString().padStart(2, '0')}:${(totalMins % 60).toString().padStart(2, '0')}`);
     }
-
-    // Open QuickAddPopover
-    setQuickAddDate(date);
-    setQuickAddStartTime(startT);
-    setQuickAddEndTime(endT);
-    setQuickAddOpen(true);
+    setShowCreateEventDialog(true);
   };
 
   const proceedWithEventCreation = (date: Date, time: string) => {
@@ -491,7 +491,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       )}
 
       {/* Main Calendar with proper scroll hierarchy */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-visible">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Sticky Header Container - Single consolidated row */}
         <div className="sticky top-0 z-20 bg-background border-b flex-shrink-0">
           <CalendarSyncToolbar
@@ -607,18 +607,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         </DialogContent>
       </Dialog>
 
-      {/* Quick Add Popover for fast event creation */}
-      <QuickAddPopover
-        open={quickAddOpen}
-        onOpenChange={setQuickAddOpen}
-        date={quickAddDate}
-        startTime={quickAddStartTime}
-        endTime={quickAddEndTime}
-        onMoreOptions={handleQuickAddMoreOptions}
-        anchorPosition={quickAddAnchorPosition}
-      />
-
-      {/* Unified Appointment Dialog for both create and edit */}
+      {/* Unified Appointment Dialog for create, edit, and view */}
       <UnifiedAppointmentDialog
         open={showEventDetails || showEditDialog || showCreateEventDialog}
         onOpenChange={(open) => {
