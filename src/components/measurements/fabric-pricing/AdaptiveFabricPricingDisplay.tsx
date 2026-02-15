@@ -105,10 +105,12 @@ export const AdaptiveFabricPricingDisplay = ({
       ? engineResult.totalDropCm * 10 // cm → mm
       : fabricCalculation?.totalDropMm;
 
+  // Use orderedLinearMeters (full widths purchased) to match fabric cost calculation
+  // fabricCost = orderedLinearMeters × pricePerMeter, so formula display must use same quantity
   const displayLinearMeters =
     isCurtainEngineActive && engineResult.linear_meters != null
       ? engineResult.linear_meters
-      : fabricCalculation?.linearMeters;
+      : (fabricCalculation?.orderedLinearMeters ?? fabricCalculation?.linearMeters);
 
   const displayFabricCost =
     isCurtainEngineActive && engineResult.fabric_cost != null

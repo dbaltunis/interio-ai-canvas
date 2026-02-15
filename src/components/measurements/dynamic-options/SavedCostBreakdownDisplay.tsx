@@ -177,12 +177,14 @@ export const SavedCostBreakdownDisplay = ({
   const headingItem = costBreakdown.find(item => item.category === 'heading');
 
   // Deduplicate options - saved cost_breakdown can accumulate duplicates over edit cycles
+  // Use optionKey first (most reliable), then fall back to name or id
   const seenKeys = new Set<string>();
   const deduplicatedBreakdown = costBreakdown.filter(item => {
     if (item.category !== 'option' && item.category !== 'hardware' && item.category !== 'hardware_accessory') {
       return true; // Keep all non-option/hardware items
     }
-    const key = item.name || item.id;
+    const itemAny = item as any;
+    const key = itemAny.optionKey || itemAny.option_key || item.name || item.id;
     if (seenKeys.has(key)) return false;
     seenKeys.add(key);
     return true;

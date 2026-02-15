@@ -5,7 +5,7 @@ import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
 import { useMyTasks } from "@/hooks/useTasks";
 import { supabase } from "@/integrations/supabase/client";
 import { EventPill } from "./EventPill";
-import { EventDetailPopover } from "./EventDetailPopover";
+// EventDetailPopover removed - events open UnifiedAppointmentDialog directly
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getAllEventsForDate } from "./utils/calendarHelpers";
 import { motion } from "framer-motion";
@@ -119,23 +119,19 @@ export const MonthlyCalendarView = ({
               {/* Event pills */}
               <div className="flex-1 space-y-0.5 overflow-hidden">
                 {events.slice(0, maxVisible).map((event, idx) => (
-                  <EventDetailPopover
-                    key={event.id}
-                    event={event}
-                    onEdit={(id) => onEventClick?.(id)}
-                  >
                     <motion.div
+                      key={event.id}
                       initial={{ opacity: 0, y: 2 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03, duration: 0.15 }}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); onEventClick?.(event.id); }}
+                      className="cursor-pointer"
                     >
                       <EventPill
                         event={event}
                         variant="month"
                       />
                     </motion.div>
-                  </EventDetailPopover>
                 ))}
 
                 {/* "+N more" popover */}
@@ -161,18 +157,16 @@ export const MonthlyCalendarView = ({
                       </div>
                       <div className="space-y-1">
                         {events.map(event => (
-                          <EventDetailPopover
-                            key={event.id}
-                            event={event}
-                            onEdit={(id) => onEventClick?.(id)}
-                          >
-                            <div onClick={(e) => e.stopPropagation()}>
+                            <div
+                              key={event.id}
+                              onClick={(e) => { e.stopPropagation(); setMorePopoverDay(null); onEventClick?.(event.id); }}
+                              className="cursor-pointer"
+                            >
                               <EventPill
                                 event={event}
                                 variant="month"
                               />
                             </div>
-                          </EventDetailPopover>
                         ))}
                       </div>
                     </PopoverContent>

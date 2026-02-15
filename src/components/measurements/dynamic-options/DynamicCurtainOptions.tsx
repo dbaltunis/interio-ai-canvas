@@ -246,15 +246,16 @@ export const DynamicCurtainOptions = ({
     });
 
     if (restoredOptions.length > 0) {
-      // Merge with existing selectedOptions, avoiding duplicates
-      const existingKeys = new Set(selectedOptions.map(o => (o as any).optionKey || o.name));
-      const newOptions = restoredOptions.filter(o => !existingKeys.has(o.optionKey || o.name));
-
-      if (newOptions.length > 0) {
-        const mergedOptions = [...selectedOptions, ...newOptions];
-        console.log('📋 Merged options for Quote Summary:', mergedOptions.map(o => o.name));
-        onSelectedOptionsChange(mergedOptions);
-      }
+      // REPLACE by optionKey: restored options have current labels and prices
+      // Keep any existing options that DON'T have a matching optionKey in restoredOptions
+      const restoredKeys = new Set(restoredOptions.map(o => o.optionKey).filter(Boolean));
+      const nonOverlapping = selectedOptions.filter(o => {
+        const key = (o as any).optionKey;
+        return key && !restoredKeys.has(key);
+      });
+      const finalOptions = [...nonOverlapping, ...restoredOptions];
+      console.log('📋 Synced options for Quote Summary:', finalOptions.map(o => o.name));
+      onSelectedOptionsChange(finalOptions);
     }
 
     setHasInitialSyncCompleted(true);

@@ -825,13 +825,14 @@ export const CostCalculationSummary = ({
       ? calculatedFabricCost
       : (fabricCalculation?.totalCost ?? fabricCalculation?.fabricCost ?? (useEngine ? engineResult.fabric_cost : 0));
   
-  // Linear meters: PRIORITY: engine > fabricCalculation > fabricDisplayData > 0
-  // ✅ CRITICAL FIX: Use same fallback order as AdaptiveFabricPricingDisplay
-  // Both components must resolve to the same value to prevent formula discrepancy
-  // Engine is authoritative; fabricCalculation is the next-best live source
+  // Linear meters: PRIORITY: engine > fabricDisplayData.totalMeters > fabricCalculation.orderedLinearMeters > 0
+  // ✅ ROOT FIX: Use the quantity that MATCHES the fabric cost calculation
+  // fabricCost is calculated from orderedLinearMeters (full widths purchased), NOT linearMeters (fabric used)
+  // Display formula must show: quantity × price = cost, where quantity matches cost
+  // Engine linear_meters IS the ordered/total value, so it matches engine fabric_cost
   const linearMeters = useEngine && engineResult?.linear_meters != null
-    ? engineResult.linear_meters  // Engine is always authoritative when available
-    : (fabricCalculation?.linearMeters ?? fabricDisplayData?.totalMeters ?? 0);
+    ? engineResult.linear_meters  // Engine: linear_meters matches fabric_cost
+    : (fabricDisplayData?.totalMeters ?? fabricCalculation?.orderedLinearMeters ?? fabricCalculation?.linearMeters ?? 0);
   
   // Widths required: engine > fabricCalculation > 1
   const widthsRequired = useEngine
