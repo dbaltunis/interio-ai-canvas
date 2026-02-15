@@ -151,8 +151,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onH
 
   return (
     <div className="w-[280px] min-w-[280px] max-w-[280px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 overflow-hidden">
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="flex flex-col px-3 py-4 w-full max-w-full overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0" style={{ overflowX: 'hidden' }}>
+        <div className="flex flex-col px-3 py-4 overflow-x-hidden" style={{ width: '256px', maxWidth: '256px' }}>
           {/* Header with collapse */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-foreground">Calendar</h2>
@@ -190,9 +190,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, onH
                 nav_button_previous: "absolute left-0",
                 nav_button_next: "absolute right-0",
                 table: "w-full border-collapse",
-                head_row: "flex w-full justify-between",
+                head_row: "grid grid-cols-7 w-full",
                 head_cell: "text-muted-foreground/60 rounded-md flex-1 text-center font-medium text-[10px] uppercase tracking-wider",
-                row: "flex w-full justify-between mt-1",
+                row: "grid grid-cols-7 w-full mt-1",
                 cell: "relative p-0 text-center text-sm flex-1 min-w-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/10 [&:has([aria-selected])]:rounded-md",
                 day: "h-8 w-8 p-0 text-xs font-normal hover:bg-accent hover:text-accent-foreground rounded-md aria-selected:opacity-100 mx-auto transition-colors",
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
