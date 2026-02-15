@@ -185,6 +185,38 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
     }
   };
 
+  const handleSyncInvoices = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('netsuite-sync-invoices', {
+        body: {},
+      });
+
+      if (error) throw error;
+
+      const parts = [];
+      if (data.synced > 0) parts.push(`${data.synced} invoices synced`);
+      if (data.updated > 0) parts.push(`${data.updated} updated`);
+
+      toast({
+        title: "Invoice Sync Complete",
+        description: parts.length > 0 ? parts.join(', ') : 'No invoices to sync',
+      });
+    } catch (err: any) {
+      const msg = err.message || "";
+      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
+      toast({
+        title: "Invoice Sync Failed",
+        description: isEdgeFnMissing
+          ? "The NetSuite invoice sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
+          : `Invoice sync failed. ${msg}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const hasCredentials = formData.account_id && formData.consumer_key && formData.token_id;
 
   return (
@@ -474,6 +506,30 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
                   >
                     <ArrowUpDown className="h-4 w-4 mr-2" />
                     Pull Estimates
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSyncOrders('salesOrder', 'pull')}
+                    disabled={isSyncing}
+                  >
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    Pull Sales Orders
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">Invoices</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSyncInvoices}
+                    disabled={isSyncing}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                    Pull Invoices
                   </Button>
                 </div>
               </div>
