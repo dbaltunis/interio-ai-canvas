@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ interface PricingGridCardDashboardProps {
 export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const confirm = useConfirmDialog();
   
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
   const [editingGridId, setEditingGridId] = useState<string | null>(null);
@@ -161,8 +163,14 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
     updateMarkupMutation.mutate({ gridId, markup });
   };
 
-  const handleDeleteGrid = (gridId: string) => {
-    if (!confirm('Delete this pricing grid?')) return;
+  const handleDeleteGrid = async (gridId: string) => {
+    const confirmed = await confirm({
+      title: "Delete Pricing Grid",
+      description: "Are you sure you want to delete this pricing grid?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     deleteGridMutation.mutate(gridId);
   };
 

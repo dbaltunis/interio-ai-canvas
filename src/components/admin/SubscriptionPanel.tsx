@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +23,7 @@ interface SubscriptionPanelProps {
 }
 
 export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
+  const confirm = useConfirmDialog();
   const [adminNotes, setAdminNotes] = useState(account.subscription?.admin_notes || "");
   const [trialEndDate, setTrialEndDate] = useState(
     account.subscription?.trial_ends_at
@@ -92,10 +94,15 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
     });
   };
 
-  const handleSubscriptionTypeChange = (newType: SubscriptionType) => {
+  const handleSubscriptionTypeChange = async (newType: SubscriptionType) => {
     if (!account.subscription) return;
 
-    if (window.confirm(`Are you sure you want to change the subscription type to "${newType}"?`)) {
+    const confirmed = await confirm({
+      title: "Change Subscription Type",
+      description: `Are you sure you want to change the subscription type to "${newType}"?`,
+      confirmLabel: "Change",
+    });
+    if (confirmed) {
       updateSubscriptionType.mutate({
         subscriptionId: account.subscription.id,
         subscriptionType: newType,
@@ -113,10 +120,15 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
     });
   };
 
-  const handleUpdateTrialDate = () => {
+  const handleUpdateTrialDate = async () => {
     if (!account.subscription || !trialEndDate) return;
 
-    if (window.confirm(`Update trial end date to ${trialEndDate}?`)) {
+    const confirmed = await confirm({
+      title: "Update Trial Date",
+      description: `Update trial end date to ${trialEndDate}?`,
+      confirmLabel: "Update",
+    });
+    if (confirmed) {
       updateTrialDuration.mutate({
         subscriptionId: account.subscription.id,
         trialEndsAt: new Date(trialEndDate).toISOString(),
@@ -142,8 +154,13 @@ export function SubscriptionPanel({ account }: SubscriptionPanelProps) {
     return <Badge variant={variants[status || ""] || "secondary"}>{status || "unknown"}</Badge>;
   };
 
-  const handleCreateTrialSubscription = () => {
-    if (window.confirm("Create a 14-day trial subscription for this account?")) {
+  const handleCreateTrialSubscription = async () => {
+    const confirmed = await confirm({
+      title: "Create Trial Subscription",
+      description: "Create a 14-day trial subscription for this account?",
+      confirmLabel: "Create Trial",
+    });
+    if (confirmed) {
       createTrialSubscription.mutate({ userId: account.user_id });
     }
   };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,7 @@ const CATEGORY_COLORS = [
 ];
 
 export const InventoryCategoriesManager = () => {
+  const confirm = useConfirmDialog();
   const { hierarchicalCategories, categories, isLoading } = useInventoryCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -99,7 +101,13 @@ export const InventoryCategoriesManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this category? Items will be unassigned.')) {
+    const confirmed = await confirm({
+      title: "Delete Category",
+      description: "Are you sure you want to delete this category? Items will be unassigned.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteCategory.mutateAsync(id);
     }
   };

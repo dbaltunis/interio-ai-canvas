@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,7 @@ const SUPPLIER_INTEGRATION_TYPES = ['twc', 'tigpim', 'somfy'];
 
 export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const { data: vendors = [] } = useVendors();
   const { integrations } = useIntegrations();
   const createVendor = useCreateVendor();
@@ -296,7 +298,13 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   };
 
   const handleDeleteGrid = async (gridId: string, gridName: string) => {
-    if (!confirm(`Delete pricing grid "${gridName}"?`)) return;
+    const confirmed = await confirm({
+      title: "Delete Pricing Grid",
+      description: `Are you sure you want to delete pricing grid "${gridName}"?`,
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       // Delete the grid directly

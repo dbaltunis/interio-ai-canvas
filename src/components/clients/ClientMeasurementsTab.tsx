@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ export const ClientMeasurementsTab = ({ clientId, canEditClient = true }: Client
   const deleteMeasurement = useDeleteClientMeasurement();
   const navigate = useNavigate();
   const { formatCurrency } = useFormattedCurrency();
+  const confirm = useConfirmDialog();
 
   const handleViewMeasurement = (measurement: any, isProject: boolean = false) => {
     setViewingMeasurement(measurement);
@@ -38,7 +40,13 @@ export const ClientMeasurementsTab = ({ clientId, canEditClient = true }: Client
   };
 
   const handleDeleteMeasurement = async (measurementId: string) => {
-    if (confirm("Are you sure you want to delete this measurement?")) {
+    const confirmed = await confirm({
+      title: "Delete Measurement",
+      description: "Are you sure you want to delete this measurement? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       deleteMeasurement.mutate(measurementId);
     }
   };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface TopSystemItem extends EnhancedInventoryItem {
 }
 
 export const TopSystemsManager = () => {
+  const confirm = useConfirmDialog();
   const { data: systemsData = [], isLoading } = useEnhancedInventoryByCategory('top_system');
   const createItem = useCreateEnhancedInventoryItem();
   const updateItem = useUpdateEnhancedInventoryItem();
@@ -215,7 +217,13 @@ export const TopSystemsManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this top system?')) {
+    const confirmed = await confirm({
+      title: "Delete Top System",
+      description: "Are you sure you want to delete this top system?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       try {
         await deleteItem.mutateAsync(id);
         toast({

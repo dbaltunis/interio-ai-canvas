@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export const TasksListEnhanced = ({ clientId }: TasksListEnhancedProps) => {
   const { data: tasks, isLoading } = useClientTasks(clientId);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const confirm = useConfirmDialog();
   const [filter, setFilter] = useState<string>("all");
 
   const handleComplete = async (taskId: string) => {
@@ -57,7 +59,13 @@ export const TasksListEnhanced = ({ clientId }: TasksListEnhancedProps) => {
   };
 
   const handleDelete = async (taskId: string) => {
-    if (window.confirm("Delete this task?")) {
+    const confirmed = await confirm({
+      title: "Delete Task",
+      description: "Are you sure you want to delete this task? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteTask.mutateAsync(taskId);
     }
   };

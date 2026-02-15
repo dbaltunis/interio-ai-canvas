@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ export const AppointmentsList = ({ projectId }: AppointmentsListProps) => {
   const deleteAppointment = useDeleteAppointment();
   const { syncToGoogle, syncFromGoogle, isSyncingToGoogle, isSyncingFromGoogle } = useGoogleCalendarSync();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
 
   const projectAppointments = appointments?.filter(apt => apt.project_id === projectId) || [];
 
@@ -42,7 +44,13 @@ export const AppointmentsList = ({ projectId }: AppointmentsListProps) => {
   };
 
   const handleDeleteAppointment = async (appointmentId: string) => {
-    if (!confirm("Are you sure you want to delete this appointment?")) return;
+    const confirmed = await confirm({
+      title: "Delete Appointment",
+      description: "Are you sure you want to delete this appointment? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       await deleteAppointment.mutateAsync(appointmentId);

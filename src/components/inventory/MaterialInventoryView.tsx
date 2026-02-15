@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -72,6 +73,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   const { data: vendors = [] } = useVendors();
   const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,7 +161,13 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this material?')) return;
+    const confirmed = await confirm({
+      title: "Delete Material",
+      description: "Are you sure you want to delete this material?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('enhanced_inventory_items')
@@ -269,7 +277,13 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
             selectedCount={selectionStats.selected}
             onClearSelection={clearSelection}
             onBulkDelete={async () => {
-            if (!confirm(`Delete ${selectionStats.selected} selected materials?`)) return;
+            const confirmed = await confirm({
+              title: "Delete Selected Materials",
+              description: `Are you sure you want to delete ${selectionStats.selected} selected materials?`,
+              confirmLabel: "Delete",
+              variant: "destructive",
+            });
+            if (!confirmed) return;
             
             const { error } = await supabase
               .from('enhanced_inventory_items')

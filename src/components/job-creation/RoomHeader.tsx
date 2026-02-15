@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RoomActionsMenu } from "./RoomActionsMenu";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useCompactMode } from "@/hooks/useCompactMode";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Edit2, ChevronDown } from "lucide-react";
 
 
@@ -47,6 +48,7 @@ export const RoomHeader = ({
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
   const { formatCurrency } = useFormattedCurrency();
+  const confirm = useConfirmDialog();
   return (
     <CardHeader 
       className={`relative bg-muted/30 border-b border-border p-[14px] ${compact ? 'py-3 px-4' : 'py-4 px-6'} ${onToggle ? 'cursor-pointer select-none' : ''}`}
@@ -104,8 +106,14 @@ export const RoomHeader = ({
             room={room}
             onEditName={onStartEditing}
             onCopyRoom={() => onCopyRoom(room)}
-            onDeleteRoom={() => {
-              if (confirm("Delete this room and all its contents?")) {
+            onDeleteRoom={async () => {
+              const confirmed = await confirm({
+                title: "Delete Room",
+                description: "Delete this room and all its contents? This action cannot be undone.",
+                confirmLabel: "Delete",
+                variant: "destructive",
+              });
+              if (confirmed) {
                 onDeleteRoom(room.id);
               }
             }}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ interface UserListProps {
 export const UserList = ({ users, onInviteUser, isLoading = false }: UserListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -230,8 +232,14 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          if (confirm('Cancel this invitation?')) {
+                        onClick={async () => {
+                          const confirmed = await confirm({
+                            title: "Cancel Invitation",
+                            description: "Are you sure you want to cancel this invitation?",
+                            confirmLabel: "Cancel Invitation",
+                            variant: "destructive",
+                          });
+                          if (confirmed) {
                             deleteInvitation.mutate(invitation.id);
                           }
                         }}

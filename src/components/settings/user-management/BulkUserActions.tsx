@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,6 +23,7 @@ export const BulkUserActions = ({ users, selectedUsers, onSelectAll, onClearSele
   const [bulkAction, setBulkAction] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   
@@ -196,14 +198,22 @@ export const BulkUserActions = ({ users, selectedUsers, onSelectAll, onClearSele
             });
             return;
           }
-          if (confirm(`Are you sure you want to delete ${targetUsers.length} users? This action cannot be undone.`)) {
-            await Promise.all(
-              targetUsers.map(userId => deleteUser.mutateAsync(userId))
-            );
-            toast({
-              title: "Users deleted",
-              description: `${targetUsers.length} users have been removed.`,
+          {
+            const confirmed = await confirm({
+              title: "Delete Users",
+              description: `Are you sure you want to delete ${targetUsers.length} users? This action cannot be undone.`,
+              confirmLabel: "Delete",
+              variant: "destructive",
             });
+            if (confirmed) {
+              await Promise.all(
+                targetUsers.map(userId => deleteUser.mutateAsync(userId))
+              );
+              toast({
+                title: "Users deleted",
+                description: `${targetUsers.length} users have been removed.`,
+              });
+            }
           }
           break;
       }

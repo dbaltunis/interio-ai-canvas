@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Task, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
@@ -35,6 +36,7 @@ interface TaskEditDialogProps {
 export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps) => {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const confirm = useConfirmDialog();
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
 
@@ -86,7 +88,13 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
 
   const handleDelete = async () => {
     if (!task) return;
-    if (confirm("Are you sure you want to delete this task?")) {
+    const confirmed = await confirm({
+      title: "Delete Task",
+      description: "Are you sure you want to delete this task? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteTask.mutateAsync(task.id);
       onOpenChange(false);
     }

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useAllVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from "@/hooks/useVendors";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export const SupplierManagement = () => {
   const createVendor = useCreateVendor();
   const updateVendor = useUpdateVendor();
   const deleteVendor = useDeleteVendor();
+  const confirm = useConfirmDialog();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -74,7 +76,13 @@ export const SupplierManagement = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this supplier?")) return;
+    const confirmed = await confirm({
+      title: "Delete Supplier",
+      description: "Are you sure you want to delete this supplier? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     await deleteVendor.mutateAsync(id);
   };
 

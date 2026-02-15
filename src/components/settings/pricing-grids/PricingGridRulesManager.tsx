@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const PricingGridRulesManager = () => {
+  const confirm = useConfirmDialog();
   const [productType, setProductType] = useState('');
   const [systemType, setSystemType] = useState('');
   const [priceGroup, setPriceGroup] = useState('');
@@ -96,7 +98,13 @@ export const PricingGridRulesManager = () => {
   };
 
   const handleDeleteRule = async (ruleId: string) => {
-    if (!confirm('Are you sure you want to delete this rule?')) return;
+    const confirmed = await confirm({
+      title: "Delete Rule",
+      description: "Are you sure you want to delete this rule?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       const { error } = await supabase

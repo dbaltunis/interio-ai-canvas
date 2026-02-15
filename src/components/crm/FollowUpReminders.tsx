@@ -18,6 +18,7 @@ import {
 import { formatDistanceToNow, format } from "date-fns";
 import { CheckCircle2, Clock, User, Target, Calendar, MoreVertical, Trash2, Bell } from "lucide-react";
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const FollowUpReminders = () => {
   const { data: reminders, isLoading } = useFollowUpReminders();
@@ -150,6 +151,7 @@ interface ReminderCardProps {
 }
 
 const ReminderCard = ({ reminder, markCompleted, snoozeReminder, deleteReminder, isOverdue }: ReminderCardProps) => {
+  const confirm = useConfirmDialog();
   const scheduledDate = new Date(reminder.scheduled_for);
   const client = reminder.clients;
   const deal = reminder.deals;
@@ -162,8 +164,14 @@ const ReminderCard = ({ reminder, markCompleted, snoozeReminder, deleteReminder,
     snoozeReminder.mutate({ reminderId: reminder.id, days });
   };
 
-  const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this reminder?')) {
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: "Delete Reminder",
+      description: "Are you sure you want to delete this reminder?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       deleteReminder.mutate(reminder.id);
     }
   };

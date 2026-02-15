@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +15,7 @@ export const LiningsSection = () => {
   const { data: linings = [], isLoading: liningsLoading } = useLiningOptions();
   const updateLining = useUpdateLiningOption();
   const deleteLining = useDeleteLiningOption();
+  const confirm = useConfirmDialog();
   const { getFabricUnitLabel } = useMeasurementUnits();
   const [isLiningDialogOpen, setIsLiningDialogOpen] = useState(false);
   const [editingLining, setEditingLining] = useState<LiningOption | null>(null);
@@ -39,10 +41,14 @@ export const LiningsSection = () => {
   };
 
   const handleDeleteLining = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this lining option?")) {
-      return;
-    }
-    
+    const confirmed = await confirm({
+      title: "Delete Lining",
+      description: "Are you sure you want to delete this lining option? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteLining.mutateAsync(id);
       toast.success("Lining option deleted successfully");

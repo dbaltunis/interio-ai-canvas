@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Square, Settings2, DollarSign, Plus, Edit, Trash2, Lock } from "lucide-react";
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { InteractiveProjectDialog } from "./InteractiveProjectDialog";
 import { useStatusPermissions } from "@/hooks/useStatusPermissions";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +36,7 @@ export const ProjectOverview = ({
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   
   // Check if status allows editing
   const statusPermissions = useStatusPermissions(project?.status_id);
@@ -99,10 +101,14 @@ export const ProjectOverview = ({
   };
 
   const handleDeleteRoom = async (roomId: string) => {
-    if (confirm("Are you sure you want to delete this room? This will also delete all associated surfaces and treatments.")) {
-      if (onDeleteRoom) {
-        await onDeleteRoom(roomId);
-      }
+    const confirmed = await confirm({
+      title: "Delete Room",
+      description: "Are you sure you want to delete this room? This will also delete all associated surfaces and treatments.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed && onDeleteRoom) {
+      await onDeleteRoom(roomId);
     }
   };
 

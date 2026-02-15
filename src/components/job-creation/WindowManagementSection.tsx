@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Home, Square, Plus, Edit, Trash2 } from "lucide-react";
@@ -20,7 +21,8 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
   const updateSurface = useUpdateSurface();
   const deleteSurface = useDeleteSurface();
   const { getLengthUnitLabel } = useMeasurementUnits();
-  
+  const confirm = useConfirmDialog();
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingSurface, setEditingSurface] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -68,8 +70,14 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
   };
 
   const handleDeleteSurface = async (surfaceId: string) => {
-    if (!confirm("Delete this surface? This action cannot be undone.")) return;
-    
+    const confirmed = await confirm({
+      title: "Delete Surface",
+      description: "Delete this surface? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteSurface.mutateAsync(surfaceId);
     } catch (error) {

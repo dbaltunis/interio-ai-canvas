@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface GridDataStructure {
 }
 
 export const PricingGridsSection = () => {
+  const confirm = useConfirmDialog();
   const [gridName, setGridName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPreview, setShowPreview] = useState<PricingGrid | null>(null);
@@ -142,7 +144,13 @@ export const PricingGridsSection = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete the pricing grid "${name}"?`)) {
+    const confirmed = await confirm({
+      title: "Delete Pricing Grid",
+      description: `Are you sure you want to delete the pricing grid "${name}"?`,
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) {
       return;
     }
     

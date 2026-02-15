@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,7 @@ const TREATMENT_OPTIONS = getTreatmentOptions();
 
 export const PricingGridManager = () => {
   const queryClient = useQueryClient();
+  const confirm = useConfirmDialog();
   const [activeTab, setActiveTab] = useState('single');
   const [newGridName, setNewGridName] = useState('');
   const [newGridCode, setNewGridCode] = useState('');
@@ -204,7 +206,13 @@ export const PricingGridManager = () => {
   };
 
   const handleDeleteGrid = async (gridId: string) => {
-    if (!confirm('Are you sure you want to delete this pricing grid?')) return;
+    const confirmed = await confirm({
+      title: "Delete Pricing Grid",
+      description: "Are you sure you want to delete this pricing grid?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       const { error } = await supabase

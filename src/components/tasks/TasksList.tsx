@@ -2,10 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
+import {
   CheckCircle2, Clock, Calendar, Trash2, AlertCircle,
   Sparkles
 } from "lucide-react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useClientTasks, useCompleteTask, useDeleteTask, Task, TaskPriority } from "@/hooks/useTasks";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { QuickAddTask } from "./QuickAddTask";
@@ -43,13 +44,20 @@ export const TasksList = ({ clientId, compact = false }: TasksListProps) => {
   const { data: tasks, isLoading } = useClientTasks(clientId);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const confirm = useConfirmDialog();
 
   const handleComplete = async (taskId: string) => {
     await completeTask.mutateAsync(taskId);
   };
 
   const handleDelete = async (taskId: string) => {
-    if (window.confirm("Delete this task?")) {
+    const confirmed = await confirm({
+      title: "Delete Task",
+      description: "Are you sure you want to delete this task? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteTask.mutateAsync(taskId);
     }
   };

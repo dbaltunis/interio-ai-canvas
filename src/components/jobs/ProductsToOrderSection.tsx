@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
   const { data: vendors = [] } = useVendors();
   const deleteProductOrder = useDeleteProductOrder();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
 
   const filteredOrders = productOrders.filter(order => {
     const statusMatch = statusFilter === "all" || order.order_status === statusFilter;
@@ -70,7 +72,13 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this product order?")) {
+    const confirmed = await confirm({
+      title: "Delete Product Order",
+      description: "Are you sure you want to delete this product order? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       try {
         await deleteProductOrder.mutateAsync(id);
       } catch (error) {

@@ -1,5 +1,6 @@
 
 import { useState, useRef } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +17,7 @@ interface WindowManagerProps {
 }
 
 export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWindowSelect }: WindowManagerProps) => {
+  const confirm = useConfirmDialog();
   const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
   const measurementWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
@@ -115,9 +117,15 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (confirm("Delete this window? This action cannot be undone.")) {
+                          const confirmed = await confirm({
+                            title: "Delete Window",
+                            description: "Delete this window? This action cannot be undone.",
+                            confirmLabel: "Delete",
+                            variant: "destructive",
+                          });
+                          if (confirmed) {
                             deleteSurface.mutate(surface.id);
                           }
                         }}

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export const ServicesSection = () => {
   const deleteService = useDeleteServiceOption();
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
+  const confirm = useConfirmDialog();
 
   const [isAddingService, setIsAddingService] = useState(false);
   const [editingService, setEditingService] = useState<string | null>(null);
@@ -107,9 +109,13 @@ export const ServicesSection = () => {
   };
 
   const handleDeleteService = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this service?")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Delete Service",
+      description: "Are you sure you want to delete this service? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       await deleteService.mutateAsync(id);

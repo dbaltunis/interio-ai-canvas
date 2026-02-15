@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,13 +23,19 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
   const updateAccountType = useUpdateAccountType();
   const deleteAccount = useDeleteAccount();
   const blockAccount = useBlockAccount();
+  const confirm = useConfirmDialog();
   const { data: emailStatus, isLoading: emailStatusLoading } = useInvitationEmailStatus(account.user_id);
   const resendInvitation = useResendInvitation();
   const [blockReason, setBlockReason] = useState("");
   const [selectedBlockStatus, setSelectedBlockStatus] = useState<AccountStatus>("trial_ended");
 
-  const handleAccountTypeChange = (newType: AccountType) => {
-    if (window.confirm(`Are you sure you want to change the account type to "${newType}"?`)) {
+  const handleAccountTypeChange = async (newType: AccountType) => {
+    const confirmed = await confirm({
+      title: "Change Account Type",
+      description: `Are you sure you want to change the account type to "${newType}"?`,
+      confirmLabel: "Change",
+    });
+    if (confirmed) {
       updateAccountType.mutate({
         userId: account.user_id,
         accountType: newType,
@@ -36,10 +43,14 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
     }
   };
 
-  const handleDeleteAccount = () => {
-    if (window.confirm(
-      `⚠️ WARNING: This will permanently delete the account for ${account.display_name || account.email} and all associated data.\n\nThis action CANNOT be undone.\n\nAre you absolutely sure you want to proceed?`
-    )) {
+  const handleDeleteAccount = async () => {
+    const confirmed = await confirm({
+      title: "Delete Account",
+      description: `This will permanently delete the account for ${account.display_name || account.email} and all associated data. This action CANNOT be undone. Are you absolutely sure you want to proceed?`,
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       deleteAccount.mutate(account.user_id, {
         onSuccess: () => {
           onAccountDeleted?.();
@@ -48,10 +59,14 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
     }
   };
 
-  const handleBlockAccount = () => {
-    if (window.confirm(
-      `Are you sure you want to ${selectedBlockStatus === 'trial_ended' ? 'end the trial for' : 'block'} this account?\n\nThe user will see a popup message and won't be able to use the app.`
-    )) {
+  const handleBlockAccount = async () => {
+    const confirmed = await confirm({
+      title: "Block Account",
+      description: `Are you sure you want to ${selectedBlockStatus === 'trial_ended' ? 'end the trial for' : 'block'} this account? The user will see a popup message and won't be able to use the app.`,
+      confirmLabel: "Block",
+      variant: "destructive",
+    });
+    if (confirmed) {
       blockAccount.mutate({
         userId: account.user_id,
         status: selectedBlockStatus,
@@ -60,8 +75,13 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
     }
   };
 
-  const handleUnblockAccount = () => {
-    if (window.confirm(`Are you sure you want to unblock this account? The user will be able to access the app again.`)) {
+  const handleUnblockAccount = async () => {
+    const confirmed = await confirm({
+      title: "Unblock Account",
+      description: "Are you sure you want to unblock this account? The user will be able to access the app again.",
+      confirmLabel: "Unblock",
+    });
+    if (confirmed) {
       blockAccount.mutate({
         userId: account.user_id,
         status: 'active',
@@ -69,8 +89,13 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
     }
   };
 
-  const handleResendInvitation = () => {
-    if (window.confirm(`This will generate a new password and send a new invitation email to ${account.email}. Continue?`)) {
+  const handleResendInvitation = async () => {
+    const confirmed = await confirm({
+      title: "Resend Invitation",
+      description: `This will generate a new password and send a new invitation email to ${account.email}. Continue?`,
+      confirmLabel: "Resend",
+    });
+    if (confirmed) {
       resendInvitation.mutate({ userId: account.user_id });
     }
   };
