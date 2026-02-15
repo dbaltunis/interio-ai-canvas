@@ -180,7 +180,7 @@ export const InventoryAdminPanel = () => {
   const handlePrint = () => window.print();
 
   // Let parent Suspense handle loading state
-  if (permissionsLoading || roleLoading || explicitPermissions === undefined) {
+  if (isLoading) {
     return null;
   }
 

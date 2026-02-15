@@ -198,23 +198,13 @@ export const UnifiedAppointmentDialog = ({
   }, [event.date, event.startTime, event.endTime]);
 
   const handleSubmit = async () => {
-    if (!isEditing) {
-      const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-      if (isPermissionLoaded && !canCreateAppointments) {
-        toast({
-          title: "Permission Denied",
-          description: "You don't have permission to create appointments.",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (!isPermissionLoaded) {
-        toast({
-          title: "Loading",
-          description: "Please wait while permissions are being checked...",
-        });
-        return;
-      }
+    if (!isEditing && !canCreateAppointments) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create appointments.",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (!event.title || !event.date || !event.startTime || !event.endTime) {
@@ -425,8 +415,7 @@ export const UnifiedAppointmentDialog = ({
         <div className="px-4 py-3 space-y-3">
           {/* Permission Warning */}
           {!isEditing && (() => {
-            const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-            if (isPermissionLoaded && !canCreateAppointments) {
+            if (!canCreateAppointments) {
               return (
                 <Alert variant="destructive" className="py-2">
                   <AlertCircle className="h-3.5 w-3.5" />

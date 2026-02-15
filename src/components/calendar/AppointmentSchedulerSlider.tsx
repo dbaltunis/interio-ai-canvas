@@ -702,20 +702,13 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            {(() => {
-              const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-              const shouldDisable = createScheduler.isPending || (isPermissionLoaded && !canCreateAppointments);
-              
-              return (
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={shouldDisable}
-                  title={isPermissionLoaded && !canCreateAppointments ? "You don't have permission to create appointments" : undefined}
-                >
-                  {createScheduler.isPending ? 'Creating...' : 'Create Schedule'}
-                </Button>
-              );
-            })()}
+            <Button
+              onClick={handleSubmit}
+              disabled={createScheduler.isPending || !canCreateAppointments}
+              title={!canCreateAppointments ? "You don't have permission to create appointments" : undefined}
+            >
+              {createScheduler.isPending ? 'Creating...' : 'Create Schedule'}
+            </Button>
           </div>
         </div>
       </div>
