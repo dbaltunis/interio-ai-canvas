@@ -87,28 +87,14 @@ export const WindowManagementDialog = ({
   const [isSavingOnClose, setIsSavingOnClose] = useState(false);
   // Counter to force MeasurementBridge remount when dialog reopens
   const [dialogOpenCounter, setDialogOpenCounter] = useState(0);
-  // Track whether a windows_summary existed when dialog opened (for ghost cleanup on discard)
-  const hadExistingSummaryRef = useRef(false);
 
   // Increment counter when dialog opens to force MeasurementBridge remount
   // This ensures fresh state and data loading when reopening the same window
   useEffect(() => {
     if (isOpen) {
       setDialogOpenCounter(prev => prev + 1);
-      // Check if a windows_summary already exists for this surface
-      // If not, discard will clean up any auto-created ghost records
-      if (surface?.id) {
-        supabase
-          .from('windows_summary')
-          .select('window_id')
-          .eq('window_id', surface.id)
-          .maybeSingle()
-          .then(({ data }) => {
-            hadExistingSummaryRef.current = !!data;
-          });
-      }
     }
-  }, [isOpen, surface?.id]);
+  }, [isOpen]);
 
   // Keep windowName in sync with surface prop
   useEffect(() => {
@@ -384,19 +370,30 @@ export const WindowManagementDialog = ({
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
 
-    // If this was a NEW treatment (no windows_summary existed when dialog opened),
-    // clean up any auto-created ghost records from fabric/material selection
-    if (!hadExistingSummaryRef.current && surface?.id) {
-      console.log('🧹 Cleaning up ghost windows_summary for new treatment:', surface.id);
-      await supabase
+    // Check at discard time: if a windows_summary exists but has no meaningful data
+    // (total_cost is 0/null and no template selected), it's a ghost record from auto-save
+    if (surface?.id) {
+      const { data: existing } = await supabase
         .from('windows_summary')
-        .delete()
-        .eq('window_id', surface.id);
-      // Invalidate queries so the UI reflects the cleanup
-      queryClient.invalidateQueries({ queryKey: ['window-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
-    } else {
-      console.log('📌 Discarding unsaved changes for existing treatment:', surface?.id);
+        .select('total_cost, template_id, fabric_cost')
+        .eq('window_id', surface.id)
+        .maybeSingle();
+
+      const hasRealData = existing && (
+        (Number(existing.total_cost) > 0) ||
+        existing.template_id ||
+        (Number(existing.fabric_cost) > 0)
+      );
+
+      if (existing && !hasRealData) {
+        console.log('🧹 Cleaning up ghost windows_summary (no pricing data):', surface.id);
+        await supabase
+          .from('windows_summary')
+          .delete()
+          .eq('window_id', surface.id);
+        queryClient.invalidateQueries({ queryKey: ['window-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      }
     }
 
     onClose();

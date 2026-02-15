@@ -7,7 +7,7 @@ import { Video, CheckCheck, MapPin, Users } from "lucide-react";
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
-import { EventDetailPopover } from "./EventDetailPopover";
+// EventDetailPopover removed - events open UnifiedAppointmentDialog directly
 import {
   SLOT_HEIGHT, PX_PER_MINUTE, ALL_TIME_SLOTS, WORKING_HOURS_SLOTS,
   getAllEventsForDate, calculateEventPosition, calculateOverlapLayout,

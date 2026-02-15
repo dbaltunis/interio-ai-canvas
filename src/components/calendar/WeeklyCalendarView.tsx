@@ -7,7 +7,7 @@ import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } fro
 import { Video, CheckCheck, Users } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
-import { EventDetailPopover } from "./EventDetailPopover";
+// EventDetailPopover removed - events open UnifiedAppointmentDialog directly
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import {
