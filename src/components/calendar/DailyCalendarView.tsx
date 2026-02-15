@@ -7,7 +7,7 @@ import { Video, CheckCheck, MapPin, Users } from "lucide-react";
 import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
-// EventDetailPopover removed - events open UnifiedAppointmentDialog directly
+import { EventDetailPopover } from "./EventDetailPopover";
 import {
   SLOT_HEIGHT, PX_PER_MINUTE, ALL_TIME_SLOTS, WORKING_HOURS_SLOTS,
   getAllEventsForDate, calculateEventPosition, calculateOverlapLayout,
@@ -322,10 +322,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                     );
                   }
 
-                  // Event pill — Apple style, click opens unified dialog directly
+                  // Event pill — Apple style, wrapped in EventDetailPopover for quick view/edit
                   const title = event.isBooking ? (event.bookingData?.customer_name || 'Customer') : event.title;
 
-                  return (
+                  const eventPill = (
                       <div
                         key={event.id}
                         className="absolute rounded-lg overflow-hidden group transition-all duration-150 hover:shadow-md hover:brightness-[0.97] cursor-pointer"
@@ -337,7 +337,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                           zIndex: event.isBooking ? 15 + eventIndex : 10 + eventIndex,
                           pointerEvents: 'auto',
                         }}
-                        onClick={event.isBooking ? handleClick : (e) => { e.stopPropagation(); onEventClick?.(event.id); }}
+                        onClick={event.isBooking ? handleClick : (e) => e.stopPropagation()}
                       >
                         <div className="absolute left-0 top-1 bottom-1 w-1 rounded-full" style={{ backgroundColor: styling.border }} />
                         <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: styling.background }} />
@@ -379,6 +379,20 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, 
                         </div>
                       </div>
                   );
+
+                  // Wrap regular events in EventDetailPopover, bookings use direct click
+                  if (!event.isBooking) {
+                    return (
+                      <EventDetailPopover
+                        key={event.id}
+                        event={event}
+                        onEdit={(id) => onEventClick?.(id)}
+                      >
+                        {eventPill}
+                      </EventDetailPopover>
+                    );
+                  }
+                  return eventPill;
                 })}
               </div>
             </div>

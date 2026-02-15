@@ -435,11 +435,17 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 overflow-hidden rounded-xl">
+        {/* Color header bar — matches EventDetailPopover design */}
+        <div className="h-2 flex-shrink-0" style={{ backgroundColor: event.color || '#6366F1' }} />
+
         {/* Compact Header */}
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-background z-10">
           <DialogTitle className="text-sm font-medium flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-primary" />
+            <div
+              className="w-3 h-3 rounded flex-shrink-0"
+              style={{ backgroundColor: event.color || '#6366F1' }}
+            />
             {isEditing ? 'Edit Event' : 'New Event'}
             {event.date && (
               <span className="text-muted-foreground font-normal">

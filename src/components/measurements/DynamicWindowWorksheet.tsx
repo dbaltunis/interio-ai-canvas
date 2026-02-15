@@ -1569,12 +1569,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             });
           }
 
-          // Calculate total meters including horizontal pieces for railroaded fabric
-          const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
-          const totalMetersOrdered = horizontalPiecesNeeded > 1 
-            ? linearMeters * horizontalPiecesNeeded  // Horizontal: multiply by pieces
-            : (fabricCalculation?.orderedLinearMeters || linearMeters); // Vertical: use ordered or actual
-
           // Calculate options cost for curtains (if any selected)
           let curtainOptionsCost = 0;
           if (displayCategory === 'curtains' && selectedOptions && selectedOptions.length > 0) {
