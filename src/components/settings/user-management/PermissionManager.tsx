@@ -21,14 +21,9 @@ import { PermissionComparison } from "./PermissionComparison";
 import { RealtimePermissionUpdates } from "./RealtimePermissionUpdates";
 import { linkUserToAccount } from "@/hooks/useAccountLinking";
 import { ROLE_PERMISSIONS } from "@/constants/permissions";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const PermissionManager = () => {
-  const { user } = useAuth();
   const { data: users = [] } = useUsers();
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: updateCustomPermissions } = useUpdateCustomPermissions();
@@ -43,44 +38,9 @@ export const PermissionManager = () => {
 
   const selectedUser = users.find(user => user.id === selectedUserId);
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-permission-manager', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[PermissionManager] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
+  // Permission check using centralized hook
+  const canManageTeam = useHasPermission('manage_team') !== false;
 
-  // Check if manage_team is explicitly in user_permissions table
-  const hasManageTeamPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'manage_team'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow manage if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_team)
-  const canManageTeam =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasManageTeamPermission
-          : hasManageTeamPermission;
-  
   // Ensure user is linked when selected so RLS and visibility work as expected
   useEffect(() => {
     const link = async () => {
@@ -113,20 +73,11 @@ export const PermissionManager = () => {
   const handleRoleChange = (newRole: string) => {
     if (!selectedUser) return;
 
-    // Check permission before changing role
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canManageTeam) {
+    if (!canManageTeam) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to manage team members.",
         variant: "destructive",
-      });
-      return;
-    }
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
       });
       return;
     }
@@ -135,16 +86,16 @@ export const PermissionManager = () => {
       userId: selectedUser.id,
       role: newRole
     });
-    
+
     // Update local permissions to match new role
     const newRolePermissions = ROLE_PERMISSIONS[newRole as keyof typeof ROLE_PERMISSIONS] || [];
     setCustomPermissions([...newRolePermissions]);
     setHasChanges(false);
-    
+
     // Invalidate queries to ensure UI updates
     queryClient.invalidateQueries({ queryKey: ["users"] });
     queryClient.invalidateQueries({ queryKey: ["custom-permissions", selectedUser.id] });
-    
+
     toast({
       title: "Role updated",
       description: `User role changed to ${newRole}. Permissions updated automatically.`,
@@ -152,9 +103,7 @@ export const PermissionManager = () => {
   };
 
   const handlePermissionToggle = (permission: string, enabled: boolean) => {
-    // Check permission before toggling
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canManageTeam) {
+    if (!canManageTeam) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to manage team permissions.",
@@ -162,18 +111,11 @@ export const PermissionManager = () => {
       });
       return;
     }
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
-      });
-      return;
-    }
 
-    const newPermissions = enabled 
+    const newPermissions = enabled
       ? [...customPermissions, permission]
       : customPermissions.filter(p => p !== permission);
-    
+
     setCustomPermissions(newPermissions);
     setHasChanges(true);
   };
@@ -181,20 +123,11 @@ export const PermissionManager = () => {
   const handleSaveCustomPermissions = async () => {
     if (!selectedUser) return;
 
-    // Check permission before saving
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canManageTeam) {
+    if (!canManageTeam) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to manage team permissions.",
         variant: "destructive",
-      });
-      return;
-    }
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
       });
       return;
     }
@@ -221,7 +154,7 @@ export const PermissionManager = () => {
 
   const handleResetToRole = () => {
     if (!selectedUser) return;
-    
+
     const rolePermissions = ROLE_PERMISSIONS[selectedUser.role as keyof typeof ROLE_PERMISSIONS] || [];
     setCustomPermissions([...rolePermissions]);
     setHasChanges(false);
@@ -305,10 +238,10 @@ export const PermissionManager = () => {
                 {/* Role Change */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Change Role</label>
-                  <Select 
-                    value={selectedUser.role} 
+                  <Select
+                    value={selectedUser.role}
                     onValueChange={handleRoleChange}
-                    disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+                    disabled={!canManageTeam}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -333,19 +266,19 @@ export const PermissionManager = () => {
                     <AlertDescription className="flex items-center justify-between">
                       <span>You have unsaved permission changes.</span>
                       <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={handleResetToRole}
-                          disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+                          disabled={!canManageTeam}
                         >
                           <RotateCcw className="h-3 w-3 mr-1" />
                           Reset
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={handleSaveCustomPermissions}
-                          disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+                          disabled={!canManageTeam}
                         >
                           <Save className="h-3 w-3 mr-1" />
                           Save
@@ -355,10 +288,10 @@ export const PermissionManager = () => {
                   </Alert>
                 )}
 
-                <PermissionGrid 
+                <PermissionGrid
                   permissions={customPermissions}
                   onToggle={handlePermissionToggle}
-                  disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+                  disabled={!canManageTeam}
                   userRole={selectedUser?.role}
                 />
               </TabsContent>

@@ -7,11 +7,7 @@ import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptio
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { TWCLibraryBrowser } from "@/components/integrations/TWCLibraryBrowser";
 import { useIntegrations } from "@/hooks/useIntegrations";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { Layers, Settings, Sliders, Truck, Lock } from "lucide-react";
 
@@ -29,88 +25,49 @@ interface WindowCoveringsTabProps {
   onTemplateEdited?: () => void;
 }
 
-export const WindowCoveringsTab = ({ 
-  createTemplateData, 
+export const WindowCoveringsTab = ({
+  createTemplateData,
   onTemplateCreated,
   editTemplateId,
   onTemplateEdited
 }: WindowCoveringsTabProps) => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(createTemplateData || editTemplateId ? "templates" : "templates");
   const [highlightedTemplateId, setHighlightedTemplateId] = useState<string | null>(null);
-  
+
   // Check if TWC integration is enabled
   const { integrations } = useIntegrations();
   const hasTWCIntegration = integrations?.some(
     (i) => i.integration_type === 'twc' && i.active
   );
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[WindowCoveringsTab] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if view_templates is explicitly in user_permissions table
-  const hasViewTemplatesPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_templates'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view_templates)
-  const canViewTemplates =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasViewTemplatesPermission
-          : hasViewTemplatesPermission;
+  // Permission check using centralized hook
+  const canViewTemplates = useHasPermission('view_templates') !== false;
 
   // Auto-switch to templates tab when createTemplateData or editTemplateId is provided
-  // Only switch if user has permission
   useEffect(() => {
-    if ((createTemplateData || editTemplateId) && canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined) {
+    if ((createTemplateData || editTemplateId) && canViewTemplates) {
       setActiveTab("templates");
     }
-  }, [createTemplateData, editTemplateId, canViewTemplates, permissionsLoading, roleLoading, explicitPermissions]);
+  }, [createTemplateData, editTemplateId, canViewTemplates]);
 
   // Redirect away from templates tab if user doesn't have permission
   useEffect(() => {
-    if (activeTab === "templates" && !canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined) {
-      // Switch to the first available tab
+    if (activeTab === "templates" && !canViewTemplates) {
       if (hasTWCIntegration) {
         setActiveTab("suppliers");
       } else {
         setActiveTab("headings");
       }
     }
-  }, [activeTab, canViewTemplates, permissionsLoading, roleLoading, explicitPermissions, hasTWCIntegration]);
+  }, [activeTab, canViewTemplates, hasTWCIntegration]);
 
   const handleTemplateCloned = (templateId: string) => {
-    // Only switch to templates tab if user has permission
-    if (canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined) {
-    setActiveTab("templates");
-    setHighlightedTemplateId(templateId);
-    
-    // Clear highlight after animation
-    setTimeout(() => setHighlightedTemplateId(null), 3000);
+    if (canViewTemplates) {
+      setActiveTab("templates");
+      setHighlightedTemplateId(templateId);
+
+      // Clear highlight after animation
+      setTimeout(() => setHighlightedTemplateId(null), 3000);
     }
   };
 
@@ -135,20 +92,20 @@ export const WindowCoveringsTab = ({
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger 
-                value="templates" 
+              <TabsTrigger
+                value="templates"
                 className="data-[state=active]:bg-primary/10"
-                disabled={!canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
-                title={!canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view templates" : undefined}
+                disabled={!canViewTemplates}
+                title={!canViewTemplates ? "You don't have permission to view templates" : undefined}
               >
                 <Layers className="h-4 w-4 mr-2" />
                 My Templates
               </TabsTrigger>
-              <TabsTrigger 
-                value="suppliers" 
+              <TabsTrigger
+                value="suppliers"
                 className="data-[state=active]:bg-primary/10"
                 disabled={!hasTWCIntegration}
-                title={!hasTWCIntegration ? "Enable supplier integration in Settings → Integrations" : undefined}
+                title={!hasTWCIntegration ? "Enable supplier integration in Settings -> Integrations" : undefined}
               >
                 {!hasTWCIntegration && <Lock className="h-3 w-3 mr-1 opacity-50" />}
                 <Truck className="h-4 w-4 mr-2" />
@@ -170,7 +127,7 @@ export const WindowCoveringsTab = ({
 
             {canViewTemplates && (
             <TabsContent value="templates" className="mt-6">
-              <CurtainTemplatesManager 
+              <CurtainTemplatesManager
                 highlightedTemplateId={highlightedTemplateId}
                 createTemplateData={createTemplateData}
                 onTemplateCreated={onTemplateCreated}
@@ -192,7 +149,7 @@ export const WindowCoveringsTab = ({
                       Connect to supplier catalogs to access their product libraries, pricing, and automated ordering.
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Go to <span className="font-medium">Settings → Integrations</span> to enable supplier connections.
+                      Go to <span className="font-medium">Settings &rarr; Integrations</span> to enable supplier connections.
                     </p>
                   </div>
                 </div>

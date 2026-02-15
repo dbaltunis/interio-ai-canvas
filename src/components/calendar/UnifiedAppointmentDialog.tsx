@@ -29,9 +29,7 @@ import { format } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -109,39 +107,8 @@ export const UnifiedAppointmentDialog = ({
   
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
 
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-appointment-dialog', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  const hasCreateAppointmentsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  const canCreateAppointments =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
-          : hasCreateAppointmentsPermission;
+  // Permission check using centralized hook
+  const canCreateAppointments = useHasPermission('create_appointments') !== false;
 
   // Filter projects by selected client (if one is selected)
   const filteredProjects = useMemo(() => {
@@ -231,23 +198,13 @@ export const UnifiedAppointmentDialog = ({
   }, [event.date, event.startTime, event.endTime]);
 
   const handleSubmit = async () => {
-    if (!isEditing) {
-      const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-      if (isPermissionLoaded && !canCreateAppointments) {
-        toast({
-          title: "Permission Denied",
-          description: "You don't have permission to create appointments.",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (!isPermissionLoaded) {
-        toast({
-          title: "Loading",
-          description: "Please wait while permissions are being checked...",
-        });
-        return;
-      }
+    if (!isEditing && !canCreateAppointments) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create appointments.",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (!event.title || !event.date || !event.startTime || !event.endTime) {
@@ -458,8 +415,7 @@ export const UnifiedAppointmentDialog = ({
         <div className="px-4 py-3 space-y-3">
           {/* Permission Warning */}
           {!isEditing && (() => {
-            const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-            if (isPermissionLoaded && !canCreateAppointments) {
+            if (!canCreateAppointments) {
               return (
                 <Alert variant="destructive" className="py-2">
                   <AlertCircle className="h-3.5 w-3.5" />

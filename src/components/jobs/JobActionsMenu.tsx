@@ -40,9 +40,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteQuote, useQuotes } from "@/hooks/useQuotes";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
+// useUserRole, useQuery, supabase removed - using centralized useHasPermission hook
 
 interface JobActionsMenuProps {
   quote: any;
@@ -74,35 +73,9 @@ export const JobActionsMenu = ({
   
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: userRoleData } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  
-  // Check explicit delete permission
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[JobActionsMenu] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user,
-  });
-  
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasDeleteJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
-  ) ?? false;
-  
-  const canDeleteJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasDeleteJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+
+  // Permission check using centralized hook
+  const canDeleteJobsExplicit = useHasPermission('delete_jobs') !== false;
   
   const deleteQuote = useDeleteQuote();
   const { refetch } = useQuotes();

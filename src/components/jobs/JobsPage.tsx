@@ -11,7 +11,7 @@ import { useCreateProject, useProjects, useDealerOwnProjects } from "@/hooks/use
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
-import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -85,116 +85,30 @@ const JobsPage = () => {
   
   const isMobile = useIsMobile();
   
-  // Get user role to check if they're Owner/System Owner/Admin/Dealer
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
   // Check if user is a Dealer - they only see their own jobs
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
-  
-  // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) {
-        console.log('[PERMS] No user, returning empty permission----------------------------------------s');
-        return [];
-      }
-  
-      console.log('[PERMS] Fetching permissions for user:----------------------------------------s', user.id);
-  
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-  
-      if (error) {
-        console.error('[PERMS] Error fetching explicit permissions:----------------------------------------s', error);
-        return [];
-      }
-  
-      console.log('[PERMS] Raw permissions from DB:----------------------------------------s', data);
-  
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
 
-  });
-  
-  console.log(explicitPermissions,'_----------------------------------------------------------------------------');
-  // Check if view permissions are explicitly in user_permissions table
-  const hasViewAllJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_all_jobs'
-  ) ?? false;
-  const hasViewAssignedJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_assigned_jobs'
-  ) ?? false;
-  
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  
-  const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
-  
-  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view permission)
-const canViewJobsExplicit =
-  userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewAllJobsPermission || hasViewAssignedJobsPermission
-        : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
+  // Permission checks using centralized hook
+  const canViewAllJobs = useHasPermission('view_all_jobs');
+  const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
+  const canViewJobsExplicit = canViewAllJobs !== false || canViewAssignedJobs !== false;
+  const shouldFilterByAssignment = canViewAllJobs === false && canViewAssignedJobs !== false;
+  const canCreateJobsExplicit = isDealer === true || useHasPermission('create_jobs') !== false;
+  const canDeleteJobsExplicit = useHasPermission('delete_jobs') !== false;
 
-  // CRITICAL: Must include isSystemOwner check to match JobDetailPage.tsx - prevents visibility issues
-  const shouldFilterByAssignment = !userRoleData?.isSystemOwner && (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
-  
-  // Check if create_jobs is explicitly in user_permissions table (enabled)
-  const hasCreateJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
-  ) ?? false;
-  
-  // Dealers can always create their own jobs
-  const hasDealerCreateAccess = isDealer === true;
-  
-  const canCreateJobsExplicit =
-  hasDealerCreateAccess
-    ? true // Dealers can create their own jobs
-    : userRoleData?.isSystemOwner
-      ? true // System Owner always can create jobs
-      : isOwner && !hasAnyExplicitPermissions
-        ? true
-        : hasCreateJobsPermission;
-  
-  // Check if delete_jobs is explicitly in user_permissions table (enabled)
-  const hasDeleteJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
-  ) ?? false;
-  
-  const canDeleteJobsExplicit =
-  userRoleData?.isSystemOwner
-    ? true // System Owner always can delete jobs
-    : isOwner && !hasAnyExplicitPermissions
-      ? true
-      : hasDeleteJobsPermission;
-  
-  // Debug: Log permission state
-  useEffect(() => {
-    console.log('[JOBS] Permission check - isOwner:', isOwner, 'isAdmin:', isAdmin);
-    console.log('[JOBS] Permission check - hasAnyExplicitPermissions:', hasAnyExplicitPermissions, 'explicitPermissions count:', explicitPermissions?.length);
-    console.log('[JOBS] Permission check - hasExplicitViewPermissions (enabled):', hasExplicitViewPermissions);
-    console.log('[JOBS] Permission check - canViewJobsExplicit:', canViewJobsExplicit, 'shouldFilterByAssignment:', shouldFilterByAssignment);
-    console.log('[JOBS] Permission check - hasViewAllJobsPermission:', hasViewAllJobsPermission, 'hasViewAssignedJobsPermission:', hasViewAssignedJobsPermission);
-    console.log('[JOBS] Explicit permissions:', explicitPermissions?.map((p: { permission_name: string }) => p.permission_name));
-  }, [canViewJobsExplicit, shouldFilterByAssignment, hasViewAllJobsPermission, hasViewAssignedJobsPermission, hasExplicitViewPermissions, hasAnyExplicitPermissions, explicitPermissions, isOwner, isAdmin]);
+  // Keep role loading for initial render gate
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const permissionsLoading = false; // useHasPermission handles loading internally
   
   // Only fetch quotes if user has view permissions
-  const shouldFetchQuotes = canViewJobsExplicit && !permissionsLoading;
+  const shouldFetchQuotes = canViewJobsExplicit;
   const { data: allQuotes = [], refetch: refetchQuotes } = useQuotes(undefined, {
     enabled: shouldFetchQuotes
   });
   
   // Use dealer-specific hook if user is a dealer - they only see their own jobs
   const { data: regularProjects = [] } = useProjects({
-    enabled: canViewJobsExplicit && !permissionsLoading && !isDealer
+    enabled: canViewJobsExplicit && !isDealer
   });
   const { data: dealerProjects = [] } = useDealerOwnProjects();
   
@@ -208,7 +122,7 @@ const canViewJobsExplicit =
     return regularProjects;
   }, [isDealer, dealerProjects, regularProjects]);
   
-  const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
+  const { data: allClients = [] } = useClients(canViewJobsExplicit);
   
   // Fetch user's direct project assignments (from project_assignments table)
   const { data: myAssignedProjectIds = [], isLoading: assignmentsLoading } = useMyProjectAssignments();
@@ -430,7 +344,7 @@ const canViewJobsExplicit =
   // Wait for permissions, role, and assignments to load (include dealer loading state)
   // Return null to let Suspense skeleton persist (single loading state)
   // CRITICAL: Include assignmentsLoading for staff members to prevent race condition
-  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined || (shouldFilterByAssignment && assignmentsLoading)) {
+  if (roleLoading || isDealerLoading || userRoleData === undefined || (shouldFilterByAssignment && assignmentsLoading)) {
     return null;
   }
   

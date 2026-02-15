@@ -9,69 +9,22 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-settings', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[Settings] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
 
-  // Check if user has ANY explicit permissions in the table
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  
-  // Check if view_settings is explicitly in user_permissions table
-  const hasViewSettingsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_settings'
-  ) ?? false;
+  // Permission check — useHasPermission merges role defaults + custom permissions.
+  // Owner/Admin always has full access. Custom permissions are additive, never subtractive.
+  const canViewSettings = useHasPermission('view_settings');
+  const permissionsLoading = canViewSettings === undefined;
 
-  // Works like jobs, clients, inventory, and emails:
-  // - System Owner: always has access
-  // - Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
-  //   If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  // - Staff/Regular users: Always check explicit permissions
-  // 
-  // DEFENSIVE: If user is Owner but profile is missing (trigger failure), still grant access
-  const isDefinitelyOwner = isOwner || (user?.id && !userRoleData?.parentAccountId && userRoleData?.role === 'Owner');
-  
-  const canViewSettings = userRoleData?.isSystemOwner
-    ? true
-    : (isDefinitelyOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
-        : hasViewSettingsPermission;
-  
   const handleBackToApp = () => {
     navigate('/', { replace: true });
   };
 
-
-  // Let parent Suspense handle loading state
-  if (permissionsLoading || explicitPermissions === undefined || roleLoading) {
+  // Show nothing while permissions are loading
+  if (permissionsLoading) {
     return null;
   }
 

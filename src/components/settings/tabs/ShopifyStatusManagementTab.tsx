@@ -10,13 +10,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const ShopifyStatusManagementTab = () => {
-  const { user } = useAuth();
   const { data: statuses = [], isLoading } = useJobStatuses();
   const updateStatus = useUpdateJobStatus();
   const queryClient = useQueryClient();
@@ -25,44 +21,8 @@ export const ShopifyStatusManagementTab = () => {
   const [editForm, setEditForm] = useState({ name: '', color: '', description: '' });
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // Permission checks - following the same pattern as other settings
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-shopify-status', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[ShopifyStatusManagementTab] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if manage_shopify is explicitly in user_permissions table
-  const hasManageShopifyPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'manage_shopify'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Check manage_shopify permission using the same pattern
-  const canManageShopify = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasManageShopifyPermission
-        : hasManageShopifyPermission;
-
-  const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+  // Permission check using centralized hook
+  const canManageShopify = useHasPermission('manage_shopify') !== false;
 
   const shopifyStatuses = statuses.filter(
     (s) => s.name === 'Online Store Lead' || s.name === 'Online Store Sale'
@@ -73,7 +33,7 @@ export const ShopifyStatusManagementTab = () => {
     const initializeStatuses = async () => {
       if (isLoading) return;
       if (shopifyStatuses.length > 0) return; // Already exist
-      
+
       setIsInitializing(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -95,13 +55,6 @@ export const ShopifyStatusManagementTab = () => {
   }, [isLoading, shopifyStatuses.length, queryClient]);
 
   const handleEdit = (status: any) => {
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
-      });
-      return;
-    }
     if (!canManageShopify) {
       toast({
         title: "Permission Denied",
@@ -119,13 +72,6 @@ export const ShopifyStatusManagementTab = () => {
   };
 
   const handleSave = (id: string) => {
-    if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
-        description: "Please wait while permissions are being checked...",
-      });
-      return;
-    }
     if (!canManageShopify) {
       toast({
         title: "Permission Denied",
@@ -146,7 +92,7 @@ export const ShopifyStatusManagementTab = () => {
 
   return (
     <div className="space-y-4">
-      {isPermissionLoaded && !canManageShopify && (
+      {!canManageShopify && (
         <Alert className="border-orange-200 bg-orange-50">
           <AlertDescription>
             <p className="font-semibold text-orange-900 mb-1">Permission Required</p>
@@ -159,7 +105,7 @@ export const ShopifyStatusManagementTab = () => {
 
       <Alert className="bg-blue-50 border-blue-200">
         <AlertDescription>
-          <p className="text-sm font-semibold text-blue-900 mb-1">💡 What are Shopify Statuses?</p>
+          <p className="text-sm font-semibold text-blue-900 mb-1">What are Shopify Statuses?</p>
           <p className="text-xs text-blue-800">
             These are job statuses automatically applied to Shopify orders: <strong>Online Store Lead</strong> (unpaid) and <strong>Online Store Sale</strong> (paid).
           </p>
@@ -191,7 +137,7 @@ export const ShopifyStatusManagementTab = () => {
               ))}
             </div>
           )}
-          
+
           {!isLoading && !isInitializing && shopifyStatuses.map((status) => {
             const isEditing = editingId === status.id;
             const Icon = status.name === 'Online Store Lead' ? ShoppingCart : ShoppingBag;
@@ -207,7 +153,7 @@ export const ShopifyStatusManagementTab = () => {
                           value={editForm.name}
                           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                           placeholder="Status name"
-                          disabled={!canManageShopify && isPermissionLoaded}
+                          disabled={!canManageShopify}
                         />
                       </div>
                       <div className="space-y-2">
@@ -217,7 +163,7 @@ export const ShopifyStatusManagementTab = () => {
                             value={editForm.color}
                             onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
                             placeholder="#10b981"
-                            disabled={!canManageShopify && isPermissionLoaded}
+                            disabled={!canManageShopify}
                           />
                           <div
                             className="w-12 h-10 rounded border"
@@ -231,14 +177,14 @@ export const ShopifyStatusManagementTab = () => {
                           value={editForm.description}
                           onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                           placeholder="Status description"
-                          disabled={!canManageShopify && isPermissionLoaded}
+                          disabled={!canManageShopify}
                         />
                       </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           onClick={() => handleSave(status.id)}
-                          disabled={updateStatus.isPending || (!canManageShopify && isPermissionLoaded)}
+                          disabled={updateStatus.isPending || !canManageShopify}
                         >
                           <Check className="h-4 w-4 mr-2" />
                           Save
@@ -278,7 +224,7 @@ export const ShopifyStatusManagementTab = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleEdit(status)}
-                        disabled={!canManageShopify && isPermissionLoaded}
+                        disabled={!canManageShopify}
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>

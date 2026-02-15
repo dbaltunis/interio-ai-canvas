@@ -24,8 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const TeamMembersWidget = () => {
   const { user } = useAuth();
@@ -38,56 +37,12 @@ export const TeamMembersWidget = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
 
-  // Permission checks - following the same pattern as jobs
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  // Permission checks using centralized hook
+  const { data: userRoleData } = useUserRole();
   const isAdmin = userRoleData?.isAdmin || false;
-  
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-team-widget', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[TeamMembersWidget] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
 
-  // Check if view_team_members is explicitly in user_permissions table
-  const hasViewTeamMembersPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_team_members'
-  ) ?? false;
-
-  // Check if send_team_messages is explicitly in user_permissions table
-  const hasSendTeamMessagesPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'send_team_messages'
-  ) ?? false;
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-
-  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view_team_members)
-  const canViewTeamMembers =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasViewTeamMembersPermission
-          : hasViewTeamMembersPermission;
-
-  // Only allow send if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include send_team_messages)
-  const canSendTeamMessages =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
-          : hasSendTeamMessagesPermission;
+  const canViewTeamMembers = useHasPermission('view_team_members') !== false;
+  const canSendTeamMessages = useHasPermission('send_team_messages') !== false;
 
   const handleAddTeamMember = () => {
     console.log('Add team member clicked, navigating to settings...');
@@ -114,18 +69,9 @@ export const TeamMembersWidget = () => {
   };
 
   const handleSendMessage = (userId: string) => {
-    // Check permission before opening message dialog
-    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
-    if (isPermissionLoaded && !canSendTeamMessages) {
+    if (!canSendTeamMessages) {
       toast.error("Permission Denied", {
         description: "You don't have permission to send team messages.",
-      });
-      return;
-    }
-    // Don't allow opening while permissions are loading
-    if (!isPermissionLoaded) {
-      toast("Loading", {
-        description: "Please wait while permissions are being checked...",
       });
       return;
     }
@@ -150,14 +96,14 @@ export const TeamMembersWidget = () => {
         },
         (payload) => {
           const message = payload.new as { sender_id: string; content: string; recipient_id: string };
-          
+
           // Find sender info
           const sender = teamMembers.find(m => m.id === message.sender_id);
           const senderName = sender?.name || 'Team member';
-          
+
           // Mark user as recently messaged
           setRecentMessageUsers(prev => new Set([...prev, message.sender_id]));
-          
+
           // Show notification
           toast.message(`New message from ${senderName}`, {
             description: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
@@ -175,9 +121,8 @@ export const TeamMembersWidget = () => {
     };
   }, [user?.id, teamMembers]);
 
-  // Don't render if user doesn't have permission (after permissions are loaded)
-  // This must be after all hooks to avoid "Rendered fewer hooks than expected" error
-  if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canViewTeamMembers) {
+  // Don't render if user doesn't have permission
+  if (!canViewTeamMembers) {
     return null;
   }
 
@@ -197,22 +142,22 @@ export const TeamMembersWidget = () => {
     const bConversation = conversations.find(c => c.user_id === b.id);
     const aUnread = aConversation?.unread_count || 0;
     const bUnread = bConversation?.unread_count || 0;
-    
+
     // First priority: users with unread messages
     if (aUnread !== bUnread) return bUnread - aUnread;
-    
+
     // Second priority: users who recently sent messages
     const aRecent = recentMessageUsers.has(a.id);
     const bRecent = recentMessageUsers.has(b.id);
     if (aRecent !== bRecent) return aRecent ? -1 : 1;
-    
+
     // Third priority: online status
     const aStatus = getPresenceStatus(a.id);
     const bStatus = getPresenceStatus(b.id);
     const statusOrder = { online: 0, away: 1, busy: 2, offline: 3 };
     const aOrder = statusOrder[aStatus as keyof typeof statusOrder] ?? 3;
     const bOrder = statusOrder[bStatus as keyof typeof statusOrder] ?? 3;
-    
+
     return aOrder - bOrder;
   });
 
@@ -243,9 +188,9 @@ export const TeamMembersWidget = () => {
             Team
           </CardTitle>
           {isAdmin && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
+            <Button
+              size="sm"
+              variant="ghost"
               className="h-7 gap-1.5 text-xs"
               onClick={handleAddTeamMember}
             >
@@ -273,12 +218,12 @@ export const TeamMembersWidget = () => {
                 const hasUnread = (conversation?.unread_count || 0) > 0;
                 const unreadCount = conversation?.unread_count || 0;
                 const avatarColor = getAvatarColor(member.id); // Use ID for consistent colors
-                
+
                 return (
                   <div
                     key={member.id}
                     className={`flex items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg bg-background border border-border transition-all ${
-                      explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages
+                      !canSendTeamMessages
                         ? 'cursor-not-allowed opacity-50'
                         : 'cursor-pointer hover:border-primary/40 hover:bg-primary/5'
                     }`}
@@ -297,7 +242,7 @@ export const TeamMembersWidget = () => {
                       className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border-2 border-background ${getStatusColor(status)}`}
                     />
                   </div>
-                    
+
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-xs sm:text-sm truncate text-foreground">
                       {member.name}
@@ -306,7 +251,7 @@ export const TeamMembersWidget = () => {
                       {member.role}
                     </p>
                   </div>
-                    
+
                   {hasUnread ? (
                     <div className="relative shrink-0">
                       <div className="p-1.5 sm:p-2 rounded-full bg-primary/10">
@@ -331,8 +276,8 @@ export const TeamMembersWidget = () => {
         )}
       </CardContent>
 
-      <DirectMessageDialog 
-        open={messageDialogOpen} 
+      <DirectMessageDialog
+        open={messageDialogOpen}
         onOpenChange={setMessageDialogOpen}
         selectedUserId={selectedUserId}
       />

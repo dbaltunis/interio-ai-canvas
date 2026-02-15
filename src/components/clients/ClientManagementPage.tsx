@@ -4,12 +4,11 @@ import { Plus, Filter, Download, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useClients, useDealerOwnClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
-import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useIsDealer } from "@/hooks/useIsDealer";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// useQuery and supabase removed - using centralized useHasPermission hook
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
@@ -53,137 +52,29 @@ export const ClientManagementPage = ({
     assignedTo: "all"
   });
 
-  // Get user role to check if they're Owner/System Owner/Admin
-  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  
   // Check if user is a Dealer - they see only their own clients
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
 
-  // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions, isLoading: explicitPermissionsLoading } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[CLIENTS] Error fetching explicit permissions:', error);
-        return [];
-      }
-      console.log('[CLIENTS] Fetched explicit permissions:', data);
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-
-  // Check if view permissions are explicitly in user_permissions table
-  // IMPORTANT: Only check if explicitPermissions is loaded (not undefined)
-  const hasViewAllClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_all_clients'
-  );
-  const hasViewAssignedClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_assigned_clients'
-  );
-
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasExplicitViewPermissions = hasViewAllClientsPermission || hasViewAssignedClientsPermission;
-
-  // Dealers always have access to view their own clients
+  // Permission checks using centralized hook
+  const canViewAllClients = useHasPermission('view_all_clients');
+  const canViewAssignedClients = useHasPermission('view_assigned_clients');
   const hasDealerAccess = isDealer === true;
+  const canViewClientsExplicit = hasDealerAccess || canViewAllClients !== false || canViewAssignedClients !== false;
+  const shouldFilterByAssignment = !hasDealerAccess && canViewAllClients === false && canViewAssignedClients !== false;
+  const canCreateClients = useHasPermission('create_clients') !== false;
+  const canDeleteClients = useHasPermission('delete_clients') !== false;
 
-  // Owners and System Owners always have full access, regardless of explicit permissions
-  // For viewing clients: 
-  // - If view_all_clients is enabled → show all clients
-  // - If view_all_clients is disabled BUT view_assigned_clients is enabled → show only clients created by current user
-  // - If view_all_clients is disabled AND view_assigned_clients is disabled → show "Access Denied"
-  // Logic matches JobDetailPage:
-  // - System Owner: ALWAYS has full access regardless of explicit permissions
-  // - Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // - Admin: if NO explicit permissions exist, they have full access; if explicit permissions exist, MUST respect them (no bypass)
-  // - Regular users: Always check explicit permissions
-  // - Dealers: Always have access (filtered to their own clients via separate hook)
-  const canViewClientsExplicit =
-    hasDealerAccess
-      ? true // Dealers can view (their own clients only)
-      : userRoleData?.isSystemOwner
-        ? true  // System Owner ALWAYS has full access
-        : isOwner && !hasAnyExplicitPermissions
-          ? true  // Owner with no explicit permissions in table at all = full access
-          : isAdmin && !hasAnyExplicitPermissions
-            ? true  // Admin with no explicit permissions = full access
-            : hasViewAllClientsPermission || hasViewAssignedClientsPermission;  // Owner/Admin with explicit permissions OR regular users: need view permission
-  
-  // Filter by creation (show only clients created by current user) if:
-  // - User is NOT System Owner (System Owners see everything)
-  // - AND (User is not Owner, OR Owner has explicit permissions)
-  // - AND they don't have view_all_clients permission
-  // - AND they have view_assigned_clients permission
-  // - AND they are NOT a dealer (dealers use separate hook)
-  // Note: Owner without explicit permissions never filters, they always see all clients
-  // But Owner with explicit permissions must respect them
-  const shouldFilterByAssignment = 
-    !userRoleData?.isSystemOwner && 
-    !hasDealerAccess &&
-    (!isOwner || hasAnyExplicitPermissions) && 
-    !hasViewAllClientsPermission && 
-    hasViewAssignedClientsPermission;
-  
-  // Debug logging to help troubleshoot permission issues
-  console.log('[CLIENTS] Permission check:', {
-    isSystemOwner: userRoleData?.isSystemOwner,
-    isOwner,
-    isAdmin,
-    hasDealerAccess,
-    hasAnyExplicitPermissions,
-    hasViewAllClientsPermission,
-    hasViewAssignedClientsPermission,
-    canViewClientsExplicit,
-    shouldFilterByAssignment,
-    explicitPermissions: explicitPermissions?.map(p => p.permission_name)
-  });
-
-  // Check if create_clients is in the MERGED permissions (role-based + custom)
-  const hasCreateClientsPermission = userPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_clients'
-  ) ?? false;
-
-  // Owners and System Owners always have full access
-  const canCreateClientsExplicit =
-    userRoleData?.isSystemOwner || isOwner
-      ? true
-      : hasCreateClientsPermission;
-
-  // Check if delete_clients is explicitly in user_permissions table (enabled)
-  const hasDeleteClientsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'delete_clients'
-  ) ?? false;
-
-  // System Owner: always can delete
-  // Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  const canDeleteClientsExplicit =
-    userRoleData?.isSystemOwner
-      ? true // System Owner always can delete clients
-      : (isOwner || isAdmin) && !hasAnyExplicitPermissions
-        ? true // Owner/Admin with no explicit permissions = full access
-        : hasDeleteClientsPermission; // Otherwise respect explicit permissions
-
-  // Permission checks (using explicit permissions)
-  const canCreateClients = canCreateClientsExplicit;
-  const canDeleteClients = canDeleteClientsExplicit;
+  // Keep role loading for initial render gate
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const permissionsLoading = false; // useHasPermission handles loading internally
+  const explicitPermissionsLoading = false;
 
   // Only fetch clients if user has view permissions
   // IMPORTANT: This prevents fetching clients from the database if permission is denied
-  const shouldFetchClients = canViewClientsExplicit && !permissionsLoading && !roleLoading && !isDealerLoading;
+  const shouldFetchClients = canViewClientsExplicit && !roleLoading && !isDealerLoading;
   
   console.log('[CLIENTS] Fetch decision:', {
     canViewClientsExplicit,
-    permissionsLoading,
     roleLoading,
     isDealerLoading,
     shouldFetchClients,
@@ -256,7 +147,7 @@ export const ClientManagementPage = ({
 
   // Handle permission loading and preserve navigation state
   // IMPORTANT: Wait for explicitPermissions to be loaded before making permission decisions
-  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissionsLoading || explicitPermissions === undefined) {
+  if (roleLoading || isDealerLoading) {
     // If we're showing client profile, keep showing it during permission refetch
     if (showClientProfile && selectedClient) {
       return <ClientProfilePage clientId={selectedClient.id} onBack={() => {
@@ -272,11 +163,7 @@ export const ClientManagementPage = ({
   // If user doesn't have permission to view clients, show access denied
   // Only check this AFTER permissions have been loaded (explicitPermissions !== undefined)
   if (!canViewClientsExplicit) {
-    console.log('[CLIENTS] Access denied - no view permissions:', {
-      hasViewAllClientsPermission,
-      hasViewAssignedClientsPermission,
-      explicitPermissions: explicitPermissions?.map(p => p.permission_name)
-    });
+    console.log('[CLIENTS] Access denied - no view permissions');
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>

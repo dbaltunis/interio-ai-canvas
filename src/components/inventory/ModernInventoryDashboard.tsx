@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw, FolderOpen, ArrowLeft } from "lucide-react";
 import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { toast } from "sonner";
@@ -18,10 +17,7 @@ import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useHasPermission, useHasAnyPermission, useUserPermissions } from "@/hooks/usePermissions";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,6 +27,7 @@ import { InventoryAdminPanel } from "./InventoryAdminPanel";
 import { CollectionsView } from "../library/CollectionsView";
 import { useCollectionsWithCounts } from "@/hooks/useCollections";
 import { BrandCollectionsSidebar } from "../library/BrandCollectionsSidebar";
+import { HeadingInventoryManager } from "@/components/settings/tabs/components/HeadingInventoryManager";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,74 +54,22 @@ export const ModernInventoryDashboard = () => {
   const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const { data: collections = [] } = useCollectionsWithCounts();
-  const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
   
-  // Permission checks - CRITICAL for data security
-  // Check explicit permissions first, like jobs and clients
-  const { user } = useAuth();
-  const { data: userRoleData } = useUserRole();
-  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
-  const isAdmin = userRoleData?.isAdmin || false;
-  const isOwnerOrAdmin = isOwner || isAdmin;
-  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-inventory-dashboard', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[ModernInventoryDashboard] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
-  const hasViewInventoryPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
-  ) ?? false;
-  const hasManageInventoryPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'manage_inventory'
-  ) ?? false;
-  const hasManageInventoryAdminPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'manage_inventory_admin'
-  ) ?? false;
-  
-  // Works like jobs and clients - check explicit permissions first
-  const canViewInventory = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
-        : hasViewInventoryPermission;
-  
-  const canManageInventory = userRoleData?.isSystemOwner
-    ? true
-    : (isOwner || isAdmin)
-        ? !hasAnyExplicitPermissions || hasManageInventoryPermission
-        : hasManageInventoryPermission;
-
-  // Only allow admin access if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_inventory_admin)
-  const canManageInventoryAdmin =
-    userRoleData?.isSystemOwner
-      ? true
-      : (isOwner || isAdmin)
-          ? !hasAnyExplicitPermissions || hasManageInventoryAdminPermission
-          : hasManageInventoryAdminPermission;
+  // Permission checks — useHasPermission merges role defaults + custom permissions.
+  // Owner/Admin always has full access. Custom permissions are additive, never subtractive.
+  const canViewInventory = useHasPermission('view_inventory') !== false;
+  const canManageInventory = useHasPermission('manage_inventory') !== false;
+  const canManageInventoryAdmin = useHasPermission('manage_inventory_admin') !== false;
 
   // Redirect away from admin tab if user doesn't have permission
   useEffect(() => {
-    if (activeTab === "admin" && !canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined) {
+    if (activeTab === "admin" && !canManageInventoryAdmin) {
       setActiveTab("fabrics");
     }
-  }, [activeTab, canManageInventoryAdmin, permissionsLoading, userRoleLoading, explicitPermissions]);
-  
+  }, [activeTab, canManageInventoryAdmin]);
+
   const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
   
   // Dealers always have browse-only access to the Library
@@ -371,6 +316,9 @@ export const ModernInventoryDashboard = () => {
                 <PixelWallpaperIcon size={18} />
                 Wallcoverings
               </TabsTrigger>
+              <TabsTrigger value="headings" className="flex items-center gap-2">
+                Headings
+              </TabsTrigger>
               {/* Hide Vendors and Admin tabs for dealers */}
               {!isDealer && (
                 <TabsTrigger value="vendors" className="flex items-center gap-2">
@@ -379,12 +327,7 @@ export const ModernInventoryDashboard = () => {
                 </TabsTrigger>
               )}
               {canManageInventoryAdmin && !isDealer && (
-                <TabsTrigger 
-                  value="admin" 
-                  className="flex items-center gap-2"
-                  disabled={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined}
-                  title={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined ? "You don't have permission to access inventory administration" : undefined}
-                >
+                <TabsTrigger value="admin" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   Admin
                 </TabsTrigger>
@@ -454,13 +397,17 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="wallcoverings" className="space-y-6">
           <WallcoveringInventoryView
-            canManageInventory={canManageInventory} 
-            searchQuery={searchQuery} 
+            canManageInventory={canManageInventory}
+            searchQuery={searchQuery}
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
           />
+        </TabsContent>
+
+        <TabsContent value="headings" className="space-y-6">
+          <HeadingInventoryManager />
         </TabsContent>
 
         {/* Collections Tab - Primary view with brand sidebar */}

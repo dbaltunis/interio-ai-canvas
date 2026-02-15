@@ -1321,26 +1321,28 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>}
 
-            {/* Roman Blind Configuration - Single/Double (Only for roman_blinds) */}
-            {treatmentCategory === 'roman_blinds' && <div className="container-level-1 rounded-lg p-3">
+            {/* Blind Configuration - Single/Double (for roman_blinds and roller-type blinds) */}
+            {(treatmentCategory === 'roman_blinds' || treatmentType === 'roller_blinds' || treatmentType === 'zebra_blinds' || treatmentType === 'cellular_blinds') && <div className="container-level-1 rounded-lg p-3">
               <div className="space-y-2">
                 <div>
-                  <Label className="text-xs font-semibold mb-2 block text-card-foreground">Roman Blind Configuration</Label>
-                  
+                  <Label className="text-xs font-semibold mb-2 block text-card-foreground">
+                    {treatmentCategory === 'roman_blinds' ? 'Roman Blind' : 'Blind'} Configuration
+                  </Label>
+
                   <RadioGroup value={curtainType || 'single'} onValueChange={value => {
-                    console.log("Roman blind configuration changed to:", value);
+                    console.log("Blind configuration changed to:", value);
                     handleInputChange("curtain_type", value);
                   }} disabled={readOnly} className="grid grid-cols-2 gap-2">
                     <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="single" id="roman-single" className="w-4 h-4" />
-                        <Label htmlFor="roman-single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One blind)</Label>
+                        <RadioGroupItem value="single" id="blind-single" className="w-4 h-4" />
+                        <Label htmlFor="blind-single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One blind)</Label>
                       </div>
                     </div>
                     <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="double" id="roman-double" className="w-4 h-4" />
-                        <Label htmlFor="roman-double" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Double (Two blinds on one headrail)</Label>
+                        <RadioGroupItem value="double" id="blind-double" className="w-4 h-4" />
+                        <Label htmlFor="blind-double" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Double (Two blinds on one headrail)</Label>
                       </div>
                     </div>
                   </RadioGroup>

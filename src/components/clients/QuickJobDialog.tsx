@@ -12,8 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Briefcase, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useUserPermissions } from '@/hooks/usePermissions';
-import { useQuery } from "@tanstack/react-query";
+import { useHasPermission } from '@/hooks/usePermissions';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { getEffectiveOwnerForMutation } from '@/utils/getEffectiveOwnerForMutation';
 
@@ -34,28 +33,9 @@ export const QuickJobDialog = ({ open, onOpenChange, client, onProjectCreated }:
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
-  const { isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_permissions')
-        .select('permission_name')
-        .eq('user_id', user.id);
-      if (error) {
-        console.error('[QuickJobDialog] Error fetching explicit permissions:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user && !permissionsLoading,
-  });
-  
-  // Check if create_jobs is explicitly in user_permissions table (ignores role-based)
-  const hasCreateJobsPermission = explicitPermissions?.some(
-    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
-  ) ?? false;
+
+  // Permission check — useHasPermission merges role defaults + custom permissions correctly.
+  const hasCreateJobsPermission = useHasPermission('create_jobs') !== false;
 
   const handleCreate = async () => {
     // Check permission before creating
