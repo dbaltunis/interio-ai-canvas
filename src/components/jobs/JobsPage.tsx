@@ -93,7 +93,8 @@ const JobsPage = () => {
   const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
   const canViewJobsExplicit = canViewAllJobs !== false || canViewAssignedJobs !== false;
   const shouldFilterByAssignment = canViewAllJobs === false && canViewAssignedJobs !== false;
-  const canCreateJobsExplicit = isDealer === true || useHasPermission('create_jobs') !== false;
+  const canCreateJobsRaw = useHasPermission('create_jobs');
+  const canCreateJobsExplicit = isDealer === true || canCreateJobsRaw !== false;
   const canDeleteJobsExplicit = useHasPermission('delete_jobs') !== false;
 
   // Keep role loading for initial render gate

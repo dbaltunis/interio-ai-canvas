@@ -8,7 +8,6 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useIsDealer } from "@/hooks/useIsDealer";
-// useQuery and supabase removed - using centralized useHasPermission hook
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";

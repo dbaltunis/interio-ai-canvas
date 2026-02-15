@@ -41,7 +41,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useDeleteQuote, useQuotes } from "@/hooks/useQuotes";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useHasPermission } from "@/hooks/usePermissions";
-// useUserRole, useQuery, supabase removed - using centralized useHasPermission hook
 
 interface JobActionsMenuProps {
   quote: any;
