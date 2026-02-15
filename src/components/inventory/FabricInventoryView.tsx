@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   const { data: vendors = [] } = useVendors();
   const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const { formatCurrency: formatPrice } = useFormattedCurrency();
   const { units } = useMeasurementUnits();
   const isMobile = useIsMobile();
@@ -182,7 +184,13 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this fabric?')) return;
+    const confirmed = await confirm({
+      title: "Delete Fabric",
+      description: "Are you sure you want to delete this fabric?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('enhanced_inventory_items')

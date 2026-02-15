@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +14,7 @@ export const PartsSection = () => {
   const { data: parts = [], isLoading: partsLoading } = usePartsOptions();
   const updateParts = useUpdatePartsOption();
   const deleteParts = useDeletePartsOption();
+  const confirm = useConfirmDialog();
   const [isPartsDialogOpen, setIsPartsDialogOpen] = useState(false);
   const [editingParts, setEditingParts] = useState<PartsOption | null>(null);
 
@@ -35,10 +37,14 @@ export const PartsSection = () => {
   };
 
   const handleDeleteParts = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this parts option?")) {
-      return;
-    }
-    
+    const confirmed = await confirm({
+      title: "Delete Parts Option",
+      description: "Are you sure you want to delete this parts option? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteParts.mutateAsync(id);
       toast.success("Parts option deleted successfully");

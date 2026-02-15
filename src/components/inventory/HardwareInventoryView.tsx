@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   const { data: vendors = [] } = useVendors();
   const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,7 +116,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this hardware item?')) return;
+    const confirmed = await confirm({
+      title: "Delete Hardware Item",
+      description: "Are you sure you want to delete this hardware item?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('enhanced_inventory_items')

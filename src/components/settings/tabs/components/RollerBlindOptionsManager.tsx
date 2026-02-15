@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ interface OptionItem extends EnhancedInventoryItem {
 }
 
 export const RollerBlindOptionsManager = () => {
+  const confirm = useConfirmDialog();
   const { data: optionsData = [], isLoading } = useEnhancedInventoryByCategory('treatment_option');
   const createItem = useCreateEnhancedInventoryItem();
   const updateItem = useUpdateEnhancedInventoryItem();
@@ -148,7 +150,13 @@ export const RollerBlindOptionsManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this option?')) {
+    const confirmed = await confirm({
+      title: "Delete Option",
+      description: "Are you sure you want to delete this option?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       try {
         await deleteItem.mutateAsync(id);
         toast({

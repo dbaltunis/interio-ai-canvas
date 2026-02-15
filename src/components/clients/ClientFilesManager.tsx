@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +35,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   const { data: projects } = useClientJobs(clientId);
   const uploadFile = useUploadClientFile();
   const deleteFile = useDeleteClientFile();
+  const confirm = useConfirmDialog();
   const getFileUrl = useGetClientFileUrl();
   
   // Format dates using user preferences - memoize callback to prevent infinite loop
@@ -120,7 +122,13 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
   };
 
   const handleDelete = async (file: any) => {
-    if (confirm(`Are you sure you want to delete ${file.file_name}?`)) {
+    const confirmed = await confirm({
+      title: "Delete File",
+      description: `Are you sure you want to delete ${file.file_name}?`,
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteFile.mutateAsync(file);
     }
   };

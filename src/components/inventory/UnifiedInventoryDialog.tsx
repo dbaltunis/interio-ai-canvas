@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -478,8 +479,16 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
+  const confirm = useConfirmDialog();
+
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+    const confirmed = await confirm({
+      title: "Delete Item",
+      description: "Are you sure you want to delete this item? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(item.id);
       // No success toast - dialog closes and item disappears from list

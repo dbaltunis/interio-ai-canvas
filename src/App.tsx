@@ -21,6 +21,7 @@ import { TeachingProvider } from "./contexts/TeachingContext";
 import { TutorialProvider } from "./contexts/TutorialContext";
 import { TutorialPlayer } from "./components/tutorials/TutorialPlayer";
 import { DebugModeProvider } from "./contexts/DebugModeContext";
+import { ConfirmDialogProvider } from "./hooks/useConfirmDialog";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 import { DebugPanel } from "./components/debug/DebugPanel";
 import { ThemeProvider } from "next-themes";
@@ -173,6 +174,7 @@ const App = () => {
               }}
             >
               <ThemeDarkSync />
+              <ConfirmDialogProvider>
               <InteractionUnlockGuard />
               <Toaster />
               <Sonner />
@@ -381,6 +383,7 @@ const App = () => {
                   </AccountStatusGuard>
                 </AuthProvider>
                  </BrowserRouter>
+              </ConfirmDialogProvider>
               </ThemeProvider>
             </TooltipProvider>
         </DebugModeProvider>

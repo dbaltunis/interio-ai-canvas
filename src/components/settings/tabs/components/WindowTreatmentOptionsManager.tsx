@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
+  const confirm = useConfirmDialog();
   const { data: roleData } = useUserRole();
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
@@ -451,7 +453,13 @@ export const WindowTreatmentOptionsManager = () => {
   };
 
   const handleDelete = async (value: OptionValue) => {
-    if (confirm('Are you sure you want to delete this option from all templates?')) {
+    const confirmed = await confirm({
+      title: "Delete Option",
+      description: "Are you sure you want to delete this option from all templates?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       try {
         // Delete this value from all templates
         for (const opt of relevantOptions) {

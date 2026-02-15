@@ -7,6 +7,7 @@ import { useAppointmentSchedulers, useDeleteScheduler, useUpdateScheduler } from
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Edit, Trash2, ExternalLink, Users, Clock, Globe, Save, X, Settings } from "lucide-react";
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { AvailabilityEditor } from "./AvailabilityEditor";
@@ -16,6 +17,7 @@ export const SchedulerManagement = () => {
   const deleteScheduler = useDeleteScheduler();
   const updateScheduler = useUpdateScheduler();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
 
@@ -57,7 +59,13 @@ export const SchedulerManagement = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+    const confirmed = await confirm({
+      title: "Delete Scheduler",
+      description: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       try {
         await deleteScheduler.mutateAsync(id);
       } catch (error) {

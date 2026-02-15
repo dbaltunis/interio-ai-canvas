@@ -8,10 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVendors, useDeleteVendor } from "@/hooks/useVendors";
 import { VendorForm } from "./VendorForm";
 import { Edit, Trash2, Mail, Phone, MapPin, Search } from "lucide-react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const VendorsList = () => {
   const { data: vendors = [] } = useVendors();
   const deleteVendor = useDeleteVendor();
+  const confirm = useConfirmDialog();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingVendor, setEditingVendor] = useState<any>(null);
 
@@ -20,8 +22,14 @@ export const VendorsList = () => {
     vendor.company_type?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this vendor?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: "Delete Vendor",
+      description: "Are you sure you want to delete this vendor?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       deleteVendor.mutate(id);
     }
   };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2 } from "lucide-react";
@@ -7,6 +8,7 @@ import { useEyeletRings, useCreateEyeletRing, useUpdateEyeletRing, useDeleteEyel
 import { RingDialog } from "@/components/inventory/RingDialog";
 
 export const RingLibrary = () => {
+  const confirm = useConfirmDialog();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRing, setEditingRing] = useState<EyeletRing | undefined>();
 
@@ -21,7 +23,13 @@ export const RingLibrary = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this ring?")) {
+    const confirmed = await confirm({
+      title: "Delete Ring",
+      description: "Are you sure you want to delete this ring? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       deleteRing.mutate(id);
     }
   };

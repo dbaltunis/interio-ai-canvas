@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { AddRuleDialog } from "./AddRuleDialog";
 export const PricingRulesSection = () => {
   const { data: pricingRules, isLoading, createPricingRule, updatePricingRule, deletePricingRule } = usePricingRules();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
 
@@ -69,7 +71,13 @@ export const PricingRulesSection = () => {
 
   const handleDeleteRule = async (ruleId: string) => {
     console.log("Delete rule clicked:", ruleId);
-    if (!confirm("Are you sure you want to delete this rule?")) return;
+    const confirmed = await confirm({
+      title: "Delete Pricing Rule",
+      description: "Are you sure you want to delete this pricing rule? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     
     try {
       await deletePricingRule.mutateAsync(ruleId);

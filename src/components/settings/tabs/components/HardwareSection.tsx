@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +14,7 @@ export const HardwareSection = () => {
   const { data: hardware = [], isLoading: hardwareLoading } = useHardwareOptions();
   const updateHardware = useUpdateHardwareOption();
   const deleteHardware = useDeleteHardwareOption();
+  const confirm = useConfirmDialog();
   const [isHardwareDialogOpen, setIsHardwareDialogOpen] = useState(false);
   const [editingHardware, setEditingHardware] = useState<HardwareOption | null>(null);
 
@@ -35,10 +37,14 @@ export const HardwareSection = () => {
   };
 
   const handleDeleteHardware = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this hardware option?")) {
-      return;
-    }
-    
+    const confirmed = await confirm({
+      title: "Delete Hardware",
+      description: "Are you sure you want to delete this hardware option? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteHardware.mutateAsync(id);
       toast.success("Hardware option deleted successfully");

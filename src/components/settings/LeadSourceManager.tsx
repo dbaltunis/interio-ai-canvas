@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,7 @@ export const LeadSourceManager = () => {
   const createSource = useCreateLeadSource();
   const updateSource = useUpdateLeadSource();
   const deleteSource = useDeleteLeadSource();
+  const confirm = useConfirmDialog();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<any>(null);
@@ -103,7 +105,13 @@ export const LeadSourceManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this lead source?")) {
+    const confirmed = await confirm({
+      title: "Delete Lead Source",
+      description: "Are you sure you want to delete this lead source? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       await deleteSource.mutateAsync(id);
     }
   };

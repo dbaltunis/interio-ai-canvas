@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { PricingCell } from "./PricingCell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
   const { data: vendors = [] } = useVendors();
   const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,7 +105,13 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this wallcovering?')) return;
+    const confirmed = await confirm({
+      title: "Delete Wallcovering",
+      description: "Are you sure you want to delete this wallcovering?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('inventory')

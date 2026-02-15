@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const [isLoading, setIsLoading] = useState(false);
   
   const [shopDomain, setShopDomain] = useState(integration?.shop_domain || "");
@@ -296,7 +298,13 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       });
       return;
     }
-    if (!confirm('Are you sure you want to disconnect this Shopify store? This will stop all syncing.')) {
+    const confirmed = await confirm({
+      title: "Disconnect Store",
+      description: "Are you sure you want to disconnect this Shopify store? This will stop all syncing.",
+      confirmLabel: "Disconnect",
+      variant: "destructive",
+    });
+    if (!confirmed) {
       return;
     }
     
@@ -326,7 +334,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     }
   };
 
-  const handleSwitchStore = () => {
+  const handleSwitchStore = async () => {
     if (!isPermissionLoaded) {
       toast({
         title: "Loading",
@@ -342,7 +350,12 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       });
       return;
     }
-    if (confirm('Switch to a different store? You can enter new credentials below.')) {
+    const confirmed = await confirm({
+      title: "Switch Store",
+      description: "Switch to a different store? You can enter new credentials below.",
+      confirmLabel: "Switch",
+    });
+    if (confirmed) {
       setShopDomain("");
       setClientId("");
       setClientSecret("");

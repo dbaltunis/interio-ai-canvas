@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { formatUserDate } from "@/utils/dateFormatUtils";
 import { Calendar, Clock, User, Mail, Phone, MapPin, MessageSquare, Trash2, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ interface BookingWithScheduler extends Booking {
 
 export const BookingManagement = () => {
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
   const [selectedBooking, setSelectedBooking] = useState<BookingWithScheduler | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -515,8 +517,14 @@ export const BookingManagement = () => {
                 </div>
                 <Button
                   variant="destructive"
-                  onClick={() => {
-                    if (confirm("Are you sure you want to delete this booking?")) {
+                  onClick={async () => {
+                    const confirmed = await confirm({
+                      title: "Delete Booking",
+                      description: "Are you sure you want to delete this booking? This action cannot be undone.",
+                      confirmLabel: "Delete",
+                      variant: "destructive",
+                    });
+                    if (confirmed) {
                       deleteBooking.mutate(selectedBooking.id);
                     }
                   }}
