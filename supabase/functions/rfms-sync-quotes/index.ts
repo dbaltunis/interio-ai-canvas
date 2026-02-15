@@ -137,12 +137,85 @@ serve(async (req: Request) => {
     );
 
     const results = {
+      imported: 0,
       exported: 0,
       updated: 0,
       errors: [] as string[],
     };
 
-    if (direction === "push") {
+    if (direction === "pull" || direction === "both") {
+      // Pull RFMS quotes into InterioApp as projects
+      try {
+        const rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, sessionToken, apiUrl);
+
+        if (rfmsData.status === "success" && rfmsData.result) {
+          const quotes = Array.isArray(rfmsData.result)
+            ? rfmsData.result
+            : rfmsData.result.quotes || [];
+
+          for (const quote of quotes) {
+            try {
+              const rfmsQuoteId = quote.id?.toString();
+              if (!rfmsQuoteId) continue;
+
+              // Check if already imported
+              const { data: existing } = await supabase
+                .from("projects")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("rfms_quote_id" as any, rfmsQuoteId)
+                .maybeSingle();
+
+              if (existing) {
+                // Update existing project totals
+                await supabase
+                  .from("projects")
+                  .update({
+                    name: quote.description || existing.id,
+                    total_price: quote.total || undefined,
+                  } as any)
+                  .eq("id", existing.id);
+                results.updated++;
+                continue;
+              }
+
+              // Resolve client from RFMS customer_id
+              let clientId = null;
+              if (quote.customer_id) {
+                const { data: matchingClient } = await supabase
+                  .from("clients")
+                  .select("id")
+                  .eq("user_id", user.id)
+                  .eq("rfms_customer_id" as any, quote.customer_id.toString())
+                  .maybeSingle();
+
+                if (matchingClient) clientId = matchingClient.id;
+              }
+
+              // Create new project from RFMS quote
+              await supabase
+                .from("projects")
+                .insert({
+                  user_id: user.id,
+                  name: quote.description || `RFMS Quote ${rfmsQuoteId}`,
+                  status: "quoted",
+                  client_id: clientId,
+                  rfms_quote_id: rfmsQuoteId,
+                  quote_number: quote.reference || undefined,
+                } as any);
+
+              results.imported++;
+            } catch (err: any) {
+              results.errors.push(`RFMS Quote ${quote.id}: ${err.message}`);
+            }
+          }
+        }
+      } catch (err: any) {
+        results.errors.push(`Pull failed: ${err.message}`);
+      }
+    }
+
+    if (direction === "push" || direction === "both") {
       // Push specific project or all projects to RFMS
       let projectsQuery = supabase
         .from("projects")

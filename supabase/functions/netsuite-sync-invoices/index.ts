@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// --- OAuth 1.0 TBA Helpers ---
+// --- OAuth 1.0 TBA Helpers (shared pattern with netsuite-sync-customers) ---
 
 function percentEncode(str: string): string {
   return encodeURIComponent(str)
@@ -73,8 +73,6 @@ function generateOAuthHeader(
   return `OAuth ${headerParts.join(", ")}`;
 }
 
-// --- NetSuite API Wrapper ---
-
 function getBaseUrl(accountId: string): string {
   const slug = accountId.replace(/_/g, "-").toLowerCase();
   return `https://${slug}.suitetalk.api.netsuite.com/services/rest/record/v1`;
@@ -104,7 +102,6 @@ async function nsRequest(
     throw new Error(`NetSuite API ${response.status}: ${errorText.substring(0, 300)}`);
   }
 
-  // 204 No Content (successful POST/PATCH)
   if (response.status === 204) {
     const location = response.headers.get("Location");
     const id = location?.split("/").pop();
@@ -114,6 +111,12 @@ async function nsRequest(
   return await response.json();
 }
 
+/**
+ * NetSuite Invoice Sync Edge Function
+ *
+ * Pulls invoices from NetSuite and updates project payment status.
+ * Links invoices to projects via netsuite_estimate_id or netsuite_sales_order_id.
+ */
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -132,7 +135,7 @@ serve(async (req: Request) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { direction, clientId } = await req.json();
+    const { projectId } = await req.json();
 
     // Get NetSuite integration
     const { data: integration, error: intError } = await supabase
@@ -161,126 +164,105 @@ serve(async (req: Request) => {
     };
     const baseUrl = getBaseUrl(account_id);
 
-    const results = { imported: 0, exported: 0, updated: 0, errors: [] as string[] };
+    const results = { synced: 0, updated: 0, errors: [] as string[] };
 
-    if (direction === "push" || direction === "both") {
-      // Push InterioApp clients to NetSuite as Customers
-      let clientsQuery = supabase
-        .from("clients")
-        .select("*")
-        .eq("user_id", user.id);
+    // Pull invoices from NetSuite
+    const listUrl = `${baseUrl}/invoice?limit=100&fields=memo,entity,tranDate,total,status,amountPaid,amountRemaining,createdFrom,externalId`;
+    const data = await nsRequest("GET", listUrl, creds);
 
-      if (clientId) clientsQuery = clientsQuery.eq("id", clientId);
+    const invoices = data.items || [];
 
-      const { data: clients } = await clientsQuery;
-
-      for (const client of clients || []) {
-        try {
-          // Map InterioApp client to NetSuite customer
-          const nsCustomer: any = {
-            companyName: client.company_name || client.name,
-            entityId: client.name,
-            email: client.email || undefined,
-            phone: client.phone || undefined,
-            comments: `Synced from InterioApp. Client ID: ${client.id}`,
-          };
-
-          // Add address if available
-          if (client.address || client.city || client.state) {
-            nsCustomer.addressBook = {
-              items: [
-                {
-                  addressBookAddress: {
-                    addr1: client.address || "",
-                    city: client.city || "",
-                    state: client.state || "",
-                    zip: client.zip_code || "",
-                    country: client.country
-                      ? (client.country === "Australia" ? "_australia"
-                        : client.country === "New Zealand" ? "_newZealand"
-                        : client.country === "United States" ? "_unitedStates"
-                        : client.country === "United Kingdom" ? "_unitedKingdom"
-                        : client.country === "Canada" ? "_canada"
-                        : `_${client.country.toLowerCase().replace(/\s+/g, "")}`)
-                      : undefined,
-                  },
-                  defaultBilling: true,
-                  defaultShipping: true,
-                  label: "Primary",
-                },
-              ],
-            };
-          }
-
-          const existingNsId = (client as any).netsuite_customer_id;
-
-          if (existingNsId) {
-            // Update existing NetSuite customer
-            const updateUrl = `${baseUrl}/customer/${existingNsId}`;
-            await nsRequest("PATCH", updateUrl, creds, nsCustomer);
-            results.updated++;
-          } else {
-            // Create new NetSuite customer
-            const createUrl = `${baseUrl}/customer`;
-            const result = await nsRequest("POST", createUrl, creds, nsCustomer);
-
-            if (result.id) {
-              await supabase
-                .from("clients")
-                .update({ netsuite_customer_id: result.id } as any)
-                .eq("id", client.id);
-              results.exported++;
-            }
-          }
-        } catch (err: any) {
-          results.errors.push(`Client ${client.id}: ${err.message}`);
-        }
-      }
-    }
-
-    if (direction === "pull" || direction === "both") {
-      // Pull NetSuite customers to InterioApp
+    for (const invoice of invoices) {
       try {
-        const listUrl = `${baseUrl}/customer?limit=100&fields=companyName,entityId,email,phone,comments`;
-        const data = await nsRequest("GET", listUrl, creds);
+        const nsInvoiceId = invoice.id?.toString();
+        if (!nsInvoiceId) continue;
 
-        const customers = data.items || [];
+        // Skip invoices created from InterioApp (we track via createdFrom)
+        const externalId = invoice.externalId;
 
-        for (const customer of customers) {
-          try {
-            const nsId = customer.id?.toString();
-            if (!nsId) continue;
+        // Find matching project by:
+        // 1. Direct netsuite_invoice_id match (already linked)
+        // 2. Via createdFrom (sales order or estimate that created this invoice)
+        let matchedProjectId: string | null = null;
 
-            // Check if already imported
-            const { data: existing } = await supabase
-              .from("clients")
+        // Check if already linked
+        if (!projectId) {
+          const { data: alreadyLinked } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("netsuite_invoice_id" as any, nsInvoiceId)
+            .maybeSingle();
+
+          if (alreadyLinked) {
+            matchedProjectId = alreadyLinked.id;
+          }
+        } else {
+          matchedProjectId = projectId;
+        }
+
+        // Try to link via createdFrom (the estimate or sales order)
+        if (!matchedProjectId && invoice.createdFrom?.id) {
+          const createdFromId = invoice.createdFrom.id.toString();
+
+          // Check sales orders
+          const { data: soMatch } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("netsuite_sales_order_id" as any, createdFromId)
+            .maybeSingle();
+
+          if (soMatch) {
+            matchedProjectId = soMatch.id;
+          } else {
+            // Check estimates
+            const { data: estMatch } = await supabase
+              .from("projects")
               .select("id")
               .eq("user_id", user.id)
-              .eq("netsuite_customer_id" as any, nsId)
+              .eq("netsuite_estimate_id" as any, createdFromId)
               .maybeSingle();
 
-            const clientData: any = {
-              user_id: user.id,
-              name: customer.entityId || customer.companyName || `NS Customer ${nsId}`,
-              company_name: customer.companyName || "",
-              email: customer.email || "",
-              phone: customer.phone || "",
-              netsuite_customer_id: nsId,
-            };
-
-            if (existing) {
-              await supabase.from("clients").update(clientData).eq("id", existing.id);
-              results.updated++;
-            } else {
-              await supabase.from("clients").insert(clientData);
-              results.imported++;
-            }
-          } catch (err: any) {
-            results.errors.push(`NS Customer ${customer.id}: ${err.message}`);
+            if (estMatch) matchedProjectId = estMatch.id;
           }
         }
+
+        // Try to match via externalId pattern
+        if (!matchedProjectId && externalId && externalId.startsWith("interioapp-")) {
+          const appProjectId = externalId.replace("interioapp-", "");
+          const { data: extMatch } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("id", appProjectId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (extMatch) matchedProjectId = extMatch.id;
+        }
+
+        if (!matchedProjectId) {
+          // No matching project — skip this invoice
+          continue;
+        }
+
+        // Update project with invoice info
+        const invoiceStatus = invoice.status?.id || invoice.status || "open";
+        const isPaid = invoiceStatus === "paidInFull" || invoiceStatus === "paid";
+        const amountPaid = invoice.amountPaid || 0;
+        const amountRemaining = invoice.amountRemaining || invoice.total || 0;
+
+        await supabase
+          .from("projects")
+          .update({
+            netsuite_invoice_id: nsInvoiceId,
+            payment_status: isPaid ? "paid" : amountPaid > 0 ? "partial" : "unpaid",
+          } as any)
+          .eq("id", matchedProjectId);
+
+        results.synced++;
       } catch (err: any) {
-        results.errors.push(`Pull failed: ${err.message}`);
+        results.errors.push(`Invoice ${invoice.id}: ${err.message}`);
       }
     }
 
@@ -290,15 +272,17 @@ serve(async (req: Request) => {
       .update({ last_sync: new Date().toISOString() })
       .eq("id", integration.id);
 
-    console.log(`NetSuite customer sync: ${results.imported} imported, ${results.exported} exported, ${results.updated} updated`);
+    console.log(
+      `NetSuite invoice sync: ${results.synced} synced, ${results.errors.length} errors`
+    );
 
     return new Response(JSON.stringify({ success: true, ...results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("NetSuite customer sync error:", error);
+    console.error("NetSuite invoice sync error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Customer sync failed" }),
+      JSON.stringify({ error: error.message || "Invoice sync failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

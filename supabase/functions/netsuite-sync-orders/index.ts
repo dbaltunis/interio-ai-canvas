@@ -328,9 +328,9 @@ serve(async (req: Request) => {
     }
 
     if (direction === "pull" || direction === "both") {
-      // Pull estimates/sales orders from NetSuite
+      // Pull estimates/sales orders from NetSuite (with line items)
       try {
-        const listUrl = `${baseUrl}/${nsRecordType}?limit=50&fields=memo,entity,tranDate,total,externalId`;
+        const listUrl = `${baseUrl}/${nsRecordType}?limit=50&fields=memo,entity,tranDate,total,externalId,status`;
         const data = await nsRequest("GET", listUrl, creds);
 
         const records = data.items || [];
@@ -340,14 +340,12 @@ serve(async (req: Request) => {
             const nsId = record.id?.toString();
             if (!nsId) continue;
 
-            // Check if this record was created from InterioApp (has externalId)
+            // Skip records created from InterioApp to avoid duplicates
             const externalId = record.externalId;
             if (externalId && externalId.startsWith("interioapp-")) {
-              // This was pushed from InterioApp — skip pull to avoid duplicates
               continue;
             }
 
-            // Check if already imported
             const idField = nsRecordType === "salesOrder"
               ? "netsuite_sales_order_id"
               : "netsuite_estimate_id";
@@ -359,7 +357,52 @@ serve(async (req: Request) => {
               .eq(idField as any, nsId)
               .maybeSingle();
 
+            // Fetch full record with line items for both new and existing
+            let lineItems: any[] = [];
+            try {
+              const detailUrl = `${baseUrl}/${nsRecordType}/${nsId}?expandSubResources=true`;
+              const detail = await nsRequest("GET", detailUrl, creds);
+              lineItems = detail.item?.items || [];
+            } catch (detailErr: any) {
+              console.log(`Could not fetch line items for ${nsRecordType} ${nsId}: ${detailErr.message}`);
+            }
+
             if (existing) {
+              // Update existing project with latest data
+              const updateData: any = {
+                name: record.memo || existing.id,
+              };
+              if (record.total != null) updateData.total_price = record.total;
+
+              await supabase.from("projects").update(updateData).eq("id", existing.id);
+
+              // Sync line items as treatments if we got them
+              if (lineItems.length > 0) {
+                for (const li of lineItems) {
+                  const treatmentData: any = {
+                    project_id: existing.id,
+                    user_id: user.id,
+                    treatment_type: "imported",
+                    treatment_name: li.description || `Line ${li.line || 1}`,
+                    product_name: li.item?.refName || li.description || "NetSuite Item",
+                    quantity: li.quantity || 1,
+                    total_price: li.amount || 0,
+                  };
+
+                  // Upsert by project + line number
+                  const { data: existingTreatment } = await supabase
+                    .from("treatments")
+                    .select("id")
+                    .eq("project_id", existing.id)
+                    .eq("treatment_name" as any, treatmentData.treatment_name)
+                    .maybeSingle();
+
+                  if (existingTreatment) {
+                    await supabase.from("treatments").update(treatmentData).eq("id", existingTreatment.id);
+                  }
+                }
+              }
+
               results.updated++;
               continue;
             }
@@ -386,7 +429,28 @@ serve(async (req: Request) => {
               [idField]: nsId,
             };
 
-            await supabase.from("projects").insert(projectData);
+            const { data: newProject } = await supabase
+              .from("projects")
+              .insert(projectData)
+              .select("id")
+              .single();
+
+            // Import line items as treatments
+            if (newProject && lineItems.length > 0) {
+              const treatmentInserts = lineItems.map((li: any) => ({
+                project_id: newProject.id,
+                user_id: user.id,
+                treatment_type: "imported",
+                treatment_name: li.description || `Line ${li.line || 1}`,
+                product_name: li.item?.refName || li.description || "NetSuite Item",
+                quantity: li.quantity || 1,
+                total_price: li.amount || 0,
+                material_cost: li.amount || 0,
+              }));
+
+              await supabase.from("treatments").insert(treatmentInserts);
+            }
+
             results.exported++;
           } catch (err: any) {
             results.errors.push(`NS ${nsRecordType} ${record.id}: ${err.message}`);

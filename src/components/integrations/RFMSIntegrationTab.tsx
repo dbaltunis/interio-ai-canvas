@@ -112,16 +112,17 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     }
   };
 
-  const handleSyncQuotes = async () => {
+  const handleSyncQuotes = async (direction: 'push' | 'pull' | 'both' = 'push') => {
     setIsSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('rfms-sync-quotes', {
-        body: { direction: 'push' },
+        body: { direction },
       });
 
       if (error) throw error;
 
       const parts = [];
+      if (data.imported > 0) parts.push(`${data.imported} imported`);
       if (data.exported > 0) parts.push(`${data.exported} exported`);
       if (data.updated > 0) parts.push(`${data.updated} updated`);
 
@@ -291,48 +292,51 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between opacity-60">
             <div className="space-y-0.5">
-              <Label>Sync Measurements</Label>
+              <div className="flex items-center gap-2">
+                <Label>Sync Measurements</Label>
+                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Import measurement data from RFMS
               </p>
             </div>
             <Switch
-              checked={formData.sync_measurements}
-              onCheckedChange={(checked) =>
-                setFormData(prev => ({ ...prev, sync_measurements: checked }))
-              }
+              checked={false}
+              disabled
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between opacity-60">
             <div className="space-y-0.5">
-              <Label>Sync Scheduling</Label>
+              <div className="flex items-center gap-2">
+                <Label>Sync Scheduling</Label>
+                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Synchronize job schedules and appointments
               </p>
             </div>
             <Switch
-              checked={formData.sync_scheduling}
-              onCheckedChange={(checked) =>
-                setFormData(prev => ({ ...prev, sync_scheduling: checked }))
-              }
+              checked={false}
+              disabled
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between opacity-60">
             <div className="space-y-0.5">
-              <Label>Auto Update Job Status</Label>
+              <div className="flex items-center gap-2">
+                <Label>Auto Update Job Status</Label>
+                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Automatically update job status from RFMS
               </p>
             </div>
             <Switch
-              checked={formData.auto_update_job_status}
-              onCheckedChange={(checked) =>
-                setFormData(prev => ({ ...prev, auto_update_job_status: checked }))
-              }
+              checked={false}
+              disabled
             />
           </div>
 
@@ -401,11 +405,20 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleSyncQuotes}
+                onClick={() => handleSyncQuotes('push')}
                 disabled={isSyncing}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Export Quotes
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSyncQuotes('pull')}
+                disabled={isSyncing}
+              >
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Import Quotes
               </Button>
             </div>
           </CardContent>
