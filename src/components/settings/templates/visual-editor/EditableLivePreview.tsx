@@ -1859,6 +1859,61 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
       );
     }
 
+    case 'document-settings': {
+      const bgColor = content.backgroundColor || '#ffffff';
+      const presetColors = [
+        { name: 'White', value: '#ffffff' },
+        { name: 'Warm Sand', value: '#faf6f1' },
+        { name: 'Cream', value: '#fdf8f0' },
+        { name: 'Ivory', value: '#fffff0' },
+        { name: 'Pearl', value: '#f5f5f0' },
+        { name: 'Soft Grey', value: '#f5f5f5' },
+        { name: 'Light Sage', value: '#f2f5f0' },
+        { name: 'Pale Blue', value: '#f0f4f8' },
+        { name: 'Blush', value: '#fdf2f2' },
+        { name: 'Lavender', value: '#f5f0fa' },
+      ];
+      return (
+        <div className="mb-4 p-3 border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-muted-foreground">Background:</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {presetColors.map((color) => (
+                <button
+                  key={color.value}
+                  title={color.name}
+                  onClick={() => updateBlockContent({ backgroundColor: color.value })}
+                  className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110"
+                  style={{
+                    backgroundColor: color.value,
+                    borderColor: bgColor === color.value ? 'hsl(var(--primary))' : '#d1d5db',
+                    boxShadow: bgColor === color.value ? '0 0 0 2px hsl(var(--primary) / 0.3)' : 'none'
+                  }}
+                />
+              ))}
+              <label className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/40 cursor-pointer flex items-center justify-center hover:scale-110 transition-all overflow-hidden" title="Custom color">
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => updateBlockContent({ backgroundColor: e.target.value })}
+                  className="absolute opacity-0 w-0 h-0"
+                />
+                <span className="text-[8px] text-muted-foreground">+</span>
+              </label>
+            </div>
+            {bgColor !== '#ffffff' && (
+              <button
+                onClick={() => updateBlockContent({ backgroundColor: '#ffffff' })}
+                className="text-xs text-muted-foreground hover:text-foreground ml-1"
+              >
+                Clear✕
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     default:
       return (
         <EditableContainer 
