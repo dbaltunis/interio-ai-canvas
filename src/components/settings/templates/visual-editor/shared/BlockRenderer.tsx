@@ -593,6 +593,99 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
           </div>
         </div>
       )}
+      {headerLayout === 'curtain-split' && (
+        <div style={{ display: 'flex', gap: '24px', backgroundColor: '#faf6f1', padding: '24px 20px', borderRadius: '4px' }}>
+          {/* LEFT: Logo + Company + Client */}
+          <div style={{ flex: 1 }}>
+            {content.showLogo !== false && (
+              <div style={{ marginBottom: '16px' }}>
+                {businessSettings?.company_logo_url ? (
+                  <img 
+                    src={businessSettings.company_logo_url} 
+                    alt="Company Logo" 
+                    className="object-contain"
+                    style={{ height: content.logoSize || '70px', maxWidth: '280px' }}
+                  />
+                ) : (
+                  <div style={{ height: '70px', width: '70px', backgroundColor: '#8b7355', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Building2 className="h-10 w-10 text-white" />
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{ fontSize: '16px', fontWeight: '700', color: '#3d2e1f', marginBottom: '4px' }}>
+              {content.companyName || getToken('company_name')}
+            </div>
+            <div style={{ fontSize: '13px', color: '#6b5c4c', lineHeight: '1.6' }}>
+              <div>{getToken('company_address')}</div>
+              <div>{getToken('company_phone')}</div>
+              <div>{getToken('company_email')}</div>
+            </div>
+
+            {/* Prepared For */}
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #d4c5b0' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#8b7355', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                Prepared For
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#3d2e1f', marginBottom: '2px' }}>
+                {getToken('client_name') || 'Client Name'}
+              </div>
+              <div style={{ fontSize: '13px', color: '#6b5c4c', lineHeight: '1.6' }}>
+                {getToken('client_email') && <div>{getToken('client_email')}</div>}
+                {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
+                {getToken('client_address') && <div>{getToken('client_address')}</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Quote metadata table */}
+          <div style={{ width: '260px', flexShrink: 0 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: '1px solid #d4c5b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quote #</td>
+                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>{getToken('job_number')}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: '1px solid #d4c5b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</td>
+                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>{getToken('date')}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: '1px solid #d4c5b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</td>
+                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>
+                    {isEditable ? renderText(
+                      content.statusValue || 'Draft',
+                      (v) => updateContent({ statusValue: v }),
+                      '',
+                      'Status'
+                    ) : (content.statusValue || 'Draft')}
+                  </td>
+                </tr>
+                {/* Custom fields */}
+                {(content.customFields || []).map((field: any, idx: number) => (
+                  <tr key={`custom-${idx}`}>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: idx < (content.customFields?.length || 0) - 1 ? '1px solid #d4c5b0' : 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {field.label || `Field ${idx + 1}`}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: idx < (content.customFields?.length || 0) - 1 ? '1px solid #d4c5b0' : 'none', textAlign: 'right' }}>
+                      {isEditable ? renderText(
+                        field.value || '',
+                        (v) => {
+                          const updatedFields = [...(content.customFields || [])];
+                          updatedFields[idx] = { ...updatedFields[idx], value: v };
+                          updateContent({ customFields: updatedFields });
+                        },
+                        '',
+                        `Enter ${field.label || 'value'}`
+                      ) : (field.value || '-')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

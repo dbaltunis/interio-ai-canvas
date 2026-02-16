@@ -14,6 +14,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
     // Extract document settings from blocks
     const documentSettings = blocks?.find((b: any) => b.type === 'document-settings')?.content || {};
     const orientation = documentSettings.orientation || 'portrait';
+    const backgroundColor = documentSettings.backgroundColor || '#ffffff';
     const marginTop = documentSettings.marginTop || 8;
     const marginRight = documentSettings.marginRight || 8;
     const marginBottom = documentSettings.marginBottom || 6;
@@ -28,7 +29,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           fontSize: '10pt',
           lineHeight: '1.4',
           color: '#000000',
-          backgroundColor: '#ffffff',
+          backgroundColor: backgroundColor,
           width: orientation === 'landscape' ? '297mm' : '210mm',
           minHeight: orientation === 'landscape' ? '210mm' : '297mm',
           padding: `${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm`,
