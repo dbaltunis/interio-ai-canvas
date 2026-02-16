@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getColorScheme } from "@/utils/quoteColorSchemes";
+import { PenTool, Save, X } from 'lucide-react';
 import { 
   Building2, 
   MapPin, 
@@ -44,6 +45,8 @@ interface BlockRendererProps {
     multiline?: boolean;
   }) => React.ReactNode;
   onContentChange?: (updates: any) => void;
+  quoteId?: string;
+  onDataChange?: any;
 }
 
 // Centralized token resolver used by both canvas and app
@@ -243,6 +246,221 @@ export const resolveToken = (
   return tokens[token] !== undefined ? tokens[token] : '';
 };
 
+// ============= CURTAIN SPLIT HEADER (with per-quote editing) =============
+const CurtainSplitHeader: React.FC<{
+  content: any;
+  businessSettings: any;
+  getToken: (token: string) => any;
+  cs: any;
+  isEditable: boolean;
+  isPrintMode: boolean;
+  renderText: (value: string, onChange: (v: string) => void, className?: string, placeholder?: string, multiline?: boolean) => React.ReactNode;
+  updateContent: (updates: any) => void;
+  quoteId?: string;
+  onDataChange?: any;
+}> = ({ content, businessSettings, getToken, cs, isEditable, isPrintMode, renderText, updateContent, quoteId, onDataChange }) => {
+  const [metadataEditMode, setMetadataEditMode] = useState(false);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  // Load saved values from customData on mount
+  useEffect(() => {
+    if (quoteId && onDataChange?.customData) {
+      const savedData = onDataChange.customData['header-metadata'];
+      if (savedData) {
+        setFieldValues(savedData);
+      }
+    }
+  }, [quoteId, onDataChange?.customData]);
+
+  const getFieldValue = (key: string, fallback: string) => {
+    return fieldValues[key] !== undefined ? fieldValues[key] : fallback;
+  };
+
+  const handleSaveMetadata = () => {
+    if (quoteId && onDataChange) {
+      setSaving(true);
+      onDataChange.saveBlockData({ blockId: 'header-metadata', data: fieldValues });
+      setTimeout(() => setSaving(false), 500);
+    }
+    setMetadataEditMode(false);
+  };
+
+  const handleCancelMetadata = () => {
+    if (quoteId && onDataChange?.customData) {
+      const savedData = onDataChange.customData['header-metadata'];
+      setFieldValues(savedData || {});
+    }
+    setMetadataEditMode(false);
+  };
+
+  const isQuoteMode = !!quoteId && !!onDataChange;
+
+  return (
+    <div style={{ display: 'flex', gap: '24px', padding: '24px 20px' }}>
+      {/* LEFT: Logo + Company + Client */}
+      <div style={{ flex: 1 }}>
+        {content.showLogo !== false && (
+          <div style={{ marginBottom: '16px' }}>
+            {businessSettings?.company_logo_url ? (
+              <img 
+                src={businessSettings.company_logo_url} 
+                alt="Company Logo" 
+                className="object-contain"
+                style={{ height: content.logoSize || '70px', maxWidth: '280px' }}
+              />
+            ) : (
+              <div style={{ height: '70px', width: '70px', backgroundColor: cs.primary, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Building2 className="h-10 w-10 text-white" />
+              </div>
+            )}
+          </div>
+        )}
+        <div style={{ fontSize: '16px', fontWeight: '700', color: cs.headingText, marginBottom: '4px' }}>
+          {content.companyName || getToken('company_name')}
+        </div>
+        <div style={{ fontSize: '13px', color: cs.secondaryText, lineHeight: '1.6' }}>
+          <div>{getToken('company_address')}</div>
+          <div>{getToken('company_phone')}</div>
+          <div>{getToken('company_email')}</div>
+        </div>
+
+        {/* Prepared For */}
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: `1px solid ${cs.border}` }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: cs.primary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            Prepared For
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: '600', color: cs.headingText, marginBottom: '2px' }}>
+            {getToken('client_name') || 'Client Name'}
+          </div>
+          <div style={{ fontSize: '13px', color: cs.secondaryText, lineHeight: '1.6' }}>
+            {getToken('client_email') && <div>{getToken('client_email')}</div>}
+            {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
+            {getToken('client_address') && <div>{getToken('client_address')}</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: Quote metadata table */}
+      <div style={{ width: '260px', flexShrink: 0, position: 'relative' }} className="group">
+        {/* Pencil edit button */}
+        {!isPrintMode && !isEditable && isQuoteMode && !metadataEditMode && (
+          <button
+            onClick={() => setMetadataEditMode(true)}
+            style={{
+              position: 'absolute',
+              top: '-4px',
+              right: '-4px',
+              padding: '4px 8px',
+              fontSize: '12px',
+              color: '#6b7280',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: 0,
+              transition: 'opacity 0.2s',
+              zIndex: 10,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+            className="group-hover:!opacity-100"
+          >
+            <PenTool style={{ width: '12px', height: '12px' }} />
+            Edit
+          </button>
+        )}
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quote #</td>
+              <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>{getToken('job_number')}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</td>
+              <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>{getToken('date')}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</td>
+              <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>
+                {metadataEditMode ? (
+                  <input
+                    type="text"
+                    value={getFieldValue('status', content.statusValue || 'Draft')}
+                    onChange={(e) => setFieldValues(prev => ({ ...prev, status: e.target.value }))}
+                    style={{ width: '100%', padding: '2px 6px', fontSize: '13px', fontWeight: '600', border: '1px solid #d1d5db', borderRadius: '4px', textAlign: 'right', background: '#fff' }}
+                  />
+                ) : isEditable ? renderText(
+                  content.statusValue || 'Draft',
+                  (v) => updateContent({ statusValue: v }),
+                  '',
+                  'Status'
+                ) : (getFieldValue('status', content.statusValue || 'Draft'))}
+              </td>
+            </tr>
+            {/* Custom fields */}
+            {(content.customFields || []).map((field: any, idx: number) => (
+              <tr key={`custom-${idx}`}>
+                <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: idx < (content.customFields?.length || 0) - 1 ? `1px solid ${cs.border}` : 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {isEditable ? renderText(
+                    field.label || `Field ${idx + 1}`,
+                    (v) => {
+                      const updatedFields = [...(content.customFields || [])];
+                      updatedFields[idx] = { ...updatedFields[idx], label: v };
+                      updateContent({ customFields: updatedFields });
+                    },
+                    '',
+                    `Label ${idx + 1}`
+                  ) : (field.label || `Field ${idx + 1}`)}
+                </td>
+                <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: idx < (content.customFields?.length || 0) - 1 ? `1px solid ${cs.border}` : 'none', textAlign: 'right' }}>
+                  {metadataEditMode ? (
+                    <input
+                      type="text"
+                      value={getFieldValue(`custom_${idx}`, field.value || '')}
+                      onChange={(e) => setFieldValues(prev => ({ ...prev, [`custom_${idx}`]: e.target.value }))}
+                      style={{ width: '100%', padding: '2px 6px', fontSize: '13px', fontWeight: '600', border: '1px solid #d1d5db', borderRadius: '4px', textAlign: 'right', background: '#fff' }}
+                      placeholder={`Enter ${field.label || 'value'}`}
+                    />
+                  ) : isEditable ? renderText(
+                    field.value || '',
+                    (v) => {
+                      const updatedFields = [...(content.customFields || [])];
+                      updatedFields[idx] = { ...updatedFields[idx], value: v };
+                      updateContent({ customFields: updatedFields });
+                    },
+                    '',
+                    `Enter ${field.label || 'value'}`
+                  ) : (getFieldValue(`custom_${idx}`, field.value || '-'))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* Save/Cancel buttons */}
+        {metadataEditMode && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '8px' }}>
+            <button
+              onClick={handleCancelMetadata}
+              style={{ padding: '4px 10px', fontSize: '12px', color: '#6b7280', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <X style={{ width: '12px', height: '12px' }} /> Cancel
+            </button>
+            <button
+              onClick={handleSaveMetadata}
+              style={{ padding: '4px 10px', fontSize: '12px', color: '#fff', background: cs.primary, border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <Save style={{ width: '12px', height: '12px' }} /> {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ============= DOCUMENT HEADER BLOCK =============
 export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   block,
@@ -253,7 +471,9 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   isEditable = false,
   documentType = 'quote',
   renderEditableText,
-  onContentChange
+  onContentChange,
+  quoteId,
+  onDataChange
 }) => {
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
@@ -597,97 +817,18 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
       {headerLayout === 'curtain-split' && (() => {
         const cs = getColorScheme(block.content?.colorScheme || projectData?.colorScheme);
         return (
-        <div style={{ display: 'flex', gap: '24px', padding: '24px 20px' }}>
-          {/* LEFT: Logo + Company + Client */}
-          <div style={{ flex: 1 }}>
-            {content.showLogo !== false && (
-              <div style={{ marginBottom: '16px' }}>
-                {businessSettings?.company_logo_url ? (
-                  <img 
-                    src={businessSettings.company_logo_url} 
-                    alt="Company Logo" 
-                    className="object-contain"
-                    style={{ height: content.logoSize || '70px', maxWidth: '280px' }}
-                  />
-                ) : (
-                  <div style={{ height: '70px', width: '70px', backgroundColor: cs.primary, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Building2 className="h-10 w-10 text-white" />
-                  </div>
-                )}
-              </div>
-            )}
-            <div style={{ fontSize: '16px', fontWeight: '700', color: cs.headingText, marginBottom: '4px' }}>
-              {content.companyName || getToken('company_name')}
-            </div>
-            <div style={{ fontSize: '13px', color: cs.secondaryText, lineHeight: '1.6' }}>
-              <div>{getToken('company_address')}</div>
-              <div>{getToken('company_phone')}</div>
-              <div>{getToken('company_email')}</div>
-            </div>
-
-            {/* Prepared For */}
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: `1px solid ${cs.border}` }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: cs.primary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                Prepared For
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: cs.headingText, marginBottom: '2px' }}>
-                {getToken('client_name') || 'Client Name'}
-              </div>
-              <div style={{ fontSize: '13px', color: cs.secondaryText, lineHeight: '1.6' }}>
-                {getToken('client_email') && <div>{getToken('client_email')}</div>}
-                {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
-                {getToken('client_address') && <div>{getToken('client_address')}</div>}
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: Quote metadata table */}
-          <div style={{ width: '260px', flexShrink: 0 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                <tr>
-                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quote #</td>
-                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>{getToken('job_number')}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</td>
-                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>{getToken('date')}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: `1px solid ${cs.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</td>
-                  <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>
-                    {isEditable ? renderText(
-                      content.statusValue || 'Draft',
-                      (v) => updateContent({ statusValue: v }),
-                      '',
-                      'Status'
-                    ) : (content.statusValue || 'Draft')}
-                  </td>
-                </tr>
-                {/* Custom fields */}
-                {(content.customFields || []).map((field: any, idx: number) => (
-                  <tr key={`custom-${idx}`}>
-                    <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: cs.primary, borderBottom: idx < (content.customFields?.length || 0) - 1 ? `1px solid ${cs.border}` : 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {field.label || `Field ${idx + 1}`}
-                    </td>
-                    <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: cs.headingText, borderBottom: idx < (content.customFields?.length || 0) - 1 ? `1px solid ${cs.border}` : 'none', textAlign: 'right' }}>
-                      {isEditable ? renderText(
-                        field.value || '',
-                        (v) => {
-                          const updatedFields = [...(content.customFields || [])];
-                          updatedFields[idx] = { ...updatedFields[idx], value: v };
-                          updateContent({ customFields: updatedFields });
-                        },
-                        '',
-                        `Enter ${field.label || 'value'}`
-                      ) : (field.value || '-')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CurtainSplitHeader
+          content={content}
+          businessSettings={businessSettings}
+          getToken={getToken}
+          cs={cs}
+          isEditable={isEditable}
+          isPrintMode={isPrintMode}
+          renderText={renderText}
+          updateContent={updateContent}
+          quoteId={quoteId}
+          onDataChange={onDataChange}
+        />
         );
       })()}
     </div>
