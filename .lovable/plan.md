@@ -1,90 +1,89 @@
 
 
-# Convert "More Options" from Modal to Expanded Popover
+# Replace All Modal Dialogs with Inline Popovers + Fix Scroll and Note Issues
 
-## Current Behavior (the problem)
+## Summary
 
-1. **Create event**: Click calendar slot opens a nice small inline `QuickAddPopover` -- this is good
-2. **Click "More options"**: Closes that popover and opens `UnifiedAppointmentDialog` as a big centered modal with dark backdrop overlay -- this is the bad experience you want to eliminate
-3. **Edit event**: Click existing event opens a nice small inline `EventDetailPopover` -- this is good
-4. **Click "More options" on edit**: Closes that popover and opens the same big modal -- same problem
+Four changes in one pass:
+1. Convert the old modal dialog (`UnifiedAppointmentDialog`) to a popover-style panel so Jobs, Clients, and RoomCard pages get the same experience as the calendar
+2. Fix the scroll issue in `QuickAddPopover` so all fields are reachable
+3. Fix the note textarea causing the popover to disappear
+4. Remove the "Event Type" section from both `QuickAddPopover` and `EventDetailPopover`
 
-## New Behavior (the solution)
+---
 
-Instead of opening a separate modal, clicking "More options" will **expand the current popover in-place** to show the additional fields. The popover grows taller (scrollable) but stays anchored to the same position. No backdrop, no modal, no context switch.
+## Issue 1: Old Modal Still Used on Jobs, Clients, and RoomCard Pages
 
-**Create flow:**
-- Click slot: small popover with title, duration, calendar group, note
-- Click "More options": popover smoothly expands to also show event type, client/job selectors, team members, location, video meeting toggle, reminders, email invite
-- Click "Less options": popover shrinks back to the compact view
+**Where the old modal is still used:**
+- `src/components/clients/ClientQuickActionsBar.tsx` (line 262) -- "Schedule" button on client page
+- `src/components/jobs/tabs/ProjectDetailsTab.tsx` (line 818) -- "Schedule" button on job details
+- `src/components/job-creation/RoomCard.tsx` (line 282) -- service scheduling from room card
+- `src/components/calendar/MobileCalendarView.tsx` (lines 411, 418) -- mobile create/edit
 
-**Edit flow:**
-- Click event: small popover with view details and Edit button
-- Click Edit: inline edit mode (title, duration, color) -- already works
-- Click "More options": popover expands to show all fields (same as create)
-- Click "Less options": shrinks back
+**Fix:** Convert `UnifiedAppointmentDialog` from a `Dialog` (centered modal with dark backdrop) to a fixed-position popover panel (no backdrop, same visual style as `QuickAddPopover`). This automatically updates every page that uses it.
 
-## What Changes
+**Technical details:**
+- Replace `<Dialog>` / `<DialogContent>` wrapper with a fixed-position `div` (same pattern as QuickAddPopover)
+- Position: centered horizontally, vertically centered in viewport
+- Width: `max-w-md` (same as current)
+- No dark backdrop overlay
+- Add click-outside-to-close and Escape-to-close handlers
+- Wrap content in `ScrollArea` with `max-h-[85vh]`
+- Add subtle shadow and border (matching QuickAddPopover)
+- All form fields, hooks, permissions, and save logic stay identical
 
-### File 1: `src/components/calendar/QuickAddPopover.tsx`
+**Files changed:** `src/components/calendar/UnifiedAppointmentDialog.tsx`
 
-- Add an `expanded` state (boolean, default false)
-- "More options" button toggles `expanded = true` instead of calling `onMoreOptions` (which closes the popover and opens the modal)
-- When expanded, render the additional fields currently in `UnifiedAppointmentDialog`: event type chips, client/job selectors, team member picker, location, notes (longer), video meeting toggle, reminders
-- Add a "Less options" button (ChevronUp) to collapse back
-- Increase width from `w-80` (320px) to `w-96` (384px) when expanded
-- Increase `maxHeight` from 480px to 85vh when expanded
-- All fields scroll within the existing `ScrollArea`
+---
 
-### File 2: `src/components/calendar/EventDetailPopover.tsx`
+## Issue 2: Popover Not Scrollable
 
-- Same pattern: add `expanded` state
-- "More options" button in edit mode toggles `expanded = true` instead of calling `onEdit` (which opens the modal)
-- When expanded, show the additional fields: event type, client/job, team members, location, video, reminders
-- The `handleSaveEdit` function gets extended to save all expanded fields
-- Add "Less options" collapse button
+**Root cause:** The `ScrollArea` in `QuickAddPopover.tsx` (line 259) uses `className="flex-1 min-h-0"` which relies on the flex parent having a constrained height. The outer div sets `maxHeight` via inline style, but Radix ScrollArea's internal viewport doesn't always pick up the flex-based height constraint correctly.
 
-### File 3: `src/components/calendar/CalendarView.tsx`
+**Fix:** Give the `ScrollArea` an explicit max-height calculated from the container's maxHeight minus the header (approx 48px) and footer (approx 48px) heights, using CSS `calc()`. This guarantees Radix creates a proper scrollable region.
 
-- The `handleQuickAddMoreOptions` function and the `UnifiedAppointmentDialog` for creation are no longer needed since the popover handles everything inline
-- Keep `UnifiedAppointmentDialog` only as a fallback for programmatic event creation from other parts of the app (e.g., from a client page), but remove it from the calendar slot click flow
+**File changed:** `src/components/calendar/QuickAddPopover.tsx` (line 259)
+
+---
+
+## Issue 3: Popover Disappears When Adding a Note
+
+**Root cause:** The click-outside handler (line 143) listens for `mousedown` events. When the user clicks into the `Textarea` for the note field, the event fires correctly and the popover should stay open since the textarea is inside `popoverRef`. However, if the user clicks on the `ScrollArea`'s scrollbar track (which Radix renders outside the normal content flow), or if the textarea causes a layout shift that moves the popover, the `contains()` check can fail.
+
+**Fix:**
+- Add the `Textarea`'s container to the click-outside exclusion list
+- Add a check for `[data-radix-scroll-area-viewport]` elements in the click-outside handler (same pattern already used for `[data-radix-popper-content-wrapper]`)
+- Prevent `mousedown` propagation on all form inputs within the popover to be safe
+
+**File changed:** `src/components/calendar/QuickAddPopover.tsx` (lines 143-148)
+
+---
+
+## Issue 4: Remove Event Type
+
+**Current state:** Both `QuickAddPopover` (lines 342-362) and `EventDetailPopover` (lines 288-308) show an "Event Type" chip selector (Meeting, Consultation, Measurement, etc.) in the expanded view.
+
+**Fix:** Remove the Event Type section entirely from both components. The `appointmentType` state and its inclusion in the save payload will remain (defaulting to "meeting") so existing data is not broken -- it just won't be shown in the UI.
+
+**Files changed:**
+- `src/components/calendar/QuickAddPopover.tsx` -- remove lines 342-362 (Event Type section)
+- `src/components/calendar/EventDetailPopover.tsx` -- remove lines 288-308 (Event Type section)
+
+---
 
 ## What Does NOT Change
 
-- The `UnifiedAppointmentDialog` component itself stays in the codebase (used by other parts of the app for event creation from client/job pages)
-- All hooks: `useCreateAppointment`, `useUpdateAppointment`, `useDeleteAppointment`, `useClients`, `useProjects`, `useTeamMembers`, etc.
+- All hooks: `useCreateAppointment`, `useUpdateAppointment`, `useDeleteAppointment`, `useClients`, `useProjects`, `useTeamMembers`
+- All permission checks (`useCalendarPermissions`, `useHasPermission`)
 - The calculation engine (`src/engine/formulas/`)
-- Permissions logic
-- Database queries
-- The visual design of the compact popover (stays identical)
-
-## Technical Details
-
-### New imports needed in QuickAddPopover:
-- `useClients`, `useProjects` (for client/job selectors)
-- `TeamMemberPicker` (for team members)
-- `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` (for dropdowns)
-- `Switch` (for video toggle)
-- `MapPin`, `Video`, `Users`, `Briefcase`, `ChevronUp` icons
-
-### State additions in QuickAddPopover:
-- `expanded: boolean` -- controls compact vs expanded view
-- `appointmentType: string` -- event type
-- `clientId: string` -- linked client
-- `projectId: string` -- linked job
-- `selectedTeamMembers: string[]` -- team members
-- `location: string` -- location text
-- `addVideoMeeting: boolean` -- video toggle
-- `videoLink: string` -- manual video link
-
-### Save function update:
-The existing `handleSave` in QuickAddPopover will pass the expanded fields to `createAppointment.mutateAsync` when they are set.
-
-### Animation:
-The popover width and height transitions will use CSS `transition-all duration-200` for a smooth expand/collapse feel.
+- Database queries and edge functions
+- The `QuickAddPopover` calendar-anchored positioning (only used on calendar page)
+- The `EventDetailPopover` (stays as Radix Popover, just removes Event Type)
 
 ## Implementation Order
 
-1. Update `QuickAddPopover.tsx` -- add expanded state and additional fields
-2. Update `EventDetailPopover.tsx` -- add expanded state in edit mode
-3. Update `CalendarView.tsx` -- remove the modal dialog from the calendar slot creation flow
+1. Remove Event Type from both popovers (safest, UI-only)
+2. Fix scroll in QuickAddPopover (CSS change)
+3. Fix click-outside handler for note textarea (event handler tweak)
+4. Convert UnifiedAppointmentDialog from Dialog to popover panel (wrapper change, zero logic change)
+
