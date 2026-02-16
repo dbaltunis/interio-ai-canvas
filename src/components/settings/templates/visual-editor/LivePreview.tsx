@@ -1294,11 +1294,6 @@ const LivePreviewBlock = ({
                               {item.description && item.description !== '-' && item.description !== 'Custom' && item.description !== 'custom'
                                 ? item.description
                                 : (item.notes || '-')}
-                              {showDetailedProducts && item.unit && item.unit !== 'each' && (
-                                <div style={{ fontSize: '11px', color: '#888', marginTop: '2px', fontStyle: 'italic' }}>
-                                  {item.unit.replace('per-', 'Per ').replace(/^\w/, (c: string) => c.toUpperCase())}
-                                </div>
-                              )}
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.quantity || 1}
@@ -1316,6 +1311,20 @@ const LivePreviewBlock = ({
                             </td>
                           </tr>
                           
+                          {/* Pricing unit breakdown row for services - only in detailed mode */}
+                          {effectiveShowDetailed && item.unit && item.unit !== 'each' && item.isRoomProduct && (
+                            <tr style={{
+                              backgroundColor: '#fff',
+                              borderBottom: '1px solid #e8e8e8'
+                            }}>
+                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}></td>
+                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
+                                {item.unit.replace('per-', 'Per ').replace(/^\w/, (c: string) => c.toUpperCase())}
+                              </td>
+                              <td colSpan={3} style={{ backgroundColor: '#ffffff' }}></td>
+                            </tr>
+                          )}
+
                           {/* Detailed breakdown rows - only show in detailed mode */}
                           {breakdown.length > 0 && effectiveShowDetailed && breakdown.map((breakdownItem: any, bidx: number) => (
                             breakdownItem.isHardwareGroup ? (

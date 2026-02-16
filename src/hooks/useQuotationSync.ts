@@ -10,6 +10,7 @@ import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMarkup, applyMarkup, calculateGrossMargin } from "@/utils/pricing/markupResolver";
+import { SERVICE_CATEGORIES } from "@/hooks/useServiceOptions";
 import {
   isManufacturedItem,
   isWallpaperType,
@@ -69,6 +70,18 @@ export const useQuotationSync = ({
       return data || [];
     },
     enabled: roomIds.length > 0,
+  });
+
+  // Fetch service options for category fallback lookup
+  const { data: serviceOptions = [] } = useQuery({
+    queryKey: ["service-options-for-quotation"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_options")
+        .select("name, category");
+      if (error) throw error;
+      return data || [];
+    },
   });
   
   const queryClient = useQueryClient();
@@ -750,6 +763,13 @@ export const useQuotationSync = ({
       if (isCustom) {
         if (product.description && product.description !== 'Custom' && product.description !== 'custom') {
           displayDescription = product.description;
+        } else {
+          // Fallback: find matching service option by name, use its category label
+          const matchingService = serviceOptions?.find((s: any) => s.name === product.name);
+          if (matchingService?.category) {
+            const catLabel = SERVICE_CATEGORIES.find(c => c.value === matchingService.category)?.label;
+            displayDescription = catLabel || matchingService.category;
+          }
         }
         // Do NOT fall back to pricing unit here — unit is displayed separately
       } else {
