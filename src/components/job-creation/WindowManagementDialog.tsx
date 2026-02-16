@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -659,15 +661,34 @@ export const WindowManagementDialog = ({
                   )}
                 </div>
                 
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
-                  <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
-                  {isEditingDescription ? (
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Input
+                <Popover open={isEditingDescription} onOpenChange={(open) => {
+                  if (!open) {
+                    handleDescriptionUpdate(editDescriptionValue);
+                    setIsEditingDescription(false);
+                  }
+                }}>
+                  <PopoverTrigger asChild>
+                    <div 
+                      className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px] cursor-pointer hover:border-primary/40 transition-colors"
+                      onClick={() => {
+                        setEditDescriptionValue(treatmentDescription);
+                        setIsEditingDescription(true);
+                      }}
+                    >
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
+                      <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
+                      <Pencil className="h-3 w-3 text-muted-foreground opacity-60 shrink-0" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[340px] p-3" align="start" side="bottom" sideOffset={4}>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Description</label>
+                      <Textarea
                         value={editDescriptionValue}
                         onChange={(e) => setEditDescriptionValue(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
                             handleDescriptionUpdate(editDescriptionValue);
                             setIsEditingDescription(false);
                           }
@@ -676,54 +697,38 @@ export const WindowManagementDialog = ({
                             setIsEditingDescription(false);
                           }
                         }}
-                        onBlur={() => {
-                          handleDescriptionUpdate(editDescriptionValue);
-                          setIsEditingDescription(false);
-                        }}
-                        className="h-6 text-xs flex-1 min-w-0 bg-background border-input"
+                        className="text-sm min-h-[80px] resize-none"
                         autoFocus
-                        maxLength={200}
-                        placeholder="Enter description"
+                        maxLength={500}
+                        placeholder="Add a description for this treatment..."
                       />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleDescriptionUpdate(editDescriptionValue);
-                          setIsEditingDescription(false);
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-transparent text-green-600 hover:text-green-700 shrink-0"
-                      >
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setEditDescriptionValue(treatmentDescription);
-                          setIsEditingDescription(false);
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground shrink-0"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">{editDescriptionValue?.length || 0}/500</span>
+                        <div className="flex gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => {
+                              setEditDescriptionValue(treatmentDescription);
+                              setIsEditingDescription(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="xs"
+                            onClick={() => {
+                              handleDescriptionUpdate(editDescriptionValue);
+                              setIsEditingDescription(false);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <>
-                      <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsEditingDescription(true)}
-                        className="h-6 w-6 p-0 hover:bg-transparent opacity-60 hover:opacity-100 shrink-0"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                  </PopoverContent>
+                </Popover>
               </DialogTitle>
             </div>
           </DialogHeader>
