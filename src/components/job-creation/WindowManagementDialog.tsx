@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ruler, Save, Pencil, Check, X, Lock, Camera } from "lucide-react";
+import { Ruler, Save, Pencil, Check, X, Lock } from "lucide-react";
+import { TreatmentPhotoUploader } from "./TreatmentPhotoUploader";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge, MeasurementBridgeRef } from "../measurements/MeasurementBridge";
@@ -435,6 +436,7 @@ export const WindowManagementDialog = ({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editProductValue, setEditProductValue] = useState('');
   const [editDescriptionValue, setEditDescriptionValue] = useState('');
+  const [treatmentPhotos, setTreatmentPhotos] = useState<string[]>([]);
   const currentTreatment = existingTreatments?.[0];
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
@@ -517,6 +519,10 @@ export const WindowManagementDialog = ({
       setTreatmentName('');
       setTreatmentDescription('');
     }
+    
+    // Load photos from windows_summary
+    const photos = (windowSummary as any)?.photos;
+    setTreatmentPhotos(Array.isArray(photos) ? photos : []);
   }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, currentTreatment, windowSummary, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
 
   // Refetch when dialog opens to ensure fresh data
@@ -593,7 +599,23 @@ export const WindowManagementDialog = ({
                   <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
                   <WindowRenameButton windowName={windowName} onRename={handleRename} />
-                  <Camera className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <TreatmentPhotoUploader
+                    surfaceId={surface?.id || ''}
+                    treatmentId={currentTreatment?.id}
+                    photos={treatmentPhotos}
+                    onPhotosChange={async (newPhotos) => {
+                      setTreatmentPhotos(newPhotos);
+                      // Save to windows_summary
+                      if (surface?.id) {
+                        await supabase
+                          .from('windows_summary')
+                          .update({ photos: newPhotos } as any)
+                          .eq('window_id', surface.id);
+                        queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+                      }
+                    }}
+                    disabled={isStatusLocked}
+                  />
                 </div>
                 
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
