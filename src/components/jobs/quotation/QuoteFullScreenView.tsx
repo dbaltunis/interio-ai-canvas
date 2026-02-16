@@ -217,6 +217,15 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                     <span className="text-xs">{isImageEditMode ? 'Done Editing' : 'Edit Images'}</span>
                   </Button>
                 )}
+                <Button
+                  variant={isEditMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className="flex items-center gap-1.5 h-8"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span className="text-xs">{isEditMode ? 'Done Editing' : 'Edit Fields'}</span>
+                </Button>
               </div>
               
               {/* Record Payment - Only for invoices */}
@@ -306,7 +315,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             <LivePreview
               blocks={templateBlocks}
               projectData={projectData}
-              isEditable={false}
+              isEditable={isEditMode}
               isPrintMode={false}
               documentType={selectedTemplate?.template_style || 'quote'}
               showDetailedBreakdown={showDetailedBreakdown}

@@ -295,10 +295,10 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
   
   return (
     <div className="mb-6" style={{ 
-      padding: style.padding || '16px',
-      margin: style.margin || '0 0 24px 0',
-      backgroundColor: style.backgroundColor || '#f8fafc',
-      borderRadius: style.borderRadius || '8px'
+      padding: content.theme === 'curtain-professional' ? '16px 0' : (style.padding || '16px'),
+      margin: content.theme === 'curtain-professional' ? '0 0 16px 0' : (style.margin || '0 0 24px 0'),
+      backgroundColor: content.theme === 'curtain-professional' ? 'transparent' : (style.backgroundColor || '#f8fafc'),
+      borderRadius: content.theme === 'curtain-professional' ? '0' : (style.borderRadius || '8px')
     }}>
       {content.label && (
         <div style={{ 
@@ -1093,15 +1093,27 @@ const LivePreviewBlock = ({
         }))
       });
 
-      // Group items by room if enabled
+      // Separate service/hardware items from regular products
+      const isServiceItem = (item: any) => {
+        const type = (item.treatment_type || item.name || '').toLowerCase();
+        return type.includes('installation') || type.includes('measurement') || 
+               type.includes('service') || item.category === 'service';
+      };
+      const isHardwareOnlyItem = (item: any) => {
+        return item.category === 'hardware' && !item.treatment_type;
+      };
+      const regularItems = projectItems.filter((i: any) => !isServiceItem(i) && !isHardwareOnlyItem(i));
+      const serviceHardwareItems = projectItems.filter((i: any) => isServiceItem(i) || isHardwareOnlyItem(i));
+
+      // Group regular items by room if enabled
       const groupedItems = groupByRoom && hasRealData ? 
-        projectItems.reduce((acc: any, item: any) => {
+        regularItems.reduce((acc: any, item: any) => {
           const room = item.room_name || item.location || 'Unassigned Room';
           if (!acc[room]) acc[room] = [];
           acc[room].push(item);
           return acc;
         }, {}) : 
-        { 'All Items': projectItems };
+        { 'All Items': regularItems };
 
       // Get localization settings
       const docBusinessSettings = projectData?.businessSettings || {};
@@ -1116,12 +1128,12 @@ const LivePreviewBlock = ({
       // ============= CURTAIN-PROFESSIONAL THEMED TABLE =============
       if (content.theme === 'curtain-professional') {
         return (
-          <div className="mb-4 products-section" style={{ padding: '8px 0' }}>
+          <div className="mb-4 products-section" style={{ padding: '0', margin: '0' }}>
             <div style={{ overflow: 'visible', width: '100%' }}>
               <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
                 <colgroup>
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '120px' }} />
                   <col style={{ width: 'auto' }} />
                   <col style={{ width: '50px' }} />
                   <col style={{ width: '90px' }} />
@@ -1181,7 +1193,7 @@ const LivePreviewBlock = ({
                                 {/* Product Image */}
                                 <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'top' }}>
                                   {showImages && itemImageUrl ? (
-                                    <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b0' }} />
+                                    <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b0' }} />
                                   ) : showImages && !isPrintMode && isImageEditMode && onItemImageChange ? (
                                     <QuoteItemImagePicker
                                       currentImageUrl={null}
@@ -1191,7 +1203,7 @@ const LivePreviewBlock = ({
                                       size={80}
                                     />
                                   ) : (
-                                    <div style={{ width: '80px', height: '60px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                    <div style={{ width: '100px', height: '70px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                                       <ImageIcon className="h-5 w-5" style={{ color: '#8b7355', opacity: 0.4 }} />
                                     </div>
                                   )}
@@ -1237,6 +1249,51 @@ const LivePreviewBlock = ({
                       </React.Fragment>
                     );
                   })}
+                  {/* Services & Hardware separator */}
+                  {serviceHardwareItems.length > 0 && hasRealData && (
+                    <>
+                      <tr style={{ backgroundColor: '#8b7355' }}>
+                        <td colSpan={content.showPrateColumn ? 7 : 6} style={{ padding: '10px 8px', fontSize: '12px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Services & Hardware
+                        </td>
+                      </tr>
+                      {serviceHardwareItems.map((item: any, itemIndex: number) => {
+                        const isItemExcluded = excludedItems.includes(item.id);
+                        if (!isExclusionEditMode && isItemExcluded) return null;
+                        return (
+                          <tr key={`service-${itemIndex}`} style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
+                            <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
+                              {item.surface_name || item.room_name || '—'}
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'top' }}>
+                              <div style={{ width: '100px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                <span style={{ fontSize: '11px', color: '#8b7355' }}>—</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
+                              <div style={{ fontWeight: '600' }}>
+                                {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Service')}
+                              </div>
+                            </td>
+                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                              {item.quantity || 1}
+                            </td>
+                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {formatCurrency((item.unit_price || item.total_cost || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
+                            </td>
+                            {content.showPrateColumn && (
+                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                {formatCurrency(item.prate || 0, projectData?.currency || getDefaultCurrency())}
+                              </td>
+                            )}
+                            <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1552,7 +1609,7 @@ const LivePreviewBlock = ({
       if (content.theme === 'curtain-professional') {
         const curtainTotalsLang = (projectData?.businessSettings?.document_language as DocumentLanguage) || 'en';
         return (
-          <div style={{ marginBottom: '24px', padding: '16px 0' }}>
+          <div style={{ marginBottom: '24px', padding: '0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '16px', borderTop: '2px solid #8b7355' }}>
               <div style={{ fontSize: '16px', fontWeight: '700', color: '#3d2e1f' }}>
                 Payment Summary
@@ -1961,7 +2018,7 @@ const LivePreviewBlock = ({
       const curtainBiz = projectData?.businessSettings || userBusinessSettings || {};
       const systemTermsForFooter = curtainBiz.general_terms_and_conditions;
       return (
-        <div style={{ marginTop: '24px', padding: '20px 0', borderTop: '2px solid #8b7355' }}>
+        <div style={{ marginTop: '24px', padding: '0', borderTop: '2px solid #8b7355', paddingTop: '20px' }}>
           <div style={{ display: 'flex', gap: '32px' }}>
             {/* LEFT: Terms & Conditions */}
             <div style={{ flex: 1, fontSize: '12px', color: '#3d2e1f', lineHeight: '1.7' }}>
