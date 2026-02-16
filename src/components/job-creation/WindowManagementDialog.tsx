@@ -662,18 +662,14 @@ export const WindowManagementDialog = ({
                 </div>
                 
                 <Popover open={isEditingDescription} onOpenChange={(open) => {
-                  if (!open) {
-                    handleDescriptionUpdate(editDescriptionValue);
-                    setIsEditingDescription(false);
+                  if (open) {
+                    setEditDescriptionValue(treatmentDescription);
                   }
+                  setIsEditingDescription(open);
                 }}>
                   <PopoverTrigger asChild>
                     <div 
                       className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px] cursor-pointer hover:border-primary/40 transition-colors"
-                      onClick={() => {
-                        setEditDescriptionValue(treatmentDescription);
-                        setIsEditingDescription(true);
-                      }}
                     >
                       <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
                       <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
@@ -681,7 +677,7 @@ export const WindowManagementDialog = ({
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-[340px] p-3 z-[9999]" align="start" side="bottom" sideOffset={4} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onOpenAutoFocus={(e) => e.preventDefault()}>
-                    <div className="space-y-2">
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                       <label className="text-xs font-medium text-muted-foreground">Description</label>
                       <Textarea
                         value={editDescriptionValue}
@@ -689,7 +685,9 @@ export const WindowManagementDialog = ({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            handleDescriptionUpdate(editDescriptionValue);
+                            if (editDescriptionValue !== treatmentDescription) {
+                              handleDescriptionUpdate(editDescriptionValue);
+                            }
                             setIsEditingDescription(false);
                           }
                           if (e.key === 'Escape') {
@@ -708,7 +706,8 @@ export const WindowManagementDialog = ({
                           <Button
                             variant="ghost"
                             size="xs"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditDescriptionValue(treatmentDescription);
                               setIsEditingDescription(false);
                             }}
@@ -717,7 +716,9 @@ export const WindowManagementDialog = ({
                           </Button>
                           <Button
                             size="xs"
-                            onClick={() => {
+                            disabled={editDescriptionValue === treatmentDescription}
+                            onClick={(e) => {
+                              e.stopPropagation();
                               handleDescriptionUpdate(editDescriptionValue);
                               setIsEditingDescription(false);
                             }}
