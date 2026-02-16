@@ -32,7 +32,8 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Info
+  Info,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -339,55 +340,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                           <div
                             key={notif.id}
                             className={cn(
-                              'flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 cursor-pointer transition-colors',
+                              'flex items-start gap-3 px-3 py-2.5 transition-colors',
                               !notif.read && 'bg-primary/5'
                             )}
-                            onClick={() => {
-                              markAsRead(notif.id);
-                              
-                              // Build targetUrl: use action_url if available, otherwise fallback from source_type/source_id
-                              let targetUrl = notif.action_url;
-                              if (!targetUrl && notif.source_type) {
-                                const tabMap: Record<string, string> = { appointment: 'calendar', client: 'clients', project: 'projects' };
-                                const idMap: Record<string, string> = { appointment: 'eventId', client: 'clientId', project: 'jobId' };
-                                const tab = tabMap[notif.source_type] || 'dashboard';
-                                const idParam = notif.source_id && idMap[notif.source_type] ? `&${idMap[notif.source_type]}=${notif.source_id}` : '';
-                                targetUrl = `/?tab=${tab}${idParam}`;
-                              }
-                              
-                              if (targetUrl) {
-                                try {
-                                  const url = new URL(targetUrl, window.location.origin);
-                                  const params = Object.fromEntries(url.searchParams.entries());
-                                  
-                                  let tab = params.tab;
-                                  delete params.tab;
-                                  
-                                  if (!tab) {
-                                    if (params.jobId) tab = 'projects';
-                                    else if (params.clientId) tab = 'clients';
-                                    else if (params.eventId) tab = 'calendar';
-                                    else if (url.pathname === '/calendar') tab = 'calendar';
-                                    else if (url.pathname === '/clients') tab = 'clients';
-                                    else if (url.pathname === '/projects') tab = 'projects';
-                                  }
-                                  
-                                  if (tab) {
-                                    onTabChange(tab);
-                                    setTimeout(() => {
-                                      const currentParams = new URLSearchParams(window.location.search);
-                                      currentParams.set('tab', tab!);
-                                      Object.entries(params).forEach(([k, v]) => currentParams.set(k, v));
-                                      window.history.replaceState(null, '', `?${currentParams.toString()}`);
-                                      window.dispatchEvent(new PopStateEvent('popstate'));
-                                    }, 50);
-                                  }
-                                } catch {
-                                  onTabChange(targetUrl.replace('/?tab=', ''));
-                                }
-                                setNotifPopoverOpen(false);
-                              }
-                            }}
+                            onClick={() => markAsRead(notif.id)}
                           >
                             <div className={cn(
                               'mt-0.5 p-1.5 rounded-md shrink-0',
@@ -409,12 +365,16 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                                 {!notif.read && (
                                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                                 )}
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 text-muted-foreground/60 border-muted-foreground/20">
+                                  <Eye className="h-2.5 w-2.5 mr-0.5" />
+                                  Tracking
+                                </Badge>
                               </div>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 shrink-0 opacity-0 group-hover:opacity-100"
+                              className="h-6 w-6 p-0 shrink-0 opacity-40 hover:opacity-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 dismissNotification(notif.id);
