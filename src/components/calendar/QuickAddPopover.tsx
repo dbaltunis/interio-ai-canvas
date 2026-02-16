@@ -3,14 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Clock, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight, ChevronUp, MapPin, Video, Briefcase, Bell, Mail } from "lucide-react";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useCalendarPermissions } from "@/hooks/useCalendarPermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { DURATION_CHIPS } from "./calendarConstants";
+import { useClients } from "@/hooks/useClients";
+import { useProjects } from "@/hooks/useProjects";
+import { DURATION_CHIPS, EVENT_TYPES } from "./calendarConstants";
 import { useCalendarTeamGroups } from "@/hooks/useCalendarTeamGroups";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { TeamMemberPicker } from "./TeamMemberPicker";
 
 interface QuickAddPopoverProps {
   open: boolean;
@@ -36,6 +41,20 @@ export const QuickAddPopover = ({
   const [note, setNote] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  // Expanded fields
+  const [appointmentType, setAppointmentType] = useState("meeting");
+  const [clientId, setClientId] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [location, setLocation] = useState("");
+  const [addVideoMeeting, setAddVideoMeeting] = useState(false);
+  const [videoLink, setVideoLink] = useState("");
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [notificationMinutes, setNotificationMinutes] = useState(15);
+  const [inviteEmail, setInviteEmail] = useState("");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const createAppointment = useCreateAppointment();
@@ -43,6 +62,8 @@ export const QuickAddPopover = ({
   const { toast } = useToast();
   const { data: teamMembers } = useTeamMembers();
   const { data: teamGroups = [] } = useCalendarTeamGroups();
+  const { data: clients = [] } = useClients(expanded);
+  const { data: projects = [] } = useProjects({ enabled: expanded });
 
   // Determine effective color from team group
   const selectedGroup = teamGroups.find(g => g.id === selectedGroupId);
@@ -72,13 +93,24 @@ export const QuickAddPopover = ({
       setNote("");
       setSelectedDuration(30);
       setSelectedGroupId(null);
+      setExpanded(false);
+      setAppointmentType("meeting");
+      setClientId("");
+      setProjectId("");
+      setSelectedTeamMembers([]);
+      setLocation("");
+      setAddVideoMeeting(false);
+      setVideoLink("");
+      setNotificationEnabled(false);
+      setNotificationMinutes(15);
+      setInviteEmail("");
     }
   }, [open]);
 
   // Measure popover and clamp to viewport after render
   useLayoutEffect(() => {
     if (!open || !popoverRef.current) return;
-    const popoverWidth = 320;
+    const popoverWidth = expanded ? 384 : 320;
     const padding = 16;
 
     let left = anchorPosition?.x ?? 200;
@@ -90,25 +122,29 @@ export const QuickAddPopover = ({
         left = Math.max(padding, (anchorPosition?.x ?? 200) - popoverWidth - 8);
       }
 
+      const maxAllowed = expanded ? window.innerHeight * 0.85 : 480;
       // Vertical clamping: ensure footer stays in viewport
       const availableHeight = window.innerHeight - top - padding;
-      const maxH = Math.max(200, availableHeight);
+      const maxH = Math.max(200, Math.min(maxAllowed, availableHeight));
 
       // If not enough space even with clamped height, move popover up
       if (maxH < 280) {
         top = Math.max(padding, window.innerHeight - 400 - padding);
-        setPosition({ left, top, maxH: Math.min(480, window.innerHeight - top - padding) });
+        setPosition({ left, top, maxH: Math.min(maxAllowed, window.innerHeight - top - padding) });
       } else {
-        setPosition({ left, top, maxH: Math.min(480, maxH) });
+        setPosition({ left, top, maxH });
       }
     }
-  }, [open, anchorPosition]);
+  }, [open, anchorPosition, expanded]);
 
   // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      // Don't close when clicking inside radix popovers (Select, TeamMemberPicker, etc.)
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-radix-popper-content-wrapper]')) return;
+      if (popoverRef.current && !popoverRef.current.contains(target)) {
         onOpenChange(false);
       }
     };
@@ -168,9 +204,19 @@ export const QuickAddPopover = ({
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         color: effectiveColor,
-        team_member_ids: selectedGroup?.member_ids || [],
-        visibility: selectedGroup ? 'team' : 'private',
+        team_member_ids: selectedTeamMembers.length > 0 ? selectedTeamMembers : (selectedGroup?.member_ids || []),
+        visibility: selectedGroup || selectedTeamMembers.length > 0 ? 'team' : 'private',
         calendar_group_id: selectedGroupId || undefined,
+        ...(expanded && {
+          appointment_type: appointmentType,
+          client_id: clientId || undefined,
+          project_id: projectId || undefined,
+          location: location.trim() || undefined,
+          video_meeting_link: addVideoMeeting ? videoLink.trim() || undefined : undefined,
+          notification_enabled: notificationEnabled,
+          notification_minutes: notificationEnabled ? notificationMinutes : undefined,
+          invited_client_emails: inviteEmail.trim() ? [inviteEmail.trim()] : undefined,
+        }),
       } as any);
       onOpenChange(false);
     } catch {
@@ -185,18 +231,6 @@ export const QuickAddPopover = ({
     }
   };
 
-  const handleMoreOptions = () => {
-    onMoreOptions?.({
-      title: title.trim(),
-      date,
-      startTime,
-      endTime: computedEndTime(),
-      color: effectiveColor,
-      type: "meeting",
-    });
-    onOpenChange(false);
-  };
-
   if (!open) return null;
 
   const endTimeStr = computedEndTime();
@@ -204,7 +238,7 @@ export const QuickAddPopover = ({
   return (
     <div
       ref={popoverRef}
-      className="fixed z-[10000] w-80 rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
+      className={`fixed z-[10000] rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col transition-all duration-200 ${expanded ? 'w-96' : 'w-80'}`}
       style={{ left: position.left, top: position.top, maxHeight: `${position.maxH}px` }}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
@@ -297,10 +331,153 @@ export const QuickAddPopover = ({
               placeholder="Add a note..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              rows={2}
+              rows={expanded ? 3 : 2}
               className="resize-none text-xs min-h-[52px]"
             />
           </div>
+
+          {/* ===== EXPANDED FIELDS ===== */}
+          {expanded && (
+            <div className="space-y-3 pt-1 border-t border-border/40">
+              {/* Event Type */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Event Type</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {EVENT_TYPES.map(type => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                        appointmentType === type.value
+                          ? 'shadow-sm ring-2 ring-offset-1'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                      style={appointmentType === type.value ? { backgroundColor: `${type.color}20`, color: type.color } : {}}
+                      onClick={() => setAppointmentType(type.value)}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Client Selector */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Briefcase className="h-3 w-3" /> Client
+                </div>
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select client..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No client</SelectItem>
+                    {clients.map((client: any) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Project/Job Selector */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Briefcase className="h-3 w-3" /> Job
+                </div>
+                <Select value={projectId} onValueChange={setProjectId}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select job..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No job</SelectItem>
+                    {projects.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Team Members */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Team Members</div>
+                <TeamMemberPicker
+                  selectedMembers={selectedTeamMembers}
+                  onChange={setSelectedTeamMembers}
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <MapPin className="h-3 w-3" /> Location
+                </div>
+                <Input
+                  placeholder="Add location..."
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              {/* Video Meeting */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Video className="h-3.5 w-3.5" />
+                  <span>Video meeting</span>
+                </div>
+                <Switch checked={addVideoMeeting} onCheckedChange={setAddVideoMeeting} />
+              </div>
+              {addVideoMeeting && (
+                <Input
+                  placeholder="Paste video link..."
+                  value={videoLink}
+                  onChange={(e) => setVideoLink(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              )}
+
+              {/* Reminders */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Bell className="h-3.5 w-3.5" />
+                  <span>Reminder</span>
+                </div>
+                <Switch checked={notificationEnabled} onCheckedChange={setNotificationEnabled} />
+              </div>
+              {notificationEnabled && (
+                <Select value={String(notificationMinutes)} onValueChange={(v) => setNotificationMinutes(Number(v))}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 minutes before</SelectItem>
+                    <SelectItem value="15">15 minutes before</SelectItem>
+                    <SelectItem value="30">30 minutes before</SelectItem>
+                    <SelectItem value="60">1 hour before</SelectItem>
+                    <SelectItem value="1440">1 day before</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Email Invite */}
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Mail className="h-3 w-3" /> Email Invite
+                </div>
+                <Input
+                  type="email"
+                  placeholder="client@email.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -325,11 +502,11 @@ export const QuickAddPopover = ({
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            handleMoreOptions();
+            setExpanded(!expanded);
           }}
         >
-          More options
-          <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          {expanded ? 'Less options' : 'More options'}
+          {expanded ? <ChevronUp className="h-3.5 w-3.5 ml-1" /> : <ChevronRight className="h-3.5 w-3.5 ml-1" />}
         </Button>
       </div>
     </div>

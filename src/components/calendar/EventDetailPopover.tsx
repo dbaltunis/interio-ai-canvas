@@ -2,9 +2,16 @@ import { useState, useRef, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Clock, MapPin, Video, Edit, Trash2, ExternalLink, Calendar, Palette, ChevronRight } from "lucide-react";
+import { Clock, MapPin, Video, Edit, Trash2, ExternalLink, Calendar, Palette, ChevronRight, ChevronUp, Briefcase, Bell, Mail } from "lucide-react";
 import { useDeleteAppointment, useUpdateAppointment } from "@/hooks/useAppointments";
+import { useClients } from "@/hooks/useClients";
+import { useProjects } from "@/hooks/useProjects";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { TeamMemberPicker } from "./TeamMemberPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DURATION_CHIPS, COLOR_DOTS } from "./calendarConstants";
+import { DURATION_CHIPS, COLOR_DOTS, EVENT_TYPES } from "./calendarConstants";
 
 interface EventDetailPopoverProps {
   children: React.ReactNode;
@@ -33,6 +40,11 @@ interface EventDetailPopoverProps {
     isTask?: boolean;
     bookingData?: any;
     scheduler_name?: string;
+    client_id?: string;
+    project_id?: string;
+    team_member_ids?: string[];
+    notification_enabled?: boolean;
+    notification_minutes?: number;
   };
   onEdit?: (id: string) => void;
   disabled?: boolean;
@@ -46,6 +58,7 @@ export const EventDetailPopover = ({
 }: EventDetailPopoverProps) => {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const deleteAppointment = useDeleteAppointment();
@@ -57,6 +70,20 @@ export const EventDetailPopover = ({
   const [editType, setEditType] = useState(event.appointment_type || "meeting");
   const [editColor, setEditColor] = useState(event.color || "#6366F1");
   const [editDuration, setEditDuration] = useState(30);
+
+  // Expanded edit fields
+  const [editClientId, setEditClientId] = useState(event.client_id || "");
+  const [editProjectId, setEditProjectId] = useState(event.project_id || "");
+  const [editTeamMembers, setEditTeamMembers] = useState<string[]>(event.team_member_ids || []);
+  const [editLocation, setEditLocation] = useState(event.location || "");
+  const [editDescription, setEditDescription] = useState(event.description || "");
+  const [editVideoMeeting, setEditVideoMeeting] = useState(!!event.video_meeting_link);
+  const [editVideoLink, setEditVideoLink] = useState(event.video_meeting_link || "");
+  const [editNotificationEnabled, setEditNotificationEnabled] = useState(event.notification_enabled || false);
+  const [editNotificationMinutes, setEditNotificationMinutes] = useState(event.notification_minutes || 15);
+
+  const { data: clients = [] } = useClients(expanded);
+  const { data: projects = [] } = useProjects({ enabled: expanded });
 
   if (disabled || event.isTask) {
     return <>{children}</>;
@@ -84,7 +111,17 @@ export const EventDetailPopover = ({
     setEditType(event.appointment_type || "meeting");
     setEditColor(event.color || "#6366F1");
     setEditDuration(durationMins);
+    setEditClientId(event.client_id || "");
+    setEditProjectId(event.project_id || "");
+    setEditTeamMembers(event.team_member_ids || []);
+    setEditLocation(event.location || "");
+    setEditDescription(event.description || "");
+    setEditVideoMeeting(!!event.video_meeting_link);
+    setEditVideoLink(event.video_meeting_link || "");
+    setEditNotificationEnabled(event.notification_enabled || false);
+    setEditNotificationMinutes(event.notification_minutes || 15);
     setShowColorPicker(false);
+    setExpanded(false);
     setIsEditing(true);
     setTimeout(() => titleInputRef.current?.focus(), 100);
   };
@@ -92,6 +129,7 @@ export const EventDetailPopover = ({
   const handleCancelEdit = () => {
     setIsEditing(false);
     setShowColorPicker(false);
+    setExpanded(false);
   };
 
   const handleSaveEdit = async () => {
@@ -106,8 +144,19 @@ export const EventDetailPopover = ({
         end_time: newEndTime.toISOString(),
         appointment_type: editType as any,
         color: editColor,
+        ...(expanded && {
+          client_id: editClientId && editClientId !== "none" ? editClientId : null,
+          project_id: editProjectId && editProjectId !== "none" ? editProjectId : null,
+          team_member_ids: editTeamMembers,
+          location: editLocation.trim() || null,
+          description: editDescription.trim() || null,
+          video_meeting_link: editVideoMeeting ? editVideoLink.trim() || null : null,
+          notification_enabled: editNotificationEnabled,
+          notification_minutes: editNotificationEnabled ? editNotificationMinutes : null,
+        }),
       });
       setIsEditing(false);
+      setExpanded(false);
     } catch {
       // Error handled by mutation
     }
@@ -121,12 +170,6 @@ export const EventDetailPopover = ({
     if (e.key === 'Escape') {
       handleCancelEdit();
     }
-  };
-
-  const handleAdvancedEdit = () => {
-    setOpen(false);
-    setIsEditing(false);
-    onEdit?.(event.id);
   };
 
   const handleDelete = () => {
@@ -145,6 +188,7 @@ export const EventDetailPopover = ({
     if (!newOpen) {
       setIsEditing(false);
       setShowColorPicker(false);
+      setExpanded(false);
     }
   };
 
@@ -155,108 +199,252 @@ export const EventDetailPopover = ({
           {children}
         </PopoverTrigger>
         <PopoverContent
-          className={`p-0 overflow-hidden ${isEditing ? 'w-80' : 'w-72'}`}
+          className={`p-0 overflow-hidden transition-all duration-200 ${isEditing ? (expanded ? 'w-96' : 'w-80') : 'w-72'}`}
           side="right"
           align="start"
           sideOffset={8}
+          style={{ maxHeight: expanded ? '85vh' : undefined }}
         >
           {/* Color header */}
           <div className="h-2" style={{ backgroundColor: isEditing ? editColor : eventColor }} />
 
           {isEditing ? (
-            /* ===== INLINE EDIT MODE (same feel as QuickAddPopover) ===== */
-            <div className="p-3 space-y-3">
-              {/* Date/time header */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="font-semibold text-foreground">{format(startTime, 'EEE, MMM d')}</span>
-                <span>&middot;</span>
-                <span className="tabular-nums">
-                  {format(startTime, 'HH:mm')} &ndash; {format(new Date(startTime.getTime() + editDuration * 60000), 'HH:mm')}
-                </span>
-              </div>
-
-              {/* Title input */}
-              <Input
-                ref={titleInputRef}
-                placeholder="Event title..."
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onKeyDown={handleEditKeyDown}
-                className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
-                autoComplete="off"
-              />
-
-              {/* Duration chips */}
-              <div>
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
-                <div className="flex gap-1.5">
-                  {DURATION_CHIPS.map(chip => (
-                    <button
-                      key={chip.minutes}
-                      type="button"
-                      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                        editDuration === chip.minutes
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                      onClick={() => setEditDuration(chip.minutes)}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
+            /* ===== INLINE EDIT MODE ===== */
+            <ScrollArea className={expanded ? 'max-h-[calc(85vh-80px)]' : undefined}>
+              <div className="p-3 space-y-3">
+                {/* Date/time header */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-semibold text-foreground">{format(startTime, 'EEE, MMM d')}</span>
+                  <span>&middot;</span>
+                  <span className="tabular-nums">
+                    {format(startTime, 'HH:mm')} &ndash; {format(new Date(startTime.getTime() + editDuration * 60000), 'HH:mm')}
+                  </span>
                 </div>
-              </div>
 
-              {/* Color selector */}
-              <div>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                >
-                  <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: editColor }} />
-                  <Palette className="h-3.5 w-3.5" />
-                  <span>Color</span>
-                </button>
-                {showColorPicker && (
-                  <div className="flex gap-2 mt-2">
-                    {COLOR_DOTS.map(color => (
+                {/* Title input */}
+                <Input
+                  ref={titleInputRef}
+                  placeholder="Event title..."
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={handleEditKeyDown}
+                  className="h-10 text-base font-medium border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                  autoComplete="off"
+                />
+
+                {/* Duration chips */}
+                <div>
+                  <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Duration</div>
+                  <div className="flex gap-1.5">
+                    {DURATION_CHIPS.map(chip => (
                       <button
-                        key={color}
+                        key={chip.minutes}
                         type="button"
-                        className={`w-6 h-6 rounded-full transition-all ${
-                          editColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                          editDuration === chip.minutes
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setEditColor(color)}
-                      />
+                        onClick={() => setEditDuration(chip.minutes)}
+                      >
+                        {chip.label}
+                      </button>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 pt-1">
-                <Button
-                  size="default"
-                  className="flex-1 h-9"
-                  onClick={handleSaveEdit}
-                  disabled={updateAppointment.isPending || !editTitle.trim()}
-                >
-                  {updateAppointment.isPending ? 'Saving...' : 'Save'}
-                </Button>
-                <Button
-                  size="default"
-                  variant="ghost"
-                  className="h-9 text-sm text-muted-foreground"
-                  onClick={handleAdvancedEdit}
-                >
-                  More options
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
+                {/* Color selector */}
+                <div>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowColorPicker(!showColorPicker)}
+                  >
+                    <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: editColor }} />
+                    <Palette className="h-3.5 w-3.5" />
+                    <span>Color</span>
+                  </button>
+                  {showColorPicker && (
+                    <div className="flex gap-2 mt-2">
+                      {COLOR_DOTS.map(color => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-6 h-6 rounded-full transition-all ${
+                            editColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-110'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setEditColor(color)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ===== EXPANDED EDIT FIELDS ===== */}
+                {expanded && (
+                  <div className="space-y-3 pt-1 border-t border-border/40">
+                    {/* Event Type */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Event Type</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {EVENT_TYPES.map(type => (
+                          <button
+                            key={type.value}
+                            type="button"
+                            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                              editType === type.value
+                                ? 'shadow-sm ring-2 ring-offset-1'
+                                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            }`}
+                            style={editType === type.value ? { backgroundColor: `${type.color}20`, color: type.color } : {}}
+                            onClick={() => setEditType(type.value)}
+                          >
+                            {type.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Client */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Briefcase className="h-3 w-3" /> Client
+                      </div>
+                      <Select value={editClientId} onValueChange={setEditClientId}>
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Select client..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No client</SelectItem>
+                          {clients.map((client: any) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Job */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Briefcase className="h-3 w-3" /> Job
+                      </div>
+                      <Select value={editProjectId} onValueChange={setEditProjectId}>
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Select job..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No job</SelectItem>
+                          {projects.map((project: any) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Team Members */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Team Members</div>
+                      <TeamMemberPicker
+                        selectedMembers={editTeamMembers}
+                        onChange={setEditTeamMembers}
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3" /> Location
+                      </div>
+                      <Input
+                        placeholder="Add location..."
+                        value={editLocation}
+                        onChange={(e) => setEditLocation(e.target.value)}
+                        className="h-9 text-xs"
+                      />
+                    </div>
+
+                    {/* Note/Description */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note</div>
+                      <Textarea
+                        placeholder="Add a note..."
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        rows={2}
+                        className="resize-none text-xs min-h-[52px]"
+                      />
+                    </div>
+
+                    {/* Video Meeting */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Video className="h-3.5 w-3.5" />
+                        <span>Video meeting</span>
+                      </div>
+                      <Switch checked={editVideoMeeting} onCheckedChange={setEditVideoMeeting} />
+                    </div>
+                    {editVideoMeeting && (
+                      <Input
+                        placeholder="Paste video link..."
+                        value={editVideoLink}
+                        onChange={(e) => setEditVideoLink(e.target.value)}
+                        className="h-9 text-xs"
+                      />
+                    )}
+
+                    {/* Reminders */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Bell className="h-3.5 w-3.5" />
+                        <span>Reminder</span>
+                      </div>
+                      <Switch checked={editNotificationEnabled} onCheckedChange={setEditNotificationEnabled} />
+                    </div>
+                    {editNotificationEnabled && (
+                      <Select value={String(editNotificationMinutes)} onValueChange={(v) => setEditNotificationMinutes(Number(v))}>
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 minutes before</SelectItem>
+                          <SelectItem value="15">15 minutes before</SelectItem>
+                          <SelectItem value="30">30 minutes before</SelectItem>
+                          <SelectItem value="60">1 hour before</SelectItem>
+                          <SelectItem value="1440">1 day before</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    size="default"
+                    className="flex-1 h-9"
+                    onClick={handleSaveEdit}
+                    disabled={updateAppointment.isPending || !editTitle.trim()}
+                  >
+                    {updateAppointment.isPending ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    size="default"
+                    variant="ghost"
+                    className="h-9 text-sm text-muted-foreground"
+                    onClick={() => setExpanded(!expanded)}
+                  >
+                    {expanded ? 'Less options' : 'More options'}
+                    {expanded ? <ChevronUp className="h-3.5 w-3.5 ml-1" /> : <ChevronRight className="h-3.5 w-3.5 ml-1" />}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           ) : (
             /* ===== VIEW MODE ===== */
             <div className="p-3 space-y-3">
