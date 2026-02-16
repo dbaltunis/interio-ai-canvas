@@ -424,10 +424,18 @@ export const UnifiedAppointmentDialog = ({
     return () => document.removeEventListener('keydown', handleEsc);
   }, [open, onOpenChange]);
 
+  // Stable callbacks - must be before any conditional return
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEvent(prev => ({ ...prev, title: e.target.value })), []);
+  const handleDateChange = useCallback((value: string) => setEvent(prev => ({ ...prev, date: value })), []);
+  const handleStartTimeChange = useCallback((value: string) => setEvent(prev => ({ ...prev, startTime: value })), []);
+  const handleEndTimeChange = useCallback((value: string) => setEvent(prev => ({ ...prev, endTime: value })), []);
+  const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEvent(prev => ({ ...prev, location: e.target.value })), []);
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => setEvent(prev => ({ ...prev, description: e.target.value })), []);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center" style={{ pointerEvents: 'none' }}>
       <div
         ref={panelRef}
         className="pointer-events-auto max-w-md w-[calc(100%-2rem)] rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
@@ -452,7 +460,7 @@ export const UnifiedAppointmentDialog = ({
             )}
           </div>
         </div>
-        <ScrollArea style={{ maxHeight: 'calc(85vh - 120px)' }}>
+        <div className="overflow-auto" style={{ maxHeight: 'calc(85vh - 120px)' }}>
         <div className="px-4 py-3 space-y-3">
           {/* Permission Warning */}
           {!isEditing && (() => {
@@ -473,7 +481,7 @@ export const UnifiedAppointmentDialog = ({
           <Input
             placeholder="Add title"
             value={event.title}
-            onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
+            onChange={handleTitleChange}
             className="text-base font-medium border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
           />
 
@@ -481,17 +489,17 @@ export const UnifiedAppointmentDialog = ({
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <DatePickerButton
               value={event.date}
-              onChange={useCallback((value) => setEvent(prev => ({ ...prev, date: value })), [])}
+              onChange={handleDateChange}
             />
             <div className="flex items-center gap-1.5">
               <TimeSelect
                 value={event.startTime}
-                onChange={useCallback((value) => setEvent(prev => ({ ...prev, startTime: value })), [])}
+                onChange={handleStartTimeChange}
               />
               <span className="text-muted-foreground text-xs">–</span>
               <TimeSelect
                 value={event.endTime}
-                onChange={useCallback((value) => setEvent(prev => ({ ...prev, endTime: value })), [])}
+                onChange={handleEndTimeChange}
               />
               <DurationBadge startTime={event.startTime} endTime={event.endTime} />
             </div>
@@ -625,7 +633,7 @@ export const UnifiedAppointmentDialog = ({
             <Input
               placeholder="Add location"
               value={event.location}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+              onChange={handleLocationChange}
               className="h-8 text-xs"
             />
           </div>
@@ -636,7 +644,7 @@ export const UnifiedAppointmentDialog = ({
             <Textarea
               placeholder="Add a note..."
               value={event.description}
-              onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
+              onChange={handleDescriptionChange}
               rows={2}
               className="resize-none text-xs"
             />
@@ -757,7 +765,7 @@ export const UnifiedAppointmentDialog = ({
             </Button>
           </div>
         </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer Actions - Clean and minimal */}
         <div className="px-4 py-2 border-t bg-muted/30 flex items-center justify-between gap-2">
