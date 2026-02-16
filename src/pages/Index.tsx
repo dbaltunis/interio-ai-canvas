@@ -336,7 +336,7 @@ const Index = () => {
         </main>
         
         <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-        <VersionFooter />
+        
       </div>
     </AIBackground>
   );
