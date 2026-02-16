@@ -2,6 +2,7 @@ import React, { Suspense, useState, useRef } from 'react';
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { formatCurrency, getCurrencySymbol } from "@/utils/formatCurrency";
+import { getColorScheme, type QuoteColorScheme } from "@/utils/quoteColorSchemes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -361,6 +362,8 @@ interface LivePreviewBlockProps {
   // Image override props
   onItemImageChange?: (itemId: string, imageUrl: string | null) => void;
   isImageEditMode?: boolean;
+  // Color scheme
+  colorScheme?: QuoteColorScheme;
 }
 
 const LivePreviewBlock = ({
@@ -382,8 +385,10 @@ const LivePreviewBlock = ({
   onToggleExclusion,
   isExclusionEditMode = false,
   onItemImageChange,
-  isImageEditMode = false
+  isImageEditMode = false,
+  colorScheme: propColorScheme
 }: LivePreviewBlockProps) => {
+  const cs = propColorScheme || getColorScheme();
   const content = block.content || {};
   const style = content.style || {};
   
@@ -1145,7 +1150,7 @@ const LivePreviewBlock = ({
                   <col style={{ width: '13%' }} />
                 </colgroup>
                 <thead>
-                  <tr style={{ backgroundColor: '#8b7355' }}>
+                  <tr style={{ backgroundColor: cs.primary }}>
                     <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Room / Window</th>
                     <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product Details</th>
                     <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qty</th>
@@ -1156,7 +1161,7 @@ const LivePreviewBlock = ({
                 <tbody>
                   {!hasRealData && (
                     <tr>
-                      <td colSpan={colCount} style={{ padding: '20px', textAlign: 'center', color: '#8b7355', fontStyle: 'italic', borderBottom: '1px solid #d4c5b0' }}>
+                      <td colSpan={colCount} style={{ padding: '20px', textAlign: 'center', color: cs.primary, fontStyle: 'italic', borderBottom: `1px solid ${cs.border}` }}>
                         No items yet. Add treatments to your project.
                       </td>
                     </tr>
@@ -1171,11 +1176,11 @@ const LivePreviewBlock = ({
                     return (
                       <React.Fragment key={roomName}>
                         {groupByRoom && hasRealData && (
-                          <tr style={{ backgroundColor: '#f0ebe3' }}>
-                            <td colSpan={colCount - 1} style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0' }}>
+                          <tr style={{ backgroundColor: cs.surfaceLight }}>
+                            <td colSpan={colCount - 1} style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: cs.headingText, borderBottom: `1px solid ${cs.border}` }}>
                               {roomName}
                             </td>
-                            <td style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>
+                            <td style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: cs.headingText, borderBottom: `1px solid ${cs.border}`, textAlign: 'right' }}>
                               {formatCurrency(roomSubtotal, currencyCode)}
                             </td>
                           </tr>
@@ -1190,13 +1195,13 @@ const LivePreviewBlock = ({
                           return (
                             <React.Fragment key={`curtain-item-${roomName}-${itemIndex}`}>
                               {/* Main product row */}
-                              <tr style={{ borderBottom: effectiveShowDetailed && (nonHardwareBreakdown.length > 0 || hardwareBreakdown.length > 0) ? 'none' : '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
-                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }} rowSpan={effectiveShowDetailed ? 1 + nonHardwareBreakdown.length + (hardwareBreakdown.length > 0 ? 1 : 0) + hardwareBreakdown.reduce((acc: number, b: any) => acc + (b.hardwareItems?.length || 1), 0) : 1}>
+                              <tr style={{ borderBottom: effectiveShowDetailed && (nonHardwareBreakdown.length > 0 || hardwareBreakdown.length > 0) ? 'none' : `1px solid ${cs.border}`, opacity: isItemExcluded ? 0.5 : 1 }}>
+                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: cs.headingText, verticalAlign: 'top' }} rowSpan={effectiveShowDetailed ? 1 + nonHardwareBreakdown.length + (hardwareBreakdown.length > 0 ? 1 : 0) + hardwareBreakdown.reduce((acc: number, b: any) => acc + (b.hardwareItems?.length || 1), 0) : 1}>
                                   <div style={{ fontWeight: '600', marginBottom: '6px' }}>
                                     {item.surface_name || item.window_number || item.name || 'Window'}
                                   </div>
                                   {showImages && itemImageUrl ? (
-                                    <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b0' }} />
+                                    <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: `1px solid ${cs.border}` }} />
                                   ) : showImages && !isPrintMode && isImageEditMode && onItemImageChange ? (
                                     <QuoteItemImagePicker
                                       currentImageUrl={null}
@@ -1206,38 +1211,38 @@ const LivePreviewBlock = ({
                                       size={80}
                                     />
                                   ) : showImages ? (
-                                    <div style={{ width: '100px', height: '70px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <ImageIcon className="h-5 w-5" style={{ color: '#8b7355', opacity: 0.4 }} />
+                                    <div style={{ width: '100px', height: '70px', backgroundColor: cs.surfaceLight, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <ImageIcon className="h-5 w-5" style={{ color: cs.primary, opacity: 0.4 }} />
                                     </div>
                                   ) : null}
                                 </td>
-                                <td style={{ padding: '8px', fontSize: '14px', fontWeight: '700', color: '#3d2e1f', verticalAlign: 'top', textTransform: 'uppercase' }}>
+                                <td style={{ padding: '8px', fontSize: '14px', fontWeight: '700', color: cs.headingText, verticalAlign: 'top', textTransform: 'uppercase' }}>
                                   {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
                                 </td>
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                                <td style={{ padding: '8px', fontSize: '13px', color: cs.headingText, textAlign: 'center', verticalAlign: 'top' }}>
                                   {item.quantity || 1}
                                 </td>
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '8px', fontSize: '13px', color: cs.headingText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
                                 </td>
-                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: cs.headingText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                                 </td>
                               </tr>
                               {/* Non-hardware breakdown rows */}
                               {effectiveShowDetailed && nonHardwareBreakdown.map((b: any, bi: number) => (
-                                <tr key={`nb-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === nonHardwareBreakdown.length - 1 && hardwareBreakdown.length === 0) ? '1px solid #d4c5b0' : 'none' }}>
-                                  <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
-                                    <span style={{ color: '#8b7355', fontWeight: '500' }}>{b.name}:</span>{' '}
+                                <tr key={`nb-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === nonHardwareBreakdown.length - 1 && hardwareBreakdown.length === 0) ? `1px solid ${cs.border}` : 'none' }}>
+                                  <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: cs.secondaryText, verticalAlign: 'top' }}>
+                                    <span style={{ color: cs.primary, fontWeight: '500' }}>{b.name}:</span>{' '}
                                     <span>{b.description || '—'}</span>
                                   </td>
-                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                     {b.quantity != null ? `${b.quantity}${b.unit ? ` ${b.unit}` : ''}` : '—'}
                                   </td>
-                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                     {(b.unit_price != null && b.unit_price !== 0) ? formatCurrency(b.unit_price, currencyCode) : '—'}
                                   </td>
-                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                     {formatCurrency(b.total_cost ?? 0, currencyCode)}
                                   </td>
                                 </tr>
@@ -1245,8 +1250,8 @@ const LivePreviewBlock = ({
                               {/* Hardware separator */}
                               {effectiveShowDetailed && hardwareBreakdown.length > 0 && (
                                 <tr style={{ opacity: isItemExcluded ? 0.5 : 1 }}>
-                                  <td colSpan={4} style={{ padding: '6px 8px 4px 16px', borderTop: '1px dashed #c4b5a0' }}>
-                                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#8b7355', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hardware</span>
+                                  <td colSpan={4} style={{ padding: '6px 8px 4px 16px', borderTop: `1px dashed ${cs.borderLight}` }}>
+                                    <span style={{ fontSize: '10px', fontWeight: '600', color: cs.primary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hardware</span>
                                   </td>
                                 </tr>
                               )}
@@ -1254,36 +1259,36 @@ const LivePreviewBlock = ({
                               {effectiveShowDetailed && hardwareBreakdown.map((b: any, bi: number) => {
                                 if (b.hardwareItems && b.hardwareItems.length > 0) {
                                   return b.hardwareItems.map((hi: any, hii: number) => (
-                                    <tr key={`hw-${bi}-${hii}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === hardwareBreakdown.length - 1 && hii === b.hardwareItems.length - 1) ? '1px solid #d4c5b0' : 'none' }}>
-                                      <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
-                                        <span style={{ color: '#8b7355', fontWeight: '500' }}>{hi.name}:</span>{' '}
+                                    <tr key={`hw-${bi}-${hii}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === hardwareBreakdown.length - 1 && hii === b.hardwareItems.length - 1) ? `1px solid ${cs.border}` : 'none' }}>
+                                      <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: cs.secondaryText, verticalAlign: 'top' }}>
+                                        <span style={{ color: cs.primary, fontWeight: '500' }}>{hi.name}:</span>{' '}
                                         <span>{hi.description || '—'}</span>
                                       </td>
-                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                         {hi.quantity != null ? `${hi.quantity}${hi.unit ? ` ${hi.unit}` : ''}` : '—'}
                                       </td>
-                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                         {(hi.unit_price != null && hi.unit_price !== 0) ? formatCurrency(hi.unit_price, currencyCode) : '—'}
                                       </td>
-                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                         {formatCurrency(hi.total_cost ?? 0, currencyCode)}
                                       </td>
                                     </tr>
                                   ));
                                 }
                                 return (
-                                  <tr key={`hw-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: bi === hardwareBreakdown.length - 1 ? '1px solid #d4c5b0' : 'none' }}>
-                                    <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
-                                      <span style={{ color: '#8b7355', fontWeight: '500' }}>{b.name}:</span>{' '}
+                                  <tr key={`hw-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: bi === hardwareBreakdown.length - 1 ? `1px solid ${cs.border}` : 'none' }}>
+                                    <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: cs.secondaryText, verticalAlign: 'top' }}>
+                                      <span style={{ color: cs.primary, fontWeight: '500' }}>{b.name}:</span>{' '}
                                       <span>{b.description || '—'}</span>
                                     </td>
-                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                       {b.quantity != null ? `${b.quantity}${b.unit ? ` ${b.unit}` : ''}` : '—'}
                                     </td>
-                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                       {(b.unit_price != null && b.unit_price !== 0) ? formatCurrency(b.unit_price, currencyCode) : '—'}
                                     </td>
-                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: cs.secondaryText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                       {formatCurrency(b.total_cost ?? 0, currencyCode)}
                                     </td>
                                   </tr>
@@ -1300,7 +1305,7 @@ const LivePreviewBlock = ({
                     if (serviceOnlyItems.length === 0 || !hasRealData) return null;
                     return (
                       <>
-                        <tr style={{ backgroundColor: '#8b7355' }}>
+                        <tr style={{ backgroundColor: cs.primary }}>
                           <td colSpan={colCount} style={{ padding: '10px 8px', fontSize: '12px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Services
                           </td>
@@ -1309,25 +1314,25 @@ const LivePreviewBlock = ({
                           const isItemExcluded = excludedItems.includes(item.id);
                           if (!isExclusionEditMode && isItemExcluded) return null;
                           return (
-                            <tr key={`service-${itemIndex}`} style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
-                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
+                            <tr key={`service-${itemIndex}`} style={{ borderBottom: `1px solid ${cs.border}`, opacity: isItemExcluded ? 0.5 : 1 }}>
+                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: cs.headingText, verticalAlign: 'top' }}>
                                 {item.surface_name || item.room_name || '—'}
                               </td>
-                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
+                              <td style={{ padding: '8px', fontSize: '13px', color: cs.headingText, verticalAlign: 'top' }}>
                                 <div style={{ fontWeight: '600' }}>
                                   {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Service')}
                                 </div>
                                 {item.description && (
-                                  <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '2px' }}>{item.description}</div>
+                                  <div style={{ fontSize: '11px', color: cs.secondaryText, marginTop: '2px' }}>{item.description}</div>
                                 )}
                               </td>
-                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                              <td style={{ padding: '8px', fontSize: '13px', color: cs.headingText, textAlign: 'center', verticalAlign: 'top' }}>
                                 {item.quantity || 1}
                               </td>
-                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '8px', fontSize: '13px', color: cs.headingText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                 {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
                               </td>
-                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: cs.headingText, textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                 {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                               </td>
                             </tr>
@@ -1652,32 +1657,32 @@ const LivePreviewBlock = ({
         const curtainTotalsLang = (projectData?.businessSettings?.document_language as DocumentLanguage) || 'en';
         return (
           <div style={{ marginBottom: '24px', padding: '0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '16px', borderTop: '2px solid #8b7355' }}>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#3d2e1f' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '16px', borderTop: `2px solid ${cs.primary}` }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: cs.headingText }}>
                 Payment Summary
               </div>
               <div style={{ minWidth: '280px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#3d2e1f' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: cs.headingText }}>
                   <span>Subtotal</span>
                   <span>{renderTokenValue('subtotal')}</span>
                 </div>
                 {content.showTax !== false && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#3d2e1f' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: cs.headingText }}>
                     <span>{userBusinessSettings?.tax_type?.toUpperCase() || 'VAT'} ({renderTokenValue('tax_rate')})</span>
                     <span>{renderTokenValue('tax_amount')}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '16px', fontWeight: '700', color: '#3d2e1f', borderTop: '1px solid #d4c5b0', marginTop: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '16px', fontWeight: '700', color: cs.headingText, borderTop: `1px solid ${cs.border}`, marginTop: '4px' }}>
                   <span>Total Order Value</span>
                   <span>{renderTokenValue('total')}</span>
                 </div>
                 {projectData?.payment?.type === 'deposit' && projectData.payment.amount > 0 && (
                   <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#6b5c4c' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: cs.secondaryText }}>
                       <span>Advance Paid</span>
                       <span>{formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '15px', fontWeight: '600', color: '#3d2e1f', borderTop: '1px solid #d4c5b0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '15px', fontWeight: '600', color: cs.headingText, borderTop: `1px solid ${cs.border}` }}>
                       <span>Balance Payable</span>
                       <span>{formatCurrency((projectData.total || 0) - projectData.payment.amount, projectData?.currency || getDefaultCurrency())}</span>
                     </div>
@@ -2060,17 +2065,17 @@ const LivePreviewBlock = ({
       const curtainBiz = projectData?.businessSettings || userBusinessSettings || {};
       const systemTermsForFooter = curtainBiz.general_terms_and_conditions;
       return (
-        <div style={{ marginTop: '24px', padding: '0', borderTop: '2px solid #8b7355', paddingTop: '20px' }}>
+        <div style={{ marginTop: '24px', padding: '0', borderTop: `2px solid ${cs.primary}`, paddingTop: '20px' }}>
           <div style={{ display: 'flex', gap: '32px' }}>
             {/* LEFT: Terms & Conditions */}
-            <div style={{ flex: 1, fontSize: '12px', color: '#3d2e1f', lineHeight: '1.7' }}>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: '#3d2e1f', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ flex: 1, fontSize: '12px', color: cs.headingText, lineHeight: '1.7' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: cs.headingText, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Terms & Conditions
               </div>
               {systemTermsForFooter ? (
                 <div style={{ whiteSpace: 'pre-wrap' }}>{systemTermsForFooter}</div>
               ) : (
-                <div style={{ color: '#8b7355', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
+                <div style={{ color: cs.primary, fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
               )}
             </div>
             {/* RIGHT: Accept button area + company details */}
@@ -2080,7 +2085,7 @@ const LivePreviewBlock = ({
                   <Button
                     size="sm"
                     className="w-full"
-                    style={{ backgroundColor: '#8b7355', color: '#fff', fontWeight: '600', padding: '12px 16px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                    style={{ backgroundColor: cs.primary, color: '#fff', fontWeight: '600', padding: '12px 16px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
                     onClick={async () => {
                       const { supabase } = await import("@/integrations/supabase/client");
                       const { data, error } = await supabase.functions.invoke("create-quote-payment", {
@@ -2098,13 +2103,13 @@ const LivePreviewBlock = ({
                   </Button>
                 </div>
               )}
-              <div style={{ fontSize: '12px', color: '#6b5c4c', lineHeight: '1.7', borderTop: '1px solid #d4c5b0', paddingTop: '12px' }}>
-                <div style={{ fontWeight: '700', color: '#3d2e1f', marginBottom: '4px' }}>{curtainBiz.company_name || curtainBiz.trading_name || ''}</div>
+              <div style={{ fontSize: '12px', color: cs.secondaryText, lineHeight: '1.7', borderTop: `1px solid ${cs.border}`, paddingTop: '12px' }}>
+                <div style={{ fontWeight: '700', color: cs.headingText, marginBottom: '4px' }}>{curtainBiz.company_name || curtainBiz.trading_name || ''}</div>
                 {curtainBiz.business_email && <div>{curtainBiz.business_email}</div>}
                 {curtainBiz.business_phone && <div>{curtainBiz.business_phone}</div>}
                 {curtainBiz.bank_name && (
-                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d4c5b0' }}>
-                    <div style={{ fontWeight: '600', color: '#8b7355', marginBottom: '2px' }}>Bank Details</div>
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${cs.border}` }}>
+                    <div style={{ fontWeight: '600', color: cs.primary, marginBottom: '2px' }}>Bank Details</div>
                     <div>{curtainBiz.bank_name}</div>
                     {curtainBiz.bank_account_name && <div>A/C: {curtainBiz.bank_account_name}</div>}
                     {curtainBiz.bank_account_number && <div>No: {curtainBiz.bank_account_number}</div>}
@@ -2331,9 +2336,12 @@ export const LivePreview = ({
     );
   }
 
-  // Extract document-settings background color
+  // Extract document-settings background color and color scheme
   const docSettingsBlock = blocks.find((b: any) => b.type === 'document-settings');
   const docBgColor = docSettingsBlock?.content?.backgroundColor;
+  const docColorScheme = getColorScheme(docSettingsBlock?.content?.colorScheme);
+  // Enrich projectData with colorScheme ID so child components (BlockRenderer) can access it
+  const enrichedProjectData = projectData ? { ...projectData, colorScheme: docSettingsBlock?.content?.colorScheme } : projectData;
 
   // Print Mode: Clean rendering without wrappers, borders, or UI elements
   if (isPrintMode) {
@@ -2351,7 +2359,7 @@ export const LivePreview = ({
           <LivePreviewBlock
             key={block.id || index}
             block={block}
-            projectData={projectData}
+            projectData={enrichedProjectData}
             isEditable={false}
             isPrintMode={true}
             documentType={documentType}
@@ -2369,6 +2377,7 @@ export const LivePreview = ({
             isExclusionEditMode={isExclusionEditMode}
             onItemImageChange={onItemImageChange}
             isImageEditMode={isImageEditMode}
+            colorScheme={docColorScheme}
           />
         ))}
       </div>
@@ -2429,7 +2438,7 @@ export const LivePreview = ({
               <LivePreviewBlock 
                 key={block.id || index} 
                 block={block} 
-                projectData={projectData}
+                projectData={enrichedProjectData}
                 isEditable={isEditable}
                 isPrintMode={false}
                 documentType={documentType}
@@ -2444,6 +2453,7 @@ export const LivePreview = ({
                 excludedItems={excludedItems}
                 onToggleExclusion={onToggleExclusion}
                 isExclusionEditMode={isExclusionEditMode}
+                colorScheme={docColorScheme}
               />
             ))}
             
