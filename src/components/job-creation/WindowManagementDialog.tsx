@@ -661,80 +661,76 @@ export const WindowManagementDialog = ({
                   )}
                 </div>
                 
-              </DialogTitle>
-              <Popover open={isEditingDescription} onOpenChange={(open) => {
-                if (open) {
-                  setEditDescriptionValue(treatmentDescription);
-                }
-                setIsEditingDescription(open);
-              }}>
-                <PopoverTrigger asChild>
-                  <button 
-                    type="button"
-                    className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px] cursor-pointer hover:border-primary/40 transition-colors text-left"
-                  >
-                    <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
-                    <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
-                    <Pencil className="h-3 w-3 text-muted-foreground opacity-60 shrink-0" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent 
-                  className="w-[340px] p-3 z-[9999]" 
-                  align="start" 
-                  side="bottom" 
-                  sideOffset={4}
-                >
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Description</label>
-                    <Textarea
-                      value={editDescriptionValue}
-                      onChange={(e) => setEditDescriptionValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          if (editDescriptionValue !== treatmentDescription) {
-                            handleDescriptionUpdate(editDescriptionValue);
+                <Popover open={isEditingDescription} onOpenChange={(open) => {
+                  if (open) {
+                    setEditDescriptionValue(treatmentDescription);
+                  }
+                  setIsEditingDescription(open);
+                }}>
+                  <PopoverTrigger asChild>
+                    <div 
+                      className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px] cursor-pointer hover:border-primary/40 transition-colors"
+                    >
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
+                      <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
+                      <Pencil className="h-3 w-3 text-muted-foreground opacity-60 shrink-0" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[340px] p-3 z-[9999]" align="start" side="bottom" sideOffset={4} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                      <label className="text-xs font-medium text-muted-foreground">Description</label>
+                      <Textarea
+                        value={editDescriptionValue}
+                        onChange={(e) => setEditDescriptionValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (editDescriptionValue !== treatmentDescription) {
+                              handleDescriptionUpdate(editDescriptionValue);
+                            }
+                            setIsEditingDescription(false);
                           }
-                          setIsEditingDescription(false);
-                        }
-                        if (e.key === 'Escape') {
-                          setEditDescriptionValue(treatmentDescription);
-                          setIsEditingDescription(false);
-                        }
-                      }}
-                      className="text-sm min-h-[80px] resize-none"
-                      autoFocus
-                      maxLength={500}
-                      placeholder="Add a description for this treatment..."
-                    />
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground">{editDescriptionValue?.length || 0}/500</span>
-                      <div className="flex gap-1.5">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => {
+                          if (e.key === 'Escape') {
                             setEditDescriptionValue(treatmentDescription);
                             setIsEditingDescription(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="xs"
-                          disabled={editDescriptionValue === treatmentDescription}
-                          onClick={() => {
-                            handleDescriptionUpdate(editDescriptionValue);
-                            setIsEditingDescription(false);
-                          }}
-                        >
-                          Save
-                        </Button>
+                          }
+                        }}
+                        className="text-sm min-h-[80px] resize-none"
+                        autoFocus
+                        maxLength={500}
+                        placeholder="Add a description for this treatment..."
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">{editDescriptionValue?.length || 0}/500</span>
+                        <div className="flex gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditDescriptionValue(treatmentDescription);
+                              setIsEditingDescription(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="xs"
+                            disabled={editDescriptionValue === treatmentDescription}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDescriptionUpdate(editDescriptionValue);
+                              setIsEditingDescription(false);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </DialogTitle>
             </div>
           </DialogHeader>
 
