@@ -87,7 +87,7 @@ export const TemplateQuotePreview = ({
             padding: '32px'
           }}
         >
-          <div className="p-8">
+          <div className="p-8 document-preview-center">
             <LivePreview 
               blocks={selectedTemplate.blocks} 
               projectData={projectData}
@@ -112,7 +112,7 @@ export const TemplateQuotePreview = ({
             </Badge>
           </div>
         </div>
-        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: 0 }}>
+        <div className="document-preview-center" style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: 0 }}>
           <LivePreview 
             blocks={selectedTemplate.blocks} 
             projectData={projectData}

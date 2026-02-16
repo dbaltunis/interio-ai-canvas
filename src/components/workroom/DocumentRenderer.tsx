@@ -130,7 +130,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
     console.log('DocumentRenderer - final projectData:', projectData);
 
     return (
-      <div className="bg-white">
+      <div className="bg-white document-preview-center">
         <LivePreview 
           blocks={blocks} 
           projectData={projectData}
