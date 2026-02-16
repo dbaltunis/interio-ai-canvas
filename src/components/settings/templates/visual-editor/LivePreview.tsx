@@ -1128,29 +1128,10 @@ const LivePreviewBlock = ({
       // ============= CURTAIN-PROFESSIONAL THEMED TABLE =============
       if (content.theme === 'curtain-professional') {
         const currencyCode = projectData?.currency || getDefaultCurrency();
-        const colCount = content.showPrateColumn ? 6 : 5;
+        const colCount = 5;
 
-        // Extract hardware from each treatment's breakdown into a separate list
-        const extractedHardware: any[] = [];
-        const getBreakdownWithoutHardware = (item: any) => {
-          const breakdown = getItemizedBreakdown(item);
-          const nonHardware: any[] = [];
-          breakdown.forEach((b: any) => {
-            if (b.isHardwareGroup || b.category === 'hardware' || b.category === 'hardware_accessory') {
-              extractedHardware.push({
-                ...b,
-                _parentRoom: item.room_name || item.location || 'Unassigned',
-                _parentSurface: item.surface_name || item.window_number || item.name || 'Window',
-              });
-            } else {
-              nonHardware.push(b);
-            }
-          });
-          return nonHardware;
-        };
-
-        // Combine top-level service/hardware items + extracted hardware from breakdowns
-        const allServiceHardware = [...serviceHardwareItems];
+        // Only top-level service items go to the bottom section (no hardware)
+        const serviceOnlyItems = serviceHardwareItems.filter((i: any) => isServiceItem(i));
 
         return (
           <div className="mb-4 products-section" style={{ padding: '0', margin: '0' }}>
@@ -1161,7 +1142,6 @@ const LivePreviewBlock = ({
                   <col style={{ width: 'auto' }} />
                   <col style={{ width: '50px' }} />
                   <col style={{ width: '90px' }} />
-                  {content.showPrateColumn && <col style={{ width: '80px' }} />}
                   <col style={{ width: '100px' }} />
                 </colgroup>
                 <thead>
@@ -1170,7 +1150,6 @@ const LivePreviewBlock = ({
                     <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product Details</th>
                     <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qty</th>
                     <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unit Price</th>
-                    {content.showPrateColumn && <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.Rate</th>}
                     <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Price</th>
                   </tr>
                 </thead>
@@ -1202,7 +1181,9 @@ const LivePreviewBlock = ({
                           </tr>
                         )}
                         {(isExclusionEditMode ? (items as any[]) : visibleItems).map((item: any, itemIndex: number) => {
-                          const breakdown = getBreakdownWithoutHardware(item);
+                          const fullBreakdown = getItemizedBreakdown(item);
+                          const nonHardwareBreakdown = fullBreakdown.filter((b: any) => !b.isHardwareGroup && b.category !== 'hardware' && b.category !== 'hardware_accessory');
+                          const hardwareBreakdown = fullBreakdown.filter((b: any) => b.isHardwareGroup || b.category === 'hardware' || b.category === 'hardware_accessory');
                           const isItemExcluded = excludedItems.includes(item.id);
                           const itemImageUrl = item.image_url_override || item.image_url;
                           
@@ -1235,32 +1216,61 @@ const LivePreviewBlock = ({
                                   <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px', textTransform: 'uppercase' }}>
                                     {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
                                   </div>
-                                  {effectiveShowDetailed && breakdown.length > 0 && (
+                                  {effectiveShowDetailed && nonHardwareBreakdown.length > 0 && (
                                     <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
-                                      {breakdown.map((b: any, bi: number) => (
-                                        <div key={bi} style={{ display: 'flex', gap: '4px' }}>
-                                          <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
-                                          <span>{b.description || formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
+                                      {nonHardwareBreakdown.map((b: any, bi: number) => (
+                                        <div key={bi} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
+                                          <div style={{ display: 'flex', gap: '4px' }}>
+                                            <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
+                                            <span>{b.description || '—'}</span>
+                                          </div>
+                                          <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
+                                            <span>{formatCurrency(b.unit_price ?? 0, currencyCode)}</span>
+                                            <span style={{ fontWeight: '500' }}>{formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
                                   )}
+                                  {effectiveShowDetailed && hardwareBreakdown.length > 0 && (
+                                    <>
+                                      <div style={{ borderTop: '1px dashed #c4b5a0', margin: '6px 0 4px 0', paddingTop: '4px' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: '600', color: '#8b7355', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hardware</span>
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
+                                        {hardwareBreakdown.map((b: any, bi: number) => {
+                                          // If it's a hardware group with sub-items, render each sub-item
+                                          if (b.hardwareItems && b.hardwareItems.length > 0) {
+                                            return b.hardwareItems.map((hi: any, hii: number) => (
+                                              <div key={`${bi}-${hii}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                  <span style={{ color: '#8b7355', minWidth: '100px' }}>{hi.name}:</span>
+                                                  <span>{hi.description || '—'}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
+                                                  <span>{formatCurrency(hi.unit_price ?? 0, currencyCode)}</span>
+                                                  <span style={{ fontWeight: '500' }}>{formatCurrency(hi.total_cost ?? 0, currencyCode)}</span>
+                                                </div>
+                                              </div>
+                                            ));
+                                          }
+                                          return (
+                                            <div key={bi} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
+                                              <div style={{ display: 'flex', gap: '4px' }}>
+                                                <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
+                                                <span>{b.description || '—'}</span>
+                                              </div>
+                                              <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
+                                                <span>{formatCurrency(b.unit_price ?? 0, currencyCode)}</span>
+                                                <span style={{ fontWeight: '500' }}>{formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </>
+                                  )}
                                 </td>
-                                {/* Qty */}
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
-                                  {item.quantity || 1}
-                                </td>
-                                {/* Unit Price */}
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                  {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
-                                </td>
-                                {/* P.Rate */}
-                                {content.showPrateColumn && (
-                                  <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                    {formatCurrency(item.prate ?? 0, currencyCode)}
-                                  </td>
-                                )}
-                                {/* Total */}
                                 <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                                 </td>
@@ -1271,19 +1281,17 @@ const LivePreviewBlock = ({
                       </React.Fragment>
                     );
                   })}
-                  {/* Services & Hardware separator - includes extracted hardware from breakdowns */}
+                  {/* Services section - services only, no hardware */}
                   {(() => {
-                    const combinedServiceHardware = [...allServiceHardware, ...extractedHardware];
-                    if (combinedServiceHardware.length === 0 || !hasRealData) return null;
+                    if (serviceOnlyItems.length === 0 || !hasRealData) return null;
                     return (
                       <>
                         <tr style={{ backgroundColor: '#8b7355' }}>
                           <td colSpan={colCount} style={{ padding: '10px 8px', fontSize: '12px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Services & Hardware
+                            Services
                           </td>
                         </tr>
-                        {/* Top-level service/hardware items */}
-                        {allServiceHardware.map((item: any, itemIndex: number) => {
+                        {serviceOnlyItems.map((item: any, itemIndex: number) => {
                           const isItemExcluded = excludedItems.includes(item.id);
                           if (!isExclusionEditMode && isItemExcluded) return null;
                           return (
@@ -1305,57 +1313,12 @@ const LivePreviewBlock = ({
                               <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                 {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
                               </td>
-                              {content.showPrateColumn && (
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                  {formatCurrency(item.prate ?? 0, currencyCode)}
-                                </td>
-                              )}
                               <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                 {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                               </td>
                             </tr>
                           );
                         })}
-                        {/* Hardware extracted from treatment breakdowns */}
-                        {extractedHardware.map((hw: any, hwIdx: number) => (
-                          <tr key={`extracted-hw-${hwIdx}`} style={{ borderBottom: '1px solid #d4c5b0' }}>
-                            <td style={{ padding: '8px', fontSize: '12px', color: '#6b5c4c', verticalAlign: 'top' }}>
-                              {hw._parentSurface}
-                            </td>
-                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
-                              <div style={{ fontWeight: '600' }}>
-                                {hw.name || 'Hardware'}
-                              </div>
-                              {hw.description && (
-                                <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '2px' }}>{hw.description}</div>
-                              )}
-                              {hw.hardwareItems && hw.hardwareItems.length > 0 && (
-                                <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '4px', lineHeight: '1.6' }}>
-                                  {hw.hardwareItems.map((hi: any, hii: number) => (
-                                    <div key={hii} style={{ display: 'flex', gap: '4px' }}>
-                                      <span style={{ color: '#8b7355' }}>{hi.name}:</span>
-                                      <span>{hi.description || formatCurrency(hi.total_cost ?? 0, currencyCode)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </td>
-                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
-                              {hw.quantity || 1}
-                            </td>
-                            <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {formatCurrency(hw.unit_price ?? hw.total_cost ?? 0, currencyCode)}
-                            </td>
-                            {content.showPrateColumn && (
-                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                {formatCurrency(0, currencyCode)}
-                              </td>
-                            )}
-                            <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {formatCurrency(hw.total_cost ?? 0, currencyCode)}
-                            </td>
-                          </tr>
-                        ))}
                       </>
                     );
                   })()}
