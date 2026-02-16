@@ -7559,6 +7559,7 @@ export type Database = {
           quantity: number
           room_id: string
           total_price: number
+          unit: string | null
           unit_price: number
           updated_at: string
           user_id: string
@@ -7578,6 +7579,7 @@ export type Database = {
           quantity?: number
           room_id: string
           total_price?: number
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           user_id: string
@@ -7597,6 +7599,7 @@ export type Database = {
           quantity?: number
           room_id?: string
           total_price?: number
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           user_id?: string

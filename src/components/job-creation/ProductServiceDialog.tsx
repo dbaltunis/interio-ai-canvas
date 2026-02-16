@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Search, Package, Wrench, Layers, ArrowLeft, Plus, Minus, ShoppingCart, PenLine, Upload, X, Calendar, Clock } from "lucide-react";
+import { Search, Package, Wrench, Layers, ArrowLeft, Plus, Minus, ShoppingCart, PenLine, Upload, X, Calendar, Clock, Info } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useActiveServiceOptions, SERVICE_UNITS, type ServiceOption } from "@/hooks/useServiceOptions";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
+import { useServiceQuantityResolver } from "@/hooks/useServiceQuantityResolver";
 
 interface ProductServiceDialogProps {
   isOpen: boolean;
@@ -116,6 +117,7 @@ export const ProductServiceDialog = ({
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
   const { data: markupSettings } = useMarkupSettings();
+  const quantityResolver = useServiceQuantityResolver(projectId);
 
   // Always show all main categories, regardless of inventory content
   const categories = ['material', 'fabric', 'hardware', 'service', 'wallcovering', 'custom'];
@@ -220,21 +222,31 @@ export const ProductServiceDialog = ({
         costPrice = item.cost_price;
       }
 
+      // Auto-resolve quantity for service options with per-window/per-room/per-metre units
+      let autoQty = 1;
+      const itemUnit = item.unit || 'each';
+      if (isServiceOption && quantityResolver) {
+        const resolution = quantityResolver.resolve(itemUnit);
+        if (resolution.autoQuantity !== null && resolution.autoQuantity > 0) {
+          autoQty = resolution.autoQuantity;
+        }
+      }
+
       newSelected.set(item.id, {
         inventoryItemId: item.id,
         name: item.name,
         category: item.category,
         subcategory: item.subcategory || "",
-        quantity: 1,
+        quantity: autoQty,
         unitPrice: price,
-        totalPrice: price,
+        totalPrice: autoQty * price,
         costPrice,
         markupPercentage: markupPct,
         markupSource: markupSrc,
         imageUrl: item.image_url,
-        unit: item.unit || "each",
+        unit: itemUnit,
         description: item.description || "",
-        isCustom: isServiceOption, // Service options are added as custom room products
+        isCustom: isServiceOption,
         isServiceOption,
         serviceOptionId: isServiceOption ? item._serviceOption?.id : undefined,
       });
@@ -717,6 +729,16 @@ export const ProductServiceDialog = ({
                           <div className="text-sm text-muted-foreground">
                             {currencySymbol}{item.unitPrice.toFixed(2)} per {item.unit}
                           </div>
+                          {/* Auto-quantity helper */}
+                          {item.isServiceOption && quantityResolver && (() => {
+                            const res = quantityResolver.resolve(item.unit);
+                            return res.isAutomatic ? (
+                              <div className="text-xs text-primary flex items-center gap-1 mt-0.5">
+                                <Info className="h-3 w-3" />
+                                {res.breakdown}
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
 
                         {/* Quantity Controls */}

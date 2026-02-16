@@ -1,0 +1,1 @@
+ALTER TABLE room_products ADD COLUMN unit text DEFAULT 'each';

@@ -154,6 +154,7 @@ export const RoomCard = ({
       description: p.notes || null,
       image_url: p.imageUrl || null,
       is_custom: p.isCustom || false,
+      unit: p.unit || 'each',
     }));
     createRoomProducts.mutate(roomProducts);
   };
@@ -215,7 +216,7 @@ export const RoomCard = ({
           )}
 
           {/* Room Products & Services */}
-          <RoomProductsList roomId={room.id} />
+          <RoomProductsList roomId={room.id} projectId={projectId} />
 
           {/* Add Buttons */}
           {!isReadOnly && (
