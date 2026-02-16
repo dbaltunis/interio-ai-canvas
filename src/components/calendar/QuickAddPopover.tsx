@@ -122,7 +122,7 @@ export const QuickAddPopover = ({
         left = Math.max(padding, (anchorPosition?.x ?? 200) - popoverWidth - 8);
       }
 
-      const maxAllowed = expanded ? window.innerHeight * 0.85 : 480;
+      const maxAllowed = window.innerHeight * 0.85;
       // Vertical clamping: ensure footer stays in viewport
       const availableHeight = window.innerHeight - top - padding;
       const maxH = Math.max(200, Math.min(maxAllowed, availableHeight));
@@ -136,6 +136,14 @@ export const QuickAddPopover = ({
       }
     }
   }, [open, anchorPosition, expanded]);
+
+  // Re-measure after expanded state changes (DOM needs a frame to render new content)
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => {
+      setPosition(prev => ({ ...prev }));
+    });
+  }, [expanded, open]);
 
   // Close on click outside
   useEffect(() => {
@@ -258,7 +266,7 @@ export const QuickAddPopover = ({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-auto" style={{ maxHeight: `calc(${position.maxH}px - 96px)` }}>
+      <div className="flex-1 min-h-0 overflow-auto" style={{ maxHeight: `calc(${position.maxH}px - 104px)` }}>
         <div className="px-3 pb-3 space-y-3">
           {/* Title input */}
           <Input
