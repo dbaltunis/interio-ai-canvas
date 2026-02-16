@@ -285,28 +285,6 @@ export const EventDetailPopover = ({
                 {/* ===== EXPANDED EDIT FIELDS ===== */}
                 {expanded && (
                   <div className="space-y-3 pt-1 border-t border-border/40">
-                    {/* Event Type */}
-                    <div>
-                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Event Type</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {EVENT_TYPES.map(type => (
-                          <button
-                            key={type.value}
-                            type="button"
-                            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                              editType === type.value
-                                ? 'shadow-sm ring-2 ring-offset-1'
-                                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
-                            style={editType === type.value ? { backgroundColor: `${type.color}20`, color: type.color } : {}}
-                            onClick={() => setEditType(type.value)}
-                          >
-                            {type.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Client */}
                     <div>
                       <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
