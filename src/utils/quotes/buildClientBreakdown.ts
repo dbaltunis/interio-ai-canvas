@@ -354,8 +354,8 @@ export const buildClientBreakdown = (
         itemImageUrl = null;
         itemColor = null;
       } else if (item.category === 'template' || item.category === 'treatment') {
-        // Template row gets template image, no color
-        itemImageUrl = itemImageUrl || summary.template_details?.image_url || summary.treatment_image_url || null;
+        // Template row gets primary photo first, then template image, no color
+        itemImageUrl = summary.primary_photo_url || itemImageUrl || summary.template_details?.image_url || summary.treatment_image_url || null;
         itemColor = null;
       } else if (item.category === 'option' || item.category === 'options') {
         // OPTIONS: ONLY show image if option has one, NO color fallback

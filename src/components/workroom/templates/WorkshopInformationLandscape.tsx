@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Pencil, RotateCcw, Save, AlertCircle } from "lucide-react";
+import { PhotoLightbox } from "@/components/workroom/components/PhotoLightbox";
 import { useToast } from "@/hooks/use-toast";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
@@ -29,6 +30,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+  const [lightboxState, setLightboxState] = useState<{ photos: string[]; index: number } | null>(null);
   const { units } = useMeasurementUnits();
   const { toast } = useToast();
   
@@ -224,16 +226,17 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
           <table className="w-full border-collapse bg-white text-[10px]">
             <thead>
               <tr className="bg-blue-50 text-gray-800 border-b-2 border-blue-200">
-                <th className="w-[10%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Item</th>
-                <th className="w-[32%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Fabric & Details</th>
-                <th className="w-[22%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Measurements</th>
-                <th className="w-[36%] text-left py-2 px-2 font-semibold">Sewing Details</th>
+                <th className="w-[8%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Item</th>
+                <th className="w-[12%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Photos</th>
+                <th className="w-[28%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Fabric & Details</th>
+                <th className="w-[20%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Measurements</th>
+                <th className="w-[32%] text-left py-2 px-2 font-semibold">Sewing Details</th>
               </tr>
             </thead>
             <tbody>
               {room.items.map((item, itemIdx) => (
                 <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50 workshop-item-row">
-                  {/* Item column with thumbnail */}
+                  {/* Item column */}
                   <td className="py-3 px-2 align-top border-r border-gray-200">
                     <div className="space-y-1">
                       <div className="font-medium">{item.location}</div>
@@ -245,6 +248,28 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                         />
                       )}
                     </div>
+                  </td>
+                  
+                  {/* Photos column */}
+                  <td className="py-3 px-2 align-top border-r border-gray-200">
+                    {(() => {
+                      const photos: string[] = item.treatmentPhotos || [];
+                      if (photos.length === 0) return <span className="text-[9px] text-gray-400">No photos</span>;
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {photos.map((url, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setLightboxState({ photos, index: i })}
+                              className="w-10 h-10 rounded overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer"
+                            >
+                              <img src={url} alt={`Photo ${i+1}`} className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </td>
                   
                   {/* Fabric & Details column */}
@@ -556,6 +581,13 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
         <div>Prepared: {new Date().toLocaleDateString()}</div>
         <div className="page-number-placeholder">Page <span className="page-number"></span></div>
       </div>
+
+      <PhotoLightbox
+        photos={lightboxState?.photos || []}
+        initialIndex={lightboxState?.index || 0}
+        open={!!lightboxState}
+        onOpenChange={(open) => !open && setLightboxState(null)}
+      />
     </div>
   );
 };

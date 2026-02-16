@@ -19,6 +19,7 @@ import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { CostBreakdownGrid, CostBreakdownItem } from "@/components/shared/CostBreakdownGrid";
+import { TreatmentPhotoUploader } from "./TreatmentPhotoUploader";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -471,7 +472,7 @@ export function WindowSummaryCard({
               <TreatmentTypeIndicator treatmentType={treatmentType} size="sm" />
             )}
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0 items-center">
             {canEditJobs && (
               <Button
                 variant="outline"
@@ -485,6 +486,35 @@ export function WindowSummaryCard({
                 <Edit className="h-4 w-4" />
               </Button>
             )}
+            {canEditJobs && (() => {
+              const treatmentPhotos: string[] = (summary as any)?.photos || [];
+              const primaryUrl = (summary as any)?.primary_photo_url;
+              const primaryIdx = primaryUrl ? treatmentPhotos.indexOf(primaryUrl) : null;
+              const treatmentId = (summary as any)?.treatment_id;
+              
+              return (
+                <TreatmentPhotoUploader
+                  surfaceId={surface.id}
+                  treatmentId={treatmentId}
+                  photos={treatmentPhotos}
+                  primaryPhotoIndex={primaryIdx !== -1 ? primaryIdx : null}
+                  onSavePhotos={async (newPhotos, newPrimaryIndex) => {
+                    const primaryPhotoUrl = newPrimaryIndex !== null ? newPhotos[newPrimaryIndex] : null;
+                    // Save to treatments table
+                    if (treatmentId) {
+                      await supabase.from('treatments')
+                        .update({ photos: newPhotos, primary_photo_index: newPrimaryIndex } as any)
+                        .eq('id', treatmentId);
+                    }
+                    // Sync to windows_summary
+                    await supabase.from('windows_summary')
+                      .update({ photos: newPhotos, primary_photo_url: primaryPhotoUrl } as any)
+                      .eq('window_id', surface.id);
+                    queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+                  }}
+                />
+              );
+            })()}
             {canDeleteJobs && (
               <Button
                 variant="outline"
@@ -534,8 +564,15 @@ export function WindowSummaryCard({
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card overflow-hidden">
               <div className="flex flex-col md:flex-row gap-2 p-2">
-                {/* LEFT: Compact Treatment Preview - Hidden on mobile due to rendering issues */}
+                {/* LEFT: Compact Treatment Preview - show main photo if set, else generic preview */}
                 <div className="hidden md:block w-24 h-24 flex-shrink-0">
+                  {(summary as any)?.primary_photo_url ? (
+                    <img
+                      src={(summary as any).primary_photo_url}
+                      alt="Treatment"
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  ) : (
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -563,6 +600,7 @@ export function WindowSummaryCard({
                     hideDetails={true}
                     className="w-full h-full"
                   />
+                  )}
                 </div>
 
                 {/* RIGHT: Compact Details */}
