@@ -744,27 +744,14 @@ export const useQuotationSync = ({
       // For custom items, use product fields; for inventory items, use inventory_item
       const displayName = isCustom ? (product.name || 'Custom Item') : (inventoryItem?.name || 'Product');
       
-      // Description: use service category from description field (set in RoomCard on add)
-      // Category is the primary description; pricing unit is shown separately in detailed views
+      // Description: ONLY use the service Category (stored in description field by RoomCard)
+      // Pricing Unit is shown separately in detailed/expanded views, never as the description
       let displayDescription = '';
       if (isCustom) {
-        // The description field stores the category label (e.g. "Installation", "Consultation")
         if (product.description && product.description !== 'Custom' && product.description !== 'custom') {
           displayDescription = product.description;
         }
-        // Fallback: for service items (have a unit), use the product name's implied category
-        // This handles legacy items added before the category-storage fix
-        if (!displayDescription && product.unit && product.unit !== 'each') {
-          const unitLabels: Record<string, string> = {
-            'per-window': 'Per Window',
-            'per-room': 'Per Room',
-            'per-metre': 'Per Metre',
-            'per-job': 'Per Job',
-            'per-hour': 'Per Hour',
-            'flat-rate': 'Flat Rate',
-          };
-          displayDescription = unitLabels[product.unit] || '';
-        }
+        // Do NOT fall back to pricing unit here — unit is displayed separately
       } else {
         displayDescription = inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '';
       }
