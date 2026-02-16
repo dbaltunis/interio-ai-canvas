@@ -21,6 +21,8 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState<number>(1);
+  const [editName, setEditName] = useState<string>("");
+  const [editUnitPrice, setEditUnitPrice] = useState<number>(0);
 
   if (isLoading) {
     return (
@@ -38,19 +40,28 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
   const handleStartEdit = (product: RoomProduct) => {
     setEditingId(product.id);
     setEditQuantity(product.quantity);
+    setEditName(product.is_custom ? (product.name || "") : "");
+    setEditUnitPrice(product.unit_price);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditQuantity(1);
+    setEditName("");
+    setEditUnitPrice(0);
   };
 
   const handleSaveEdit = (product: RoomProduct) => {
-    updateProduct.mutate({
+    const updates: any = {
       id: product.id,
       roomId: product.room_id,
       quantity: editQuantity,
-    });
+      unit_price: editUnitPrice,
+    };
+    if (product.is_custom && editName.trim()) {
+      updates.name = editName.trim();
+    }
+    updateProduct.mutate(updates);
     setEditingId(null);
   };
 
@@ -117,41 +128,71 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
 
               {/* Details */}
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">
-                  {displayName}
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {displayCategory && (
-                    <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
-                      {displayCategory.replace(/_/g, " ")}
-                    </Badge>
-                  )}
-                  {product.markup_percentage != null && product.markup_percentage > 0 && (
-                    <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
-                      <TrendingUp className="h-3 w-3 mr-0.5" />
-                      {product.markup_percentage}%
-                    </Badge>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {currencySymbol}{product.unit_price.toFixed(2)} × {product.quantity}
-                  </span>
-                </div>
-                {isCustom && product.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{product.description}</p>
+                {isEditing ? (
+                  <div className="space-y-1.5">
+                    {isCustom && (
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="h-7 text-sm font-medium"
+                        placeholder="Service name..."
+                        autoFocus
+                      />
+                    )}
+                    {!isCustom && (
+                      <div className="font-medium text-sm truncate">{displayName}</div>
+                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{currencySymbol}</span>
+                      <Input
+                        type="number"
+                        value={editUnitPrice}
+                        onChange={(e) => setEditUnitPrice(parseFloat(e.target.value) || 0)}
+                        className="w-20 h-7 text-sm"
+                        step="0.01"
+                        min={0}
+                      />
+                      <span className="text-xs text-muted-foreground">×</span>
+                      <Input
+                        type="number"
+                        value={editQuantity}
+                        onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                        className="w-14 h-7 text-sm text-center"
+                        min={1}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-medium text-sm truncate">
+                      {displayName}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {displayCategory && (
+                        <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
+                          {displayCategory.replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      {product.markup_percentage != null && product.markup_percentage > 0 && (
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
+                          <TrendingUp className="h-3 w-3 mr-0.5" />
+                          {product.markup_percentage}%
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {currencySymbol}{product.unit_price.toFixed(2)} × {product.quantity}
+                      </span>
+                    </div>
+                    {isCustom && product.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{product.description}</p>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Quantity Edit */}
+              {/* Actions */}
               {isEditing ? (
                 <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    value={editQuantity}
-                    onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
-                    className="w-16 h-8 text-center text-sm"
-                    min={1}
-                    autoFocus
-                  />
                   <Button
                     variant="ghost"
                     size="icon"

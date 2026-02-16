@@ -184,7 +184,7 @@ export const useUpdateRoomProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, roomId, ...updates }: { id: string; roomId: string; quantity?: number; notes?: string }) => {
+    mutationFn: async ({ id, roomId, ...updates }: { id: string; roomId: string; quantity?: number; notes?: string; name?: string; unit_price?: number; description?: string }) => {
       // Check project status before updating
       const projectId = await getProjectIdForRoom(roomId);
       if (projectId) {
@@ -196,16 +196,18 @@ export const useUpdateRoomProduct = () => {
 
       const updateData: any = { ...updates };
       
-      // If quantity changed, recalculate total
-      if (updates.quantity !== undefined) {
+      // If quantity or unit_price changed, recalculate total
+      if (updates.quantity !== undefined || updates.unit_price !== undefined) {
         const { data: existing } = await supabase
           .from("room_products")
-          .select("unit_price")
+          .select("unit_price, quantity")
           .eq("id", id)
           .single();
         
         if (existing) {
-          updateData.total_price = updates.quantity * existing.unit_price;
+          const finalQty = updates.quantity ?? existing.quantity;
+          const finalPrice = updates.unit_price ?? existing.unit_price;
+          updateData.total_price = finalQty * finalPrice;
         }
       }
 
