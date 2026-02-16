@@ -1,72 +1,41 @@
 
+# Add "Edit Quote" Button to QuotationTab
 
-# Make Metadata Table and Introduction Message Editable Per-Quote
+## Problem
+The metadata table and introduction message editing was implemented in `BlockRenderer.tsx` and `LivePreview.tsx`, but:
+- The QuotationTab (main quote view) renders `LivePreview` with `isPrintMode={true}`, which hides all pencil/edit buttons
+- There is no "Edit Quote" button in the QuotationTab toolbar to toggle editing on
+- The editing only works in the full-screen QuoteFullScreenView dialog, not in the inline quote preview
 
-## What This Does
+## Solution
 
-Enables two sections of the curtain-professional quote to be edited and saved permanently to the database for each individual quote:
+### 1. Add "Edit Quote" button to QuotationTab toolbar (`src/components/jobs/tabs/QuotationTab.tsx`)
 
-1. **Metadata table** (right side of header): Status, Services Required, Purchase Date, Referral Source values
-2. **Introduction Message**: The text block below the header
+Add a new `Pencil` button in the action buttons row (near Download PDF, Email, Discount, etc.) that toggles a new `isQuoteEditMode` state. This button should only appear when the selected template is a curtain-quote type (`selectedTemplate?.template_style === 'curtain-quote'` or theme is `curtain-professional`).
 
-Both sections will show a pencil/edit button on hover. When clicked, the fields become editable. On save, changes persist to the quote's `template_custom_data` JSONB field in the database.
+### 2. Pass `isPrintMode={false}` when editing (`src/components/jobs/tabs/QuotationTab.tsx`)
 
-## Technical Changes
-
-### 1. Pass `quoteId` and `onDataChange` to `BlockRenderer.tsx`
-
-Update the `BlockRendererProps` interface to accept `quoteId` and `onDataChange` props. Then update `DocumentHeaderBlock` to use them.
-
-In `LivePreview.tsx`, pass `quoteId` and `onDataChange` when rendering `DocumentHeaderBlock` (lines ~710 and ~724):
+Currently line 1178 sets `isPrintMode={!isExclusionEditMode}`. Change this to also account for the new edit mode:
 ```
-isEditable={false}  -->  keep false (template editing stays off)
-quoteId={quoteId}        // NEW
-onDataChange={onDataChange}  // NEW
+isPrintMode={!isExclusionEditMode && !isQuoteEditMode}
 ```
 
-### 2. Add per-quote editing to the metadata table in `BlockRenderer.tsx`
+This allows the pencil buttons on the metadata table and introduction message to become visible and clickable.
 
-Inside the `curtain-split` header section (around line 597), add inline editing for the custom field values:
+### 3. No changes needed to BlockRenderer or LivePreview
 
-- Add local state (`localEditMode`, `fieldValues`) to track editing
-- Load saved values from `onDataChange.customData['header-metadata']` on mount
-- Show a pencil button on hover (matching the Introduction Message pattern)
-- When editing: render `<input>` elements for Status and each custom field value
-- On save: call `onDataChange.saveBlockData({ blockId: 'header-metadata', data: fieldValues })`
-- Display saved values (from customData) instead of template defaults when available
-
-### 3. Fix Introduction Message visibility
-
-The existing pencil button on `EditableTextField` uses `opacity: 0` with a Tailwind `group-hover:!opacity-100` class. Verify this is working correctly -- the `group` class is on the parent div. If the hover isn't triggering, ensure the parent wrapper has the `group` class applied properly. The save logic already works via `useQuoteCustomData`.
-
-### 4. Ensure `QuoteFullScreenView.tsx` passes `quoteId`
-
-Verify that `QuoteFullScreenView.tsx` passes the `quoteId` prop to `LivePreview` so that the `useQuoteCustomData` hook initializes. This was done in the previous change but needs confirmation that the prop flows all the way down.
-
-## Data Flow
-
-```
-QuoteFullScreenView (quoteId)
-  -> LivePreview (quoteId, onDataChange = useQuoteCustomData)
-    -> LivePreviewBlock (quoteId, onDataChange)
-      -> DocumentHeaderBlock (quoteId, onDataChange)  [metadata table]
-      -> EditableTextField (quoteId, onDataChange)     [intro message]
-```
-
-Both save to `quotes.template_custom_data` JSONB under different block IDs:
-- Metadata: `template_custom_data['header-metadata']`
-- Intro message: `template_custom_data[blockId]` (already working)
+The `CurtainSplitHeader` and `EditableTextField` components already have the per-quote editing logic (pencil button on hover, save/cancel, database persistence via `useQuoteCustomData`). They just need `isPrintMode={false}` and a valid `quoteId` to activate -- both of which will now be provided when the edit button is toggled on.
 
 ## Files to Modify
 
-1. **`src/components/settings/templates/visual-editor/shared/BlockRenderer.tsx`**
-   - Add `quoteId` and `onDataChange` to `BlockRendererProps`
-   - Add local edit state and save logic to the `curtain-split` metadata table
-   - Show pencil button, editable inputs, and save/cancel buttons
+**`src/components/jobs/tabs/QuotationTab.tsx`**:
+- Add `isQuoteEditMode` state (line ~65 area, near other state declarations)
+- Add "Edit Quote" button in the action buttons section (around line 880, after the Markup button)
+- Update `isPrintMode` prop on `LivePreview` (line 1178) to be `false` when `isQuoteEditMode` is active
 
-2. **`src/components/settings/templates/visual-editor/LivePreview.tsx`**
-   - Pass `quoteId` and `onDataChange` to `DocumentHeaderBlock` calls (2 locations)
-
-3. **`src/components/jobs/quotation/QuoteFullScreenView.tsx`** (verify only)
-   - Confirm `quoteId` prop is being passed to `LivePreview`
-
+## Expected Behavior
+1. User sees an "Edit" (pencil icon) button in the QuotationTab toolbar
+2. Clicking it enables edit mode -- pencil buttons appear on hover over the metadata table and introduction message
+3. User clicks individual pencil buttons to edit specific sections
+4. Saving persists to `quotes.template_custom_data` in the database
+5. Clicking the edit button again (now showing "Done") exits edit mode
