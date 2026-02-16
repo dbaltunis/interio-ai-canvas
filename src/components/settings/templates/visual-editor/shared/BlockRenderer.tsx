@@ -34,6 +34,7 @@ interface BlockRendererProps {
   userDateFormat?: string;
   isPrintMode?: boolean;
   isEditable?: boolean;
+  editMode?: 'template' | 'document';
   documentType?: string;
   renderEditableText?: (props: {
     value: string;
@@ -250,6 +251,7 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   userDateFormat = 'M/d/yyyy',
   isPrintMode = false,
   isEditable = false,
+  editMode,
   documentType = 'quote',
   renderEditableText,
   onContentChange
@@ -653,7 +655,7 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 <tr>
                   <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: '1px solid #d4c5b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</td>
                   <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>
-                    {isEditable ? renderText(
+                    {isEditable && editMode === 'document' ? renderText(
                       content.statusValue || 'Draft',
                       (v) => updateContent({ statusValue: v }),
                       '',
@@ -665,10 +667,19 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 {(content.customFields || []).map((field: any, idx: number) => (
                   <tr key={`custom-${idx}`}>
                     <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '600', color: '#8b7355', borderBottom: idx < (content.customFields?.length || 0) - 1 ? '1px solid #d4c5b0' : 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {field.label || `Field ${idx + 1}`}
+                      {isEditable && editMode === 'template' ? renderText(
+                        field.label || `Field ${idx + 1}`,
+                        (v) => {
+                          const updatedFields = [...(content.customFields || [])];
+                          updatedFields[idx] = { ...updatedFields[idx], label: v };
+                          updateContent({ customFields: updatedFields });
+                        },
+                        '',
+                        `Field label`
+                      ) : (field.label || `Field ${idx + 1}`)}
                     </td>
                     <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', borderBottom: idx < (content.customFields?.length || 0) - 1 ? '1px solid #d4c5b0' : 'none', textAlign: 'right' }}>
-                      {isEditable ? renderText(
+                      {isEditable && editMode === 'document' ? renderText(
                         field.value || '',
                         (v) => {
                           const updatedFields = [...(content.customFields || [])];
@@ -677,7 +688,7 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                         },
                         '',
                         `Enter ${field.label || 'value'}`
-                      ) : (field.value || '-')}
+                      ) : (field.value || (editMode === 'template' ? 'Value placeholder' : '-'))}
                     </td>
                   </tr>
                 ))}
