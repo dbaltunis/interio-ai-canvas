@@ -1159,13 +1159,14 @@ export const QuotationTab = ({
         </div>
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
-          <div className="w-full bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-2 py-2 rounded-lg border border-border/40">
-            <div className="w-full shadow-2xl dark:shadow-xl">
-              <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground w-full" style={{
+          <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
+            <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
+              <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
+                width: '210mm',
                 minHeight: '297mm',
                 fontFamily: 'Arial, Helvetica, sans-serif',
                 fontSize: '10pt',
-                padding: '8mm',
+                padding: '0',
                 boxSizing: 'border-box',
                 overflow: 'hidden'
               }}>
