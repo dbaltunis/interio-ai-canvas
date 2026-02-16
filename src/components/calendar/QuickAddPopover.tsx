@@ -258,7 +258,7 @@ export const QuickAddPopover = ({
       </div>
 
       {/* Scrollable content */}
-      <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: `calc(${position.maxH}px - 96px)` }}>
+      <div className="flex-1 min-h-0 overflow-auto" style={{ maxHeight: `calc(${position.maxH}px - 96px)` }}>
         <div className="px-3 pb-3 space-y-3">
           {/* Title input */}
           <Input
@@ -459,7 +459,7 @@ export const QuickAddPopover = ({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Actions - sticky at bottom */}
       <div className="px-3 py-2 border-t bg-popover flex items-center gap-2 flex-shrink-0">
