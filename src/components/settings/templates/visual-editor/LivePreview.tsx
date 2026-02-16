@@ -47,7 +47,7 @@ import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 import { t, getLocalizedTableHeaders, getLocalizedSectionTitles, getLocalizedTotalColumnHeader, getLocalizedTotalsLabels, type DocumentLanguage } from '@/utils/documentTranslations';
 import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock, TaxBreakdownBlock } from './shared/BlockRenderer';
 // Chunk rebuild: 2026-01-11T14:25
-import { groupHardwareItems, filterMeaningfulHardwareItems, isHardwareItem } from '@/utils/quotes/groupHardwareItems';
+import { groupHardwareItems, filterMeaningfulHardwareItems } from '@/utils/quotes/groupHardwareItems';
 
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
@@ -248,9 +248,8 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, b
 };
 
 // Interactive Editable Text Field Component
-const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange, editMode }: any) => {
+const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange }: any) => {
   const [fieldValue, setFieldValue] = useState(content.value || '');
-  const [labelValue, setLabelValue] = useState(content.label || '');
   const [saving, setSaving] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -269,10 +268,15 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
     setFieldValue(newValue);
     
     if (quoteId && blockId && onDataChange) {
+      // Clear previous timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      
+      // Set saving indicator
       setSaving(true);
+      
+      // Debounce save for 1 second
       saveTimeoutRef.current = setTimeout(() => {
         onDataChange.saveBlockData({ blockId, data: { text: newValue } });
         setSaving(false);
@@ -288,9 +292,6 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
       }
     };
   }, []);
-
-  const isTemplateMode = editMode === 'template';
-  const isDocumentMode = editMode === 'document';
   
   return (
     <div className="mb-6" style={{ 
@@ -309,22 +310,11 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
           alignItems: 'center',
           gap: '8px'
         }}>
-          {!isPrintMode && isEditable && isTemplateMode ? (
-            <input
-              type="text"
-              value={labelValue}
-              onChange={(e) => setLabelValue(e.target.value)}
-              className="border-b border-dashed border-gray-400 bg-transparent outline-none font-medium"
-              style={{ fontSize: '14px', color: '#6b7280' }}
-              placeholder="Field label"
-            />
-          ) : (
-            content.label
-          )}
+          {content.label}
           {saving && <span style={{ fontSize: '12px', color: '#3b82f6' }}>Auto-saving...</span>}
         </div>
       )}
-      {!isPrintMode && isEditable && isDocumentMode ? (
+      {!isPrintMode && isEditable ? (
         <Textarea
           value={fieldValue}
           onChange={(e) => handleTextChange(e.target.value)}
@@ -342,7 +332,7 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
           fontWeight: content.isBold ? '700' : '400',
           color: fieldValue ? '#000' : '#9ca3af'
         }}>
-          {isTemplateMode ? (fieldValue || 'Placeholder text — value will be entered in the job view') : (fieldValue || 'No text entered yet')}
+          {fieldValue || 'No text entered yet'}
         </div>
       )}
     </div>
@@ -353,7 +343,6 @@ interface LivePreviewBlockProps {
   block: any;
   projectData?: any;
   isEditable?: boolean;
-  editMode?: 'template' | 'document';
   isPrintMode?: boolean;
   documentType?: string;
   userBusinessSettings?: any;
@@ -378,7 +367,6 @@ const LivePreviewBlock = ({
   block,
   projectData,
   isEditable,
-  editMode,
   isPrintMode = false,
   documentType = 'quote',
   userBusinessSettings,
@@ -668,8 +656,7 @@ const LivePreviewBlock = ({
           userTimezone={userTimezone}
           userDateFormat={userDateFormat}
           isPrintMode={isPrintMode}
-          isEditable={isEditable}
-          editMode={editMode}
+          isEditable={false}
           documentType={documentType}
         />
       );
@@ -683,8 +670,7 @@ const LivePreviewBlock = ({
           userTimezone={userTimezone}
           userDateFormat={userDateFormat}
           isPrintMode={isPrintMode}
-          isEditable={isEditable}
-          editMode={editMode}
+          isEditable={false}
           documentType={documentType}
         />
       );
@@ -1116,30 +1102,8 @@ const LivePreviewBlock = ({
       const isHardwareOnlyItem = (item: any) => {
         return item.category === 'hardware' && !item.treatment_type;
       };
-
-      // Extract hardware children from treatment breakdowns
-      const extractedHardware: any[] = [];
       const regularItems = projectItems.filter((i: any) => !isServiceItem(i) && !isHardwareOnlyItem(i));
-      
-      // For each regular item, check if its children contain hardware items
-      regularItems.forEach((item: any) => {
-        if (item.children && Array.isArray(item.children)) {
-          item.children.forEach((child: any) => {
-            if (isHardwareItem(child)) {
-              extractedHardware.push({
-                ...child,
-                room_name: item.room_name || item.location || item.surface_name || 'Unassigned',
-                _parentTreatment: item.treatment_type || item.name
-              });
-            }
-          });
-        }
-      });
-
-      const serviceHardwareItems = [
-        ...projectItems.filter((i: any) => isServiceItem(i) || isHardwareOnlyItem(i)),
-        ...extractedHardware
-      ];
+      const serviceHardwareItems = projectItems.filter((i: any) => isServiceItem(i) || isHardwareOnlyItem(i));
 
       // Group regular items by room if enabled
       const groupedItems = groupByRoom && hasRealData ? 
@@ -1850,7 +1814,7 @@ const LivePreviewBlock = ({
       );
 
     case 'editable-text-field':
-      return <EditableTextField content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} quoteId={quoteId} blockId={block.id} onDataChange={onDataChange} editMode={editMode} />;
+      return <EditableTextField content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} quoteId={quoteId} blockId={block.id} onDataChange={onDataChange} />;
 
     case 'image':
       return (
@@ -2251,7 +2215,6 @@ interface LivePreviewProps {
   blocks: any[];
   projectData?: any;
   isEditable?: boolean;
-  editMode?: 'template' | 'document';
   isPrintMode?: boolean;
   documentType?: string;
   onBlocksChange?: (blocks: any[]) => void;
@@ -2276,7 +2239,6 @@ export const LivePreview = ({
   blocks,
   projectData,
   isEditable = false,
-  editMode,
   isPrintMode = false,
   documentType = 'quote',
   onBlocksChange,
@@ -2349,7 +2311,6 @@ export const LivePreview = ({
             block={block}
             projectData={projectData}
             isEditable={false}
-            editMode={editMode}
             isPrintMode={true}
             documentType={documentType}
             userBusinessSettings={businessSettings}
@@ -2428,7 +2389,6 @@ export const LivePreview = ({
                 block={block} 
                 projectData={projectData}
                 isEditable={isEditable}
-                editMode={editMode}
                 isPrintMode={false}
                 documentType={documentType}
                 userBusinessSettings={businessSettings}
