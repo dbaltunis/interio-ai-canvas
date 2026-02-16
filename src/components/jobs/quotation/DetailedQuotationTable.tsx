@@ -350,9 +350,14 @@ const QuotationItemRow: React.FC<{
             {item.description && item.description !== '-' && (
               <div className="text-xs text-muted-foreground">{item.description}</div>
             )}
+            {item.unit && item.unit !== 'each' && (
+              <div className="text-xs text-muted-foreground font-medium">
+                {item.unit.replace('per-', 'Per ').replace(/^\w/, (c: string) => c.toUpperCase())}
+              </div>
+            )}
             {item.quantity && item.unit_price && (
               <div className="text-xs text-muted-foreground">
-                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)} {item.unit && item.unit !== 'each' ? item.unit.replace('per-', 'per ') : 'each'}
+                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)}
               </div>
             )}
           </div>
@@ -360,10 +365,10 @@ const QuotationItemRow: React.FC<{
         <div className="text-right flex flex-col items-end gap-1">
           <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
-            <div className="text-xs text-muted-foreground">
-              {formatCurrency(item.unit_price, currency)} {item.unit && item.unit !== 'each' ? item.unit.replace('per-', 'per ') : 'per unit'}
-            </div>
-          )}
+             <div className="text-xs text-muted-foreground">
+               {formatCurrency(item.unit_price, currency)} {item.unit && item.unit !== 'each' ? item.unit.replace('per-', 'per ') : 'per unit'}
+             </div>
+           )}
           {canViewMarkup && item.cost_price && item.total && (
             <LineItemProfitColumn
               costPrice={item.cost_price}
