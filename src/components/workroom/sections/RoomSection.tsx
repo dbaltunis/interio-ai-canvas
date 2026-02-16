@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
 import { compressImage, needsCompression, formatFileSize } from "@/utils/imageUtils";
 import { toast } from "sonner";
+import { PhotoLightbox } from "@/components/workroom/components/PhotoLightbox";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -189,7 +190,10 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
 };
 
 export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
+  const [lightboxState, setLightboxState] = useState<{ photos: string[]; index: number } | null>(null);
+
   return (
+    <>
     <Card className="workshop-room-section break-inside-avoid">
       <CardHeader>
         <CardTitle>{section.roomName}</CardTitle>
@@ -197,11 +201,11 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
       <CardContent>
         <div className="space-y-4">
           {section.items.map((item) => {
-            // Extract fabric/material image from inventory
             const fabricImageUrl = item.summary?.fabric?.image_url || 
                                    item.summary?.material?.image_url || 
                                    item.summary?.fabric_details?.image_url ||
                                    item.summary?.material_details?.image_url;
+            const treatmentPhotos: string[] = item.treatmentPhotos || [];
             
             return (
               <div key={item.id} className="workshop-item-card rounded-md border p-3 bg-background">
@@ -209,7 +213,25 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                   {/* Left: Visual */}
                   <div className="space-y-2">
                     <div className="text-sm font-medium">{item.name}</div>
-                    <WorkItemPhotoGallery itemId={item.id} />
+                    
+                    {/* Treatment Photos from Supabase */}
+                    {treatmentPhotos.length > 0 ? (
+                      <div className="flex gap-1.5">
+                        {treatmentPhotos.map((url, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightboxState({ photos: treatmentPhotos, index: i })}
+                            className="relative w-20 h-20 rounded-md overflow-hidden border border-border hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer"
+                          >
+                            <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <WorkItemPhotoGallery itemId={item.id} />
+                    )}
+                    
                     <div className="rounded-lg border overflow-hidden bg-card h-48 flex items-center justify-center">
                       {fabricImageUrl ? (
                         <img 
@@ -252,5 +274,12 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
         </div>
       </CardContent>
     </Card>
+    <PhotoLightbox
+      photos={lightboxState?.photos || []}
+      initialIndex={lightboxState?.index || 0}
+      open={!!lightboxState}
+      onOpenChange={(open) => !open && setLightboxState(null)}
+    />
+    </>
   );
 };

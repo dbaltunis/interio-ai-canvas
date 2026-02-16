@@ -93,6 +93,8 @@ export interface WorkshopRoomItem {
     thumbnailUrl?: string;
     showImage: boolean;
   };
+  
+  treatmentPhotos?: string[];
 }
 
 export interface WorkshopRoomSection {
@@ -385,6 +387,7 @@ export const useWorkshopData = (projectId?: string) => {
         options,
         liningDetails,
         visualDetails,
+        treatmentPhotos: Array.isArray(summary?.photos) ? summary.photos : [],
       };
 
       const section = ensureSectionByRoomId(s.room_id);
