@@ -347,10 +347,12 @@ const QuotationItemRow: React.FC<{
                 </Badge>
               )}
             </div>
-            <div className="text-xs text-muted-foreground">{item.description}</div>
+            {item.description && item.description !== '-' && (
+              <div className="text-xs text-muted-foreground">{item.description}</div>
+            )}
             {item.quantity && item.unit_price && (
               <div className="text-xs text-muted-foreground">
-                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)} each
+                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)} {item.unit && item.unit !== 'each' ? item.unit.replace('per-', 'per ') : 'each'}
               </div>
             )}
           </div>
@@ -359,7 +361,7 @@ const QuotationItemRow: React.FC<{
           <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
             <div className="text-xs text-muted-foreground">
-              {formatCurrency(item.unit_price, currency)} per unit
+              {formatCurrency(item.unit_price, currency)} {item.unit && item.unit !== 'each' ? item.unit.replace('per-', 'per ') : 'per unit'}
             </div>
           )}
           {canViewMarkup && item.cost_price && item.total && (

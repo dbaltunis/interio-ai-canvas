@@ -743,10 +743,34 @@ export const useQuotationSync = ({
       
       // For custom items, use product fields; for inventory items, use inventory_item
       const displayName = isCustom ? (product.name || 'Custom Item') : (inventoryItem?.name || 'Product');
-      const displayDescription = isCustom 
-        ? (product.description || 'Custom') 
-        : (inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '');
+      
+      // Description: use service category label from description field, fallback to unit label
+      // The description field stores the service category when added from service options
+      let displayDescription = '';
+      if (isCustom) {
+        if (product.description && product.description !== 'Custom') {
+          displayDescription = product.description;
+        }
+        // If no description but has a pricing unit, show the unit label
+        const productUnit = product.unit || 'each';
+        if (!displayDescription && productUnit !== 'each') {
+          const unitLabels: Record<string, string> = {
+            'per-window': 'Per Window',
+            'per-room': 'Per Room',
+            'per-metre': 'Per Metre',
+            'per-job': 'Per Job',
+            'per-hour': 'Per Hour',
+            'flat-rate': 'Flat Rate',
+          };
+          displayDescription = unitLabels[productUnit] || productUnit;
+        }
+      } else {
+        displayDescription = inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '';
+      }
       const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
+      
+      // Get the pricing unit label for display
+      const productUnit = product.unit || 'each';
       
       // Track cost and selling totals for room products
       // Room products: total_price is selling price (with markup), cost_price is cost (if tracked)
@@ -767,6 +791,7 @@ export const useQuotationSync = ({
         unit_price: product.unit_price,
         total: productSelling,
         cost_total: productCostTotal,
+        unit: productUnit,
         currency: (() => {
           if (!businessSettings?.measurement_units) return 'USD';
           const units = typeof businessSettings.measurement_units === 'string' 

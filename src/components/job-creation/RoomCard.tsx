@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { SurfaceList } from "./SurfaceList";
 import { RoomProductsList } from "./RoomProductsList";
 import { ProductServiceDialog, SelectedProduct, CalendarEventRequest } from "./ProductServiceDialog";
+import { SERVICE_CATEGORIES } from "@/hooks/useServiceOptions";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -141,21 +142,30 @@ export const RoomCard = ({
   };
 
   const handleAddProducts = (products: SelectedProduct[]) => {
-    const roomProducts = products.map(p => ({
-      room_id: room.id,
-      inventory_item_id: p.isCustom ? null : p.inventoryItemId,
-      quantity: p.quantity,
-      unit_price: p.unitPrice,
-      total_price: p.totalPrice,
-      cost_price: p.costPrice ?? null,
-      markup_percentage: p.markupPercentage ?? null,
-      markup_source: p.markupSource ?? null,
-      name: p.name || null,
-      description: p.notes || null,
-      image_url: p.imageUrl || null,
-      is_custom: p.isCustom || false,
-      unit: p.unit || 'each',
-    }));
+    const roomProducts = products.map(p => {
+      // For service options, use the category label as description for quote display
+      let description = p.notes || null;
+      if (p.isServiceOption && p.subcategory) {
+        const categoryLabel = SERVICE_CATEGORIES.find(c => c.value === p.subcategory)?.label || p.subcategory;
+        description = categoryLabel;
+      }
+      
+      return {
+        room_id: room.id,
+        inventory_item_id: p.isCustom ? null : p.inventoryItemId,
+        quantity: p.quantity,
+        unit_price: p.unitPrice,
+        total_price: p.totalPrice,
+        cost_price: p.costPrice ?? null,
+        markup_percentage: p.markupPercentage ?? null,
+        markup_source: p.markupSource ?? null,
+        name: p.name || null,
+        description,
+        image_url: p.imageUrl || null,
+        is_custom: p.isCustom || false,
+        unit: p.unit || 'each',
+      };
+    });
     createRoomProducts.mutate(roomProducts);
   };
 
