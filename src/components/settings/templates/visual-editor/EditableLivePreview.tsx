@@ -1861,6 +1861,12 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
 
     case 'document-settings': {
       const bgColor = content.backgroundColor || '#ffffff';
+      const currentScheme = content.colorScheme || 'warm-brown';
+      const schemes = [
+        { id: 'warm-brown', name: 'Warm Brown', colors: ['#8b7355', '#faf6f1', '#d4c5b0'] },
+        { id: 'modern-navy', name: 'Modern Navy', colors: ['#2c4a6e', '#f7f9fc', '#b8cce0'] },
+        { id: 'classic-charcoal', name: 'Classic Charcoal', colors: ['#4a4a4a', '#f8f8f8', '#d0d0d0'] },
+      ];
       const presetColors = [
         { name: 'White', value: '#ffffff' },
         { name: 'Warm Sand', value: '#faf6f1' },
@@ -1868,14 +1874,39 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         { name: 'Ivory', value: '#fffff0' },
         { name: 'Pearl', value: '#f5f5f0' },
         { name: 'Soft Grey', value: '#f5f5f5' },
-        { name: 'Light Sage', value: '#f2f5f0' },
         { name: 'Pale Blue', value: '#f0f4f8' },
         { name: 'Blush', value: '#fdf2f2' },
         { name: 'Lavender', value: '#f5f0fa' },
       ];
       return (
-        <div className="mb-4 p-3 border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="mb-4 p-3 border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20 space-y-3">
+          {/* Color Scheme */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Scheme:</span>
+            <div className="flex gap-2 flex-wrap">
+              {schemes.map((scheme) => (
+                <button
+                  key={scheme.id}
+                  title={scheme.name}
+                  onClick={() => updateBlockContent({ colorScheme: scheme.id })}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md border-2 transition-all hover:scale-105 text-xs"
+                  style={{
+                    borderColor: currentScheme === scheme.id ? 'hsl(var(--primary))' : '#d1d5db',
+                    backgroundColor: currentScheme === scheme.id ? 'hsl(var(--primary) / 0.05)' : 'transparent',
+                  }}
+                >
+                  <div className="flex gap-0.5">
+                    {scheme.colors.map((c, i) => (
+                      <div key={i} className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <span className="text-muted-foreground">{scheme.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Background Color */}
+          <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Background:</span>
             <div className="flex gap-1.5 flex-wrap">
               {presetColors.map((color) => (
