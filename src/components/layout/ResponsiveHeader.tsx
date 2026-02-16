@@ -345,7 +345,26 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                             onClick={() => {
                               markAsRead(notif.id);
                               if (notif.action_url) {
-                                onTabChange(notif.action_url.replace('/?tab=', ''));
+                                try {
+                                  const url = new URL(notif.action_url, window.location.origin);
+                                  const params = Object.fromEntries(url.searchParams.entries());
+                                  const tab = params.tab;
+                                  delete params.tab;
+                                  if (tab) {
+                                    onTabChange(tab);
+                                    // Preserve deep-link params (jobId, eventId, clientId, etc.)
+                                    setTimeout(() => {
+                                      const currentParams = new URLSearchParams(window.location.search);
+                                      currentParams.set('tab', tab);
+                                      Object.entries(params).forEach(([k, v]) => currentParams.set(k, v));
+                                      window.history.replaceState(null, '', `?${currentParams.toString()}`);
+                                      window.dispatchEvent(new PopStateEvent('popstate'));
+                                    }, 50);
+                                  }
+                                } catch {
+                                  // Fallback for malformed URLs
+                                  onTabChange(notif.action_url.replace('/?tab=', ''));
+                                }
                                 setNotifPopoverOpen(false);
                               }
                             }}

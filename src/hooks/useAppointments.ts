@@ -65,62 +65,155 @@ export const useAppointments = () => {
   });
 };
 
-/** Notify team members when they are added to an appointment (in-app + email) */
-async function notifyTeamMembers(
+/** Notify all relevant parties when an appointment is created/updated (in-app + email) */
+async function notifyRelevantParties(
   appointmentData: any,
   appointmentId: string,
   creatorId: string
 ) {
-  const teamMemberIds: string[] = appointmentData.team_member_ids || [];
-  if (teamMemberIds.length === 0) return;
-
-  // Don't notify the creator
-  const membersToNotify = teamMemberIds.filter(id => id !== creatorId);
-  if (membersToNotify.length === 0) return;
-
   const title = appointmentData.title || 'Untitled Event';
   const startTime = appointmentData.start_time
     ? new Date(appointmentData.start_time).toLocaleString()
     : '';
+  const actionUrl = `/?tab=calendar&eventId=${appointmentId}`;
 
-  // 1. Create in-app notifications
-  const notifications = membersToNotify.map(memberId => ({
-    user_id: memberId,
-    title: 'New Calendar Event',
-    message: `You've been invited to "${title}"${startTime ? ` on ${startTime}` : ''}`,
-    type: 'calendar_invite',
-    category: 'calendar',
-    source_type: 'appointment',
-    source_id: appointmentId,
-    action_url: `/calendar`,
-    read: false,
-  }));
-
+  // Dedup guard: check if notifications for this source_id already exist
   try {
-    await supabase.from('notifications').insert(notifications as any);
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('source_id', appointmentId)
+      .eq('source_type', 'appointment')
+      .limit(1);
+    if (existing && existing.length > 0) {
+      console.log('[notifyRelevantParties] Notifications already exist for this appointment, skipping');
+      return;
+    }
   } catch (err) {
-    console.error('Failed to create in-app notifications:', err);
+    console.warn('Dedup check failed, proceeding:', err);
   }
 
-  // 2. Send email invitations via edge function (non-blocking)
+  const recipientSet = new Set<string>(); // Track who we're notifying to avoid duplicates
+  const notifications: any[] = [];
+
+  // 1. Invited team members
+  const teamMemberIds: string[] = appointmentData.team_member_ids || [];
+  const membersToNotify = teamMemberIds.filter(id => id !== creatorId);
+  for (const memberId of membersToNotify) {
+    if (!recipientSet.has(memberId)) {
+      recipientSet.add(memberId);
+      notifications.push({
+        user_id: memberId,
+        title: 'New Calendar Event',
+        message: `You've been invited to "${title}"${startTime ? ` on ${startTime}` : ''}`,
+        type: 'calendar_invite',
+        category: 'calendar',
+        source_type: 'appointment',
+        source_id: appointmentId,
+        action_url: actionUrl,
+        read: false,
+      });
+    }
+  }
+
+  // 2. Job/project owner — if event is linked to a project, notify the project owner
+  if (appointmentData.project_id) {
+    try {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('user_id')
+        .eq('id', appointmentData.project_id)
+        .single();
+      if (project?.user_id && project.user_id !== creatorId && !recipientSet.has(project.user_id)) {
+        recipientSet.add(project.user_id);
+        notifications.push({
+          user_id: project.user_id,
+          title: 'Event Scheduled on Your Job',
+          message: `"${title}" was scheduled on your project${startTime ? ` for ${startTime}` : ''}`,
+          type: 'info',
+          category: 'calendar',
+          source_type: 'appointment',
+          source_id: appointmentId,
+          action_url: actionUrl,
+          read: false,
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to notify project owner:', err);
+    }
+  }
+
+  // 3. Account owner — if creator is a team member, notify the account owner
   try {
-    supabase.functions.invoke('send-calendar-invite-emails', {
-      body: {
-        appointmentId,
-        teamMemberIds,
-        creatorId,
-        title,
-        startTime: appointmentData.start_time,
-        endTime: appointmentData.end_time,
-        location: appointmentData.location,
-        description: appointmentData.description,
-        videoMeetingLink: appointmentData.video_meeting_link,
-      },
-    }).then(({ error }) => {
-      if (error) console.error('Calendar invite email error:', error);
-    });
+    const { data: creatorProfile } = await supabase
+      .from('user_profiles')
+      .select('parent_account_id')
+      .eq('user_id', creatorId)
+      .single();
+    const accountOwnerId = creatorProfile?.parent_account_id;
+    if (accountOwnerId && accountOwnerId !== creatorId && !recipientSet.has(accountOwnerId)) {
+      recipientSet.add(accountOwnerId);
+      notifications.push({
+        user_id: accountOwnerId,
+        title: 'Team Event Created',
+        message: `A team member scheduled "${title}"${startTime ? ` for ${startTime}` : ''}`,
+        type: 'info',
+        category: 'calendar',
+        source_type: 'appointment',
+        source_id: appointmentId,
+        action_url: actionUrl,
+        read: false,
+      });
+    }
   } catch (err) {
-    console.error('Failed to send calendar invite emails:', err);
+    console.warn('Failed to notify account owner:', err);
+  }
+
+  // 4. Creator confirmation — self-notification for records
+  if (!recipientSet.has(creatorId)) {
+    notifications.push({
+      user_id: creatorId,
+      title: 'Appointment Scheduled',
+      message: `Your event "${title}" has been confirmed${startTime ? ` for ${startTime}` : ''}`,
+      type: 'success',
+      category: 'calendar',
+      source_type: 'appointment',
+      source_id: appointmentId,
+      action_url: actionUrl,
+      read: false,
+    });
+  }
+
+  // Insert all notifications
+  if (notifications.length > 0) {
+    try {
+      await supabase.from('notifications').insert(notifications);
+    } catch (err) {
+      console.error('Failed to create in-app notifications:', err);
+    }
+  }
+
+  // 5. Send email invitations via edge function (non-blocking)
+  if (teamMemberIds.length > 0) {
+    try {
+      supabase.functions.invoke('send-calendar-invite-emails', {
+        body: {
+          appointmentId,
+          teamMemberIds,
+          creatorId,
+          title,
+          startTime: appointmentData.start_time,
+          endTime: appointmentData.end_time,
+          location: appointmentData.location,
+          description: appointmentData.description,
+          videoMeetingLink: appointmentData.video_meeting_link,
+        },
+      }).then(({ error }) => {
+        if (error) console.error('Calendar invite email error:', error);
+      });
+    } catch (err) {
+      console.error('Failed to send calendar invite emails:', err);
+    }
   }
 }
 
@@ -198,7 +291,7 @@ export const useCreateAppointment = () => {
       });
 
       // Notify team members added to this event
-      notifyTeamMembers(variables, data.id, data.user_id);
+      notifyRelevantParties(variables, data.id, data.user_id);
 
       // Auto-sync to all connected calendars (Google + Outlook + Nylas)
       try {
@@ -248,7 +341,7 @@ export const useUpdateAppointment = () => {
 
       // Notify newly added team members
       if (variables.team_member_ids) {
-        notifyTeamMembers(
+        notifyRelevantParties(
           { ...data, ...variables },
           data.id,
           data.user_id

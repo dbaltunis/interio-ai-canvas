@@ -227,7 +227,7 @@ export const useCreateClient = () => {
             category: "client",
             source_type: "client",
             source_id: data.id,
-            action_url: `/clients?clientId=${data.id}`,
+            action_url: `/?tab=clients&clientId=${data.id}`,
           });
         }
       } catch (err) {
