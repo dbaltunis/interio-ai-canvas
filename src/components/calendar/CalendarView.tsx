@@ -20,7 +20,7 @@ import { DailyCalendarView } from "./DailyCalendarView";
 import { MonthlyCalendarView } from "./MonthlyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-// QuickAddPopover removed - using UnifiedAppointmentDialog directly for all event creation
+import { QuickAddPopover } from "./QuickAddPopover";
 import { AnimatePresence, motion } from "framer-motion";
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
@@ -260,19 +260,18 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       endT = e;
     }
 
-    // Open UnifiedAppointmentDialog directly (replacing old QuickAddPopover)
-    setSelectedDate(date);
-    setSelectedStartTime(startT);
-    if (endT) {
-      setSelectedEndTime(endT);
+    // Open inline QuickAddPopover instead of dialog
+    setQuickAddDate(date);
+    setQuickAddStartTime(startT);
+    setQuickAddEndTime(endT);
+
+    // Calculate anchor position from click event
+    if (event) {
+      setQuickAddAnchorPosition({ x: event.clientX, y: event.clientY });
     } else {
-      // Default to 30 min duration for single slot click
-      const hour = parseInt(startT.split(':')[0]);
-      const mins = parseInt(startT.split(':')[1]);
-      const totalMins = hour * 60 + mins + 30;
-      setSelectedEndTime(`${Math.floor(totalMins / 60).toString().padStart(2, '0')}:${(totalMins % 60).toString().padStart(2, '0')}`);
+      setQuickAddAnchorPosition({ x: 300, y: 200 });
     }
-    setShowCreateEventDialog(true);
+    setQuickAddOpen(true);
   };
 
   const proceedWithEventCreation = (date: Date, time: string) => {
@@ -525,6 +524,16 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Inline QuickAddPopover for time slot clicks */}
+      <QuickAddPopover
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        date={quickAddDate}
+        startTime={quickAddStartTime}
+        endTime={quickAddEndTime}
+        anchorPosition={quickAddAnchorPosition}
+      />
 
       {/* Dialogs */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
