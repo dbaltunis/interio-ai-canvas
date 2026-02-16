@@ -15,10 +15,10 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
     const documentSettings = blocks?.find((b: any) => b.type === 'document-settings')?.content || {};
     const orientation = documentSettings.orientation || 'portrait';
     const backgroundColor = documentSettings.backgroundColor || '#ffffff';
-    const marginTop = documentSettings.marginTop || 8;
-    const marginRight = documentSettings.marginRight || 8;
-    const marginBottom = documentSettings.marginBottom || 6;
-    const marginLeft = documentSettings.marginLeft || 8;
+    const marginTop = documentSettings.marginTop || 2;
+    const marginRight = documentSettings.marginRight || 4;
+    const marginBottom = documentSettings.marginBottom || 2;
+    const marginLeft = documentSettings.marginLeft || 4;
     
     return (
       <div 
