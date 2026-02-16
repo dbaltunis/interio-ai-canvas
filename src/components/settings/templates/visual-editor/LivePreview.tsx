@@ -1291,14 +1291,7 @@ const LivePreviewBlock = ({
                               </div>
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '13px', color: isItemExcluded ? '#9ca3af' : '#000', fontWeight: '400', verticalAlign: 'middle', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
-                              <div>
-                                {item.description && item.description !== '-' && item.description !== 'Custom' && item.description !== 'custom' ? item.description : (item.notes || '-')}
-                              </div>
-                              {item.unit && item.unit !== 'each' && (
-                                <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
-                                  {item.unit.replace('per-', 'Per ').replace(/^\w/, (c: string) => c.toUpperCase())}
-                                </div>
-                              )}
+                              {item.description && item.description !== '-' && item.description !== 'Custom' && item.description !== 'custom' ? item.description : (item.notes || '-')}
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.quantity || 1}
