@@ -125,8 +125,9 @@ export const QuotationTab = ({
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
   // TEMPORARILY DISABLED: Exclusion edit mode caused quote breaking issues
   const isExclusionEditMode = false; // useState(false) - revert when reimplemented
+  const [isQuoteEditMode, setIsQuoteEditMode] = useState(false);
 
-  
+
   // Quote item exclusions hook
   const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
   const {
@@ -878,6 +879,30 @@ export const QuotationTab = ({
               <span className="hidden lg:inline ml-2">Markup</span>
             </Button>
 
+            {/* Edit Quote Button - for curtain-quote templates */}
+            {selectedTemplate?.template_style === 'curtain-quote' && (
+              <Button
+                variant={isQuoteEditMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsQuoteEditMode(!isQuoteEditMode)}
+                disabled={isReadOnly}
+                className="h-9 px-2 lg:px-4"
+                title={isQuoteEditMode ? "Done Editing" : "Edit Quote"}
+              >
+                {isQuoteEditMode ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span className="hidden lg:inline ml-2">Done</span>
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4" />
+                    <span className="hidden lg:inline ml-2">Edit Quote</span>
+                  </>
+                )}
+              </Button>
+            )}
+
 
             {/* Edit Items Toggle Button - TEMPORARILY HIDDEN
                Needs reimplementation to avoid breaking quotes
@@ -1175,7 +1200,7 @@ export const QuotationTab = ({
                   blocks={templateBlocks}
                   projectData={projectData}
                   isEditable={false}
-                  isPrintMode={!isExclusionEditMode}
+                  isPrintMode={!isExclusionEditMode && !isQuoteEditMode}
                   documentType={selectedTemplate?.template_style || 'quote'}
                   layout={templateSettings.layout}
                   showDetailedBreakdown={templateSettings.layout === 'detailed'}
