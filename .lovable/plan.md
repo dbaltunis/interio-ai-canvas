@@ -1,65 +1,55 @@
 
 
-# Keep Hardware Per Window with Visual Separation + Remove P.Rate + Services-Only Bottom Section
+# Fix Curtain-Professional Table: Breakdown Items as Proper Table Rows
 
-## Summary
+## Problem
 
-Instead of extracting hardware into a separate bottom section, hardware items (tracks, rods, finials, motors, etc.) will stay within each window's product details breakdown -- but rendered below a thin separator line for visual clarity. The bottom section becomes "Services" only. The P.Rate column is removed entirely.
+Currently, all breakdown items (fabric, heading, hardware, etc.) are rendered as nested `<div>` elements inside the Product Details `<td>` cell. This causes unit prices and totals to appear squished inside the product details column instead of aligning with the Qty, Unit Price, and Total Price columns.
 
-## Changes
+## Solution
 
-### 1. Remove P.Rate Column
+Each breakdown item becomes its own `<tr>` row in the table, so prices land in the correct columns.
 
-**File: `LivePreview.tsx`**
-
-- Remove the `content.showPrateColumn` conditional logic throughout the curtain-professional table
-- Remove P.Rate `<col>`, `<th>`, and all `<td>` cells referencing P.Rate
-- Set `colCount` to a fixed `5` (Room/Window, Product Details, Qty, Unit Price, Total Price)
-
-### 2. Keep Hardware in Window Breakdown with Visual Separator
-
-**File: `LivePreview.tsx` (lines 1133-1150, 1204-1247)**
-
-Replace the current `getBreakdownWithoutHardware` approach (which extracts hardware into a separate bottom section) with a single `getItemizedBreakdown` call that keeps all items together but splits them visually:
-
-- Stop populating the `extractedHardware` array -- remove the `getBreakdownWithoutHardware` function entirely
-- Use `getItemizedBreakdown(item)` directly for each product row
-- In the breakdown rendering, split items into two groups using `isHardwareItem()`:
-  - **Non-hardware items** (fabric, lining, heading, etc.) -- rendered first as they are now
-  - **Hardware items** (tracks, rods, finials, motors, brackets, etc.) -- rendered below a thin dashed separator line within the same cell
-
-The visual structure per window becomes:
+### Visual result per window:
 
 ```text
-Window Name        | CURTAIN                              | 1 | $500 | $500
-                   |   Fabric: Silk Dupion     $45  $180  |   |      |
-                   |   Lining: Blockout        $20  $80   |   |      |
-                   |   Heading: Double Pleat   $0   Incl  |   |      |
-                   |   ── Hardware ──────────────────────  |   |      |
-                   |   Track: Ceiling Track    $35  $35   |   |      |
-                   |   Finials: Chrome Ball    $12  $24   |   |      |
-                   |   Motor: Somfy RTS        $120 $120  |   |      |
+Room/Window    | Product Details                   | Qty   | Unit Price | Total Price
+---------------|-----------------------------------|-------|------------|------------
+Window 1       | NEW CURTAIN                       | 1     | £1,271.12  | £1,271.12
+  [image]      |   Fabric:    ADARA - lunar rock   |10.08m | £26.50     | £267.12
+               |   Heading:   Pinch pleat          | 1.00  | -          | £0.00
+               |   Manufact.: Machine Finished     | 1.00  | -          | £504.00
+               |   Services:  Fitting              | 1.00  | -          | £0.00
+               |   ── HARDWARE ──────────────────────────────────────────
+               |   Motor:     Somfy 360            | 1     | -          | £500.00
+               |   Track:     Motorised track      | 1     | -          | £0.00
 ```
 
-### 3. Itemized Prices for Each Breakdown Item
+## Technical Changes
 
-Each breakdown line (both non-hardware and hardware) will show:
-- Name + description on the left
-- Unit price and total cost on the right (aligned)
-- Prices shown even when zero
+### File: `LivePreview.tsx` (lines ~1190-1287)
 
-### 4. Bottom Section: "Services" Only
+**1. Main product row** -- Keep Room/Window cell (with image) and Product Details cell showing only the treatment type name (e.g., "NEW CURTAIN"). Qty, Unit Price, and Total Price cells show the top-level item totals. Same as now.
 
-**File: `LivePreview.tsx` (lines 1274-1361)**
+**2. Non-hardware breakdown items** -- Instead of rendering inside the Product Details `<td>`, each breakdown item becomes a new `<tr>`:
+- Column 1 (Room/Window): empty
+- Column 2 (Product Details): indented label + description (e.g., "Fabric: ADARA - lunar rock 08")
+- Column 3 (Qty): breakdown quantity (e.g., "10.08 m") or item quantity
+- Column 4 (Unit Price): `b.unit_price` (show "-" if zero or undefined)
+- Column 5 (Total Price): `b.total_cost` (always show, even if zero)
 
-- Remove all `extractedHardware` references from the bottom section
-- Remove `isHardwareOnlyItem` from the item splitting -- hardware stays with its window
-- Rename the section header from "Services & Hardware" to "Services"
-- Only top-level service items (installation, measurement, etc.) appear here
+**3. Hardware separator row** -- A single `<tr>` with a cell spanning columns 2-5 containing the "HARDWARE" label with a dashed top border.
 
-## Files to Modify
+**4. Hardware breakdown items** -- Same format as non-hardware breakdown rows, appearing after the separator.
 
-| File | Change |
-|------|--------|
-| `LivePreview.tsx` | Remove P.Rate column; replace `getBreakdownWithoutHardware` with inline split rendering using `isHardwareItem()`; add "Hardware" separator line within each window's breakdown; rename bottom section to "Services"; remove extractedHardware logic |
+**5. Remove the nested div-based price rendering** from inside the Product Details `<td>` entirely.
+
+### Column widths adjustment
+
+Update `<colgroup>` to give more space to Product Details and proper width to price columns:
+- Room/Window: 15%
+- Product Details: auto
+- Qty: 8%
+- Unit Price: 13%
+- Total Price: 13%
 
