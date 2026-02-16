@@ -2,22 +2,30 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Trash2, Edit2, Check, X, TrendingUp } from "lucide-react";
+import { Package, Trash2, Edit2, Check, X, TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { useRoomProducts, useUpdateRoomProduct, useDeleteRoomProduct, RoomProduct } from "@/hooks/useRoomProducts";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useServiceQuantityResolver } from "@/hooks/useServiceQuantityResolver";
+import { SERVICE_UNITS } from "@/hooks/useServiceOptions";
 
 interface RoomProductsListProps {
   roomId: string;
+  projectId?: string;
 }
 
-export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
+const getUnitLabel = (unit: string) => {
+  return SERVICE_UNITS.find(u => u.value === unit)?.label || unit;
+};
+
+export const RoomProductsList = ({ roomId, projectId }: RoomProductsListProps) => {
   const { data: products = [], isLoading } = useRoomProducts(roomId);
   const updateProduct = useUpdateRoomProduct();
   const deleteProduct = useDeleteRoomProduct();
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
+  const quantityResolver = useServiceQuantityResolver(projectId);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState<number>(1);
@@ -72,6 +80,32 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
     });
   };
 
+  // Staleness detection: check if auto-quantity services are out of date
+  const getStalenessInfo = (product: RoomProduct) => {
+    const unit = product.unit || 'each';
+    if (!quantityResolver || !['per-window', 'per-room'].includes(unit)) return null;
+    
+    const resolution = quantityResolver.resolve(unit);
+    if (resolution.autoQuantity === null) return null;
+    if (resolution.autoQuantity !== product.quantity) {
+      return {
+        currentCount: resolution.autoQuantity,
+        storedCount: product.quantity,
+        label: unit === 'per-window' ? 'window' : 'room',
+        breakdown: resolution.breakdown,
+      };
+    }
+    return null;
+  };
+
+  const handleRecalculate = (product: RoomProduct, newQuantity: number) => {
+    updateProduct.mutate({
+      id: product.id,
+      roomId: product.room_id,
+      quantity: newQuantity,
+    });
+  };
+
   const total = products.reduce((sum, p) => sum + p.total_price, 0);
   const totalCost = products.reduce((sum, p) => sum + (p.cost_price || p.total_price), 0);
   const hasMarkupData = products.some(p => p.cost_price != null && p.cost_price > 0);
@@ -102,138 +136,156 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
           const isEditing = editingId === product.id;
           const inventoryItem = product.inventory_item;
           const isCustom = product.is_custom;
+          const staleness = getStalenessInfo(product);
           
-          // For custom items, use product fields; for inventory items, use inventory_item
           const displayName = isCustom ? product.name : (inventoryItem?.name || "Unknown Product");
           const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
           const displayCategory = isCustom ? "Custom" : inventoryItem?.subcategory;
+          const unitLabel = product.unit ? getUnitLabel(product.unit) : null;
 
           return (
-            <div
-              key={product.id}
-              className="px-4 py-3 flex items-center gap-3 hover:bg-muted/20 transition-colors"
-            >
-              {/* Image or Icon */}
-              {displayImage ? (
-                <img
-                  src={displayImage}
-                  alt={displayName || "Product"}
-                  className="w-10 h-10 object-cover rounded"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
+            <div key={product.id}>
+              <div className="px-4 py-3 flex items-center gap-3 hover:bg-muted/20 transition-colors">
+                {/* Image or Icon */}
+                {displayImage ? (
+                  <img
+                    src={displayImage}
+                    alt={displayName || "Product"}
+                    className="w-10 h-10 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
 
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                {isEditing ? (
-                  <div className="space-y-1.5">
-                    {isCustom && (
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-7 text-sm font-medium"
-                        placeholder="Service name..."
-                        autoFocus
-                      />
-                    )}
-                    {!isCustom && (
-                      <div className="font-medium text-sm truncate">{displayName}</div>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">{currencySymbol}</span>
-                      <Input
-                        type="number"
-                        value={editUnitPrice}
-                        onChange={(e) => setEditUnitPrice(parseFloat(e.target.value) || 0)}
-                        className="w-20 h-7 text-sm"
-                        step="0.01"
-                        min={0}
-                      />
-                      <span className="text-xs text-muted-foreground">×</span>
-                      <Input
-                        type="number"
-                        value={editQuantity}
-                        onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
-                        className="w-14 h-7 text-sm text-center"
-                        min={1}
-                      />
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <div className="space-y-1.5">
+                      {isCustom && (
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="h-7 text-sm font-medium"
+                          placeholder="Service name..."
+                          autoFocus
+                        />
+                      )}
+                      {!isCustom && (
+                        <div className="font-medium text-sm truncate">{displayName}</div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">{currencySymbol}</span>
+                        <Input
+                          type="number"
+                          value={editUnitPrice}
+                          onChange={(e) => setEditUnitPrice(parseFloat(e.target.value) || 0)}
+                          className="w-20 h-7 text-sm"
+                          step="0.01"
+                          min={0}
+                        />
+                        <span className="text-xs text-muted-foreground">×</span>
+                        <Input
+                          type="number"
+                          value={editQuantity}
+                          onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                          className="w-14 h-7 text-sm text-center"
+                          min={1}
+                        />
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="font-medium text-sm truncate">
+                        {displayName}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {displayCategory && (
+                          <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
+                            {displayCategory.replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                        {unitLabel && unitLabel !== 'each' && (
+                          <Badge variant="outline" className="text-xs">
+                            {unitLabel}
+                          </Badge>
+                        )}
+                        {product.markup_percentage != null && product.markup_percentage > 0 && (
+                          <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
+                            <TrendingUp className="h-3 w-3 mr-0.5" />
+                            {product.markup_percentage}%
+                          </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {currencySymbol}{product.unit_price.toFixed(2)} × {product.quantity}
+                        </span>
+                      </div>
+                      {isCustom && product.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{product.description}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {isEditing ? (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleSaveEdit(product)}
+                    >
+                      <Check className="h-4 w-4 text-green-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleCancelEdit}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 ) : (
-                  <>
-                    <div className="font-medium text-sm truncate">
-                      {displayName}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium min-w-[70px] text-right">
+                      {currencySymbol}{product.total_price.toFixed(2)}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {displayCategory && (
-                        <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
-                          {displayCategory.replace(/_/g, " ")}
-                        </Badge>
-                      )}
-                      {product.markup_percentage != null && product.markup_percentage > 0 && (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
-                          <TrendingUp className="h-3 w-3 mr-0.5" />
-                          {product.markup_percentage}%
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {currencySymbol}{product.unit_price.toFixed(2)} × {product.quantity}
-                      </span>
-                    </div>
-                    {isCustom && product.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{product.description}</p>
-                    )}
-                  </>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleStartEdit(product)}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(product)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 )}
               </div>
 
-              {/* Actions */}
-              {isEditing ? (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleSaveEdit(product)}
-                  >
-                    <Check className="h-4 w-4 text-green-600" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleCancelEdit}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {/* Price */}
-                  <div className="text-sm font-medium min-w-[70px] text-right">
-                    {currencySymbol}{product.total_price.toFixed(2)}
+              {/* Staleness indicator */}
+              {staleness && !isEditing && (
+                <div 
+                  className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+                  onClick={() => handleRecalculate(product, staleness.currentCount)}
+                >
+                  <div className="flex items-center gap-2 text-xs text-amber-700">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>
+                      {staleness.label} count changed ({staleness.storedCount} → {staleness.currentCount}). Tap to update.
+                    </span>
                   </div>
-
-                  {/* Actions */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleStartEdit(product)}
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(product)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <RefreshCw className="h-3.5 w-3.5 text-amber-600" />
                 </div>
               )}
             </div>

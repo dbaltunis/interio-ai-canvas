@@ -241,6 +241,9 @@ export const ServicesSection = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Displays as description line in quotes & documents
+                    </p>
                   </div>
                 </div>
 
@@ -286,6 +289,14 @@ export const ServicesSection = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {newService.unit === 'per-window' && '⚡ Auto-counts all windows in the project'}
+                      {newService.unit === 'per-room' && '⚡ Auto-counts all rooms in the project'}
+                      {newService.unit === 'per-metre' && '⚡ Auto-calculates total metres from treatments'}
+                      {newService.unit === 'per-job' && 'Manual quantity — entered per job'}
+                      {newService.unit === 'per-hour' && 'Manual quantity — enter hours'}
+                      {newService.unit === 'flat-rate' && 'Fixed price — quantity stays at 1'}
+                    </p>
                   </div>
                 </div>
 

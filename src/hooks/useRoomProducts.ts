@@ -30,6 +30,7 @@ export interface RoomProduct {
   description: string | null;
   image_url: string | null;
   is_custom: boolean;
+  unit: string | null;
   created_at: string;
   updated_at: string;
   inventory_item?: {
@@ -56,6 +57,7 @@ export interface RoomProductInsert {
   description?: string;
   image_url?: string;
   is_custom?: boolean;
+  unit?: string;
 }
 
 export const useRoomProducts = (roomId?: string) => {
