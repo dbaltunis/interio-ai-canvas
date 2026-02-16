@@ -311,7 +311,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         
         {/* Scrollable content area - visible on screen */}
         <div className="flex-1 overflow-y-auto bg-white p-8 no-print">
-          <div ref={previewRef}>
+          <div ref={previewRef} className="document-preview-center">
             <LivePreview
               blocks={templateBlocks}
               projectData={projectData}

@@ -1107,3 +1107,11 @@ html {
   border-radius: 50%;
   background-color: hsl(var(--primary));
 }
+
+/* Screen-only document preview centering - cosmetic mask for app UI only */
+/* This NEVER applies during print or PDF generation */
+@media screen {
+  .document-preview-center > div {
+    margin: 0 auto !important;
+  }
+}
