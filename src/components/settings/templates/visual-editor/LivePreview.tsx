@@ -1291,13 +1291,18 @@ const LivePreviewBlock = ({
                               </div>
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '13px', color: isItemExcluded ? '#9ca3af' : '#000', fontWeight: '400', verticalAlign: 'middle', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
-                              {item.description || item.notes || '-'}
+                              {item.description && item.description !== '-' && item.description !== 'Custom' ? item.description : (item.notes || '-')}
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'center', verticalAlign: 'middle', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {item.quantity || 1}
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '400', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
-                              {formatCurrency((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
+                              {formatCurrency(
+                                item.isRoomProduct
+                                  ? (item.unit_price || 0)
+                                  : (item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1),
+                                projectData?.currency || getDefaultCurrency()
+                              )}
                             </td>
                             <td style={{ padding: '6px 6px', fontSize: '14px', fontWeight: '500', color: isItemExcluded ? '#9ca3af' : '#000', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap', backgroundColor: isItemExcluded ? '#fef2f2' : '#ffffff' }}>
                               {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
