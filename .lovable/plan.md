@@ -1,55 +1,72 @@
 
 
-# Fix: Revert Print Impact and Apply Screen-Only Centering
+# Make Metadata Table and Introduction Message Editable Per-Quote
 
-## The Problem
+## What This Does
 
-The previous change (`margin: '0 auto'`) was applied inside `LivePreview.tsx`'s print-mode branch, which is shared by both:
-1. The in-app visual preview (what you see on screen)
-2. The `PrintableQuote` / `PrintableWorkshop` components (used for PDF generation and printing)
+Enables two sections of the curtain-professional quote to be edited and saved permanently to the database for each individual quote:
 
-This caused the printed/saved document to also shift, which is not what we want.
+1. **Metadata table** (right side of header): Status, Services Required, Purchase Date, Referral Source values
+2. **Introduction Message**: The text block below the header
 
-## The Solution
-
-Revert the `margin: '0 auto'` back to `margin: 0` inside `LivePreview.tsx`, and instead apply centering as a **screen-only CSS wrapper** in the parent components that display the preview on screen. This way:
-
-- **On screen**: the wrapper centers the document visually (the "mask")
-- **When printing/saving PDF**: the `PrintableQuote` component renders separately (in a hidden div) and is completely unaffected
+Both sections will show a pencil/edit button on hover. When clicked, the fields become editable. On save, changes persist to the quote's `template_custom_data` JSONB field in the database.
 
 ## Technical Changes
 
-### 1. Revert `LivePreview.tsx` (line 2346)
+### 1. Pass `quoteId` and `onDataChange` to `BlockRenderer.tsx`
 
-Change `margin: '0 auto'` back to `margin: 0`. This restores the original behavior for all consumers of LivePreview, including the printable components.
+Update the `BlockRendererProps` interface to accept `quoteId` and `onDataChange` props. Then update `DocumentHeaderBlock` to use them.
 
-### 2. Add screen-only centering in `QuotationTab.tsx`
-
-Wrap the visible LivePreview (the one users see in the app) with a div that has a CSS class applying `margin: 0 auto` only under `@media screen`. This wrapper only exists around the **on-screen preview**, not around the hidden `PrintableQuote` used for PDF/print.
-
-### 3. Add CSS rule to `index.css`
-
-```css
-@media screen {
-  .document-preview-center > div {
-    margin: 0 auto !important;
-  }
-}
+In `LivePreview.tsx`, pass `quoteId` and `onDataChange` when rendering `DocumentHeaderBlock` (lines ~710 and ~724):
+```
+isEditable={false}  -->  keep false (template editing stays off)
+quoteId={quoteId}        // NEW
+onDataChange={onDataChange}  // NEW
 ```
 
-This ensures the centering is purely cosmetic and only applies when viewing on screen -- never during print or PDF capture.
+### 2. Add per-quote editing to the metadata table in `BlockRenderer.tsx`
 
-### 4. Apply the same wrapper in other preview locations
+Inside the `curtain-split` header section (around line 597), add inline editing for the custom field values:
 
-- `QuoteFullScreenView.tsx` (the full-screen quote preview)
-- `DocumentRenderer.tsx` (workroom document preview)
+- Add local state (`localEditMode`, `fieldValues`) to track editing
+- Load saved values from `onDataChange.customData['header-metadata']` on mount
+- Show a pencil button on hover (matching the Introduction Message pattern)
+- When editing: render `<input>` elements for Status and each custom field value
+- On save: call `onDataChange.saveBlockData({ blockId: 'header-metadata', data: fieldValues })`
+- Display saved values (from customData) instead of template defaults when available
 
-These are the components where users see the document in the app. The hidden printable components (`PrintableQuote`, `PrintableWorkshop`, `PrintableWorkOrder`) remain completely untouched.
+### 3. Fix Introduction Message visibility
 
-## Why This is Safe
+The existing pencil button on `EditableTextField` uses `opacity: 0` with a Tailwind `group-hover:!opacity-100` class. Verify this is working correctly -- the `group` class is on the parent div. If the hover isn't triggering, ensure the parent wrapper has the `group` class applied properly. The save logic already works via `useQuoteCustomData`.
 
-- The `PrintableQuote` component renders in a hidden div (`position: absolute; left: -9999px`) and is captured by `html2pdf.js` -- it never gets the screen-only CSS
-- `@media screen` rules are completely ignored during `window.print()` and PDF generation
-- The centering class is only added to the visible preview wrappers, not to any printable component
-- Zero risk to PDF output, email attachments, or printed documents
+### 4. Ensure `QuoteFullScreenView.tsx` passes `quoteId`
+
+Verify that `QuoteFullScreenView.tsx` passes the `quoteId` prop to `LivePreview` so that the `useQuoteCustomData` hook initializes. This was done in the previous change but needs confirmation that the prop flows all the way down.
+
+## Data Flow
+
+```
+QuoteFullScreenView (quoteId)
+  -> LivePreview (quoteId, onDataChange = useQuoteCustomData)
+    -> LivePreviewBlock (quoteId, onDataChange)
+      -> DocumentHeaderBlock (quoteId, onDataChange)  [metadata table]
+      -> EditableTextField (quoteId, onDataChange)     [intro message]
+```
+
+Both save to `quotes.template_custom_data` JSONB under different block IDs:
+- Metadata: `template_custom_data['header-metadata']`
+- Intro message: `template_custom_data[blockId]` (already working)
+
+## Files to Modify
+
+1. **`src/components/settings/templates/visual-editor/shared/BlockRenderer.tsx`**
+   - Add `quoteId` and `onDataChange` to `BlockRendererProps`
+   - Add local edit state and save logic to the `curtain-split` metadata table
+   - Show pencil button, editable inputs, and save/cancel buttons
+
+2. **`src/components/settings/templates/visual-editor/LivePreview.tsx`**
+   - Pass `quoteId` and `onDataChange` to `DocumentHeaderBlock` calls (2 locations)
+
+3. **`src/components/jobs/quotation/QuoteFullScreenView.tsx`** (verify only)
+   - Confirm `quoteId` prop is being passed to `LivePreview`
 
