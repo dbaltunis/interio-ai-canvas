@@ -1140,9 +1140,9 @@ const LivePreviewBlock = ({
                 <colgroup>
                   <col style={{ width: '15%' }} />
                   <col style={{ width: 'auto' }} />
-                  <col style={{ width: '6%' }} />
-                  <col style={{ width: '14%' }} />
-                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '13%' }} />
+                  <col style={{ width: '13%' }} />
                 </colgroup>
                 <thead>
                   <tr style={{ backgroundColor: '#8b7355' }}>
@@ -1189,9 +1189,9 @@ const LivePreviewBlock = ({
                           
                           return (
                             <React.Fragment key={`curtain-item-${roomName}-${itemIndex}`}>
-                              <tr style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
-                                {/* Room/Window name + Image below */}
-                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
+                              {/* Main product row */}
+                              <tr style={{ borderBottom: effectiveShowDetailed && (nonHardwareBreakdown.length > 0 || hardwareBreakdown.length > 0) ? 'none' : '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
+                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }} rowSpan={effectiveShowDetailed ? 1 + nonHardwareBreakdown.length + (hardwareBreakdown.length > 0 ? 1 : 0) + hardwareBreakdown.reduce((acc: number, b: any) => acc + (b.hardwareItems?.length || 1), 0) : 1}>
                                   <div style={{ fontWeight: '600', marginBottom: '6px' }}>
                                     {item.surface_name || item.window_number || item.name || 'Window'}
                                   </div>
@@ -1211,79 +1211,84 @@ const LivePreviewBlock = ({
                                     </div>
                                   ) : null}
                                 </td>
-                                {/* Product Details */}
-                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
-                                  <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px', textTransform: 'uppercase' }}>
-                                    {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
-                                  </div>
-                                  {effectiveShowDetailed && nonHardwareBreakdown.length > 0 && (
-                                    <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
-                                      {nonHardwareBreakdown.map((b: any, bi: number) => (
-                                        <div key={bi} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
-                                          <div style={{ display: 'flex', gap: '4px' }}>
-                                            <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
-                                            <span>{b.description || '—'}</span>
-                                          </div>
-                                          <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
-                                            <span>{formatCurrency(b.unit_price ?? 0, currencyCode)}</span>
-                                            <span style={{ fontWeight: '500' }}>{formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {effectiveShowDetailed && hardwareBreakdown.length > 0 && (
-                                    <>
-                                      <div style={{ borderTop: '1px dashed #c4b5a0', margin: '6px 0 4px 0', paddingTop: '4px' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: '600', color: '#8b7355', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hardware</span>
-                                      </div>
-                                      <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
-                                        {hardwareBreakdown.map((b: any, bi: number) => {
-                                          // If it's a hardware group with sub-items, render each sub-item
-                                          if (b.hardwareItems && b.hardwareItems.length > 0) {
-                                            return b.hardwareItems.map((hi: any, hii: number) => (
-                                              <div key={`${bi}-${hii}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                  <span style={{ color: '#8b7355', minWidth: '100px' }}>{hi.name}:</span>
-                                                  <span>{hi.description || '—'}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
-                                                  <span>{formatCurrency(hi.unit_price ?? 0, currencyCode)}</span>
-                                                  <span style={{ fontWeight: '500' }}>{formatCurrency(hi.total_cost ?? 0, currencyCode)}</span>
-                                                </div>
-                                              </div>
-                                            ));
-                                          }
-                                          return (
-                                            <div key={bi} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
-                                              <div style={{ display: 'flex', gap: '4px' }}>
-                                                <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
-                                                <span>{b.description || '—'}</span>
-                                              </div>
-                                              <div style={{ display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
-                                                <span>{formatCurrency(b.unit_price ?? 0, currencyCode)}</span>
-                                                <span style={{ fontWeight: '500' }}>{formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </>
-                                  )}
+                                <td style={{ padding: '8px', fontSize: '14px', fontWeight: '700', color: '#3d2e1f', verticalAlign: 'top', textTransform: 'uppercase' }}>
+                                  {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
                                 </td>
-                                {/* Qty */}
                                 <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
                                   {item.quantity || 1}
                                 </td>
-                                {/* Unit Price */}
                                 <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
                                 </td>
-                                {/* Total */}
                                 <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                                 </td>
                               </tr>
+                              {/* Non-hardware breakdown rows */}
+                              {effectiveShowDetailed && nonHardwareBreakdown.map((b: any, bi: number) => (
+                                <tr key={`nb-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === nonHardwareBreakdown.length - 1 && hardwareBreakdown.length === 0) ? '1px solid #d4c5b0' : 'none' }}>
+                                  <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
+                                    <span style={{ color: '#8b7355', fontWeight: '500' }}>{b.name}:</span>{' '}
+                                    <span>{b.description || '—'}</span>
+                                  </td>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    {b.quantity != null ? `${b.quantity}${b.unit ? ` ${b.unit}` : ''}` : '—'}
+                                  </td>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    {(b.unit_price != null && b.unit_price !== 0) ? formatCurrency(b.unit_price, currencyCode) : '—'}
+                                  </td>
+                                  <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    {formatCurrency(b.total_cost ?? 0, currencyCode)}
+                                  </td>
+                                </tr>
+                              ))}
+                              {/* Hardware separator */}
+                              {effectiveShowDetailed && hardwareBreakdown.length > 0 && (
+                                <tr style={{ opacity: isItemExcluded ? 0.5 : 1 }}>
+                                  <td colSpan={4} style={{ padding: '6px 8px 4px 16px', borderTop: '1px dashed #c4b5a0' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#8b7355', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hardware</span>
+                                  </td>
+                                </tr>
+                              )}
+                              {/* Hardware breakdown rows */}
+                              {effectiveShowDetailed && hardwareBreakdown.map((b: any, bi: number) => {
+                                if (b.hardwareItems && b.hardwareItems.length > 0) {
+                                  return b.hardwareItems.map((hi: any, hii: number) => (
+                                    <tr key={`hw-${bi}-${hii}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: (bi === hardwareBreakdown.length - 1 && hii === b.hardwareItems.length - 1) ? '1px solid #d4c5b0' : 'none' }}>
+                                      <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
+                                        <span style={{ color: '#8b7355', fontWeight: '500' }}>{hi.name}:</span>{' '}
+                                        <span>{hi.description || '—'}</span>
+                                      </td>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                        {hi.quantity != null ? `${hi.quantity}${hi.unit ? ` ${hi.unit}` : ''}` : '—'}
+                                      </td>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                        {(hi.unit_price != null && hi.unit_price !== 0) ? formatCurrency(hi.unit_price, currencyCode) : '—'}
+                                      </td>
+                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                        {formatCurrency(hi.total_cost ?? 0, currencyCode)}
+                                      </td>
+                                    </tr>
+                                  ));
+                                }
+                                return (
+                                  <tr key={`hw-${bi}`} style={{ opacity: isItemExcluded ? 0.5 : 1, borderBottom: bi === hardwareBreakdown.length - 1 ? '1px solid #d4c5b0' : 'none' }}>
+                                    <td style={{ padding: '4px 8px 4px 16px', fontSize: '11px', color: '#6b5c4c', verticalAlign: 'top' }}>
+                                      <span style={{ color: '#8b7355', fontWeight: '500' }}>{b.name}:</span>{' '}
+                                      <span>{b.description || '—'}</span>
+                                    </td>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      {b.quantity != null ? `${b.quantity}${b.unit ? ` ${b.unit}` : ''}` : '—'}
+                                    </td>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      {(b.unit_price != null && b.unit_price !== 0) ? formatCurrency(b.unit_price, currencyCode) : '—'}
+                                    </td>
+                                    <td style={{ padding: '4px 8px', fontSize: '11px', color: '#6b5c4c', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                      {formatCurrency(b.total_cost ?? 0, currencyCode)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </React.Fragment>
                           );
                         })}
