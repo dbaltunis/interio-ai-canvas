@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -390,15 +390,56 @@ export const UnifiedAppointmentDialog = ({
 
   const isSaving = createAppointment.isPending || updateAppointment.isPending;
 
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-radix-popper-content-wrapper]')) return;
+      if (target.closest('[data-radix-scroll-area-viewport]')) return;
+      if (target.closest('[data-radix-select-content]')) return;
+      if (target.closest('[role="alertdialog"]')) return;
+      if (panelRef.current && !panelRef.current.contains(target)) {
+        onOpenChange(false);
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onOpenChange]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open, onOpenChange]);
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 rounded-xl shadow-2xl border-0 gap-0">
-        {/* Color header bar — matches EventDetailPopover design */}
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center pointer-events-none">
+      <div
+        ref={panelRef}
+        className="pointer-events-auto max-w-md w-[calc(100%-2rem)] rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col"
+        style={{ maxHeight: '85vh' }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Color header bar */}
         <div className="h-2 flex-shrink-0 rounded-t-xl" style={{ backgroundColor: event.color || '#6366F1' }} />
 
         {/* Compact Header */}
-        <DialogHeader className="px-4 py-3">
-          <DialogTitle className="text-sm font-medium flex items-center gap-2">
+        <div className="px-4 py-3">
+          <div className="text-sm font-medium flex items-center gap-2">
             <div
               className="w-3 h-3 rounded flex-shrink-0"
               style={{ backgroundColor: event.color || '#6366F1' }}
@@ -409,9 +450,9 @@ export const UnifiedAppointmentDialog = ({
                 • {format(new Date(event.date), 'MMM d')}
               </span>
             )}
-          </DialogTitle>
-        </DialogHeader>
-        
+          </div>
+        </div>
+        <ScrollArea style={{ maxHeight: 'calc(85vh - 120px)' }}>
         <div className="px-4 py-3 space-y-3">
           {/* Permission Warning */}
           {!isEditing && (() => {
@@ -716,6 +757,7 @@ export const UnifiedAppointmentDialog = ({
             </Button>
           </div>
         </div>
+        </ScrollArea>
 
         {/* Footer Actions - Clean and minimal */}
         <div className="px-4 py-2 border-t bg-muted/30 flex items-center justify-between gap-2">
@@ -773,7 +815,7 @@ export const UnifiedAppointmentDialog = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

@@ -141,9 +141,11 @@ export const QuickAddPopover = ({
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      // Don't close when clicking inside radix popovers (Select, TeamMemberPicker, etc.)
       const target = e.target as HTMLElement;
+      // Don't close when clicking inside radix popovers, scroll areas, or select content
       if (target.closest('[data-radix-popper-content-wrapper]')) return;
+      if (target.closest('[data-radix-scroll-area-viewport]')) return;
+      if (target.closest('[data-radix-select-content]')) return;
       if (popoverRef.current && !popoverRef.current.contains(target)) {
         onOpenChange(false);
       }
@@ -256,7 +258,7 @@ export const QuickAddPopover = ({
       </div>
 
       {/* Scrollable content */}
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: `calc(${position.maxH}px - 96px)` }}>
         <div className="px-3 pb-3 space-y-3">
           {/* Title input */}
           <Input
@@ -339,28 +341,6 @@ export const QuickAddPopover = ({
           {/* ===== EXPANDED FIELDS ===== */}
           {expanded && (
             <div className="space-y-3 pt-1 border-t border-border/40">
-              {/* Event Type */}
-              <div>
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Event Type</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {EVENT_TYPES.map(type => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
-                        appointmentType === type.value
-                          ? 'shadow-sm ring-2 ring-offset-1'
-                          : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                      style={appointmentType === type.value ? { backgroundColor: `${type.color}20`, color: type.color } : {}}
-                      onClick={() => setAppointmentType(type.value)}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Client Selector */}
               <div>
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
