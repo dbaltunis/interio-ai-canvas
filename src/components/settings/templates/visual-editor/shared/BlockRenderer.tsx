@@ -283,10 +283,10 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
     <div 
       className="mb-8" 
       style={{ 
-        backgroundColor: '#ffffff',
+        backgroundColor: headerLayout === 'curtain-split' ? 'transparent' : '#ffffff',
         color: '#000000',
-        padding: '24px 20px',
-        margin: '0 0 24px 0'
+        padding: headerLayout === 'curtain-split' ? '0' : '24px 20px',
+        margin: headerLayout === 'curtain-split' ? '0 0 16px 0' : '0 0 24px 0'
       }}
     >
       {headerLayout === 'centered' && (
@@ -594,7 +594,7 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
         </div>
       )}
       {headerLayout === 'curtain-split' && (
-        <div style={{ display: 'flex', gap: '24px', backgroundColor: '#faf6f1', padding: '24px 20px', borderRadius: '4px' }}>
+        <div style={{ display: 'flex', gap: '24px', padding: '24px 20px' }}>
           {/* LEFT: Logo + Company + Client */}
           <div style={{ flex: 1 }}>
             {content.showLogo !== false && (
