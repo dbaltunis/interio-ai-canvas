@@ -715,6 +715,8 @@ const LivePreviewBlock = ({
           isPrintMode={isPrintMode}
           isEditable={false}
           documentType={documentType}
+          quoteId={quoteId}
+          onDataChange={onDataChange}
         />
       );
 
@@ -729,6 +731,8 @@ const LivePreviewBlock = ({
           isPrintMode={isPrintMode}
           isEditable={false}
           documentType={documentType}
+          quoteId={quoteId}
+          onDataChange={onDataChange}
         />
       );
 
