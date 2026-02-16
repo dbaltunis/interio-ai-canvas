@@ -752,6 +752,19 @@ export const useQuotationSync = ({
         if (product.description && product.description !== 'Custom' && product.description !== 'custom') {
           displayDescription = product.description;
         }
+        // Fallback: for service items (have a unit), use the product name's implied category
+        // This handles legacy items added before the category-storage fix
+        if (!displayDescription && product.unit && product.unit !== 'each') {
+          const unitLabels: Record<string, string> = {
+            'per-window': 'Per Window',
+            'per-room': 'Per Room',
+            'per-metre': 'Per Metre',
+            'per-job': 'Per Job',
+            'per-hour': 'Per Hour',
+            'flat-rate': 'Flat Rate',
+          };
+          displayDescription = unitLabels[product.unit] || '';
+        }
       } else {
         displayDescription = inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '';
       }
