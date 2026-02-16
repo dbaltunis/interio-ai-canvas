@@ -9483,6 +9483,7 @@ export type Database = {
           mounting_type: string | null
           notes: string | null
           pattern: string | null
+          photos: string[] | null
           product_name: string | null
           project_id: string
           quantity: number | null
@@ -9512,6 +9513,7 @@ export type Database = {
           mounting_type?: string | null
           notes?: string | null
           pattern?: string | null
+          photos?: string[] | null
           product_name?: string | null
           project_id: string
           quantity?: number | null
@@ -9541,6 +9543,7 @@ export type Database = {
           mounting_type?: string | null
           notes?: string | null
           pattern?: string | null
+          photos?: string[] | null
           product_name?: string | null
           project_id?: string
           quantity?: number | null
