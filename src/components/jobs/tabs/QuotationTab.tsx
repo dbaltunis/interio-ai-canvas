@@ -42,7 +42,7 @@ import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
 import { useQuotePayment } from "@/hooks/useQuotePayment";
 import { useQuoteExclusions } from "@/hooks/useQuoteExclusions";
-import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
+
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -126,8 +126,6 @@ export const QuotationTab = ({
   // TEMPORARILY DISABLED: Exclusion edit mode caused quote breaking issues
   const isExclusionEditMode = false; // useState(false) - revert when reimplemented
 
-  // Edit mode for Homekaara template
-  const [isHomekaaraEditable, setIsHomekaaraEditable] = useState(false);
   
   // Quote item exclusions hook
   const { excludedItems, toggleExclusion } = useQuoteExclusions(activeQuoteId || quoteId);
@@ -347,10 +345,6 @@ export const QuotationTab = ({
     };
   }, [selectedTemplate]);
 
-  // Check if Homekaara template style should be used
-  // When 'homekaara' is selected in business settings, it overrides the block-based template
-  const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
-  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara';
 
   // Function to update template settings
   const handleUpdateTemplateSettings = async (key: string, value: any) => {
@@ -516,89 +510,6 @@ export const QuotationTab = ({
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
-  // Prepare Homekaara template data - MUST be after projectData
-  // Uses quotationData.items (already computed) instead of re-parsing projectSummaries
-  const homekaaraTemplateData = useMemo(() => {
-    if (!useHomekaaraTemplate) return null;
-    
-    // Use sourceTreatments which already have all the correct data from useQuotationSync
-    const items = sourceTreatments.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      quantity: item.quantity || 1,
-      unit_price: item.unit_price || item.total,
-      total: item.total || 0,
-      prate: item.quantity || 1,
-      image_url: item.image_url,
-      // CRITICAL: Use display_formula for consistent formula rendering across all views
-      // Priority: display_formula > description > total
-      breakdown: item.children?.map((child: any) => ({
-        label: child.name || child.category || '',
-        value: child.display_formula || child.description || (child.total_cost ? `${child.total_cost.toFixed(2)}` : ''),
-      })) || [],
-      room_name: item.room_name,
-      room_id: item.room_id,
-      surface_name: item.surface_name,
-      treatment_type: item.treatment_type,
-    }));
-    
-    // Get currency from business settings
-    let currency = 'USD';
-    try {
-      const measurementUnits = businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units) : null;
-      currency = measurementUnits?.currency || 'USD';
-    } catch {
-      currency = 'USD';
-    }
-    
-    return {
-      items,
-      subtotal: subtotal,
-      taxAmount: taxAmount,
-      total: total,
-      currency: currency,
-      businessInfo: {
-        name: businessSettings?.company_name || 'Your Business',
-        logo_url: businessSettings?.company_logo_url,
-        email: businessSettings?.business_email,
-        phone: businessSettings?.business_phone,
-        address: [businessSettings?.address, businessSettings?.city, businessSettings?.state, businessSettings?.zip_code].filter(Boolean).join(', '),
-      },
-      clientInfo: {
-        name: (client as any)?.full_name || client?.name || 'Client',
-        email: client?.email,
-        phone: client?.phone,
-        address: client?.address,
-      },
-      metadata: {
-        quote_number: project?.job_number || currentQuote?.id?.slice(0, 8) || 'N/A',
-        date: currentQuote?.created_at
-          ? new Date(currentQuote.created_at).toLocaleDateString('en-GB')
-          : project?.created_at
-            ? new Date(project.created_at).toLocaleDateString('en-GB')
-            : new Date().toLocaleDateString('en-GB'),
-        status: currentQuote?.status || project?.status || 'Draft',
-        validity_days: currentQuote?.valid_until
-          ? Math.ceil((new Date(currentQuote.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-          : 14,
-        services_required: (currentQuote as any)?.metadata?.services_required || (project as any)?.services_required,
-        expected_purchase_date: (currentQuote as any)?.metadata?.expected_purchase_date || (project as any)?.expected_purchase_date,
-        referral_source: (currentQuote as any)?.metadata?.referral_source || (project as any)?.referral_source,
-      },
-      paymentInfo: {
-        advance_paid: currentQuote?.amount_paid || 0,
-        deposit_percentage: currentQuote?.payment_percentage || 50,
-      },
-      // Discount info - pass to template for display
-      discountInfo: currentQuote?.discount_type ? {
-        type: currentQuote.discount_type as 'percentage' | 'fixed',
-        value: currentQuote.discount_value || 0,
-        amount: currentQuote.discount_amount || 0,
-      } : undefined,
-      introMessage: currentQuote?.notes || (project as any)?.intro_message,
-    };
-  }, [useHomekaaraTemplate, sourceTreatments, subtotal, taxAmount, total, businessSettings, client, project, currentQuote]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -662,85 +573,6 @@ export const QuotationTab = ({
     }
   };
 
-  // Handle Homekaara template save
-  const handleHomekaaraSave = async (data: { metadata: any; introMessage: string; items: any[] }) => {
-    if (!currentQuote?.id) {
-      toast({
-        title: "Error",
-        description: "No quote selected to save changes.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Save quote metadata changes to database
-      const { error } = await supabase
-        .from('quotes')
-        .update({
-          notes: data.introMessage,
-          // Store metadata in JSON field if available
-          metadata: {
-            services_required: data.metadata.services_required,
-            expected_purchase_date: data.metadata.expected_purchase_date,
-            referral_source: data.metadata.referral_source,
-          },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentQuote.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Changes Saved",
-        description: "Quote has been updated successfully."
-      });
-      setIsHomekaaraEditable(false);
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-    } catch (error: any) {
-      console.error('Save error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save changes.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Handle image upload for Homekaara template
-  const handleHomekaaraImageUpload = async (itemId: string, file: File): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/treatments/${itemId}-${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('treatment-images')
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error('Failed to upload image');
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('treatment-images')
-      .getPublicUrl(filePath);
-
-    // Update treatment with new image URL
-    await supabase
-      .from('treatments')
-      .update({ image_url: publicUrl } as any)
-      .eq('id', itemId);
-
-    toast({
-      title: "Image Uploaded",
-      description: "Product image has been updated."
-    });
-
-    return publicUrl;
-  };
 
   // Email quote
   const handleSendEmail = async (emailData: {
@@ -1046,29 +878,6 @@ export const QuotationTab = ({
               <span className="hidden lg:inline ml-2">Markup</span>
             </Button>
 
-            {/* Edit Quote Button - Only for Homekaara Template */}
-            {useHomekaaraTemplate && (
-              <Button
-                variant={isHomekaaraEditable ? "default" : "outline"}
-                size="sm"
-                onClick={() => setIsHomekaaraEditable(!isHomekaaraEditable)}
-                disabled={isReadOnly}
-                className="h-9 px-2 lg:px-4"
-                title={isHomekaaraEditable ? "Done Editing" : "Edit Quote"}
-              >
-                {isHomekaaraEditable ? (
-                  <>
-                    <Check className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-2">Done</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-2">Edit Quote</span>
-                  </>
-                )}
-              </Button>
-            )}
 
             {/* Edit Items Toggle Button - TEMPORARILY HIDDEN
                Needs reimplementation to avoid breaking quotes
@@ -1334,39 +1143,6 @@ export const QuotationTab = ({
           const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
           if (roomsTab) roomsTab.click();
         }} />
-      ) : useHomekaaraTemplate && homekaaraTemplateData ? (
-        <section className="mt-2 sm:mt-4">
-          <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
-            <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
-              <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
-                width: '210mm',
-                minHeight: '297mm',
-                fontFamily: 'Arial, Helvetica, sans-serif',
-                fontSize: '10pt',
-                padding: '8mm',
-                boxSizing: 'border-box',
-                overflow: 'hidden'
-              }}>
-                <QuoteTemplateHomekaara
-                  items={homekaaraTemplateData.items}
-                  subtotal={homekaaraTemplateData.subtotal}
-                  taxAmount={homekaaraTemplateData.taxAmount}
-                  total={homekaaraTemplateData.total}
-                  currency={homekaaraTemplateData.currency}
-                  businessInfo={homekaaraTemplateData.businessInfo}
-                  clientInfo={homekaaraTemplateData.clientInfo}
-                  metadata={homekaaraTemplateData.metadata}
-                  paymentInfo={homekaaraTemplateData.paymentInfo}
-                  discountInfo={homekaaraTemplateData.discountInfo}
-                  introMessage={homekaaraTemplateData.introMessage}
-                  isEditable={isHomekaaraEditable}
-                  onSaveChanges={handleHomekaaraSave}
-                  onImageUpload={handleHomekaaraImageUpload}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
       ) : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />

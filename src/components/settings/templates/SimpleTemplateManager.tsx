@@ -83,6 +83,17 @@ const getBlankTemplateBlocks = (category: string) => {
   if (['quote', 'proposal', 'estimate'].includes(category)) {
     baseBlocks.push({ id: 'signature', type: 'signature', content: {} });
   }
+
+  // Curtain quote: pre-configured with images, room grouping, detailed layout
+  if (category === 'curtain-quote') {
+    return [
+      { id: 'header', type: 'document-header', content: { title: 'Professional Curtain Quote', showLogo: true } },
+      { id: 'client', type: 'client-info', content: {} },
+      { id: 'items', type: 'line-items', content: { showImages: true, groupByRoom: true, layout: 'detailed', showDetailedBreakdown: true } },
+      { id: 'totals', type: 'totals', content: {} },
+      { id: 'signature', type: 'signature', content: {} }
+    ];
+  }
   
   return baseBlocks;
 };
@@ -125,6 +136,7 @@ const SortableTemplateRow = ({
       case 'invoice': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
       case 'estimate': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       case 'proposal': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'curtain-quote': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -683,6 +695,7 @@ export const SimpleTemplateManager: React.FC = () => {
             <SelectItem value="invoice">Invoices</SelectItem>
             <SelectItem value="estimate">Estimates</SelectItem>
             <SelectItem value="proposal">Proposals</SelectItem>
+            <SelectItem value="curtain-quote">Curtain Quotes</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -776,6 +789,7 @@ export const SimpleTemplateManager: React.FC = () => {
                   <SelectItem value="invoice">Invoice</SelectItem>
                   <SelectItem value="estimate">Estimate</SelectItem>
                   <SelectItem value="proposal">Proposal</SelectItem>
+                  <SelectItem value="curtain-quote">Professional Curtain Quote</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1.5">

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Edit2, Save, Pencil } from "lucide-react";
+import { Download, Mail, MoreVertical, Eye, Image as ImageIcon, CreditCard, FileSpreadsheet, Pencil } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,6 @@ import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
-import QuoteTemplateHomekaara from "@/components/quotes/templates/QuoteTemplateHomekaara";
-import { useQuoteTemplateData } from "@/hooks/useQuoteTemplateData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -123,9 +121,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const dueDate = quote?.due_date || null;
   const currency = businessSettings?.currency || 'GBP';
 
-  // Determine quote template style from business settings
-  const quoteTemplateStyle = (businessSettings as any)?.quote_template || 'default';
-  const useHomekaaraTemplate = quoteTemplateStyle === 'homekaara' && documentType === 'quote';
+  
 
   // Handle CSV export
   const handleExportCSV = (format: 'generic' | 'xero' | 'quickbooks') => {
@@ -169,85 +165,6 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   }), [project, client, businessSettings, projectSummaries, quotationItems, subtotal, taxRate, taxAmount, total, markupPercentage]);
 
-  // Prepare data for Homekaara template
-  const preparedQuoteData = useMemo(() => {
-    if (!useHomekaaraTemplate) return null;
-    return prepareQuoteData(projectData, showDetailedBreakdown);
-  }, [projectData, showDetailedBreakdown, useHomekaaraTemplate]);
-
-  // Transform data for Homekaara template format
-  const homekaaraTemplateData = useMemo(() => {
-    if (!useHomekaaraTemplate || !preparedQuoteData) return null;
-
-    // Helper to format currency for breakdown values
-    const formatBreakdownPrice = (price: number | undefined): string => {
-      if (!price || price <= 0) return '';
-      const symbol = currency === 'INR' ? '₹' : currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency;
-      return `${symbol}${price.toLocaleString(currency === 'INR' ? 'en-IN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
-
-    return {
-      items: preparedQuoteData.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total: item.total,
-        prate: item.quantity,
-        image_url: item.image_url,
-        // FIXED: Properly transform breakdown items with correct label/value mapping
-        breakdown: item.breakdown?.map(b => {
-          // Build a meaningful value string
-          let valueStr = b.description || '';
-          // If there's a price, append it
-          if (b.total_cost && b.total_cost > 0) {
-            const priceStr = formatBreakdownPrice(b.total_cost);
-            valueStr = valueStr ? `${valueStr} - ${priceStr}` : priceStr;
-          }
-          return {
-            label: b.name || b.category || 'Item',
-            value: valueStr || '-',
-          };
-        }).filter(b => b.label && b.value) || [],
-        room_name: item.room_name,
-        room_id: item.room_id,
-        surface_name: item.surface_name,
-        treatment_type: item.treatment_type,
-      })),
-      subtotal: preparedQuoteData.subtotal,
-      taxAmount: preparedQuoteData.taxAmount,
-      total: preparedQuoteData.total,
-      currency: preparedQuoteData.currency,
-      businessInfo: {
-        name: businessSettings?.company_name || 'Your Business',
-        logo_url: businessSettings?.company_logo_url,
-        email: businessSettings?.business_email,
-        phone: businessSettings?.business_phone,
-        address: [businessSettings?.address, businessSettings?.city, businessSettings?.state, businessSettings?.zip_code].filter(Boolean).join(', '),
-      },
-      clientInfo: {
-        name: client?.full_name || client?.name || 'Client',
-        email: client?.email,
-        phone: client?.phone,
-        address: client?.address,
-      },
-      metadata: {
-        quote_number: project?.quote_number || project?.id?.slice(0, 8)?.toUpperCase() || 'N/A',
-        date: project?.created_at ? new Date(project.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
-        status: project?.status || 'Draft',
-        validity_days: project?.validity_days || 14,
-        services_required: project?.services_required,
-        expected_purchase_date: project?.expected_purchase_date,
-        referral_source: project?.referral_source,
-      },
-      paymentInfo: {
-        advance_paid: project?.advance_paid || 0,
-        deposit_percentage: project?.deposit_percentage || 50,
-      },
-      introMessage: project?.intro_message,
-    };
-  }, [useHomekaaraTemplate, preparedQuoteData, businessSettings, client, project, currency]);
 
   const handleDownloadPDF = () => {
     // Open browser's native print dialog - most reliable approach
@@ -299,20 +216,6 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                     <Pencil className="h-3.5 w-3.5" />
                     <span className="text-xs">{isImageEditMode ? 'Done Editing' : 'Edit Images'}</span>
                   </Button>
-                )}
-                {/* Edit Mode Toggle - Only for Homekaara template */}
-                {useHomekaaraTemplate && (
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="edit-mode"
-                      checked={isEditMode}
-                      onCheckedChange={setIsEditMode}
-                    />
-                    <Label htmlFor="edit-mode" className="text-sm cursor-pointer">
-                      <Edit2 className="h-4 w-4 inline mr-1" />
-                      Edit Mode
-                    </Label>
-                  </div>
                 )}
               </div>
               
@@ -400,55 +303,21 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         {/* Scrollable content area - visible on screen */}
         <div className="flex-1 overflow-y-auto bg-white p-8 no-print">
           <div ref={previewRef}>
-            {useHomekaaraTemplate && homekaaraTemplateData ? (
-              <QuoteTemplateHomekaara
-                items={homekaaraTemplateData.items}
-                subtotal={homekaaraTemplateData.subtotal}
-                taxAmount={homekaaraTemplateData.taxAmount}
-                total={homekaaraTemplateData.total}
-                currency={homekaaraTemplateData.currency}
-                businessInfo={homekaaraTemplateData.businessInfo}
-                clientInfo={homekaaraTemplateData.clientInfo}
-                metadata={homekaaraTemplateData.metadata}
-                paymentInfo={homekaaraTemplateData.paymentInfo}
-                introMessage={homekaaraTemplateData.introMessage}
-                isEditable={isEditMode}
-                onSaveChanges={(data) => {
-                  // TODO: Save changes to database
-                  console.log('Quote changes to save:', data);
-                  toast({
-                    title: "Changes saved",
-                    description: "Your quote edits have been saved.",
-                  });
-                  setIsEditMode(false);
-                }}
-                onImageUpload={async (itemId, file) => {
-                  // TODO: Upload image to storage
-                  const url = URL.createObjectURL(file);
-                  toast({
-                    title: "Image uploaded",
-                    description: "Product image has been added.",
-                  });
-                  return url;
-                }}
-              />
-            ) : (
-              <LivePreview
-                blocks={templateBlocks}
-                projectData={projectData}
-                isEditable={false}
-                isPrintMode={false}
-                documentType={selectedTemplate?.template_style || 'quote'}
-                showDetailedBreakdown={showDetailedBreakdown}
-                showImages={showImages}
-                onSettingsChange={(settings) => {
-                  if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
-                  if (settings.showImages !== undefined) setShowImages(settings.showImages);
-                }}
-                onItemImageChange={handleItemImageChange}
-                isImageEditMode={isImageEditMode}
-              />
-            )}
+            <LivePreview
+              blocks={templateBlocks}
+              projectData={projectData}
+              isEditable={false}
+              isPrintMode={false}
+              documentType={selectedTemplate?.template_style || 'quote'}
+              showDetailedBreakdown={showDetailedBreakdown}
+              showImages={showImages}
+              onSettingsChange={(settings) => {
+                if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
+                if (settings.showImages !== undefined) setShowImages(settings.showImages);
+              }}
+              onItemImageChange={handleItemImageChange}
+              isImageEditMode={isImageEditMode}
+            />
           </div>
         </div>
         
@@ -458,21 +327,6 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           style={{ display: 'none' }}
           className="print:block"
         >
-          {useHomekaaraTemplate && homekaaraTemplateData ? (
-            <QuoteTemplateHomekaara
-              items={homekaaraTemplateData.items}
-              subtotal={homekaaraTemplateData.subtotal}
-              taxAmount={homekaaraTemplateData.taxAmount}
-              total={homekaaraTemplateData.total}
-              currency={homekaaraTemplateData.currency}
-              businessInfo={homekaaraTemplateData.businessInfo}
-              clientInfo={homekaaraTemplateData.clientInfo}
-              metadata={homekaaraTemplateData.metadata}
-              paymentInfo={homekaaraTemplateData.paymentInfo}
-              introMessage={homekaaraTemplateData.introMessage}
-              isEditable={false}
-            />
-          ) : (
             <LivePreview 
               blocks={templateBlocks} 
               projectData={projectData}
@@ -482,7 +336,6 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
               showDetailedBreakdown={showDetailedBreakdown}
               showImages={showImages}
             />
-          )}
         </div>
 
       </DialogContent>

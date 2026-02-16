@@ -1,7 +1,5 @@
 import { SimpleTemplateManager } from "../templates/SimpleTemplateManager";
-import { QuoteTemplateStyleSelector } from "../templates/QuoteTemplateStyleSelector";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
-import { Separator } from "@/components/ui/separator";
 
 export const DocumentTemplatesTab = () => {
   return (
@@ -14,11 +12,6 @@ export const DocumentTemplatesTab = () => {
         </div>
         <SectionHelpButton sectionId="documents" />
       </div>
-
-      {/* Quote Template Style Selector */}
-      <QuoteTemplateStyleSelector />
-
-      <Separator />
 
       {/* Block-Based Template Editor */}
       <SimpleTemplateManager />
