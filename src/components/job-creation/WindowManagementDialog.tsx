@@ -682,9 +682,7 @@ export const WindowManagementDialog = ({
                   className="w-[340px] p-3 z-[9999]" 
                   align="start" 
                   side="bottom" 
-                  sideOffset={4} 
-                  onPointerDownOutside={(e) => e.preventDefault()} 
-                  onInteractOutside={(e) => e.preventDefault()}
+                  sideOffset={4}
                 >
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Description</label>
