@@ -123,7 +123,7 @@ export const TeamGroupManager = ({ open, onOpenChange, editGroup }: TeamGroupMan
           {/* Members */}
           <div>
             <Label className="text-xs">Members ({selectedIds.length})</Label>
-            <ScrollArea className="max-h-[240px] mt-1.5 border rounded-lg">
+            <ScrollArea className="h-[240px] mt-1.5 border rounded-lg">
               <div className="p-1">
                 {teamMembers.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">

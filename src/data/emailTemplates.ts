@@ -440,7 +440,7 @@ export const predefinedEmailTemplates: EmailTemplateData[] = [
         </p>
         <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
           <h3 style="color: #856404; margin-top: 0;">Payment Details:</h3>
-          <p style="margin: 8px 0; color: #333;"><strong>Amount Due:</strong> ${{invoice_amount}}</p>
+          <p style="margin: 8px 0; color: #333;"><strong>Amount Due:</strong> \${{invoice_amount}}</p>
           <p style="margin: 8px 0; color: #333;"><strong>Due Date:</strong> {{due_date}}</p>
         </div>
         <p style="font-size: 16px; line-height: 1.6; color: #333;">

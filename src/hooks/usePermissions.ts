@@ -88,10 +88,10 @@ export const useUserPermissions = () => {
       return Array.from(finalPermissions).map(p => ({ permission_name: p }));
     },
     enabled: !!user && !authLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000, // 1 minute - allows role changes to take effect quickly
     gcTime: 10 * 60 * 1000,
     retry: 3,
-    refetchOnWindowFocus: false, // Permissions don't change while using the app
+    refetchOnWindowFocus: true, // Refresh permissions when user returns to tab
     refetchOnMount: false, // Use cached data - staleTime handles freshness
   });
 };

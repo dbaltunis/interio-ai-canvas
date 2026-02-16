@@ -86,7 +86,7 @@ export const CalendarSharingDialog = ({
                 ) : (
                   availableMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.display_name || member.email}
+                      {member.name || member.email}
                     </SelectItem>
                   ))
                 )}
@@ -126,7 +126,7 @@ export const CalendarSharingDialog = ({
               <div className="space-y-2">
                 {delegations.map((delegation) => {
                   const member = teamMembers.find((m) => m.id === delegation.delegate_id);
-                  const displayName = member?.display_name || member?.email || delegation.delegate_id.slice(0, 8);
+                  const displayName = member?.name || member?.email || delegation.delegate_id.slice(0, 8);
 
                   return (
                     <div

@@ -1848,6 +1848,53 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_recipients: {
+        Row: {
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string | null
+          email: string
+          email_id: string | null
+          error_message: string | null
+          id: string
+          name: string | null
+          processed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          email: string
+          email_id?: string | null
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          email?: string
+          email_id?: string | null
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_activity_log: {
         Row: {
           activity_type: string
@@ -2410,6 +2457,9 @@ export type Database = {
           total_spent: number | null
           updated_at: string
           user_id: string
+          whatsapp_cloud_access_token: string | null
+          whatsapp_cloud_phone_number_id: string | null
+          whatsapp_cloud_waba_id: string | null
           zip_code: string | null
         }
         Insert: {
@@ -2452,6 +2502,9 @@ export type Database = {
           total_spent?: number | null
           updated_at?: string
           user_id: string
+          whatsapp_cloud_access_token?: string | null
+          whatsapp_cloud_phone_number_id?: string | null
+          whatsapp_cloud_waba_id?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -2494,6 +2547,9 @@ export type Database = {
           total_spent?: number | null
           updated_at?: string
           user_id?: string
+          whatsapp_cloud_access_token?: string | null
+          whatsapp_cloud_phone_number_id?: string | null
+          whatsapp_cloud_waba_id?: string | null
           zip_code?: string | null
         }
         Relationships: []
@@ -7693,6 +7749,54 @@ export type Database = {
         }
         Relationships: []
       }
+      service_options: {
+        Row: {
+          active: boolean
+          category: string | null
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_schedulable: boolean
+          name: string
+          price: number
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_schedulable?: boolean
+          name: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_schedulable?: boolean
+          name?: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shopify_analytics: {
         Row: {
           analytics_data: Json | null
@@ -8666,11 +8770,12 @@ export type Database = {
           created_at: string | null
           delivery_date: string
           id: string
+          integration_type: string | null
           lead_time_days: number | null
           material_type: string
           order_complexity: string | null
           order_date: string
-          supplier_id: string
+          supplier_id: string | null
           user_id: string
         }
         Insert: {
@@ -8678,11 +8783,12 @@ export type Database = {
           created_at?: string | null
           delivery_date: string
           id?: string
+          integration_type?: string | null
           lead_time_days?: number | null
           material_type: string
           order_complexity?: string | null
           order_date: string
-          supplier_id: string
+          supplier_id?: string | null
           user_id: string
         }
         Update: {
@@ -8690,11 +8796,12 @@ export type Database = {
           created_at?: string | null
           delivery_date?: string
           id?: string
+          integration_type?: string | null
           lead_time_days?: number | null
           material_type?: string
           order_complexity?: string | null
           order_date?: string
-          supplier_id?: string
+          supplier_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -10393,6 +10500,9 @@ export type Database = {
         Row: {
           account_sid: string | null
           auth_token: string | null
+          cloud_access_token: string | null
+          cloud_business_account_id: string | null
+          cloud_phone_number_id: string | null
           created_at: string | null
           id: string
           updated_at: string | null
@@ -10405,6 +10515,9 @@ export type Database = {
         Insert: {
           account_sid?: string | null
           auth_token?: string | null
+          cloud_access_token?: string | null
+          cloud_business_account_id?: string | null
+          cloud_phone_number_id?: string | null
           created_at?: string | null
           id?: string
           updated_at?: string | null
@@ -10417,6 +10530,9 @@ export type Database = {
         Update: {
           account_sid?: string | null
           auth_token?: string | null
+          cloud_access_token?: string | null
+          cloud_business_account_id?: string | null
+          cloud_phone_number_id?: string | null
           created_at?: string | null
           id?: string
           updated_at?: string | null
