@@ -1,106 +1,98 @@
 
 
-# Add "Curtain Quote" as a Template Type + Remove Global Override
+# Give "Curtain Quote" a Distinctive Visual Style
 
-## Summary
+## Overview
 
-Convert the Homekaara "Professional Curtains Quote" from a global override into a regular template type called **"Curtain Quote"** that lives alongside Quote, Invoice, Estimate, and Proposal. Everything uses the same block-based `LivePreview` engine -- same editing, same PDF, same printing. The visual style differences are encoded in the template's default blocks, not in a separate component.
+Add a `theme: 'curtain-professional'` property to the curtain-quote default blocks. The `LivePreview` renderer and `BlockRenderer` will read this theme flag and conditionally render a warm, professional layout matching your reference images -- while all other template types remain completely unchanged.
 
-## What Changes
+## Block Structure for Curtain Quote
 
-### 1. Remove the Global Style Selector (Settings page)
+The curtain-quote will use these specific blocks with the theme flag:
 
-**File:** `src/components/settings/tabs/DocumentTemplatesTab.tsx`
+```text
+Block 1: document-header (theme: curtain-professional, layout: curtain-split)
+  - LEFT: Logo, company details below, then "Prepared For:" client details
+  - RIGHT: Table layout with Quote #, Date, Status (editable), plus 1-3 custom fields
+    (custom title + input value, configurable in Settings)
 
-Remove the `QuoteTemplateStyleSelector` component import and rendering, and remove the `<Separator>` below it. The two-card selector ("Default" vs "Professional Curtains Quote") goes away entirely. Template style is now per-template, not global.
+Block 2: editable-text-field (intro message, free text)
 
-### 2. Add "Curtain Quote" as a Document Type
+Block 3: line-items (theme: curtain-professional)
+  - Columns: Room/Window | Product Image | Product Details | Qty | Unit Price/Prate | Total
+  - Warm brown header bar (#8b7355), white text
+  - Room grouping rows with warm gray background
+  - Product images in dedicated column
 
-**File:** `src/components/settings/templates/SimpleTemplateManager.tsx`
+Block 4: totals (theme: curtain-professional)
+  - Payment Summary label on left
+  - Advance Paid, Total Order Value, Balance Payable on right
 
-- Add `<SelectItem value="curtain-quote">Curtain Quote</SelectItem>` to:
-  - The **Create Template** dialog dropdown (line 775-779)
-  - The **Filter** dropdown (line 680-686)
-- Add curtain-quote color in `getCategoryColor`: e.g. `'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'`
-- Update `getBlankTemplateBlocks('curtain-quote')` to return blocks with:
-  - `document-header` with `showLogo: true`
-  - `client-info`
-  - `line-items` (or `products`) block with `showImages: true`, `groupByRoom: true`, `layout: 'detailed'` as defaults
-  - `totals`
-  - `signature`
+Block 5: curtain-footer (new block type)
+  - LEFT: Terms & Conditions (from system settings)
+  - RIGHT: "View and Accept Quote" button area + company account details
 
-This means when a user creates a "Curtain Quote" template, it comes pre-configured with images ON and room grouping ON -- the features that make it special. But it's still the same block-based editor; users can customize everything.
+Block 6: signature
+```
 
-### 3. Remove Homekaara Override in QuotationTab
+## Technical Changes
 
-**File:** `src/components/jobs/tabs/QuotationTab.tsx`
+### File 1: `SimpleTemplateManager.tsx`
 
-- Remove the `useHomekaaraTemplate` flag (line 353) and all Homekaara-specific logic:
-  - Remove `isHomekaaraEditable` state (line 130)
-  - Remove `homekaaraTemplateData` useMemo (lines 521-601)
-  - Remove `handleHomekaaraSave` function (lines 666-708)
-  - Remove `handleHomekaaraImageUpload` function (lines 711-743)
-  - Remove the `QuoteTemplateHomekaara` import (line 45)
-  - Remove the Homekaara conditional branch in the render (lines 1337-1369) -- all templates now go through the `LivePreview` path
-  - Remove Edit Mode toggle for Homekaara in the display options
+Update `getBlankTemplateBlocks('curtain-quote')` to return blocks with `theme: 'curtain-professional'` and the new layout structure. Add a `backgroundColor` field so the background color is selectable per template (stored in a `document-settings` block).
 
-All templates -- including curtain-quote type -- render through `LivePreview` with existing image upload, editing, and PDF features.
+### File 2: `BlockRenderer.tsx` (DocumentHeaderBlock)
 
-### 4. Remove Homekaara Override in QuoteFullScreenView
+Add a new layout branch: `layout === 'curtain-split'`:
+- Warm cream background (`#faf6f1`)
+- Left column: Logo at top, business name + contact below, then "Prepared For:" with client name/email/phone
+- Right column: A 2-column table with rows for Quote #, Date, Status (each with label on left, value on right), plus up to 3 custom fields (title: value pairs stored in block content, editable)
+- Warm brown text colors (`#8b7355` for labels, `#3d2e1f` for values)
 
-**File:** `src/components/jobs/quotation/QuoteFullScreenView.tsx`
+### File 3: `LivePreview.tsx` (Products/Line-Items block)
 
-- Remove `QuoteTemplateHomekaara` import (line 15)
-- Remove `useQuoteTemplateData` import (line 16)
-- Remove `useHomekaaraTemplate` flag (line 128) and all Homekaara-specific data transforms (lines 172-250)
-- Remove the Homekaara conditional in the visible content area (lines 403-434) -- use `LivePreview` for all
-- Remove the Homekaara conditional in the print area (lines 461-474) -- use `LivePreview` for all
-- Remove the Homekaara-only "Edit Mode" toggle (lines 303-316)
-- Keep: Show Images toggle, Detailed View toggle, Edit Images button -- these already work with `LivePreview` for all template types
+When `content.theme === 'curtain-professional'`:
+- Table header: warm brown background (`#8b7355`), white text
+- Columns rearranged: Room/Window (first), Product Image (dedicated column, ~120px), Product Details (title + breakdown as key-value pairs), Qty, Unit Price, Prate, Price
+- Room grouping rows: warm beige background with bold room name
+- Product detail cell: Title in bold, below it a 2-column mini layout (label: value) for breakdown items
+- Table borders: warm gray (`#d4c5b0`)
+- Background color selectable from document-settings block
 
-### 5. Image Upload Support (Already Built)
+### File 4: `LivePreview.tsx` (Totals block)
 
-The existing `LivePreview` already supports:
-- `showImages` toggle in display options
-- `isImageEditMode` with `onItemImageChange` callback in `QuoteFullScreenView`
-- Image upload to `treatment-images` storage bucket
-- Per-item image override via `product_details.image_url_override`
+When `content.theme === 'curtain-professional'`:
+- Full-width layout: "Payment Summary" label on left, totals on right
+- Show: Subtotal, Total Order Value (bold), Advance Paid, Balance Payable
+- Warm styling with subtle separator line
+- Bottom border in warm brown
 
-For curtain-quote templates, `showImages` defaults to `true` in the blank template blocks, so images are visible out of the box. Users can still toggle it on/off.
+### File 5: `LivePreview.tsx` (New `curtain-footer` block type)
 
-### 6. Editing Support (Already Built)
+Add a new case for `curtain-footer`:
+- Two-column layout
+- Left: Terms and Conditions heading + numbered list from system settings
+- Right top: "View and Accept Quote" button (links to quote acceptance -- uses existing payment button infrastructure)
+- Right bottom: Company name, contact person, email, phone
 
-The block-based editor in `SimpleTemplateManager` already handles all template types. When a user clicks "Edit" on a curtain-quote template, the same `LivePreview` editor opens with `isEditable={true}`. Users can:
-- Rearrange blocks
-- Change block content
-- Toggle settings per block (images, room grouping, detailed breakdown)
+### File 6: `LivePreview.tsx` (Document background)
 
-No new editing infrastructure needed.
+Read the `document-settings` block's `backgroundColor` field and apply it as the page background. This makes the background color selectable -- users can pick warm cream, white, or any color in the template editor.
+
+## What Stays the Same
+
+- All non-curtain-quote templates render exactly as before (no theme flag = no changes)
+- Same block editor for managing/reordering blocks
+- Same PDF generation and printing pipeline
+- Same image upload system
+- Same data sources (treatments, rooms, pricing)
+- Editable text blocks work the same way
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/settings/tabs/DocumentTemplatesTab.tsx` | Remove `QuoteTemplateStyleSelector` + separator |
-| `src/components/settings/templates/SimpleTemplateManager.tsx` | Add "Curtain Quote" type to create dialog, filter, colors, default blocks |
-| `src/components/jobs/tabs/QuotationTab.tsx` | Remove all Homekaara override logic; all templates use LivePreview |
-| `src/components/jobs/quotation/QuoteFullScreenView.tsx` | Remove all Homekaara override logic; all templates use LivePreview |
-
-## Files NOT Modified
-
-- `LivePreview.tsx` -- already handles all block types and features generically
-- `QuoteTemplateHomekaara.tsx` -- kept in codebase for reference but no longer rendered
-- `PrintableQuote.tsx` -- unchanged, works with any template
-- All PDF generation, email, printing -- unchanged
-- Storage buckets -- unchanged
-
-## What Makes "Curtain Quote" Special
-
-It's not a different rendering engine -- it's a template with **better defaults**:
-- Images enabled by default
-- Room grouping enabled by default  
-- Detailed layout by default
-- Pre-configured blocks optimized for curtain/blind quotes
-
-Users can still customize everything through the same block editor.
+| `SimpleTemplateManager.tsx` | Update curtain-quote default blocks with theme flags, new block types, backgroundColor in document-settings |
+| `BlockRenderer.tsx` | Add `curtain-split` layout branch in DocumentHeaderBlock |
+| `LivePreview.tsx` | Add curtain-professional theme in line-items, totals blocks; add `curtain-footer` block type; read backgroundColor from document-settings |
 
