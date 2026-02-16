@@ -9484,6 +9484,7 @@ export type Database = {
           notes: string | null
           pattern: string | null
           photos: string[] | null
+          primary_photo_index: number | null
           product_name: string | null
           project_id: string
           quantity: number | null
@@ -9514,6 +9515,7 @@ export type Database = {
           notes?: string | null
           pattern?: string | null
           photos?: string[] | null
+          primary_photo_index?: number | null
           product_name?: string | null
           project_id: string
           quantity?: number | null
@@ -9544,6 +9546,7 @@ export type Database = {
           notes?: string | null
           pattern?: string | null
           photos?: string[] | null
+          primary_photo_index?: number | null
           product_name?: string | null
           project_id?: string
           quantity?: number | null
@@ -10679,8 +10682,10 @@ export type Database = {
           material_details: Json | null
           measurements_details: Json | null
           options_cost: number | null
+          photos: string[] | null
           price_per_meter: number | null
           pricing_type: string | null
+          primary_photo_url: string | null
           profit_margin: number | null
           rail_width: number | null
           selected_fabric_id: string | null
@@ -10729,8 +10734,10 @@ export type Database = {
           material_details?: Json | null
           measurements_details?: Json | null
           options_cost?: number | null
+          photos?: string[] | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          primary_photo_url?: string | null
           profit_margin?: number | null
           rail_width?: number | null
           selected_fabric_id?: string | null
@@ -10779,8 +10786,10 @@ export type Database = {
           material_details?: Json | null
           measurements_details?: Json | null
           options_cost?: number | null
+          photos?: string[] | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          primary_photo_url?: string | null
           profit_margin?: number | null
           rail_width?: number | null
           selected_fabric_id?: string | null

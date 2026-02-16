@@ -1,15 +1,17 @@
-import { useState, useRef } from "react";
-import { Camera, X, ImagePlus, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Camera, X, ImagePlus, Loader2, Star, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface TreatmentPhotoUploaderProps {
   treatmentId?: string;
   surfaceId: string;
   photos: string[];
-  onPhotosChange: (photos: string[]) => void;
+  primaryPhotoIndex: number | null;
+  onSavePhotos: (photos: string[], primaryIndex: number | null) => Promise<void>;
   maxPhotos?: number;
   disabled?: boolean;
 }
@@ -18,15 +20,29 @@ export const TreatmentPhotoUploader = ({
   treatmentId,
   surfaceId,
   photos = [],
-  onPhotosChange,
+  primaryPhotoIndex = null,
+  onSavePhotos,
   maxPhotos = 3,
   disabled = false,
 }: TreatmentPhotoUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [localPhotos, setLocalPhotos] = useState<string[]>(photos);
+  const [localPrimaryIndex, setLocalPrimaryIndex] = useState<number | null>(primaryPhotoIndex);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Sync local state when popover opens
+  useEffect(() => {
+    if (isOpen) {
+      setLocalPhotos(photos);
+      setLocalPrimaryIndex(primaryPhotoIndex);
+    }
+  }, [isOpen, photos, primaryPhotoIndex]);
+
+  const hasChanges = JSON.stringify(localPhotos) !== JSON.stringify(photos) || localPrimaryIndex !== primaryPhotoIndex;
 
   const uploadPhoto = async (file: File) => {
     try {
@@ -48,10 +64,8 @@ export const TreatmentPhotoUploader = ({
         .from("treatment-photos")
         .getPublicUrl(fileName);
 
-      const newPhotos = [...photos, urlData.publicUrl];
-      onPhotosChange(newPhotos);
-
-      toast({ title: "Photo added", description: "Treatment photo uploaded successfully" });
+      setLocalPhotos(prev => [...prev, urlData.publicUrl]);
+      toast({ title: "Photo added", description: "Click Save to persist changes" });
     } catch (error: any) {
       console.error("Photo upload failed:", error);
       toast({
@@ -67,7 +81,7 @@ export const TreatmentPhotoUploader = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (photos.length >= maxPhotos) {
+    if (localPhotos.length >= maxPhotos) {
       toast({ title: "Limit reached", description: `Maximum ${maxPhotos} photos allowed`, variant: "destructive" });
       return;
     }
@@ -76,8 +90,7 @@ export const TreatmentPhotoUploader = ({
   };
 
   const handleRemovePhoto = async (index: number) => {
-    const photoUrl = photos[index];
-    // Extract path from URL for deletion
+    const photoUrl = localPhotos[index];
     try {
       const urlObj = new URL(photoUrl);
       const pathParts = urlObj.pathname.split("/treatment-photos/");
@@ -87,8 +100,31 @@ export const TreatmentPhotoUploader = ({
     } catch {
       // If URL parsing fails, still remove from array
     }
-    const newPhotos = photos.filter((_, i) => i !== index);
-    onPhotosChange(newPhotos);
+    const newPhotos = localPhotos.filter((_, i) => i !== index);
+    setLocalPhotos(newPhotos);
+    // Adjust primary index
+    if (localPrimaryIndex === index) {
+      setLocalPrimaryIndex(null);
+    } else if (localPrimaryIndex !== null && localPrimaryIndex > index) {
+      setLocalPrimaryIndex(localPrimaryIndex - 1);
+    }
+  };
+
+  const handleSetPrimary = (index: number) => {
+    setLocalPrimaryIndex(localPrimaryIndex === index ? null : index);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSavePhotos(localPhotos, localPrimaryIndex);
+      toast({ title: "Photos saved", description: "Treatment photos updated successfully" });
+      setIsOpen(false);
+    } catch (error: any) {
+      toast({ title: "Save failed", description: error.message || "Could not save photos", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -124,19 +160,46 @@ export const TreatmentPhotoUploader = ({
         >
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-muted-foreground">
-              Treatment Photos ({photos.length}/{maxPhotos})
+              Treatment Photos ({localPhotos.length}/{maxPhotos})
             </label>
           </div>
 
           {/* Photo grid */}
-          {photos.length > 0 && (
+          {localPhotos.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
-              {photos.map((url, i) => (
-                <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-border group">
+              {localPhotos.map((url, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "relative aspect-square rounded-md overflow-hidden border-2 group cursor-pointer transition-colors",
+                    localPrimaryIndex === i
+                      ? "border-primary ring-1 ring-primary/30"
+                      : "border-border hover:border-muted-foreground/40"
+                  )}
+                  onClick={() => handleSetPrimary(i)}
+                >
                   <img src={url} alt={`Treatment photo ${i + 1}`} className="w-full h-full object-cover" />
+                  {/* Star overlay */}
+                  <div
+                    className={cn(
+                      "absolute top-0.5 left-0.5 rounded-full h-5 w-5 flex items-center justify-center transition-opacity",
+                      localPrimaryIndex === i
+                        ? "bg-primary text-primary-foreground opacity-100"
+                        : "bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100"
+                    )}
+                  >
+                    <Star className={cn("h-3 w-3", localPrimaryIndex === i && "fill-current")} />
+                  </div>
+                  {/* Primary label */}
+                  {localPrimaryIndex === i && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[9px] text-center py-0.5 font-medium">
+                      Main
+                    </div>
+                  )}
+                  {/* Remove button */}
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(i)}
+                    onClick={(e) => { e.stopPropagation(); handleRemovePhoto(i); }}
                     className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full h-4 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="h-2.5 w-2.5" />
@@ -147,7 +210,7 @@ export const TreatmentPhotoUploader = ({
           )}
 
           {/* Upload buttons */}
-          {photos.length < maxPhotos && (
+          {localPhotos.length < maxPhotos && (
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -173,8 +236,21 @@ export const TreatmentPhotoUploader = ({
           )}
 
           <p className="text-[10px] text-muted-foreground">
-            Photos are used for work orders and optionally for quotes.
+            Click the ★ to set the main image for quotes. Photos are used for work orders.
           </p>
+
+          {/* Save button */}
+          {localPhotos.length > 0 && (
+            <Button
+              size="sm"
+              className="w-full text-xs"
+              disabled={isSaving || !hasChanges}
+              onClick={handleSave}
+            >
+              {isSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+              {hasChanges ? "Save Photos" : "Saved"}
+            </Button>
+          )}
 
           {/* Hidden file inputs */}
           <input

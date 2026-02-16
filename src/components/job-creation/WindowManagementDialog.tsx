@@ -437,6 +437,7 @@ export const WindowManagementDialog = ({
   const [editProductValue, setEditProductValue] = useState('');
   const [editDescriptionValue, setEditDescriptionValue] = useState('');
   const [treatmentPhotos, setTreatmentPhotos] = useState<string[]>([]);
+  const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number | null>(null);
   const currentTreatment = existingTreatments?.[0];
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
@@ -520,9 +521,15 @@ export const WindowManagementDialog = ({
       setTreatmentDescription('');
     }
     
-    // Load photos from windows_summary
-    const photos = (windowSummary as any)?.photos;
-    setTreatmentPhotos(Array.isArray(photos) ? photos : []);
+    // Load photos from treatments table first, fallback to windows_summary
+    const treatmentPhotoData = (currentTreatment as any)?.photos;
+    const summaryPhotoData = (windowSummary as any)?.photos;
+    const loadedPhotos = Array.isArray(treatmentPhotoData) ? treatmentPhotoData : (Array.isArray(summaryPhotoData) ? summaryPhotoData : []);
+    setTreatmentPhotos(loadedPhotos);
+    
+    // Load primary photo index from treatment
+    const pIndex = (currentTreatment as any)?.primary_photo_index;
+    setPrimaryPhotoIndex(typeof pIndex === 'number' ? pIndex : null);
   }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, currentTreatment, windowSummary, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
 
   // Refetch when dialog opens to ensure fresh data
@@ -603,15 +610,27 @@ export const WindowManagementDialog = ({
                     surfaceId={surface?.id || ''}
                     treatmentId={currentTreatment?.id}
                     photos={treatmentPhotos}
-                    onPhotosChange={async (newPhotos) => {
+                    primaryPhotoIndex={primaryPhotoIndex}
+                    onSavePhotos={async (newPhotos, newPrimaryIndex) => {
                       setTreatmentPhotos(newPhotos);
-                      // Save to windows_summary
+                      setPrimaryPhotoIndex(newPrimaryIndex);
+                      const primaryUrl = newPrimaryIndex !== null ? newPhotos[newPrimaryIndex] || null : null;
+                      
+                      // Save to treatments table
+                      if (currentTreatment?.id) {
+                        await supabase
+                          .from('treatments')
+                          .update({ photos: newPhotos, primary_photo_index: newPrimaryIndex } as any)
+                          .eq('id', currentTreatment.id);
+                      }
+                      // Sync to windows_summary
                       if (surface?.id) {
                         await supabase
                           .from('windows_summary')
-                          .update({ photos: newPhotos } as any)
+                          .update({ photos: newPhotos, primary_photo_url: primaryUrl } as any)
                           .eq('window_id', surface.id);
                         queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+                        queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
                       }
                     }}
                     disabled={isStatusLocked}
