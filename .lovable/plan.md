@@ -1,36 +1,136 @@
 
-# Fix: Restore Document Preview Scaling and Fill Cream Background
 
-## What went wrong
-The last change removed the fixed A4 width and scaling, making the document stretch across the full app width. That's not what you want.
+# Apple Finder-Style Library Redesign
 
-## What you actually want
-- Restore the original A4-sized, centered, scaled document preview (the white container with shadow)
-- The cream/beige background (from the template's document-settings backgroundColor) should fill the entire white document container edge-to-edge, with no white gaps inside it
+## Overview
 
-## Changes
+Transform the Library page to match the Calendar section's layout -- a persistent collapsible sidebar with an Apple Finder-inspired brand/collection navigation tree, color tags for visual organization, and inline renaming. Works across ALL product categories (Fabrics, Materials, Hardware, Wallcoverings, Headings).
 
-### File: `src/components/jobs/tabs/QuotationTab.tsx` (lines 1161-1171)
+## Database Changes
 
-**Revert** the last diff — bring back the centered layout with scaling:
+Two new nullable columns:
 
-```tsx
-<div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
-  <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
-    <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
-      width: '210mm',
-      minHeight: '297mm',
-      fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: '10pt',
-      padding: '0',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
-    }}>
+- **`collections.color_tag`** (text) -- stores color key like `"red"`, `"blue"`, `"green"`
+- **`vendors.color_tag`** (text) -- same palette
+
+No existing data is affected. Both columns default to NULL (no color).
+
+## Layout Change
+
+Current layout uses a loose `space-y-4` vertical stack. New layout mirrors the Calendar exactly:
+
+```text
++----------------------------------------------------------+
+| Library  [search] [filter] [grid/list] [scan] [+add]     |
++-------------+--------------------------------------------+
+|             | Fabrics | Materials | Hardware | Wall...    |
+| BRANDS      | ------------------------------------------ |
+|             |                                            |
+| o All Items | [scrollable product grid/list]             |
+|             |                                            |
+| > TWC  [o]  |                                            |
+|   o Adara   |                                            |
+|   o Bella   |                                            |
+|             |                                            |
+| > Somfy [o] |                                            |
+|   o Motors  |                                            |
+|             |                                            |
+| TAGS        |                                            |
+| o Red       |                                            |
+| o Blue      |                                            |
++-------------+--------------------------------------------+
 ```
 
-Key difference from the original: set `padding: '0'` on the outer `#quote-live-preview` div. The padding is already handled by the document-settings block margins inside LivePreview, so removing it here prevents double-padding and lets the cream background fill edge-to-edge within the white A4 container.
+The `[o]` circles represent Finder-style color dots next to brands/collections.
 
-This way:
-- The **white container** = the outer gradient wrapper (the section background)
-- The **cream document** = fills the entire A4-sized `#quote-live-preview` div with no white gaps inside it
-- Scaling and centering remain intact for a proper document preview feel
+## What Gets Built
+
+### 1. LibrarySidebar.tsx (new file)
+
+Modeled directly after `CalendarSidebar.tsx`:
+- Collapsible with `localStorage` persistence (`library.sidebarCollapsed`)
+- Collapsed: narrow 12px strip with expand chevron
+- Expanded: 280px, scrollable
+- Contains:
+  - Header: "Library" + collapse chevron
+  - Search brands input
+  - "All Items" button (clears filters)
+  - Brand tree with expandable collections (reuses existing `useVendorsWithCollections` data)
+  - Color dot next to each brand/collection name
+  - Hover reveals "..." menu with: Rename (inline edit), Color Tag (7-color submenu + "None")
+  - "Tags" section at bottom -- quick filter by color tag
+- On mobile: hidden, Sheet drawer triggered from header
+
+### 2. Color Tag Palette
+
+```text
+Red (#FF3B30), Orange (#FF9500), Yellow (#FFCC00),
+Green (#34C759), Blue (#007AFF), Purple (#AF52DE), Gray (#8E8E93)
+```
+
+Same 7 colors as macOS Finder tags.
+
+### 3. ModernInventoryDashboard.tsx (modified)
+
+- Outer container changes from `flex-1 space-y-4 p-4` to `h-[calc(100dvh-3.5rem)] flex overflow-hidden`
+- LibrarySidebar added on the left (persistent across ALL tabs)
+- Header + Tabs + content move into the right `flex-1` column with internal scroll
+- Remove the conditional `BrandCollectionsSidebar` block (lines 274-292)
+- `selectedBrand` and `selectedCollection` state already exists -- just wired to the new sidebar
+
+### 4. CollectionsView.tsx (simplified)
+
+- Remove internal sidebar, Sheet, and collapse logic (lines 93-169)
+- Becomes a simple grid of collection cards with search header
+- Receives `selectedBrand` as prop from parent
+- Collection cards show color dot if `color_tag` is set
+
+### 5. useCollections.ts (extended)
+
+- Add `useUpdateCollectionColor` mutation -- updates `color_tag` on collections table
+- Add `useUpdateVendorColor` mutation -- updates `color_tag` on vendors table  
+- Add `useRenameVendor` mutation -- updates vendor name
+- Existing `useUpdateCollection` already supports name changes
+
+### 6. BrandCollectionsSidebar.tsx (enhanced)
+
+- Add color dot rendering next to each name
+- Add hover "..." DropdownMenu with Rename and Color Tag options
+- Color Tag submenu: 7 colored circles + "None" to clear
+- Rename: switches to inline Input, Enter/blur to save
+
+## Sidebar Interactions
+
+| Action | Result |
+|--------|--------|
+| Click brand | Filters ALL tabs by that vendor |
+| Click collection under brand | Switches to Fabrics tab filtered by that collection |
+| Click "All Items" | Clears brand + collection filters |
+| Right-click / hover "..." on brand | Rename or change color tag |
+| Right-click / hover "..." on collection | Rename or change color tag |
+| Click color in Tags section | Filter to brands/collections with that color |
+| Collapse sidebar | Shrinks to 12px with expand chevron |
+| Mobile | Sidebar hidden; brand button opens Sheet |
+
+## Files Changed
+
+| File | Action |
+|------|--------|
+| `collections` table | Add `color_tag` column (migration) |
+| `vendors` table | Add `color_tag` column (migration) |
+| `src/components/library/LibrarySidebar.tsx` | New file |
+| `src/components/inventory/ModernInventoryDashboard.tsx` | Layout restructure |
+| `src/components/library/CollectionsView.tsx` | Simplify (remove sidebar) |
+| `src/components/library/BrandCollectionsSidebar.tsx` | Add color dots + context menu |
+| `src/hooks/useCollections.ts` | Add color/rename mutations |
+| `src/constants/finderColors.ts` | New constants file |
+
+## What Stays Untouched
+
+- All inventory hooks (`useEnhancedInventory`, etc.)
+- Product category views (FabricInventoryView, HardwareInventoryView, etc.)
+- FilterButton component
+- RLS policies and multi-tenant logic
+- AddInventoryDialog, QR scanner
+- Vendors tab and Admin tab content
+
