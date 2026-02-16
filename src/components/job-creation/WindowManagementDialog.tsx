@@ -585,7 +585,7 @@ export const WindowManagementDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4">
+        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4" onPointerDownOutside={(e) => { if ((e.target as HTMLElement)?.closest('[data-radix-popper-content-wrapper]')) e.preventDefault(); }} onInteractOutside={(e) => { if ((e.target as HTMLElement)?.closest('[data-radix-popper-content-wrapper]')) e.preventDefault(); }}>
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
@@ -680,7 +680,7 @@ export const WindowManagementDialog = ({
                       <Pencil className="h-3 w-3 text-muted-foreground opacity-60 shrink-0" />
                     </div>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[340px] p-3" align="start" side="bottom" sideOffset={4}>
+                  <PopoverContent className="w-[340px] p-3 z-[9999]" align="start" side="bottom" sideOffset={4} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onOpenAutoFocus={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground">Description</label>
                       <Textarea
