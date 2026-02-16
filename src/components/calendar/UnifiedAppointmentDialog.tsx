@@ -528,45 +528,7 @@ export const UnifiedAppointmentDialog = ({
             </Alert>
           )}
 
-          {/* Event Type & Color indicator */}
-          <div>
-            <Label className="text-[10px] text-muted-foreground mb-1 block">Type</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { value: "meeting", label: "Meeting", color: "#3B82F6" },
-                { value: "consultation", label: "Consult", color: "#22C55E" },
-                { value: "measurement", label: "Measure", color: "#8B5CF6" },
-                { value: "installation", label: "Install", color: "#F59E0B" },
-                { value: "follow_up", label: "Follow-up", color: "#06B6D4" },
-                { value: "reminder", label: "Reminder", color: "#F97316" },
-                { value: "call", label: "Call", color: "#EF4444" },
-              ].map(type => (
-                <button
-                  key={type.value}
-                  type="button"
-                  className={`px-2.5 py-1 text-[11px] rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                    event.appointment_type === type.value
-                      ? 'ring-2 ring-offset-1 shadow-sm'
-                      : 'opacity-50 hover:opacity-80'
-                  }`}
-                  style={{
-                    backgroundColor: `${type.color}20`,
-                    color: type.color,
-                  }}
-                  onClick={() => setEvent(prev => ({
-                    ...prev,
-                    appointment_type: type.value as any,
-                    // Only set color from type when no team group is selected
-                    ...(prev.selectedTeamMembers.length === 0 ? { color: type.color } : {}),
-                  }))}
-
-                >
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
-                  {type.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Event Type removed — appointment_type defaults to "meeting" internally */}
 
           {/* Client & Job Linking — always visible for reception workflow */}
           <div className="grid grid-cols-2 gap-2">
