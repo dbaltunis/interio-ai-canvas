@@ -78,8 +78,11 @@ export const QuickAddPopover = ({
       const [sh, sm] = startTime.split(':').map(Number);
       const [eh, em] = initialEndTime.split(':').map(Number);
       const diff = (eh * 60 + em) - (sh * 60 + sm);
-      if (diff > 0 && diff <= 180) {
+      // Use dragged range if > 15min, otherwise default to 30min
+      if (diff > 15 && diff <= 180) {
         setSelectedDuration(diff);
+      } else {
+        setSelectedDuration(30);
       }
     }
   }, [startTime, initialEndTime]);
