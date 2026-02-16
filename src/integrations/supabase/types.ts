@@ -2557,6 +2557,7 @@ export type Database = {
       collections: {
         Row: {
           active: boolean | null
+          color_tag: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -2571,6 +2572,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          color_tag?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -2585,6 +2587,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          color_tag?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -10224,6 +10227,7 @@ export type Database = {
           active: boolean | null
           address: string | null
           city: string | null
+          color_tag: string | null
           company_type: string | null
           contact_person: string | null
           country: string | null
@@ -10245,6 +10249,7 @@ export type Database = {
           active?: boolean | null
           address?: string | null
           city?: string | null
+          color_tag?: string | null
           company_type?: string | null
           contact_person?: string | null
           country?: string | null
@@ -10266,6 +10271,7 @@ export type Database = {
           active?: boolean | null
           address?: string | null
           city?: string | null
+          color_tag?: string | null
           company_type?: string | null
           contact_person?: string | null
           country?: string | null
