@@ -1,89 +1,117 @@
 
 
-# Replace All Modal Dialogs with Inline Popovers + Fix Scroll and Note Issues
+# Fix Notification Navigation + Smart Notification Audience
 
-## Summary
+## Problem 1: Notification Click Doesn't Navigate to the Right Place
 
-Four changes in one pass:
-1. Convert the old modal dialog (`UnifiedAppointmentDialog`) to a popover-style panel so Jobs, Clients, and RoomCard pages get the same experience as the calendar
-2. Fix the scroll issue in `QuickAddPopover` so all fields are reachable
-3. Fix the note textarea causing the popover to disappear
-4. Remove the "Event Type" section from both `QuickAddPopover` and `EventDetailPopover`
+**Current behavior**: Clicking a notification like "Appointment Scheduled" navigates to `/?tab=calendar` (generic calendar page) or `/?tab=projects` (generic jobs list). It never opens the specific event or job.
 
----
+**Root cause**: Two issues working together:
+- `action_url` is stored as `/calendar` (no event ID) or `/?tab=projects` (no job ID)
+- The `handleTabChange` function in `ResponsiveHeader.tsx` (line 348) strips query params with `action_url.replace('/?tab=', '')` and passes only the tab name to `setSearchParams({ tab: tabId })`, which overwrites all other params
 
-## Issue 1: Old Modal Still Used on Jobs, Clients, and RoomCard Pages
+**Fix**:
 
-**Where the old modal is still used:**
-- `src/components/clients/ClientQuickActionsBar.tsx` (line 262) -- "Schedule" button on client page
-- `src/components/jobs/tabs/ProjectDetailsTab.tsx` (line 818) -- "Schedule" button on job details
-- `src/components/job-creation/RoomCard.tsx` (line 282) -- service scheduling from room card
-- `src/components/calendar/MobileCalendarView.tsx` (lines 411, 418) -- mobile create/edit
+### File 1: `src/components/layout/ResponsiveHeader.tsx` (line 345-350)
 
-**Fix:** Convert `UnifiedAppointmentDialog` from a `Dialog` (centered modal with dark backdrop) to a fixed-position popover panel (no backdrop, same visual style as `QuickAddPopover`). This automatically updates every page that uses it.
+Replace the naive `onTabChange(action_url.replace(...))` with proper URL parsing:
 
-**Technical details:**
-- Replace `<Dialog>` / `<DialogContent>` wrapper with a fixed-position `div` (same pattern as QuickAddPopover)
-- Position: centered horizontally, vertically centered in viewport
-- Width: `max-w-md` (same as current)
-- No dark backdrop overlay
-- Add click-outside-to-close and Escape-to-close handlers
-- Wrap content in `ScrollArea` with `max-h-[85vh]`
-- Add subtle shadow and border (matching QuickAddPopover)
-- All form fields, hooks, permissions, and save logic stay identical
+```
+onClick={() => {
+  markAsRead(notif.id);
+  if (notif.action_url) {
+    const url = new URL(notif.action_url, window.location.origin);
+    const params = Object.fromEntries(url.searchParams.entries());
+    const tab = params.tab;
+    delete params.tab;
+    // Navigate to the tab with all query params preserved
+    if (tab) {
+      onTabChange(tab);
+      // Set all additional params (jobId, eventId, clientId, etc.)
+      setTimeout(() => {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('tab', tab);
+        Object.entries(params).forEach(([k, v]) => currentParams.set(k, v));
+        window.history.replaceState(null, '', `?${currentParams.toString()}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, 50);
+    }
+    setNotifPopoverOpen(false);
+  }
+});
+```
 
-**Files changed:** `src/components/calendar/UnifiedAppointmentDialog.tsx`
+### File 2: `src/hooks/useAppointments.ts` (line 95)
 
----
+Change `action_url` from `/calendar` to include the event ID:
+```
+action_url: `/?tab=calendar&eventId=${appointmentId}`,
+```
 
-## Issue 2: Popover Not Scrollable
+### File 3: `src/hooks/useClients.ts` (line 230)
 
-**Root cause:** The `ScrollArea` in `QuickAddPopover.tsx` (line 259) uses `className="flex-1 min-h-0"` which relies on the flex parent having a constrained height. The outer div sets `maxHeight` via inline style, but Radix ScrollArea's internal viewport doesn't always pick up the flex-based height constraint correctly.
-
-**Fix:** Give the `ScrollArea` an explicit max-height calculated from the container's maxHeight minus the header (approx 48px) and footer (approx 48px) heights, using CSS `calc()`. This guarantees Radix creates a proper scrollable region.
-
-**File changed:** `src/components/calendar/QuickAddPopover.tsx` (line 259)
-
----
-
-## Issue 3: Popover Disappears When Adding a Note
-
-**Root cause:** The click-outside handler (line 143) listens for `mousedown` events. When the user clicks into the `Textarea` for the note field, the event fires correctly and the popover should stay open since the textarea is inside `popoverRef`. However, if the user clicks on the `ScrollArea`'s scrollbar track (which Radix renders outside the normal content flow), or if the textarea causes a layout shift that moves the popover, the `contains()` check can fail.
-
-**Fix:**
-- Add the `Textarea`'s container to the click-outside exclusion list
-- Add a check for `[data-radix-scroll-area-viewport]` elements in the click-outside handler (same pattern already used for `[data-radix-popper-content-wrapper]`)
-- Prevent `mousedown` propagation on all form inputs within the popover to be safe
-
-**File changed:** `src/components/calendar/QuickAddPopover.tsx` (lines 143-148)
+Already has `action_url: /clients?clientId=${data.id}` -- just needs the `/?tab=` prefix format to match the parser:
+```
+action_url: `/?tab=clients&clientId=${data.id}`,
+```
 
 ---
 
-## Issue 4: Remove Event Type
+## Problem 2: Calendar Doesn't Handle Deep-Link to Specific Event
 
-**Current state:** Both `QuickAddPopover` (lines 342-362) and `EventDetailPopover` (lines 288-308) show an "Event Type" chip selector (Meeting, Consultation, Measurement, etc.) in the expanded view.
+When `eventId` is in the URL, the calendar should auto-scroll to that date and open the event detail popover.
 
-**Fix:** Remove the Event Type section entirely from both components. The `appointmentType` state and its inclusion in the save payload will remain (defaulting to "meeting") so existing data is not broken -- it just won't be shown in the UI.
+### File 4: `src/components/calendar/CalendarView.tsx`
 
-**Files changed:**
-- `src/components/calendar/QuickAddPopover.tsx` -- remove lines 342-362 (Event Type section)
-- `src/components/calendar/EventDetailPopover.tsx` -- remove lines 288-308 (Event Type section)
+Add a `useEffect` that reads `eventId` from `searchParams`, finds the matching appointment, sets the calendar date to the event's date, and opens the `EventDetailPopover` for it.
 
 ---
+
+## Problem 3: Notification Audience (Industry Best Practice)
+
+**Current behavior**: Only explicitly invited team members get notified. The event creator gets a toast but no persistent notification. The job owner (if the event is linked to a job) gets nothing. The client gets nothing unless email invites are sent.
+
+**Industry standard** (Google Calendar, Outlook, Calendly):
+- **Invited team members**: In-app notification + email -- already works
+- **Event creator**: Confirmation notification (in-app) with event details -- for their own records
+- **Job/project owner**: If the event is linked to a job and was created by a team member (not the owner), the owner should get notified that an event was scheduled on their job
+- **Client**: Email only (no in-app since clients don't have app accounts) -- already handled by `send-calendar-invite-emails`
+
+### File 5: `src/hooks/useAppointments.ts` -- `notifyTeamMembers` function
+
+Extend to also:
+1. **Notify the job owner** when the event is linked to a project (`project_id`): query the project's `user_id`, and if it differs from the creator, send them an in-app notification
+2. **Notify the account owner** when a team member creates an event: use `getEffectiveOwnerForMutation` pattern to identify the parent account, notify them if different from creator
+3. **Creator confirmation**: Add a self-notification for the creator with `action_url` pointing to the specific event
+
+Rename function to `notifyRelevantParties` for clarity.
+
+---
+
+## Problem 4: Duplicate Notifications (from screenshot)
+
+The screenshot shows 3 identical "Appointment Scheduled" notifications. This suggests the notification insert is being called multiple times (possibly from React strict mode double-rendering or from the toast + notification both triggering).
+
+### File 6: `src/hooks/useAppointments.ts`
+
+Add a guard to prevent duplicate notifications by checking if a notification with the same `source_id` already exists before inserting.
+
+---
+
+## Summary of Files Changed
+
+| File | Change |
+|------|--------|
+| `ResponsiveHeader.tsx` | Parse `action_url` as full URL with query params |
+| `useAppointments.ts` | Deep-link `action_url`, notify job owner + account owner, dedup guard |
+| `useClients.ts` | Fix `action_url` format to `/?tab=clients&clientId=...` |
+| `CalendarView.tsx` | Auto-open event from `eventId` URL param |
 
 ## What Does NOT Change
 
-- All hooks: `useCreateAppointment`, `useUpdateAppointment`, `useDeleteAppointment`, `useClients`, `useProjects`, `useTeamMembers`
-- All permission checks (`useCalendarPermissions`, `useHasPermission`)
-- The calculation engine (`src/engine/formulas/`)
-- Database queries and edge functions
-- The `QuickAddPopover` calendar-anchored positioning (only used on calendar page)
-- The `EventDetailPopover` (stays as Radix Popover, just removes Event Type)
-
-## Implementation Order
-
-1. Remove Event Type from both popovers (safest, UI-only)
-2. Fix scroll in QuickAddPopover (CSS change)
-3. Fix click-outside handler for note textarea (event handler tweak)
-4. Convert UnifiedAppointmentDialog from Dialog to popover panel (wrapper change, zero logic change)
+- Database schema (notifications table already has `action_url`, `source_type`, `source_id`)
+- RLS policies (the cross-account insert policy was just fixed)
+- Edge functions
+- Permission hooks
+- The popover UI components
 
