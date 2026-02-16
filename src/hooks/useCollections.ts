@@ -127,7 +127,7 @@ export const useCollectionsWithCounts = () => {
         .from("collections")
         .select(`
           *,
-          vendor:vendors(id, name, color_tag)
+          vendor:vendors(id, name)
         `)
         .eq("user_id", effectiveOwnerId)
         .eq("active", true)
@@ -176,7 +176,7 @@ export const useVendorsWithCollections = () => {
         .from("collections")
         .select(`
           *,
-          vendor:vendors(id, name, color_tag)
+          vendor:vendors(id, name)
         `)
         .eq("user_id", effectiveOwnerId)
         .eq("active", true)
