@@ -222,8 +222,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 const isEmailsTab = item.id === 'emails';
                 const isEmailsDisabled = isEmailsTab && canViewEmails === false;
                 // Only check email configuration for non-owners/admins
-                const isEmailsNotConfigured = isEmailsTab && canViewEmails !== false && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
-                const shouldDisableEmails = isEmailsDisabled || isEmailsNotConfigured;
+                const shouldDisableEmails = isEmailsDisabled;
                 
                 const handleClick = () => {
                   if (isEmailsDisabled) {
@@ -234,14 +233,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     });
                     return;
                   }
-                  if (isEmailsNotConfigured) {
-                    toast({
-                      title: "Emails Not Configured",
-                      description: "Please configure SendGrid integration to access emails.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
+                  // Messages tab is now always accessible if user has permission
+                  // Email provider config prompt is shown inside the Messages tab itself
                   onTabChange(item.id);
                 };
                 

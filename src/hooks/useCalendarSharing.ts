@@ -38,7 +38,7 @@ export const useCalendarDelegations = () => {
         console.warn("Calendar delegations query failed:", error.message);
         return [];
       }
-      return (data || []) as CalendarDelegation[];
+      return (data || []) as unknown as CalendarDelegation[];
     },
   });
 };
@@ -65,7 +65,7 @@ export const useAppointmentShares = (appointmentId?: string) => {
         console.warn("Appointment shares query failed:", error.message);
         return [];
       }
-      return (data || []) as AppointmentShare[];
+      return (data || []) as unknown as AppointmentShare[];
     },
   });
 };

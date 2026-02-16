@@ -87,7 +87,7 @@ export const AppointmentSharingDialog = ({
                 ) : (
                   availableMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.display_name || member.email}
+                      {member.name || member.email}
                     </SelectItem>
                   ))
                 )}
@@ -127,7 +127,7 @@ export const AppointmentSharingDialog = ({
               <div className="space-y-2">
                 {shares.map((share) => {
                   const member = teamMembers.find((m) => m.id === share.shared_with_user_id);
-                  const displayName = member?.display_name || member?.email || share.shared_with_user_id.slice(0, 8);
+                  const displayName = member?.name || member?.email || share.shared_with_user_id.slice(0, 8);
 
                   return (
                     <div

@@ -37,7 +37,7 @@ export const CWSystemsIntegrationTab = () => {
     setIsLoading(true);
     try {
       const data = {
-        integration_type: 'cw_systems',
+        integration_type: 'cw_systems' as const,
         active: true,
         api_credentials: {
           account_code: formData.account_code,
@@ -50,7 +50,7 @@ export const CWSystemsIntegrationTab = () => {
           default_delivery_address: formData.default_delivery_address,
           default_payment_terms: formData.default_payment_terms,
           notes_template: formData.notes_template,
-          order_method: 'email',
+          order_method: 'email' as const,
         },
         last_sync: null,
       };

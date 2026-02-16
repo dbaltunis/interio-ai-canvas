@@ -59,8 +59,8 @@ export const useServiceOptions = () => {
     queryFn: async () => {
       if (!effectiveOwnerId) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('service_options')
+      const { data, error } = await (supabase
+        .from('service_options' as any) as any)
         .select('*')
         .eq('user_id', effectiveOwnerId)
         .order('created_at', { ascending: false });
@@ -85,8 +85,8 @@ export const useActiveServiceOptions = () => {
     queryFn: async () => {
       if (!effectiveOwnerId) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('service_options')
+      const { data, error } = await (supabase
+        .from('service_options' as any) as any)
         .select('*')
         .eq('user_id', effectiveOwnerId)
         .eq('active', true)
@@ -122,8 +122,8 @@ export const useCreateServiceOption = () => {
         cost_price: option.cost_price || null,
       };
 
-      const { data, error } = await supabase
-        .from('service_options')
+      const { data, error } = await (supabase
+        .from('service_options' as any) as any)
         .insert(insertData)
         .select()
         .single();
@@ -152,8 +152,8 @@ export const useUpdateServiceOption = () => {
     mutationFn: async (option: Partial<ServiceOption> & { id: string }) => {
       const { id, user_id, created_at, updated_at, ...updates } = option;
 
-      const { data, error } = await supabase
-        .from('service_options')
+      const { data, error } = await (supabase
+        .from('service_options' as any) as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -181,8 +181,8 @@ export const useDeleteServiceOption = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('service_options')
+      const { error } = await (supabase
+        .from('service_options' as any) as any)
         .delete()
         .eq('id', id);
 

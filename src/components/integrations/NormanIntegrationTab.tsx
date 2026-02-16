@@ -37,7 +37,7 @@ export const NormanIntegrationTab = () => {
     setIsLoading(true);
     try {
       const data = {
-        integration_type: 'norman_australia',
+        integration_type: 'norman_australia' as const,
         active: true,
         api_credentials: {
           account_number: formData.account_number,
@@ -50,7 +50,7 @@ export const NormanIntegrationTab = () => {
           default_delivery_address: formData.default_delivery_address,
           default_payment_terms: formData.default_payment_terms,
           notes_template: formData.notes_template,
-          order_method: 'email',
+          order_method: 'email' as const,
         },
         last_sync: null,
       };
