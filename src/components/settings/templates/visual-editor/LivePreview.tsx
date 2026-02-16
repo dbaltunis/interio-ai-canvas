@@ -2343,7 +2343,7 @@ export const LivePreview = ({
           backgroundColor: docBgColor || '#ffffff',
           color: '#000000 !important',
           padding: 0,
-          margin: 0,
+          margin: '0 auto',
           width: '90%'
         }}
       >
