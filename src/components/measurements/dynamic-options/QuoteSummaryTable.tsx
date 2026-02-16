@@ -14,7 +14,7 @@
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup } from "@/utils/pricing/markupResolver";
-import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { groupHardwareItems, filterMeaningfulHardwareItems, isHardwareItem } from "@/utils/quotes/groupHardwareItems";
 
 export interface QuoteSummaryItem {
   name: string;
@@ -113,10 +113,13 @@ export const QuoteSummaryTable = ({
   // Flatten hardware items
   const filteredHardwareItems = hardwareGroup ? filterMeaningfulHardwareItems(hardwareGroup.items) : [];
   
-  // Non-hardware items
+  // Non-hardware items — use the same isHardwareItem() check to prevent duplicates
   const nonHardwareItems = items.filter(item => 
-    !item.category?.includes('hardware') && 
-    item.category !== 'hardware_accessory'
+    !isHardwareItem({
+      ...item,
+      total_cost: item.price,
+      calculatedPrice: item.price
+    })
   );
 
   // Calculate totals - all items included (no exclusion feature)
