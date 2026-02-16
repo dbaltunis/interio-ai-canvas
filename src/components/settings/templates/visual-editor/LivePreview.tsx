@@ -1271,6 +1271,15 @@ const LivePreviewBlock = ({
                                     </>
                                   )}
                                 </td>
+                                {/* Qty */}
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                                  {item.quantity || 1}
+                                </td>
+                                {/* Unit Price */}
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
+                                </td>
+                                {/* Total */}
                                 <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                                   {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                                 </td>
