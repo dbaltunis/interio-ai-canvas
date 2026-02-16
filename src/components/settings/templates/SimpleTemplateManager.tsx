@@ -84,13 +84,15 @@ const getBlankTemplateBlocks = (category: string) => {
     baseBlocks.push({ id: 'signature', type: 'signature', content: {} });
   }
 
-  // Curtain quote: pre-configured with images, room grouping, detailed layout
+  // Curtain quote: themed professional layout with warm styling
   if (category === 'curtain-quote') {
     return [
-      { id: 'header', type: 'document-header', content: { title: 'Professional Curtain Quote', showLogo: true } },
-      { id: 'client', type: 'client-info', content: {} },
-      { id: 'items', type: 'line-items', content: { showImages: true, groupByRoom: true, layout: 'detailed', showDetailedBreakdown: true } },
-      { id: 'totals', type: 'totals', content: {} },
+      { id: 'doc-settings', type: 'document-settings', content: { backgroundColor: '#faf6f1', orientation: 'portrait', marginTop: 8, marginRight: 8, marginBottom: 6, marginLeft: 8 } },
+      { id: 'header', type: 'document-header', content: { theme: 'curtain-professional', layout: 'curtain-split', title: 'Professional Curtain Quote', showLogo: true, customFields: [{ label: 'Services Required', value: '' }, { label: 'Purchase Date', value: '' }, { label: 'Referral Source', value: '' }] } },
+      { id: 'intro', type: 'editable-text-field', content: { label: 'Introduction Message', value: 'Thank you for giving us the opportunity to quote on your window furnishing requirements. Please find our quotation below.' } },
+      { id: 'items', type: 'line-items', content: { theme: 'curtain-professional', showImages: true, groupByRoom: true, layout: 'detailed', showDetailedBreakdown: true, showProductImageColumn: true, showPrateColumn: true } },
+      { id: 'totals', type: 'totals', content: { theme: 'curtain-professional' } },
+      { id: 'curtain-footer', type: 'curtain-footer', content: {} },
       { id: 'signature', type: 'signature', content: {} }
     ];
   }

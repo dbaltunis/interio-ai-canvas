@@ -1113,6 +1113,137 @@ const LivePreviewBlock = ({
       const sectionTitle = getLocalizedSectionTitles(documentType, lang);
       const totalColumnHeader = getLocalizedTotalColumnHeader(taxType, taxInclusive, lang);
 
+      // ============= CURTAIN-PROFESSIONAL THEMED TABLE =============
+      if (content.theme === 'curtain-professional') {
+        return (
+          <div className="mb-4 products-section" style={{ padding: '8px 0' }}>
+            <div style={{ overflow: 'visible', width: '100%' }}>
+              <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+                <colgroup>
+                  <col style={{ width: '18%' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: 'auto' }} />
+                  <col style={{ width: '50px' }} />
+                  <col style={{ width: '90px' }} />
+                  {content.showPrateColumn && <col style={{ width: '80px' }} />}
+                  <col style={{ width: '100px' }} />
+                </colgroup>
+                <thead>
+                  <tr style={{ backgroundColor: '#8b7355' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Room / Window</th>
+                    <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Image</th>
+                    <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product Details</th>
+                    <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qty</th>
+                    <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unit Price</th>
+                    {content.showPrateColumn && <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.Rate</th>}
+                    <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!hasRealData && (
+                    <tr>
+                      <td colSpan={content.showPrateColumn ? 7 : 6} style={{ padding: '20px', textAlign: 'center', color: '#8b7355', fontStyle: 'italic', borderBottom: '1px solid #d4c5b0' }}>
+                        No items yet. Add treatments to your project.
+                      </td>
+                    </tr>
+                  )}
+                  {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => {
+                    const visibleItems = (!isExclusionEditMode && excludedItems.length > 0)
+                      ? (items as any[]).filter((item: any) => !excludedItems.includes(item.id))
+                      : (items as any[]);
+                    if (visibleItems.length === 0 && !isExclusionEditMode) return null;
+                    const roomSubtotal = visibleItems.reduce((sum: number, item: any) => sum + (item.total_cost || item.total || 0), 0);
+                    
+                    return (
+                      <React.Fragment key={roomName}>
+                        {groupByRoom && hasRealData && (
+                          <tr style={{ backgroundColor: '#f0ebe3' }}>
+                            <td colSpan={content.showPrateColumn ? 6 : 5} style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0' }}>
+                              {roomName}
+                            </td>
+                            <td style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>
+                              {formatCurrency(roomSubtotal, projectData?.currency || getDefaultCurrency())}
+                            </td>
+                          </tr>
+                        )}
+                        {(isExclusionEditMode ? (items as any[]) : visibleItems).map((item: any, itemIndex: number) => {
+                          const breakdown = getItemizedBreakdown(item);
+                          const isItemExcluded = excludedItems.includes(item.id);
+                          const itemImageUrl = item.image_url_override || item.image_url;
+                          
+                          return (
+                            <React.Fragment key={`curtain-item-${roomName}-${itemIndex}`}>
+                              <tr style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
+                                {/* Room/Window name */}
+                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
+                                  {item.surface_name || item.window_number || item.name || 'Window'}
+                                </td>
+                                {/* Product Image */}
+                                <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'top' }}>
+                                  {showImages && itemImageUrl ? (
+                                    <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b0' }} />
+                                  ) : showImages && !isPrintMode && isImageEditMode && onItemImageChange ? (
+                                    <QuoteItemImagePicker
+                                      currentImageUrl={null}
+                                      itemId={item.id || `${roomName}-${itemIndex}`}
+                                      itemName={item.name || 'Product'}
+                                      onImageChange={(url) => onItemImageChange(item.id || `${roomName}-${itemIndex}`, url)}
+                                      size={80}
+                                    />
+                                  ) : (
+                                    <div style={{ width: '80px', height: '60px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                      <ImageIcon className="h-5 w-5" style={{ color: '#8b7355', opacity: 0.4 }} />
+                                    </div>
+                                  )}
+                                </td>
+                                {/* Product Details */}
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
+                                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                    {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
+                                  </div>
+                                  {effectiveShowDetailed && breakdown.length > 0 && (
+                                    <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
+                                      {breakdown.map((b: any, bi: number) => (
+                                        <div key={bi} style={{ display: 'flex', gap: '4px' }}>
+                                          <span style={{ color: '#8b7355', minWidth: '80px' }}>{b.name}:</span>
+                                          <span>{b.description || formatCurrency(b.total_cost || 0, projectData?.currency || getDefaultCurrency())}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                                {/* Qty */}
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                                  {item.quantity || 1}
+                                </td>
+                                {/* Unit Price */}
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  {formatCurrency((item.unit_price || item.total_cost || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
+                                </td>
+                                {/* P.Rate */}
+                                {content.showPrateColumn && (
+                                  <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                    {formatCurrency(item.prate || 0, projectData?.currency || getDefaultCurrency())}
+                                  </td>
+                                )}
+                                {/* Total */}
+                                <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="mb-4 products-section" style={{ backgroundColor: '#ffffff', padding: '8px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', backgroundColor: '#ffffff' }}>
@@ -1417,6 +1548,48 @@ const LivePreviewBlock = ({
     case 'pricing-summary':
     case 'pricing-totals':
     case 'summary':
+      // ============= CURTAIN-PROFESSIONAL THEMED TOTALS =============
+      if (content.theme === 'curtain-professional') {
+        const curtainTotalsLang = (projectData?.businessSettings?.document_language as DocumentLanguage) || 'en';
+        return (
+          <div style={{ marginBottom: '24px', padding: '16px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '16px', borderTop: '2px solid #8b7355' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#3d2e1f' }}>
+                Payment Summary
+              </div>
+              <div style={{ minWidth: '280px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#3d2e1f' }}>
+                  <span>Subtotal</span>
+                  <span>{renderTokenValue('subtotal')}</span>
+                </div>
+                {content.showTax !== false && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#3d2e1f' }}>
+                    <span>{userBusinessSettings?.tax_type?.toUpperCase() || 'VAT'} ({renderTokenValue('tax_rate')})</span>
+                    <span>{renderTokenValue('tax_amount')}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '16px', fontWeight: '700', color: '#3d2e1f', borderTop: '1px solid #d4c5b0', marginTop: '4px' }}>
+                  <span>Total Order Value</span>
+                  <span>{renderTokenValue('total')}</span>
+                </div>
+                {projectData?.payment?.type === 'deposit' && projectData.payment.amount > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px', color: '#6b5c4c' }}>
+                      <span>Advance Paid</span>
+                      <span>{formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '15px', fontWeight: '600', color: '#3d2e1f', borderTop: '1px solid #d4c5b0' }}>
+                      <span>Balance Payable</span>
+                      <span>{formatCurrency((projectData.total || 0) - projectData.payment.amount, projectData?.currency || getDefaultCurrency())}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      // ============= STANDARD TOTALS =============
       // Get localization settings for totals
       const totalsBusinessSettings = projectData?.businessSettings || {};
       const totalsLang = (totalsBusinessSettings?.document_language as DocumentLanguage) || 'en';
@@ -1784,6 +1957,67 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    case 'curtain-footer': {
+      const curtainBiz = projectData?.businessSettings || userBusinessSettings || {};
+      const systemTermsForFooter = curtainBiz.general_terms_and_conditions;
+      return (
+        <div style={{ marginTop: '24px', padding: '20px 0', borderTop: '2px solid #8b7355' }}>
+          <div style={{ display: 'flex', gap: '32px' }}>
+            {/* LEFT: Terms & Conditions */}
+            <div style={{ flex: 1, fontSize: '12px', color: '#3d2e1f', lineHeight: '1.7' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#3d2e1f', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Terms & Conditions
+              </div>
+              {systemTermsForFooter ? (
+                <div style={{ whiteSpace: 'pre-wrap' }}>{systemTermsForFooter}</div>
+              ) : (
+                <div style={{ color: '#8b7355', fontStyle: 'italic' }}>No terms configured. Add them in Settings → System → Terms & Conditions.</div>
+              )}
+            </div>
+            {/* RIGHT: Accept button area + company details */}
+            <div style={{ width: '240px', flexShrink: 0 }}>
+              {!isPrintMode && projectData?.quoteId && (
+                <div style={{ marginBottom: '20px' }}>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    style={{ backgroundColor: '#8b7355', color: '#fff', fontWeight: '600', padding: '12px 16px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                    onClick={async () => {
+                      const { supabase } = await import("@/integrations/supabase/client");
+                      const { data, error } = await supabase.functions.invoke("create-quote-payment", {
+                        body: { quote_id: projectData.quoteId },
+                      });
+                      if (error) {
+                        const { toast } = await import("sonner");
+                        toast.error(`Payment failed: ${error.message}`);
+                      } else if (data?.url) {
+                        window.open(data.url, "_blank");
+                      }
+                    }}
+                  >
+                    View & Accept Quote
+                  </Button>
+                </div>
+              )}
+              <div style={{ fontSize: '12px', color: '#6b5c4c', lineHeight: '1.7', borderTop: '1px solid #d4c5b0', paddingTop: '12px' }}>
+                <div style={{ fontWeight: '700', color: '#3d2e1f', marginBottom: '4px' }}>{curtainBiz.company_name || curtainBiz.trading_name || ''}</div>
+                {curtainBiz.business_email && <div>{curtainBiz.business_email}</div>}
+                {curtainBiz.business_phone && <div>{curtainBiz.business_phone}</div>}
+                {curtainBiz.bank_name && (
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d4c5b0' }}>
+                    <div style={{ fontWeight: '600', color: '#8b7355', marginBottom: '2px' }}>Bank Details</div>
+                    <div>{curtainBiz.bank_name}</div>
+                    {curtainBiz.bank_account_name && <div>A/C: {curtainBiz.bank_account_name}</div>}
+                    {curtainBiz.bank_account_number && <div>No: {curtainBiz.bank_account_number}</div>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     case 'footer':
       const businessSettings = projectData?.businessSettings || {};
       return (
@@ -1998,12 +2232,16 @@ export const LivePreview = ({
     );
   }
 
+  // Extract document-settings background color
+  const docSettingsBlock = blocks.find((b: any) => b.type === 'document-settings');
+  const docBgColor = docSettingsBlock?.content?.backgroundColor;
+
   // Print Mode: Clean rendering without wrappers, borders, or UI elements
   if (isPrintMode) {
     return (
       <div
         style={{
-          backgroundColor: '#ffffff !important',
+          backgroundColor: docBgColor || '#ffffff',
           color: '#000000 !important',
           padding: 0,
           margin: 0,
@@ -2050,7 +2288,7 @@ export const LivePreview = ({
             minWidth: '794px',
             maxWidth: '794px',
             minHeight: '1123px',
-            backgroundColor: containerStyles?.backgroundColor || '#ffffff',
+            backgroundColor: docBgColor || containerStyles?.backgroundColor || '#ffffff',
             border: isPrintMode ? 'none' : '2px solid hsl(var(--border))',
             boxShadow: isPrintMode ? 'none' : '0 0 20px rgba(0, 0, 0, 0.1)'
           }}
