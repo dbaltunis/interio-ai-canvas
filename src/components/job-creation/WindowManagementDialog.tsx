@@ -676,13 +676,40 @@ export const WindowManagementDialog = ({
                       <Pencil className="h-3 w-3 text-muted-foreground opacity-60 shrink-0" />
                     </div>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[340px] p-3 z-[9999]" align="start" side="bottom" sideOffset={4} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
-                    <div className="space-y-2" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                  <PopoverContent 
+                    className="w-[340px] p-3 z-[9999]" 
+                    align="start" 
+                    side="bottom" 
+                    sideOffset={4} 
+                    onPointerDownOutside={(e) => e.preventDefault()} 
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onOpenAutoFocus={(e) => {
+                      e.preventDefault();
+                      // Manually focus the textarea after a small delay to avoid race conditions
+                      setTimeout(() => {
+                        const ta = document.getElementById('treatment-description-textarea');
+                        if (ta) {
+                          ta.focus();
+                          // Place cursor at end
+                          (ta as HTMLTextAreaElement).selectionStart = (ta as HTMLTextAreaElement).value.length;
+                          (ta as HTMLTextAreaElement).selectionEnd = (ta as HTMLTextAreaElement).value.length;
+                        }
+                      }, 50);
+                    }}
+                  >
+                    <div 
+                      className="space-y-2" 
+                      onClick={(e) => e.stopPropagation()} 
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <label className="text-xs font-medium text-muted-foreground">Description</label>
-                      <Textarea
+                      <textarea
+                        id="treatment-description-textarea"
                         value={editDescriptionValue}
                         onChange={(e) => setEditDescriptionValue(e.target.value)}
                         onKeyDown={(e) => {
+                          e.stopPropagation();
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
                             if (editDescriptionValue !== treatmentDescription) {
@@ -695,8 +722,9 @@ export const WindowManagementDialog = ({
                             setIsEditingDescription(false);
                           }
                         }}
-                        className="text-sm min-h-[80px] resize-none"
-                        autoFocus
+                        onFocus={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                         maxLength={500}
                         placeholder="Add a description for this treatment..."
                       />
