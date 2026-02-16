@@ -1,55 +1,36 @@
 
+# Fix: Restore Document Preview Scaling and Fill Cream Background
 
-# Fix Curtain-Professional Table: Breakdown Items as Proper Table Rows
+## What went wrong
+The last change removed the fixed A4 width and scaling, making the document stretch across the full app width. That's not what you want.
 
-## Problem
+## What you actually want
+- Restore the original A4-sized, centered, scaled document preview (the white container with shadow)
+- The cream/beige background (from the template's document-settings backgroundColor) should fill the entire white document container edge-to-edge, with no white gaps inside it
 
-Currently, all breakdown items (fabric, heading, hardware, etc.) are rendered as nested `<div>` elements inside the Product Details `<td>` cell. This causes unit prices and totals to appear squished inside the product details column instead of aligning with the Qty, Unit Price, and Total Price columns.
+## Changes
 
-## Solution
+### File: `src/components/jobs/tabs/QuotationTab.tsx` (lines 1161-1171)
 
-Each breakdown item becomes its own `<tr>` row in the table, so prices land in the correct columns.
+**Revert** the last diff — bring back the centered layout with scaling:
 
-### Visual result per window:
-
-```text
-Room/Window    | Product Details                   | Qty   | Unit Price | Total Price
----------------|-----------------------------------|-------|------------|------------
-Window 1       | NEW CURTAIN                       | 1     | £1,271.12  | £1,271.12
-  [image]      |   Fabric:    ADARA - lunar rock   |10.08m | £26.50     | £267.12
-               |   Heading:   Pinch pleat          | 1.00  | -          | £0.00
-               |   Manufact.: Machine Finished     | 1.00  | -          | £504.00
-               |   Services:  Fitting              | 1.00  | -          | £0.00
-               |   ── HARDWARE ──────────────────────────────────────────
-               |   Motor:     Somfy 360            | 1     | -          | £500.00
-               |   Track:     Motorised track      | 1     | -          | £0.00
+```tsx
+<div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
+  <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
+    <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
+      width: '210mm',
+      minHeight: '297mm',
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '10pt',
+      padding: '0',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
 ```
 
-## Technical Changes
+Key difference from the original: set `padding: '0'` on the outer `#quote-live-preview` div. The padding is already handled by the document-settings block margins inside LivePreview, so removing it here prevents double-padding and lets the cream background fill edge-to-edge within the white A4 container.
 
-### File: `LivePreview.tsx` (lines ~1190-1287)
-
-**1. Main product row** -- Keep Room/Window cell (with image) and Product Details cell showing only the treatment type name (e.g., "NEW CURTAIN"). Qty, Unit Price, and Total Price cells show the top-level item totals. Same as now.
-
-**2. Non-hardware breakdown items** -- Instead of rendering inside the Product Details `<td>`, each breakdown item becomes a new `<tr>`:
-- Column 1 (Room/Window): empty
-- Column 2 (Product Details): indented label + description (e.g., "Fabric: ADARA - lunar rock 08")
-- Column 3 (Qty): breakdown quantity (e.g., "10.08 m") or item quantity
-- Column 4 (Unit Price): `b.unit_price` (show "-" if zero or undefined)
-- Column 5 (Total Price): `b.total_cost` (always show, even if zero)
-
-**3. Hardware separator row** -- A single `<tr>` with a cell spanning columns 2-5 containing the "HARDWARE" label with a dashed top border.
-
-**4. Hardware breakdown items** -- Same format as non-hardware breakdown rows, appearing after the separator.
-
-**5. Remove the nested div-based price rendering** from inside the Product Details `<td>` entirely.
-
-### Column widths adjustment
-
-Update `<colgroup>` to give more space to Product Details and proper width to price columns:
-- Room/Window: 15%
-- Product Details: auto
-- Qty: 8%
-- Unit Price: 13%
-- Total Price: 13%
-
+This way:
+- The **white container** = the outer gradient wrapper (the section background)
+- The **cream document** = fills the entire A4-sized `#quote-live-preview` div with no white gaps inside it
+- Scaling and centering remain intact for a proper document preview feel
