@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ruler, Save, Pencil, Check, X, Lock } from "lucide-react";
+import { Ruler, Save, Pencil, Check, X, Lock, Camera } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge, MeasurementBridgeRef } from "../measurements/MeasurementBridge";
@@ -593,6 +593,7 @@ export const WindowManagementDialog = ({
                   <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
                   <WindowRenameButton windowName={windowName} onRename={handleRename} />
+                  <Camera className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 </div>
                 
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
