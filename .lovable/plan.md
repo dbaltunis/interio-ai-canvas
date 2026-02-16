@@ -1,119 +1,87 @@
 
-# Refine Curtain Quote Visual Style
+
+# Refine Curtain Quote: Edit Button, Hardware Separation, and Editable Fields Logic
 
 ## Summary
 
-Five fixes to make the curtain-professional quote feel native and polished: background color on the page layer, full-width blocks, edit button in the job view, larger images with adjusted column widths, and hardware/services separated to the bottom.
+Four refinements to perfect the curtain-professional quote: (1) ensure the "Edit Fields" button works and is visible in the job quote view, (2) extract hardware breakdown items from each treatment into the "Services & Hardware" section, (3) make only field **labels/titles** editable in the Settings template editor and only field **values/inputs** editable in the Job quote view, and (4) same logic for the intro message and other text blocks.
 
 ## Changes
 
-### 1. Background Color on Page Layer (not block level)
+### 1. Edit Fields Button in Job View
 
-Currently the `#faf6f1` background is applied on the header block itself, creating a "card on white plate" look. Instead:
+The "Edit Fields" button already exists in `QuoteFullScreenView.tsx` (lines 220-228) and passes `isEditMode` as `isEditable` to `LivePreview`. However, the button is currently always visible for all template types. We need to verify it works correctly and, per the user's request, restrict it to curtain-quote type only.
 
-**File: `LivePreview.tsx` (Editor mode, lines 2284-2295)**
-- The A4 page container already reads `docBgColor` from `document-settings` block and applies it to the outer page div. This is correct.
-- The issue is that individual blocks (like the header at `BlockRenderer.tsx` line 597) also set their own `backgroundColor: '#faf6f1'`, creating a double background effect.
+**File: `QuoteFullScreenView.tsx`**
+- Wrap the "Edit Fields" button in a condition: only show when `selectedTemplate?.template_type === 'curtain-quote'` or the template blocks contain `theme: 'curtain-professional'`.
+- Ensure `isEditMode` is passed correctly to `LivePreview` as `isEditable`.
 
-**File: `BlockRenderer.tsx` (curtain-split layout, line 597)**
-- Remove `backgroundColor: '#faf6f1'` from the header block's inline style. The page-level background handles this.
+### 2. Hardware from Treatment Breakdown -> Services & Hardware Section
 
-**File: `LivePreview.tsx` (curtain-professional table, line 1119)**
-- Remove any explicit background from the products section wrapper -- let the page background show through.
+Currently, the `isServiceItem` / `isHardwareOnlyItem` filters in `LivePreview.tsx` only check top-level room products by `treatment_type`, `name`, or `category`. But hardware items (tracks, rods, accessories) are often **children/breakdown items within a treatment**, not separate top-level products.
 
-**File: `LivePreview.tsx` (curtain-professional totals, line 1555)**
-- Same: remove explicit background, inherit from page.
+**File: `LivePreview.tsx` (curtain-professional products section)**
 
-**File: `LivePreview.tsx` (curtain-footer, line 1964)**
-- Same: no explicit background on the footer wrapper.
+Two-part approach:
 
-### 2. Full-Width Blocks (no padding/margin making them look sandwiched)
+**Part A: Extract hardware from breakdown**
+- In the curtain-professional table rendering, when iterating through each treatment's `children` array (breakdown items), use the existing `isHardwareItem()` utility from `src/utils/quotes/groupHardwareItems.ts` to identify hardware children.
+- Collect these hardware children into a separate list (`extractedHardware`) instead of displaying them inline in the product details breakdown.
+- Each extracted hardware item gets associated with its parent treatment's room name for display context.
 
-Currently blocks have padding and margins that create visual gaps between the content and page edges.
+**Part B: Display extracted hardware in Services & Hardware section**
+- Combine `serviceHardwareItems` (top-level service/hardware products) with `extractedHardware` (hardware children extracted from treatment breakdowns).
+- Display all of them in the "Services & Hardware" section at the bottom of the table.
+- For extracted hardware children, show: the room name, no image, hardware name + description, quantity, unit price, and total.
 
-**File: `BlockRenderer.tsx` (DocumentHeaderBlock, line 284-290)**
-- When `headerLayout === 'curtain-split'`, remove the outer div's `padding: '24px 20px'` and `margin: '0 0 24px 0'`. Instead set `padding: 0` and `margin: 0 0 16px 0` so the header fills edge-to-edge within the page content area.
+This uses the already-built `isHardwareItem()` function from `groupHardwareItems.ts` which comprehensively checks for tracks, rods, poles, brackets, finials, headrails, motors, cassettes, valances, etc.
 
-**File: `LivePreview.tsx` (curtain-professional products, line 1119)**
-- Remove `padding: '8px 0'` from the wrapper. Set `margin: 0 0 0 0` so the table extends full width.
+### 3. Editable Titles (Settings) vs Editable Values (Job View)
 
-**File: `LivePreview.tsx` (curtain-professional totals, line 1555)**
-- Remove extra padding so it flows naturally.
+The current `BlockRenderer.tsx` curtain-split header makes both the labels AND values editable when `isEditable` is true. The user wants a clear split:
 
-**File: `LivePreview.tsx` (editable-text-field, lines 297-301)**
-- When rendered within a curtain-professional context, the intro text field should also span full width without rounded corners or background card styling. Update the `EditableTextField` to check for the curtain theme in content/style and render edge-to-edge.
+- **In Settings** (template editor): Only the **labels/titles** of custom fields are editable (e.g., rename "Services Required" to "Project Type"). The values show as placeholder text.
+- **In Job View** (quote preview with Edit Fields button): Only the **values/inputs** are editable (e.g., enter "Curtains & Blinds" for "Services Required"). The labels are read-only.
 
-### 3. Missing Edit Button in QuoteFullScreenView
+**File: `BlockRenderer.tsx` (curtain-split header, custom fields section)**
 
-Currently there's no edit button for fields or images when viewing a curtain-quote in the job.
+Add a new prop or context flag to distinguish between "template editing" (Settings page) and "document editing" (Job view). The simplest approach:
+- Add an optional `editMode` prop to BlockRenderer: `'template'` (editing the template structure in Settings) vs `'document'` (editing field values in the Job view).
+- When `editMode === 'template'` and `isEditable`: make custom field **labels** editable (click to rename), show values as placeholder text (not editable).
+- When `editMode === 'document'` and `isEditable`: make custom field **values** editable (click to type input), labels are read-only.
+- The Status field value is always editable in document mode (as it is now).
 
-**File: `QuoteFullScreenView.tsx` (lines 181-220)**
-- The "Show Images" toggle and "Edit Images" button already exist (lines 196-219) and work correctly.
-- Add a new "Edit Fields" toggle/button next to the existing display options. This sets `isEditMode` state (already declared at line 59) and passes it as `isEditable` to `LivePreview`.
+**File: `LivePreview.tsx`**
+- Accept an `editMode` prop and pass it through to `BlockRenderer`.
+- In the Settings visual editor, pass `editMode="template"`.
+- In the Job view (`QuoteFullScreenView.tsx`), pass `editMode="document"`.
 
-**Changes:**
-- Add an "Edit Fields" button in the header bar (similar to "Edit Images")
-- Pass `isEditMode` as `isEditable` prop to both the visible `LivePreview` (line 306) and the print version
-- When `isEditMode` is true, `LivePreview` enables the `EditableTextField` and editable header fields
+**File: `QuoteFullScreenView.tsx`**
+- Pass `editMode="document"` to `LivePreview`.
 
-### 4. Larger Product Images + Adjusted Column Widths
+### 4. Intro Message and Text Blocks: Same Logic
 
-**File: `LivePreview.tsx` (curtain-professional colgroup, lines 1122-1130)**
+The `editable-text-field` block (intro message) should follow the same pattern:
+- **Settings** (`editMode="template"`): The **label/title** is editable (e.g., rename "Introduction Message" to "Welcome Note"). The text area shows placeholder text.
+- **Job View** (`editMode="document"`): The **content/value** is editable (e.g., type the actual message to the client). The label is read-only.
 
-Current widths:
-- Room/Window: `18%` 
-- Image: `100px`
-- Product Details: `auto`
-- Qty: `50px`
-- Unit Price: `90px`
-- P.Rate: `80px`
-- Total: `100px`
-
-New widths:
-- Room/Window: `12%` (less space)
-- Image: `120px` (bigger)
-- Product Details: `auto` (gets more space from room/window reduction)
-- Qty: `50px` (same)
-- Unit Price: `90px` (same)
-- P.Rate: `80px` (same)
-- Total: `100px` (same)
-
-Also increase the image size from `80x80` to `100x100` in the product row (line 1184).
-
-### 5. Hardware & Services Separated to Bottom
-
-Currently hardware items and service items (Installation, Measurement) are mixed in with the regular product items per room. They should be separated out and displayed at the bottom of the table, always.
-
-**File: `LivePreview.tsx` (curtain-professional table body, lines 1142-1240)**
-
-Add logic after the main room-grouped items render:
-- After rendering all room groups, filter `projectItems` for items that are services (treatment_type contains 'installation', 'measurement', 'service', or category is 'service').
-- Also filter for items that are hardware-only (no treatment, hardware category).
-- Render a separator row with "Services & Hardware" label.
-- Render these service/hardware items in the same table format but visually separated.
-
-Logic:
-```
-const isServiceItem = (item) => {
-  const type = (item.treatment_type || item.name || '').toLowerCase();
-  return type.includes('installation') || type.includes('measurement') || 
-         type.includes('service') || item.category === 'service';
-};
-const isHardwareOnlyItem = (item) => {
-  return item.category === 'hardware' && !item.treatment_type;
-};
-
-// Split items: regular products vs services/hardware
-const regularItems = projectItems.filter(i => !isServiceItem(i) && !isHardwareOnlyItem(i));
-const serviceItems = projectItems.filter(i => isServiceItem(i) || isHardwareOnlyItem(i));
-```
-
-Group `regularItems` by room as before. Then after all rooms, render a "Services" separator row and list `serviceItems` below.
+**File: `LivePreview.tsx` (editable-text-field case)**
+- When `editMode === 'template'`: render label as editable text, value as non-editable placeholder.
+- When `editMode === 'document'`: render label as read-only, value as editable text area.
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `BlockRenderer.tsx` | Remove bg color from curtain-split header; remove padding to go full-width |
-| `LivePreview.tsx` | Remove bg/padding from curtain-professional products, totals, footer; adjust column widths; larger images; separate services/hardware to bottom |
-| `QuoteFullScreenView.tsx` | Add "Edit Fields" button that enables `isEditable` on LivePreview |
+| `QuoteFullScreenView.tsx` | Restrict "Edit Fields" button to curtain-quote templates; pass `editMode="document"` to LivePreview |
+| `LivePreview.tsx` | Accept `editMode` prop, pass to BlockRenderer; extract hardware children from treatment breakdowns into Services & Hardware section; update editable-text-field to respect editMode |
+| `BlockRenderer.tsx` | Accept `editMode` prop; split editable behavior for custom field labels (template mode) vs values (document mode) |
+
+## What Stays the Same
+
+- All non-curtain-quote templates are completely unchanged
+- PDF generation, printing, email -- unchanged
+- Image upload/editing -- unchanged
+- The existing `isHardwareItem()` utility is reused as-is
+- Block editor structure -- unchanged
+
