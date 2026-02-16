@@ -326,6 +326,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
               }}
               onItemImageChange={handleItemImageChange}
               isImageEditMode={isImageEditMode}
+              quoteId={quote?.id}
             />
           </div>
         </div>

@@ -252,6 +252,7 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, b
 const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange }: any) => {
   const [fieldValue, setFieldValue] = useState(content.value || '');
   const [saving, setSaving] = useState(false);
+  const [localEditMode, setLocalEditMode] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Load saved data on mount
@@ -269,23 +270,28 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
     setFieldValue(newValue);
     
     if (quoteId && blockId && onDataChange) {
-      // Clear previous timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
-      // Set saving indicator
       setSaving(true);
-      
-      // Debounce save for 1 second
       saveTimeoutRef.current = setTimeout(() => {
         onDataChange.saveBlockData({ blockId, data: { text: newValue } });
         setSaving(false);
       }, 1000);
     }
   };
+
+  const handleSaveAndClose = () => {
+    // Force immediate save
+    if (quoteId && blockId && onDataChange) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      onDataChange.saveBlockData({ blockId, data: { text: fieldValue } });
+    }
+    setLocalEditMode(false);
+  };
   
-  // Cleanup timeout on unmount
   React.useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -293,9 +299,11 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
       }
     };
   }, []);
+
+  const isActiveEdit = isEditable || localEditMode;
   
   return (
-    <div className="mb-6" style={{ 
+    <div className="mb-6 relative group" style={{ 
       padding: content.theme === 'curtain-professional' ? '16px 0' : (style.padding || '16px'),
       margin: content.theme === 'curtain-professional' ? '0 0 16px 0' : (style.margin || '0 0 24px 0'),
       backgroundColor: content.theme === 'curtain-professional' ? 'transparent' : (style.backgroundColor || '#f8fafc'),
@@ -312,21 +320,65 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, b
           gap: '8px'
         }}>
           {content.label}
-          {saving && <span style={{ fontSize: '12px', color: '#3b82f6' }}>Auto-saving...</span>}
+          {saving && <span style={{ fontSize: '12px', color: '#3b82f6' }}>Saving...</span>}
+          {/* Inline pencil button - only in non-print, non-edit mode, when quoteId exists */}
+          {!isPrintMode && !isActiveEdit && quoteId && (
+            <button
+              onClick={() => setLocalEditMode(true)}
+              style={{
+                marginLeft: 'auto',
+                padding: '4px 8px',
+                fontSize: '12px',
+                color: '#6b7280',
+                background: 'transparent',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                opacity: 0,
+                transition: 'opacity 0.2s'
+              }}
+              className="group-hover:!opacity-100"
+            >
+              <PenTool style={{ width: '12px', height: '12px' }} />
+              Edit
+            </button>
+          )}
         </div>
       )}
-      {!isPrintMode && isEditable ? (
-        <Textarea
-          value={fieldValue}
-          onChange={(e) => handleTextChange(e.target.value)}
-          placeholder="Enter text here..."
-          className="w-full"
-          style={{ 
-            fontSize: '16px',
-            fontWeight: content.isBold ? '700' : '400',
-            minHeight: '100px'
-          }}
-        />
+      {!isPrintMode && isActiveEdit ? (
+        <div>
+          <Textarea
+            value={fieldValue}
+            onChange={(e) => handleTextChange(e.target.value)}
+            placeholder="Enter text here..."
+            className="w-full"
+            style={{ 
+              fontSize: '16px',
+              fontWeight: content.isBold ? '700' : '400',
+              minHeight: '100px'
+            }}
+          />
+          {localEditMode && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocalEditMode(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveAndClose}
+              >
+                Save
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
         <div style={{ 
           fontSize: '16px',
