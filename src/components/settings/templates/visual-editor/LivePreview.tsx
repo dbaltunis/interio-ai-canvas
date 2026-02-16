@@ -1127,13 +1127,37 @@ const LivePreviewBlock = ({
 
       // ============= CURTAIN-PROFESSIONAL THEMED TABLE =============
       if (content.theme === 'curtain-professional') {
+        const currencyCode = projectData?.currency || getDefaultCurrency();
+        const colCount = content.showPrateColumn ? 6 : 5;
+
+        // Extract hardware from each treatment's breakdown into a separate list
+        const extractedHardware: any[] = [];
+        const getBreakdownWithoutHardware = (item: any) => {
+          const breakdown = getItemizedBreakdown(item);
+          const nonHardware: any[] = [];
+          breakdown.forEach((b: any) => {
+            if (b.isHardwareGroup || b.category === 'hardware' || b.category === 'hardware_accessory') {
+              extractedHardware.push({
+                ...b,
+                _parentRoom: item.room_name || item.location || 'Unassigned',
+                _parentSurface: item.surface_name || item.window_number || item.name || 'Window',
+              });
+            } else {
+              nonHardware.push(b);
+            }
+          });
+          return nonHardware;
+        };
+
+        // Combine top-level service/hardware items + extracted hardware from breakdowns
+        const allServiceHardware = [...serviceHardwareItems];
+
         return (
           <div className="mb-4 products-section" style={{ padding: '0', margin: '0' }}>
             <div style={{ overflow: 'visible', width: '100%' }}>
               <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
                 <colgroup>
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '120px' }} />
+                  <col style={{ width: '18%' }} />
                   <col style={{ width: 'auto' }} />
                   <col style={{ width: '50px' }} />
                   <col style={{ width: '90px' }} />
@@ -1143,18 +1167,17 @@ const LivePreviewBlock = ({
                 <thead>
                   <tr style={{ backgroundColor: '#8b7355' }}>
                     <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Room / Window</th>
-                    <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Image</th>
                     <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product Details</th>
                     <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qty</th>
                     <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unit Price</th>
                     {content.showPrateColumn && <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.Rate</th>}
-                    <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                    <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px', fontWeight: '600', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Price</th>
                   </tr>
                 </thead>
                 <tbody>
                   {!hasRealData && (
                     <tr>
-                      <td colSpan={content.showPrateColumn ? 7 : 6} style={{ padding: '20px', textAlign: 'center', color: '#8b7355', fontStyle: 'italic', borderBottom: '1px solid #d4c5b0' }}>
+                      <td colSpan={colCount} style={{ padding: '20px', textAlign: 'center', color: '#8b7355', fontStyle: 'italic', borderBottom: '1px solid #d4c5b0' }}>
                         No items yet. Add treatments to your project.
                       </td>
                     </tr>
@@ -1170,28 +1193,27 @@ const LivePreviewBlock = ({
                       <React.Fragment key={roomName}>
                         {groupByRoom && hasRealData && (
                           <tr style={{ backgroundColor: '#f0ebe3' }}>
-                            <td colSpan={content.showPrateColumn ? 6 : 5} style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0' }}>
+                            <td colSpan={colCount - 1} style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0' }}>
                               {roomName}
                             </td>
                             <td style={{ padding: '10px 8px', fontSize: '13px', fontWeight: '700', color: '#3d2e1f', borderBottom: '1px solid #d4c5b0', textAlign: 'right' }}>
-                              {formatCurrency(roomSubtotal, projectData?.currency || getDefaultCurrency())}
+                              {formatCurrency(roomSubtotal, currencyCode)}
                             </td>
                           </tr>
                         )}
                         {(isExclusionEditMode ? (items as any[]) : visibleItems).map((item: any, itemIndex: number) => {
-                          const breakdown = getItemizedBreakdown(item);
+                          const breakdown = getBreakdownWithoutHardware(item);
                           const isItemExcluded = excludedItems.includes(item.id);
                           const itemImageUrl = item.image_url_override || item.image_url;
                           
                           return (
                             <React.Fragment key={`curtain-item-${roomName}-${itemIndex}`}>
                               <tr style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
-                                {/* Room/Window name */}
+                                {/* Room/Window name + Image below */}
                                 <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
-                                  {item.surface_name || item.window_number || item.name || 'Window'}
-                                </td>
-                                {/* Product Image */}
-                                <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'top' }}>
+                                  <div style={{ fontWeight: '600', marginBottom: '6px' }}>
+                                    {item.surface_name || item.window_number || item.name || 'Window'}
+                                  </div>
                                   {showImages && itemImageUrl ? (
                                     <img src={itemImageUrl} alt={item.name || 'Product'} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b0' }} />
                                   ) : showImages && !isPrintMode && isImageEditMode && onItemImageChange ? (
@@ -1202,23 +1224,23 @@ const LivePreviewBlock = ({
                                       onImageChange={(url) => onItemImageChange(item.id || `${roomName}-${itemIndex}`, url)}
                                       size={80}
                                     />
-                                  ) : (
-                                    <div style={{ width: '100px', height: '70px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                  ) : showImages ? (
+                                    <div style={{ width: '100px', height: '70px', backgroundColor: '#f0ebe3', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                       <ImageIcon className="h-5 w-5" style={{ color: '#8b7355', opacity: 0.4 }} />
                                     </div>
-                                  )}
+                                  ) : null}
                                 </td>
                                 {/* Product Details */}
                                 <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
-                                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                  <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px', textTransform: 'uppercase' }}>
                                     {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Window Treatment')}
                                   </div>
                                   {effectiveShowDetailed && breakdown.length > 0 && (
                                     <div style={{ fontSize: '11px', color: '#6b5c4c', lineHeight: '1.6' }}>
                                       {breakdown.map((b: any, bi: number) => (
                                         <div key={bi} style={{ display: 'flex', gap: '4px' }}>
-                                          <span style={{ color: '#8b7355', minWidth: '80px' }}>{b.name}:</span>
-                                          <span>{b.description || formatCurrency(b.total_cost || 0, projectData?.currency || getDefaultCurrency())}</span>
+                                          <span style={{ color: '#8b7355', minWidth: '100px' }}>{b.name}:</span>
+                                          <span>{b.description || formatCurrency(b.total_cost ?? 0, currencyCode)}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1230,17 +1252,17 @@ const LivePreviewBlock = ({
                                 </td>
                                 {/* Unit Price */}
                                 <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                  {formatCurrency((item.unit_price || item.total_cost || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
+                                  {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
                                 </td>
                                 {/* P.Rate */}
                                 {content.showPrateColumn && (
                                   <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                    {formatCurrency(item.prate || 0, projectData?.currency || getDefaultCurrency())}
+                                    {formatCurrency(item.prate ?? 0, currencyCode)}
                                   </td>
                                 )}
                                 {/* Total */}
                                 <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                  {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
+                                  {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
                                 </td>
                               </tr>
                             </React.Fragment>
@@ -1249,51 +1271,94 @@ const LivePreviewBlock = ({
                       </React.Fragment>
                     );
                   })}
-                  {/* Services & Hardware separator */}
-                  {serviceHardwareItems.length > 0 && hasRealData && (
-                    <>
-                      <tr style={{ backgroundColor: '#8b7355' }}>
-                        <td colSpan={content.showPrateColumn ? 7 : 6} style={{ padding: '10px 8px', fontSize: '12px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Services & Hardware
-                        </td>
-                      </tr>
-                      {serviceHardwareItems.map((item: any, itemIndex: number) => {
-                        const isItemExcluded = excludedItems.includes(item.id);
-                        if (!isExclusionEditMode && isItemExcluded) return null;
-                        return (
-                          <tr key={`service-${itemIndex}`} style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
-                            <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
-                              {item.surface_name || item.room_name || '—'}
-                            </td>
-                            <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'top' }}>
-                              <div style={{ width: '100px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                                <span style={{ fontSize: '11px', color: '#8b7355' }}>—</span>
-                              </div>
+                  {/* Services & Hardware separator - includes extracted hardware from breakdowns */}
+                  {(() => {
+                    const combinedServiceHardware = [...allServiceHardware, ...extractedHardware];
+                    if (combinedServiceHardware.length === 0 || !hasRealData) return null;
+                    return (
+                      <>
+                        <tr style={{ backgroundColor: '#8b7355' }}>
+                          <td colSpan={colCount} style={{ padding: '10px 8px', fontSize: '12px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Services & Hardware
+                          </td>
+                        </tr>
+                        {/* Top-level service/hardware items */}
+                        {allServiceHardware.map((item: any, itemIndex: number) => {
+                          const isItemExcluded = excludedItems.includes(item.id);
+                          if (!isExclusionEditMode && isItemExcluded) return null;
+                          return (
+                            <tr key={`service-${itemIndex}`} style={{ borderBottom: '1px solid #d4c5b0', opacity: isItemExcluded ? 0.5 : 1 }}>
+                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '500', color: '#3d2e1f', verticalAlign: 'top' }}>
+                                {item.surface_name || item.room_name || '—'}
+                              </td>
+                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
+                                <div style={{ fontWeight: '600' }}>
+                                  {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Service')}
+                                </div>
+                                {item.description && (
+                                  <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '2px' }}>{item.description}</div>
+                                )}
+                              </td>
+                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
+                                {item.quantity || 1}
+                              </td>
+                              <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                {formatCurrency((item.unit_price ?? item.total_cost ?? 0) / (item.quantity || 1), currencyCode)}
+                              </td>
+                              {content.showPrateColumn && (
+                                <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                  {formatCurrency(item.prate ?? 0, currencyCode)}
+                                </td>
+                              )}
+                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                {formatCurrency(item.total_cost ?? item.total ?? 0, currencyCode)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {/* Hardware extracted from treatment breakdowns */}
+                        {extractedHardware.map((hw: any, hwIdx: number) => (
+                          <tr key={`extracted-hw-${hwIdx}`} style={{ borderBottom: '1px solid #d4c5b0' }}>
+                            <td style={{ padding: '8px', fontSize: '12px', color: '#6b5c4c', verticalAlign: 'top' }}>
+                              {hw._parentSurface}
                             </td>
                             <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', verticalAlign: 'top' }}>
                               <div style={{ fontWeight: '600' }}>
-                                {item.treatment_type ? item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : (item.name || 'Service')}
+                                {hw.name || 'Hardware'}
                               </div>
+                              {hw.description && (
+                                <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '2px' }}>{hw.description}</div>
+                              )}
+                              {hw.hardwareItems && hw.hardwareItems.length > 0 && (
+                                <div style={{ fontSize: '11px', color: '#6b5c4c', marginTop: '4px', lineHeight: '1.6' }}>
+                                  {hw.hardwareItems.map((hi: any, hii: number) => (
+                                    <div key={hii} style={{ display: 'flex', gap: '4px' }}>
+                                      <span style={{ color: '#8b7355' }}>{hi.name}:</span>
+                                      <span>{hi.description || formatCurrency(hi.total_cost ?? 0, currencyCode)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </td>
                             <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'center', verticalAlign: 'top' }}>
-                              {item.quantity || 1}
+                              {hw.quantity || 1}
                             </td>
                             <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {formatCurrency((item.unit_price || item.total_cost || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
+                              {formatCurrency(hw.unit_price ?? hw.total_cost ?? 0, currencyCode)}
                             </td>
                             {content.showPrateColumn && (
                               <td style={{ padding: '8px', fontSize: '13px', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                {formatCurrency(item.prate || 0, projectData?.currency || getDefaultCurrency())}
+                                {formatCurrency(0, currencyCode)}
                               </td>
                             )}
                             <td style={{ padding: '8px', fontSize: '13px', fontWeight: '600', color: '#3d2e1f', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
+                              {formatCurrency(hw.total_cost ?? 0, currencyCode)}
                             </td>
                           </tr>
-                        );
-                      })}
-                    </>
-                  )}
+                        ))}
+                      </>
+                    );
+                  })()}
                 </tbody>
               </table>
             </div>
