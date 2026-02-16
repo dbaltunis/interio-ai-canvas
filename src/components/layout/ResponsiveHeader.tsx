@@ -344,16 +344,25 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                             )}
                             onClick={() => {
                               markAsRead(notif.id);
-                              if (notif.action_url) {
+                              
+                              // Build targetUrl: use action_url if available, otherwise fallback from source_type/source_id
+                              let targetUrl = notif.action_url;
+                              if (!targetUrl && notif.source_type) {
+                                const tabMap: Record<string, string> = { appointment: 'calendar', client: 'clients', project: 'projects' };
+                                const idMap: Record<string, string> = { appointment: 'eventId', client: 'clientId', project: 'jobId' };
+                                const tab = tabMap[notif.source_type] || 'dashboard';
+                                const idParam = notif.source_id && idMap[notif.source_type] ? `&${idMap[notif.source_type]}=${notif.source_id}` : '';
+                                targetUrl = `/?tab=${tab}${idParam}`;
+                              }
+                              
+                              if (targetUrl) {
                                 try {
-                                  const url = new URL(notif.action_url, window.location.origin);
+                                  const url = new URL(targetUrl, window.location.origin);
                                   const params = Object.fromEntries(url.searchParams.entries());
                                   
-                                  // Determine target tab from explicit ?tab= or infer from path/params
                                   let tab = params.tab;
                                   delete params.tab;
                                   
-                                  // Legacy support: infer tab from jobId param or path
                                   if (!tab) {
                                     if (params.jobId) tab = 'projects';
                                     else if (params.clientId) tab = 'clients';
@@ -365,7 +374,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                                   
                                   if (tab) {
                                     onTabChange(tab);
-                                    // Preserve deep-link params (jobId, eventId, clientId, etc.)
                                     setTimeout(() => {
                                       const currentParams = new URLSearchParams(window.location.search);
                                       currentParams.set('tab', tab!);
@@ -375,7 +383,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                                     }, 50);
                                   }
                                 } catch {
-                                  onTabChange(notif.action_url.replace('/?tab=', ''));
+                                  onTabChange(targetUrl.replace('/?tab=', ''));
                                 }
                                 setNotifPopoverOpen(false);
                               }
