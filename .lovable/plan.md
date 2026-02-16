@@ -1,177 +1,90 @@
 
 
-# Deep Codebase Investigation Report and Fix Plan
+# Convert "More Options" from Modal to Expanded Popover
 
-## Overview
+## Current Behavior (the problem)
 
-I have thoroughly read through every file related to the issues your team reported. This plan covers all findings and proposed fixes. I want to be transparent: I will explain exactly what each issue is, why it happens, and what the minimal safe fix looks like -- so you can approve with confidence.
+1. **Create event**: Click calendar slot opens a nice small inline `QuickAddPopover` -- this is good
+2. **Click "More options"**: Closes that popover and opens `UnifiedAppointmentDialog` as a big centered modal with dark backdrop overlay -- this is the bad experience you want to eliminate
+3. **Edit event**: Click existing event opens a nice small inline `EventDetailPopover` -- this is good
+4. **Click "More options" on edit**: Closes that popover and opens the same big modal -- same problem
 
----
+## New Behavior (the solution)
 
-## Issue 1: Team Group -- Cannot Scroll Member List
+Instead of opening a separate modal, clicking "More options" will **expand the current popover in-place** to show the additional fields. The popover grows taller (scrollable) but stays anchored to the same position. No backdrop, no modal, no context switch.
 
-**File:** `src/components/calendar/TeamGroupManager.tsx` (line 126)
+**Create flow:**
+- Click slot: small popover with title, duration, calendar group, note
+- Click "More options": popover smoothly expands to also show event type, client/job selectors, team members, location, video meeting toggle, reminders, email invite
+- Click "Less options": popover shrinks back to the compact view
 
-**Root Cause:** The `ScrollArea` has `max-h-[240px]` which should enable scrolling. However, the Radix ScrollArea component needs an explicit `h-[240px]` (fixed height) rather than just `max-h` to properly calculate the scrollable region. When there are many team members, the content overflows but the scrollbar never appears because `max-h` alone doesn't trigger Radix's internal scroll detection.
+**Edit flow:**
+- Click event: small popover with view details and Edit button
+- Click Edit: inline edit mode (title, duration, color) -- already works
+- Click "More options": popover expands to show all fields (same as create)
+- Click "Less options": shrinks back
 
-**Fix:** Change `max-h-[240px]` to `h-[240px]` on the `ScrollArea`, or wrap the inner content in an additional overflow container. This is a CSS-only change -- zero logic impact.
+## What Changes
 
----
+### File 1: `src/components/calendar/QuickAddPopover.tsx`
 
-## Issue 2: Messages Tab Disabled on Some Accounts
+- Add an `expanded` state (boolean, default false)
+- "More options" button toggles `expanded = true` instead of calling `onMoreOptions` (which closes the popover and opens the modal)
+- When expanded, render the additional fields currently in `UnifiedAppointmentDialog`: event type chips, client/job selectors, team member picker, location, notes (longer), video meeting toggle, reminders
+- Add a "Less options" button (ChevronUp) to collapse back
+- Increase width from `w-80` (320px) to `w-96` (384px) when expanded
+- Increase `maxHeight` from 480px to 85vh when expanded
+- All fields scroll within the existing `ScrollArea`
 
-**File:** `src/components/layout/ResponsiveHeader.tsx` (lines 137-166, 222-226)
+### File 2: `src/components/calendar/EventDetailPopover.tsx`
 
-**Root Cause Found:** The Messages tab has TWO independent disable conditions:
+- Same pattern: add `expanded` state
+- "More options" button in edit mode toggles `expanded = true` instead of calling `onEdit` (which opens the modal)
+- When expanded, show the additional fields: event type, client/job, team members, location, video, reminders
+- The `handleSaveEdit` function gets extended to save all expanded fields
+- Add "Less options" collapse button
 
-1. **Permission check** (line 223): `canViewEmails === false` -- disables if user lacks `view_emails` permission. All roles except "User" and "Dealer" have this permission, so this is correct.
+### File 3: `src/components/calendar/CalendarView.tsx`
 
-2. **Email provider configuration check** (lines 137-166, 225): `hasEmailsConfigured === false` -- this query checks if the account owner has an active SendGrid or Resend integration with a valid API key. **If the account owner has NOT set up SendGrid/Resend, the Messages tab is disabled for ALL team members on that account, even Owners/Admins.**
+- The `handleQuickAddMoreOptions` function and the `UnifiedAppointmentDialog` for creation are no longer needed since the popover handles everything inline
+- Keep `UnifiedAppointmentDialog` only as a fallback for programmatic event creation from other parts of the app (e.g., from a client page), but remove it from the calendar slot click flow
 
-This means: accounts that haven't configured an email sending provider yet will see Messages as disabled. The original intent was to hide it for accounts without email capability, but the logic is too aggressive -- it blocks access to the tab entirely, including viewing past emails and templates.
+## What Does NOT Change
 
-**Fix options:**
-- Option A (recommended): Only disable Messages if `canViewEmails === false` (permission-based). Remove the `hasEmailsConfigured` check entirely. Inside the Messages tab itself, show a "Configure email provider" prompt when they try to send.
-- Option B: Keep the check but only for non-Owner/Admin roles. Let Owners and Admins always access it so they can configure it.
+- The `UnifiedAppointmentDialog` component itself stays in the codebase (used by other parts of the app for event creation from client/job pages)
+- All hooks: `useCreateAppointment`, `useUpdateAppointment`, `useDeleteAppointment`, `useClients`, `useProjects`, `useTeamMembers`, etc.
+- The calculation engine (`src/engine/formulas/`)
+- Permissions logic
+- Database queries
+- The visual design of the compact popover (stays identical)
 
----
+## Technical Details
 
-## Issue 3: Service Options Pricing Unit Behavior
+### New imports needed in QuickAddPopover:
+- `useClients`, `useProjects` (for client/job selectors)
+- `TeamMemberPicker` (for team members)
+- `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` (for dropdowns)
+- `Switch` (for video toggle)
+- `MapPin`, `Video`, `Users`, `Briefcase`, `ChevronUp` icons
 
-**Current Behavior (by design):** The pricing unit (Per Window / Per Room / Per Job / Per Hour / etc.) is stored as metadata on each service option but is currently used only as a label. When a service is added to a quote, it's added as a line item with quantity, and the price is simply `price x quantity` regardless of the unit type.
+### State additions in QuickAddPopover:
+- `expanded: boolean` -- controls compact vs expanded view
+- `appointmentType: string` -- event type
+- `clientId: string` -- linked client
+- `projectId: string` -- linked job
+- `selectedTeamMembers: string[]` -- team members
+- `location: string` -- location text
+- `addVideoMeeting: boolean` -- video toggle
+- `videoLink: string` -- manual video link
 
-**What your team expected:** The unit should automatically calculate based on the number of windows/rooms in the job. For example, "Per Window" at $50 with 5 windows should auto-calculate to $250.
+### Save function update:
+The existing `handleSave` in QuickAddPopover will pass the expanded fields to `createAppointment.mutateAsync` when they are set.
 
-**Assessment:** This is a feature enhancement, not a bug. The current system works correctly as a simple quantity-based pricing model. Making the unit actually drive automatic quantity calculation would require connecting service options to room/window counts from the job, which is a larger feature. No changes needed now -- this is working as designed.
+### Animation:
+The popover width and height transitions will use CSS `transition-all duration-200` for a smooth expand/collapse feel.
 
----
+## Implementation Order
 
-## Issue 4: Build Errors (10 TypeScript Errors)
-
-These are preventing the app from building. Here are the exact fixes:
-
-### 4A. `display_name` does not exist on `TeamMember` (4 errors)
-
-**Files:** `AppointmentSharingDialog.tsx` (lines 89-90, 129-130) and `CalendarSharingDialog.tsx` (lines 88-89, 128-129)
-
-**Root Cause:** The `TeamMember` interface maps the database `display_name` column to a property called `name` (in `useTeamMembers.ts` line 57: `name: p.display_name`). The Opus-generated sharing dialogs reference `member.display_name` which doesn't exist on the interface.
-
-**Fix:** Replace `member.display_name` with `member.name` and `member?.display_name` with `member?.name` in all 4 locations.
-
-**Risk: None** -- the underlying data is identical, this is just the correct property name.
-
-### 4B. `integration_type` not typed as literal (4 errors)
-
-**Files:** `CWSystemsIntegrationTab.tsx` (line 40) and `NormanIntegrationTab.tsx` (line 40)
-
-**Root Cause:** `integration_type: 'cw_systems'` is inferred as `string` rather than the literal `'cw_systems'`. The `IntegrationType` union requires specific string literals.
-
-**Fix:** Add `as const` after the string literal: `integration_type: 'cw_systems' as const` and `integration_type: 'norman_australia' as const`.
-
-**Risk: None** -- zero runtime change, purely TypeScript type narrowing.
-
-### 4C. `${{invoice_amount}}` template literal error (1 error)
-
-**File:** `emailTemplates.ts` (line 443)
-
-**Root Cause:** `${{invoice_amount}}` inside a template literal is parsed by TypeScript as `${({invoice_amount})}` -- a shorthand property reference. The intent is to output the literal text `$` followed by the template placeholder `{{invoice_amount}}`.
-
-**Fix:** Escape as `\${{invoice_amount}}`.
-
-**Risk: None** -- the rendered HTML output is identical.
-
-### 4D. `useCalendarSharing.ts` type cast errors (2 errors)
-
-**File:** `useCalendarSharing.ts` (lines 41, 68)
-
-**Root Cause:** `calendar_delegations` and `appointment_shares` tables are not in the auto-generated Supabase types. The `as any` on `.from()` handles the query, but the final cast from the query result to the custom interface fails TypeScript's overlap check.
-
-**Fix:** Change `as CalendarDelegation[]` to `as unknown as CalendarDelegation[]` and same for `AppointmentShare[]`.
-
-**Risk: None** -- same runtime behavior, satisfies TypeScript strict checking.
-
-### 4E. `useServiceOptions.ts` table not in types (multiple errors)
-
-**File:** `useServiceOptions.ts` (lines 62-63, 88-89, 125-127, 155-156, 185)
-
-**Root Cause:** `service_options` table exists in the database but not in the generated TypeScript types file.
-
-**Fix:** Cast each `.from('service_options')` to `.from('service_options' as any)`.
-
-**Risk: None** -- the table exists in the database, queries work correctly at runtime.
-
----
-
-## Issue 5: Permissions Not Reflecting Role Changes
-
-**File:** `src/hooks/usePermissions.ts` (lines 91-95)
-
-**Root Cause Confirmed:**
-```
-staleTime: 5 * 60 * 1000,      // 5 minutes cache
-refetchOnWindowFocus: false,     // No refresh on tab switch
-refetchOnMount: false,           // No refresh on component remount
-```
-
-When a user's role is changed (e.g., Admin to Owner), the permissions query continues serving the cached (old role) data for up to 5 minutes. Even switching browser tabs won't trigger a refresh.
-
-**Fix:** Change `staleTime` to `60 * 1000` (1 minute) and set `refetchOnWindowFocus: true`. This way, after a role change, the user sees updated permissions within 1 minute or immediately upon switching tabs.
-
-**Risk: Low** -- slightly more database queries, but the permissions table is tiny and the query is fast.
-
----
-
-## Issue 6: Supplier Ordering -- "No Items to Order"
-
-**File:** `src/hooks/useProjectSuppliers.ts`
-
-**Root Cause Analysis:** The detection logic works by scanning `quoteItems` for:
-- **TWC:** Looks for `twc_item_number` in `item.product_details`, `item.metadata`, or `item.twc_item_number` (lines 100-106)
-- **Vendors (Norman, Capitol, etc.):** Looks for `item.inventory_item_id`, then joins with `enhanced_inventory_items` to find `vendor_id` (lines 135-166)
-
-The "No items to order" message appears when `supplier.items.length === 0` (line 152 of SupplierOrderingDropdown).
-
-**Likely causes for your partners:**
-1. Products added to quotes don't have `twc_item_number` metadata set (TWC products not synced from TWC catalog)
-2. Products don't have an `inventory_item_id` linking them to inventory records that have a `vendor_id`
-3. Products were manually added to quotes rather than selected from the synced catalog
-
-**This is a data/setup issue, not a code bug.** The detection logic is correct. To fix for specific accounts, we need to verify their products have the proper vendor linkage. No code changes needed -- this requires account setup verification.
-
----
-
-## Issue 7: RFMS API Sync Errors
-
-**Files:** `supabase/functions/rfms-sync-customers/index.ts`, `supabase/functions/rfms-sync-quotes/index.ts`
-
-**Assessment:** Without seeing the specific error message from the screenshot, the edge functions look structurally sound. They handle session management, authentication, and error reporting correctly. The most common RFMS failure modes are:
-- Session token expiration (RFMS uses async session-based auth)
-- API endpoint URL misconfiguration
-- Store queue parameter issues
-
-**Recommendation:** I should check the edge function logs when your team shares the specific error message. This needs runtime debugging, not code changes.
-
----
-
-## Issue 8: Google/Outlook/Nylas Calendar Integration
-
-**Assessment:** The Nylas integration code (`useNylasCalendar.ts`) is architecturally complete with OAuth popup flow, bidirectional sync, and webhook support. Google Calendar has a known "code displayed at end" issue (OAuth redirect not completing). These are configuration/credentials issues, not code bugs.
-
-**Recommendation:** These need account-specific setup -- OAuth redirect URIs, API credentials, and Nylas admin account configuration. Not code changes.
-
----
-
-## Implementation Order (Safest First)
-
-1. Fix 10 build errors (4A-4E) -- zero logic risk, just TypeScript corrections
-2. Fix team group scroll bug -- CSS-only change
-3. Fix Messages disabled issue -- logic change in ResponsiveHeader
-4. Improve permissions cache refresh -- config change in usePermissions
-
-**Files that will NOT be touched:**
-- `src/engine/formulas/*` (calculation engine)
-- `src/constants/permissions.ts` (permission definitions)
-- Any edge functions
-- Any database migrations
-- Any integration logic
-
+1. Update `QuickAddPopover.tsx` -- add expanded state and additional fields
+2. Update `EventDetailPopover.tsx` -- add expanded state in edit mode
+3. Update `CalendarView.tsx` -- remove the modal dialog from the calendar slot creation flow
