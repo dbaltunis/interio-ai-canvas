@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { addDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -52,6 +53,7 @@ interface CalendarViewProps {
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewOwnCalendar = useHasPermission('view_own_calendar');
   const hasCalendarAccess = canViewCalendar !== false || canViewOwnCalendar !== false;
@@ -213,6 +215,24 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       setCurrentUserId(data?.user?.id || null);
     });
   }, []);
+
+  // Deep-link: auto-open event when eventId is in URL
+  useEffect(() => {
+    const eventId = searchParams.get('eventId');
+    if (!eventId || !appointments) return;
+
+    const appointment = appointments.find(a => a.id === eventId);
+    if (appointment) {
+      const eventDate = new Date(appointment.start_time);
+      setCurrentDate(eventDate);
+      setSelectedAppointment(appointment);
+      setShowEditDialog(true);
+      // Clear the param so it doesn't re-trigger
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('eventId');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, appointments]);
 
   // newEvent state removed - using UnifiedAppointmentDialog now
 
