@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco") {
+    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -142,6 +142,10 @@ Deno.serve(async (req) => {
             item = await mapMaslina(supabase, row, vendorCache);
           } else if (format === "mydeco") {
             item = await mapMydeco(supabase, row, vendorCache);
+          } else if (format === "radpol_fabrics") {
+            item = await mapRadpolFabrics(supabase, row, vendorCache);
+          } else if (format === "radpol_haberdashery") {
+            item = await mapRadpolHaberdashery(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -791,5 +795,178 @@ async function mapMydeco(
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
+  };
+}
+
+// --- RAD-POL Fabrics ---
+
+function mapRadpolSubcategory(category: string): string {
+  const c = category.trim().toLowerCase();
+  if (c.includes("sheer") || c.includes("voile")) return "sheer_fabric";
+  if (c.includes("lining") || c.includes("antislip")) return "lining_fabric";
+  if (c.includes("blackout")) return "curtain_fabric";
+  if (c.includes("dimout")) return "curtain_fabric";
+  if (c.includes("outdoor")) return "curtain_fabric";
+  if (c.includes("upholstery")) return "upholstery_fabric";
+  if (c.includes("taffeta")) return "curtain_fabric";
+  if (c.includes("cafe curtain")) return "curtain_fabric";
+  if (c.includes("tablecloth") || c.includes("runner") || c.includes("cushion")) return "curtain_fabric";
+  return "curtain_fabric";
+}
+
+async function mapRadpolFabrics(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const article = row["article"]?.trim();
+  if (!article) return null;
+
+  // Get or create RAD-POL vendor
+  const vendorKey = "RAD-POL";
+  let radpolVendorId = vendorCache.get(vendorKey);
+  if (!radpolVendorId) {
+    radpolVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, radpolVendorId);
+  }
+
+  // Clean name: strip "(DISCOUNT)" for display
+  let displayName = article;
+  const tags: string[] = [];
+  if (article.toUpperCase().includes("(DISCOUNT)")) {
+    displayName = article.replace(/\s*\(DISCOUNT\)\s*/gi, "").trim();
+    tags.push("discount");
+  }
+
+  const sku = `RAD-${normalizeSku(displayName)}`;
+  const category = row["category"]?.trim() || "";
+  const notes = row["notes"]?.trim() || "";
+
+  // Parse prices - handle "Roll only"
+  const cutPriceStr = row["cut_price_eur"]?.trim() || "";
+  const rollPrice = parsePrice(row["roll_price_eur"]);
+  const isRollOnly = cutPriceStr.toLowerCase() === "roll only" || cutPriceStr === "";
+  const cutPrice = isRollOnly ? rollPrice : parsePrice(cutPriceStr);
+
+  const costPrice = rollPrice;
+  const sellingPrice = cutPrice > 0 ? cutPrice : rollPrice;
+
+  // Extract tags from notes
+  if (notes.toLowerCase().includes("fire retardant") || notes.toLowerCase().includes("fr")) {
+    tags.push("fire-retardant");
+  }
+  if (notes.toLowerCase().includes("discount")) {
+    if (!tags.includes("discount")) tags.push("discount");
+  }
+  if (isRollOnly) tags.push("roll-only");
+
+  // Category tag
+  if (category) tags.push(`type:${category}`);
+
+  const subcategory = mapRadpolSubcategory(category);
+
+  // Single collection for all RAD-POL fabrics
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, "RAD-POL");
+  } catch (e) {
+    console.warn("Collection error for RAD-POL:", e.message);
+  }
+
+  return {
+    user_id: activeUserId,
+    name: displayName,
+    sku,
+    category: "fabric",
+    subcategory,
+    fabric_width: parseWidth(row["width_cm"]),
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: radpolVendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    description: category || undefined,
+    tags: tags.length > 0 ? tags : undefined,
+    collection_name: "RAD-POL",
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+    ...(notes.toLowerCase().includes("fire retardant") ? { fire_rating: "FR" } : {}),
+  };
+}
+
+// --- RAD-POL Haberdashery ---
+
+async function mapRadpolHaberdashery(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const articleName = row["article_name"]?.trim();
+  if (!articleName) return null;
+
+  // Get or create RAD-POL vendor
+  const vendorKey = "RAD-POL";
+  let radpolVendorId = vendorCache.get(vendorKey);
+  if (!radpolVendorId) {
+    radpolVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, radpolVendorId);
+  }
+
+  const sku = `RAD-H-${normalizeSku(articleName)}`;
+  const articleType = row["article_type"]?.trim() || "";
+  const composition = row["composition"]?.trim() || "";
+  const unit = row["unit"]?.trim().toLowerCase() || "";
+  const categoryField = row["category"]?.trim() || "";
+
+  // Parse prices
+  const couponPrice = parsePrice(row["coupon_price_eur"]);
+  const packagePrice = parsePrice(row["package_price_eur"]);
+  const costPrice = packagePrice > 0 ? packagePrice : couponPrice;
+  const sellingPrice = couponPrice > 0 ? couponPrice : packagePrice;
+
+  // Pricing method from unit
+  let pricingMethod: "per_meter" | "per_unit" = "per_unit";
+  if (unit === "lm" || unit === "mb") {
+    pricingMethod = "per_meter";
+  }
+
+  // Collection from Category
+  const collectionName = categoryField
+    ? `RAD-POL ${categoryField.toUpperCase()}`
+    : "RAD-POL HABERDASHERY";
+
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, collectionName);
+  } catch (e) {
+    console.warn(`Collection error for ${collectionName}:`, e.message);
+  }
+
+  const tags: string[] = [];
+  if (articleType) tags.push(`type:${articleType}`);
+  if (categoryField) tags.push(`group:${categoryField}`);
+
+  // Name: combine article name with type for clarity
+  const displayName = articleType
+    ? `${articleName} (${articleType})`
+    : articleName;
+
+  return {
+    user_id: activeUserId,
+    name: displayName,
+    sku,
+    category: "hardware",
+    subcategory: "accessory",
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: radpolVendorId,
+    pricing_method: pricingMethod,
+    quantity: 0,
+    description: articleType || undefined,
+    composition: composition || undefined,
+    tags: tags.length > 0 ? tags : undefined,
+    collection_name: collectionName,
+    collection_id: collectionId || undefined,
   };
 }

@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { encodeBase64 as base64Encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 // Web Crypto based HMAC-SHA256 (replaces deno std hash module)
 async function hmacSha256(key: string, message: string): Promise<Uint8Array> {

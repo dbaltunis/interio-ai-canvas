@@ -27,6 +27,8 @@ const IMPORT_FILES = [
   { format: "spanish_suppliers", file: "/import-data/CSV_Spanish_Suppliers_Combined.csv", label: "Spanish Suppliers - DABEDAN, RIOMA, TARIFA STOCK (~240 fabrics)" },
   { format: "maslina", file: "/import-data/CSV_MASLINA_Catalog.csv", label: "MASLINA Curtain Fabrics (116 items)" },
   { format: "mydeco", file: "/import-data/CSV_MYDECO_Hardware.csv", label: "MYDECO (BARGELD) Hardware (166 items)" },
+  { format: "radpol_fabrics", file: "/import-data/CSV_RADPOL_Fabrics.csv", label: "RAD-POL Fabrics (483 items)" },
+  { format: "radpol_haberdashery", file: "/import-data/CSV_RADPOL_Haberdashery.csv", label: "RAD-POL Haberdashery (90 items)" },
 ];
 
 const CHUNK_SIZE = 200;
