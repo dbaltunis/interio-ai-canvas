@@ -1,31 +1,55 @@
 
-## Connect Treatment Photos to Quote Document
+
+## Align Dealer Permissions Across Desktop and Mobile/Tablet Views
 
 ### Problem
-The window card now shows uploaded treatment photos correctly (screenshot 2), but the quote document still displays the old catalog/template image (screenshot 1). This is because `prepareQuoteData.ts` -- which sets the main item-level image for quote rendering -- never checks the `primary_photo_url` field from `windows_summary`.
+Dealers see different navigation and actions depending on whether they're on desktop vs mobile/tablet. The permission set should be identical across all screen sizes.
 
-### Fix
+### Current State Comparison
 
-**File:** `src/utils/quotes/prepareQuoteData.ts`
+| Feature | Desktop (Sidebar) | Mobile (BottomNav + CreateDialog) |
+|---|---|---|
+| Dashboard | Yes | Yes |
+| Jobs | Yes | Yes |
+| Clients | **NO (missing)** | Yes |
+| Calendar | No | No (hidden) |
+| Library | Yes | **NO (missing from bottom nav)** |
+| Settings | Yes | Only via CreateDialog |
+| Messages | No | No (hidden in header) |
+| "New Event" action | N/A | **Yes (should be hidden)** |
+| "Team & Messages" action | N/A | **Yes (should be restricted)** |
 
-One change needed at line 72 where the product image is resolved:
+Dealers DO have `view_assigned_clients` and `create_clients` permissions, so Clients should be visible everywhere.
 
-**Current:**
-```
-const productImage = materialDetails.image_url || fabricDetails.image_url;
-```
+### Changes
 
-**Updated:**
-```
-const productImage = summary.primary_photo_url || materialDetails.image_url || fabricDetails.image_url;
-```
+#### 1. Desktop Sidebar -- Add Clients to dealer navigation
+**File:** `src/components/layout/Sidebar.tsx`
+Add a "Clients" entry to `dealerNavItems` so dealers can access their assigned clients from the desktop sidebar too.
 
-This ensures the user's designated "main" treatment photo takes highest priority for the quote item image. If no custom photo is set, it falls back to the catalog material/fabric image as before.
+#### 2. Mobile Bottom Nav -- Add Library tab for dealers
+**File:** `src/components/layout/MobileBottomNav.tsx`
+Currently the bottom nav only has: Home, Jobs, Clients, Calendar (with Calendar hidden for dealers). Update `navItems` to include a Library/Inventory option, or add dealer-specific logic to swap Calendar for Library when `isDealer` is true. This ensures dealers see: Home, Jobs, Clients, Library -- matching desktop.
 
-### Why This Is Sufficient
-- `buildClientBreakdown.ts` was already updated in the previous change to prioritize `primary_photo_url` for breakdown sub-rows (template/treatment category)
-- `prepareQuoteData.ts` is the file that sets the top-level `image_url` for each quote line item -- this is what appears in the quote document next to the product name (the image shown in screenshot 1)
-- The `primary_photo_url` column on `windows_summary` is already being populated by the camera save logic in both `WindowSummaryCard` and `WindowManagementDialog`
+#### 3. Create Action Dialog -- Hide calendar and restrict team for dealers
+**File:** `src/components/layout/CreateActionDialog.tsx`
+- Hide "New Event" (calendar) action when `isDealer` is true
+- Hide or restrict "Team & Messages" action for dealers (they have limited team visibility)
 
-### Files Modified
-- `src/utils/quotes/prepareQuoteData.ts` -- one line change to image priority
+#### 4. Index.tsx -- Block restricted tabs for dealers
+**File:** `src/pages/Index.tsx`
+Add dealer checks to the tab restriction logic so dealers cannot navigate to calendar, emails, ordering-hub, analytics, or other restricted tabs via URL manipulation.
+
+### Summary of Final Dealer Navigation (All Screen Sizes)
+- **Dashboard** -- always visible
+- **Jobs** -- view/create/edit own jobs
+- **Clients** -- view/create/edit own clients
+- **Library** -- browse products (read-only, no costs/suppliers)
+- **Settings** -- personal profile only
+- Calendar, Messages, Analytics, Store, Ordering Hub -- all hidden
+
+### Technical Details
+- All checks use the existing `useIsDealer` hook
+- No database or permission constant changes needed
+- Aligns UI visibility with the `Dealer` role permissions already defined in `constants/permissions.ts`
+
