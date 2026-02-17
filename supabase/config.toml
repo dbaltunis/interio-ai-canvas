@@ -229,3 +229,6 @@ verify_jwt = false
 [functions.send-whatsapp-cloud]
 verify_jwt = true
 
+[functions.import-client-library]
+verify_jwt = false
+

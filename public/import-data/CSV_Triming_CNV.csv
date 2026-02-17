@@ -1,0 +1,15 @@
+supplier,product_code,product_type,category,unit,purchase_price_eur,sell_price_eur
+CNV,CNV 10027,KORDON,trimmings,M,0.6,0.96
+CNV,CNV 10028,BORDUR,trimmings,M,0.49,0.784
+CNV,CNV 10029,BORDUR,trimmings,M,0.49,0.784
+CNV,CNV 10030,BORDUR,trimmings,M,0.61,0.976
+CNV,CNV 10031,BORDUR,trimmings,M,0.61,0.976
+CNV,CNV 10032,SACAK,trimmings,M,6.3,10.08
+CNV,CNV 10033,SACAK,trimmings,M,1.7,2.72
+CNV,CNV 10034,ROZET,trimmings,VNT,0.97,1.552
+CNV,CNV 10035,BRACOL,trimmings,VNT,13.31,21.296
+CNV,CNV 10036,BRACOL,trimmings,VNT,5.93,9.488
+CNV,CNV 10037,KOLBAGI,trimmings,VNT,3.63,5.808
+CNV,CNV 10038,KOLBAGI,trimmings,VNT,2.3,3.68
+CNV,CNV 10039,KORDON,trimmings,M,0.46,0.736
+CNV,CNV 10040,KORDON,trimmings,M,0.56,0.896
