@@ -69,7 +69,7 @@ export const prepareQuoteData = (
         const templateName = summary.template_name || '';
         const materialName = materialDetails.name || fabricDetails.name || '';
         const productName = templateName || materialName || window.surface_name || 'Window Treatment';
-        const productImage = materialDetails.image_url || fabricDetails.image_url;
+        const productImage = summary.primary_photo_url || materialDetails.image_url || fabricDetails.image_url;
 
         // Get measurements for display
         const widthCm = summary.rail_width ? (summary.rail_width / 10).toFixed(0) : '';
