@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery") {
+    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery" && format !== "laela_selected_samples") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -146,6 +146,8 @@ Deno.serve(async (req) => {
             item = await mapRadpolFabrics(supabase, row, vendorCache);
           } else if (format === "radpol_haberdashery") {
             item = await mapRadpolHaberdashery(supabase, row, vendorCache);
+          } else if (format === "laela_selected_samples") {
+            item = await mapLaelaSelectedSamples(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -968,5 +970,101 @@ async function mapRadpolHaberdashery(
     tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName,
     collection_id: collectionId || undefined,
+  };
+}
+
+// --- LAELA Selected Samples ---
+
+function parseRepeatCm(repeatStr: string): number {
+  if (!repeatStr) return 0;
+  // "vert.repeat 0" or "horiz.repeat 0" -> 0
+  const zeroMatch = repeatStr.match(/repeat\s+0$/i);
+  if (zeroMatch) return 0;
+  // "vert.repeat 101cm-39.5"" or "horiz.repeat 64,5cm-25"" -> extract cm number
+  const cmMatch = repeatStr.match(/repeat\s+(\d+[.,]?\d*)cm/i);
+  if (cmMatch) {
+    return Math.round(parseFloat(cmMatch[1].replace(",", ".")));
+  }
+  // "vert.repeat 4cm-1.5"" 
+  const shortMatch = repeatStr.match(/(\d+[.,]?\d*)\s*cm/i);
+  if (shortMatch) {
+    return Math.round(parseFloat(shortMatch[1].replace(",", ".")));
+  }
+  return 0;
+}
+
+function capitalizeWords(str: string): string {
+  return str.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+
+async function mapLaelaSelectedSamples(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const article = row["article"]?.trim();
+  const name = row["name"]?.trim();
+  if (!article || !name) return null;
+
+  // Get or create LAELA vendor
+  const vendorKey = "LAELA";
+  let laelaVendorId = vendorCache.get(vendorKey);
+  if (!laelaVendorId) {
+    laelaVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, laelaVendorId);
+  }
+
+  const sku = `LAELA-${article}`;
+  const displayName = capitalizeWords(name);
+  const cutPrice = parsePrice(row["cut_price_eur"]);
+  const widthCm = parseInt(row["width_cm"] || "0") || null;
+  const composition = row["composition"]?.trim() || "";
+  const direction = row["direction"]?.trim() || "";
+  const vertRepeat = parseRepeatCm(row["vert_repeat"] || "");
+  const horizRepeat = parseRepeatCm(row["horiz_repeat"] || "");
+  const weightKgMt = parseFloat(row["weight_kg_mt"] || "0") || 0;
+  const comments = row["comments"]?.trim() || "";
+
+  // Weight-based subcategory
+  const subcategory = weightKgMt < 0.30 ? "sheer_fabric" : "curtain_fabric";
+
+  // Collection from hanger description
+  const collectionRaw = row["collection"]?.trim() || "";
+  const collectionName = collectionRaw ? `LAELA ${collectionRaw.toUpperCase()}` : "LAELA";
+
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, collectionName);
+  } catch (e) {
+    console.warn(`Collection error for ${collectionName}:`, e.message);
+  }
+
+  // Build description from direction + weight
+  const descParts: string[] = [];
+  if (direction) descParts.push(direction);
+  if (weightKgMt > 0) descParts.push(`weight: ${weightKgMt} kg/mt`);
+  if (comments && comments !== ".") descParts.push(comments);
+
+  return {
+    user_id: activeUserId,
+    name: displayName,
+    sku,
+    category: "fabric",
+    subcategory,
+    fabric_width: widthCm,
+    cost_price: cutPrice,
+    selling_price: cutPrice,
+    vendor_id: laelaVendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    composition: composition || undefined,
+    description: descParts.length > 0 ? descParts.join("; ") : undefined,
+    pattern_repeat_vertical: vertRepeat || undefined,
+    pattern_repeat_horizontal: horizRepeat || undefined,
+    collection_name: collectionName,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+    specifications: weightKgMt > 0 ? { weight_kg_mt: weightKgMt } : undefined,
   };
 }

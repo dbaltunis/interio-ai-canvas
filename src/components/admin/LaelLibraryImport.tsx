@@ -29,6 +29,7 @@ const IMPORT_FILES = [
   { format: "mydeco", file: "/import-data/CSV_MYDECO_Hardware.csv", label: "MYDECO (BARGELD) Hardware (166 items)" },
   { format: "radpol_fabrics", file: "/import-data/CSV_RADPOL_Fabrics.csv", label: "RAD-POL Fabrics (483 items)" },
   { format: "radpol_haberdashery", file: "/import-data/CSV_RADPOL_Haberdashery.csv", label: "RAD-POL Haberdashery (90 items)" },
+  { format: "laela_selected_samples", file: "/import-data/CSV_LAELA_Selected_Samples.csv", label: "LAELA Selected Samples 2024 (191 items)" },
 ];
 
 const CHUNK_SIZE = 200;
