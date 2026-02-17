@@ -99,9 +99,9 @@ Deno.serve(async (req) => {
 
     console.log(`Processing ${rows.length} rows in format: ${format} for user: ${activeUserId}`);
 
-    // For spanish_suppliers, vendor is determined per-row
+    // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers") {
+    if (format !== "spanish_suppliers" && format !== "maslina") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -138,6 +138,8 @@ Deno.serve(async (req) => {
             item = await mapIksForma(supabase, row, vendorId!);
           } else if (format === "spanish_suppliers") {
             item = await mapSpanishSuppliers(supabase, row, vendorCache);
+          } else if (format === "maslina") {
+            item = await mapMaslina(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -548,6 +550,63 @@ async function mapIksForma(supabase: any, row: Record<string, string>, vendorId:
     quantity: 0,
     tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName || undefined,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+  };
+}
+
+// --- MASLINA (Turkey) ---
+
+async function mapMaslina(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const name = row["name"]?.trim();
+  if (!name) return null;
+
+  // Get or create MASLINA vendor
+  const vendorKey = "MASLINA";
+  let maslinaVendorId = vendorCache.get(vendorKey);
+  if (!maslinaVendorId) {
+    maslinaVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, maslinaVendorId);
+  }
+
+  const sku = `MAS-${normalizeSku(name)}`;
+  const costPrice = parsePrice(row["cut_price_eur"]);
+  const sellingPrice = costPrice; // Only cut price available
+
+  // Auto-detect type from name for description
+  const upperName = name.toUpperCase();
+  let description = "";
+  if (upperName.includes("BLACKOUT")) description = "Blackout";
+  else if (upperName.includes("DIMOUT")) description = "Dimout";
+  else if (upperName.includes("GREK")) description = "Greek pattern";
+
+  // Single collection for all MASLINA items
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, "MASLINA");
+  } catch (e) {
+    console.warn(`Collection error for MASLINA:`, e.message);
+  }
+
+  return {
+    user_id: activeUserId,
+    name,
+    sku,
+    category: "fabric",
+    subcategory: "curtain_fabric",
+    fabric_width: parseWidth(row["width_cm"]),
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: maslinaVendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    description: description || undefined,
+    collection_name: "MASLINA",
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
