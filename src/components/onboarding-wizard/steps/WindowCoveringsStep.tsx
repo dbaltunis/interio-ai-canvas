@@ -15,7 +15,7 @@ interface StepProps {
 // STANDARDIZED: Use centralized pricing method codes
 const WINDOW_COVERING_TYPES = [
   { id: 'curtains', label: 'Curtains', icon: '🪟', pricingOptions: ['per-linear-meter', 'per-width', 'per-drop', 'fixed'] },
-  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', pricingOptions: ['per-linear-meter', 'per-width', 'per-drop', 'fixed'] },
+  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', pricingOptions: ['per-linear-meter', 'per-width', 'per-drop', 'per-sqm', 'pricing-grid', 'fixed'] },
   { id: 'roller_blinds', label: 'Roller Blinds', icon: '🔲', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
   { id: 'venetian_blinds', label: 'Venetian Blinds', icon: '📊', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
   { id: 'cellular_blinds', label: 'Cellular / Honeycomb', icon: '🐝', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
