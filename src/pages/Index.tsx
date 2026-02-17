@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/utils/lazyWithRetry";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 // Lazy load heavy components with automatic retry
 const Dashboard = lazyWithRetry(
@@ -112,6 +113,7 @@ const Index = () => {
   const canViewInventory = useHasPermission('view_inventory') !== false;
   const canViewEmails = useHasPermission('view_emails') !== false;
   const permissionsLoading = useHasPermission('view_settings') === undefined;
+  const { data: isDealer } = useIsDealer();
   
   // Session timeout removed in v2.3.7 - users stay logged in via Supabase auto-refresh
   
@@ -136,6 +138,12 @@ const Index = () => {
     const restricted: Record<string, boolean> = {
       inventory: !canViewInventory,
       emails: !canViewEmails,
+      // Dealers cannot access these tabs via URL
+      calendar: !!isDealer,
+      'ordering-hub': !!isDealer,
+      'online-store': !!isDealer,
+      tasks: !!isDealer,
+      'bug-reports': !!isDealer,
     };
 
     const urlTab = searchParams.get('tab');
@@ -146,7 +154,7 @@ const Index = () => {
       setActiveTab('dashboard');
       sessionStorage.setItem('active_tab', 'dashboard');
     }
-  }, [canViewInventory, canViewEmails, activeTab, searchParams, setSearchParams, permissionsLoading]);
+  }, [canViewInventory, canViewEmails, isDealer, activeTab, searchParams, setSearchParams, permissionsLoading]);
 
   // Sync activeTab with URL
   useEffect(() => {

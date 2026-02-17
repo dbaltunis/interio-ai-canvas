@@ -6,7 +6,8 @@ import {
   Users,
   Home,
   Calendar,
-  Plus
+  Plus,
+  Package
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -30,6 +31,7 @@ const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
+  { id: "inventory", label: "Library", icon: Package, permission: "view_inventory" },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -46,6 +48,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
+  const canViewInventory = useHasPermission('view_inventory');
   
   // Permission check using centralized hook
   const canViewSettings = useHasPermission('view_settings') !== false;
@@ -55,15 +58,18 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   // Check if ANY permission is still loading (undefined)
   const navPermissionsLoading = canViewJobs === undefined ||
                              canViewClients === undefined ||
-                             canViewCalendar === undefined;
+                             canViewCalendar === undefined ||
+                             canViewInventory === undefined;
   
   // Filter nav items based on permissions and dealer restrictions
   // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
     
-    // Dealers: hide Calendar (they only see Home, Jobs, Clients, Library)
+    // Dealers: hide Calendar, show Library (they see Home, Jobs, Clients, Library)
     if (isDealer && item.id === 'calendar') return false;
+    // Non-dealers: hide Library from bottom nav (accessible via sidebar/other means)
+    if (!isDealer && item.id === 'inventory') return false;
     
     // Dashboard/Home should always be visible for authenticated users
     if (item.permission === 'view_dashboard') return true;
@@ -71,6 +77,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
+    if (item.permission === 'view_inventory') return canViewInventory !== false;
     
     return true; // Default to showing during loading
   });

@@ -141,8 +141,8 @@ export const CreateActionDialog = ({
             </Button>
           )}
           
-          {/* New Event - only if can view calendar */}
-          {canAccessCalendar && (
+          {/* New Event - only if can view calendar AND not a dealer */}
+          {canAccessCalendar && !isDealer && (
             <Button
               onClick={() => handleAction("event")}
               variant="outline"
@@ -178,19 +178,22 @@ export const CreateActionDialog = ({
           {/* Separator before utility items */}
           <Separator className="my-1" />
           
-          <Button
-            onClick={() => handleAction("team")}
-            variant="outline"
-            className="h-14 justify-start gap-4 text-left"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-              <MessageCircle className="h-4 w-4 text-secondary-foreground" />
-            </div>
-            <div>
-              <div className="font-medium">Team & Messages</div>
-              <div className="text-xs text-muted-foreground">Collaborate with your team</div>
-            </div>
-          </Button>
+          {/* Team & Messages - hide for dealers (they have restricted team visibility) */}
+          {!isDealer && (
+            <Button
+              onClick={() => handleAction("team")}
+              variant="outline"
+              className="h-14 justify-start gap-4 text-left"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
+                <MessageCircle className="h-4 w-4 text-secondary-foreground" />
+              </div>
+              <div>
+                <div className="font-medium">Team & Messages</div>
+                <div className="text-xs text-muted-foreground">Collaborate with your team</div>
+              </div>
+            </Button>
+          )}
           
           {/* Settings - HIDE entirely if no permission */}
           {canViewSettings !== false && (

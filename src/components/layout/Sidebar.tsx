@@ -50,6 +50,11 @@ const Sidebar = () => {
         icon: Briefcase,
       },
       {
+        path: "/crm",
+        label: "Clients",
+        icon: Users,
+      },
+      {
         path: "/inventory",
         label: "Library",
         icon: Package,
