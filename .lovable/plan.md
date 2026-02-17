@@ -1,112 +1,125 @@
 
 
-## Import RAD-POL Fabrics + Haberdashery for Laela Account
+## Import LAELA Selected Samples (Pricelist 2024) for Laela Account
 
 ### File Summary
 
-| Dataset | Page | Items | Type | Pricing |
-|---|---|---|---|---|
-| RAD-POL Fabrics | Page 8 | ~483 | Decoration, upholstery, sheer, outdoor, blackout, dimout, FR, lining, voile, cafe curtain | Cut price + Roll price (EUR/m) |
-| RAD-POL Haberdashery | Page 9 | ~90 | Cords, fringes, tassels, braids, curtain tapes, lace trims, Swarovski buttons | Coupon (cut) + Package (roll) price (EUR) |
+| Detail | Value |
+|---|---|
+| Supplier / Vendor | LAELA (own brand) |
+| Total items | ~191 |
+| Type | Sheer and curtain fabrics (woven railroaded) |
+| Collections | 22 (HOME, PROMISE, LOVELY, MONT, IRIS, THEAMA, AUTHENTIC, SIMPLICITY, TROPICANA, VERANDA, EXIST, INDRA, OSLO, CAPITAL, LEOMAR, SINGLE, AGORA, ACROSS, ALONG, APPEAR, LOUNGE, ART) |
+| Prices | Cut-length price (EUR per meter), range 12.00 - 30.00 |
+| Widths | 295-325 cm |
+| Source file | selected_samples_-_Pricelist_2024.XLSX (Page 1) |
 
-### Data Structures
+Note: The two PDF files (LAELA_Pricelist_2025.pdf and selected_samples_-_Pricelist_2024.pdf) failed to parse. This plan uses the XLSX data which parsed successfully.
 
-**Fabrics (Page 8):**
-```text
-Article | Purpose/Category | Width (cm) | Cut Price EUR/mt | Roll Price EUR/mt | Currency | Notes
-```
+### Data Structure
 
-**Haberdashery (Page 9):**
-```text
-Article Name | Article Type | Composition | Unit | Coupon Price EUR | Package Price EUR | Currency | Category
-```
+| Column | Example | Notes |
+|---|---|---|
+| hanger | F-0896F | Hanger/swatch code |
+| hanger description | WATERFALL HOME | Collection name |
+| article | 6301670-02 | Article number (used as SKU base) |
+| article description | home off white | Product name with color |
+| width | 305cm - 120" (+/-1%) | Fabric width |
+| composition | 100%pol | Fabric composition |
+| cutlength price | 13.80 | EUR per meter |
+| direction comment | woven railroaded | Fabric direction |
+| vertical repeat | vert.repeat 0 | Vertical pattern repeat |
+| horiz.repeat | horiz.repeat 0 | Horizontal pattern repeat |
+| comments | LB - eurohem | Processing notes |
+| weight (kg/mt) | 0.1330 | Weight per meter |
+| washing instructions | GKXNQa | Encoded care codes |
+| comments 2 | colors may vary from lot to lot | Additional notes |
 
-### Column Mapping - Fabrics
+### Column Mapping
 
 | Source Column | Maps To | Notes |
 |---|---|---|
-| Article | `name` | e.g., "ACAPULCO", "ADELE" |
-| Article | `sku` | Prefixed: "RAD-ACAPULCO", "RAD-ADELE" |
-| Purpose/Category | `description` + tags | e.g., "upholstery/decoration", "sheer", "outdoor" |
-| Width (cm) | `fabric_width` | Parse first number from values like "295/300" |
-| Roll Price | `cost_price` | Wholesale price |
-| Cut Price | `selling_price` | Retail/cut price; fallback to roll if "Roll only" |
-| Notes | tags | "DISCOUNT", "Fire retardant" extracted as tags |
+| article | `sku` | Prefixed: "LAELA-6301670-02" |
+| article description | `name` | Capitalized: "Home Off White" |
+| hanger description | `collection_name` | e.g., "WATERFALL HOME", "HANGER IRIS" |
+| width | `fabric_width` | Parse first number: "305cm" -> 305 |
+| composition | `composition` | e.g., "100%pol", "60%pol 40%lin" |
+| cutlength price | `cost_price` AND `selling_price` | Same value (single price) |
+| direction comment | `description` | Included in description |
+| vertical repeat | `pattern_repeat_vertical` | Parse number from "vert.repeat 0" |
+| horiz.repeat | `pattern_repeat_horizontal` | Parse number from "horiz.repeat 3cm-1\"" -> 3 |
+| weight (kg/mt) | stored in `specifications` | Weight data |
 | All items | `category: "fabric"` | |
-| All items | `subcategory: "curtain_fabric"` | |
+| All items | `subcategory: "sheer_fabric"` | Most are sheers; some heavier ones as "curtain_fabric" |
 | All items | `pricing_method: "per_meter"` | |
-
-### Column Mapping - Haberdashery
-
-| Source Column | Maps To | Notes |
-|---|---|---|
-| Article Name | `name` | e.g., "7003-6 / 0006", "Koronka-1 (1.5cm) ecru" |
-| Article Name | `sku` | Prefixed: "RAD-H-7003-6", "RAD-H-KORONKA-1-ECR" |
-| Article Type | `description` | e.g., "cord", "fringe", "Swarovski button" |
-| Composition | `composition` | e.g., "100% polyester" |
-| Unit | `pricing_method` | "lm"/"mb" -> per_meter; "pc."/"pkg" -> per_unit |
-| Package Price | `cost_price` | Wholesale/package price |
-| Coupon Price | `selling_price` | Retail/coupon price; fallback to package price |
-| Category | tags + collection | "Queen Collection", "Decorative", "Curtain Tapes", etc. |
-| All items | `category: "hardware"` | Haberdashery goes under hardware |
-| All items | `subcategory: "accessory"` | |
+| All items | `compatible_treatments: ["curtains"]` | |
 
 ### What Changes
 
-#### 1. Create two CSV files
-- `public/import-data/CSV_RADPOL_Fabrics.csv` (~483 rows) from Page 8
-  - Columns: `article`, `category`, `width_cm`, `cut_price_eur`, `roll_price_eur`, `notes`
-- `public/import-data/CSV_RADPOL_Haberdashery.csv` (~90 rows) from Page 9
-  - Columns: `article_name`, `article_type`, `composition`, `unit`, `coupon_price_eur`, `package_price_eur`, `category`
+#### 1. Create CSV file
+`public/import-data/CSV_LAELA_Selected_Samples.csv` (~191 rows) with columns:
+`article,name,collection,width_cm,composition,cut_price_eur,direction,vert_repeat,horiz_repeat,weight_kg_mt,comments`
 
-#### 2. Add two mappers to Edge Function
+#### 2. Add `mapLaelaSelectedSamples()` mapper to Edge Function
 
-**`mapRadpolFabrics()`:**
-- SKU: `RAD-{NORMALIZED_ARTICLE_NAME}` (e.g., "RAD-ACAPULCO", "RAD-ALASKA")
-- `cost_price` = roll price, `selling_price` = cut price
-- Special handling for "Roll only" items (no cut price) -- use roll price for both
-- Parse width from "295/300" format (take first number)
-- Extract tags: "DISCOUNT" flag, "Fire retardant" from Notes column
-- Auto-detect subcategory from Purpose/Category: outdoor -> curtain_fabric, sheer -> sheer_fabric, lining -> lining_fabric, blackout/dimout -> curtain_fabric
-- Collection: "RAD-POL" (single collection for all fabrics)
-
-**`mapRadpolHaberdashery()`:**
-- SKU: `RAD-H-{NORMALIZED_ARTICLE_NAME}` (e.g., "RAD-H-7003-6", "RAD-H-10232")
-- `cost_price` = package price, `selling_price` = coupon price
-- `pricing_method`: "lm"/"mb" -> per_meter, "pc." -> per_unit, "pkg" -> per_unit
-- `composition` from Composition column
-- Collection based on Category: "RAD-POL QUEEN COLLECTION", "RAD-POL DECORATIVE", "RAD-POL CURTAIN TAPES", etc.
-- `category: "hardware"`, `subcategory: "accessory"`
+- SKU: `LAELA-{ARTICLE_NUMBER}` (e.g., "LAELA-6301670-02", "LAELA-1354611-01")
+- `name`: Capitalized article description (e.g., "Home Off White", "Promise Natur")
+- `cost_price` = `selling_price` = cutlength price
+- `fabric_width`: Parse first number from width string (e.g., "305cm" -> 305)
+- `composition`: Stored directly from source
+- `pattern_repeat_vertical`: Parse cm value from "vert.repeat Xcm" (0 if "vert.repeat 0")
+- `pattern_repeat_horizontal`: Parse cm value from "horiz.repeat Xcm" (0 if "horiz.repeat 0")
+- `description`: Includes direction comment and weight info
+- Collection: Use "hanger description" cleaned up (e.g., "WATERFALL HOME" -> collection "LAELA WATERFALL HOME")
+- Auto-detect subcategory: items with weight < 0.30 kg/mt -> `sheer_fabric`; heavier items -> `curtain_fabric`
+- Vendor: "LAELA" (auto-created)
+- Deduplication: Some rows appear duplicated (same article number) -- skip duplicates by SKU
 
 #### 3. Register in `LaelLibraryImport.tsx`
-Add two entries to `IMPORT_FILES` array:
+Add entry:
 ```text
-{ format: "radpol_fabrics", file: "/import-data/CSV_RADPOL_Fabrics.csv", label: "RAD-POL Fabrics (483 items)" }
-{ format: "radpol_haberdashery", file: "/import-data/CSV_RADPOL_Haberdashery.csv", label: "RAD-POL Haberdashery (90 items)" }
+{ format: "laela_selected_samples", file: "/import-data/CSV_LAELA_Selected_Samples.csv", label: "LAELA Selected Samples 2024 (191 items)" }
 ```
 
 #### 4. Add vendor routing in Edge Function
-Both formats skip single-vendor lookup and auto-create vendor "RAD-POL" via the mapper (same pattern as maslina/mydeco).
+Add `"laela_selected_samples"` to the bypass list for single-vendor lookup, auto-creating vendor "LAELA".
 
-### Technical Details
+### Collections Created (~22)
 
-**SKU generation:**
-```text
-Fabrics:       RAD-{ARTICLE_NAME_NORMALIZED}     e.g., "RAD-ACAPULCO", "RAD-EKO-300-FOLDED"
-Haberdashery:  RAD-H-{ARTICLE_NAME_NORMALIZED}   e.g., "RAD-H-7003-6", "RAD-H-KORONKA-1-ECR"
-```
+| Collection Name | Items |
+|---|---|
+| LAELA WATERFALL HOME | 7 |
+| LAELA WATERFALL PROMISE | 18 |
+| LAELA HANGER LOVELY | 9 |
+| LAELA WATERFALL MONT | 19 |
+| LAELA HANGER IRIS | 10 |
+| LAELA HANGER THEAMA | 5 |
+| LAELA HANGER AUTHENTIC | 10 |
+| LAELA WATERFALL SIMPLICITY | 13 |
+| LAELA HANGER TROPICANA | 3 |
+| LAELA HANGER VERANDA | 3 |
+| LAELA HANGER EXIST | 7 |
+| LAELA WATERFALL INDRA | 7 |
+| LAELA HANGER OSLO | 6 |
+| LAELA HANGER CAPITAL | 14 |
+| LAELA HANGER LEOMAR | 9 |
+| LAELA HANGER SINGLE | 10 |
+| LAELA WATERFALL AGORA | 16 |
+| LAELA WATERFALL ACROSS | 7 |
+| LAELA WATERFALL ALONG | 6 |
+| LAELA HANGER APPEAR | 3 |
+| LAELA HANGER LOUNGE | 3 |
+| LAELA HANGER ART | 6 |
 
-**Special cases:**
-- Items with "Roll only" as cut price: use roll price for both cost and selling price
-- Items with "(DISCOUNT)" in name: add "discount" tag, strip "(DISCOUNT)" from display name
-- Items with "FR" in notes: add "fire-retardant" tag
-- Width values like "295/300" or "305/310": parse first number
-- Haberdashery curtain tapes priced per package (pkg 50m/100m): stored as per_unit with note about package contents
-- Duplicate article numbers in haberdashery (e.g., shared ceiling brackets): SKU deduplication via article name normalization
+### Special Cases
+
+- **Duplicate rows**: Some article numbers appear twice (e.g., "mont grey 1561618-01", "indra taupe 4861620-01") -- deduplicated by SKU
+- **Pattern repeats**: Most items have "0" repeats (plain fabrics); some have values like "101cm-39.5\"" or "57,5cm-22.5\"" -- parsed as cm integers
+- **Weight-based subcategory**: Items under 0.30 kg/mt classified as `sheer_fabric`; heavier ones as `curtain_fabric`
+- **Composition parsing**: Left as-is from source (e.g., "100%pol", "60%pol 40%lin", "82pan 6pol 6cot 3li 3cv")
 
 ### After Implementation
 1. Navigate to `/admin/import-laela`
-2. Click "Start Import" for "RAD-POL Fabrics" entry (~483 items)
-3. Click "Start Import" for "RAD-POL Haberdashery" entry (~90 items)
-4. All items will import with proper vendor, pricing, and metadata
+2. Click "Start Import" for "LAELA Selected Samples 2024" entry (~191 items)
+3. All items will import with proper collections, composition, pattern repeats, and vendor
 
