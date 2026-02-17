@@ -1,6 +1,13 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HmacSha256 } from "https://deno.land/std@0.190.0/hash/sha256.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+
+async function hmacSha256(key: string, message: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw", encoder.encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(message));
+  return new Uint8Array(sig);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,10 +73,8 @@ function generateOAuthHeader(
   const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
 
   // HMAC-SHA256 signature
-  const hmac = new HmacSha256(signingKey);
-  hmac.update(signatureBase);
-  const signatureBytes = hmac.digest();
-  const signature = base64Encode(new Uint8Array(signatureBytes));
+  const sigBytes = await hmacSha256(signingKey, signatureBase);
+  const signature = base64Encode(sigBytes);
 
   // Build Authorization header
   const realm = accountId.replace(/-/g, "_").toUpperCase();
@@ -84,7 +89,7 @@ function generateOAuthHeader(
   return `OAuth ${headerParts.join(", ")}`;
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
