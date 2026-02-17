@@ -24,6 +24,7 @@ const IMPORT_FILES = [
   { format: "cnv_trimmings", file: "/import-data/CSV_Triming_CNV.csv", label: "CNV Trimmings (14 items)" },
   { format: "eurofirany", file: "/import-data/CSV_EUROFIRANY_All_Collections.csv", label: "EUROFIRANY All Collections (233 fabrics)" },
   { format: "iks_forma", file: "/import-data/CSV_IKS_FORMA_Full_Catalog.csv", label: "IKS FORMA Hardware (181 items)" },
+  { format: "spanish_suppliers", file: "/import-data/CSV_Spanish_Suppliers_Combined.csv", label: "Spanish Suppliers - DABEDAN, RIOMA, TARIFA STOCK (~240 fabrics)" },
 ];
 
 const CHUNK_SIZE = 200;

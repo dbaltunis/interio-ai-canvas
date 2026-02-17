@@ -99,12 +99,18 @@ Deno.serve(async (req) => {
 
     console.log(`Processing ${rows.length} rows in format: ${format} for user: ${activeUserId}`);
 
-    // Determine vendor name based on format
-    const vendorName = format === "cnv_trimmings" ? "CNV" 
-      : format === "eurofirany" ? "EUROFIRANY" 
-      : format === "iks_forma" ? "IKS FORMA"
-      : "DATEKS";
-    const vendorId = await ensureVendor(supabase, vendorName);
+    // For spanish_suppliers, vendor is determined per-row
+    let vendorId: string | undefined;
+    if (format !== "spanish_suppliers") {
+      const vendorName = format === "cnv_trimmings" ? "CNV" 
+        : format === "eurofirany" ? "EUROFIRANY" 
+        : format === "iks_forma" ? "IKS FORMA"
+        : "DATEKS";
+      vendorId = await ensureVendor(supabase, vendorName);
+    }
+
+    // Cache vendor IDs for spanish_suppliers (per-row lookup)
+    const vendorCache = new Map<string, string>();
 
     const result: ImportResult = {
       created: 0, updated: 0, skipped: 0, errors: [],
@@ -121,15 +127,17 @@ Deno.serve(async (req) => {
         try {
           let item;
           if (format === "dateks_expo_2024") {
-            item = await mapExpo2024(supabase, row, vendorId);
+            item = await mapExpo2024(supabase, row, vendorId!);
           } else if (format === "dateks_pricelist_2023") {
-            item = await mapPricelist2023(supabase, row, vendorId);
+            item = await mapPricelist2023(supabase, row, vendorId!);
           } else if (format === "cnv_trimmings") {
-            item = mapCNVTrimmings(row, vendorId);
+            item = mapCNVTrimmings(row, vendorId!);
           } else if (format === "eurofirany") {
-            item = await mapEurofirany(supabase, row, vendorId);
+            item = await mapEurofirany(supabase, row, vendorId!);
           } else if (format === "iks_forma") {
-            item = await mapIksForma(supabase, row, vendorId);
+            item = await mapIksForma(supabase, row, vendorId!);
+          } else if (format === "spanish_suppliers") {
+            item = await mapSpanishSuppliers(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -169,6 +177,9 @@ Deno.serve(async (req) => {
               subcategory: item.subcategory,
               pricing_method: item.pricing_method,
               vendor_id: item.vendor_id,
+              ...(item.composition ? { composition: item.composition } : {}),
+              ...(item.fire_rating ? { fire_rating: item.fire_rating } : {}),
+              ...(item.description ? { description: item.description } : {}),
             })
             .eq("id", existing.id);
           if (error) result.errors.push(`Update ${item.sku}: ${error.message}`);
@@ -537,6 +548,102 @@ async function mapIksForma(supabase: any, row: Record<string, string>, vendorId:
     quantity: 0,
     tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName || undefined,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+  };
+}
+
+// --- Spanish Suppliers (DABEDAN, RIOMA, TARIFA STOCK) ---
+
+function getSupplierPrefix(supplier: string): string {
+  const s = supplier.trim().toUpperCase();
+  if (s.startsWith("DABEDAN")) return "DAB";
+  if (s.startsWith("RIOMA")) return "RIO";
+  if (s.startsWith("TARIFA")) return "TAR";
+  return "ESP";
+}
+
+function normalizeSku(name: string): string {
+  return name.trim().toUpperCase()
+    .replace(/[^A-Z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .substring(0, 40);
+}
+
+async function mapSpanishSuppliers(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const supplier = row["Supplier"]?.trim();
+  const productName = row["Product Name"]?.trim();
+  if (!supplier || !productName) return null;
+
+  // Skip header-like rows (e.g. "CONTRACT COLLECTION")
+  const category = row["Category"]?.trim() || "";
+  const width = row["Width (cm)"]?.trim() || "";
+  if (!width && !category) return null;
+
+  // Get or create vendor
+  const supplierKey = supplier.toUpperCase();
+  let rowVendorId = vendorCache.get(supplierKey);
+  if (!rowVendorId) {
+    rowVendorId = await ensureVendor(supabase, supplierKey);
+    vendorCache.set(supplierKey, rowVendorId);
+  }
+
+  const prefix = getSupplierPrefix(supplier);
+  // For TARIFA STOCK items with same name but different finish/width, include category+width in SKU
+  const skuSuffix = supplier.startsWith("TARIFA") && category
+    ? `${normalizeSku(productName)}-${normalizeSku(category)}-${width}`
+    : normalizeSku(productName);
+  const sku = `${prefix}-${skuSuffix}`;
+
+  const costPrice = parsePrice(row["Price - Roll (EUR/m)"]);
+  const cutPrice = parsePrice(row["Price - Cut Length (EUR/m)"]);
+  const sellingPrice = withPriceFallback(costPrice, cutPrice);
+
+  const composition = row["Composition"]?.trim() || "";
+  const weight = row["Weight (g/m2)"]?.trim() || "";
+  const martindale = row["Martindale"]?.trim() || "";
+  const fireRating = row["Fire Rating"]?.trim() || "";
+  const remarks = row["Remarks/Finish"]?.trim() || "";
+
+  const tags: string[] = [];
+  if (category) tags.push(`category:${category}`);
+  if (weight) tags.push(`weight:${weight}`);
+  if (martindale) tags.push(`martindale:${martindale}`);
+
+  // Collection: Supplier + Category
+  const collectionName = category 
+    ? `${supplierKey} ${category.toUpperCase()}`
+    : supplierKey;
+  
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, collectionName);
+  } catch (e) {
+    console.warn(`Collection error for ${collectionName}:`, e.message);
+  }
+
+  return {
+    user_id: activeUserId,
+    name: productName,
+    sku,
+    category: "fabric",
+    subcategory: "curtain_fabric",
+    fabric_width: parseWidth(width),
+    composition: composition || undefined,
+    fire_rating: fireRating || undefined,
+    description: remarks || undefined,
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: rowVendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    tags: tags.length > 0 ? tags : undefined,
+    collection_name: collectionName,
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
