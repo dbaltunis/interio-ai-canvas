@@ -1,5 +1,6 @@
 import {
   isManufacturedItem,
+  isBlindType,
   isWallpaperType,
   detectTreatmentCategory,
   isAreaCalculationType
@@ -176,8 +177,10 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   });
   const treatmentCategory = detectedCategory || template?.treatment_category || template?.category || '';
   const isBlindTreatment = isManufacturedItem(detectedCategory);
+  // Roman blinds are blind-type but not manufactured — they can still use per_sqm pricing
+  const isBlindOrRoman = isBlindType(detectedCategory);
   
-  console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
+  console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, isBlindOrRoman: ${isBlindOrRoman}, template: ${template?.name}`);
   
   // For blinds, default to per_sqm if no pricing type specified
   const effectivePricingType = isBlindTreatment && !pricingType ? 'per_sqm' : pricingType;
@@ -214,7 +217,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       } else {
         console.warn(`⚠️ pricing_grid returned 0 - falling back to per_sqm calculation`);
         // Fallback to per_sqm for blinds
-        if (isBlindTreatment) {
+        if (isBlindOrRoman) {
           const squareMetersRaw = (widthCm * heightCm) / 10000;
           const squareMeters = squareMetersRaw * wasteMultiplier;
           fabricCost = squareMeters * pricePerMeter;
@@ -227,7 +230,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     } else {
       console.warn(`⚠️ pricing_grid type but NO grid data found - check template/fabric configuration`);
       // Fallback calculation
-      if (isBlindTreatment) {
+      if (isBlindOrRoman) {
         const squareMetersRaw = (widthCm * heightCm) / 10000;
         const squareMeters = squareMetersRaw * wasteMultiplier;
         fabricCost = squareMeters * pricePerMeter;
@@ -237,8 +240,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
         console.log(`💰 Fabric cost (fallback per_metre): ${pricePerMeter}/m × ${linearMeters.toFixed(2)}m = ${fabricCost.toFixed(2)}`);
       }
     }
-  } else if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
-    // Calculate square meters: For blinds, use actual measurements without hems (hems are internal)
+  } else if (effectivePricingType === 'per_sqm' && isBlindOrRoman) {
+    // Calculate square meters: For blinds/romans, use actual measurements without hems (hems are internal)
     const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
     
@@ -272,7 +275,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     // All-inclusive grid pricing - manufacturing is included in the grid price
     manufacturingCost = 0;
     console.log(`💰 Manufacturing cost (pricing_grid ALL-INCLUSIVE): £0 - already included in grid price`);
-  } else if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
+  } else if (effectivePricingType === 'per_sqm' && isBlindOrRoman) {
     // Manufacturing priced per square meter - use same calculation as fabric
     const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
@@ -419,14 +422,14 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       // Fabric with detailed quantity and unit price
       ...(fabricCost > 0 ? [{
         id: 'fabric',
-        name: fabricItem?.name || (isBlindTreatment ? 'Material' : isWallpaperType(detectedCategory) ? 'Wallpaper' : 'Fabric'),
-        description: effectivePricingType === 'per_sqm' && isBlindTreatment 
+        name: fabricItem?.name || (isBlindOrRoman ? 'Material' : isWallpaperType(detectedCategory) ? 'Wallpaper' : 'Fabric'),
+        description: effectivePricingType === 'per_sqm' && isBlindOrRoman 
           ? `${((widthCm * heightCm) / 10000 * wasteMultiplier).toFixed(2)} sqm × ${pricePerMeter.toFixed(2)}/sqm`
           : `${linearMeters.toFixed(2)} m × ${pricePerMeter.toFixed(2)}/m`,
-        quantity: effectivePricingType === 'per_sqm' && isBlindTreatment 
+        quantity: effectivePricingType === 'per_sqm' && isBlindOrRoman 
           ? (widthCm * heightCm) / 10000 * wasteMultiplier
           : linearMeters,
-        unit: effectivePricingType === 'per_sqm' && isBlindTreatment ? 'sqm' : 'm',
+        unit: effectivePricingType === 'per_sqm' && isBlindOrRoman ? 'sqm' : 'm',
         unit_price: pricePerMeter,
         total_cost: fabricCost,
         category: 'fabric',
