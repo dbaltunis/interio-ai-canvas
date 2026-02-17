@@ -63,6 +63,7 @@ const AdminAccountHealth = lazyWithRetry(() => import("./pages/AdminAccountHealt
 const OnboardingSubmissions = lazyWithRetry(() => import("./pages/OnboardingSubmissions"), "OnboardingSubmissions");
 const SubscriptionSuccess = lazyWithRetry(() => import("./pages/SubscriptionSuccess"), "SubscriptionSuccess");
 const SubscriptionCanceled = lazyWithRetry(() => import("./pages/SubscriptionCanceled"), "SubscriptionCanceled");
+const LaelLibraryImport = lazyWithRetry(() => import("./components/admin/LaelLibraryImport").then(m => ({ default: m.LaelLibraryImport })), "LaelLibraryImport");
 
 
 
@@ -331,6 +332,15 @@ const App = () => {
                   <SystemOwnerRoute>
                     <ErrorBoundary>
                       <OnboardingSubmissions />
+                    </ErrorBoundary>
+                  </SystemOwnerRoute>
+                } />
+
+                {/* Admin Library Import for Laela */}
+                <Route path="/admin/import-laela" element={
+                  <SystemOwnerRoute>
+                    <ErrorBoundary>
+                      <LaelLibraryImport />
                     </ErrorBoundary>
                   </SystemOwnerRoute>
                 } />
