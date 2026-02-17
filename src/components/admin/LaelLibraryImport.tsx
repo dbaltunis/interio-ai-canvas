@@ -22,6 +22,7 @@ const IMPORT_FILES = [
   { format: "dateks_pricelist_2023", file: "/import-data/CSV_DATEKS_Pricelist_2023.csv", label: "DATEKS Pricelist 2023 (~1,799 fabrics)" },
   { format: "dateks_expo_2024", file: "/import-data/CSV_DATEKS_Expo_2024.csv", label: "DATEKS Expo 2024 (~2,359 fabrics)" },
   { format: "cnv_trimmings", file: "/import-data/CSV_Triming_CNV.csv", label: "CNV Trimmings (14 items)" },
+  { format: "eurofirany", file: "/import-data/CSV_EUROFIRANY_All_Collections.csv", label: "EUROFIRANY All Collections (233 fabrics)" },
 ];
 
 const CHUNK_SIZE = 200;
