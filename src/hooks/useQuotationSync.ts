@@ -1010,10 +1010,10 @@ export const useQuotationSync = ({
           {
             type: existingQuote.discount_type as 'percentage' | 'fixed',
             value: existingQuote.discount_value,
-            scope: (existingQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items') || 'all',
-            selectedItems: Array.isArray(existingQuote.selected_discount_items) 
-              ? existingQuote.selected_discount_items as string[]
-              : undefined
+            scope: existingQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items' | null,
+            selectedItems: Array.isArray(existingQuote.selected_discount_items)
+              ? (existingQuote.selected_discount_items as any[]).filter(id => typeof id === 'string')
+              : null
           },
           quotationData.subtotal
         );
