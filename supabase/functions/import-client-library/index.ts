@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
     // Determine vendor name based on format
     const vendorName = format === "cnv_trimmings" ? "CNV" 
       : format === "eurofirany" ? "EUROFIRANY" 
+      : format === "iks_forma" ? "IKS FORMA"
       : "DATEKS";
     const vendorId = await ensureVendor(supabase, vendorName);
 
@@ -127,6 +128,8 @@ Deno.serve(async (req) => {
             item = mapCNVTrimmings(row, vendorId);
           } else if (format === "eurofirany") {
             item = await mapEurofirany(supabase, row, vendorId);
+          } else if (format === "iks_forma") {
+            item = await mapIksForma(supabase, row, vendorId);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -476,6 +479,63 @@ async function mapEurofirany(supabase: any, row: Record<string, string>, vendorI
     vendor_id: vendorId,
     pricing_method: "per_meter" as const,
     quantity: 0,
+    collection_name: collectionName || undefined,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+  };
+}
+
+function mapIksFormaSubcategory(subcategory: string): string {
+  const s = subcategory.trim().toLowerCase();
+  if (s === "lazdos" || s === "rifliuotos lazdos") return "rod";
+  if (s === "bėgeliai" || s === "begeliai") return "track";
+  if (s === "laikikliai") return "bracket";
+  // Everything else: antgaliai, lazdelės, trimmings, tiebacks, tassels
+  return "accessory";
+}
+
+async function mapIksForma(supabase: any, row: Record<string, string>, vendorId: string) {
+  const productCode = row.product_code;
+  const productName = row.product_name;
+  if (!productCode || !productName) return null;
+
+  const sku = `IKS-${productCode}`;
+  const color = row.color?.trim() || "";
+  const name = color ? `${productName} - ${color}` : productName;
+
+  const costPrice = parsePrice(row.purchase_price_eur);
+  const sellingPrice = withPriceFallback(costPrice, 0);
+
+  const subcategory = mapIksFormaSubcategory(row.subcategory || "");
+  const pricingMethod = (row.unit?.trim().toUpperCase() === "M") ? "per_meter" as const : "per_unit" as const;
+
+  // Collection from product_group
+  const collectionName = row.product_group?.trim().toUpperCase() || null;
+  let collectionId: string | undefined;
+  if (collectionName) {
+    try {
+      collectionId = await ensureCollection(supabase, collectionName);
+    } catch (e) {
+      console.warn(`Collection error for ${collectionName}:`, e.message);
+    }
+  }
+
+  const tags: string[] = [];
+  if (color) tags.push(`color:${color}`);
+
+  return {
+    user_id: activeUserId,
+    name,
+    sku,
+    category: "hardware",
+    subcategory,
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: vendorId,
+    pricing_method: pricingMethod,
+    quantity: 0,
+    tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName || undefined,
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],

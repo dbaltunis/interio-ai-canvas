@@ -23,6 +23,7 @@ const IMPORT_FILES = [
   { format: "dateks_expo_2024", file: "/import-data/CSV_DATEKS_Expo_2024.csv", label: "DATEKS Expo 2024 (~2,359 fabrics)" },
   { format: "cnv_trimmings", file: "/import-data/CSV_Triming_CNV.csv", label: "CNV Trimmings (14 items)" },
   { format: "eurofirany", file: "/import-data/CSV_EUROFIRANY_All_Collections.csv", label: "EUROFIRANY All Collections (233 fabrics)" },
+  { format: "iks_forma", file: "/import-data/CSV_IKS_FORMA_Full_Catalog.csv", label: "IKS FORMA Hardware (181 items)" },
 ];
 
 const CHUNK_SIZE = 200;
