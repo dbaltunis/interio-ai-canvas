@@ -1,87 +1,99 @@
 
 
-## Import IKS FORMA Hardware Catalog for Laela Account
+## Import Spanish Supplier Price Lists for Laela Account
 
 ### File Summary
 
-| Detail | Value |
-|---|---|
-| Supplier | IKS FORMA |
-| Total items | 181 |
-| Type | Hardware (not fabric) |
-| Prices | Wholesale only (EUR) |
-| Unit types | VNT (piece) and M (meter) |
+| Supplier | Items | Categories | Prices |
+|---|---|---|---|
+| DABEDAN (Tejidos Ignifugos) | ~54 | FR Multipurpose, Blackout/Dimout, Velvets, Sheers | Cut, Roll, 250m+, 500m+ |
+| RIOMA | ~120 (A-C subset shown, full catalog 400+) | Upholstery/Curtain, Digital Prints, Jacquards | Cut Length, Roll |
+| TARIFA STOCK | ~69 | Cotton, Linen, Polyester, Chenille, FR, Jacquard | Cut, Pieces, volume tiers |
 
-### Product Groups in the File
+### Approach
 
-| CSV `product_group` | CSV `subcategory` | Inventory Category | Inventory Subcategory | Count |
-|---|---|---|---|---|
-| 19mm Karnizai | Lazdos | hardware | rod | ~36 |
-| 19mm Karnizai | Rifliuotos lazdos | hardware | rod | ~8 |
-| 19mm Karnizai | Bėgeliai | hardware | track | ~50 |
-| 19mm Karnizai | Laikikliai | hardware | bracket | ~27 |
-| 19mm Karnizai | Antgaliai | hardware | accessory | ~18 |
-| Lubiniai bėgeliai | Bėgeliai | hardware | track | ~19 |
-| Traukimo lazdelės | Lazdelės | hardware | accessory | ~13 |
-| Aksesuarai | trimmings/tiebacks/tassels | hardware | accessory | ~10 |
+The XLSX Page 2 contains a **unified table** with all 3 suppliers in a single format with these columns:
+
+```text
+Supplier | Product Name | Category | Width (cm) | Composition | Weight (g/m2) | 
+Martindale | Fire Rating | Remarks/Finish | Price - Cut Length (EUR/m) | 
+Price - Roll (EUR/m) | Price - 250m+ (EUR/m) | Price - 500m+ (EUR/m) | 
+Currency | Price Unit | Price List Date
+```
+
+Since the edge function only processes CSV files, I will:
+1. Extract the Page 2 data into a CSV file
+2. Add a single `mapSpanishSuppliers` mapper that handles all 3 suppliers from this unified format
+3. Create separate vendors for each supplier (DABEDAN, RIOMA, TARIFA STOCK)
 
 ### Column Mapping
 
-| CSV Column | Maps To | Notes |
+| XLSX Column | Maps To | Notes |
 |---|---|---|
-| `product_code` | `sku` | Prefixed as "IKS-{product_code}" |
-| `product_name` | `name` | Combined with color: "Lazda 1.60m - Sendinto aukso" |
-| `color` | appended to name + stored in `tags` | e.g., tag "color:Sendinto aukso" |
-| `purchase_price_eur` | `cost_price` and `selling_price` | Selling = cost (no retail price) |
-| `product_group` | `collection_name` | Auto-create collections: "19MM KARNIZAI", "LUBINIAI BEGELIAI", "TRAUKIMO LAZDELES", "AKSESUARAI" |
-| `subcategory` | mapped to inventory subcategory | See table above |
-| `unit` | `pricing_method` | VNT = per_unit, M = per_meter |
-| `supplier` | vendor lookup | Auto-create "IKS FORMA" vendor |
+| `Supplier` | vendor lookup | Auto-create 3 vendors |
+| `Product Name` | `name` | e.g., "BERNIA LONETA" |
+| `Product Name` | `sku` | Prefixed by supplier: "DAB-BERNIA-LONETA", "RIO-AARON-140", "TAR-AFRICA-COTTON" |
+| `Category` | stored in `tags` | e.g., "category:Multipurpose C1" |
+| `Width (cm)` | `fabric_width` | Parse integer |
+| `Composition` | `composition` | e.g., "Pes FR", "100%PES" |
+| `Weight (g/m2)` | stored in `tags` | e.g., "weight:210" |
+| `Martindale` | stored in `tags` | e.g., "martindale:35000" |
+| `Fire Rating` | `fire_rating` | e.g., "C1 - Fire Retardant" |
+| `Remarks/Finish` | `description` | e.g., "Loneta", "Velvet, New" |
+| `Price - Roll (EUR/m)` | `cost_price` | Wholesale/roll price as cost |
+| `Price - Cut Length (EUR/m)` | `selling_price` | Cut length as retail price; fallback to roll price |
+| All items | `category: "fabric"` | All are fabrics |
+| All items | `subcategory: "curtain_fabric"` | Default for curtain fabrics |
+| All items | `compatible_treatments: ["curtains"]` | Standard |
+| All items | `pricing_method: "per_meter"` | All priced per linear meter |
 
 ### What Changes
 
-#### 1. Copy CSV to `public/import-data/CSV_IKS_FORMA_Full_Catalog.csv`
-Copy the uploaded file so the admin page can fetch it.
+#### 1. Create CSV from XLSX data
+Extract Page 2 data into `public/import-data/CSV_Spanish_Suppliers_Combined.csv` with the unified columns.
 
-#### 2. Add `mapIksForma()` handler to Edge Function
+#### 2. Add `mapSpanishSuppliers()` handler to Edge Function
 New mapper in `supabase/functions/import-client-library/index.ts`:
-- Creates "IKS FORMA" vendor automatically
-- Maps `subcategory` to proper inventory subcategories (rod, track, bracket, accessory)
-- Sets `category: "hardware"` for all items
-- Sets `compatible_treatments: ["curtains"]` since these are curtain hardware
-- Creates collections from `product_group` (4 collections)
-- Combines `product_name` + `color` into the display name
-- Items with empty `purchase_price_eur` (the accessories at the end) import with price 0
-- `pricing_method`: "per_meter" for M units, "per_unit" for VNT units
+- Reads the `Supplier` column to determine which vendor to assign
+- Auto-creates 3 vendors: "DABEDAN", "RIOMA", "TARIFA STOCK"
+- Generates SKU from supplier prefix + product name (e.g., "DAB-BERNIA-LONETA")
+- Uses `Price - Roll` as `cost_price`, `Price - Cut Length` as `selling_price`
+- Falls back: if no cut length price, uses roll price for both
+- Stores composition, weight, martindale, fire rating in appropriate fields and tags
+- Creates collections per supplier (e.g., "DABEDAN MULTIPURPOSE C1", "DABEDAN SHEERS C1")
+- Sets `category: "fabric"`, `subcategory: "curtain_fabric"`, `compatible_treatments: ["curtains"]`
 
 #### 3. Register in `LaelLibraryImport.tsx`
-Add a 5th entry to the `IMPORT_FILES` array:
-```
-{ format: "iks_forma", file: "/import-data/CSV_IKS_FORMA_Full_Catalog.csv", label: "IKS FORMA Hardware (181 items)" }
+Add entry to `IMPORT_FILES` array:
+```text
+{ format: "spanish_suppliers", file: "/import-data/CSV_Spanish_Suppliers_Combined.csv", label: "Spanish Suppliers - DABEDAN, RIOMA, TARIFA STOCK (~500+ fabrics)" }
 ```
 
 #### 4. Add vendor routing in Edge Function
-Update the vendor name lookup to handle "iks_forma" format, mapping it to vendor name "IKS FORMA".
+For `spanish_suppliers` format, skip the single-vendor lookup and instead determine vendor per-row from the `Supplier` column.
 
 ### Technical Details
 
-Subcategory mapping logic in the mapper:
+SKU generation:
 ```text
-CSV subcategory         ->  Inventory subcategory
-Lazdos                  ->  rod
-Rifliuotos lazdos       ->  rod
-Bėgeliai                ->  track
-Laikikliai              ->  bracket
-Antgaliai               ->  accessory
-Lazdelės                ->  accessory
-trimmings               ->  accessory
-tiebacks                ->  accessory
-tassels                 ->  accessory
+DABEDAN items     -> "DAB-{PRODUCT_NAME_NORMALIZED}"
+RIOMA items       -> "RIO-{PRODUCT_NAME_NORMALIZED}"
+TARIFA STOCK items -> "TAR-{PRODUCT_NAME_NORMALIZED}"
 ```
+
+Collection mapping:
+```text
+Supplier + Category column -> Collection name
+e.g., "DABEDAN" + "Multipurpose C1" -> "DABEDAN MULTIPURPOSE C1"
+      "RIOMA" + "Upholstery/Curtain" -> "RIOMA UPHOLSTERY"
+      "TARIFA STOCK" + "WASH" -> "TARIFA STOCK"  (finish used as collection)
+```
+
+Note: RIOMA data in this file appears to be a partial catalog (letters A-C, ~120 items). The full RIOMA catalog has 400+ items -- if the full list is available later, it can be re-imported and existing items will be updated via SKU matching.
 
 ### After This Fix
 1. Navigate to `/admin/import-laela`
-2. Click "Re-run Import" (or "Start Import")
-3. The 181 IKS FORMA hardware items will import directly (small file, no chunking needed)
-4. Items will appear in the Library under the Hardware category with proper subcategories and collections
+2. Click "Start Import" for the Spanish Suppliers entry
+3. Items will import with proper vendors, collections, pricing, and metadata
+4. All fabrics will appear in the Library under curtain fabrics with composition and fire rating info
 
