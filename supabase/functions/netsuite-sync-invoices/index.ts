@@ -1,7 +1,15 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { HmacSha256 } from "https://deno.land/std@0.190.0/hash/sha256.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+
+// Web Crypto based HMAC-SHA256 (replaces deno std hash module)
+async function hmacSha256(key: string, message: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw", encoder.encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(message));
+  return new Uint8Array(sig);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,9 +67,8 @@ function generateOAuthHeader(
   const signatureBase = `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(paramString)}`;
   const signingKey = `${percentEncode(creds.consumerSecret)}&${percentEncode(creds.tokenSecret)}`;
 
-  const hmac = new HmacSha256(signingKey);
-  hmac.update(signatureBase);
-  const signature = base64Encode(new Uint8Array(hmac.digest()));
+  const sigBytes = await hmacSha256(signingKey, signatureBase);
+  const signature = base64Encode(sigBytes);
 
   const realm = creds.accountId.replace(/-/g, "_").toUpperCase();
   const headerParts = [
@@ -117,7 +124,7 @@ async function nsRequest(
  * Pulls invoices from NetSuite and updates project payment status.
  * Links invoices to projects via netsuite_estimate_id or netsuite_sales_order_id.
  */
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
