@@ -1,49 +1,110 @@
 
-## Fix: Display Discount Scope Clearly in Quotes
 
-### Problem
-When a user selects "specific items" for a discount, there's no visual indication anywhere in the quote summary or client-facing quote that the discount applies only to certain items. The discount line just says "Discount (10%)" regardless of scope.
+## Library Setup for Laela Account (baltunis+laela@curtainscalculator.com)
 
-### Changes
+### What We Have
 
-#### 1. Update discount label in LivePreview (internal quote preview)
-**File:** `src/components/settings/templates/visual-editor/LivePreview.tsx`
+You've provided 3 data files with fabric and trimming catalogs:
 
-Update the discount row (line 1785) to include scope context. When scope is `selected_items`, append "(on selected items)" to the label. When scope is `fabrics_only`, append "(on fabrics)".
+| File | Supplier | Items | Type |
+|---|---|---|---|
+| CSV_Triming_CNV.csv | CNV | 14 | Trimmings (cords, borders, tassels, rosettes, tie-backs) |
+| CSV_DATEKS_Pricelist_2023.csv | DATEKS | ~1,799 | Fabrics - full 2023 catalog (roll + coupon + client price) |
+| CSV_DATEKS_Expo_2024.csv | DATEKS | ~2,359 | Fabrics - 2024 showroom expo (roll + cut + client prices, year, status) |
 
-Current: `Discount (10%): -$50.00`
-New: `Discount (10% on selected items): -$50.00`
+The Excel file is a compiled summary of the same data.
 
-#### 2. Add `scope` field to DiscountInfo interface in QuoteTemplateHomekaara
-**File:** `src/components/quotes/templates/QuoteTemplateHomekaara.tsx`
+**Note:** The 4th source file (Kainos_DATEKS_VLN.xlsx) was corrupted. You may want to re-share that file later.
 
-- Add `scope?: 'all' | 'fabrics_only' | 'selected_items'` to the `DiscountInfo` interface (line 63-67)
-- Update the discount row label (line 707) to show scope when it's not "all":
-  - `selected_items` -> "Discount (10% on selected items)"
-  - `fabrics_only` -> "Discount (10% on fabrics)"
-  - `all` or undefined -> "Discount (10%)" (no change)
+### The Challenge
 
-#### 3. Pass scope through to QuoteTemplateHomekaara
-**File:** `src/components/jobs/tabs/QuotationTab.tsx`
+The existing CSV importer in the app expects a standard format (`sku, name, category, subcategory, supplier, cost_price, selling_price...`), but each of your files has a different column structure. We need to build a dedicated import edge function that:
 
-The `discount` object already includes `scope` (line 503). Verify that `discountInfo` passed to `QuoteTemplateHomekaara` includes the scope field. If there's a mapping step that drops it, add it back.
+1. Understands each file's unique column layout
+2. Maps the data correctly to the inventory system
+3. Targets only the Laela account (no other accounts affected)
+4. Creates the vendor/brand records (DATEKS, CNV) automatically
+5. Organizes fabrics into collections where identifiable (e.g., "BLANQUETTE", "DOLCE VITA", "SUPER SONIC", etc.)
 
-#### 4. Update InlineDiscountPanel live preview to show scope
-**File:** `src/components/jobs/quotation/InlineDiscountPanel.tsx`
+### Plan
 
-In the "Live Preview" section (lines 302-332), add a small note showing which items the discount applies to when scope is `selected_items`, e.g. "Applied to X of Y items".
+#### Step 1: Create the "DATEKS" and "CNV" vendors
+Create vendor records for the Laela account so all imported items are properly linked to their supplier/brand.
 
-### Summary of Label Changes
-| Scope | Current Label | New Label |
-|---|---|---|
-| all | Discount (10%) | Discount (10%) |
-| fabrics_only | Discount (10%) | Discount (10% on fabrics) |
-| selected_items | Discount (10%) | Discount (10% on selected items) |
+#### Step 2: Build an edge function `import-client-library`
+A dedicated edge function that accepts CSV data and a format identifier, transforms it to the inventory schema, and inserts it for the specified account.
 
-### Testing Note
-I was unable to log in to the app to test the discount flow end-to-end (authentication returned 400 errors). After implementing, the user should test by:
-1. Opening a job with treatments
-2. Applying a discount with "Select Specific Items" scope
-3. Checking only selected items and clicking "Apply and Save"
-4. Verifying the quote preview shows "on selected items" in the discount label
-5. Verifying excluded/unchecked items are NOT affected by the discount amount
+**Data mapping per file:**
+
+**DATEKS Expo 2024:**
+- `fabric_name` --> `name`
+- `supplier` --> vendor lookup (DATEKS)
+- `category: "fabrics"` --> `category: "fabric"`, `subcategory: "curtain_fabric"`
+- `width_cm` --> `fabric_width` (parse numeric, handle "300 DEPO", "300 ROLL" etc.)
+- `roll_price_eur` --> `cost_price` (wholesale cost)
+- `sell_cut_price_eur` --> `selling_price` (client-facing price)
+- `nr` --> `sku` (prefixed as "DATEKS-{nr}")
+- `year` --> stored in tags
+- `status` --> stored in tags (e.g., "clearance" for "ispardavimas")
+- Collection extraction from fabric name (e.g., "MINGO / KNYGA BLANQUETTE" --> collection "BLANQUETTE")
+
+**DATEKS Pricelist 2023:**
+- `design` --> `name`
+- `catalog_nr` --> `sku` (prefixed as "DATEKS-{catalog_nr}")
+- `roll_price_eur` --> `cost_price`
+- `sell_price_eur` --> `selling_price`
+- `width_cm` --> `fabric_width`
+
+**CNV Trimmings:**
+- `product_code` --> `sku`
+- `product_type` --> `name` (e.g., "KORDON", "BORDUR")
+- `category: "trimmings"` --> `category: "hardware"`, `subcategory: "accessories"`
+- `unit` --> `unit` (M = meters, VNT = units/pieces)
+- `purchase_price_eur` --> `cost_price`
+- `sell_price_eur` --> `selling_price`
+
+#### Step 3: Handle duplicates between the two DATEKS files
+The Expo 2024 file (~2,359 items) and the Pricelist 2023 file (~1,799 items) have significant overlap. Strategy:
+- Import the 2023 Pricelist first (baseline catalog)
+- Import the 2024 Expo second, using upsert by name to update prices and add new items
+- The 2024 Expo has more recent pricing so it takes priority
+
+#### Step 4: Auto-extract collections from fabric names
+Many DATEKS fabrics include collection references in their names like:
+- "MINGO / KNYGA BLANQUETTE" --> Collection: "BLANQUETTE"
+- "AVIATION / KNYGA SUPER SONIC" --> Collection: "SUPER SONIC"
+- "Alassio / Dolce Vita" --> Collection: "DOLCE VITA"
+- "KINALI / KN. MARMARA" --> Collection: "MARMARA"
+
+The edge function will parse these patterns (`/ KNYGA`, `/ KN.`, `/ kn.`, `/`) and auto-create collection records, linking fabrics to them.
+
+#### Step 5: Run the import via the admin UI
+Trigger the import from the app (or via direct API call) targeting only the Laela account. The function will:
+1. Create vendors (DATEKS, CNV)
+2. Create collections (extracted from fabric names)
+3. Import ~2,500+ unique inventory items
+4. Report results (created, updated, skipped, errors)
+
+### What You'll Get
+
+After import, the Laela account Library will show:
+- **2 Brands/Vendors**: DATEKS, CNV
+- **~30+ Collections**: BLANQUETTE, DOLCE VITA, SUPER SONIC, COSMOPOLITAN, FESTIVAL, ADRIYA, SUN CITY, CANNES, MUSEO, KALAHARI, etc.
+- **~2,500+ Fabric items** with proper cost/sell prices, widths, SKUs
+- **14 Trimming/Accessory items** from CNV
+
+### Next Steps After This Import
+Once this batch is done, you can share additional files (hardware, headings, more suppliers) and we'll import those the same way. We can also:
+- Fine-tune collection groupings
+- Add color tags to brands/collections for Finder-style navigation
+- Set up window treatment templates with the imported products
+
+### Technical Details
+
+- Edge function: `supabase/functions/import-client-library/index.ts`
+- Account-scoped: uses the Laela user ID directly in INSERT queries
+- Vendor/collection creation: auto-creates if not exists, reuses if already present
+- Currency: EUR (all prices in the files are EUR)
+- Batch processing: items imported in batches of 50 to avoid timeouts
+- Deduplication: by SKU within same account, upsert mode
+
