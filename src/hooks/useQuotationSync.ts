@@ -233,7 +233,8 @@ export const useQuotationSync = ({
           // ✅ FIX: Treatment template image - PRIORITY: template_image_url > template_details.image_url > fabric/material image
           // This ensures treatment templates with custom images show in quote even when fabric has no image
           const templateDetails = summary.template_details || {};
-          const treatmentImageUrl = summary.template_image_url || 
+          const treatmentImageUrl = summary.primary_photo_url ||
+                                    summary.template_image_url || 
                                     templateDetails.image_url || 
                                     templateDetails.display_image_url ||
                                     summary.image_url || 
