@@ -26,6 +26,7 @@ const IMPORT_FILES = [
   { format: "iks_forma", file: "/import-data/CSV_IKS_FORMA_Full_Catalog.csv", label: "IKS FORMA Hardware (181 items)" },
   { format: "spanish_suppliers", file: "/import-data/CSV_Spanish_Suppliers_Combined.csv", label: "Spanish Suppliers - DABEDAN, RIOMA, TARIFA STOCK (~240 fabrics)" },
   { format: "maslina", file: "/import-data/CSV_MASLINA_Catalog.csv", label: "MASLINA Curtain Fabrics (116 items)" },
+  { format: "mydeco", file: "/import-data/CSV_MYDECO_Hardware.csv", label: "MYDECO (BARGELD) Hardware (166 items)" },
 ];
 
 const CHUNK_SIZE = 200;

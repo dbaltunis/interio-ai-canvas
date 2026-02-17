@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers" && format !== "maslina") {
+    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -140,6 +140,8 @@ Deno.serve(async (req) => {
             item = await mapSpanishSuppliers(supabase, row, vendorCache);
           } else if (format === "maslina") {
             item = await mapMaslina(supabase, row, vendorCache);
+          } else if (format === "mydeco") {
+            item = await mapMydeco(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -700,6 +702,89 @@ async function mapSpanishSuppliers(
     selling_price: sellingPrice,
     vendor_id: rowVendorId,
     pricing_method: "per_meter" as const,
+    quantity: 0,
+    tags: tags.length > 0 ? tags : undefined,
+    collection_name: collectionName,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+  };
+}
+
+// --- MYDECO (BARGELD) Hardware ---
+
+function mapMydecoSubcategory(category: string): string {
+  const c = category.trim().toLowerCase();
+  if (c.includes("rod") || c.includes("vamzd")) return "rod";
+  if (c.includes("track") || c.includes("bėgel") || c.includes("profil")) return "track";
+  if (c.includes("double bracket") || c.includes("dvigub")) return "bracket";
+  if (c.includes("bracket") || c.includes("laikik")) return "bracket";
+  if (c.includes("ceiling")) return "bracket";
+  if (c.includes("side bracket") || c.includes("šonin")) return "bracket";
+  if (c.includes("finial") || c.includes("antgal")) return "accessory";
+  if (c.includes("glider") || c.includes("hook") || c.includes("segtu") || c.includes("žied")) return "accessory";
+  if (c.includes("draw rod") || c.includes("atitrauk")) return "accessory";
+  if (c.includes("corner") || c.includes("kamp")) return "accessory";
+  if (c.includes("extension") || c.includes("prailg")) return "accessory";
+  if (c.includes("fixator")) return "accessory";
+  return "accessory";
+}
+
+async function mapMydeco(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const artNr = row["art_nr"]?.trim();
+  const productName = row["product_name"]?.trim();
+  if (!artNr || !productName) return null;
+
+  // Get or create MYDECO vendor
+  const vendorKey = "MYDECO";
+  let mydecoVendorId = vendorCache.get(vendorKey);
+  if (!mydecoVendorId) {
+    mydecoVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, mydecoVendorId);
+  }
+
+  const sku = `MYD-${artNr}`;
+  const costPrice = parsePrice(row["net_price_eur"]);
+  const grossPrice = parsePrice(row["gross_price_eur"]);
+  const sellingPrice = grossPrice > 0 ? grossPrice : costPrice;
+
+  const category = row["category"]?.trim() || "";
+  const colorFinish = row["color_finish"]?.trim() || "";
+  const subcategory = mapMydecoSubcategory(category);
+
+  const tags: string[] = [];
+  if (colorFinish) tags.push(`color:${colorFinish}`);
+  if (category) tags.push(`hw_type:${category}`);
+
+  // Collection based on system size (20mm, 18x18, 25mm)
+  let collectionName = "MYDECO 20MM";
+  if (productName.startsWith("18x18") || productName.includes("18x18")) {
+    collectionName = "MYDECO 18X18MM";
+  } else if (productName.startsWith("25mm") || productName.includes("25mm")) {
+    collectionName = "MYDECO 25MM";
+  }
+
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, collectionName);
+  } catch (e) {
+    console.warn(`Collection error for ${collectionName}:`, e.message);
+  }
+
+  return {
+    user_id: activeUserId,
+    name: productName,
+    sku,
+    category: "hardware",
+    subcategory,
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: mydecoVendorId,
+    pricing_method: "per_unit" as const,
     quantity: 0,
     tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName,
