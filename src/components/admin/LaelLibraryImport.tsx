@@ -7,7 +7,8 @@ import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface ImportStatus {
   format: string;
-  status: "pending" | "running" | "done" | "error";
+  status: "pending" | "uploading" | "running" | "done" | "error";
+  uploadProgress?: string;
   result?: {
     created: number;
     updated: number;
@@ -23,11 +24,40 @@ const IMPORT_FILES = [
   { format: "cnv_trimmings", file: "/import-data/CSV_Triming_CNV.csv", label: "CNV Trimmings (14 items)" },
 ];
 
+const CHUNK_SIZE = 200;
+const SMALL_FILE_THRESHOLD = 100;
+
+function splitCsvIntoChunks(csvData: string, chunkSize: number): string[] {
+  const lines = csvData.split("\n");
+  const header = lines[0];
+  const dataLines = lines.slice(1).filter(l => l.trim());
+
+  if (dataLines.length <= chunkSize) {
+    return [csvData];
+  }
+
+  const chunks: string[] = [];
+  for (let i = 0; i < dataLines.length; i += chunkSize) {
+    const chunkLines = dataLines.slice(i, i + chunkSize);
+    // First chunk gets header, subsequent chunks are data only
+    if (i === 0) {
+      chunks.push([header, ...chunkLines].join("\n"));
+    } else {
+      chunks.push(chunkLines.join("\n"));
+    }
+  }
+  return chunks;
+}
+
 export const LaelLibraryImport = () => {
   const [statuses, setStatuses] = useState<ImportStatus[]>(
     IMPORT_FILES.map(f => ({ format: f.format, status: "pending" }))
   );
   const [running, setRunning] = useState(false);
+
+  const updateStatus = (idx: number, update: Partial<ImportStatus>) => {
+    setStatuses(prev => prev.map((s, i) => i === idx ? { ...s, ...update } : s));
+  };
 
   const runImport = async () => {
     setRunning(true);
@@ -35,32 +65,56 @@ export const LaelLibraryImport = () => {
     for (let i = 0; i < IMPORT_FILES.length; i++) {
       const { format, file } = IMPORT_FILES[i];
 
-      setStatuses(prev => prev.map((s, idx) =>
-        idx === i ? { ...s, status: "running" } : s
-      ));
-
       try {
         // Fetch CSV from public folder
+        updateStatus(i, { status: "uploading", uploadProgress: "Fetching file..." });
         const resp = await fetch(file);
         if (!resp.ok) throw new Error(`Failed to fetch ${file}: ${resp.status}`);
         const csvData = await resp.text();
+        const lineCount = csvData.split("\n").filter(l => l.trim()).length;
 
-        console.log(`Sending ${format}: ${csvData.split("\n").length} lines`);
+        console.log(`[Import] ${format}: ${lineCount} lines`);
 
-        // Send to edge function
-        const { data, error } = await supabase.functions.invoke("import-client-library", {
-          body: { format, csv_data: csvData },
-        });
+        if (lineCount <= SMALL_FILE_THRESHOLD) {
+          // Small file: send directly
+          updateStatus(i, { status: "running", uploadProgress: undefined });
+          const { data, error } = await supabase.functions.invoke("import-client-library", {
+            body: { format, csv_data: csvData },
+          });
+          if (error) throw error;
+          updateStatus(i, { status: "done", result: data });
+        } else {
+          // Large file: chunked upload then import
+          const chunks = splitCsvIntoChunks(csvData, CHUNK_SIZE);
+          console.log(`[Import] ${format}: splitting into ${chunks.length} chunks`);
 
-        if (error) throw error;
+          for (let c = 0; c < chunks.length; c++) {
+            updateStatus(i, {
+              status: "uploading",
+              uploadProgress: `Uploading chunk ${c + 1} of ${chunks.length}...`,
+            });
 
-        setStatuses(prev => prev.map((s, idx) =>
-          idx === i ? { ...s, status: "done", result: data } : s
-        ));
+            const { error } = await supabase.functions.invoke("import-client-library", {
+              body: {
+                action: "upload",
+                format,
+                csv_data: chunks[c],
+                append: c > 0,
+              },
+            });
+            if (error) throw new Error(`Upload chunk ${c + 1} failed: ${error.message}`);
+          }
+
+          // Now trigger the actual import from storage
+          updateStatus(i, { status: "running", uploadProgress: undefined });
+          const { data, error } = await supabase.functions.invoke("import-client-library", {
+            body: { format },
+          });
+          if (error) throw error;
+          updateStatus(i, { status: "done", result: data });
+        }
       } catch (err: any) {
-        setStatuses(prev => prev.map((s, idx) =>
-          idx === i ? { ...s, status: "error", error: err.message } : s
-        ));
+        updateStatus(i, { status: "error", error: err.message, uploadProgress: undefined });
       }
     }
 
@@ -70,7 +124,8 @@ export const LaelLibraryImport = () => {
   const totalCreated = statuses.reduce((sum, s) => sum + (s.result?.created || 0), 0);
   const totalUpdated = statuses.reduce((sum, s) => sum + (s.result?.updated || 0), 0);
   const totalErrors = statuses.reduce((sum, s) => sum + (s.result?.errors?.length || 0), 0);
-  const progress = (statuses.filter(s => s.status === "done" || s.status === "error").length / statuses.length) * 100;
+  const doneCount = statuses.filter(s => s.status === "done" || s.status === "error").length;
+  const progress = (doneCount / statuses.length) * 100;
 
   return (
     <Card className="max-w-2xl mx-auto mt-8">
@@ -87,11 +142,17 @@ export const LaelLibraryImport = () => {
         {statuses.map((s, i) => (
           <div key={s.format} className="flex items-center gap-3 p-3 rounded-lg border">
             {s.status === "pending" && <div className="h-5 w-5 rounded-full border-2 border-muted" />}
-            {s.status === "running" && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+            {(s.status === "uploading" || s.status === "running") && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
             {s.status === "done" && <CheckCircle className="h-5 w-5 text-green-500" />}
             {s.status === "error" && <AlertCircle className="h-5 w-5 text-destructive" />}
             <div className="flex-1">
               <div className="font-medium text-sm">{IMPORT_FILES[i].label}</div>
+              {s.uploadProgress && (
+                <div className="text-xs text-primary">{s.uploadProgress}</div>
+              )}
+              {s.status === "running" && (
+                <div className="text-xs text-primary">Processing import...</div>
+              )}
               {s.result && (
                 <div className="text-xs text-muted-foreground">
                   Created: {s.result.created} | Updated: {s.result.updated}
