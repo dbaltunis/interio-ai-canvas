@@ -1782,7 +1782,7 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                        {t('Discount', totalsLang)} ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): - {renderTokenValue('discount')}
+                        {t('Discount', totalsLang)} ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}{projectData.discount.scope === 'selected_items' ? ' on selected items' : projectData.discount.scope === 'fabrics_only' ? ' on fabrics' : ''}): - {renderTokenValue('discount')}
                       </span>
                     </div>
                   </div>
