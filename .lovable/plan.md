@@ -1,53 +1,49 @@
 
-## Fix: Discount Applied to Unchecked/Excluded Items
+## Fix: Display Discount Scope Clearly in Quotes
 
-### Root Cause
-
-Two issues combine to create this bug:
-
-1. **Excluded items not filtered from discount calculation**: The `items` array passed to `InlineDiscountPanel` and `QuoteDiscountDialog` includes ALL quote items, even those excluded via `useQuoteExclusions`. When calculating the discount for `selected_items` scope, excluded items can still match selected IDs and contribute to the discountable amount.
-
-2. **Sync fallback overrides scope**: In `useQuotationSync.ts` line 1013, the code `(existingQuote.discount_scope as ...) || 'all'` falls back to `'all'` if `discount_scope` is null or empty. This means if the scope field is ever cleared (e.g., during a version duplication or data migration), the discount silently applies to ALL items instead of selected ones.
-
-3. **Auto-apply on panel mount**: The `InlineDiscountPanel` has an auto-apply mechanism (lines 72-86) that re-saves the discount on every panel open. If `currentDiscount.selectedItems` is undefined (JSONB parsing edge case), it saves an empty array, which combined with a stale scope can produce unexpected results.
+### Problem
+When a user selects "specific items" for a discount, there's no visual indication anywhere in the quote summary or client-facing quote that the discount applies only to certain items. The discount line just says "Discount (10%)" regardless of scope.
 
 ### Changes
 
-#### 1. Filter excluded items from discount calculations
+#### 1. Update discount label in LivePreview (internal quote preview)
+**File:** `src/components/settings/templates/visual-editor/LivePreview.tsx`
+
+Update the discount row (line 1785) to include scope context. When scope is `selected_items`, append "(on selected items)" to the label. When scope is `fabrics_only`, append "(on fabrics)".
+
+Current: `Discount (10%): -$50.00`
+New: `Discount (10% on selected items): -$50.00`
+
+#### 2. Add `scope` field to DiscountInfo interface in QuoteTemplateHomekaara
+**File:** `src/components/quotes/templates/QuoteTemplateHomekaara.tsx`
+
+- Add `scope?: 'all' | 'fabrics_only' | 'selected_items'` to the `DiscountInfo` interface (line 63-67)
+- Update the discount row label (line 707) to show scope when it's not "all":
+  - `selected_items` -> "Discount (10% on selected items)"
+  - `fabrics_only` -> "Discount (10% on fabrics)"
+  - `all` or undefined -> "Discount (10%)" (no change)
+
+#### 3. Pass scope through to QuoteTemplateHomekaara
 **File:** `src/components/jobs/tabs/QuotationTab.tsx`
 
-Before passing `items` to `InlineDiscountPanel` and `QuoteDiscountDialog`, filter out any excluded items using the existing `useQuoteExclusions` hook. This ensures excluded items cannot be selected for discounting and do not contribute to the discountable amount.
+The `discount` object already includes `scope` (line 503). Verify that `discountInfo` passed to `QuoteTemplateHomekaara` includes the scope field. If there's a mapping step that drops it, add it back.
 
-#### 2. Guard against scope fallback in sync
-**File:** `src/hooks/useQuotationSync.ts`
-
-Remove the `|| 'all'` fallback on line 1013. If `discount_scope` is null, the guard clause in `calculateDiscountAmount` already handles it (returns 0 when scope is null). The fallback silently changes behavior from "no discount" to "discount everything."
-
-Change:
-```
-scope: (existingQuote.discount_scope as ...) || 'all',
-```
-To:
-```
-scope: existingQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items' | null,
-```
-
-#### 3. Remove auto-apply on mount from InlineDiscountPanel
+#### 4. Update InlineDiscountPanel live preview to show scope
 **File:** `src/components/jobs/quotation/InlineDiscountPanel.tsx`
 
-Remove the auto-apply useEffect (lines 70-86). This mechanism re-saves the discount every time the panel opens, which can overwrite the saved discount with potentially stale data. The first useEffect (lines 53-66) already correctly loads saved values for display. The user should explicitly click "Apply and Save" to persist changes.
+In the "Live Preview" section (lines 302-332), add a small note showing which items the discount applies to when scope is `selected_items`, e.g. "Applied to X of Y items".
 
-#### 4. Validate selectedItems from JSONB
-**File:** `src/hooks/useQuotationSync.ts`
+### Summary of Label Changes
+| Scope | Current Label | New Label |
+|---|---|---|
+| all | Discount (10%) | Discount (10%) |
+| fabrics_only | Discount (10%) | Discount (10% on fabrics) |
+| selected_items | Discount (10%) | Discount (10% on selected items) |
 
-Add validation to ensure `selected_discount_items` from the DB is a proper string array before using it:
-```
-selectedItems: Array.isArray(existingQuote.selected_discount_items)
-  ? (existingQuote.selected_discount_items as any[]).filter(id => typeof id === 'string')
-  : null
-```
-
-### Files to Modify
-1. `src/components/jobs/tabs/QuotationTab.tsx` -- filter excluded items from discount panels
-2. `src/hooks/useQuotationSync.ts` -- remove scope fallback, validate selectedItems
-3. `src/components/jobs/quotation/InlineDiscountPanel.tsx` -- remove auto-apply on mount
+### Testing Note
+I was unable to log in to the app to test the discount flow end-to-end (authentication returned 400 errors). After implementing, the user should test by:
+1. Opening a job with treatments
+2. Applying a discount with "Select Specific Items" scope
+3. Checking only selected items and clicking "Apply and Save"
+4. Verifying the quote preview shows "on selected items" in the discount label
+5. Verifying excluded/unchecked items are NOT affected by the discount amount
