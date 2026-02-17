@@ -39,7 +39,7 @@ function generateNonce(): string {
   return nonce;
 }
 
-function generateOAuthHeader(
+async function generateOAuthHeader(
   method: string,
   url: string,
   consumerKey: string,
@@ -47,7 +47,7 @@ function generateOAuthHeader(
   tokenId: string,
   tokenSecret: string,
   accountId: string
-): string {
+): Promise<string> {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = generateNonce();
 
@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Testing NetSuite connection to account ${account_id}...`);
 
-    const authHeader = generateOAuthHeader(
+    const authHeader = await generateOAuthHeader(
       "GET",
       testUrl,
       consumer_key,
