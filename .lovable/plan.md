@@ -1,99 +1,69 @@
 
 
-## Import Spanish Supplier Price Lists for Laela Account
+## Import MASLINA Fabrics (116 items) for Laela Account
 
 ### File Summary
 
-| Supplier | Items | Categories | Prices |
-|---|---|---|---|
-| DABEDAN (Tejidos Ignifugos) | ~54 | FR Multipurpose, Blackout/Dimout, Velvets, Sheers | Cut, Roll, 250m+, 500m+ |
-| RIOMA | ~120 (A-C subset shown, full catalog 400+) | Upholstery/Curtain, Digital Prints, Jacquards | Cut Length, Roll |
-| TARIFA STOCK | ~69 | Cotton, Linen, Polyester, Chenille, FR, Jacquard | Cut, Pieces, volume tiers |
+| Detail | Value |
+|---|---|
+| Supplier | MASLINA |
+| Location | Turkey |
+| Total items | 116 |
+| Type | Curtain fabrics (blackout, dimout, sheers, Greek patterns) |
+| Prices | Cut price only (EUR per meter) |
+| Widths | 285-330 cm |
 
-### Approach
+### Data Structure (Page 6 of the XLSX)
 
-The XLSX Page 2 contains a **unified table** with all 3 suppliers in a single format with these columns:
+The MASLINA data is very simple -- only 4 columns:
 
-```text
-Supplier | Product Name | Category | Width (cm) | Composition | Weight (g/m2) | 
-Martindale | Fire Rating | Remarks/Finish | Price - Cut Length (EUR/m) | 
-Price - Roll (EUR/m) | Price - 250m+ (EUR/m) | Price - 500m+ (EUR/m) | 
-Currency | Price Unit | Price List Date
-```
-
-Since the edge function only processes CSV files, I will:
-1. Extract the Page 2 data into a CSV file
-2. Add a single `mapSpanishSuppliers` mapper that handles all 3 suppliers from this unified format
-3. Create separate vendors for each supplier (DABEDAN, RIOMA, TARIFA STOCK)
+| Column | Example |
+|---|---|
+| Kumaş Adı (Fabric Name) | AMANDA, GALA BLACKOUT, LORD BLACKOUT |
+| EN / Width (cm) | 295, 310, 320 |
+| KESİM / Cut Price (EUR) | 11.8, 9.9, 15.3 |
+| Currency | EUR |
 
 ### Column Mapping
 
-| XLSX Column | Maps To | Notes |
+| Source | Maps To | Notes |
 |---|---|---|
-| `Supplier` | vendor lookup | Auto-create 3 vendors |
-| `Product Name` | `name` | e.g., "BERNIA LONETA" |
-| `Product Name` | `sku` | Prefixed by supplier: "DAB-BERNIA-LONETA", "RIO-AARON-140", "TAR-AFRICA-COTTON" |
-| `Category` | stored in `tags` | e.g., "category:Multipurpose C1" |
-| `Width (cm)` | `fabric_width` | Parse integer |
-| `Composition` | `composition` | e.g., "Pes FR", "100%PES" |
-| `Weight (g/m2)` | stored in `tags` | e.g., "weight:210" |
-| `Martindale` | stored in `tags` | e.g., "martindale:35000" |
-| `Fire Rating` | `fire_rating` | e.g., "C1 - Fire Retardant" |
-| `Remarks/Finish` | `description` | e.g., "Loneta", "Velvet, New" |
-| `Price - Roll (EUR/m)` | `cost_price` | Wholesale/roll price as cost |
-| `Price - Cut Length (EUR/m)` | `selling_price` | Cut length as retail price; fallback to roll price |
-| All items | `category: "fabric"` | All are fabrics |
-| All items | `subcategory: "curtain_fabric"` | Default for curtain fabrics |
-| All items | `compatible_treatments: ["curtains"]` | Standard |
-| All items | `pricing_method: "per_meter"` | All priced per linear meter |
+| Fabric Name | `name` | e.g., "AMANDA" |
+| Fabric Name | `sku` | Prefixed: "MAS-AMANDA", "MAS-GALA-BLACKOUT" |
+| Width | `fabric_width` | Integer in cm |
+| Cut Price | `cost_price` and `selling_price` | Same value (only cut price available) |
+| All items | `category: "fabric"` | |
+| All items | `subcategory: "curtain_fabric"` | |
+| All items | `compatible_treatments: ["curtains"]` | |
+| All items | `pricing_method: "per_meter"` | |
+| Supplier | vendor: "MASLINA" | Auto-created |
 
 ### What Changes
 
-#### 1. Create CSV from XLSX data
-Extract Page 2 data into `public/import-data/CSV_Spanish_Suppliers_Combined.csv` with the unified columns.
+#### 1. Create CSV file
+Extract the 116 MASLINA items from Page 6 into `public/import-data/CSV_MASLINA_Catalog.csv` with columns: `name`, `width_cm`, `cut_price_eur`.
 
-#### 2. Add `mapSpanishSuppliers()` handler to Edge Function
+#### 2. Add `mapMaslina()` mapper to Edge Function
 New mapper in `supabase/functions/import-client-library/index.ts`:
-- Reads the `Supplier` column to determine which vendor to assign
-- Auto-creates 3 vendors: "DABEDAN", "RIOMA", "TARIFA STOCK"
-- Generates SKU from supplier prefix + product name (e.g., "DAB-BERNIA-LONETA")
-- Uses `Price - Roll` as `cost_price`, `Price - Cut Length` as `selling_price`
-- Falls back: if no cut length price, uses roll price for both
-- Stores composition, weight, martindale, fire rating in appropriate fields and tags
-- Creates collections per supplier (e.g., "DABEDAN MULTIPURPOSE C1", "DABEDAN SHEERS C1")
-- Sets `category: "fabric"`, `subcategory: "curtain_fabric"`, `compatible_treatments: ["curtains"]`
+- Very simple mapper (only 3 data columns)
+- Auto-creates "MASLINA" vendor
+- SKU: "MAS-{NORMALIZED_NAME}" (e.g., "MAS-GALA-BLACKOUT")
+- `cost_price` = `selling_price` = cut price
+- `fabric_width` from width column
+- Items with price 0 (e.g., "SİES") still imported with price 0
+- Auto-detect blackout/dimout from name for `description` tag
+- Single collection: "MASLINA"
 
 #### 3. Register in `LaelLibraryImport.tsx`
-Add entry to `IMPORT_FILES` array:
+Add entry:
 ```text
-{ format: "spanish_suppliers", file: "/import-data/CSV_Spanish_Suppliers_Combined.csv", label: "Spanish Suppliers - DABEDAN, RIOMA, TARIFA STOCK (~500+ fabrics)" }
+{ format: "maslina", file: "/import-data/CSV_MASLINA_Catalog.csv", label: "MASLINA Curtain Fabrics (116 items)" }
 ```
 
 #### 4. Add vendor routing in Edge Function
-For `spanish_suppliers` format, skip the single-vendor lookup and instead determine vendor per-row from the `Supplier` column.
+Add `"maslina"` to the vendor name lookup, mapping to "MASLINA".
 
-### Technical Details
-
-SKU generation:
-```text
-DABEDAN items     -> "DAB-{PRODUCT_NAME_NORMALIZED}"
-RIOMA items       -> "RIO-{PRODUCT_NAME_NORMALIZED}"
-TARIFA STOCK items -> "TAR-{PRODUCT_NAME_NORMALIZED}"
-```
-
-Collection mapping:
-```text
-Supplier + Category column -> Collection name
-e.g., "DABEDAN" + "Multipurpose C1" -> "DABEDAN MULTIPURPOSE C1"
-      "RIOMA" + "Upholstery/Curtain" -> "RIOMA UPHOLSTERY"
-      "TARIFA STOCK" + "WASH" -> "TARIFA STOCK"  (finish used as collection)
-```
-
-Note: RIOMA data in this file appears to be a partial catalog (letters A-C, ~120 items). The full RIOMA catalog has 400+ items -- if the full list is available later, it can be re-imported and existing items will be updated via SKU matching.
-
-### After This Fix
+### After Implementation
 1. Navigate to `/admin/import-laela`
-2. Click "Start Import" for the Spanish Suppliers entry
-3. Items will import with proper vendors, collections, pricing, and metadata
-4. All fabrics will appear in the Library under curtain fabrics with composition and fire rating info
-
+2. Click "Start Import" (or "Re-run Import")
+3. The 116 MASLINA fabric items will import with proper width, pricing, and vendor assignment
