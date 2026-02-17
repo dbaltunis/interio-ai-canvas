@@ -67,23 +67,8 @@ export const InlineDiscountPanel = ({
     }
   }, [isOpen, currentDiscount]);
 
-  const [hasloaded, setHasloaded] = useState<boolean>(false);
-
-  React.useEffect(() => {
-    if(currentDiscount && currentDiscount.value != 0 && !hasloaded){
-      setDiscountType(currentDiscount.type);
-      setDiscountValue(currentDiscount.value);
-      setDiscountScope(currentDiscount.scope);
-      setSelectedItems(new Set(currentDiscount.selectedItems || []));
-      setHasloaded(true);
-    }
-  },[setHasloaded]);
-
-  React.useEffect(()=>{
-    if(hasloaded){
-      handleApply();
-    }
-  },[hasloaded]);
+  // Auto-apply on mount removed: was re-saving discount on every panel open,
+  // potentially overwriting DB with stale data. Users must click "Apply & Save".
 
   const config: DiscountConfig = {
     type: discountType,

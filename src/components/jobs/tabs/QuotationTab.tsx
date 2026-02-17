@@ -1089,7 +1089,7 @@ export const QuotationTab = ({
         onClose={() => setIsDiscountDialogOpen(false)} 
         quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''} 
         projectId={projectId} 
-        items={quotationData.items || []} 
+        items={(quotationData.items || []).filter(item => !excludedItems.includes(item.id))} 
         subtotal={quotationData.sellingTotal || subtotal} 
         taxRate={taxRate * 100} 
         currency={projectData.currency}
