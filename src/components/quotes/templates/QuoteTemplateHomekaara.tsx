@@ -64,6 +64,7 @@ export interface DiscountInfo {
   type: 'percentage' | 'fixed';
   value: number;
   amount: number;
+  scope?: 'all' | 'fabrics_only' | 'selected_items';
 }
 
 export interface QuoteTemplateHomekaaraProps {
@@ -704,7 +705,7 @@ const QuoteTemplateHomekaara: React.FC<QuoteTemplateHomekaaraProps> = ({
             {discountInfo && discountInfo.amount > 0 && (
               <div className="flex justify-between items-center px-4 py-2.5 border-b border-stone-200">
                 <span className="text-stone-600 text-sm">
-                  Discount{discountInfo.type === 'percentage' ? ` (${discountInfo.value}%)` : ''}
+                  Discount{discountInfo.type === 'percentage' ? ` (${discountInfo.value}%${discountInfo.scope === 'selected_items' ? ' on selected items' : discountInfo.scope === 'fabrics_only' ? ' on fabrics' : ''})` : ''}
                 </span>
                 <span className="text-red-600 font-medium whitespace-nowrap">
                   -{formatCurrency(discountInfo.amount, currency)}

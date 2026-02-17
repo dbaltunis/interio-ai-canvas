@@ -305,7 +305,7 @@ export const InlineDiscountPanel = ({
                     <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-destructive">
-                    <span>Discount{taxInclusive ? ' (inc. tax)' : ''}:</span>
+                    <span>Discount{discountScope === 'selected_items' ? ` (${selectedItems.size} of ${items.length} items)` : discountScope === 'fabrics_only' ? ' (fabrics only)' : ''}{taxInclusive ? ' (inc. tax)' : ''}:</span>
                     <span className="font-medium">-{formatCurrency(displayDiscountAmount, currency)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
