@@ -3294,15 +3294,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     // Get price from fabric item or fabricCalculation - never calculate from total/meters
                     const selectedFabricItem = selectedItems.fabric || selectedItems.material;
-                    // ✅ CRITICAL FIX: Use selling_price as the PRIMARY source for consistent display
-                    // The quote and window display show CLIENT-FACING prices (what customer pays)
-                    // This ensures live popup matches saved window display and quote
-                    // Cost price is only for internal profit tracking
-                    const pricePerMeter = selectedFabricItem?.selling_price
-                      || selectedFabricItem?.price_per_meter
-                      || selectedFabricItem?.cost_price  // Fallback only if no selling_price exists
-                      || fabricCalculation?.pricePerMeter
-                      || 0;
+                    // ✅ Smart price base: use cost_price when both exist (markup handles the rest),
+                    // otherwise fall back to selling_price or price_per_meter
+                    const hasBothPrices = (selectedFabricItem?.cost_price || 0) > 0
+                      && (selectedFabricItem?.selling_price || 0) > 0;
+                    const pricePerMeter = hasBothPrices
+                      ? selectedFabricItem.cost_price
+                      : (selectedFabricItem?.selling_price
+                        || selectedFabricItem?.price_per_meter
+                        || selectedFabricItem?.cost_price
+                        || fabricCalculation?.pricePerMeter
+                        || 0);
                     
                     // ✅ FIX: Check if curtain fabric uses pricing grid
                     const curtainUsesPricingGrid = selectedFabricItem?.pricing_grid_data && 
