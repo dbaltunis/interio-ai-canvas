@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, X, QrCode, Tag, FolderPlus, FolderInput } from "lucide-react";
+import { Trash2, X, QrCode, Tag, FolderPlus, FolderInput, DollarSign } from "lucide-react";
 import { QRCodeLabelGenerator } from "./QRCodeLabelGenerator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreateCollectionFromSelectionDialog } from "./CreateCollectionFromSelectionDialog";
 import { AddToCollectionDialog } from "./AddToCollectionDialog";
 import { BulkTagEditor } from "./BulkTagEditor";
+import { BulkPriceUpdateDialog } from "./BulkPriceUpdateDialog";
 
 interface InventoryBulkActionsBarProps {
   selectedCount: number;
@@ -34,6 +35,7 @@ export const InventoryBulkActionsBar = ({
   const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showTagEditor, setShowTagEditor] = useState(false);
+  const [showPriceUpdate, setShowPriceUpdate] = useState(false);
   const [priceGroup, setPriceGroup] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -121,6 +123,14 @@ export const InventoryBulkActionsBar = ({
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowPriceUpdate(true)}
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              Update Prices
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowPriceGroupDialog(true)}
             >
               <Tag className="h-4 w-4 mr-2" />
@@ -174,6 +184,15 @@ export const InventoryBulkActionsBar = ({
       <BulkTagEditor
         open={showTagEditor}
         onOpenChange={setShowTagEditor}
+        selectedItemIds={selectedIds}
+        selectedItems={selectedItems}
+        onSuccess={handleBulkSuccess}
+      />
+
+      {/* Bulk Price Update */}
+      <BulkPriceUpdateDialog
+        open={showPriceUpdate}
+        onOpenChange={setShowPriceUpdate}
         selectedItemIds={selectedIds}
         selectedItems={selectedItems}
         onSuccess={handleBulkSuccess}

@@ -361,9 +361,15 @@ function parsePrice(priceStr: string): number {
   return isNaN(num) ? 0 : Math.round(num * 100) / 100;
 }
 
-/** Ensure selling_price falls back to cost_price if zero */
+/** Ensure selling_price falls back to cost_price if zero.
+ *  Returns { price, needsPricing } to tag items that need user attention. */
 function withPriceFallback(costPrice: number, sellingPrice: number): number {
   return sellingPrice > 0 ? sellingPrice : costPrice;
+}
+
+/** Check if an item needs pricing attention (selling = cost, no margin) */
+function itemNeedsPricing(costPrice: number, sellingPrice: number): boolean {
+  return sellingPrice <= 0 || (costPrice > 0 && Math.abs(sellingPrice - costPrice) < 0.01);
 }
 
 async function mapExpo2024(supabase: any, row: Record<string, string>, vendorId: string) {
@@ -506,6 +512,9 @@ async function mapEurofirany(supabase: any, row: Record<string, string>, vendorI
     }
   }
 
+  const tags: string[] = [];
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
+
   return {
     user_id: activeUserId,
     name: productName,
@@ -522,6 +531,7 @@ async function mapEurofirany(supabase: any, row: Record<string, string>, vendorI
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
@@ -562,6 +572,7 @@ async function mapIksForma(supabase: any, row: Record<string, string>, vendorId:
 
   const tags: string[] = [];
   if (color) tags.push(`color:${color}`);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
 
   return {
     user_id: activeUserId,
@@ -619,6 +630,9 @@ async function mapMaslina(
     console.warn(`Collection error for MASLINA:`, e.message);
   }
 
+  const tags: string[] = [];
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
+
   return {
     user_id: activeUserId,
     name,
@@ -636,6 +650,7 @@ async function mapMaslina(
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
@@ -1064,6 +1079,9 @@ async function mapLaelaSelectedSamples(
   if (weightKgMt > 0) descParts.push(`weight: ${weightKgMt} kg/mt`);
   if (comments && comments !== ".") descParts.push(comments);
 
+  const tags: string[] = [];
+  if (itemNeedsPricing(cutPrice, cutPrice)) tags.push("needs_pricing");
+
   return {
     user_id: activeUserId,
     name: displayName,
@@ -1085,6 +1103,7 @@ async function mapLaelaSelectedSamples(
     compatible_treatments: ["curtains"],
     product_category: "curtains",
     specifications: weightKgMt > 0 ? { weight_kg_mt: weightKgMt } : undefined,
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
@@ -1225,6 +1244,9 @@ async function mapIfiTekstile(
   const descParts: string[] = [];
   if (direction) descParts.push(direction);
 
+  const tags: string[] = [];
+  if (itemNeedsPricing(price, price)) tags.push("needs_pricing");
+
   return {
     user_id: activeUserId,
     name: displayName,
@@ -1245,5 +1267,6 @@ async function mapIfiTekstile(
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
