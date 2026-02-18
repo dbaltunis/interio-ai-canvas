@@ -175,26 +175,33 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (existing) {
-          // Update ALL mapped fields (not just a subset)
+          // Update ALL mapped fields including fabric-specific ones
+          const updateData: Record<string, any> = {
+            name: item.name,
+            cost_price: item.cost_price,
+            selling_price: item.selling_price,
+            fabric_width: item.fabric_width,
+            tags: item.tags,
+            collection_name: item.collection_name,
+            collection_id: item.collection_id,
+            compatible_treatments: item.compatible_treatments,
+            product_category: item.product_category,
+            subcategory: item.subcategory,
+            pricing_method: item.pricing_method,
+            vendor_id: item.vendor_id,
+          };
+          // Conditionally include optional fields
+          if (item.fabric_composition) updateData.fabric_composition = item.fabric_composition;
+          if (item.fire_rating) updateData.fire_rating = item.fire_rating;
+          if (item.description) updateData.description = item.description;
+          if (item.pattern_repeat_vertical) updateData.pattern_repeat_vertical = item.pattern_repeat_vertical;
+          if (item.pattern_repeat_horizontal) updateData.pattern_repeat_horizontal = item.pattern_repeat_horizontal;
+          if (item.color) updateData.color = item.color;
+          if (item.specifications) updateData.specifications = item.specifications;
+
           const { error } = await supabase
             .from("enhanced_inventory_items")
-            .update({
-              name: item.name,
-              cost_price: item.cost_price,
-              selling_price: item.selling_price,
-              fabric_width: item.fabric_width,
-              tags: item.tags,
-              collection_name: item.collection_name,
-              collection_id: item.collection_id,
-              compatible_treatments: item.compatible_treatments,
-              product_category: item.product_category,
-              subcategory: item.subcategory,
-              pricing_method: item.pricing_method,
-              vendor_id: item.vendor_id,
-              ...(item.composition ? { composition: item.composition } : {}),
-              ...(item.fire_rating ? { fire_rating: item.fire_rating } : {}),
-              ...(item.description ? { description: item.description } : {}),
-            })
+            .update(updateData)
             .eq("id", existing.id);
           if (error) result.errors.push(`Update ${item.sku}: ${error.message}`);
           else result.updated++;
@@ -255,26 +262,33 @@ async function ensureVendor(supabase: any, name: string): Promise<string> {
   return data.id;
 }
 
-async function ensureCollection(supabase: any, name: string): Promise<string> {
+async function ensureCollection(supabase: any, name: string, vendorId?: string): Promise<string> {
   const key = name.toUpperCase().trim();
   if (!key) throw new Error("Empty collection name");
   if (collectionCache.has(key)) return collectionCache.get(key)!;
 
   const { data: existing } = await supabase
     .from("collections")
-    .select("id")
+    .select("id, vendor_id")
     .eq("user_id", activeUserId)
     .eq("name", key)
     .maybeSingle();
 
   if (existing) {
+    // Backfill vendor_id if missing and we have one
+    if (vendorId && !existing.vendor_id) {
+      await supabase.from("collections").update({ vendor_id: vendorId }).eq("id", existing.id);
+    }
     collectionCache.set(key, existing.id);
     return existing.id;
   }
 
+  const insertData: Record<string, any> = { user_id: activeUserId, name: key, active: true };
+  if (vendorId) insertData.vendor_id = vendorId;
+
   const { data, error } = await supabase
     .from("collections")
-    .insert({ user_id: activeUserId, name: key, active: true })
+    .insert(insertData)
     .select("id")
     .single();
 
@@ -374,11 +388,11 @@ async function mapExpo2024(supabase: any, row: Record<string, string>, vendorId:
   if (!collectionName) {
     collectionName = extractCollectionFromDesign(name);
   }
-  
+
   let collectionId: string | undefined;
   if (collectionName) {
     try {
-      collectionId = await ensureCollection(supabase, collectionName);
+      collectionId = await ensureCollection(supabase, collectionName, vendorId);
     } catch (e) {
       console.warn(`Collection error for ${collectionName}:`, e.message);
     }
@@ -421,7 +435,7 @@ async function mapPricelist2023(supabase: any, row: Record<string, string>, vend
   let collectionId: string | undefined;
   if (collectionName) {
     try {
-      collectionId = await ensureCollection(supabase, collectionName);
+      collectionId = await ensureCollection(supabase, collectionName, vendorId);
     } catch (e) {
       console.warn(`Collection error for ${collectionName}:`, e.message);
     }
@@ -486,7 +500,7 @@ async function mapEurofirany(supabase: any, row: Record<string, string>, vendorI
   let collectionId: string | undefined;
   if (collectionName) {
     try {
-      collectionId = await ensureCollection(supabase, collectionName);
+      collectionId = await ensureCollection(supabase, collectionName, vendorId);
     } catch (e) {
       console.warn(`Collection error for ${collectionName}:`, e.message);
     }
@@ -540,7 +554,7 @@ async function mapIksForma(supabase: any, row: Record<string, string>, vendorId:
   let collectionId: string | undefined;
   if (collectionName) {
     try {
-      collectionId = await ensureCollection(supabase, collectionName);
+      collectionId = await ensureCollection(supabase, collectionName, vendorId);
     } catch (e) {
       console.warn(`Collection error for ${collectionName}:`, e.message);
     }
@@ -600,7 +614,7 @@ async function mapMaslina(
   // Single collection for all MASLINA items
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, "MASLINA");
+    collectionId = await ensureCollection(supabase, "MASLINA", maslinaVendorId);
   } catch (e) {
     console.warn(`Collection error for MASLINA:`, e.message);
   }
@@ -686,14 +700,14 @@ async function mapSpanishSuppliers(
   if (weight) tags.push(`weight:${weight}`);
   if (martindale) tags.push(`martindale:${martindale}`);
 
-  // Collection: Supplier + Category
-  const collectionName = category 
-    ? `${supplierKey} ${category.toUpperCase()}`
-    : supplierKey;
-  
+  // Collection: use Category as collection name (vendor is linked separately)
+  const collectionName = category
+    ? category.toUpperCase()
+    : "GENERAL";
+
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, collectionName);
+    collectionId = await ensureCollection(supabase, collectionName, rowVendorId);
   } catch (e) {
     console.warn(`Collection error for ${collectionName}:`, e.message);
   }
@@ -705,7 +719,7 @@ async function mapSpanishSuppliers(
     category: "fabric",
     subcategory: "curtain_fabric",
     fabric_width: parseWidth(width),
-    composition: composition || undefined,
+    fabric_composition: composition || undefined,
     fire_rating: fireRating || undefined,
     description: remarks || undefined,
     cost_price: costPrice,
@@ -770,17 +784,17 @@ async function mapMydeco(
   if (colorFinish) tags.push(`color:${colorFinish}`);
   if (category) tags.push(`hw_type:${category}`);
 
-  // Collection based on system size (20mm, 18x18, 25mm)
-  let collectionName = "MYDECO 20MM";
+  // Collection based on system size (no vendor prefix — vendor linked via vendor_id)
+  let collectionName = "20MM";
   if (productName.startsWith("18x18") || productName.includes("18x18")) {
-    collectionName = "MYDECO 18X18MM";
+    collectionName = "18X18MM";
   } else if (productName.startsWith("25mm") || productName.includes("25mm")) {
-    collectionName = "MYDECO 25MM";
+    collectionName = "25MM";
   }
 
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, collectionName);
+    collectionId = await ensureCollection(supabase, collectionName, mydecoVendorId);
   } catch (e) {
     console.warn(`Collection error for ${collectionName}:`, e.message);
   }
@@ -871,12 +885,13 @@ async function mapRadpolFabrics(
 
   const subcategory = mapRadpolSubcategory(category);
 
-  // Single collection for all RAD-POL fabrics
+  // Collection for RAD-POL fabrics (use subcategory as collection name)
+  const rpCollName = category ? category.toUpperCase() : "FABRICS";
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, "RAD-POL");
+    collectionId = await ensureCollection(supabase, rpCollName, radpolVendorId);
   } catch (e) {
-    console.warn("Collection error for RAD-POL:", e.message);
+    console.warn(`Collection error for ${rpCollName}:`, e.message);
   }
 
   return {
@@ -937,14 +952,14 @@ async function mapRadpolHaberdashery(
     pricingMethod = "per_meter";
   }
 
-  // Collection from Category
+  // Collection from Category (no vendor prefix — vendor linked via vendor_id)
   const collectionName = categoryField
-    ? `RAD-POL ${categoryField.toUpperCase()}`
-    : "RAD-POL HABERDASHERY";
+    ? categoryField.toUpperCase()
+    : "HABERDASHERY";
 
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, collectionName);
+    collectionId = await ensureCollection(supabase, collectionName, radpolVendorId);
   } catch (e) {
     console.warn(`Collection error for ${collectionName}:`, e.message);
   }
@@ -970,7 +985,7 @@ async function mapRadpolHaberdashery(
     pricing_method: pricingMethod,
     quantity: 0,
     description: articleType || undefined,
-    composition: composition || undefined,
+    fabric_composition: composition || undefined,
     tags: tags.length > 0 ? tags : undefined,
     collection_name: collectionName,
     collection_id: collectionId || undefined,
@@ -1032,13 +1047,13 @@ async function mapLaelaSelectedSamples(
   // Weight-based subcategory
   const subcategory = weightKgMt < 0.30 ? "sheer_fabric" : "curtain_fabric";
 
-  // Collection from hanger description
+  // Collection from hanger description (no vendor prefix — vendor linked via vendor_id)
   const collectionRaw = row["collection"]?.trim() || "";
-  const collectionName = collectionRaw ? `LAELA ${collectionRaw.toUpperCase()}` : "LAELA";
+  const collectionName = collectionRaw ? collectionRaw.toUpperCase() : "GENERAL";
 
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, collectionName);
+    collectionId = await ensureCollection(supabase, collectionName, laelaVendorId);
   } catch (e) {
     console.warn(`Collection error for ${collectionName}:`, e.message);
   }
@@ -1061,7 +1076,7 @@ async function mapLaelaSelectedSamples(
     vendor_id: laelaVendorId,
     pricing_method: "per_meter" as const,
     quantity: 0,
-    composition: composition || undefined,
+    fabric_composition: composition || undefined,
     description: descParts.length > 0 ? descParts.join("; ") : undefined,
     pattern_repeat_vertical: vertRepeat || undefined,
     pattern_repeat_horizontal: horizRepeat || undefined,
@@ -1135,7 +1150,7 @@ async function mapRidex(
   // Single collection for all RIDEX items
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, "RIDEX 2025");
+    collectionId = await ensureCollection(supabase, "RIDEX 2025", ridexVendorId);
   } catch (e) {
     console.warn("Collection error for RIDEX 2025:", e.message);
   }
@@ -1194,14 +1209,14 @@ async function mapIfiTekstile(
   const vertRepeat = parseRepeatCm(row["vert_repeat"] || "");
   const horizRepeat = parseRepeatCm(row["horiz_repeat"] || "");
 
-  // Collection: strip prefix, then prepend "IFI TEKSTILE"
+  // Collection: strip prefix (no vendor prefix — vendor linked via vendor_id)
   const collectionRaw = row["collection"]?.trim() || "";
   const cleanedCollection = cleanIfiCollectionName(collectionRaw);
-  const collectionName = cleanedCollection ? `IFI TEKSTILE ${cleanedCollection.toUpperCase()}` : "IFI TEKSTILE";
+  const collectionName = cleanedCollection ? cleanedCollection.toUpperCase() : "GENERAL";
 
   let collectionId: string | undefined;
   try {
-    collectionId = await ensureCollection(supabase, collectionName);
+    collectionId = await ensureCollection(supabase, collectionName, vendorId);
   } catch (e) {
     console.warn(`Collection error for ${collectionName}:`, e.message);
   }
@@ -1222,7 +1237,7 @@ async function mapIfiTekstile(
     vendor_id: vendorId,
     pricing_method: "per_meter" as const,
     quantity: 0,
-    composition: composition || undefined,
+    fabric_composition: composition || undefined,
     description: descParts.length > 0 ? descParts.join("; ") : undefined,
     pattern_repeat_vertical: vertRepeat || undefined,
     pattern_repeat_horizontal: horizRepeat || undefined,

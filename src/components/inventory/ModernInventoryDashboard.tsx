@@ -1,11 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Grid, List, Package, Lock, QrCode, Shield, RefreshCw, FolderOpen, ArrowLeft } from "lucide-react";
-import { PixelFabricIcon, PixelMaterialIcon, PixelHardwareIcon, PixelWallpaperIcon, PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
+import { Search, Plus, Grid, List, Package, Lock, QrCode, RefreshCw, PanelLeft } from "lucide-react";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { toast } from "sonner";
@@ -14,7 +12,6 @@ import { HardwareInventoryView } from "./HardwareInventoryView";
 import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { VendorDashboard } from "../vendors/VendorDashboard";
-import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -24,87 +21,89 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FilterButton } from "../library/FilterButton";
 import { InventoryAdminPanel } from "./InventoryAdminPanel";
-import { CollectionsView } from "../library/CollectionsView";
 import { useCollectionsWithCounts } from "@/hooks/useCollections";
-import { BrandCollectionsSidebar } from "../library/BrandCollectionsSidebar";
 import { HeadingInventoryManager } from "@/components/settings/tabs/components/HeadingInventoryManager";
+import { CategoryBrandSidebar, type LibraryNavState } from "../library/CategoryBrandSidebar";
+import { BrandsOverviewGrid } from "../library/BrandsOverviewGrid";
+import { BrandDetailView } from "../library/BrandDetailView";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [activeTab, setActiveTab] = useState(() => {
-    const savedTab = sessionStorage.getItem('library_active_tab');
-    return savedTab || "collections";
-  });
-  const [showSearch, setShowSearch] = useState(false);
 
-  // Persist library sub-tab to sessionStorage
+  // New sidebar-driven navigation state (replaces tabs)
+  const [navState, setNavState] = useState<LibraryNavState>(() => {
+    try {
+      const saved = sessionStorage.getItem("library_nav_state");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      selectedCategory: null,
+      selectedVendorId: null,
+      selectedCollectionId: null,
+      view: "brands-grid",
+    };
+  });
+
+  // Persist nav state
   useEffect(() => {
-    sessionStorage.setItem('library_active_tab', activeTab);
-  }, [activeTab]);
-  
+    sessionStorage.setItem("library_nav_state", JSON.stringify(navState));
+  }, [navState]);
+
   const [showScanner, setShowScanner] = useState(false);
   const [scannedItemId, setScannedItemId] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [selectedVendor, setSelectedVendor] = useState<string | undefined>();
-  const [selectedCollection, setSelectedCollection] = useState<string | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
-  const { data: vendors } = useVendors();
   const { data: collections = [] } = useCollectionsWithCounts();
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
-  
-  // Permission checks — useHasPermission merges role defaults + custom permissions.
-  // Owner/Admin always has full access. Custom permissions are additive, never subtractive.
+
+  // Permission checks
   const canViewInventory = useHasPermission('view_inventory') !== false;
   const canManageInventory = useHasPermission('manage_inventory') !== false;
   const canManageInventoryAdmin = useHasPermission('manage_inventory_admin') !== false;
 
-  // Redirect away from admin tab if user doesn't have permission
+  // Redirect away from admin if no permission
   useEffect(() => {
-    if (activeTab === "admin" && !canManageInventoryAdmin) {
-      setActiveTab("fabrics");
+    if (navState.view === "admin" && !canManageInventoryAdmin) {
+      setNavState(prev => ({ ...prev, view: "brands-grid" }));
     }
-  }, [activeTab, canManageInventoryAdmin]);
+  }, [navState.view, canManageInventoryAdmin]);
 
   const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
-  
-  // Dealers always have browse-only access to the Library
-  // Use direct dealer check instead of problematic timeout fallback
+
   const hasAnyInventoryAccess = useMemo(() => {
-    // If dealer check is still loading, return undefined to show loading state
     if (isDealerLoading) return undefined;
-    // Dealers always have browse access
     if (isDealer === true) return true;
-    // Otherwise use the permission hook result
     return hasAnyInventoryAccessFromHook;
   }, [isDealerLoading, isDealer, hasAnyInventoryAccessFromHook]);
-  
-  // Filter out treatment options - only show physical inventory
+
+  // Filter out treatment options
   const allPhysicalInventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
-  
+
+  // Derive vendor/collection filters from navState
+  const selectedVendor = navState.selectedVendorId === "unassigned" ? undefined : navState.selectedVendorId || undefined;
+  const selectedCollection = navState.selectedCollectionId || undefined;
+
   // Apply filters to inventory
   const inventory = allPhysicalInventory.filter(item => {
-    // Apply vendor filter
     if (selectedVendor && item.vendor_id !== selectedVendor) return false;
-    
-    // Apply collection filter
     if (selectedCollection && item.collection_id !== selectedCollection) return false;
-    
-    // Apply storage location filter
     if (selectedStorageLocation && item.location !== selectedStorageLocation) return false;
-    
-    // Apply tags filter
     if (selectedTags.length > 0) {
       const itemTags = item.tags || [];
       const hasMatchingTag = selectedTags.some(tag => itemTags.includes(tag));
       if (!hasMatchingTag) return false;
     }
-    
-    // Apply search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -113,7 +112,6 @@ export const ModernInventoryDashboard = () => {
         item.description?.toLowerCase().includes(query)
       );
     }
-    
     return true;
   });
 
@@ -138,7 +136,126 @@ export const ModernInventoryDashboard = () => {
     setShowQuickActions(false);
   };
 
-  // If no inventory permissions at all, show access denied
+  // Render the main content area based on navigation state
+  const renderContent = () => {
+    // Vendors management view
+    if (navState.view === "vendors") {
+      return <VendorDashboard />;
+    }
+
+    // Admin panel
+    if (navState.view === "admin") {
+      return <InventoryAdminPanel />;
+    }
+
+    // Brands overview grid (default landing)
+    if (navState.view === "brands-grid") {
+      return (
+        <BrandsOverviewGrid
+          searchQuery={searchQuery}
+          onSelectBrand={(vendorId) =>
+            setNavState({
+              selectedCategory: null,
+              selectedVendorId: vendorId,
+              selectedCollectionId: null,
+              view: "brand-detail",
+            })
+          }
+        />
+      );
+    }
+
+    // Brand detail view
+    if (navState.view === "brand-detail" && navState.selectedVendorId) {
+      return (
+        <BrandDetailView
+          vendorId={navState.selectedVendorId}
+          searchQuery={searchQuery}
+          onBack={() =>
+            setNavState({
+              selectedCategory: null,
+              selectedVendorId: null,
+              selectedCollectionId: null,
+              view: "brands-grid",
+            })
+          }
+          onSelectCollection={(collectionId) =>
+            setNavState((prev) => ({
+              ...prev,
+              selectedCollectionId: collectionId,
+              view: "items",
+            }))
+          }
+          onViewAllItems={() =>
+            setNavState((prev) => ({
+              ...prev,
+              selectedCategory: null,
+              view: "items",
+            }))
+          }
+        />
+      );
+    }
+
+    // Items view — route to appropriate category view
+    const category = navState.selectedCategory;
+    const sharedProps = {
+      searchQuery,
+      viewMode,
+      selectedVendor,
+      selectedCollection,
+      selectedStorageLocation,
+      canManageInventory,
+    };
+
+    if (category === "fabric") {
+      return <FabricInventoryView {...sharedProps} />;
+    }
+    if (category === "hardware") {
+      return <HardwareInventoryView {...sharedProps} />;
+    }
+    if (category === "material") {
+      return <MaterialInventoryView {...sharedProps} />;
+    }
+    if (category === "wallcovering") {
+      return (
+        <WallcoveringInventoryView
+          canManageInventory={canManageInventory}
+          searchQuery={searchQuery}
+          viewMode={viewMode}
+          selectedVendor={selectedVendor}
+          selectedCollection={selectedCollection}
+          selectedStorageLocation={selectedStorageLocation}
+        />
+      );
+    }
+
+    // If a vendor is selected but no category, show a combined view (default to fabrics as most common)
+    if (navState.selectedVendorId && !category) {
+      return <FabricInventoryView {...sharedProps} />;
+    }
+
+    // Fallback: brands grid
+    return (
+      <BrandsOverviewGrid
+        searchQuery={searchQuery}
+        onSelectBrand={(vendorId) =>
+          setNavState({
+            selectedCategory: null,
+            selectedVendorId: vendorId,
+            selectedCollectionId: null,
+            view: "brand-detail",
+          })
+        }
+      />
+    );
+  };
+
+  // Show view mode toggle only when viewing items
+  const showViewToggle = navState.view === "items";
+  // Show filter button only when viewing items
+  const showFilters = navState.view === "items";
+
   if (hasAnyInventoryAccess === false) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
@@ -153,286 +270,153 @@ export const ModernInventoryDashboard = () => {
     );
   }
 
-  // Let parent Suspense handle loading state
   if (hasAnyInventoryAccess === undefined) {
     return null;
   }
 
+  const sidebarContent = (
+    <CategoryBrandSidebar
+      navState={navState}
+      onNavigate={(newState) => {
+        setNavState(newState);
+        setMobileSheetOpen(false);
+      }}
+      canManageInventoryAdmin={canManageInventoryAdmin}
+      isDealer={isDealer === true}
+    />
+  );
+
   return (
-    <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-4 lg:p-6")}>
-      {/* Compact Header - Analytics Style */}
-      <div className={cn(
-        "flex items-center",
-        isMobile ? "flex-col gap-3" : "justify-between"
-      )}>
-        <div className={cn(
-          "flex items-center gap-3",
-          isMobile && "w-full"
-        )}>
-          <div className={cn("p-2 bg-primary/10 rounded-lg", isMobile && "p-1.5")}>
-            <Package className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", "text-primary")} />
-          </div>
-          <h1 className={cn(
-            "font-semibold text-foreground",
-            isMobile ? "text-base" : "text-lg"
+    <div className="h-[calc(100dvh-3.5rem)] flex overflow-hidden">
+      {/* Apple-style sidebar — always visible on desktop */}
+      {!isMobile && sidebarContent}
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Header bar */}
+        <div className="sticky top-0 z-20 bg-background border-b flex-shrink-0">
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile ? "px-3 py-2" : "px-4 py-2.5"
           )}>
-            Library
-          </h1>
-          <SectionHelpButton sectionId="library" size="sm" />
-          <Badge variant="secondary" className="text-xs">
-            {inventoryLoading ? (
-              <Skeleton className="h-3 w-10 inline-block" />
-            ) : (
-              `${inventory?.length || 0} items`
+            {/* Mobile sidebar toggle */}
+            {isMobile && (
+              <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-[280px]">
+                  {sidebarContent}
+                </SheetContent>
+              </Sheet>
             )}
-          </Badge>
-          {inventoryFetching && !inventoryLoading && (
-            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
-          )}
-        </div>
-        <div className={cn(
-          "flex items-center gap-2",
-          isMobile && "w-full"
-        )}>
-          {/* Compact Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={isMobile ? "Search..." : "Search library..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={cn("pl-9", isMobile ? "h-9 text-sm" : "h-9")}
-            />
-          </div>
-          
-          <FilterButton
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedTags={selectedTags}
-            selectedStorageLocation={selectedStorageLocation}
-            onVendorChange={setSelectedVendor}
-            onCollectionChange={setSelectedCollection}
-            onTagsChange={setSelectedTags}
-            onStorageLocationChange={setSelectedStorageLocation}
-          />
-          
-          {!isMobile && (
-            <>
-              {/* View Toggle */}
-              <div className="flex items-center gap-1 border rounded-md p-1">
+
+            {/* Title area */}
+            <div className="flex items-center gap-2 mr-auto">
+              <div className={cn("p-1.5 bg-primary/10 rounded-lg")}>
+                <Package className="h-4 w-4 text-primary" />
+              </div>
+              <h1 className="font-semibold text-foreground text-sm">
+                Library
+              </h1>
+              <SectionHelpButton sectionId="library" size="sm" />
+              <Badge variant="secondary" className="text-xs">
+                {inventoryLoading ? (
+                  <Skeleton className="h-3 w-10 inline-block" />
+                ) : (
+                  `${allPhysicalInventory?.length || 0} items`
+                )}
+              </Badge>
+              {inventoryFetching && !inventoryLoading && (
+                <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+              )}
+            </div>
+
+            {/* Search */}
+            <div className="relative w-48 lg:w-64">
+              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm bg-muted/40 border-0 focus-visible:ring-1"
+              />
+            </div>
+
+            {/* Filters — only when viewing items */}
+            {showFilters && (
+              <FilterButton
+                selectedVendor={selectedVendor}
+                selectedCollection={selectedCollection}
+                selectedTags={selectedTags}
+                selectedStorageLocation={selectedStorageLocation}
+                onVendorChange={(v) =>
+                  setNavState((prev) => ({ ...prev, selectedVendorId: v || null }))
+                }
+                onCollectionChange={(c) =>
+                  setNavState((prev) => ({ ...prev, selectedCollectionId: c || null }))
+                }
+                onTagsChange={setSelectedTags}
+                onStorageLocationChange={setSelectedStorageLocation}
+              />
+            )}
+
+            {/* View toggle — only when viewing items */}
+            {showViewToggle && !isMobile && (
+              <div className="flex items-center gap-0.5 border rounded-md p-0.5">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 p-0"
                 >
-                  <Grid className="h-4 w-4" />
+                  <Grid className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("list")}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 p-0"
                 >
-                  <List className="h-4 w-4" />
+                  <List className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </>
-          )}
+            )}
 
-          {/* Primary Actions - Hide for dealers (read-only access) */}
-          {!isDealer && (
-            <>
-              <Button
-                variant="outline"
-                size={isMobile ? "sm" : "default"}
-                onClick={() => setShowScanner(true)}
-              >
-                <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                {!isMobile && "Scan"}
-              </Button>
+            {/* Primary actions */}
+            {!isDealer && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowScanner(true)}
+                  className="h-8"
+                >
+                  <QrCode className="h-3.5 w-3.5 mr-1.5" />
+                  {!isMobile && "Scan"}
+                </Button>
 
-              {canManageInventory && (
-                <AddInventoryDialog
-                  trigger={
-                    <Button variant="default" size={isMobile ? "sm" : "default"}>
-                      <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                      {!isMobile && "Add"}
-                    </Button>
-                  }
-                  onSuccess={refetch}
-                />
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content - Flex layout for persistent sidebar */}
-      <div className="flex gap-4">
-        {/* Persistent sidebar when collection is selected (Fabrics tab) */}
-        {selectedCollection && activeTab === "fabrics" && !isMobile && (
-          <div className="w-64 shrink-0">
-            <BrandCollectionsSidebar
-              selectedBrand={null}
-              onSelectBrand={() => {}}
-              selectedCollection={selectedCollection}
-              onSelectCollection={(collectionId) => {
-                if (collectionId === selectedCollection) {
-                  // Clicking same collection = clear filter and go back
-                  setSelectedCollection(undefined);
-                  setActiveTab("collections");
-                } else {
-                  setSelectedCollection(collectionId);
-                }
-              }}
-              className="h-[calc(100vh-200px)] rounded-lg"
-            />
+                {canManageInventory && (
+                  <AddInventoryDialog
+                    trigger={
+                      <Button variant="default" size="sm" className="h-8">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        {!isMobile && "Add"}
+                      </Button>
+                    }
+                    onSuccess={refetch}
+                  />
+                )}
+              </>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Main tabs content */}
-        <div className="flex-1 min-w-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
-              {/* Collections Tab - Primary entry point for browsing by brand */}
-              <TabsTrigger value="collections" className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4" />
-                Collections
-              </TabsTrigger>
-              <TabsTrigger value="fabrics" className="flex items-center gap-2">
-                <PixelFabricIcon size={18} />
-                Fabrics
-              </TabsTrigger>
-              <TabsTrigger value="materials" className="flex items-center gap-2">
-                <PixelMaterialIcon size={18} />
-                Materials
-              </TabsTrigger>
-              <TabsTrigger value="hardware" className="flex items-center gap-2">
-                <PixelHardwareIcon size={18} />
-                Hardware
-              </TabsTrigger>
-              <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
-                <PixelWallpaperIcon size={18} />
-                Wallcoverings
-              </TabsTrigger>
-              <TabsTrigger value="headings" className="flex items-center gap-2">
-                Headings
-              </TabsTrigger>
-              {/* Hide Vendors and Admin tabs for dealers */}
-              {!isDealer && (
-                <TabsTrigger value="vendors" className="flex items-center gap-2">
-                  <PixelBriefcaseIcon size={18} />
-                  Vendors
-                </TabsTrigger>
-              )}
-              {canManageInventoryAdmin && !isDealer && (
-                <TabsTrigger value="admin" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </TabsTrigger>
-              )}
-            </TabsList>
-
-        <TabsContent value="fabrics" className="space-y-6">
-          {/* Show collection name header when filtering - shows on ALL devices */}
-          {selectedCollection && (
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  setSelectedCollection(undefined);
-                  setActiveTab("collections");
-                }}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Collections
-              </Button>
-              <span className="text-sm text-muted-foreground">|</span>
-              <span className="text-sm font-medium">
-                Viewing: {collections.find(c => c.id === selectedCollection)?.name || "Collection"}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-auto"
-                onClick={() => setSelectedCollection(undefined)}
-              >
-                Clear Filter
-              </Button>
-            </div>
-          )}
-          <FabricInventoryView 
-            searchQuery={searchQuery} 
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-            canManageInventory={canManageInventory}
-          />
-        </TabsContent>
-
-        <TabsContent value="materials" className="space-y-6">
-          <MaterialInventoryView 
-            searchQuery={searchQuery} 
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-            canManageInventory={canManageInventory}
-          />
-        </TabsContent>
-
-        <TabsContent value="hardware" className="space-y-6">
-          <HardwareInventoryView 
-            searchQuery={searchQuery} 
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-            canManageInventory={canManageInventory}
-          />
-        </TabsContent>
-
-        <TabsContent value="wallcoverings" className="space-y-6">
-          <WallcoveringInventoryView
-            canManageInventory={canManageInventory}
-            searchQuery={searchQuery}
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-          />
-        </TabsContent>
-
-        <TabsContent value="headings" className="space-y-6">
-          <HeadingInventoryManager />
-        </TabsContent>
-
-        {/* Collections Tab - Primary view with brand sidebar */}
-        <TabsContent value="collections" className="space-y-0 -mt-2">
-          <CollectionsView 
-            onSelectCollection={(collectionId) => {
-              setSelectedCollection(collectionId);
-              setActiveTab("fabrics"); // Switch to fabrics and filter by collection
-            }}
-            selectedVendor={selectedVendor}
-          />
-        </TabsContent>
-
-        {!isDealer && (
-          <TabsContent value="vendors" className="space-y-6">
-            <VendorDashboard />
-          </TabsContent>
-        )}
-
-        {canManageInventoryAdmin && !isDealer && (
-          <TabsContent value="admin" className="space-y-6">
-            <InventoryAdminPanel />
-          </TabsContent>
-        )}
-          </Tabs>
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {renderContent()}
         </div>
       </div>
 
