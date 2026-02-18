@@ -1882,17 +1882,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             linear_meters: linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
-            // ✅ CRITICAL: Use selling_price consistently for both save AND display
-            // This ensures live popup, saved window display, and quote all show the same values
-            price_per_meter: (() => {
-              const item = (displayCategory === 'blinds' || displayCategory === 'shutters')
-                ? (selectedItems.material || selectedItems.fabric)
-                : (selectedItems.fabric || selectedItems.material);
-              const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
-              return hasBoth
-                ? item.selling_price
-                : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
-            })(),
+            // ✅ CRITICAL: Save cost-based price. Display layer applies markup via applyMarkupToItem.
+            price_per_meter: fabricCalculation?.pricePerMeter || 0,
             fabric_cost: fabricCost, // Use the already calculated fabricCost, not recalculate
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
@@ -2230,14 +2221,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   category: 'fabric',
                   quantity: fabricQuantity,
                   unit: fabricUnit, // Use treatment-type-aware unit (m for curtains, sqm for blinds)
-                  // ✅ CRITICAL: Use selling_price FIRST for consistency with display path (line 3209)
-                  unit_price: (() => {
-                    const item = selectedItems.fabric || selectedItems.material;
-                    const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
-                    return hasBoth
-                      ? item.selling_price
-                      : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
-                  })(),
+                  unit_price: fabricCalculation?.pricePerMeter || 0,
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                   widths_required: fabricCalculation?.widthsRequired,
                   fabric_orientation: fabricCalculation?.fabricOrientation,
