@@ -1,109 +1,122 @@
 
 
-## Display Selling Prices Everywhere, Cost/Markup Only for Authorized Users
+## Fix: Three Separate Issues in the Worksheet and Quote Display
 
-### The Problem
+### Issue 1: Infinite Decimal in Drop Input (e.g., 108.49999999999999)
 
-After the smart price base fix, the calculator correctly uses `cost_price` (e.g., 145/m) as the math base. But this cost price now leaks into the **visible formula details** shown to all users:
+**Root Cause**: Floating-point precision loss during unit conversion round-trips.
+
+When the worksheet loads saved data:
+1. User enters `108.5` (in inches)
+2. Save converts to MM: `108.5 * 25.4 = 2755.9`
+3. On reload, the useEffect (line 904) converts back: `2755.9 / 25.4 = 108.49999999999999...`
+4. This unrounded string is set as the input value
+
+This only affects Drop (and Rail Width) when the user's unit involves non-integer conversion factors (inches, feet, yards).
+
+**Fix**: Round the converted value in the useEffect at line 904-906 of `DynamicWindowWorksheet.tsx`. Apply `parseFloat(value.toFixed(4))` to truncate floating-point noise while preserving user precision (e.g., `.25`, `.5`).
 
 ```
-Fabric: 22.05m x 145/m = 3,197   <-- everyone sees cost price!
-Quote Price: 6,394               <-- doubled with markup
+Before:
+  convertLength(storedDropMM, 'mm', units.length).toString()
+
+After:
+  parseFloat(convertLength(storedDropMM, 'mm', units.length).toFixed(4)).toString()
 ```
 
-This is a privacy and UX issue:
-- **Dealers** should never see cost prices
-- **Staff** without cost visibility permission should not see them
-- **Admins** feel uncomfortable because a client looking over their shoulder sees the cost price, not the selling price
-- The "Quote Price" should match what appears on the client's quote
+Same fix for `convertedWidth` on line 898.
 
-### The Correct Approach
+**Files**: `DynamicWindowWorksheet.tsx` (lines 898 and 905)
 
-**Calculation layer**: Keep using `cost_price` as the base (for correct markup math) -- no changes here.
+---
 
-**Display layer**: Always show `selling_price` (or the final marked-up price) in formula details, and only reveal the cost/markup breakdown in the dedicated section for authorized users.
+### Issue 2: Fabric Price Shows unit_price (580) Instead of Selling Price
 
-### What Changes
+**Root Cause**: In the WindowSummaryCard, line 237 reads `fabricUnitPrice = Number(summary.price_per_meter)`. The `price_per_meter` saved in the summary (line 1887-1889 of DynamicWindowWorksheet) falls through to `unit_price` when `selling_price` is falsy.
 
-#### 1. CostCalculationSummary.tsx -- Fabric details string (lines 1104-1132)
+But the real issue is that `price_per_meter` saved to the database at line 1887-1889 uses the smart base selection for the save path, which correctly picks `cost_price` when both exist. However, for display in the WindowSummaryCard, we should show the **selling price**, not the cost-based price.
 
-Currently the details string is built with `fabricDisplayData.pricePerMeter` which is now `cost_price`:
+The fix has two parts:
+
+**Part A**: The save path (line 1887-1889) should save the **display price** (selling price) to `price_per_meter`, since this field is used by WindowSummaryCard for client-facing display:
+
 ```
-"22.05m x 145/m = 3,197"
-```
+Before:
+  price_per_meter: selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || ...
 
-**Fix**: Build TWO versions of the details string:
-- **Display details** (shown to everyone): uses selling price per meter
-- **Cost details** (shown only to authorized users in markup section): uses cost price
-
-```typescript
-// Calculate the display price (what client pays per meter)
-const displayPricePerUnit = fabricHasBothPrices
-  ? (fabricToUse?.selling_price || pricePerUnit)  // Show selling price
-  : pricePerUnit;  // Already at selling price (Scenario B/D)
-
-// Display formula uses selling price
-fabricDetails = `${formatFabricLength(meters)} x ${formatPricePerFabricUnit(displayPricePerUnit)} = ${formatPrice(meters * displayPricePerUnit)}`;
+After (apply smart display price logic):
+  price_per_meter: (() => {
+    const item = selectedItems.fabric || selectedItems.material;
+    const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
+    return hasBoth
+      ? item.selling_price
+      : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
+  })()
 ```
 
-Then in the table item, the `price` field stays as cost-based (for internal math), but `details` shows selling-price-based formula. The "Price" column already shows `sellingPrice` correctly.
+**Part B**: Same logic for the cost_breakdown's fabric `unit_price` at line 2228:
 
-#### 2. CostCalculationSummary.tsx -- Align the sellingPrice with the display
+```
+Before:
+  unit_price: selectedItems.fabric?.selling_price || selectedItems.material?.selling_price || ...
 
-When `hasBothPrices` is true (Scenario A), the table item should show:
-- **Details**: `"22.05m x 290/m = 6,394"` (selling price formula)
-- **Price column**: 6,394 (the selling price -- same number)
-- **Cost Total row** (authorized only): 3,197 (the cost total)
-
-This means the `sellingPrice` for the item should equal `meters x displayPricePerUnit`, and the `price` (cost) should remain `fabricCost` (meters x cost_price).
-
-#### 3. DynamicWindowWorksheet.tsx -- fabricDisplayData (line 3683-3693)
-
-Add a `displayPricePerMeter` field alongside `pricePerMeter`:
-
-```typescript
-fabricDisplayData={{
-  linearMeters: perPieceMeters,
-  totalMeters: totalMeters,
-  pricePerMeter: pricePerMeter,           // cost-based (for internal math)
-  displayPricePerMeter: hasBothPrices      // selling-based (for UI display)
-    ? selectedFabricItem.selling_price
-    : pricePerMeter,
-  ...
-}}
+After:
+  unit_price: (() => {
+    const item = selectedItems.fabric || selectedItems.material;
+    const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
+    return hasBoth
+      ? item.selling_price
+      : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
+  })()
 ```
 
-#### 4. QuoteSummaryTable.tsx -- Details column already respects canViewCosts
+This ensures the saved display fields always carry the selling price, not the internal cost base.
 
-The table already has logic (line 154) to strip price info from details for dealers:
-```typescript
-const displayDetails = canViewCosts ? item.details : extractQuantityOnly(item.details);
+**Files**: `DynamicWindowWorksheet.tsx` (lines 1887-1889 and 2228)
+
+---
+
+### Issue 3: "Manufacturing" Naming and Cost Price Visibility
+
+**Problem A**: The label still shows "Manufacturing" in several places instead of "Making/Labor (machine)" or "Making/Labor (hand)".
+
+The CostCalculationSummary calculator popup (line 1165) already shows `Making/Labor (machine)` correctly. But these locations still say "Manufacturing":
+
+| Location | File | Line | Current | Should Be |
+|---|---|---|---|---|
+| Save cost_breakdown | DynamicWindowWorksheet.tsx | 2288 | `name: 'Manufacturing'` | `name: 'Making/Labor'` |
+| Save cost_breakdown description | DynamicWindowWorksheet.tsx | 2289 | `'Hand Finished' / 'Machine Finished'` | Keep as description |
+| WindowSummaryCard display | WindowSummaryCard.tsx | 356 | `name: 'Manufacturing'` | `name: 'Making/Labor'` |
+| WindowSummaryCard description | WindowSummaryCard.tsx | 357 | `summary.manufacturing_type || 'Assembly & Manufacturing'` | `manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'` |
+
+**Fix**: Update the `name` field to `Making/Labor` and use the `manufacturing_type` value dynamically in the description.
+
+For DynamicWindowWorksheet line 2288-2289:
+```
+name: 'Making/Labor',
+description: measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
 ```
 
-With the fix above, even `canViewCosts=true` users (admins) will see selling prices in the formula, which is the desired behavior. The cost breakdown is only in the dedicated "Cost Total" row and markup indicators.
+For WindowSummaryCard line 354-361:
+```
+name: `Making/Labor (${summary.manufacturing_type === 'hand' ? 'hand' : 'machine'})`,
+description: summary.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
+```
 
-### Summary of Display Behavior After Fix
+**Problem B**: WindowSummaryCard (the Cost Breakdown) shows cost price (₹580/m) instead of selling price. This is addressed by Issue 2 fix above -- once the saved `price_per_meter` carries the selling price, the display will be correct.
 
-| Element | Everyone Sees | Authorized Users Also See |
-|---|---|---|
-| Fabric formula | "22.05m x 290/m = 6,394" | Same |
-| Price column | 6,394 (selling) | Same |
-| Cost Total row | Hidden | 3,197 (cost total) |
-| Markup indicator | Hidden | "(100% markup)" |
-| Quote Price | 6,394 | 6,394 |
+**Files**: `DynamicWindowWorksheet.tsx` (lines 2286-2292), `WindowSummaryCard.tsx` (lines 354-361)
 
-### Files to Change
+---
+
+### Summary of All Changes
 
 | File | Change |
 |---|---|
-| `CostCalculationSummary.tsx` | Use selling price in fabric details string; keep cost price for internal math only |
-| `DynamicWindowWorksheet.tsx` | Add `displayPricePerMeter` to fabricDisplayData |
-| `CostCalculationSummary.tsx` interface | Add `displayPricePerMeter` to FabricDisplayData type |
-
-### What Does NOT Change
-
-- The **calculation logic** (smart price base) stays exactly as implemented
-- The **save/persist logic** stays the same (cost_price as base, markup metadata saved)
-- The **markup resolution** stays the same
-- The **QuoteSummaryTable** component itself needs no changes (it already uses `sellingPrice` for the Price column)
+| `DynamicWindowWorksheet.tsx` line 898 | Round converted rail_width to 4 decimals |
+| `DynamicWindowWorksheet.tsx` line 905 | Round converted drop to 4 decimals |
+| `DynamicWindowWorksheet.tsx` lines 1887-1889 | Save selling price (not cost) to `price_per_meter` |
+| `DynamicWindowWorksheet.tsx` line 2228 | Save selling price (not cost) to cost_breakdown `unit_price` |
+| `DynamicWindowWorksheet.tsx` lines 2286-2292 | Rename "Manufacturing" to "Making/Labor" in cost_breakdown |
+| `WindowSummaryCard.tsx` lines 354-361 | Rename "Manufacturing" to "Making/Labor (machine/hand)" with dynamic type |
 
