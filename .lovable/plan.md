@@ -1,125 +1,124 @@
 
 
-## Import LAELA Selected Samples (Pricelist 2024) for Laela Account
+## Import RIDEX Fabric Catalog (2025 Prices) for Laela Account
 
-### File Summary
+### Source Analysis
+
+Three price lists were provided spanning 2023-2025. The **2025 price list** is the latest and most comprehensive, containing updated prices for the full RIDEX catalog. The 2023 lists are older versions of the same catalog.
+
+The uploaded image shows 10 fabrics with "CENA TKANI" (fabric price) and "CENA OBRAZCA" (sample price) -- these are already included in the 2025 catalog at updated prices.
+
+| Source | Items | Used? |
+|---|---|---|
+| cennik_export.pdf (2023) | ~170 | No -- superseded by 2025 |
+| PRICE_LIST_AUTUMN_2023_eng.pdf | 11 | No -- superseded by 2025 |
+| RIDEX_PRICE_LIST_2025_new_collection.pdf | ~170 | Yes -- primary source |
+| Image (PAKIET 1) | 10 | Already in 2025 catalog |
+
+### Data Summary
 
 | Detail | Value |
 |---|---|
-| Supplier / Vendor | LAELA (own brand) |
-| Total items | ~191 |
-| Type | Sheer and curtain fabrics (woven railroaded) |
-| Collections | 22 (HOME, PROMISE, LOVELY, MONT, IRIS, THEAMA, AUTHENTIC, SIMPLICITY, TROPICANA, VERANDA, EXIST, INDRA, OSLO, CAPITAL, LEOMAR, SINGLE, AGORA, ACROSS, ALONG, APPEAR, LOUNGE, ART) |
-| Prices | Cut-length price (EUR per meter), range 12.00 - 30.00 |
-| Widths | 295-325 cm |
-| Source file | selected_samples_-_Pricelist_2024.XLSX (Page 1) |
+| Vendor | RIDEX |
+| Total items | ~170 (deduplicated) |
+| Category | Interior fabrics (curtain, sheer, blackout, dimout, velvet, FR) |
+| Widths | 138-420 cm |
+| Price range | 3.70 - 55.50 EUR per meter |
+| Pricing | Cut price (retail) + Roll price (wholesale, where available) |
 
-Note: The two PDF files (LAELA_Pricelist_2025.pdf and selected_samples_-_Pricelist_2024.pdf) failed to parse. This plan uses the XLSX data which parsed successfully.
+### Special Item Types
 
-### Data Structure
-
-| Column | Example | Notes |
-|---|---|---|
-| hanger | F-0896F | Hanger/swatch code |
-| hanger description | WATERFALL HOME | Collection name |
-| article | 6301670-02 | Article number (used as SKU base) |
-| article description | home off white | Product name with color |
-| width | 305cm - 120" (+/-1%) | Fabric width |
-| composition | 100%pol | Fabric composition |
-| cutlength price | 13.80 | EUR per meter |
-| direction comment | woven railroaded | Fabric direction |
-| vertical repeat | vert.repeat 0 | Vertical pattern repeat |
-| horiz.repeat | horiz.repeat 0 | Horizontal pattern repeat |
-| comments | LB - eurohem | Processing notes |
-| weight (kg/mt) | 0.1330 | Weight per meter |
-| washing instructions | GKXNQa | Encoded care codes |
-| comments 2 | colors may vary from lot to lot | Additional notes |
+- **"(roll price)" variants**: ~20 items have a discounted bulk/roll price alongside the cut price. Roll price becomes `cost_price`, cut price becomes `selling_price`.
+- **Items without roll price**: Single price used for both `cost_price` and `selling_price`.
+- **FR items**: Fire retardant fabrics -- tagged "fire-retardant".
+- **Blackout/dimout items**: Tagged accordingly and noted in description.
+- **Variable widths**: e.g., "300-320" for PRIMO FR -- first number used.
 
 ### Column Mapping
 
 | Source Column | Maps To | Notes |
 |---|---|---|
-| article | `sku` | Prefixed: "LAELA-6301670-02" |
-| article description | `name` | Capitalized: "Home Off White" |
-| hanger description | `collection_name` | e.g., "WATERFALL HOME", "HANGER IRIS" |
-| width | `fabric_width` | Parse first number: "305cm" -> 305 |
-| composition | `composition` | e.g., "100%pol", "60%pol 40%lin" |
-| cutlength price | `cost_price` AND `selling_price` | Same value (single price) |
-| direction comment | `description` | Included in description |
-| vertical repeat | `pattern_repeat_vertical` | Parse number from "vert.repeat 0" |
-| horiz.repeat | `pattern_repeat_horizontal` | Parse number from "horiz.repeat 3cm-1\"" -> 3 |
-| weight (kg/mt) | stored in `specifications` | Weight data |
+| FABRIC | `name` + `sku` | SKU: "RDX-{NAME}" (e.g., "RDX-ALGARVE") |
+| WIDTH / HEIGHT (CM) | `fabric_width` | Parse first number from "300-320" |
+| PRICE (cut) | `selling_price` | Retail per-meter price |
+| PRICE (roll) | `cost_price` | Wholesale; fallback to cut price if no roll variant |
+| LEADBAND FINISH | tags | "blackout", "dimout" |
+| ADDITIONAL INFORMATION | tags | "100 %" -> "fire-retardant" |
 | All items | `category: "fabric"` | |
-| All items | `subcategory: "sheer_fabric"` | Most are sheers; some heavier ones as "curtain_fabric" |
 | All items | `pricing_method: "per_meter"` | |
 | All items | `compatible_treatments: ["curtains"]` | |
+
+### Subcategory Auto-Detection
+
+| Pattern in Name | Subcategory |
+|---|---|
+| BLACKOUT, HOLD BLACKOUT | curtain_fabric + tag "blackout" |
+| DIMOUT, MOONLIGHT, NIGHTFALL, NIGHTGUARD, NOCTURNE, ECLIPSE, SOLAR | curtain_fabric + tag "dimout" |
+| WOAL, WHITE (sheers) | sheer_fabric |
+| VELVET, VELLUTI, CROWN VELVET, CELEBRATION VELVET, JUBILATION VELVET, SOFTY VELVET | curtain_fabric + tag "velvet" |
+| FR suffix | add "fire-retardant" tag |
+| Everything else | curtain_fabric |
 
 ### What Changes
 
 #### 1. Create CSV file
-`public/import-data/CSV_LAELA_Selected_Samples.csv` (~191 rows) with columns:
-`article,name,collection,width_cm,composition,cut_price_eur,direction,vert_repeat,horiz_repeat,weight_kg_mt,comments`
+`public/import-data/CSV_RIDEX_2025.csv` (~170 rows) with columns:
+`name,width_cm,cut_price_eur,roll_price_eur,tags`
 
-#### 2. Add `mapLaelaSelectedSamples()` mapper to Edge Function
+- Items with "(roll price)" variants are merged into one row with both prices
+- Deduplication: BLACKOUT FR 150 and BLACKOUT FR 300 become separate rows (different widths)
+- Items like "LINCOLN FR 140" and "LINCOLN FR 280" kept as separate entries with width suffix in SKU
 
-- SKU: `LAELA-{ARTICLE_NUMBER}` (e.g., "LAELA-6301670-02", "LAELA-1354611-01")
-- `name`: Capitalized article description (e.g., "Home Off White", "Promise Natur")
-- `cost_price` = `selling_price` = cutlength price
-- `fabric_width`: Parse first number from width string (e.g., "305cm" -> 305)
-- `composition`: Stored directly from source
-- `pattern_repeat_vertical`: Parse cm value from "vert.repeat Xcm" (0 if "vert.repeat 0")
-- `pattern_repeat_horizontal`: Parse cm value from "horiz.repeat Xcm" (0 if "horiz.repeat 0")
-- `description`: Includes direction comment and weight info
-- Collection: Use "hanger description" cleaned up (e.g., "WATERFALL HOME" -> collection "LAELA WATERFALL HOME")
-- Auto-detect subcategory: items with weight < 0.30 kg/mt -> `sheer_fabric`; heavier items -> `curtain_fabric`
-- Vendor: "LAELA" (auto-created)
-- Deduplication: Some rows appear duplicated (same article number) -- skip duplicates by SKU
+#### 2. Add `mapRidex()` mapper to Edge Function
+
+- SKU: `RDX-{NORMALIZED_NAME}` (e.g., "RDX-ALGARVE", "RDX-BASIC-GLAZE", "RDX-BLACKOUT-FR-150")
+- For duplicate names with different widths: append width to SKU (e.g., "RDX-LINCOLN-FR-140", "RDX-LINCOLN-FR-280")
+- `cost_price` = roll price (if available), otherwise cut price
+- `selling_price` = cut price
+- `fabric_width` = parsed from width column
+- Tags: auto-detect "blackout", "dimout", "fire-retardant", "velvet", "sheer" from name
+- Collection: "RIDEX 2025" (single collection for all items)
+- Vendor: "RIDEX" (auto-created)
 
 #### 3. Register in `LaelLibraryImport.tsx`
 Add entry:
 ```text
-{ format: "laela_selected_samples", file: "/import-data/CSV_LAELA_Selected_Samples.csv", label: "LAELA Selected Samples 2024 (191 items)" }
+{ format: "ridex", file: "/import-data/CSV_RIDEX_2025.csv", label: "RIDEX Interior Fabrics 2025 (170 items)" }
 ```
 
 #### 4. Add vendor routing in Edge Function
-Add `"laela_selected_samples"` to the bypass list for single-vendor lookup, auto-creating vendor "LAELA".
+Add `"ridex"` to the vendor bypass list, auto-creating vendor "RIDEX".
 
-### Collections Created (~22)
+### SKU Examples
 
-| Collection Name | Items |
-|---|---|
-| LAELA WATERFALL HOME | 7 |
-| LAELA WATERFALL PROMISE | 18 |
-| LAELA HANGER LOVELY | 9 |
-| LAELA WATERFALL MONT | 19 |
-| LAELA HANGER IRIS | 10 |
-| LAELA HANGER THEAMA | 5 |
-| LAELA HANGER AUTHENTIC | 10 |
-| LAELA WATERFALL SIMPLICITY | 13 |
-| LAELA HANGER TROPICANA | 3 |
-| LAELA HANGER VERANDA | 3 |
-| LAELA HANGER EXIST | 7 |
-| LAELA WATERFALL INDRA | 7 |
-| LAELA HANGER OSLO | 6 |
-| LAELA HANGER CAPITAL | 14 |
-| LAELA HANGER LEOMAR | 9 |
-| LAELA HANGER SINGLE | 10 |
-| LAELA WATERFALL AGORA | 16 |
-| LAELA WATERFALL ACROSS | 7 |
-| LAELA WATERFALL ALONG | 6 |
-| LAELA HANGER APPEAR | 3 |
-| LAELA HANGER LOUNGE | 3 |
-| LAELA HANGER ART | 6 |
+```text
+RDX-ALGARVE              (single width)
+RDX-BASIC-HOLD-BLACKOUT  (roll price merged into same record)
+RDX-BLACKOUT-FR-150      (width suffix for disambiguation)
+RDX-BLACKOUT-FR-300      (width suffix for disambiguation)
+RDX-LINCOLN-FR-140       (width suffix)
+RDX-LINCOLN-FR-280       (width suffix)
+RDX-WOAL-300             (sheer, width suffix)
+RDX-WOAL-420             (sheer, width suffix)
+```
 
-### Special Cases
+### Price Handling
 
-- **Duplicate rows**: Some article numbers appear twice (e.g., "mont grey 1561618-01", "indra taupe 4861620-01") -- deduplicated by SKU
-- **Pattern repeats**: Most items have "0" repeats (plain fabrics); some have values like "101cm-39.5\"" or "57,5cm-22.5\"" -- parsed as cm integers
-- **Weight-based subcategory**: Items under 0.30 kg/mt classified as `sheer_fabric`; heavier ones as `curtain_fabric`
-- **Composition parsing**: Left as-is from source (e.g., "100%pol", "60%pol 40%lin", "82pan 6pol 6cot 3li 3cv")
+Items with roll price (wholesale discount):
+```text
+BASIC HOLD BLACKOUT:    cost=13.20, selling=21.30
+BASIC KEY:              cost=7.20,  selling=12.30
+SOLIDARITY:             cost=6.30,  selling=9.40
+```
+
+Items without roll price (single price for both):
+```text
+ALGARVE:                cost=19.70, selling=19.70
+BELLUCI:                cost=54.70, selling=54.70
+```
 
 ### After Implementation
 1. Navigate to `/admin/import-laela`
-2. Click "Start Import" for "LAELA Selected Samples 2024" entry (~191 items)
-3. All items will import with proper collections, composition, pattern repeats, and vendor
+2. Click "Start Import" for "RIDEX Interior Fabrics 2025" entry (~170 items)
+3. All items import with vendor, pricing, tags, and width metadata
 
