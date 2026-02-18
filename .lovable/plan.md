@@ -1,99 +1,140 @@
 
+## Fix: Hem Values Still Showing 0 Despite Template Settings
 
-## Fix: Hem Values Ignoring Template Settings (8cm/15cm Hardcoded Fallbacks)
+### Root Causes Found (3 distinct bugs)
 
-### Root Cause Found
+#### Bug 1: `handleTemplateSelect` is dead code
+The function at line 2937 that initializes measurements with template hem values is **never called**. The actual template selection at line 3094 (`onCoveringSelect`) calls `setSelectedTemplate(template)` directly but never calls `handleTemplateSelect`. So for new curtains, `measurements.header_hem` is never set from the template.
 
-The bug is on **lines 739-751** of `DynamicWindowWorksheet.tsx`. When loading a saved quote, the code tries to find hem values through a chain of property names. When none match (due to mismatched property names between the template snapshot and the DB), it falls through to **hardcoded fallbacks**:
+#### Bug 2: `template_details` snapshot missing hem values
+When saving to `windows_summary` (line 3119-3130), the `template_details` JSONB only saves pricing and manufacturing fields -- it does NOT save `header_allowance`, `bottom_hem`, `side_hems`, `seam_hems`, `return_left`, `return_right`. On restore, the code at line 730 uses this incomplete snapshot as `freshTemplate`, so all hems resolve to 0.
 
-```text
-header_hem fallback chain:
-  saved header_hem -> saved header_allowance -> snapshot.header_hem -> snapshot.header_allowance -> 8  (HARDCODED!)
+#### Bug 3: `0` is treated as valid by `??`
+Once `header_hem: 0` is saved to `measurements_details` (which happened after the previous "fix" changed fallbacks from 8/15 to 0), the nullish coalescing operator `??` treats 0 as a valid value and never falls through to the template's actual value.
 
-bottom_hem fallback chain:
-  saved bottom_hem -> saved bottom_allowance -> snapshot.bottom_hem -> snapshot.bottom_allowance -> 15 (HARDCODED!)
+### Why side hems work but header/bottom don't
+Side hems were already set to 2 in a previous save. The `??` operator preserves them. But header/bottom were saved as 0 (from the fallback change), so they stay 0.
 
-side_hems fallback -> 7.5 (HARDCODED!)
-seam_hems fallback -> 1.5 (HARDCODED!)
-waste_percent fallback -> 5 (HARDCODED!)
+### Fix Plan
+
+#### Fix 1: Wire up `handleTemplateSelect` properly
+
+**File: `DynamicWindowWorksheet.tsx` (line ~3094)**
+
+The `onCoveringSelect` callback must call `handleTemplateSelect(template)` to initialize measurements with template hems.
+
+```
+Before:
+  onCoveringSelect={async template => {
+    setSelectedTemplate(template);
+    setSelectedOptions([]);
+    ...
+
+After:
+  onCoveringSelect={async template => {
+    handleTemplateSelect(template);  // This sets both selectedTemplate AND measurements hems
+    ...
 ```
 
-These hardcoded values (8cm header, 15cm bottom) override whatever you set in the template Manufacturing tab.
+Remove the duplicate `setSelectedTemplate(template)` call since `handleTemplateSelect` already does it.
 
-### Additional Problem: "Defaults" Section
+#### Fix 2: Save ALL template manufacturing values in template_details
 
-The "Manufacturing Defaults" section in Settings > Products > Defaults:
-- Is ONLY used to pre-fill new template forms (not calculations)
-- Has its own separate values that never reach the calculation engine
-- Creates confusion because it looks like it should control calculations
+**File: `DynamicWindowWorksheet.tsx` (line ~3119)**
 
-### What Will Be Fixed
+Add the missing fields to the template_details snapshot:
 
-#### 1. Remove all hardcoded hem fallbacks (lines 739-781)
-
-Replace the hardcoded 8, 15, 7.5, 1.5, 5 values with `0` (no hem). If the template has values, they will be used. If not, 0 is the safe default (no hidden cost inflation).
-
-**Before:**
-```text
-header_hem fallback -> 8
-bottom_hem fallback -> 15
-side_hems fallback -> 7.5
-seam_hems fallback -> 1.5
-waste_percent fallback -> 5
+```
+template_details: {
+  id: template.id,
+  name: template.name,
+  pricing_type: template.pricing_type,
+  ...existing fields...
+  // ADD THESE:
+  header_allowance: template.header_allowance,
+  bottom_hem: template.bottom_hem,
+  side_hems: template.side_hems,
+  seam_hems: template.seam_hems,
+  return_left: template.return_left,
+  return_right: template.return_right,
+  waste_percent: template.waste_percent,
+  overlap: template.overlap,
+}
 ```
 
-**After:**
-```text
-header_hem fallback -> 0
-bottom_hem fallback -> 0
-side_hems fallback -> 0
-seam_hems fallback -> 0
-waste_percent fallback -> 0
+#### Fix 3: Use `fullTemplate` (from DB fetch) instead of async `selectedTemplate` for restore hems
+
+**File: `DynamicWindowWorksheet.tsx` (line ~730)**
+
+The current code uses `selectedTemplate` which hasn't been updated yet (async state). Change to use the locally available `fullTemplate` variable that was just fetched from the database.
+
+This requires restructuring the restore code so that the hem initialization uses the local `fullTemplate` variable (which has the fresh DB values including `header_allowance: 2`) instead of the stale `selectedTemplate` state.
+
+```
+Before (line 730):
+  const freshTemplate = selectedTemplate || existingWindowSummary.template_details;
+
+After:
+  // fullTemplate is the locally-fetched DB template (available in this same scope)
+  // It has the REAL values, not the stale snapshot
+  const freshTemplate = fullTemplate || selectedTemplate || existingWindowSummary.template_details;
 ```
 
-#### 2. Fix property name resolution order
+But `fullTemplate` is defined inside a try/catch block above. We need to hoist it to be accessible at line 730.
 
-The DB column is `header_allowance`, but the restore code checks `templateToUse.header_hem` first (which may not exist in the snapshot). Fix the order to check `header_allowance` FIRST since that's the actual DB column name.
+#### Fix 4: Change hem resolution to prefer template over saved 0
 
-**Before:**
-```text
-templateToUse.header_hem -> templateToUse.header_allowance
+**File: `VisualMeasurementSheet.tsx` (line ~361)**
+
+The enrichment should prefer template values for manufacturing settings, not saved measurement values. Manufacturing settings (hems, returns, waste) are template-level properties, not per-window measurements.
+
+```
+Before:
+  header_hem: measurements.header_hem ?? selectedTemplate.header_allowance ?? 0,
+
+After:
+  header_hem: selectedTemplate.header_allowance ?? selectedTemplate.header_hem ?? measurements.header_hem ?? 0,
 ```
 
-**After:**
-```text
-templateToUse.header_allowance -> templateToUse.header_hem
+This makes the template authoritative for all manufacturing settings.
+
+#### Fix 5: Same fix in `useFabricCalculator.ts` (line ~78)
+
+```
+Before:
+  const headerHem = measurementsAny.header_hem ?? templateAny.header_allowance ?? templateAny.header_hem;
+
+After:
+  const headerHem = templateAny.header_allowance ?? templateAny.header_hem ?? measurementsAny.header_hem;
 ```
 
-#### 3. Also fetch fresh template values on restore
-
-Currently, the code fetches the full template from DB (line 430-451) for heading IDs, but the hem values still come from the stale `template_details` snapshot. Change the restore logic so that when the full template is fetched, its current hem values are used instead of the snapshot's.
-
-#### 4. Remove the confusing "Defaults" tab
-
-- Remove `ManufacturingDefaults.tsx` component
-- Remove the "Defaults" tab from `WindowCoveringsTab.tsx`
-- Remove the `useManufacturingDefaults` hook and its useEffect from `CurtainTemplateForm.tsx` (which pre-fills new templates from defaults)
-
-### Files Changed
+### Files to Change
 
 | File | Change |
 |---|---|
-| `DynamicWindowWorksheet.tsx` (lines 739-781) | Replace hardcoded fallbacks (8, 15, 7.5, 1.5, 5) with 0; fix property name order to check `header_allowance` before `header_hem`; use freshly fetched template values over snapshot |
-| `VisualMeasurementSheet.tsx` (lines 358-362) | Same property name order fix for enrichedMeasurements |
-| `ManufacturingDefaults.tsx` | Delete this component |
-| `WindowCoveringsTab.tsx` | Remove "Defaults" tab and ManufacturingDefaults import |
-| `CurtainTemplateForm.tsx` | Remove `useManufacturingDefaults` hook and the useEffect that applies defaults |
-| `calculateTreatmentPricing.ts` (lines 107-108) | Fix property resolution order: `header_allowance` before `header_hem` |
+| `DynamicWindowWorksheet.tsx` (~line 3094) | Call `handleTemplateSelect(template)` instead of `setSelectedTemplate(template)` |
+| `DynamicWindowWorksheet.tsx` (~line 3119) | Add hem/return/seam fields to template_details snapshot |
+| `DynamicWindowWorksheet.tsx` (~line 730) | Use local `fullTemplate` variable for hem resolution, not async `selectedTemplate` |
+| `VisualMeasurementSheet.tsx` (~line 361-364) | Template hems authoritative over saved measurements |
+| `useFabricCalculator.ts` (~line 78-84) | Template hems authoritative over saved measurements |
 
-### Also fix the build error
+### How Many Calculation Algorithms Exist
 
-The `create-admin-account` edge function has a broken `npm:resend@2.0.0` import. Add the dependency to the edge function's import map or fix the import.
+There are **4 separate calculation paths** that all need consistent hem resolution:
 
-### Expected Result
+1. **`src/engine/formulas/curtain.formulas.ts`** -- New engine (pure functions, single source of truth for math). Used by `CalculationEngine.ts` via `useCurtainEngine`. Gets hems from `TemplateContract` via `buildTemplate()` in `shadowModeRunner.ts`.
 
-- Template Manufacturing values (e.g., 12/12) will correctly appear in the Fabric Usage Breakdown
-- No more mystery 8cm/15cm values appearing from hardcoded fallbacks
-- No more confusing duplicate "Defaults" section in Settings
-- Side hems, seam hems, and waste also correctly use template values (no hidden 7.5/1.5/5 defaults)
+2. **`src/components/shared/measurement-visual/hooks/useFabricCalculator.ts`** -- Legacy display calculator used by `MeasurementVisual`. Resolves hems from measurements then template.
 
+3. **`src/components/measurements/VisualMeasurementSheet.tsx`** (line 324-580) -- Inline useMemo calculation that calls `calculateFabricUsage` and builds the `fabricCalculation` object for display. Resolves hems via `enrichedMeasurements`.
+
+4. **`src/utils/pricing/calculateTreatmentPricing.ts`** -- Legacy pricing calculator. Resolves hems from template directly.
+
+All four must agree on hem values. The fix ensures that in all paths, **template values are authoritative** for manufacturing settings.
+
+### Expected Result After Fix
+
+- Template manufacturing values (header 2, bottom 2, sides 2, seams 2) will immediately show in the Fabric Usage Breakdown
+- No more mystery 0 values from incomplete template_details snapshots
+- Template selection properly initializes all manufacturing measurements
+- Saved quotes will pick up current template values on restore (not stale snapshots)
