@@ -459,7 +459,15 @@ export const VisualMeasurementSheet = ({
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
       const totalSideHems = sideHems * 2 * curtainCount;
       const totalDrop = height + headerHem + bottomHem + pooling;
-      const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.selling_price || 0;
+      // ✅ Smart price base: use cost_price when both cost and selling exist (markup applied later by display layer)
+      const hasBothPrices = (selectedFabricItem?.cost_price || 0) > 0 
+        && (selectedFabricItem?.selling_price || 0) > 0;
+      const pricePerMeter = hasBothPrices
+        ? selectedFabricItem.cost_price
+        : (selectedFabricItem?.selling_price 
+           || selectedFabricItem?.price_per_meter 
+           || selectedFabricItem?.cost_price 
+           || 0);
       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
       console.log('VisualMeasurementSheet using unified fabric calculator:', {
         treatmentCategory: selectedTemplate.treatment_category,
