@@ -1458,12 +1458,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             }
           }
 
-          // Track manufacturing pricing metadata for cost breakdown display
-          let mfgPricingType = '';
-          let mfgPricePerUnit = 0;
-          let mfgQuantity = 0;
-          let mfgUnit = '';
-
           // ✅ Calculate manufacturing cost dynamically - ONLY if not using liveCurtainCalcResult
           // Note: manufacturingCost set from liveCurtainCalcResult if available (line ~1030)
           if (!liveCurtainCalcResult && displayCategory === 'curtains' && selectedTemplate && fabricCalculation) {
@@ -1495,15 +1489,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 ? (selectedPricingMethod?.hand_price_per_panel ?? selectedTemplate.hand_price_per_panel ?? 0)
                 : (selectedPricingMethod?.machine_price_per_panel ?? selectedTemplate.machine_price_per_panel ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || 1);
-              mfgPricingType = 'per_panel'; mfgPricePerUnit = pricePerUnit;
-              mfgQuantity = fabricCalculation.curtainCount || 1; mfgUnit = 'panel(s)';
             } else if (pricingType === 'per_drop') {
               pricePerUnit = manufacturingType === 'hand'
                 ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
                 : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
-              mfgPricingType = 'per_drop'; mfgPricePerUnit = pricePerUnit;
-              mfgQuantity = fabricCalculation.widthsRequired || 1; mfgUnit = 'drop(s)';
             } else if (pricingType === 'per_metre') {
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
@@ -1542,8 +1532,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               
               // Multiply final width by manufacturing price per meter
               manufacturingCost = pricePerUnit * finalWidthM;
-              mfgPricingType = 'per_metre'; mfgPricePerUnit = pricePerUnit;
-              mfgQuantity = parseFloat(finalWidthM.toFixed(2)); mfgUnit = 'm';
               
               console.log('💰 [SAVE] Per metre manufacturing calculation (FIXED):', {
                 widthWithAllowancesCm,
@@ -1562,8 +1550,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               if (range) {
                 pricePerUnit = manufacturingType === 'hand' ? range.hand_price : range.machine_price;
                 manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1);
-                mfgPricingType = 'height_based'; mfgPricePerUnit = pricePerUnit;
-                mfgQuantity = fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1; mfgUnit = 'unit(s)';
               }
             }
             
@@ -2242,7 +2228,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     const hasBoth = (item.cost_price || 0) > 0 && (item.selling_price || 0) > 0;
                     return hasBoth ? item.cost_price : (item.selling_price || item.price_per_meter || item.cost_price || fabricCalculation?.pricePerMeter || 0);
                   })(),
-                  pricing_method: selectedItems.fabric?.pricing_method || selectedItems.material?.pricing_method || 'per_metre',
+                  pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                    widths_required: fabricCalculation?.widthsRequired,
                    drops_per_width: fabricCalculation?.dropsPerWidth,
                    fabric_orientation: fabricCalculation?.fabricOrientation,
@@ -2305,15 +2291,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   name: 'Making/Labor',
                   description: measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
                   total_cost: manufacturingCost,
-                  category: 'manufacturing',
-                  quantity: mfgQuantity || undefined,
-                  unit: mfgUnit || undefined,
-                  unit_price: mfgPricePerUnit || undefined,
-                  pricing_method: mfgPricingType || undefined,
-                  pricing_method_label: mfgPricingType === 'per_metre' ? 'Per Linear Meter' :
-                    mfgPricingType === 'per_drop' ? 'Per Drop' :
-                    mfgPricingType === 'per_panel' ? 'Per Panel' :
-                    mfgPricingType === 'height_based' ? 'Height Based' : undefined,
+                  category: 'manufacturing'
                 }] : []),
                 // Hardware
                 ...(hardwareCost > 0 ? [{
