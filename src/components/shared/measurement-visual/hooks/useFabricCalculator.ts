@@ -180,9 +180,15 @@ export const useFabricCalculator = ({
       // Note: seamsCount is already calculated above at line 129
       const seamLaborHours = seamsCount * 0.25; // 15 minutes per seam
 
-      // ✅ CRITICAL: Use selling_price first for consistency with all other display paths
-      // This ensures useFabricCalculator matches DynamicWindowWorksheet (line 3214)
-      const effectivePricePerMeter = fabric.selling_price || fabric.price_per_meter;
+      // ✅ SMART PRICE BASE: Use cost_price when both exist (markup system handles implied markup),
+      // otherwise fall back to selling_price or price_per_meter
+      const hasBothPrices = (fabric.cost_price || 0) > 0 && (fabric.selling_price || 0) > 0;
+      const effectivePricePerMeter = hasBothPrices
+        ? fabric.cost_price                    // Scenario A: markup system will add implied markup
+        : (fabric.selling_price || fabric.price_per_meter || fabric.cost_price || 0);  // Scenario B/C/D
+
+      // Flag for downstream: does this price already include markup?
+      const priceIsAlreadySelling = !hasBothPrices && (fabric.selling_price || 0) > 0;
 
       // Calculate total cost based on ORDERED fabric (not just used)
       const fabricCost = orderedLinearMeters * effectivePricePerMeter;
@@ -222,7 +228,9 @@ export const useFabricCalculator = ({
         fabricRotated: isRailroaded,               // Whether fabric is rotated/railroaded
         fabricOrientation: isRailroaded ? 'horizontal' : 'vertical',
         linearMetersPerPiece,                      // Per-piece meters for accurate horizontal display
-        leftoverFromLastPiece: undefined           // For future leftover tracking
+        leftoverFromLastPiece: undefined,          // For future leftover tracking
+        hasBothPrices,                             // Whether fabric has both cost and selling prices
+        priceIsAlreadySelling,                     // Whether base price is already the selling price
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);

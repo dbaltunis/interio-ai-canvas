@@ -1091,14 +1091,13 @@ export const CostCalculationSummary = ({
   // Build items for table display with per-item markup
   const tableItems: QuoteSummaryItem[] = [];
 
-  // ✅ CRITICAL FIX: Check if fabric uses library pricing (has both cost_price and selling_price)
-  // If library pricing exists, fabricCost is already based on selling_price - DO NOT apply additional markup
-  const curtainUsesLibraryPricing = curtainHasLibraryPricing;
-  // ✅ CRITICAL FIX: Use BOTH display data flag AND shared utility for consistency
-  // This ensures same validation logic as blinds section
+  // ✅ SMART PRICE BASE: Determine if the fabricCost base is already at selling price
+  // Only true when selling_price is the base (Scenario B: only selling_price, no cost_price)
+  const fabricHasBothPrices = curtainFabricCostPrice > 0 && curtainFabricSellingPrice > 0;
+  const fabricPriceIsAlreadySelling = !fabricHasBothPrices && curtainFabricSellingPrice > 0;
+  // For pricing grid items, markup is handled by the grid itself
   const curtainUsesPricingGrid = (fabricDisplayData?.usesPricingGrid && fabricDisplayData?.gridName) ||
                                   hasValidPricingGrid(fabricToUse?.pricing_grid_data);
-  const curtainFabricAlreadyHasMarkup = curtainUsesLibraryPricing || curtainUsesPricingGrid;
 
   // Fabric - with clear math display and category-specific markup
   if (fabricCost > 0) {
@@ -1124,11 +1123,12 @@ export const CostCalculationSummary = ({
       details: fabricDetails,
       price: fabricCost,
       category: 'fabric',
-      // ✅ CRITICAL: Skip markup if fabric already has markup included (library pricing or grid)
-      markupPercentage: curtainFabricAlreadyHasMarkup ? 0 : fabricMarkupPercent,
-      sellingPrice: curtainFabricAlreadyHasMarkup
-        ? fabricCost  // Already includes markup from selling_price or grid
-        : applyMarkup(fabricCost, fabricMarkupPercent)
+      // ✅ SMART: If base IS selling price (Scenario B) or grid, markup = 0
+      // If base is cost_price (Scenario A/C), use resolved markup (includes implied markup)
+      markupPercentage: (fabricPriceIsAlreadySelling || curtainUsesPricingGrid) ? 0 : fabricMarkupPercent,
+      sellingPrice: (fabricPriceIsAlreadySelling || curtainUsesPricingGrid)
+        ? fabricCost                                    // Already at selling price
+        : applyMarkup(fabricCost, fabricMarkupPercent)   // Apply resolved markup to cost
     });
   }
 
