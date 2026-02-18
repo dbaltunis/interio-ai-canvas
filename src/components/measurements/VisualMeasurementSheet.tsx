@@ -529,7 +529,8 @@ export const VisualMeasurementSheet = ({
         console.log('✅ Fullness ratio source:', fullnessSource, 'value:', fullnessRatioValue);
       }
       
-      const requiredWidth = width * fullnessRatioValue;
+      const overlapCm = selectedTemplate.overlap ?? 0;
+      const requiredWidth = (width + overlapCm) * fullnessRatioValue;
       const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
       
       const fabricCalcResult = {
@@ -549,6 +550,7 @@ export const VisualMeasurementSheet = ({
         pooling: pooling,
         totalDrop: totalDrop,
         returns: returnLeft + returnRight,
+        overlap: overlapCm,
         wastePercent: selectedTemplate.waste_percent || 0,
         sideHems: sideHems,
         seamHems: seamHems,

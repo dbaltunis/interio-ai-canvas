@@ -123,6 +123,8 @@ export interface FabricCalculation {
   fabricRotated?: boolean;
   fabricOrientation?: 'horizontal' | 'vertical';
   linearMetersPerPiece?: number; // Per-piece meters for accurate horizontal display
+  overlap?: number; // Overlap in cm for display synchronization
+  seamsRequired?: number; // Number of seams needed (alias for seamsCount)
 }
 
 export interface MeasurementVisualProps {
