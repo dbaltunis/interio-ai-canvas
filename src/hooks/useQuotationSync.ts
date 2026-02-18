@@ -359,6 +359,8 @@ export const useQuotationSync = ({
               rail_width: measurementsDetails.rail_width || summary.rail_width,
               drop: measurementsDetails.drop || summary.drop,
             },
+            // Vendor ID for supplier ordering detection (all vendors)
+            vendor_id: materialDetails?.vendor_id || fabricDetails?.vendor_id || null,
           };
 
           // CRITICAL FIX: If cost_breakdown is structured, USE IT DIRECTLY
@@ -411,6 +413,10 @@ export const useQuotationSync = ({
                 image_url: itemImageUrl,
                 color: itemColor,
                 category: item.category,
+                // Pass inventory_item_id for fabric/material children (for supplier ordering detection)
+                inventory_item_id: (item.category === 'fabric' || item.category === 'material')
+                  ? (materialDetails?.inventory_item_id || materialDetails?.id || fabricDetails?.inventory_item_id || fabricDetails?.id || null)
+                  : null,
                 isChild: true
               };
             });
@@ -1109,6 +1115,8 @@ export const useQuotationSync = ({
             selected_options: item.selected_options || [],
             // Measurements for order submission
             measurements: item.measurements,
+            // Vendor ID for supplier ordering detection (all vendors, not just TWC)
+            vendor_id: item.vendor_id || null,
           },
         breakdown: item.breakdown || {},
         currency: item.currency || (() => {
