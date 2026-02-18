@@ -128,7 +128,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const vRepeatCm = parseFloat(measurements?.vertical_pattern_repeat_cm ?? measurements?.vertical_pattern_repeat ?? measurements?.pattern_repeat_vertical_cm ?? measurements?.pattern_repeat_vertical ?? measurements?.vertical_repeat_cm ?? measurements?.vertical_repeat ?? '0') || 0;
   const hRepeatCm = parseFloat(measurements?.horizontal_pattern_repeat_cm ?? measurements?.horizontal_pattern_repeat ?? measurements?.pattern_repeat_horizontal_cm ?? measurements?.pattern_repeat_horizontal ?? measurements?.horizontal_repeat_cm ?? measurements?.horizontal_repeat ?? '0') || 0;
 
-  const requiredWidth = widthCm * fullnessRatio;
+  // ✅ FIX: Include overlap in width calculation (added BEFORE fullness, per industry standard)
+  const overlapCm = template?.overlap || 0;
+  const requiredWidth = (widthCm + overlapCm) * fullnessRatio;
   const totalWidthWithAllowancesRaw = requiredWidth + returnLeft + returnRight + totalSideHems;
 
   // Apply horizontal repeat rounding across overall width
@@ -146,9 +148,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // Determine number of widths required
   const widthsRequired = fabricWidthCm ? Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm)) : 0;
 
-  // Seams and drop
+  // ✅ FIX: seamHem is TOTAL per join (not per side) — remove the * 2 that doubled seam consumption
   const seamsRequired = Math.max(0, widthsRequired - 1);
-  const totalSeamAllowance = seamsRequired > 0 ? seamsRequired * seamHems * 2 : 0;
+  const totalSeamAllowance = seamsRequired > 0 ? seamsRequired * seamHems : 0;
 
   // Total drop per width (apply vertical repeat rounding)
   const totalDropUnrounded = heightCm + headerHem + bottomHem + pooling;
@@ -158,7 +160,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   const wasteMultiplier = 1 + ((template?.waste_percent || 0) / 100);
 
-  const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
+  // ✅ FIX: Use engine formula: totalFabric = (widths * drop) + seamAllowance
+  // Previous formula incorrectly added seamAllowance to drop BEFORE multiplying by widths
+  const linearMeters = ((widthsRequired * totalDropPerWidth) + totalSeamAllowance) / 100 * wasteMultiplier;
   
   // ✅ CRITICAL FIX: Use cost_price as base when available to prevent double-markup
   // The markup system will calculate implied markup from cost vs selling difference
