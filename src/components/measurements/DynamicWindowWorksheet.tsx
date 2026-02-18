@@ -722,65 +722,67 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             restoredMeasurements.drop = ""; // Empty string for null/zero
           }
           
-          // Apply template defaults for missing hem/return/seam values (NOT for saved values)
-          // CRITICAL FIX: Also apply defaults when values are explicitly 0
-          const templateToUse = existingWindowSummary.template_details || selectedTemplate;
-          if (templateToUse) {
-            // Apply defaults if values don't exist - FIXED: 0 is a valid explicit value
-            const safeValue = (saved: any, ...fallbacks: any[]) => {
-              // Only treat null/undefined as missing - 0 is valid for "no hem/allowance"
-              if (saved !== null && saved !== undefined) return saved;
-              for (const fb of fallbacks) {
-                if (fb !== null && fb !== undefined) return fb;
-              }
-              return fallbacks[fallbacks.length - 1];
-            };
-            
-            // FIX: Check DB column names FIRST (header_allowance, not header_hem)
-            // FIX: Fallback to 0 instead of hardcoded 8/15/7.5/1.5/5
-            restoredMeasurements.header_hem = safeValue(
-              restoredMeasurements.header_hem,
-              restoredMeasurements.header_allowance,
-              templateToUse.header_allowance,
-              templateToUse.header_hem,
-              0
-            );
-            restoredMeasurements.bottom_hem = safeValue(
-              restoredMeasurements.bottom_hem,
-              restoredMeasurements.bottom_allowance,
-              templateToUse.bottom_hem,
-              templateToUse.bottom_allowance,
-              0
-            );
-            restoredMeasurements.side_hems = safeValue(
-              restoredMeasurements.side_hems,
-              restoredMeasurements.side_hem,
-              templateToUse.side_hems,
-              templateToUse.side_hem,
-              0
-            );
-            restoredMeasurements.seam_hems = safeValue(
-              restoredMeasurements.seam_hems,
-              restoredMeasurements.seam_hem,
-              templateToUse.seam_hems,
-              templateToUse.seam_allowance,
-              0
-            );
-            restoredMeasurements.return_left = safeValue(
-              restoredMeasurements.return_left,
-              templateToUse.return_left,
-              0
-            );
-            restoredMeasurements.return_right = safeValue(
-              restoredMeasurements.return_right,
-              templateToUse.return_right,
-              0
-            );
-            restoredMeasurements.waste_percent = safeValue(
-              restoredMeasurements.waste_percent,
-              templateToUse.waste_percent,
-              0
-            );
+           // CRITICAL FIX: Template manufacturing settings are AUTHORITATIVE
+           // Use freshly fetched fullTemplate (not stale snapshot) for hem values
+           // Hem/return/seam/waste are template-level manufacturing settings, NOT per-window measurements
+           // The template is the single source of truth for these values
+           // selectedTemplate was set from fullTemplate at line 454 (freshly fetched from DB)
+           const freshTemplate = selectedTemplate || existingWindowSummary.template_details;
+           if (freshTemplate) {
+             // Helper: get first non-null/undefined value
+             const firstDefined = (...vals: any[]) => {
+               for (const v of vals) {
+                 if (v !== null && v !== undefined) return v;
+               }
+               return 0;
+             };
+             
+             // FIX: Template values are AUTHORITATIVE for manufacturing settings
+             // Saved measurement hem values are IGNORED — they were stale copies of old template values
+             // DB column is header_allowance, so check that first
+             restoredMeasurements.header_hem = firstDefined(
+               freshTemplate.header_allowance,
+               freshTemplate.header_hem,
+               0
+             );
+             restoredMeasurements.bottom_hem = firstDefined(
+               freshTemplate.bottom_hem,
+               freshTemplate.bottom_allowance,
+               0
+             );
+             restoredMeasurements.side_hems = firstDefined(
+               freshTemplate.side_hems,
+               freshTemplate.side_hem,
+               0
+             );
+             restoredMeasurements.seam_hems = firstDefined(
+               freshTemplate.seam_hems,
+               freshTemplate.seam_allowance,
+               0
+             );
+             restoredMeasurements.return_left = firstDefined(
+               freshTemplate.return_left,
+               0
+             );
+             restoredMeasurements.return_right = firstDefined(
+               freshTemplate.return_right,
+               0
+             );
+             restoredMeasurements.waste_percent = firstDefined(
+               freshTemplate.waste_percent,
+               0
+             );
+             
+             console.log('✅ [HEM_FIX] Using FRESH template manufacturing values:', {
+               templateName: freshTemplate.name,
+               header_allowance: restoredMeasurements.header_hem,
+               bottom_hem: restoredMeasurements.bottom_hem,
+               side_hems: restoredMeasurements.side_hems,
+               seam_hems: restoredMeasurements.seam_hems,
+               return_left: restoredMeasurements.return_left,
+               return_right: restoredMeasurements.return_right,
+               waste_percent: restoredMeasurements.waste_percent,
+             });
           }
           
           // CRITICAL: Ensure all hem/return/seam values are preserved from saved data
