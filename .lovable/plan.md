@@ -1,163 +1,178 @@
 
 
-## Fix Supplier Ordering Product Detection + Backfill Existing Jobs
+## Fix Supplier Ordering: Complete Root Cause Analysis and Fix
 
-### Problem Summary
+### What is Actually Broken (Database Proof)
 
-Products are not showing in the Supplier Ordering dropdown because `vendor_id` is never saved to `windows_summary` or `quote_items`. The detection system (`useProjectSuppliers`) relies on `inventory_item_id` on quote_items to look up vendor info, but that field is also null.
+The Supplier Ordering dropdown shows "No products" because **quote_items for this project are completely empty** (0 rows). The quote sync is crashing every time it runs.
 
-**Database proof:**
-- 944 of 960 windows_summary records have NO `vendor_id` in fabric/material details
-- All quote_items in the current job have `inventory_item_id: null` and `vendor_id: null`
-- The inventory items themselves DO have `vendor_id` (e.g., "Curtains - ALLUSION" has `vendor_id: d6775560` pointing to TWC)
-
-### Three-Part Fix
-
-#### Part 1: Save `vendor_id` Going Forward
-
-**File: `DynamicWindowWorksheet.tsx` (lines 2342-2398)**
-
-Add `vendor_id` and `inventory_item_id` to both `fabric_details` and `material_details` when saving:
-
-```typescript
-fabric_details: selectedItems.fabric ? {
-  // ... existing fields ...
-  vendor_id: selectedItems.fabric.vendor_id || null,
-  inventory_item_id: selectedItems.fabric.id,
-} : null,
-
-material_details: selectedItems.material ? {
-  // ... existing fields ...
-  vendor_id: selectedItems.material.vendor_id || null,
-  inventory_item_id: selectedItems.material.id,
-} : null,
+**Console error (visible in logs):**
+```
+Error saving quote items: foreign key constraint "quote_items_inventory_item_id_fkey"
+Key is not present in table "enhanced_inventory_items"
 ```
 
-**File: `useQuotationSync.ts` (lines 402-414 and 1088-1110)**
+**Root cause chain:**
 
-Pass `inventory_item_id` and `vendor_id` through structured breakdown children and into quote_items:
+```text
+windows_summary has fabric_details.id / material_details.id
+  -> Some IDs (d2ed3c0b, af6eed75) do NOT exist in enhanced_inventory_items
+  -> useQuotationSync passes these as inventory_item_id on quote_items
+  -> FK constraint rejects the insert
+  -> ENTIRE batch insert fails
+  -> quote_items = 0 rows
+  -> useProjectSuppliers has nothing to scan
+  -> "No products detected"
+```
+
+This is NOT a detection logic problem. The quote items literally do not exist because the save crashes.
+
+### Three Fixes Required
+
+#### Fix 1: Validate `inventory_item_id` Before Insert (Critical)
+
+**File: `src/hooks/useQuotationSync.ts` (~line 1101)**
+
+Before assigning `inventory_item_id`, verify the ID actually exists in `enhanced_inventory_items`. Since we cannot do a lookup for every item during save, the safest fix is:
+
+- Set `inventory_item_id` to `null` if the value is not confirmed valid
+- Store the raw ID in `product_details.inventory_item_id` (JSONB, no FK constraint) for detection purposes
+- Only set the actual column when the ID is verified
+
+Concrete change:
+```typescript
+// Line 1101 - change from:
+inventory_item_id: inventoryItemId,
+// to:
+inventory_item_id: null,  // Don't risk FK crash - use product_details instead
+```
+
+And ensure line 1119 captures vendor_id from children:
+```typescript
+vendor_id: (() => {
+  // Extract vendor_id from children's data
+  const children = item.children || [];
+  for (const child of children) {
+    if (child.vendor_id) return child.vendor_id;
+  }
+  // Fallback to item-level vendor_id
+  return item.vendor_id || null;
+})(),
+inventory_item_id: inventoryItemId || null,  // Store in JSONB (no FK)
+```
+
+#### Fix 2: Also Fix `useQuoteItems.ts`
+
+**File: `src/hooks/useQuoteItems.ts`**
+
+This file also inserts quote_items but does NOT set `inventory_item_id` at all. It should also store `vendor_id` in `product_details` for consistency:
 
 ```typescript
-// In structured breakdown children (line 402):
-inventory_item_id: item.category === 'fabric'
-  ? (materialDetails?.inventory_item_id || materialDetails?.id || fabricDetails?.id || null)
-  : null,
-
-// In quote_items save (line 1096):
 product_details: {
   // ... existing fields ...
-  vendor_id: materialDetails?.vendor_id || fabricDetails?.vendor_id || null,
+  vendor_id: item.vendor_id || item.product_details?.vendor_id || null,
+  inventory_item_id: item.inventory_item_id || item.product_details?.inventory_item_id || null,
 },
-inventory_item_id: inventoryItemId || materialDetails?.id || fabricDetails?.id || null,
 ```
 
-#### Part 2: Backfill Existing Data (No Re-save Needed)
+#### Fix 3: Update Detection to Use JSONB `product_details.inventory_item_id`
 
-**New SQL migration** to populate `vendor_id` in existing windows_summary records by joining `selected_fabric_id` and `selected_material_id` to `enhanced_inventory_items`:
+**File: `src/hooks/useProjectSuppliers.ts`**
+
+The detection already checks `product_details.vendor_id` (the fallback we added). But we should also check `product_details.inventory_item_id` for the inventory lookup path:
+
+```typescript
+// Line 139 - also check product_details for inventory_item_id
+const effectiveInventoryItemId = item.inventory_item_id || productDetails?.inventory_item_id;
+if (effectiveInventoryItemId) {
+  const inventoryItem = inventoryWithVendors.find(
+    (inv) => inv.id === effectiveInventoryItemId
+  );
+  // ... existing vendor detection ...
+}
+```
+
+And update the `inventoryItemIds` extraction (line 52-56) to also pull from product_details:
+
+```typescript
+const inventoryItemIds = useMemo(() => {
+  return quoteItems
+    .map((item) => item.inventory_item_id || (item.product_details as any)?.inventory_item_id)
+    .filter(Boolean);
+}, [quoteItems]);
+```
+
+#### Fix 4: Backfill with Direct SQL (run once)
+
+Run a direct UPDATE to populate `product_details.vendor_id` on existing quote_items by looking up from `windows_summary` and `enhanced_inventory_items`:
 
 ```sql
--- Backfill fabric_details.vendor_id from inventory
+-- For each quote_item, find the vendor from its project's windows
+UPDATE quote_items qi
+SET product_details = jsonb_set(
+  COALESCE(qi.product_details::jsonb, '{}'::jsonb),
+  '{vendor_id}',
+  to_jsonb(eii.vendor_id::text)
+)
+FROM quotes q
+JOIN surfaces s ON s.project_id = q.project_id
+JOIN windows_summary ws ON ws.window_id = s.id
+JOIN enhanced_inventory_items eii ON eii.id = COALESCE(ws.selected_fabric_id, ws.selected_material_id)
+WHERE qi.quote_id = q.id
+  AND eii.vendor_id IS NOT NULL
+  AND (qi.product_details->>'vendor_id') IS NULL;
+```
+
+Also backfill `windows_summary` vendor_id using `fabric_details.id` and `material_details.id` (not just `selected_fabric_id`):
+
+```sql
+-- Backfill using fabric_details->>'id' 
 UPDATE windows_summary ws
 SET fabric_details = jsonb_set(
-  COALESCE(ws.fabric_details::jsonb, '{}'::jsonb),
+  ws.fabric_details::jsonb,
   '{vendor_id}',
   to_jsonb(eii.vendor_id::text)
 )
 FROM enhanced_inventory_items eii
-WHERE ws.selected_fabric_id = eii.id
+WHERE (ws.fabric_details->>'id')::uuid = eii.id
   AND eii.vendor_id IS NOT NULL
+  AND ws.fabric_details IS NOT NULL
   AND (ws.fabric_details->>'vendor_id') IS NULL;
 
--- Same for material_details
+-- Same for material_details->>'id'
 UPDATE windows_summary ws
 SET material_details = jsonb_set(
-  COALESCE(ws.material_details::jsonb, '{}'::jsonb),
+  ws.material_details::jsonb,
   '{vendor_id}',
   to_jsonb(eii.vendor_id::text)
 )
 FROM enhanced_inventory_items eii
-WHERE ws.selected_material_id = eii.id
+WHERE (ws.material_details->>'id')::uuid = eii.id
   AND eii.vendor_id IS NOT NULL
+  AND ws.material_details IS NOT NULL
   AND (ws.material_details->>'vendor_id') IS NULL;
 ```
 
-**Also backfill quote_items** to populate `inventory_item_id` from windows_summary:
+### Why Previous Fixes Did Not Work
 
-```sql
--- Backfill quote_items.inventory_item_id from windows_summary fabric/material IDs
-UPDATE quote_items qi
-SET inventory_item_id = COALESCE(
-  ws.selected_fabric_id,
-  ws.selected_material_id
-)
-FROM windows_summary ws
-JOIN treatments t ON ws.window_id = t.window_id
-JOIN quotes q ON qi.quote_id = q.id AND q.project_id = t.project_id
-WHERE qi.inventory_item_id IS NULL
-  AND qi.name = t.product_name
-  AND (ws.selected_fabric_id IS NOT NULL OR ws.selected_material_id IS NOT NULL);
-```
-
-#### Part 3: Enhanced Detection (Belt and Suspenders)
-
-**File: `useProjectSuppliers.ts` (lines 99-166)**
-
-Add a fallback detection path that checks `product_details.vendor_id` directly when `inventory_item_id` lookup fails:
-
-```typescript
-quoteItems.forEach((item) => {
-  // ... existing TWC detection (unchanged) ...
-
-  // Existing path: inventory_item_id lookup
-  if (item.inventory_item_id) { /* ... existing code ... */ }
-
-  // NEW fallback: check product_details.vendor_id directly
-  const directVendorId = productDetails?.vendor_id;
-  if (directVendorId && !supplierMap.has(directVendorId)) {
-    const vendorInfo = allSettingsVendors.find(v => v.id === directVendorId);
-    if (vendorInfo) {
-      supplierMap.set(directVendorId, {
-        id: directVendorId,
-        name: vendorInfo.name,
-        type: 'vendor',
-        items: [{ id: item.id, name: item.name, quantity: item.quantity || 1 }],
-        isOrdered: false,
-      });
-    }
-  }
-});
-```
-
-Also pass `allSettingsVendors` into the suppliers detection memo so it can resolve vendor names without a separate DB lookup.
-
-### TWC Ordering Status
-
-The TWC ordering flow (TWCSubmitDialog) is functional -- it maps options, submits via the `twc-submit-order` edge function, and tracks status in `supplier_orders`. The client's inability to order was caused by the same root issue: products weren't being detected because of the missing `vendor_id`/`inventory_item_id` linkage, so the "Send Order" button never activated.
-
-Once the backfill runs and the detection fix is deployed, TWC ordering will work for existing jobs without re-saving.
-
-### Email Ordering for Other Suppliers
-
-Email ordering for non-TWC vendors is already implemented in `SupplierOrderingDropdown.tsx` (lines 209-244). When a vendor-type supplier is selected, it:
-1. Records the order in `supplier_orders` JSONB on the quote
-2. Opens the user's email client with a pre-filled purchase order (items list, quantities, project ref)
-3. Uses the vendor's email from Settings
-
-This will also start working once products are correctly detected.
+1. **Previous backfill** joined on `selected_fabric_id` / `selected_material_id` only -- but most windows_summary rows have those as NULL while having the ID inside `fabric_details->>'id'` or `material_details->>'id'`
+2. **Code changes to useQuotationSync** correctly added `inventory_item_id` -- but this CAUSED the FK crash because some IDs (collections, deleted items) don't exist in `enhanced_inventory_items`
+3. The FK crash means quote_items are **never saved**, so detection has nothing to detect
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `DynamicWindowWorksheet.tsx` | Add `vendor_id` and `inventory_item_id` to fabric_details and material_details save |
-| `useQuotationSync.ts` | Pass `inventory_item_id` through children + save `vendor_id` in product_details |
-| `useProjectSuppliers.ts` | Add fallback detection via `product_details.vendor_id` |
-| SQL Migration | Backfill existing windows_summary and quote_items with vendor data |
+| `useQuotationSync.ts` | Stop setting `inventory_item_id` column directly; store in `product_details` JSONB instead; extract `vendor_id` from children |
+| `useQuoteItems.ts` | Add `vendor_id` and `inventory_item_id` to `product_details` JSONB |
+| `useProjectSuppliers.ts` | Read `inventory_item_id` and `vendor_id` from `product_details` JSONB as well as columns |
+| SQL (run once) | Backfill `vendor_id` using `fabric_details->>'id'` and `material_details->>'id'` join paths |
 
 ### After the Fix
 
-- Existing jobs: backfill populates vendor links -- products appear in Supplier Ordering immediately
-- New jobs: vendor data is saved automatically during worksheet save
-- TWC ordering: works for TWC-linked products (when integration is in production mode)
-- Email ordering: works for all other vendors with email configured in Settings
+- Quote items will save successfully (no more FK crash)
+- Supplier ordering will detect vendors from `product_details.vendor_id`
+- Existing jobs get backfilled via SQL
+- TWC ordering and email ordering both activate once products are detected
 - No re-saving of existing windows required
+
