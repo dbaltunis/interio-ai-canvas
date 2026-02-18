@@ -602,7 +602,8 @@ export const AdaptiveFabricPricingDisplay = ({
                           const sideHemsMM = (fabricCalculation?.totalSideHems || 0) * 10;
                           const seamHemMM = (parseFloat(measurements.seam_hems) || 1) * 10;
                           const seamAllowanceMM = (fabricCalculation?.seamsRequired || 0) * seamHemMM * 2;
-                          const totalWidthMM = railWidthMM * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
+                          const overlapMM = (fabricCalculation?.overlap || 0) * 10;
+                          const totalWidthMM = (railWidthMM + overlapMM) * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
                           return formatMeasurement(totalWidthMM, 'mm');
                         })()}
                   </span>
@@ -614,7 +615,8 @@ export const AdaptiveFabricPricingDisplay = ({
                   // ✅ FIX: Convert from user's display unit to MM first
                   const rawRailWidth = parseFloat(measurements.rail_width) || 0;
                   const railWidthMM = convertLength(rawRailWidth, units.length, 'mm');
-                  return formatMeasurement(railWidthMM * (displayFullness || 1), 'mm');
+                  const overlapMM = (fabricCalculation?.overlap || 0) * 10;
+                  return formatMeasurement((railWidthMM + overlapMM) * (displayFullness || 1), 'mm');
                 })()}
                   </span>
                 </div>
@@ -637,6 +639,12 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Returns (L+R):</span>
                   <span>{formatMeasurement(fabricCalculation.returns || 0, 'cm')}</span>
                 </div>
+                {(fabricCalculation?.overlap ?? 0) > 0 && (
+                  <div className="flex justify-between pl-2 text-muted-foreground/70">
+                    <span>Overlap:</span>
+                    <span>{formatMeasurement(fabricCalculation.overlap!, 'cm')}</span>
+                  </div>
+                )}
                 {fabricCalculation.seamsRequired > 0 && <div className="flex justify-between pl-2 text-muted-foreground/70">
                     <span>Seam Allowances:</span>
                     <span>{formatMeasurement((fabricCalculation.seamsRequired || 0) * (parseFloat(measurements.seam_hems) || 1) * 2, 'cm')} ({fabricCalculation.seamsRequired} seam(s) × 2)</span>
@@ -672,6 +680,12 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Returns (L+R):</span>
                   <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0, 'cm')}</span>
                 </div>
+                {(fabricCalculation?.overlap ?? 0) > 0 && (
+                  <div className="flex justify-between pl-2">
+                    <span>Overlap:</span>
+                    <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.overlap!, 'cm')}</span>
+                  </div>
+                )}
                 <div className="flex justify-between pl-2">
                   <span>Side Hems:</span>
                   <span className="font-medium text-foreground">
@@ -696,7 +710,8 @@ export const AdaptiveFabricPricingDisplay = ({
                           const railWidthCM = fabricCalculation?.railWidth || (measurements.rail_width || 0) / 10;
                           const returnsCM = fabricCalculation?.returns || 0;
                           const sideHemsCM = fabricCalculation?.totalSideHems || 0;
-                          const totalCM = railWidthCM * displayFullness + returnsCM + sideHemsCM;
+                          const overlapCM = fabricCalculation?.overlap || 0;
+                          const totalCM = (railWidthCM + overlapCM) * displayFullness + returnsCM + sideHemsCM;
                           return formatMeasurement(totalCM, 'cm');
                         })()}
                   </span>
