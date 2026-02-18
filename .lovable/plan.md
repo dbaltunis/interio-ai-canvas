@@ -1,114 +1,99 @@
 
 
-## Import IFI Tekstile Fabrics for Laela Account
+## Fix: Hem Values Ignoring Template Settings (8cm/15cm Hardcoded Fallbacks)
 
-### File Summary
+### Root Cause Found
 
-| Detail | Value |
-|---|---|
-| Vendor | IFI TEKSTILE |
-| Total items | ~523 |
-| Type | Sheer and curtain fabrics (woven railroaded) |
-| Collections | ~14 (ORAMA, SWEETNESS, HISTORY, MONTANA, ESTRADA, SMILE & ADMIRE, NATIONAL, GLORY, PUBLIC, LOOK, HOTEL ROOM OFF WHITE, ECO & LINENS, DELICATE VOLUME 1, DELICATE VOLUME 2) |
-| Prices | Single price (EUR per meter), range 5.00 - 57.00 |
-| Widths | 290-330 cm |
-| Source | IFI_Tekstile.xlsx (Page 1) |
+The bug is on **lines 739-751** of `DynamicWindowWorksheet.tsx`. When loading a saved quote, the code tries to find hem values through a chain of property names. When none match (due to mismatched property names between the template snapshot and the DB), it falls through to **hardcoded fallbacks**:
 
-### Data Structure
-
-The file has the same column layout as the LAELA Selected Samples import:
-
-| Column | Example | Notes |
-|---|---|---|
-| Hanger Code | F-1004F | Hanger/swatch code |
-| Collection | HANGER ORAMA | Collection name |
-| Article Code | 9751661-01 | Article number (SKU base) |
-| Description | orama anthracite | Product name with color |
-| Width | 300cm - 118" (+/-1%) | Fabric width |
-| Composition | 59%cot 41%pol | Fabric composition |
-| Price (EUR/m) | 18.00 EUR | Single price per meter |
-| Direction | woven railroaded | Fabric direction |
-| Vertical Repeat | vert.repeat 0 | Vertical pattern repeat |
-| Horizontal Repeat | horiz.repeat 0 | Horizontal pattern repeat |
-| Washing Instructions | uKXNQ | Encoded care codes |
-
-### Column Mapping
-
-| Source Column | Maps To | Notes |
-|---|---|---|
-| Article Code | `sku` | Prefixed: "IFI-9751661-01" |
-| Description | `name` | Capitalized: "Orama Anthracite" |
-| Collection | `collection_name` | e.g., "HANGER ORAMA" -> "IFI TEKSTILE ORAMA" |
-| Width | `fabric_width` | Parse first number: "300cm" -> 300 |
-| Composition | `composition` | e.g., "59%cot 41%pol" |
-| Price | `cost_price` AND `selling_price` | Same value (single price); parse "18.00 EUR" -> 18.00 |
-| Direction | `description` | Included in description |
-| Vertical Repeat | `pattern_repeat_vertical` | Parse from "vert.repeat Xcm" |
-| Horizontal Repeat | `pattern_repeat_horizontal` | Parse from "horiz.repeat Xcm" |
-| All items | `category: "fabric"` | |
-| All items | `subcategory: "sheer_fabric"` | All are lightweight sheers |
-| All items | `pricing_method: "per_meter"` | |
-| All items | `compatible_treatments: ["curtains"]` | |
-
-### What Changes
-
-#### 1. Create CSV file
-`public/import-data/CSV_IFI_Tekstile.csv` (~523 rows) with columns:
-`article,name,collection,width_cm,composition,price_eur,direction,vert_repeat,horiz_repeat`
-
-Extracted from the parsed XLSX data. Price cleaned from "18.00 EUR" format to numeric "18.00".
-
-#### 2. Add `mapIfiTekstile()` mapper to Edge Function
-
-- SKU: `IFI-{ARTICLE_CODE}` (e.g., "IFI-9751661-01", "IFI-75-1609-02")
-- `name`: Capitalized description (e.g., "Orama Anthracite", "Bright Sand")
-- `cost_price` = `selling_price` = parsed price
-- `fabric_width`: Parse first number from width string
-- `composition`: Stored directly from source
-- `pattern_repeat_vertical` / `pattern_repeat_horizontal`: Parse cm values (reuse `parseRepeatCm` from LAELA mapper)
-- `description`: Includes direction info
-- Collection: Clean collection name -- strip "HANGER " / "WATERFALL " / "BOOK " prefixes, then prefix with "IFI TEKSTILE" (e.g., "HANGER ORAMA" -> "IFI TEKSTILE ORAMA", "BOOK ECO & LINENS" -> "IFI TEKSTILE ECO & LINENS")
-- Subcategory: `sheer_fabric` for all (these are all lightweight woven railroaded sheers)
-- Vendor: "IFI TEKSTILE" (auto-created)
-- Deduplication: Some article codes appear in multiple collections (e.g., "orama grey 9751618-01" in both HANGER ORAMA and BOOK DELICATE VOLUME 2) -- first occurrence wins via SKU upsert
-
-#### 3. Register in `LaelLibraryImport.tsx`
-Add entry:
 ```text
-{ format: "ifi_tekstile", file: "/import-data/CSV_IFI_Tekstile.csv", label: "IFI Tekstile Fabrics (523 items)" }
+header_hem fallback chain:
+  saved header_hem -> saved header_allowance -> snapshot.header_hem -> snapshot.header_allowance -> 8  (HARDCODED!)
+
+bottom_hem fallback chain:
+  saved bottom_hem -> saved bottom_allowance -> snapshot.bottom_hem -> snapshot.bottom_allowance -> 15 (HARDCODED!)
+
+side_hems fallback -> 7.5 (HARDCODED!)
+seam_hems fallback -> 1.5 (HARDCODED!)
+waste_percent fallback -> 5 (HARDCODED!)
 ```
 
-#### 4. Add vendor routing in Edge Function
-Add `"ifi_tekstile"` to the bypass list for single-vendor lookup, auto-creating vendor "IFI TEKSTILE".
+These hardcoded values (8cm header, 15cm bottom) override whatever you set in the template Manufacturing tab.
 
-### Collections Created (~14)
+### Additional Problem: "Defaults" Section
 
-| Collection Name | Approx Items |
+The "Manufacturing Defaults" section in Settings > Products > Defaults:
+- Is ONLY used to pre-fill new template forms (not calculations)
+- Has its own separate values that never reach the calculation engine
+- Creates confusion because it looks like it should control calculations
+
+### What Will Be Fixed
+
+#### 1. Remove all hardcoded hem fallbacks (lines 739-781)
+
+Replace the hardcoded 8, 15, 7.5, 1.5, 5 values with `0` (no hem). If the template has values, they will be used. If not, 0 is the safe default (no hidden cost inflation).
+
+**Before:**
+```text
+header_hem fallback -> 8
+bottom_hem fallback -> 15
+side_hems fallback -> 7.5
+seam_hems fallback -> 1.5
+waste_percent fallback -> 5
+```
+
+**After:**
+```text
+header_hem fallback -> 0
+bottom_hem fallback -> 0
+side_hems fallback -> 0
+seam_hems fallback -> 0
+waste_percent fallback -> 0
+```
+
+#### 2. Fix property name resolution order
+
+The DB column is `header_allowance`, but the restore code checks `templateToUse.header_hem` first (which may not exist in the snapshot). Fix the order to check `header_allowance` FIRST since that's the actual DB column name.
+
+**Before:**
+```text
+templateToUse.header_hem -> templateToUse.header_allowance
+```
+
+**After:**
+```text
+templateToUse.header_allowance -> templateToUse.header_hem
+```
+
+#### 3. Also fetch fresh template values on restore
+
+Currently, the code fetches the full template from DB (line 430-451) for heading IDs, but the hem values still come from the stale `template_details` snapshot. Change the restore logic so that when the full template is fetched, its current hem values are used instead of the snapshot's.
+
+#### 4. Remove the confusing "Defaults" tab
+
+- Remove `ManufacturingDefaults.tsx` component
+- Remove the "Defaults" tab from `WindowCoveringsTab.tsx`
+- Remove the `useManufacturingDefaults` hook and its useEffect from `CurtainTemplateForm.tsx` (which pre-fills new templates from defaults)
+
+### Files Changed
+
+| File | Change |
 |---|---|
-| IFI TEKSTILE ORAMA | 8 |
-| IFI TEKSTILE SWEETNESS | 4 |
-| IFI TEKSTILE HISTORY | 9 |
-| IFI TEKSTILE MONTANA | 7 |
-| IFI TEKSTILE ESTRADA | 8 |
-| IFI TEKSTILE SMILE & ADMIRE | 30 |
-| IFI TEKSTILE NATIONAL | 9 |
-| IFI TEKSTILE GLORY | 5 |
-| IFI TEKSTILE PUBLIC | 14 |
-| IFI TEKSTILE LOOK | 10 |
-| IFI TEKSTILE HOTEL ROOM OFF WHITE | 11 |
-| IFI TEKSTILE ECO & LINENS | ~130 |
-| IFI TEKSTILE DELICATE VOLUME 1 | ~140 |
-| IFI TEKSTILE DELICATE VOLUME 2 | ~148 |
+| `DynamicWindowWorksheet.tsx` (lines 739-781) | Replace hardcoded fallbacks (8, 15, 7.5, 1.5, 5) with 0; fix property name order to check `header_allowance` before `header_hem`; use freshly fetched template values over snapshot |
+| `VisualMeasurementSheet.tsx` (lines 358-362) | Same property name order fix for enrichedMeasurements |
+| `ManufacturingDefaults.tsx` | Delete this component |
+| `WindowCoveringsTab.tsx` | Remove "Defaults" tab and ManufacturingDefaults import |
+| `CurtainTemplateForm.tsx` | Remove `useManufacturingDefaults` hook and the useEffect that applies defaults |
+| `calculateTreatmentPricing.ts` (lines 107-108) | Fix property resolution order: `header_allowance` before `header_hem` |
 
-### Special Cases
+### Also fix the build error
 
-- **Price format**: Contains EUR symbol (e.g., "18.00 EUR") -- stripped to numeric
-- **Duplicate article codes across collections**: Same fabric may appear in a HANGER collection and a BOOK collection. SKU-based upsert means first insert wins, subsequent ones update (price should be same).
-- **Pattern repeats**: Most are "0"; some have values like "10cm-4\"", "6,5cm-2 1/2\"", "5,5cm-2\"", "8cm-3\"", "3cm-1\"" -- parsed as cm values
-- **Composition abbreviations**: pol=polyester, cot=cotton, lin=linen, pan=polyamide/nylon, wo=wool, vis=viscose, acr=acrylic, cv=viscose, pa=polyamide, cly=cellulose -- stored as-is
+The `create-admin-account` edge function has a broken `npm:resend@2.0.0` import. Add the dependency to the edge function's import map or fix the import.
 
-### After Implementation
-1. Navigate to `/admin/import-laela`
-2. Click "Start Import" -- the "IFI Tekstile Fabrics (523 items)" entry will be processed
-3. All items import with vendor, collections, composition, and pricing
+### Expected Result
+
+- Template Manufacturing values (e.g., 12/12) will correctly appear in the Fabric Usage Breakdown
+- No more mystery 8cm/15cm values appearing from hardcoded fallbacks
+- No more confusing duplicate "Defaults" section in Settings
+- Side hems, seam hems, and waste also correctly use template values (no hidden 7.5/1.5/5 defaults)
 
