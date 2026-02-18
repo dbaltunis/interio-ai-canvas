@@ -156,7 +156,8 @@ export const calculateFabricUsage = (
     selectedFabricItem: selectedFabricItem?.name
   });
   
-  const quantity = formData.quantity || 1;
+  // ✅ FIX: Derive quantity from curtain_type (pair = 2 panels) instead of formData.quantity
+  const quantity = formData.curtain_type === 'pair' ? 2 : (formData.quantity || 1);
   const pooling = parseFloat(formData.pooling) || 0;
 
   // Enhanced fabric analysis
@@ -242,6 +243,8 @@ export const calculateFabricUsage = (
   
   const returnLeft = parseFloat(formData.return_left) || 0;
   const returnRight = parseFloat(formData.return_right) || 0;
+  // ✅ FIX: Read overlap from formData (enriched from template)
+  const overlap = parseFloat(formData.overlap) || 0;
 
   if (!railWidth || !drop || !fabricWidth) {
     const missing: string[] = [];
@@ -275,7 +278,8 @@ export const calculateFabricUsage = (
     verticalPatternRepeatCm,
     horizontalPatternRepeatCm,
     returnLeft,
-    returnRight
+    returnRight,
+    overlap,
   };
 
   // Get labor rate

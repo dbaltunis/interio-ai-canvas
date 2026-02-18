@@ -373,7 +373,14 @@ export const VisualMeasurementSheet = ({
         heading_fullness: measurements.heading_fullness || selectedTemplate.default_fullness,
         selected_heading: measurements.selected_heading,
         // Fabric rotation setting
-        fabric_rotated: measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'
+        fabric_rotated: measurements.fabric_rotated === true || measurements.fabric_rotated === 'true',
+        // ✅ FIX: Pass overlap from template so fabricUsageCalculator includes it in width
+        overlap: selectedTemplate.overlap ?? measurements.overlap ?? 0,
+        // ✅ FIX: Pass curtain_type so fabricUsageCalculator derives correct quantity
+        curtain_type: measurements.curtain_type,
+        // Pass returns from template
+        return_left: selectedTemplate.return_left ?? measurements.return_left ?? 0,
+        return_right: selectedTemplate.return_right ?? measurements.return_right ?? 0,
       };
 
       // ✅ FIX: Pass heading inventory so calculator can look up fullness_ratio
