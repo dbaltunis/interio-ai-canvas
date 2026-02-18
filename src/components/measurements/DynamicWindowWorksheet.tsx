@@ -706,20 +706,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // Only convert and display if value exists and is > 0
           // CRITICAL: Database stores in MM, convert from MM to user's preferred unit
           if (storedRailWidth && storedRailWidth > 0) {
-            restoredMeasurements.rail_width = convertLength(
-              storedRailWidth, 
-              'mm', 
-              units.length
+            restoredMeasurements.rail_width = parseFloat(
+              convertLength(storedRailWidth, 'mm', units.length).toFixed(4)
             ).toString();
           } else {
             restoredMeasurements.rail_width = ""; // Empty string for null/zero
           }
           
           if (storedDrop && storedDrop > 0) {
-            restoredMeasurements.drop = convertLength(
-              storedDrop, 
-              'mm', 
-              units.length
+            restoredMeasurements.drop = parseFloat(
+              convertLength(storedDrop, 'mm', units.length).toFixed(4)
             ).toString();
           } else {
             restoredMeasurements.drop = ""; // Empty string for null/zero
@@ -1883,7 +1879,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
             // ✅ CRITICAL: Save cost-based price. Display layer applies markup via applyMarkupToItem.
-            price_per_meter: fabricCalculation?.pricePerMeter || 0,
+            price_per_meter: (() => {
+              const item = selectedItems?.fabric || selectedItems?.material;
+              if (!item) return fabricCalculation?.pricePerMeter || 0;
+              const hasBoth = (item.cost_price || 0) > 0 && (item.selling_price || 0) > 0;
+              return hasBoth ? item.cost_price : (item.selling_price || item.price_per_meter || item.cost_price || fabricCalculation?.pricePerMeter || 0);
+            })(),
             fabric_cost: fabricCost, // Use the already calculated fabricCost, not recalculate
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
@@ -2221,7 +2222,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   category: 'fabric',
                   quantity: fabricQuantity,
                   unit: fabricUnit, // Use treatment-type-aware unit (m for curtains, sqm for blinds)
-                  unit_price: fabricCalculation?.pricePerMeter || 0,
+                  unit_price: (() => {
+                    const item = selectedItems?.fabric || selectedItems?.material;
+                    if (!item) return fabricCalculation?.pricePerMeter || 0;
+                    const hasBoth = (item.cost_price || 0) > 0 && (item.selling_price || 0) > 0;
+                    return hasBoth ? item.cost_price : (item.selling_price || item.price_per_meter || item.cost_price || fabricCalculation?.pricePerMeter || 0);
+                  })(),
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
                   widths_required: fabricCalculation?.widthsRequired,
                   fabric_orientation: fabricCalculation?.fabricOrientation,
