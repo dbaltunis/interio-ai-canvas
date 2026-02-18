@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery" && format !== "laela_selected_samples" && format !== "ridex") {
+    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery" && format !== "laela_selected_samples" && format !== "ridex" && format !== "ifi_tekstile") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -150,6 +150,8 @@ Deno.serve(async (req) => {
             item = await mapLaelaSelectedSamples(supabase, row, vendorCache);
           } else if (format === "ridex") {
             item = await mapRidex(supabase, row, vendorCache);
+          } else if (format === "ifi_tekstile") {
+            item = await mapIfiTekstile(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -1156,5 +1158,77 @@ async function mapRidex(
     compatible_treatments: ["curtains"],
     product_category: "curtains",
     ...(tags.includes("fire-retardant") ? { fire_rating: "FR" } : {}),
+  };
+}
+
+// --- IFI TEKSTILE ---
+
+function cleanIfiCollectionName(raw: string): string {
+  // Strip prefixes like "HANGER ", "WATERFALL ", "BOOK "
+  return raw.replace(/^(HANGER|WATERFALL|BOOK)\s+/i, "").trim();
+}
+
+async function mapIfiTekstile(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const article = row["article"]?.trim();
+  const name = row["name"]?.trim();
+  if (!article || !name) return null;
+
+  // Get or create IFI TEKSTILE vendor
+  const vendorKey = "IFI TEKSTILE";
+  let vendorId = vendorCache.get(vendorKey);
+  if (!vendorId) {
+    vendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, vendorId);
+  }
+
+  const sku = `IFI-${article}`;
+  const displayName = capitalizeWords(name);
+  const price = parsePrice(row["price_eur"]);
+  const widthCm = parseInt(row["width_cm"] || "0") || null;
+  const composition = row["composition"]?.trim() || "";
+  const direction = row["direction"]?.trim() || "";
+  const vertRepeat = parseRepeatCm(row["vert_repeat"] || "");
+  const horizRepeat = parseRepeatCm(row["horiz_repeat"] || "");
+
+  // Collection: strip prefix, then prepend "IFI TEKSTILE"
+  const collectionRaw = row["collection"]?.trim() || "";
+  const cleanedCollection = cleanIfiCollectionName(collectionRaw);
+  const collectionName = cleanedCollection ? `IFI TEKSTILE ${cleanedCollection.toUpperCase()}` : "IFI TEKSTILE";
+
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, collectionName);
+  } catch (e) {
+    console.warn(`Collection error for ${collectionName}:`, e.message);
+  }
+
+  // Build description from direction
+  const descParts: string[] = [];
+  if (direction) descParts.push(direction);
+
+  return {
+    user_id: activeUserId,
+    name: displayName,
+    sku,
+    category: "fabric",
+    subcategory: "sheer_fabric",
+    fabric_width: widthCm,
+    cost_price: price,
+    selling_price: price,
+    vendor_id: vendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    composition: composition || undefined,
+    description: descParts.length > 0 ? descParts.join("; ") : undefined,
+    pattern_repeat_vertical: vertRepeat || undefined,
+    pattern_repeat_horizontal: horizRepeat || undefined,
+    collection_name: collectionName,
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
   };
 }

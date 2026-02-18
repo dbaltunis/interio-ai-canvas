@@ -31,6 +31,7 @@ const IMPORT_FILES = [
   { format: "radpol_haberdashery", file: "/import-data/CSV_RADPOL_Haberdashery.csv", label: "RAD-POL Haberdashery (90 items)" },
   { format: "laela_selected_samples", file: "/import-data/CSV_LAELA_Selected_Samples.csv", label: "LAELA Selected Samples 2024 (191 items)" },
   { format: "ridex", file: "/import-data/CSV_RIDEX_2025.csv", label: "RIDEX Interior Fabrics 2025 (145 items)" },
+  { format: "ifi_tekstile", file: "/import-data/CSV_IFI_Tekstile.csv", label: "IFI Tekstile Fabrics (523 items)" },
 ];
 
 const CHUNK_SIZE = 200;
