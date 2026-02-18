@@ -579,6 +579,8 @@ export const VisualMeasurementSheet = ({
         ...(result.leftoverFromLastPiece && result.leftoverFromLastPiece > 0 && { 
           leftoverFromLastPiece: result.leftoverFromLastPiece 
         }),
+        // Display metadata for cost breakdown
+        dropsPerWidth: result.dropsPerWidth,
         // Add blind-specific data if available
         sqm: result.details?.sqm,
         widthCalcNote: result.details?.widthCalcNote,

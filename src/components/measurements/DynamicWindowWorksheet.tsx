@@ -2229,9 +2229,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     return hasBoth ? item.cost_price : (item.selling_price || item.price_per_meter || item.cost_price || fabricCalculation?.pricePerMeter || 0);
                   })(),
                   pricing_method: selectedTemplate?.pricing_type || 'per_metre',
-                  widths_required: fabricCalculation?.widthsRequired,
-                  fabric_orientation: fabricCalculation?.fabricOrientation,
-                  uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data),
+                   widths_required: fabricCalculation?.widthsRequired,
+                   drops_per_width: fabricCalculation?.dropsPerWidth,
+                   fabric_orientation: fabricCalculation?.fabricOrientation,
+                   uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data),
                   uses_leftover: usesLeftover,
                   horizontal_pieces_needed: horizontalPiecesNeeded,
                   pieces_charged: piecesToCharge,
