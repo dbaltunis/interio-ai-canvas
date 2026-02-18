@@ -100,7 +100,18 @@ export const useProjectSuppliers = ({
     // Parse supplier_orders JSON for new multi-supplier tracking
     const parsedSupplierOrders = supplierOrders || {};
 
-    quoteItems.forEach((item) => {
+    // Filter to parent items only - children inherit vendor/TWC data from parents
+    // and should NOT be counted as separate products
+    const parentItems = quoteItems.filter((item) => {
+      const pd = item.product_details || {};
+      // Keep items that ARE parents (hasChildren=true) or standalone items (no parent indicator)
+      // Skip items that are explicitly children
+      if (pd.hasChildren === true) return true; // Parent item
+      if (pd.hasChildren === false && pd.room_id) return false; // Child of a parent
+      return true; // Standalone item (no hasChildren flag)
+    });
+
+    parentItems.forEach((item) => {
       // Check for TWC products in multiple locations
       const productDetails = item.product_details || {};
       const metadata = item.metadata || productDetails.metadata || {};

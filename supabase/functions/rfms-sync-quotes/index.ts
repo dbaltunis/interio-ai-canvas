@@ -118,11 +118,19 @@ serve(async (req: Request) => {
 
     const { projectId, direction } = await req.json();
 
-    // Get RFMS integration
+    // Resolve effective account owner for multi-tenant support
+    const { data: userProfile } = await supabase
+      .from("user_profiles")
+      .select("parent_account_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const accountOwnerId = userProfile?.parent_account_id || user.id;
+
+    // Get RFMS integration using account_owner_id (not user_id)
     const { data: integration, error: intError } = await supabase
       .from("integration_settings")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", accountOwnerId)
       .eq("integration_type", "rfms")
       .eq("active", true)
       .single();

@@ -91,6 +91,9 @@ export const useQuotationSync = ({
   // Get settings (prices already include markup, we just add tax)
   const taxRate = (businessSettings?.tax_rate || 0) / 100;
   
+  // Sync mutex to prevent concurrent syncs causing duplicates
+  const isSyncingRef = useRef(false);
+
   // Keep track of previous data to detect changes
   const previousDataRef = useRef<{
     treatmentCount: number;
@@ -1226,20 +1229,24 @@ export const useQuotationSync = ({
       const roomProductsCountChanged = allRoomProducts.length !== previousDataRef.current.roomProductsCount;
 
       if (windowCountChanged || windowCostsChanged || roomProductsCountChanged) {
-        console.log('[QUOTE SYNC] Data changed, triggering immediate sync', {
+        console.log('[QUOTE SYNC] Data changed, triggering debounced sync', {
           windowCountChanged,
           windowCostsChanged,
           roomProductsCountChanged,
           currentRoomProducts: allRoomProducts.length,
           prevRoomProducts: previousDataRef.current.roomProductsCount
         });
-        syncQuotation();
         previousDataRef.current.windowCosts = currentWindowCosts;
       }
 
-      // Also debounce for other changes
+      // Single debounced sync only (no double-sync to prevent duplicates)
       const timeoutId = setTimeout(() => {
-        syncQuotation();
+        if (!isSyncingRef.current) {
+          isSyncingRef.current = true;
+          syncQuotation().finally(() => {
+            isSyncingRef.current = false;
+          });
+        }
       }, 1000);
 
       return () => clearTimeout(timeoutId);
