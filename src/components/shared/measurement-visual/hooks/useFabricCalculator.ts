@@ -75,13 +75,15 @@ export const useFabricCalculator = ({
       // Manufacturing allowances - MUST come from template, no hardcoded defaults
       // Use nullish coalescing (??) to ONLY apply defaults when value is null/undefined
       const templateAny = template as any;
-      const headerHem = measurementsAny.header_hem ?? measurementsAny.header_allowance ?? templateAny.header_allowance ?? templateAny.header_hem;
-      const bottomHem = measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance ?? templateAny.bottom_hem ?? templateAny.bottom_allowance;
-      const sideHems = measurementsAny.side_hems ?? measurementsAny.side_hem ?? templateAny.side_hem ?? template.side_hems;
-      const seamHems = measurementsAny.seam_hems ?? measurementsAny.seam_hem ?? templateAny.seam_allowance ?? template.seam_hems;
-      const returnLeft = measurementsAny.return_left ?? template.return_left ?? 0;
-      const returnRight = measurementsAny.return_right ?? template.return_right ?? 0;
-      const wastePercent = measurementsAny.waste_percent ?? template.waste_percent ?? 0;
+      // ✅ FIX: Template is AUTHORITATIVE for manufacturing settings
+      // Template values checked FIRST — saved measurement values may be stale 0s
+      const headerHem = templateAny.header_allowance ?? templateAny.header_hem ?? measurementsAny.header_hem ?? measurementsAny.header_allowance;
+      const bottomHem = templateAny.bottom_hem ?? templateAny.bottom_allowance ?? measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance;
+      const sideHems = templateAny.side_hems ?? templateAny.side_hem ?? measurementsAny.side_hems ?? measurementsAny.side_hem;
+      const seamHems = templateAny.seam_hems ?? templateAny.seam_allowance ?? measurementsAny.seam_hems ?? measurementsAny.seam_hem;
+      const returnLeft = template.return_left ?? measurementsAny.return_left ?? 0;
+      const returnRight = template.return_right ?? measurementsAny.return_right ?? 0;
+      const wastePercent = template.waste_percent ?? measurementsAny.waste_percent ?? 0;
       
       // Log warning if critical values are missing
       if (headerHem === undefined || bottomHem === undefined) {

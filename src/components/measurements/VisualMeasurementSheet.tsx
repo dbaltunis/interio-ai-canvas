@@ -358,10 +358,12 @@ export const VisualMeasurementSheet = ({
         treatment_type_id: selectedTemplate.id,
         // Add template hems if not in measurements - ?? respects 0, || does not
         // FIX: Check DB column names FIRST (header_allowance before header_hem)
-        header_hem: measurements.header_hem ?? selectedTemplate.header_allowance ?? selectedTemplate.header_hem ?? 0,
-        bottom_hem: measurements.bottom_hem ?? selectedTemplate.bottom_hem ?? selectedTemplate.bottom_allowance ?? 0,
-        side_hem: measurements.side_hem ?? selectedTemplate.side_hems ?? selectedTemplate.side_hem ?? 0,
-        seam_hem: measurements.seam_hem ?? selectedTemplate.seam_hems ?? selectedTemplate.seam_allowance ?? 0,
+        // ✅ FIX: Template is AUTHORITATIVE for manufacturing settings (hems/seams)
+        // Template values checked FIRST — saved measurement values may be stale 0s
+        header_hem: selectedTemplate.header_allowance ?? selectedTemplate.header_hem ?? measurements.header_hem ?? 0,
+        bottom_hem: selectedTemplate.bottom_hem ?? selectedTemplate.bottom_allowance ?? measurements.bottom_hem ?? 0,
+        side_hem: selectedTemplate.side_hems ?? selectedTemplate.side_hem ?? measurements.side_hem ?? 0,
+        seam_hem: selectedTemplate.seam_hems ?? selectedTemplate.seam_allowance ?? measurements.seam_hem ?? 0,
         // Add fabric properties
         fabric_width: selectedFabricItem.fabric_width,
         // Add pattern repeats from selected fabric

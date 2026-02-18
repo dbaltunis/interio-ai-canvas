@@ -412,6 +412,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           console.log('✅ [EARLY] Restored treatment type from summary:', existingWindowSummary.treatment_type);
         }
         
+        // Hoist fullTemplate so it's accessible for hem resolution later (line ~731)
+        let fullTemplate: any = null;
+        
         if (templateDetails) {
           console.log('🔧 [v2.0.3] Template details from snapshot:', {
             id: templateDetails.id,
@@ -423,7 +426,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // CRITICAL FIX: ALWAYS fetch full template to ensure we have selected_heading_ids AND manufacturing pricing
           // FIX: Use template_id from windows_summary as fallback if template_details.id is missing
           const templateIdToFetch = templateDetails?.id || existingWindowSummary.template_id;
-          let fullTemplate = templateDetails || {};
+          fullTemplate = templateDetails || {};
           if (templateIdToFetch) {
             console.log('🔍 [v2.0.3] Fetching full template to get selected_heading_ids and manufacturing pricing:', templateIdToFetch);
             try {
@@ -727,7 +730,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
            // Hem/return/seam/waste are template-level manufacturing settings, NOT per-window measurements
            // The template is the single source of truth for these values
            // selectedTemplate was set from fullTemplate at line 454 (freshly fetched from DB)
-           const freshTemplate = selectedTemplate || existingWindowSummary.template_details;
+           // CRITICAL: Use fullTemplate (locally fetched from DB at line ~445) NOT selectedTemplate (async state, not yet updated)
+           const freshTemplate = fullTemplate || selectedTemplate || existingWindowSummary.template_details;
            if (freshTemplate) {
              // Helper: get first non-null/undefined value
              const firstDefined = (...vals: any[]) => {
@@ -3092,9 +3096,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               <ImprovedTreatmentSelector 
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={async template => {
-                  setSelectedTemplate(template);
+                  // ✅ FIX: Use handleTemplateSelect to initialize measurements with template hems
+                  handleTemplateSelect(template);
                   
                   // ✅ CRITICAL: Clear old options when template changes to prevent stale data
+                  // (handleTemplateSelect only clears on template CHANGE, force clear here for safety)
                   setSelectedOptions([]);
                   
                   if (template) {
@@ -3126,7 +3132,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                               hand_price_per_drop: template.hand_price_per_drop,
                               manufacturing_type: template.manufacturing_type,
                               waste_percent: template.waste_percent,
-                              selected_heading_ids: template.selected_heading_ids || []
+                              selected_heading_ids: template.selected_heading_ids || [],
+                              // ✅ FIX: Save ALL manufacturing values so restore doesn't lose them
+                              header_allowance: template.header_allowance,
+                              bottom_hem: template.bottom_hem,
+                              side_hems: template.side_hems,
+                              seam_hems: template.seam_hems,
+                              return_left: template.return_left,
+                              return_right: template.return_right,
+                              overlap: template.overlap,
+                              fullness_ratio: template.fullness_ratio,
                             },
                             // ✅ CRITICAL: Clear old options when treatment changes
                             selected_options: [],
