@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
           } else if (format === "dateks_pricelist_2023") {
             item = await mapPricelist2023(supabase, row, vendorId!);
           } else if (format === "cnv_trimmings") {
-            item = mapCNVTrimmings(row, vendorId!);
+            item = await mapCNVTrimmings(supabase, row, vendorId!);
           } else if (format === "eurofirany") {
             item = await mapEurofirany(supabase, row, vendorId!);
           } else if (format === "iks_forma") {
@@ -191,6 +191,11 @@ Deno.serve(async (req) => {
             vendor_id: item.vendor_id,
           };
           // Conditionally include optional fields
+          if (item.category) updateData.category = item.category;
+          if (item.unit) updateData.unit = item.unit;
+          if (item.pricing_method) updateData.pricing_method = item.pricing_method;
+          if (item.compatible_treatments) updateData.compatible_treatments = item.compatible_treatments;
+          if (item.product_category) updateData.product_category = item.product_category;
           if (item.fabric_composition) updateData.fabric_composition = item.fabric_composition;
           if (item.fire_rating) updateData.fire_rating = item.fire_rating;
           if (item.description) updateData.description = item.description;
@@ -389,6 +394,8 @@ async function mapExpo2024(supabase: any, row: Record<string, string>, vendorId:
   const costPrice = parsePrice(row.roll_price_eur);
   const sellingPrice = withPriceFallback(costPrice, parsePrice(row.sell_cut_price_eur));
 
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
+
   // Try collection extraction with improved fallbacks
   let collectionName = extractCollection(name);
   if (!collectionName) {
@@ -432,6 +439,9 @@ async function mapPricelist2023(supabase: any, row: Record<string, string>, vend
   const costPrice = parsePrice(row.roll_price_eur);
   const sellingPrice = withPriceFallback(costPrice, parsePrice(row.sell_price_eur));
 
+  const tags: string[] = [];
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
+
   // Extract collection from design field
   let collectionName = extractCollection(name);
   if (!collectionName) {
@@ -463,15 +473,30 @@ async function mapPricelist2023(supabase: any, row: Record<string, string>, vend
     collection_id: collectionId || undefined,
     compatible_treatments: ["curtains"],
     product_category: "curtains",
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
-function mapCNVTrimmings(row: Record<string, string>, vendorId: string) {
+async function mapCNVTrimmings(supabase: any, row: Record<string, string>, vendorId: string) {
   const name = row.product_type;
   if (!name) return null;
 
   const costPrice = parsePrice(row.purchase_price_eur);
   const sellingPrice = withPriceFallback(costPrice, parsePrice(row.sell_price_eur));
+
+  const tags: string[] = [];
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
+
+  // Derive collection from product_type (e.g., "Juostos" → "JUOSTOS")
+  const collectionName = name.trim().toUpperCase();
+  let collectionId: string | undefined;
+  if (collectionName) {
+    try {
+      collectionId = await ensureCollection(supabase, collectionName, vendorId);
+    } catch (e) {
+      console.warn(`Collection error for ${collectionName}:`, e.message);
+    }
+  }
 
   return {
     user_id: activeUserId,
@@ -485,7 +510,9 @@ function mapCNVTrimmings(row: Record<string, string>, vendorId: string) {
     pricing_method: row.unit === "M" ? "per_meter" as const : "per_unit" as const,
     unit: row.unit === "M" ? "meters" : "units",
     quantity: 0,
-    // Hardware items: no curtain-specific metadata
+    collection_name: collectionName || undefined,
+    collection_id: collectionId || undefined,
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
@@ -714,6 +741,7 @@ async function mapSpanishSuppliers(
   if (category) tags.push(`category:${category}`);
   if (weight) tags.push(`weight:${weight}`);
   if (martindale) tags.push(`martindale:${martindale}`);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
 
   // Collection: use Category as collection name (vendor is linked separately)
   const collectionName = category
@@ -798,6 +826,7 @@ async function mapMydeco(
   const tags: string[] = [];
   if (colorFinish) tags.push(`color:${colorFinish}`);
   if (category) tags.push(`hw_type:${category}`);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
 
   // Collection based on system size (no vendor prefix — vendor linked via vendor_id)
   let collectionName = "20MM";
@@ -897,6 +926,7 @@ async function mapRadpolFabrics(
 
   // Category tag
   if (category) tags.push(`type:${category}`);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
 
   const subcategory = mapRadpolSubcategory(category);
 
@@ -982,6 +1012,7 @@ async function mapRadpolHaberdashery(
   const tags: string[] = [];
   if (articleType) tags.push(`type:${articleType}`);
   if (categoryField) tags.push(`group:${categoryField}`);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
 
   // Name: combine article name with type for clarity
   const displayName = articleType
@@ -1164,6 +1195,7 @@ async function mapRidex(
   const csvTags = row["tags"]?.trim() || "";
 
   const tags = detectRidexTags(name, csvTags);
+  if (itemNeedsPricing(costPrice, sellingPrice)) tags.push("needs_pricing");
   const subcategory = detectRidexSubcategory(name);
 
   // Single collection for all RIDEX items

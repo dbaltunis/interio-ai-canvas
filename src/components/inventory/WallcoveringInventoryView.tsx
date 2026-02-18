@@ -354,6 +354,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                         onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                         formatPrice={formatPrice}
                         stockUnit={stockUnit}
+                        isDealer={isDealer === true}
                       />
                     );
                   })}

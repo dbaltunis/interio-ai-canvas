@@ -505,6 +505,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                       }}
                       formatPrice={formatPrice}
                       stockUnit="m"
+                      isDealer={isDealer === true}
                     />
                   ))}
                 </div>

@@ -28,6 +28,7 @@ interface InventoryMobileCardProps {
   stockUnit?: string;
   showPriceGroup?: boolean;
   renderImage?: () => React.ReactNode;
+  isDealer?: boolean;
 }
 
 export const InventoryMobileCard = ({
@@ -41,6 +42,7 @@ export const InventoryMobileCard = ({
   stockUnit = "units",
   showPriceGroup = false,
   renderImage,
+  isDealer = false,
 }: InventoryMobileCardProps) => {
   return (
     <div
@@ -77,7 +79,7 @@ export const InventoryMobileCard = ({
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium truncate">{item.name}</span>
-          {item.supplier?.toUpperCase() === 'TWC' && (
+          {!isDealer && item.supplier?.toUpperCase() === 'TWC' && (
             <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1 py-0 shrink-0">
               TWC
             </Badge>
@@ -85,8 +87,8 @@ export const InventoryMobileCard = ({
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {item.sku && <span>{item.sku}</span>}
-          {item.sku && item.supplier && <span>•</span>}
-          {item.supplier && <span>{item.supplier}</span>}
+          {!isDealer && item.sku && item.supplier && <span>•</span>}
+          {!isDealer && item.supplier && <span>{item.supplier}</span>}
         </div>
         <div className="flex items-center gap-2">
           <PricingCell item={item} className="text-xs font-medium text-primary" />
