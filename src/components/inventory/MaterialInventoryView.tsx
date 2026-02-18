@@ -333,6 +333,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                       onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                       stockUnit="units"
                       showPriceGroup={true}
+                      isDealer={isDealer === true}
                     />
                   ))}
                 </div>

@@ -372,6 +372,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                       onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                       formatPrice={formatPrice}
                       stockUnit="units"
+                      isDealer={isDealer === true}
                     />
                   ))}
                 </div>

@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Palette } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Search, Palette, Building2, ChevronRight } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
@@ -26,6 +27,8 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
   const [selectedType, setSelectedType] = useState('');
   const [selectedFabric, setSelectedFabric] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('library');
+  const [browseMode, setBrowseMode] = useState(false);
+  const [expandedVendor, setExpandedVendor] = useState<string | null>(null);
   
   const [manualFabric, setManualFabric] = useState({
     name: '',
@@ -172,6 +175,19 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
       uniqueTypes: Array.from(types)
     };
   }, [fabrics]);
+
+  // Group fabrics by vendor for browse mode
+  const vendorGroups = useMemo(() => {
+    const source = searchTerm || selectedColor || selectedType ? filteredFabrics : fabrics;
+    const groups: Record<string, { vendorName: string; items: typeof fabrics }> = {};
+    source.forEach(fabric => {
+      const vendorId = (fabric as any).vendor_id || 'unassigned';
+      const vendorName = (fabric as any).vendor?.name || (fabric as any).supplier || 'Other';
+      if (!groups[vendorId]) groups[vendorId] = { vendorName, items: [] };
+      groups[vendorId].items.push(fabric);
+    });
+    return Object.entries(groups).sort((a, b) => a[1].vendorName.localeCompare(b[1].vendorName));
+  }, [fabrics, filteredFabrics, searchTerm, selectedColor, selectedType]);
 
   // Update selected fabric when selectedFabricId changes and populate manual form if it's a manual fabric
   useEffect(() => {
@@ -365,7 +381,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
                     />
                   </div>
                   
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 flex-wrap">
                     <Select value={selectedColor} onValueChange={setSelectedColor}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Color" />
@@ -376,7 +392,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
                         ))}
                       </SelectContent>
                     </Select>
-                    
+
                     <Select value={selectedType} onValueChange={setSelectedType}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Type" />
@@ -387,72 +403,160 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType
                         ))}
                       </SelectContent>
                     </Select>
-                    
-                    <Button variant="outline" onClick={clearFilters}>
+
+                    <Button variant="outline" onClick={clearFilters} size="sm">
                       Clear Filters
+                    </Button>
+
+                    <Button
+                      variant={browseMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setBrowseMode(!browseMode)}
+                      className="ml-auto"
+                    >
+                      <Building2 className="h-3.5 w-3.5 mr-1.5" />
+                      Browse by Brand
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Results */}
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {filteredFabrics.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      {fabrics.length === 0 ? 'No fabrics in inventory' : 'No fabrics match your search'}
-                    </div>
+                  {browseMode ? (
+                    // Browse by Brand mode — vendor accordion
+                    vendorGroups.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No fabrics in inventory
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {vendorGroups.map(([vendorId, group]) => (
+                          <Collapsible
+                            key={vendorId}
+                            open={expandedVendor === vendorId}
+                            onOpenChange={(open) => setExpandedVendor(open ? vendorId : null)}
+                          >
+                            <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg hover:bg-accent/40 transition-colors text-left border">
+                              <div className="flex items-center gap-2">
+                                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${expandedVendor === vendorId ? 'rotate-90' : ''}`} />
+                                <span className="font-medium text-sm">{group.vendorName}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {group.items.length} items
+                              </Badge>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                              {group.items.map(fabric => (
+                                <Card
+                                  key={fabric.id}
+                                  className="cursor-pointer hover:shadow-md transition-shadow"
+                                  onClick={() => handleSelectFabric(fabric)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex justify-between items-start">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <h3 className="font-medium text-sm">{fabric.name}</h3>
+                                          {(fabric as any).isTWC && (
+                                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                                              TWC
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <div className="flex gap-1.5 flex-wrap">
+                                          {fabric.color && (
+                                            <Badge variant="secondary" className="text-[10px]">{fabric.color}</Badge>
+                                          )}
+                                          {fabric.type && (
+                                            <Badge variant="secondary" className="text-[10px]">{fabric.type}</Badge>
+                                          )}
+                                          {(fabric as any).price_group && (
+                                            <Badge variant="outline" className="text-[10px]">Group {(fabric as any).price_group}</Badge>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {fabric.width && `${fabric.width}cm wide`}
+                                          {fabric.quantity !== undefined && ` • ${fabric.quantity} available`}
+                                        </div>
+                                      </div>
+                                      <div className="text-right text-sm">
+                                        {(fabric as any).price_group ? (
+                                          <div className="text-xs text-muted-foreground">Grid pricing</div>
+                                        ) : fabric.cost_per_unit ? (
+                                          <div className="font-medium text-xs">
+                                            {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit || units.fabric}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ))}
+                      </div>
+                    )
                   ) : (
-                    <div className="grid gap-2">
-                      {filteredFabrics.map((fabric) => (
-                        <Card 
-                          key={fabric.id} 
-                          className="cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => handleSelectFabric(fabric)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{fabric.name}</h3>
-                                  {(fabric as any).isTWC && (
-                                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
-                                      TWC
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex gap-2 flex-wrap">
-                                  {fabric.color && (
-                                    <Badge variant="secondary" className="text-xs">{fabric.color}</Badge>
-                                  )}
-                                  {fabric.pattern && (
-                                    <Badge variant="secondary" className="text-xs">{fabric.pattern}</Badge>
-                                  )}
-                                  {fabric.type && (
-                                    <Badge variant="secondary" className="text-xs">{fabric.type}</Badge>
-                                  )}
-                                  {(fabric as any).price_group && (
-                                    <Badge variant="outline" className="text-xs">Group {(fabric as any).price_group}</Badge>
-                                  )}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {fabric.width && `${fabric.width}cm wide`}
-                                  {fabric.quantity !== undefined && ` • ${fabric.quantity} ${fabric.unit || 'units'} available`}
-                                  {(fabric as any).metadata?.maxLength && ` • Max: ${((fabric as any).metadata.maxLength / 100).toFixed(2)}m`}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                {(fabric as any).price_group ? (
-                                  <div className="text-sm text-muted-foreground">Grid pricing</div>
-                                ) : fabric.cost_per_unit ? (
-                                  <div className="font-medium">
-                                    {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit || units.fabric}
+                    // Flat search mode (original)
+                    filteredFabrics.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        {fabrics.length === 0 ? 'No fabrics in inventory' : 'No fabrics match your search'}
+                      </div>
+                    ) : (
+                      <div className="grid gap-2">
+                        {filteredFabrics.map((fabric) => (
+                          <Card
+                            key={fabric.id}
+                            className="cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => handleSelectFabric(fabric)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium">{fabric.name}</h3>
+                                    {(fabric as any).isTWC && (
+                                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                                        TWC
+                                      </Badge>
+                                    )}
                                   </div>
-                                ) : null}
+                                  <div className="flex gap-2 flex-wrap">
+                                    {fabric.color && (
+                                      <Badge variant="secondary" className="text-xs">{fabric.color}</Badge>
+                                    )}
+                                    {fabric.pattern && (
+                                      <Badge variant="secondary" className="text-xs">{fabric.pattern}</Badge>
+                                    )}
+                                    {fabric.type && (
+                                      <Badge variant="secondary" className="text-xs">{fabric.type}</Badge>
+                                    )}
+                                    {(fabric as any).price_group && (
+                                      <Badge variant="outline" className="text-xs">Group {(fabric as any).price_group}</Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {fabric.width && `${fabric.width}cm wide`}
+                                    {fabric.quantity !== undefined && ` • ${fabric.quantity} ${fabric.unit || 'units'} available`}
+                                    {(fabric as any).metadata?.maxLength && ` • Max: ${((fabric as any).metadata.maxLength / 100).toFixed(2)}m`}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  {(fabric as any).price_group ? (
+                                    <div className="text-sm text-muted-foreground">Grid pricing</div>
+                                  ) : fabric.cost_per_unit ? (
+                                    <div className="font-medium">
+                                      {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit || units.fabric}
+                                    </div>
+                                  ) : null}
+                                </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )
                   )}
                 </div>
               </>

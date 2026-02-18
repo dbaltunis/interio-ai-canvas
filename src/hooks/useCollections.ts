@@ -165,7 +165,7 @@ export const useCollectionsWithCounts = () => {
 // Hook to get vendors with their collections grouped
 export const useVendorsWithCollections = () => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
-  
+
   return useQuery({
     queryKey: ["vendors", "with-collections", effectiveOwnerId],
     queryFn: async () => {
@@ -184,22 +184,41 @@ export const useVendorsWithCollections = () => {
 
       if (collectionsError) throw collectionsError;
 
-      // Get item counts per collection
+      // Get ALL items with their vendor_id and collection_id
+      // This ensures we count items even if they have no collection assigned
       const { data: inventoryItems, error: itemsError } = await supabase
         .from("enhanced_inventory_items")
-        .select("collection_id")
+        .select("vendor_id, collection_id")
         .eq("user_id", effectiveOwnerId)
-        .not("collection_id", "is", null);
+        .eq("active", true)
+        .neq("category", "treatment_option");
 
       if (itemsError) throw itemsError;
 
       // Count items per collection
       const itemCountMap: Record<string, number> = {};
+      // Count items per vendor (including those without collection)
+      const vendorItemCountMap: Record<string, number> = {};
       inventoryItems?.forEach(item => {
+        const vendorId = item.vendor_id || "unassigned";
+        vendorItemCountMap[vendorId] = (vendorItemCountMap[vendorId] || 0) + 1;
         if (item.collection_id) {
           itemCountMap[item.collection_id] = (itemCountMap[item.collection_id] || 0) + 1;
         }
       });
+
+      // Get all vendors that have items (even without collections)
+      const { data: vendors, error: vendorsError } = await supabase
+        .from("vendors")
+        .select("id, name")
+        .eq("user_id", effectiveOwnerId)
+        .eq("active", true);
+
+      if (vendorsError) throw vendorsError;
+
+      // Build vendor lookup
+      const vendorLookup = new Map<string, { id: string; name: string }>();
+      vendors?.forEach(v => vendorLookup.set(v.id, v));
 
       // Group collections by vendor
       const vendorMap = new Map<string, {
@@ -228,7 +247,27 @@ export const useVendorsWithCollections = () => {
           itemCount,
           description: collection.description,
         });
-        entry.totalItems += itemCount;
+      });
+
+      // Ensure all vendors with items appear (even without collections)
+      for (const [vendorId, count] of Object.entries(vendorItemCountMap)) {
+        if (!vendorMap.has(vendorId)) {
+          const vendor = vendorLookup.get(vendorId) || null;
+          vendorMap.set(vendorId, {
+            vendor,
+            collections: [],
+            totalItems: 0,
+          });
+        }
+        // Use the actual item count from vendor_id (includes items without collections)
+        vendorMap.get(vendorId)!.totalItems = count;
+      }
+
+      // For vendors that are in vendorMap but have no items, ensure totalItems is correct
+      vendorMap.forEach((entry, vendorId) => {
+        if (!vendorItemCountMap[vendorId]) {
+          entry.totalItems = 0;
+        }
       });
 
       // Sort by vendor name, put unassigned last

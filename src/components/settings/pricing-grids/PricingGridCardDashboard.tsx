@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  ChevronDown, 
-  ChevronRight, 
+import {
+  ChevronDown,
+  ChevronRight,
   Plus,
   Pencil,
   Check,
@@ -18,8 +18,20 @@ import {
   Grid3X3,
   Package,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  Percent
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { toast } from 'sonner';
@@ -142,6 +154,135 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
       toast.error(error.message || 'Failed to delete grid');
     }
   });
+
+  // State for bulk price adjustment dialog
+  const [adjustGridId, setAdjustGridId] = useState<string | null>(null);
+  const [adjustPercent, setAdjustPercent] = useState('');
+  const [adjustMode, setAdjustMode] = useState<'increase' | 'decrease'>('increase');
+
+  // Export grid as CSV
+  const handleExportGrid = async (gridId: string, gridName: string) => {
+    try {
+      const { data: grid, error } = await supabase
+        .from('pricing_grids')
+        .select('grid_data, name, product_type, price_group, grid_code')
+        .eq('id', gridId)
+        .single();
+
+      if (error) throw error;
+      if (!grid?.grid_data) {
+        toast.error('Grid has no data to export');
+        return;
+      }
+
+      const gd = grid.grid_data as any;
+      let csvContent = '';
+
+      // Standard format: widthColumns + dropRows
+      if (gd.widthColumns && gd.dropRows) {
+        const widths = gd.widthColumns as number[];
+        csvContent = 'Drop / Width,' + widths.join(',') + '\n';
+        (gd.dropRows as any[]).forEach((row: any) => {
+          csvContent += row.drop + ',' + (row.prices as number[]).join(',') + '\n';
+        });
+      } else if (gd.rows && gd.columns) {
+        // Legacy format
+        const cols = (gd.columns as any[]).map((c: any) => c.key || `${c.width_min}-${c.width_max}`);
+        csvContent = 'Drop Range,' + cols.join(',') + '\n';
+        (gd.rows as any[]).forEach((row: any) => {
+          const label = `${row.drop_min}-${row.drop_max}`;
+          const prices = cols.map((col: string) => row[col] || 0);
+          csvContent += label + ',' + prices.join(',') + '\n';
+        });
+      }
+
+      if (!csvContent) {
+        toast.error('Unsupported grid format for export');
+        return;
+      }
+
+      // Add metadata header
+      const header = `# Grid: ${grid.name}\n# Type: ${grid.product_type}\n# Group: ${grid.price_group}\n# Code: ${grid.grid_code}\n`;
+      csvContent = header + csvContent;
+
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pricing_grid_${gridName.replace(/\s+/g, '_')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Grid exported');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to export grid');
+    }
+  };
+
+  // Bulk adjust all prices in a grid by percentage
+  const adjustPricesMutation = useMutation({
+    mutationFn: async ({ gridId, percent, mode }: { gridId: string; percent: number; mode: 'increase' | 'decrease' }) => {
+      const { data: grid, error: fetchError } = await supabase
+        .from('pricing_grids')
+        .select('grid_data')
+        .eq('id', gridId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!grid?.grid_data) throw new Error('No grid data');
+
+      const gd = { ...(grid.grid_data as any) };
+      const multiplier = mode === 'increase' ? (1 + percent / 100) : (1 - percent / 100);
+
+      // Standard format
+      if (gd.dropRows) {
+        gd.dropRows = (gd.dropRows as any[]).map((row: any) => ({
+          ...row,
+          prices: (row.prices as number[]).map((p: number) => Math.round(p * multiplier * 100) / 100),
+        }));
+      }
+      // Legacy format
+      if (gd.rows && gd.columns) {
+        const cols = (gd.columns as any[]).map((c: any) => c.key);
+        gd.rows = (gd.rows as any[]).map((row: any) => {
+          const updated = { ...row };
+          cols.forEach((col: string) => {
+            if (typeof updated[col] === 'number') {
+              updated[col] = Math.round(updated[col] * multiplier * 100) / 100;
+            }
+          });
+          return updated;
+        });
+      }
+
+      const { error: updateError } = await supabase
+        .from('pricing_grids')
+        .update({ grid_data: gd })
+        .eq('id', gridId);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      toast.success('Grid prices adjusted');
+      queryClient.invalidateQueries({ queryKey: ['pricing-grids-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['pricing-grids'] });
+      setAdjustGridId(null);
+      setAdjustPercent('');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to adjust prices');
+    }
+  });
+
+  const handleAdjustPrices = () => {
+    if (!adjustGridId || !adjustPercent) return;
+    const pct = parseFloat(adjustPercent);
+    if (isNaN(pct) || pct <= 0) {
+      toast.error('Enter a valid percentage');
+      return;
+    }
+    adjustPricesMutation.mutate({ gridId: adjustGridId, percent: pct, mode: adjustMode });
+  };
 
   const toggleExpand = (productType: string) => {
     const next = new Set(expandedTypes);
@@ -358,6 +499,28 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
                           </button>
                         )}
                         
+                        {/* Adjust Prices */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => setAdjustGridId(grid.id)}
+                          title="Adjust all prices"
+                        >
+                          <Percent className="h-3 w-3" />
+                        </Button>
+
+                        {/* Export CSV */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => handleExportGrid(grid.id, grid.name)}
+                          title="Export as CSV"
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+
                         {/* Delete */}
                         <Button
                           variant="ghost"
@@ -376,6 +539,51 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
           </Card>
         </Collapsible>
       ))}
+
+      {/* Adjust Prices Dialog */}
+      <Dialog open={!!adjustGridId} onOpenChange={(open) => { if (!open) setAdjustGridId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Adjust Grid Prices</DialogTitle>
+            <DialogDescription>
+              Apply a percentage adjustment to all prices in this grid.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <RadioGroup value={adjustMode} onValueChange={(v) => setAdjustMode(v as any)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="increase" id="adj_inc" />
+                <Label htmlFor="adj_inc" className="cursor-pointer">Increase prices</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="decrease" id="adj_dec" />
+                <Label htmlFor="adj_dec" className="cursor-pointer">Decrease prices</Label>
+              </div>
+            </RadioGroup>
+            <div className="space-y-2">
+              <Label>Percentage</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  placeholder="e.g., 10"
+                  value={adjustPercent}
+                  onChange={(e) => setAdjustPercent(e.target.value)}
+                />
+                <span className="text-sm text-muted-foreground shrink-0">%</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjustGridId(null)}>Cancel</Button>
+            <Button onClick={handleAdjustPrices} disabled={adjustPricesMutation.isPending}>
+              {adjustPricesMutation.isPending ? 'Adjusting...' : 'Apply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
