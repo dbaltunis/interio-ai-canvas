@@ -821,6 +821,14 @@ export function WindowSummaryCard({
                       total_cost: item.total_cost,
                       category: item.category,
                       isIncluded: item.total_cost === 0 && item.name,
+                      pricing_method: item.pricing_method,
+                      widths_required: item.widths_required,
+                      drops_per_width: item.drops_per_width,
+                      grid_dimensions: item.grid_dimensions,
+                      uses_pricing_grid: item.uses_pricing_grid,
+                      pricing_method_label: item.pricing_method_label,
+                      quantity_display: item.quantity_display,
+                      display_formula: item.display_formula,
                     } as CostBreakdownItem))}
                     totalCost={displayTotal}
                     currency={userCurrency}
