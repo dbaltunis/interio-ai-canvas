@@ -78,6 +78,9 @@ export const useQuoteItems = (quoteId?: string) => {
             rail_width: item.rail_width,
             drop: item.drop,
           },
+          // Vendor and inventory tracking for supplier ordering
+          vendor_id: item.vendor_id || item.product_details?.vendor_id || null,
+          inventory_item_id: item.inventory_item_id || item.product_details?.inventory_item_id || null,
         },
         breakdown: item.breakdown || {},
         currency: item.currency || 'USD', // Fallback only - should come from item
