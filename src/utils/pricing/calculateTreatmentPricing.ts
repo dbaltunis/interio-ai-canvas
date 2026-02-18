@@ -104,6 +104,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const returnRight = template?.return_right || 0;
   const seamHems = template?.seam_hems || 0;
   // ✅ FIX: Use proper nullish chain with 0 as final fallback (not arbitrary 8cm)
+  // FIX: DB column names first: header_allowance, bottom_hem
   const headerHemRaw = template?.header_allowance ?? template?.header_hem ?? template?.header_hem_cm;
   const bottomHemRaw = template?.bottom_hem ?? template?.bottom_allowance ?? template?.bottom_hem_cm;
   

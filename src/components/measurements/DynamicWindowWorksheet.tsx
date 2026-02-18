@@ -736,33 +736,35 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               return fallbacks[fallbacks.length - 1];
             };
             
+            // FIX: Check DB column names FIRST (header_allowance, not header_hem)
+            // FIX: Fallback to 0 instead of hardcoded 8/15/7.5/1.5/5
             restoredMeasurements.header_hem = safeValue(
               restoredMeasurements.header_hem,
               restoredMeasurements.header_allowance,
-              templateToUse.header_hem,
               templateToUse.header_allowance,
-              8
+              templateToUse.header_hem,
+              0
             );
             restoredMeasurements.bottom_hem = safeValue(
               restoredMeasurements.bottom_hem,
               restoredMeasurements.bottom_allowance,
               templateToUse.bottom_hem,
               templateToUse.bottom_allowance,
-              15
+              0
             );
             restoredMeasurements.side_hems = safeValue(
               restoredMeasurements.side_hems,
               restoredMeasurements.side_hem,
               templateToUse.side_hems,
               templateToUse.side_hem,
-              7.5
+              0
             );
             restoredMeasurements.seam_hems = safeValue(
               restoredMeasurements.seam_hems,
               restoredMeasurements.seam_hem,
               templateToUse.seam_hems,
               templateToUse.seam_allowance,
-              1.5
+              0
             );
             restoredMeasurements.return_left = safeValue(
               restoredMeasurements.return_left,
@@ -777,7 +779,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             restoredMeasurements.waste_percent = safeValue(
               restoredMeasurements.waste_percent,
               templateToUse.waste_percent,
-              5
+              0
             );
           }
           

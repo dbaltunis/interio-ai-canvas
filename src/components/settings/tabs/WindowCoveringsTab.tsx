@@ -4,12 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
-import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
+
 import { TWCLibraryBrowser } from "@/components/integrations/TWCLibraryBrowser";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { SectionHelpButton } from "@/components/help/SectionHelpButton";
-import { Layers, Settings, Sliders, Truck, Lock } from "lucide-react";
+import { Layers, Sliders, Truck, Lock } from "lucide-react";
 
 interface CreateTemplateData {
   name: string;
@@ -71,8 +71,8 @@ export const WindowCoveringsTab = ({
     }
   };
 
-  // Fixed 5 tabs - Suppliers always visible
-  const tabCount = 5;
+  // Fixed 4 tabs - Suppliers always visible (Defaults tab removed)
+  const tabCount = 4;
 
   return (
     <div className="space-y-6">
@@ -91,7 +91,7 @@ export const WindowCoveringsTab = ({
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger
                 value="templates"
                 className="data-[state=active]:bg-primary/10"
@@ -118,10 +118,6 @@ export const WindowCoveringsTab = ({
               <TabsTrigger value="treatment-options" className="data-[state=active]:bg-primary/10">
                 <Sliders className="h-4 w-4 mr-2" />
                 Options
-              </TabsTrigger>
-              <TabsTrigger value="defaults" className="data-[state=active]:bg-primary/10">
-                <Settings className="h-4 w-4 mr-2" />
-                Defaults
               </TabsTrigger>
             </TabsList>
 
@@ -164,9 +160,6 @@ export const WindowCoveringsTab = ({
               <WindowTreatmentOptionsManager />
             </TabsContent>
 
-            <TabsContent value="defaults" className="mt-6">
-              <ManufacturingDefaults />
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

@@ -18,42 +18,8 @@ import { HeadingStyleSelector } from "./HeadingStyleSelector";
 import { TemplateOptionsManager } from "./TemplateOptionsManager";
 import { TWCOptionsPreview } from "./TWCOptionsPreview";
 import { OptionRulesManager } from "./OptionRulesManager";
-import { useQuery } from "@tanstack/react-query";
 
-// Hook to fetch manufacturing defaults from business_settings
-const useManufacturingDefaults = () => {
-  return useQuery({
-    queryKey: ['manufacturing-defaults'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
 
-      const { data, error } = await supabase
-        .from('business_settings')
-        .select('pricing_settings')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading manufacturing defaults:', error);
-        return null;
-      }
-
-      if (data?.pricing_settings) {
-        const settings = typeof data.pricing_settings === 'string'
-          ? JSON.parse(data.pricing_settings)
-          : data.pricing_settings;
-
-        // Validate settings is a proper object
-        if (typeof settings === 'object' && settings !== null && !('0' in settings) && !Array.isArray(settings)) {
-          return settings.manufacturing_defaults || null;
-        }
-      }
-      return null;
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-};
 
 interface PrefilledData {
   name: string;
@@ -74,28 +40,6 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   const updateTemplate = useUpdateCurtainTemplate();
   const [isSaving, setIsSaving] = useState(false);
   const [linkedTWCProduct, setLinkedTWCProduct] = useState<any>(null);
-  const [defaultsApplied, setDefaultsApplied] = useState(false);
-
-  // Fetch manufacturing defaults from business_settings
-  const { data: manufacturingDefaults } = useManufacturingDefaults();
-
-  // Helper to get default value: template value > business defaults > fallback (0 or empty)
-  const getDefaultValue = (
-    templateValue: number | undefined | null,
-    defaultKey: keyof NonNullable<typeof manufacturingDefaults>,
-    fallback: string = ""
-  ): string => {
-    // If template has a value, use it
-    if (templateValue !== undefined && templateValue !== null) {
-      return templateValue.toString();
-    }
-    // If business defaults are available, use them
-    if (manufacturingDefaults && manufacturingDefaults[defaultKey] !== undefined) {
-      return manufacturingDefaults[defaultKey].toString();
-    }
-    // Otherwise return empty (0 for new templates without defaults)
-    return fallback;
-  };
 
   const [formData, setFormData] = useState({
     name: template?.name || prefilledData?.name || "",
@@ -154,24 +98,6 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     maximum_height: (template as any)?.maximum_height?.toString() || "",
   });
 
-  // Apply manufacturing defaults when they load (only for new templates without values)
-  useEffect(() => {
-    if (manufacturingDefaults && !defaultsApplied && !template) {
-      // Only apply defaults for new templates (not editing existing ones)
-      setFormData(prev => ({
-        ...prev,
-        header_allowance: prev.header_allowance || manufacturingDefaults.header_allowance?.toString() || "",
-        bottom_hem: prev.bottom_hem || manufacturingDefaults.bottom_hem?.toString() || "",
-        side_hems: prev.side_hems || manufacturingDefaults.side_hems?.toString() || "",
-        seam_hems: prev.seam_hems || manufacturingDefaults.seam_hems?.toString() || "",
-        return_left: prev.return_left || manufacturingDefaults.return_left?.toString() || "",
-        return_right: prev.return_right || manufacturingDefaults.return_right?.toString() || "",
-        overlap: prev.overlap || manufacturingDefaults.overlap?.toString() || "",
-        waste_percent: prev.waste_percent || manufacturingDefaults.waste_percent?.toString() || "",
-      }));
-      setDefaultsApplied(true);
-    }
-  }, [manufacturingDefaults, defaultsApplied, template]);
 
   // Fetch linked TWC product data when template has inventory_item_id
   useEffect(() => {
