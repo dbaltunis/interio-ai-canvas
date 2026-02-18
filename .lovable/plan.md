@@ -1,116 +1,110 @@
 
 
-## Fix: Display-vs-Pricing Mismatch in Fabric Calculations
+## Fix: Overlap Missing from Display — Causes Display vs Pricing Mismatch
 
-### The Problem (What You're Seeing)
+### The Problem
 
-The "Fabric Usage Breakdown" display shows one set of numbers (e.g., Total Width: 818cm, 7.74m), but the pricing formula below it shows a DIFFERENT amount (e.g., 8.24m x 26.50 = 218.36). These come from **different calculation paths that disagree on the math**.
+The **Fabric Usage Breakdown** shows `Total Width: 1006.0cm` and computes fabric usage WITHOUT overlap.
+The **Quote Summary** pricing uses the engine result which INCLUDES overlap (`(500 + 1) * 2.0 = 1002cm`).
 
-### Root Causes (3 Bugs)
+This is why the numbers don't match — the display path skips overlap entirely.
 
-#### Bug 1: `quantity` not set from `curtain_type` in `fabricUsageCalculator`
+### Root Cause
 
-The `fabricUsageCalculator.ts` (line 159) reads `formData.quantity || 1`, but the actual panel count comes from `curtain_type === 'pair'` (which means 2 panels). This means:
+In `VisualMeasurementSheet.tsx` line 532:
 
-- **Display** (VisualMeasurementSheet): Uses `curtainCount = 2` for side hems, showing `3cm x 2 x 2 = 12cm`
-- **Calculator** (fabricUsageCalculator): Uses `quantity = 1`, computing side hems as `3cm x 2 x 1 = 6cm`
-
-Result: The display says 818cm total width, but the calculator uses 812cm. The linear meters are **wrong because side hems are halved**.
-
-**Fix:** In `fabricUsageCalculator.ts`, derive quantity from `formData.curtain_type`:
 ```
-const quantity = formData.curtain_type === 'pair' ? 2 : (formData.quantity || 1);
+const requiredWidth = width * fullnessRatioValue;  // BUG: missing overlap
 ```
 
-#### Bug 2: `overlap` not passed to fabricUsageCalculator
+Should be:
 
-The `fabricUsageCalculator.ts` (line 243-244) reads `formData.return_left` and `formData.return_right` but never reads `overlap`. The template has `overlap: 3cm` but it's not in formData. The engine correctly picks up overlap from the template via `buildMeasurements`, but the legacy calculator ignores it.
-
-**Fix:** In `fabricUsageCalculator.ts`, add overlap reading:
 ```
-const overlap = parseFloat(formData.overlap) || 0;
-```
-And pass it in the `params` object (line 264-279).
-
-Also in `VisualMeasurementSheet.tsx`, enrich measurements with the template's overlap value so it reaches the calculator.
-
-#### Bug 3: `calculateTreatmentPricing.ts` has its OWN linear meters formula
-
-This file (line 161) computes:
-```
-linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier
+const overlapCm = selectedTemplate.overlap || 0;
+const requiredWidth = (width + overlapCm) * fullnessRatioValue;
 ```
 
-This has TWO differences from the engine:
-1. It multiplies `seamHems * 2` per seam (line 151), but the engine treats `seamHemCm` as TOTAL per join (not per side)
-2. It adds seam allowance to the DROP before multiplying by widths, which inflates the result when widthsRequired > 1
+Same bug in `AdaptiveFabricPricingDisplay.tsx` lines 605 and 699 — the display fallback computes `railWidth * fullness` without overlap.
 
-The engine formula (the correct one):
+### What Needs to Change
+
+#### File 1: `VisualMeasurementSheet.tsx` (line 532)
+
+Add overlap to width calculation AND include it in `fabricCalcResult`:
+
 ```
-totalFabricCm = (widthsRequired * totalDropCm) + seamAllowanceCm
+Before:
+  const requiredWidth = width * fullnessRatioValue;
+  const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+
+After:
+  const overlapCm = selectedTemplate.overlap ?? 0;
+  const requiredWidth = (width + overlapCm) * fullnessRatioValue;
+  const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
 ```
 
-**Fix:** This file is a LEGACY path that should delegate to the engine formulas instead of computing its own. Replace lines 131-161 with a call to the engine's `calculateCurtainVertical` / `calculateCurtainHorizontal`.
+Also add `overlap: overlapCm` to the `fabricCalcResult` object (around line 551) so the display component can show it.
 
-### Fix Plan
+#### File 2: `AdaptiveFabricPricingDisplay.tsx`
 
-#### File 1: `fabricUsageCalculator.ts`
+**Vertical display** (line 605): Add overlap to the Total Width calculation:
+```
+Before:
+  const totalWidthMM = railWidthMM * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
 
-| Line | Change |
-|---|---|
-| 159 | Derive `quantity` from `curtain_type === 'pair'` instead of `formData.quantity` |
-| 243-244 | Read `overlap` from formData |
-| 264-279 | Pass `overlap` in params object |
+After:
+  const overlapMM = (fabricCalculation?.overlap || 0) * 10;
+  const totalWidthMM = (railWidthMM + overlapMM) * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
+```
 
-#### File 2: `VisualMeasurementSheet.tsx`
+**Vertical sub-item** (line 617): Show `(Rail + Overlap) x Fullness`:
+```
+Before:
+  return formatMeasurement(railWidthMM * (displayFullness || 1), 'mm');
 
-| Line | Change |
-|---|---|
-| ~356-377 | Add `overlap` to `enrichedMeasurements` from template |
+After:
+  const overlapMM = (fabricCalculation?.overlap || 0) * 10;
+  return formatMeasurement((railWidthMM + overlapMM) * (displayFullness || 1), 'mm');
+```
 
-#### File 3: `calculateTreatmentPricing.ts`
+Add an **Overlap line** after Returns in the vertical breakdown (after line 639):
+```
+{fabricCalculation?.overlap > 0 && (
+  <div className="flex justify-between pl-2 text-muted-foreground/70">
+    <span>Overlap:</span>
+    <span>{formatMeasurement(fabricCalculation.overlap, 'cm')}</span>
+  </div>
+)}
+```
 
-| Line | Change |
-|---|---|
-| 131-161 | Replace manual linear meters formula with call to engine's `calculateCurtainVertical`/`calculateCurtainHorizontal`. This eliminates the duplicate formula entirely. |
-| 151 | Remove the `seamHems * 2` calculation (engine handles seams correctly) |
+**Horizontal display** (line 699): Same fix:
+```
+Before:
+  const totalCM = railWidthCM * displayFullness + returnsCM + sideHemsCM;
 
-#### File 4: `orientationCalculator.ts`
+After:
+  const overlapCM = fabricCalculation?.overlap || 0;
+  const totalCM = (railWidthCM + overlapCM) * displayFullness + returnsCM + sideHemsCM;
+```
 
-| Line | Change |
-|---|---|
-| ~264-279 | Pass `overlap` from params to formula inputs (currently it's passed but the FabricCalculationParams type needs to include it) |
+Add Overlap line in horizontal breakdown too (after line 674).
 
-### Verification Math
+### Files to Change
 
-With the fix, using the user's values (rail 400cm, fullness 2.0, pair, hems all 3cm, overlap 3cm, fabric 290cm, waste 2%):
+| File | Lines | Change |
+|---|---|---|
+| `VisualMeasurementSheet.tsx` | 532-533 | Add overlap to width formula |
+| `VisualMeasurementSheet.tsx` | ~551 | Add `overlap` field to `fabricCalcResult` |
+| `AdaptiveFabricPricingDisplay.tsx` | 605 | Add overlap to vertical Total Width fallback |
+| `AdaptiveFabricPricingDisplay.tsx` | 617 | Add overlap to Rail x Fullness display |
+| `AdaptiveFabricPricingDisplay.tsx` | ~639 | Add Overlap display line (vertical) |
+| `AdaptiveFabricPricingDisplay.tsx` | 699 | Add overlap to horizontal Total Width fallback |
+| `AdaptiveFabricPricingDisplay.tsx` | ~674 | Add Overlap display line (horizontal) |
 
-**Correct calculation (vertical):**
-- finishedWidth = (400 + 3 overlap) x 2.0 = 806cm
-- sideHems = 3 x 2 sides x 2 panels = 12cm
-- returns = 3 + 3 = 6cm
-- totalWidth = 806 + 6 + 12 = 824cm
-- widthsRequired = ceil(824/290) = 3
-- totalDrop = 250 + 3 + 3 = 256cm
-- seams = 2, seamAllowance = 2 x 3 = 6cm
-- totalFabric = (3 x 256) + 6 = 774cm = 7.74m
-- with 2% waste = 7.74 x 1.02 = 7.89m
-- cost = 7.89 x 26.50 = 209.09
+### Verification
 
-The display breakdown and the pricing formula will show the SAME numbers.
+With user values (rail 500, overlap 1, fullness 2.0, returns 2, side hems 4):
+- Before fix: `500 * 2.0 + 2 + 4 = 1006cm` (wrong, no overlap)
+- After fix: `(500 + 1) * 2.0 + 2 + 4 = 1008cm` (correct, matches engine)
 
-### Technical Details
-
-The seam allowance convention difference is critical:
-- Engine: `seamHemCm` = TOTAL per join (e.g., 3cm means 3cm total consumed per seam)
-- Legacy (`calculateTreatmentPricing`): multiplies by 2, treating it as per-side
-
-The engine convention (total per join) is correct for the industry. The legacy code's `* 2` doubles the seam consumption, inflating fabric usage.
-
-### Expected Result
-
-- Fabric Usage Breakdown numbers will exactly match the pricing formula
-- Side hems correctly account for pair curtains (4 hems, not 2)
-- Overlap included in width calculation
-- Single formula (engine) used everywhere -- no more disagreements between paths
-
+Both display AND pricing will use 1008cm, producing identical linear meters.
