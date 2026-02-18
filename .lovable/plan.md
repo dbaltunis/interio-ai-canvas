@@ -1,56 +1,109 @@
 
 
-## Fix: Third Price Path in DynamicWindowWorksheet Not Updated
+## Display Selling Prices Everywhere, Cost/Markup Only for Authorized Users
 
 ### The Problem
 
-We fixed `useFabricCalculator.ts` and `calculateTreatmentPricing.ts` to use the smart price base (cost_price when both exist), but missed a **third path** in `DynamicWindowWorksheet.tsx` that still uses `selling_price` as the base.
-
-### The Chain of the Bug
-
-```text
-Line 3301: pricePerMeter = selling_price (290)
-Line 3366: fabricCost = 22.05m x 290 = 6394.50
-Line 1748-1753: impliedMarkup = (290-145)/145 = 100%
-Line 1797: fabricSelling = applyMarkup(6394.50, 100%) = 12,789  <-- DOUBLED!
-```
-
-The base is 290 (selling), but the markup system detects 100% implied markup from cost vs selling and applies it again.
-
-### The Fix (one location)
-
-**File: `DynamicWindowWorksheet.tsx`, line 3299-3303**
-
-Apply the same smart conditional used everywhere else:
+After the smart price base fix, the calculator correctly uses `cost_price` (e.g., 145/m) as the math base. But this cost price now leaks into the **visible formula details** shown to all users:
 
 ```
-Before:
-  const pricePerMeter = selectedFabricItem?.selling_price
-    || selectedFabricItem?.price_per_meter
-    || selectedFabricItem?.cost_price
-
-After:
-  const hasBothPrices = (selectedFabricItem?.cost_price || 0) > 0
-    && (selectedFabricItem?.selling_price || 0) > 0;
-  const pricePerMeter = hasBothPrices
-    ? selectedFabricItem.cost_price
-    : (selectedFabricItem?.selling_price
-      || selectedFabricItem?.price_per_meter
-      || selectedFabricItem?.cost_price || 0);
+Fabric: 22.05m x 145/m = 3,197   <-- everyone sees cost price!
+Quote Price: 6,394               <-- doubled with markup
 ```
 
-There is also a second occurrence at line 1341 that uses `fabricCalculation?.pricePerMeter` which is already fixed (comes from useFabricCalculator). But the line 3301 occurrence is hardcoded and was never updated.
+This is a privacy and UX issue:
+- **Dealers** should never see cost prices
+- **Staff** without cost visibility permission should not see them
+- **Admins** feel uncomfortable because a client looking over their shoulder sees the cost price, not the selling price
+- The "Quote Price" should match what appears on the client's quote
 
-### Why This Only Breaks Some Accounts
+### The Correct Approach
 
-- If a fabric has only `selling_price` (no `cost_price`): `impliedMarkup = 0` (since cost is 0). No double markup. Works fine.
-- If a fabric has both prices (cost=145, selling=290): `impliedMarkup = 100%`. The base is already 290 (selling), then 100% markup is applied on top. Price doubles.
+**Calculation layer**: Keep using `cost_price` as the base (for correct markup math) -- no changes here.
+
+**Display layer**: Always show `selling_price` (or the final marked-up price) in formula details, and only reveal the cost/markup breakdown in the dedicated section for authorized users.
+
+### What Changes
+
+#### 1. CostCalculationSummary.tsx -- Fabric details string (lines 1104-1132)
+
+Currently the details string is built with `fabricDisplayData.pricePerMeter` which is now `cost_price`:
+```
+"22.05m x 145/m = 3,197"
+```
+
+**Fix**: Build TWO versions of the details string:
+- **Display details** (shown to everyone): uses selling price per meter
+- **Cost details** (shown only to authorized users in markup section): uses cost price
+
+```typescript
+// Calculate the display price (what client pays per meter)
+const displayPricePerUnit = fabricHasBothPrices
+  ? (fabricToUse?.selling_price || pricePerUnit)  // Show selling price
+  : pricePerUnit;  // Already at selling price (Scenario B/D)
+
+// Display formula uses selling price
+fabricDetails = `${formatFabricLength(meters)} x ${formatPricePerFabricUnit(displayPricePerUnit)} = ${formatPrice(meters * displayPricePerUnit)}`;
+```
+
+Then in the table item, the `price` field stays as cost-based (for internal math), but `details` shows selling-price-based formula. The "Price" column already shows `sellingPrice` correctly.
+
+#### 2. CostCalculationSummary.tsx -- Align the sellingPrice with the display
+
+When `hasBothPrices` is true (Scenario A), the table item should show:
+- **Details**: `"22.05m x 290/m = 6,394"` (selling price formula)
+- **Price column**: 6,394 (the selling price -- same number)
+- **Cost Total row** (authorized only): 3,197 (the cost total)
+
+This means the `sellingPrice` for the item should equal `meters x displayPricePerUnit`, and the `price` (cost) should remain `fabricCost` (meters x cost_price).
+
+#### 3. DynamicWindowWorksheet.tsx -- fabricDisplayData (line 3683-3693)
+
+Add a `displayPricePerMeter` field alongside `pricePerMeter`:
+
+```typescript
+fabricDisplayData={{
+  linearMeters: perPieceMeters,
+  totalMeters: totalMeters,
+  pricePerMeter: pricePerMeter,           // cost-based (for internal math)
+  displayPricePerMeter: hasBothPrices      // selling-based (for UI display)
+    ? selectedFabricItem.selling_price
+    : pricePerMeter,
+  ...
+}}
+```
+
+#### 4. QuoteSummaryTable.tsx -- Details column already respects canViewCosts
+
+The table already has logic (line 154) to strip price info from details for dealers:
+```typescript
+const displayDetails = canViewCosts ? item.details : extractQuantityOnly(item.details);
+```
+
+With the fix above, even `canViewCosts=true` users (admins) will see selling prices in the formula, which is the desired behavior. The cost breakdown is only in the dedicated "Cost Total" row and markup indicators.
+
+### Summary of Display Behavior After Fix
+
+| Element | Everyone Sees | Authorized Users Also See |
+|---|---|---|
+| Fabric formula | "22.05m x 290/m = 6,394" | Same |
+| Price column | 6,394 (selling) | Same |
+| Cost Total row | Hidden | 3,197 (cost total) |
+| Markup indicator | Hidden | "(100% markup)" |
+| Quote Price | 6,394 | 6,394 |
 
 ### Files to Change
 
-| File | Line | Change |
-|---|---|---|
-| `DynamicWindowWorksheet.tsx` | 3299-3303 | Apply smart price base conditional (same as useFabricCalculator) |
+| File | Change |
+|---|---|
+| `CostCalculationSummary.tsx` | Use selling price in fabric details string; keep cost price for internal math only |
+| `DynamicWindowWorksheet.tsx` | Add `displayPricePerMeter` to fabricDisplayData |
+| `CostCalculationSummary.tsx` interface | Add `displayPricePerMeter` to FabricDisplayData type |
 
-One file, one location. The root cause of the doubling.
+### What Does NOT Change
+
+- The **calculation logic** (smart price base) stays exactly as implemented
+- The **save/persist logic** stays the same (cost_price as base, markup metadata saved)
+- The **markup resolution** stays the same
+- The **QuoteSummaryTable** component itself needs no changes (it already uses `sellingPrice` for the Price column)
 
