@@ -12,7 +12,20 @@ const corsHeaders = {
  * Handles session creation and token refresh for the RFMS API v2.
  * Auth flow: POST /v2/session/begin with Basic Auth (store_queue:api_key)
  * Returns a session token that auto-extends on each API call.
+ * 
+ * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
  */
+
+async function resolveAccountOwnerId(supabase: any, userId: string): Promise<string> {
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("parent_account_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  
+  return profile?.parent_account_id || userId;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,11 +46,14 @@ serve(async (req: Request) => {
 
     const { action } = await req.json();
 
-    // Get integration settings
+    // Resolve effective account owner for multi-tenant support
+    const accountOwnerId = await resolveAccountOwnerId(supabase, user.id);
+
+    // Get integration settings using account_owner_id (not user_id)
     const { data: integration, error: intError } = await supabase
       .from("integration_settings")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", accountOwnerId)
       .eq("integration_type", "rfms")
       .eq("active", true)
       .single();
@@ -54,7 +70,6 @@ serve(async (req: Request) => {
     }
 
     if (action === "begin" || action === "refresh") {
-      // Begin a new session
       const basicAuth = btoa(`${store_queue}:${api_key}`);
 
       const response = await fetch(`${apiUrl}/session/begin`, {
@@ -82,7 +97,7 @@ serve(async (req: Request) => {
         throw new Error("No session token in RFMS response");
       }
 
-      // Store session token in integration settings
+      // Store session token
       await supabase
         .from("integration_settings")
         .update({
@@ -108,7 +123,6 @@ serve(async (req: Request) => {
     }
 
     if (action === "end") {
-      // Clear session token
       await supabase
         .from("integration_settings")
         .update({
