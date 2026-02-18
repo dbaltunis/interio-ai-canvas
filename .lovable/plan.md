@@ -1,122 +1,79 @@
 
 
-## Fix: Three Separate Issues in the Worksheet and Quote Display
+## Fix: Revert unit_price and price_per_meter Back to Cost-Based
 
-### Issue 1: Infinite Decimal in Drop Input (e.g., 108.49999999999999)
+### The Bug (crystal clear)
 
-**Root Cause**: Floating-point precision loss during unit conversion round-trips.
+The previous fix changed `unit_price` and `price_per_meter` to save selling_price (290). But `WindowSummaryCard.applyMarkupToItem()` applies markup to EVERY saved value:
 
-When the worksheet loads saved data:
-1. User enters `108.5` (in inches)
-2. Save converts to MM: `108.5 * 25.4 = 2755.9`
-3. On reload, the useEffect (line 904) converts back: `2755.9 / 25.4 = 108.49999999999999...`
-4. This unrounded string is set as the input value
-
-This only affects Drop (and Rail Width) when the user's unit involves non-integer conversion factors (inches, feet, yards).
-
-**Fix**: Round the converted value in the useEffect at line 904-906 of `DynamicWindowWorksheet.tsx`. Apply `parseFloat(value.toFixed(4))` to truncate floating-point noise while preserving user precision (e.g., `.25`, `.5`).
-
-```
-Before:
-  convertLength(storedDropMM, 'mm', units.length).toString()
-
-After:
-  parseFloat(convertLength(storedDropMM, 'mm', units.length).toFixed(4)).toString()
+```text
+Saved: unit_price = 290 (selling), implied_markup = 100%
+Display: applyMarkup(290, 100%) = 580  <-- DOUBLED!
 ```
 
-Same fix for `convertedWidth` on line 898.
-
-**Files**: `DynamicWindowWorksheet.tsx` (lines 898 and 905)
-
----
-
-### Issue 2: Fabric Price Shows unit_price (580) Instead of Selling Price
-
-**Root Cause**: In the WindowSummaryCard, line 237 reads `fabricUnitPrice = Number(summary.price_per_meter)`. The `price_per_meter` saved in the summary (line 1887-1889 of DynamicWindowWorksheet) falls through to `unit_price` when `selling_price` is falsy.
-
-But the real issue is that `price_per_meter` saved to the database at line 1887-1889 uses the smart base selection for the save path, which correctly picks `cost_price` when both exist. However, for display in the WindowSummaryCard, we should show the **selling price**, not the cost-based price.
-
-The fix has two parts:
-
-**Part A**: The save path (line 1887-1889) should save the **display price** (selling price) to `price_per_meter`, since this field is used by WindowSummaryCard for client-facing display:
-
-```
-Before:
-  price_per_meter: selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || ...
-
-After (apply smart display price logic):
-  price_per_meter: (() => {
-    const item = selectedItems.fabric || selectedItems.material;
-    const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
-    return hasBoth
-      ? item.selling_price
-      : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
-  })()
+The correct flow should be:
+```text
+Saved: unit_price = 145 (cost), implied_markup = 100%
+Display: applyMarkup(145, 100%) = 290  <-- CORRECT selling price
 ```
 
-**Part B**: Same logic for the cost_breakdown's fabric `unit_price` at line 2228:
+### The Fix (two reverts in one file)
+
+**File: `DynamicWindowWorksheet.tsx`**
+
+**Change 1 -- line 2234-2240**: Revert `unit_price` back to cost-based `pricePerMeter`
 
 ```
-Before:
-  unit_price: selectedItems.fabric?.selling_price || selectedItems.material?.selling_price || ...
-
-After:
+Before (broken):
   unit_price: (() => {
     const item = selectedItems.fabric || selectedItems.material;
     const hasBoth = (item?.cost_price || 0) > 0 && (item?.selling_price || 0) > 0;
     return hasBoth
       ? item.selling_price
-      : (item?.selling_price || item?.price_per_meter || item?.cost_price || fabricCalculation?.pricePerMeter || 0);
+      : (item?.selling_price || ...);
   })()
+
+After (correct):
+  unit_price: pricePerMeter,
 ```
 
-This ensures the saved display fields always carry the selling price, not the internal cost base.
+`pricePerMeter` is already the smart-base-selected cost_price (set at line 3313). Simple, one value.
 
-**Files**: `DynamicWindowWorksheet.tsx` (lines 1887-1889 and 2228)
+**Change 2 -- line 1887-1895**: Revert `price_per_meter` back to cost-based
 
----
-
-### Issue 3: "Manufacturing" Naming and Cost Price Visibility
-
-**Problem A**: The label still shows "Manufacturing" in several places instead of "Making/Labor (machine)" or "Making/Labor (hand)".
-
-The CostCalculationSummary calculator popup (line 1165) already shows `Making/Labor (machine)` correctly. But these locations still say "Manufacturing":
-
-| Location | File | Line | Current | Should Be |
-|---|---|---|---|---|
-| Save cost_breakdown | DynamicWindowWorksheet.tsx | 2288 | `name: 'Manufacturing'` | `name: 'Making/Labor'` |
-| Save cost_breakdown description | DynamicWindowWorksheet.tsx | 2289 | `'Hand Finished' / 'Machine Finished'` | Keep as description |
-| WindowSummaryCard display | WindowSummaryCard.tsx | 356 | `name: 'Manufacturing'` | `name: 'Making/Labor'` |
-| WindowSummaryCard description | WindowSummaryCard.tsx | 357 | `summary.manufacturing_type || 'Assembly & Manufacturing'` | `manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'` |
-
-**Fix**: Update the `name` field to `Making/Labor` and use the `manufacturing_type` value dynamically in the description.
-
-For DynamicWindowWorksheet line 2288-2289:
 ```
-name: 'Making/Labor',
-description: measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
+Before (broken):
+  price_per_meter: (() => {
+    const item = ...;
+    const hasBoth = ...;
+    return hasBoth ? item.selling_price : ...;
+  })()
+
+After (correct):
+  price_per_meter: pricePerMeter || fabricCalculation?.pricePerMeter || 0,
 ```
 
-For WindowSummaryCard line 354-361:
-```
-name: `Making/Labor (${summary.manufacturing_type === 'hand' ? 'hand' : 'machine'})`,
-description: summary.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
-```
+Same reason -- the fallback path in WindowSummaryCard (line 237) reads `price_per_meter` and passes it through `applyMarkupToItem` which applies the implied markup. If the stored value is already selling, it gets doubled.
 
-**Problem B**: WindowSummaryCard (the Cost Breakdown) shows cost price (₹580/m) instead of selling price. This is addressed by Issue 2 fix above -- once the saved `price_per_meter` carries the selling price, the display will be correct.
+### Why This Works
 
-**Files**: `DynamicWindowWorksheet.tsx` (lines 2286-2292), `WindowSummaryCard.tsx` (lines 354-361)
+| Field | Saved Value | Markup Applied | Display Value |
+|---|---|---|---|
+| `total_cost` | 3,197 (cost) | 100% | 6,394 (selling) |
+| `unit_price` | 145 (cost) | 100% | 290 (selling) |
+| `price_per_meter` | 145 (cost) | 100% | 290 (selling) |
 
----
+All three display as selling prices. No doubling. No cost price leaking.
 
-### Summary of All Changes
+### What About the displayPricePerMeter?
 
-| File | Change |
-|---|---|
-| `DynamicWindowWorksheet.tsx` line 898 | Round converted rail_width to 4 decimals |
-| `DynamicWindowWorksheet.tsx` line 905 | Round converted drop to 4 decimals |
-| `DynamicWindowWorksheet.tsx` lines 1887-1889 | Save selling price (not cost) to `price_per_meter` |
-| `DynamicWindowWorksheet.tsx` line 2228 | Save selling price (not cost) to cost_breakdown `unit_price` |
-| `DynamicWindowWorksheet.tsx` lines 2286-2292 | Rename "Manufacturing" to "Making/Labor" in cost_breakdown |
-| `WindowSummaryCard.tsx` lines 354-361 | Rename "Manufacturing" to "Making/Labor (machine/hand)" with dynamic type |
+The `displayPricePerMeter` added to `fabricDisplayData` for the live calculator popup formula strings (CostCalculationSummary) remains as selling_price. That path does NOT go through `applyMarkupToItem` -- it is used directly in a display string. So it correctly shows "22.05m x 290/m".
 
+### Files to Change
+
+| File | Line | Change |
+|---|---|---|
+| `DynamicWindowWorksheet.tsx` | 2234-2240 | Replace IIFE with simple `pricePerMeter` |
+| `DynamicWindowWorksheet.tsx` | 1887-1895 | Replace IIFE with simple `pricePerMeter` fallback |
+
+One file. Two lines. Both reverts to cost-based storage.
