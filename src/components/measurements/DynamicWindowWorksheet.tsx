@@ -2356,7 +2356,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               resolved_grid_code: selectedItems.fabric.resolved_grid_code,
               resolved_grid_id: selectedItems.fabric.resolved_grid_id,
               price_group: selectedItems.fabric.price_group,
-              product_category: selectedItems.fabric.product_category
+              product_category: selectedItems.fabric.product_category,
+              vendor_id: selectedItems.fabric.vendor_id || null,
+              inventory_item_id: selectedItems.fabric.id,
             } : null,
             selected_fabric_id: selectedItems.fabric?.id || null,
             selected_hardware_id: selectedItems.hardware?.id || null,
@@ -2384,7 +2386,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               resolved_grid_code: selectedItems.material.resolved_grid_code,
               resolved_grid_id: selectedItems.material.resolved_grid_id,
               price_group: selectedItems.material.price_group,
-              product_category: selectedItems.material.product_category
+              product_category: selectedItems.material.product_category,
+              vendor_id: selectedItems.material.vendor_id || null,
+              inventory_item_id: selectedItems.material.id,
             } : (
               (displayCategory === 'blinds' || displayCategory === 'shutters') && selectedTemplate
                 ? {

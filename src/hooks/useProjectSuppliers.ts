@@ -81,6 +81,10 @@ export const useProjectSuppliers = ({
     enabled: inventoryItemIds.length > 0,
   });
 
+  // Fetch ALL vendors from Settings so the dropdown shows every configured supplier
+  // NOTE: Must be before suppliers memo since it's used for fallback vendor name resolution
+  const { data: allSettingsVendors = [] } = useVendors();
+
   // Detect suppliers from quote items
   const suppliers = useMemo<DetectedSupplier[]>(() => {
     const supplierMap = new Map<string, DetectedSupplier>();
@@ -131,7 +135,7 @@ export const useProjectSuppliers = ({
         });
       }
 
-      // Check for vendor-linked inventory items
+      // Check for vendor-linked inventory items (primary path)
       if (item.inventory_item_id) {
         const inventoryItem = inventoryWithVendors.find(
           (inv) => inv.id === item.inventory_item_id
@@ -164,13 +168,47 @@ export const useProjectSuppliers = ({
           });
         }
       }
+
+      // Fallback: check product_details.vendor_id directly
+      const directVendorId = productDetails?.vendor_id;
+      if (directVendorId && !supplierMap.has(directVendorId)) {
+        const vendorInfo = allSettingsVendors.find((v: any) => v.id === directVendorId);
+        if (vendorInfo) {
+          const vendorSupplierOrder = parsedSupplierOrders[directVendorId];
+          supplierMap.set(directVendorId, {
+            id: directVendorId,
+            name: vendorInfo.name,
+            type: 'vendor',
+            items: [{
+              id: item.id,
+              name: item.name,
+              quantity: item.quantity || 1,
+            }],
+            isOrdered: Boolean(vendorSupplierOrder),
+            orderInfo: vendorSupplierOrder ? {
+              orderId: vendorSupplierOrder.order_id,
+              status: vendorSupplierOrder.status,
+              submittedAt: vendorSupplierOrder.submitted_at,
+            } : undefined,
+          });
+        }
+      } else if (directVendorId && supplierMap.has(directVendorId)) {
+        // Append item to existing vendor entry
+        const existing = supplierMap.get(directVendorId)!;
+        const alreadyAdded = existing.items.some(i => i.id === item.id);
+        if (!alreadyAdded) {
+          existing.items.push({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity || 1,
+          });
+        }
+      }
     });
 
     return Array.from(supplierMap.values());
-  }, [quoteItems, inventoryWithVendors, quoteData, supplierOrders]);
+  }, [quoteItems, inventoryWithVendors, quoteData, supplierOrders, allSettingsVendors]);
 
-  // Fetch ALL vendors from Settings so the dropdown shows every configured supplier
-  const { data: allSettingsVendors = [] } = useVendors();
 
   // Build list of all vendors not already detected from quote items
   const allVendors = useMemo<DetectedSupplier[]>(() => {
