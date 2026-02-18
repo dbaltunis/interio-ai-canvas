@@ -353,8 +353,8 @@ export function WindowSummaryCard({
       
       items.push({
         id: 'manufacturing',
-        name: 'Manufacturing',
-        description: summary.manufacturing_type || 'Assembly & Manufacturing',
+        name: `Making/Labor (${summary.manufacturing_type === 'hand' ? 'hand' : 'machine'})`,
+        description: summary.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
         total_cost: manufacturingCost,
         category: makingCategory,
         details: { type: summary.manufacturing_type },
