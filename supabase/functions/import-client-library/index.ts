@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // For spanish_suppliers and maslina, vendor is determined per-row or in mapper
     let vendorId: string | undefined;
-    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery" && format !== "laela_selected_samples") {
+    if (format !== "spanish_suppliers" && format !== "maslina" && format !== "mydeco" && format !== "radpol_fabrics" && format !== "radpol_haberdashery" && format !== "laela_selected_samples" && format !== "ridex") {
       const vendorName = format === "cnv_trimmings" ? "CNV" 
         : format === "eurofirany" ? "EUROFIRANY" 
         : format === "iks_forma" ? "IKS FORMA"
@@ -148,6 +148,8 @@ Deno.serve(async (req) => {
             item = await mapRadpolHaberdashery(supabase, row, vendorCache);
           } else if (format === "laela_selected_samples") {
             item = await mapLaelaSelectedSamples(supabase, row, vendorCache);
+          } else if (format === "ridex") {
+            item = await mapRidex(supabase, row, vendorCache);
           } else {
             result.errors.push(`Unknown format: ${format}`);
             continue;
@@ -1066,5 +1068,93 @@ async function mapLaelaSelectedSamples(
     compatible_treatments: ["curtains"],
     product_category: "curtains",
     specifications: weightKgMt > 0 ? { weight_kg_mt: weightKgMt } : undefined,
+  };
+}
+
+// --- RIDEX ---
+
+function detectRidexTags(name: string, csvTags: string): string[] {
+  const tags: string[] = [];
+  const upper = name.toUpperCase();
+  
+  // From CSV tags column (semicolon-separated)
+  if (csvTags) {
+    csvTags.split(";").forEach(t => {
+      const tag = t.trim();
+      if (tag && !tags.includes(tag)) tags.push(tag);
+    });
+  }
+  
+  // Auto-detect from name
+  if (upper.includes("BLACKOUT") && !tags.includes("blackout")) tags.push("blackout");
+  if (upper.includes("DIMOUT") && !tags.includes("dimout")) tags.push("dimout");
+  if (upper.includes("VELVET") && !tags.includes("velvet")) tags.push("velvet");
+  if (upper.includes("VELLUTI") && !tags.includes("velvet")) tags.push("velvet");
+  if (upper.endsWith(" FR") || upper.includes(" FR ")) {
+    if (!tags.includes("fire-retardant")) tags.push("fire-retardant");
+  }
+  
+  return tags;
+}
+
+function detectRidexSubcategory(name: string): string {
+  const upper = name.toUpperCase();
+  if (upper.includes("WOAL") || upper.includes("WHITE")) return "sheer_fabric";
+  return "curtain_fabric";
+}
+
+async function mapRidex(
+  supabase: any,
+  row: Record<string, string>,
+  vendorCache: Map<string, string>
+) {
+  const name = row["name"]?.trim();
+  if (!name) return null;
+
+  // Get or create RIDEX vendor
+  const vendorKey = "RIDEX";
+  let ridexVendorId = vendorCache.get(vendorKey);
+  if (!ridexVendorId) {
+    ridexVendorId = await ensureVendor(supabase, vendorKey);
+    vendorCache.set(vendorKey, ridexVendorId);
+  }
+
+  const sku = `RDX-${normalizeSku(name)}`;
+  const cutPrice = parsePrice(row["cut_price_eur"]);
+  const rollPrice = parsePrice(row["roll_price_eur"]);
+  const costPrice = rollPrice > 0 ? rollPrice : cutPrice;
+  const sellingPrice = cutPrice;
+  const widthCm = parseInt(row["width_cm"] || "0") || null;
+  const csvTags = row["tags"]?.trim() || "";
+
+  const tags = detectRidexTags(name, csvTags);
+  const subcategory = detectRidexSubcategory(name);
+
+  // Single collection for all RIDEX items
+  let collectionId: string | undefined;
+  try {
+    collectionId = await ensureCollection(supabase, "RIDEX 2025");
+  } catch (e) {
+    console.warn("Collection error for RIDEX 2025:", e.message);
+  }
+
+  return {
+    user_id: activeUserId,
+    name,
+    sku,
+    category: "fabric",
+    subcategory,
+    fabric_width: widthCm,
+    cost_price: costPrice,
+    selling_price: sellingPrice,
+    vendor_id: ridexVendorId,
+    pricing_method: "per_meter" as const,
+    quantity: 0,
+    tags: tags.length > 0 ? tags : undefined,
+    collection_name: "RIDEX 2025",
+    collection_id: collectionId || undefined,
+    compatible_treatments: ["curtains"],
+    product_category: "curtains",
+    ...(tags.includes("fire-retardant") ? { fire_rating: "FR" } : {}),
   };
 }
