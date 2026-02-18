@@ -3684,6 +3684,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           linearMeters: perPieceMeters,
                           totalMeters: totalMeters,
                           pricePerMeter: pricePerMeter,
+                          displayPricePerMeter: hasBothPrices
+                            ? selectedFabricItem?.selling_price
+                            : pricePerMeter,
                           horizontalPieces: piecesToDisplay,
                           orientation: isRailroaded ? 'horizontal' : 'vertical',
                           usesLeftover,

@@ -147,6 +147,7 @@ interface CostCalculationSummaryProps {
     linearMeters: number;
     totalMeters: number;
     pricePerMeter: number;
+    displayPricePerMeter?: number; // ✅ Selling price for UI display (hides cost from unauthorized users)
     horizontalPieces: number;
     orientation: 'horizontal' | 'vertical';
     usesLeftover?: boolean;
@@ -1109,10 +1110,12 @@ export const CostCalculationSummary = ({
         // ✅ CRITICAL FIX: Use the same linearMeters source (which prioritizes engineResult)
         // This ensures formula display matches the Pricing Method display in AdaptiveFabricPricingDisplay
         const meters = linearMeters;  // Already computed from authoritative source above
-        const pricePerUnit = fabricDisplayData.pricePerMeter;
-        // ✅ FIX: Use consistent cost - either calculatedFabricCost prop or display-calculated value
-        const consistentFabricCost = calculatedFabricCost ?? (meters * pricePerUnit);
-        fabricDetails = `${formatFabricLength(meters)} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(consistentFabricCost)}`;
+        const pricePerUnit = fabricDisplayData.pricePerMeter; // cost-based for internal math
+        // ✅ DISPLAY FIX: Show selling price in formula (never expose cost price in UI)
+        // displayPricePerMeter = selling price when both exist, otherwise same as pricePerMeter
+        const displayPricePerUnit = fabricDisplayData.displayPricePerMeter || pricePerUnit;
+        const displayFabricTotal = meters * displayPricePerUnit;
+        fabricDetails = `${formatFabricLength(meters)} × ${formatPricePerFabricUnit(displayPricePerUnit)} = ${formatPrice(displayFabricTotal)}`;
       }
     } else if (linearMeters > 0) {
       fabricDetails = `${linearMeters.toFixed(2)}m`;
