@@ -1,124 +1,114 @@
 
 
-## Import RIDEX Fabric Catalog (2025 Prices) for Laela Account
+## Import IFI Tekstile Fabrics for Laela Account
 
-### Source Analysis
-
-Three price lists were provided spanning 2023-2025. The **2025 price list** is the latest and most comprehensive, containing updated prices for the full RIDEX catalog. The 2023 lists are older versions of the same catalog.
-
-The uploaded image shows 10 fabrics with "CENA TKANI" (fabric price) and "CENA OBRAZCA" (sample price) -- these are already included in the 2025 catalog at updated prices.
-
-| Source | Items | Used? |
-|---|---|---|
-| cennik_export.pdf (2023) | ~170 | No -- superseded by 2025 |
-| PRICE_LIST_AUTUMN_2023_eng.pdf | 11 | No -- superseded by 2025 |
-| RIDEX_PRICE_LIST_2025_new_collection.pdf | ~170 | Yes -- primary source |
-| Image (PAKIET 1) | 10 | Already in 2025 catalog |
-
-### Data Summary
+### File Summary
 
 | Detail | Value |
 |---|---|
-| Vendor | RIDEX |
-| Total items | ~170 (deduplicated) |
-| Category | Interior fabrics (curtain, sheer, blackout, dimout, velvet, FR) |
-| Widths | 138-420 cm |
-| Price range | 3.70 - 55.50 EUR per meter |
-| Pricing | Cut price (retail) + Roll price (wholesale, where available) |
+| Vendor | IFI TEKSTILE |
+| Total items | ~523 |
+| Type | Sheer and curtain fabrics (woven railroaded) |
+| Collections | ~14 (ORAMA, SWEETNESS, HISTORY, MONTANA, ESTRADA, SMILE & ADMIRE, NATIONAL, GLORY, PUBLIC, LOOK, HOTEL ROOM OFF WHITE, ECO & LINENS, DELICATE VOLUME 1, DELICATE VOLUME 2) |
+| Prices | Single price (EUR per meter), range 5.00 - 57.00 |
+| Widths | 290-330 cm |
+| Source | IFI_Tekstile.xlsx (Page 1) |
 
-### Special Item Types
+### Data Structure
 
-- **"(roll price)" variants**: ~20 items have a discounted bulk/roll price alongside the cut price. Roll price becomes `cost_price`, cut price becomes `selling_price`.
-- **Items without roll price**: Single price used for both `cost_price` and `selling_price`.
-- **FR items**: Fire retardant fabrics -- tagged "fire-retardant".
-- **Blackout/dimout items**: Tagged accordingly and noted in description.
-- **Variable widths**: e.g., "300-320" for PRIMO FR -- first number used.
+The file has the same column layout as the LAELA Selected Samples import:
+
+| Column | Example | Notes |
+|---|---|---|
+| Hanger Code | F-1004F | Hanger/swatch code |
+| Collection | HANGER ORAMA | Collection name |
+| Article Code | 9751661-01 | Article number (SKU base) |
+| Description | orama anthracite | Product name with color |
+| Width | 300cm - 118" (+/-1%) | Fabric width |
+| Composition | 59%cot 41%pol | Fabric composition |
+| Price (EUR/m) | 18.00 EUR | Single price per meter |
+| Direction | woven railroaded | Fabric direction |
+| Vertical Repeat | vert.repeat 0 | Vertical pattern repeat |
+| Horizontal Repeat | horiz.repeat 0 | Horizontal pattern repeat |
+| Washing Instructions | uKXNQ | Encoded care codes |
 
 ### Column Mapping
 
 | Source Column | Maps To | Notes |
 |---|---|---|
-| FABRIC | `name` + `sku` | SKU: "RDX-{NAME}" (e.g., "RDX-ALGARVE") |
-| WIDTH / HEIGHT (CM) | `fabric_width` | Parse first number from "300-320" |
-| PRICE (cut) | `selling_price` | Retail per-meter price |
-| PRICE (roll) | `cost_price` | Wholesale; fallback to cut price if no roll variant |
-| LEADBAND FINISH | tags | "blackout", "dimout" |
-| ADDITIONAL INFORMATION | tags | "100 %" -> "fire-retardant" |
+| Article Code | `sku` | Prefixed: "IFI-9751661-01" |
+| Description | `name` | Capitalized: "Orama Anthracite" |
+| Collection | `collection_name` | e.g., "HANGER ORAMA" -> "IFI TEKSTILE ORAMA" |
+| Width | `fabric_width` | Parse first number: "300cm" -> 300 |
+| Composition | `composition` | e.g., "59%cot 41%pol" |
+| Price | `cost_price` AND `selling_price` | Same value (single price); parse "18.00 EUR" -> 18.00 |
+| Direction | `description` | Included in description |
+| Vertical Repeat | `pattern_repeat_vertical` | Parse from "vert.repeat Xcm" |
+| Horizontal Repeat | `pattern_repeat_horizontal` | Parse from "horiz.repeat Xcm" |
 | All items | `category: "fabric"` | |
+| All items | `subcategory: "sheer_fabric"` | All are lightweight sheers |
 | All items | `pricing_method: "per_meter"` | |
 | All items | `compatible_treatments: ["curtains"]` | |
-
-### Subcategory Auto-Detection
-
-| Pattern in Name | Subcategory |
-|---|---|
-| BLACKOUT, HOLD BLACKOUT | curtain_fabric + tag "blackout" |
-| DIMOUT, MOONLIGHT, NIGHTFALL, NIGHTGUARD, NOCTURNE, ECLIPSE, SOLAR | curtain_fabric + tag "dimout" |
-| WOAL, WHITE (sheers) | sheer_fabric |
-| VELVET, VELLUTI, CROWN VELVET, CELEBRATION VELVET, JUBILATION VELVET, SOFTY VELVET | curtain_fabric + tag "velvet" |
-| FR suffix | add "fire-retardant" tag |
-| Everything else | curtain_fabric |
 
 ### What Changes
 
 #### 1. Create CSV file
-`public/import-data/CSV_RIDEX_2025.csv` (~170 rows) with columns:
-`name,width_cm,cut_price_eur,roll_price_eur,tags`
+`public/import-data/CSV_IFI_Tekstile.csv` (~523 rows) with columns:
+`article,name,collection,width_cm,composition,price_eur,direction,vert_repeat,horiz_repeat`
 
-- Items with "(roll price)" variants are merged into one row with both prices
-- Deduplication: BLACKOUT FR 150 and BLACKOUT FR 300 become separate rows (different widths)
-- Items like "LINCOLN FR 140" and "LINCOLN FR 280" kept as separate entries with width suffix in SKU
+Extracted from the parsed XLSX data. Price cleaned from "18.00 EUR" format to numeric "18.00".
 
-#### 2. Add `mapRidex()` mapper to Edge Function
+#### 2. Add `mapIfiTekstile()` mapper to Edge Function
 
-- SKU: `RDX-{NORMALIZED_NAME}` (e.g., "RDX-ALGARVE", "RDX-BASIC-GLAZE", "RDX-BLACKOUT-FR-150")
-- For duplicate names with different widths: append width to SKU (e.g., "RDX-LINCOLN-FR-140", "RDX-LINCOLN-FR-280")
-- `cost_price` = roll price (if available), otherwise cut price
-- `selling_price` = cut price
-- `fabric_width` = parsed from width column
-- Tags: auto-detect "blackout", "dimout", "fire-retardant", "velvet", "sheer" from name
-- Collection: "RIDEX 2025" (single collection for all items)
-- Vendor: "RIDEX" (auto-created)
+- SKU: `IFI-{ARTICLE_CODE}` (e.g., "IFI-9751661-01", "IFI-75-1609-02")
+- `name`: Capitalized description (e.g., "Orama Anthracite", "Bright Sand")
+- `cost_price` = `selling_price` = parsed price
+- `fabric_width`: Parse first number from width string
+- `composition`: Stored directly from source
+- `pattern_repeat_vertical` / `pattern_repeat_horizontal`: Parse cm values (reuse `parseRepeatCm` from LAELA mapper)
+- `description`: Includes direction info
+- Collection: Clean collection name -- strip "HANGER " / "WATERFALL " / "BOOK " prefixes, then prefix with "IFI TEKSTILE" (e.g., "HANGER ORAMA" -> "IFI TEKSTILE ORAMA", "BOOK ECO & LINENS" -> "IFI TEKSTILE ECO & LINENS")
+- Subcategory: `sheer_fabric` for all (these are all lightweight woven railroaded sheers)
+- Vendor: "IFI TEKSTILE" (auto-created)
+- Deduplication: Some article codes appear in multiple collections (e.g., "orama grey 9751618-01" in both HANGER ORAMA and BOOK DELICATE VOLUME 2) -- first occurrence wins via SKU upsert
 
 #### 3. Register in `LaelLibraryImport.tsx`
 Add entry:
 ```text
-{ format: "ridex", file: "/import-data/CSV_RIDEX_2025.csv", label: "RIDEX Interior Fabrics 2025 (170 items)" }
+{ format: "ifi_tekstile", file: "/import-data/CSV_IFI_Tekstile.csv", label: "IFI Tekstile Fabrics (523 items)" }
 ```
 
 #### 4. Add vendor routing in Edge Function
-Add `"ridex"` to the vendor bypass list, auto-creating vendor "RIDEX".
+Add `"ifi_tekstile"` to the bypass list for single-vendor lookup, auto-creating vendor "IFI TEKSTILE".
 
-### SKU Examples
+### Collections Created (~14)
 
-```text
-RDX-ALGARVE              (single width)
-RDX-BASIC-HOLD-BLACKOUT  (roll price merged into same record)
-RDX-BLACKOUT-FR-150      (width suffix for disambiguation)
-RDX-BLACKOUT-FR-300      (width suffix for disambiguation)
-RDX-LINCOLN-FR-140       (width suffix)
-RDX-LINCOLN-FR-280       (width suffix)
-RDX-WOAL-300             (sheer, width suffix)
-RDX-WOAL-420             (sheer, width suffix)
-```
+| Collection Name | Approx Items |
+|---|---|
+| IFI TEKSTILE ORAMA | 8 |
+| IFI TEKSTILE SWEETNESS | 4 |
+| IFI TEKSTILE HISTORY | 9 |
+| IFI TEKSTILE MONTANA | 7 |
+| IFI TEKSTILE ESTRADA | 8 |
+| IFI TEKSTILE SMILE & ADMIRE | 30 |
+| IFI TEKSTILE NATIONAL | 9 |
+| IFI TEKSTILE GLORY | 5 |
+| IFI TEKSTILE PUBLIC | 14 |
+| IFI TEKSTILE LOOK | 10 |
+| IFI TEKSTILE HOTEL ROOM OFF WHITE | 11 |
+| IFI TEKSTILE ECO & LINENS | ~130 |
+| IFI TEKSTILE DELICATE VOLUME 1 | ~140 |
+| IFI TEKSTILE DELICATE VOLUME 2 | ~148 |
 
-### Price Handling
+### Special Cases
 
-Items with roll price (wholesale discount):
-```text
-BASIC HOLD BLACKOUT:    cost=13.20, selling=21.30
-BASIC KEY:              cost=7.20,  selling=12.30
-SOLIDARITY:             cost=6.30,  selling=9.40
-```
-
-Items without roll price (single price for both):
-```text
-ALGARVE:                cost=19.70, selling=19.70
-BELLUCI:                cost=54.70, selling=54.70
-```
+- **Price format**: Contains EUR symbol (e.g., "18.00 EUR") -- stripped to numeric
+- **Duplicate article codes across collections**: Same fabric may appear in a HANGER collection and a BOOK collection. SKU-based upsert means first insert wins, subsequent ones update (price should be same).
+- **Pattern repeats**: Most are "0"; some have values like "10cm-4\"", "6,5cm-2 1/2\"", "5,5cm-2\"", "8cm-3\"", "3cm-1\"" -- parsed as cm values
+- **Composition abbreviations**: pol=polyester, cot=cotton, lin=linen, pan=polyamide/nylon, wo=wool, vis=viscose, acr=acrylic, cv=viscose, pa=polyamide, cly=cellulose -- stored as-is
 
 ### After Implementation
 1. Navigate to `/admin/import-laela`
-2. Click "Start Import" for "RIDEX Interior Fabrics 2025" entry (~170 items)
-3. All items import with vendor, pricing, tags, and width metadata
+2. Click "Start Import" -- the "IFI Tekstile Fabrics (523 items)" entry will be processed
+3. All items import with vendor, collections, composition, and pricing
 
