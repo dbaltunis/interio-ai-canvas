@@ -51,8 +51,8 @@ export const useProjectSuppliers = ({
   // Fetch inventory items with vendor info for items that have inventory_item_id
   const inventoryItemIds = useMemo(() => {
     return quoteItems
-      .filter((item) => item.inventory_item_id)
-      .map((item) => item.inventory_item_id);
+      .map((item) => item.inventory_item_id || (item.product_details as any)?.inventory_item_id)
+      .filter(Boolean);
   }, [quoteItems]);
 
   const { data: inventoryWithVendors = [] } = useQuery({
@@ -135,10 +135,11 @@ export const useProjectSuppliers = ({
         });
       }
 
-      // Check for vendor-linked inventory items (primary path)
-      if (item.inventory_item_id) {
+      // Check for vendor-linked inventory items (primary path + JSONB fallback)
+      const effectiveInventoryItemId = item.inventory_item_id || productDetails?.inventory_item_id;
+      if (effectiveInventoryItemId) {
         const inventoryItem = inventoryWithVendors.find(
-          (inv) => inv.id === item.inventory_item_id
+          (inv) => inv.id === effectiveInventoryItemId
         );
 
         if (inventoryItem?.vendor_id && inventoryItem.vendor) {

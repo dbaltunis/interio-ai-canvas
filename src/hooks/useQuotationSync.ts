@@ -1098,7 +1098,7 @@ export const useQuotationSync = ({
           quantity: item.quantity || 1,
           unit_price: item.unit_price || item.total || 0,
           total_price: item.total || 0,
-          inventory_item_id: inventoryItemId, // NEW: Link to inventory for tracking
+          inventory_item_id: null, // Don't set FK column - IDs may not exist in enhanced_inventory_items
           product_details: {
             room_id: item.room_id,
             room_name: item.room_name,
@@ -1116,7 +1116,16 @@ export const useQuotationSync = ({
             // Measurements for order submission
             measurements: item.measurements,
             // Vendor ID for supplier ordering detection (all vendors, not just TWC)
-            vendor_id: item.vendor_id || null,
+            vendor_id: (() => {
+              // Extract vendor_id from children first (most reliable)
+              const children = item.children || [];
+              for (const child of children) {
+                if (child.vendor_id) return child.vendor_id;
+              }
+              return item.vendor_id || null;
+            })(),
+            // Store inventory_item_id in JSONB (no FK constraint) for detection
+            inventory_item_id: inventoryItemId || null,
           },
         breakdown: item.breakdown || {},
         currency: item.currency || (() => {
