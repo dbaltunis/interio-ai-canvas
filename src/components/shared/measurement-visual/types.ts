@@ -125,6 +125,8 @@ export interface FabricCalculation {
   linearMetersPerPiece?: number; // Per-piece meters for accurate horizontal display
   overlap?: number; // Overlap in cm for display synchronization
   seamsRequired?: number; // Number of seams needed (alias for seamsCount)
+  hasBothPrices?: boolean; // Whether fabric has both cost_price and selling_price
+  priceIsAlreadySelling?: boolean; // Whether base price is already the selling price (no markup needed)
 }
 
 export interface MeasurementVisualProps {

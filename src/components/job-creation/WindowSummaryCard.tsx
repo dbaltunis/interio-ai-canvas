@@ -145,15 +145,18 @@ export function WindowSummaryCard({
     const applyMarkupToItem = (item: any) => {
       if (!markupSettings) return item;
 
+      // ✅ SMART: If the item flagged that its price is already selling, skip markup
+      if (item.price_is_already_selling) {
+        return { ...item };  // total_cost and unit_price are already selling prices
+      }
+
       const itemCategory = item.category;
 
       // For manufacturing items, use the specific making category directly
-      // This ensures we get the 100% manufacturing markup instead of the parent category's 50%
       const isMakingCategory = itemCategory?.includes('making') || itemCategory === 'manufacturing';
 
       let effectiveCategory: string;
       if (isMakingCategory) {
-        // Use the stored making category directly, or derive it from treatment type
         const treatmentCat = summary.treatment_category || summary.treatment_type || 'curtains';
         effectiveCategory = itemCategory?.includes('making')
           ? itemCategory
@@ -163,10 +166,16 @@ export function WindowSummaryCard({
         effectiveCategory = summary.treatment_category || summary.treatment_type || 'curtains';
       }
 
-      // ✅ CRITICAL: Use saved markup sources from the item for proper hierarchy
+      // ✅ Compute implied markup from saved cost/selling if not directly saved
+      const itemCost = item.cost_price || 0;
+      const itemSelling = item.selling_price || 0;
+      const computedImpliedMarkup = (itemCost > 0 && itemSelling > itemCost)
+        ? ((itemSelling - itemCost) / itemCost) * 100
+        : undefined;
+
       const markupResult = resolveMarkup({
         productMarkup: item.markup_percentage,
-        impliedMarkup: item.implied_markup,
+        impliedMarkup: item.implied_markup ?? computedImpliedMarkup,
         gridMarkup: item.pricing_grid_markup,
         category: effectiveCategory,
         subcategory: isMakingCategory ? undefined : itemCategory,

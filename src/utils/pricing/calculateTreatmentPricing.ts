@@ -164,10 +164,13 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // Previous formula incorrectly added seamAllowance to drop BEFORE multiplying by widths
   const linearMeters = ((widthsRequired * totalDropPerWidth) + totalSeamAllowance) / 100 * wasteMultiplier;
   
-  // ✅ CRITICAL FIX: Use cost_price as base when available to prevent double-markup
-  // The markup system will calculate implied markup from cost vs selling difference
-  // Priority: cost_price > price_per_meter > unit_price > selling_price
-  const pricePerMeter = fabricItem?.cost_price || fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
+  // ✅ SMART PRICE BASE: Use cost_price when both exist (markup handles implied markup),
+  // otherwise fall back to selling_price or price_per_meter
+  const hasBothPrices = ((fabricItem?.cost_price || 0) > 0) && ((fabricItem?.selling_price || 0) > 0);
+  const pricePerMeter = hasBothPrices
+    ? fabricItem!.cost_price!                    // Scenario A: markup system will add implied markup
+    : (fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.cost_price || 0);
+  const priceIsAlreadySelling = !hasBothPrices && ((fabricItem?.selling_price || 0) > 0);
   
   console.log(`💵 Price lookup: cost_price=${fabricItem?.cost_price}, price_per_meter=${fabricItem?.price_per_meter}, unit_price=${fabricItem?.unit_price}, selling_price=${fabricItem?.selling_price} → base: ${pricePerMeter}`);
   
@@ -438,7 +441,13 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
         unit_price: pricePerMeter,
         total_cost: fabricCost,
         category: 'fabric',
-        image_url: fabricItem?.image_url
+        image_url: fabricItem?.image_url,
+        // ✅ Save markup metadata for consistent resolution downstream
+        cost_price: fabricItem?.cost_price,
+        selling_price: fabricItem?.selling_price,
+        markup_percentage: fabricItem?.markup_percentage,
+        pricing_grid_markup: fabricItem?.pricing_grid_markup,
+        price_is_already_selling: priceIsAlreadySelling
       }] : []),
       // Lining
       ...(liningCost > 0 ? [{
