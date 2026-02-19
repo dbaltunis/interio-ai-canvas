@@ -10,7 +10,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { RFMSIntegration } from "@/types/integrations";
-import { RefreshCw, Users, ArrowUpDown, FileText, Info, Ruler, Calendar, Activity } from "lucide-react";
+import { RefreshCw, Users, ArrowUpDown, FileText, Info, Ruler, Calendar, Activity, Stethoscope, CheckCircle2, XCircle, AlertTriangle, ShieldAlert } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 
 interface RFMSIntegrationTabProps {
@@ -91,6 +91,8 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [syncingAction, setSyncingAction] = useState<string | null>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
 
   // Read tier limitation flags from integration configuration
   const customerImportUnavailable = !!(integration?.configuration as any)?.customer_import_unavailable;
@@ -408,6 +410,45 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     }
   };
 
+  const handleRunDiagnostics = async () => {
+    setIsDiagnosing(true);
+    setDiagnosticResults(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('rfms-diagnose');
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
+      if (!data?.success) {
+        throw new Error(data?.error || "Diagnostics failed");
+      }
+      setDiagnosticResults(data);
+      toast({
+        title: "Diagnostics Complete",
+        description: data.summary,
+        importance: 'important',
+      });
+    } catch (err: any) {
+      toast({
+        title: "Diagnostics Failed",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
+        importance: 'important',
+      });
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
+
+  const getDiagnosticIcon = (status: string) => {
+    switch (status) {
+      case "working": return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      case "unavailable": return <XCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+      case "forbidden": return <ShieldAlert className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      default: return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -591,6 +632,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
       </Card>
 
       {integration?.active && (
+        <>
         <Card>
           <CardHeader>
             <CardTitle>Manual Sync</CardTitle>
@@ -701,6 +743,85 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             </div>
           </CardContent>
         </Card>
+
+        {/* Diagnostics Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Stethoscope className="h-4 w-4" />
+              API Diagnostics
+            </CardTitle>
+            <CardDescription>
+              Test every RFMS endpoint to see exactly what your API key can access. Share the results with RFMS support if needed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              onClick={handleRunDiagnostics}
+              disabled={isDiagnosing}
+            >
+              {isDiagnosing ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Stethoscope className="h-4 w-4 mr-2" />
+              )}
+              {isDiagnosing ? "Running Diagnostics..." : "Run Diagnostics"}
+            </Button>
+
+            {diagnosticResults && (
+              <div className="space-y-4">
+                {/* Tier badge */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium">Estimated Tier:</span>
+                  <Badge variant={diagnosticResults.estimatedTier === "Enterprise" ? "success-solid" : diagnosticResults.estimatedTier === "Plus" ? "info" : "secondary"}>
+                    {diagnosticResults.estimatedTier}
+                  </Badge>
+                </div>
+
+                {/* Results table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Status</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Feature</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground hidden sm:table-cell">Endpoint</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground hidden md:table-cell">Tier Required</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {diagnosticResults.results?.map((r: any, i: number) => (
+                        <tr key={i} className="border-t border-border/50">
+                          <td className="px-3 py-2">{getDiagnosticIcon(r.status)}</td>
+                          <td className="px-3 py-2 font-medium">{r.label}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground hidden sm:table-cell">{r.method} {r.endpoint}</td>
+                          <td className="px-3 py-2 hidden md:table-cell">
+                            <Badge variant="outline" className="text-xs">{r.tierRequired}</Badge>
+                          </td>
+                          <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px] truncate">{r.detail}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Action suggestion */}
+                {diagnosticResults.results?.some((r: any) => r.status === "unavailable") && (
+                  <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg p-3">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Some features are unavailable on your current RFMS tier.</span>
+                      <p className="mt-1">Contact your RFMS representative and share this diagnostic report. Ask about upgrading to the tier that includes the features you need (typically Enterprise for quote creation).</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        </>
       )}
     </div>
   );
