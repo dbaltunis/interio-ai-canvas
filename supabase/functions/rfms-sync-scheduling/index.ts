@@ -12,9 +12,7 @@ const corsHeaders = {
  * Pulls scheduled jobs from RFMS Schedule Pro and creates/updates
  * calendar appointments in InterioApp.
  * 
- * RFMS Schedule Pro endpoints:
- * - GET /schedule/jobs - List scheduled jobs
- * - GET /schedule/crews - List available crews
+ * Returns clear error when Schedule Pro endpoints are not available (404).
  * 
  * MULTI-TENANT: Uses account_owner_id for integration lookup.
  */
@@ -74,7 +72,7 @@ async function ensureSession(
   throw new Error("Could not establish RFMS session");
 }
 
-async function rfmsRequest(method: string, endpoint: string, storeQueue: string, sessionToken: string, apiUrl: string): Promise<any> {
+async function rfmsRequest(method: string, endpoint: string, storeQueue: string, sessionToken: string, apiUrl: string): Promise<{ data: any; status: number }> {
   const auth = btoa(`${storeQueue}:${sessionToken}`);
   const response = await fetch(`${apiUrl}${endpoint}`, {
     method,
@@ -86,9 +84,15 @@ async function rfmsRequest(method: string, endpoint: string, storeQueue: string,
 
   if (response.status === 401) throw new Error("RFMS_SESSION_EXPIRED");
 
-  const data = JSON.parse(responseText);
-  if (data.status === "failed") throw new Error(`RFMS API error: ${data.reason || "Request failed"}`);
-  return data;
+  let data: any;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = null;
+  }
+  
+  if (data?.status === "failed") throw new Error(`RFMS API error: ${data.reason || "Request failed"}`);
+  return { data, status: response.status };
 }
 
 serve(async (req: Request) => {
@@ -153,8 +157,8 @@ serve(async (req: Request) => {
 
     await withRetry(async (currentToken: string) => {
       // Try to fetch scheduled jobs from RFMS Schedule Pro
-      let scheduleData: any;
       let jobs: any[] = [];
+      let foundEndpoint = false;
 
       // Try multiple endpoints for scheduling data
       const endpoints = [
@@ -166,7 +170,15 @@ serve(async (req: Request) => {
 
       for (const endpoint of endpoints) {
         try {
-          scheduleData = await rfmsRequest("GET", endpoint, storeQueue, currentToken, apiUrl);
+          const { data: scheduleData, status } = await rfmsRequest("GET", endpoint, storeQueue, currentToken, apiUrl);
+
+          // 404 means endpoint doesn't exist - try next
+          if (status === 404) {
+            console.log(`${endpoint} returned 404 - not available`);
+            continue;
+          }
+
+          foundEndpoint = true;
 
           // Extract job records
           if (Array.isArray(scheduleData)) {
@@ -189,8 +201,15 @@ serve(async (req: Request) => {
         }
       }
 
+      // Clear error message when Schedule Pro is not available
+      if (!foundEndpoint) {
+        results.errors.push("RFMS Schedule Pro is not available for your account. This feature requires the Enterprise API tier or a Schedule Pro subscription. Contact RFMS support to enable scheduling.");
+        return;
+      }
+
       if (jobs.length === 0) {
-        results.errors.push("No scheduled jobs found in RFMS. Schedule Pro may not be enabled for your RFMS account.");
+        // Endpoint exists but no jobs
+        console.log("Schedule endpoints available but no jobs found");
         return;
       }
 
@@ -242,7 +261,7 @@ serve(async (req: Request) => {
           }
 
           const startDate = new Date(startTime);
-          const endDate = endTime ? new Date(endTime) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // default 2 hours
+          const endDate = endTime ? new Date(endTime) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
           const appointmentData: any = {
             user_id: accountOwnerId,
@@ -277,7 +296,7 @@ serve(async (req: Request) => {
       .update({ last_sync: new Date().toISOString() })
       .eq("id", integration.id);
 
-    console.log(`RFMS schedule sync: ${results.imported} imported, ${results.updated} updated`);
+    console.log(`RFMS schedule sync: ${results.imported} imported, ${results.updated} updated, ${results.errors.length} errors`);
 
     return new Response(
       JSON.stringify({ success: true, ...results }),

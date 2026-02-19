@@ -92,9 +92,9 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         await createIntegration.mutateAsync(integrationData);
       }
 
-      toast({ title: "NetSuite Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
+      toast({ title: "NetSuite Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work.", importance: 'important' });
     } catch (err: any) {
-      toast({ title: "Could not save NetSuite settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning" });
+      toast({ title: "Could not save NetSuite settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning", importance: 'important' });
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +119,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         toast({
           title: "Connection Successful",
           description: `Connected to NetSuite${data.customer_count != null ? ` (${data.customer_count} customers found)` : ''}`,
+          importance: 'important',
         });
       } else {
         throw new Error(data?.error || "Connection test failed");
@@ -132,6 +133,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
           ? "The NetSuite backend service is not deployed yet. Please deploy the Edge Functions via Supabase CLI first."
           : `Could not connect to NetSuite. ${msg}. Check your Account ID and TBA credentials are correct.`,
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setIsTesting(false);
@@ -156,6 +158,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
       toast({
         title: "Customer Sync Complete",
         description: parts.length > 0 ? parts.join(', ') : 'No changes needed',
+        importance: 'important',
       });
     } catch (err: any) {
       const msg = err.message || "";
@@ -166,6 +169,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
           ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Customer sync failed. ${msg}`,
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
@@ -190,6 +194,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
       toast({
         title: `${label} Sync Complete`,
         description: parts.length > 0 ? parts.join(', ') : `No ${label.toLowerCase()}s to sync`,
+        importance: 'important',
       });
     } catch (err: any) {
       const msg = err.message || "";
@@ -200,6 +205,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
           ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Order sync failed. ${msg}`,
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
@@ -222,6 +228,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
       toast({
         title: "Invoice Sync Complete",
         description: parts.length > 0 ? parts.join(', ') : 'No invoices to sync',
+        importance: 'important',
       });
     } catch (err: any) {
       const msg = err.message || "";
@@ -232,6 +239,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
           ? "The NetSuite invoice sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Invoice sync failed. ${msg}`,
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
