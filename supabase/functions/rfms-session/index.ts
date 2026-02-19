@@ -70,6 +70,21 @@ serve(async (req: Request) => {
     }
 
     if (action === "begin" || action === "refresh") {
+      // Check if existing session is still valid
+      const existingToken = integration.api_credentials?.session_token;
+      const sessionStartedAt = integration.api_credentials?.session_started_at;
+      if (existingToken && action === "begin" && sessionStartedAt) {
+        const sessionAge = Date.now() - new Date(sessionStartedAt).getTime();
+        const MAX_SESSION_AGE_MS = 25 * 60 * 1000;
+        if (sessionAge < MAX_SESSION_AGE_MS) {
+          console.log("RFMS session still valid, reusing existing token");
+          return new Response(
+            JSON.stringify({ success: true, message: "RFMS session active", session_token: existingToken }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        console.log("RFMS session expired, creating new session...");
+      }
       const basicAuth = btoa(`${store_queue}:${api_key}`);
 
       let response: Response;

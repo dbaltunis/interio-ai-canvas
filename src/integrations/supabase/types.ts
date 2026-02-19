@@ -6856,11 +6856,16 @@ export type Database = {
           invoice_number: string | null
           job_number: string | null
           name: string
+          netsuite_estimate_id: string | null
+          netsuite_invoice_id: string | null
+          netsuite_sales_order_id: string | null
           order_number: string | null
           parent_job_id: string | null
           priority: string | null
           quote_number: string | null
           referral_source: string | null
+          rfms_order_id: string | null
+          rfms_quote_id: string | null
           services_required: string | null
           shopify_order_id: string | null
           shopify_order_number: string | null
@@ -6895,11 +6900,16 @@ export type Database = {
           invoice_number?: string | null
           job_number?: string | null
           name: string
+          netsuite_estimate_id?: string | null
+          netsuite_invoice_id?: string | null
+          netsuite_sales_order_id?: string | null
           order_number?: string | null
           parent_job_id?: string | null
           priority?: string | null
           quote_number?: string | null
           referral_source?: string | null
+          rfms_order_id?: string | null
+          rfms_quote_id?: string | null
           services_required?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
@@ -6934,11 +6944,16 @@ export type Database = {
           invoice_number?: string | null
           job_number?: string | null
           name?: string
+          netsuite_estimate_id?: string | null
+          netsuite_invoice_id?: string | null
+          netsuite_sales_order_id?: string | null
           order_number?: string | null
           parent_job_id?: string | null
           priority?: string | null
           quote_number?: string | null
           referral_source?: string | null
+          rfms_order_id?: string | null
+          rfms_quote_id?: string | null
           services_required?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
