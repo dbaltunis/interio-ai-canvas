@@ -165,9 +165,16 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
     }
   };
 
+  // Helper: get RFMS integration config
+  const getRFMSConfig = () =>
+    integrations.find((i) => i.integration_type === "rfms" && i.active)?.configuration as Record<string, any> | undefined;
+
+  const isRFMSReadOnly = getRFMSConfig()?.quote_create_unavailable === true;
+
   // Helper: should we show push button for RFMS?
   const shouldShowRFMSPush = (sync: SyncItem) => {
     if (sync.integrationType !== "rfms" || !effectiveProjectId) return false;
+    if (isRFMSReadOnly) return false;
     return true;
   };
 
@@ -190,7 +197,9 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
                     className={
                       hasSynced
                         ? "text-[10px] px-1.5 py-0 h-5 gap-1 bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400 cursor-pointer"
-                        : "text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400 cursor-pointer"
+                        : (sync.integrationType === "rfms" && isRFMSReadOnly)
+                          ? "text-[10px] px-1.5 py-0 h-5 gap-1 bg-muted border-border text-muted-foreground cursor-pointer"
+                          : "text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400 cursor-pointer"
                     }
                   >
                     <img src={sync.logo} alt={sync.system} className={sync.logoClass} />
@@ -238,7 +247,16 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {showPush ? (
+                      {sync.integrationType === "rfms" && isRFMSReadOnly ? (
+                        <>
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Connected (read-only)
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/70 leading-snug">
+                            Your RFMS plan supports reading data only. Pushing quotes requires a higher tier.
+                          </p>
+                        </>
+                      ) : showPush ? (
                         <>
                           <p className="text-xs text-muted-foreground">
                             Connected — not yet synced for this job
@@ -354,9 +372,9 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
                     </>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <Badge variant="info" className="text-xs">
+                      <Badge variant={sync.integrationType === "rfms" && isRFMSReadOnly ? "muted" : "info"} className="text-xs">
                         <Link2 className="h-3 w-3 mr-1" />
-                        Connected
+                        {sync.integrationType === "rfms" && isRFMSReadOnly ? "Connected (read-only)" : "Connected"}
                       </Badge>
                       {showPush && (
                         <Button
