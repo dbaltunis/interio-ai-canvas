@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RefreshCw, CheckCircle2, Link2, Loader2, ExternalLink, Upload, Info } from "lucide-react";
+import { RefreshCw, CheckCircle2, Link2, Loader2, ExternalLink, Upload, Info, Check } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
 import { useIntegrations } from "@/hooks/useIntegrations";
@@ -24,6 +25,7 @@ interface IntegrationSyncStatusProps {
   };
   compact?: boolean;
   projectId?: string;
+  onSyncComplete?: () => void;
 }
 
 interface SyncItem {
@@ -34,11 +36,13 @@ interface SyncItem {
   records: { label: string; id: string | null | undefined }[];
 }
 
-export const IntegrationSyncStatus = ({ project, compact = false, projectId }: IntegrationSyncStatusProps) => {
+export const IntegrationSyncStatus = ({ project, compact = false, projectId, onSyncComplete }: IntegrationSyncStatusProps) => {
   const { integrations, isLoading } = useIntegrations();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [pushingSystem, setPushingSystem] = useState<string | null>(null);
+  const [justSynced, setJustSynced] = useState(false);
 
   const effectiveProjectId = projectId || project.id;
 
@@ -106,6 +110,15 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
           data?.summary || "Quote synced successfully",
           "important"
         );
+        // Show brief visual success state
+        setJustSynced(true);
+        setTimeout(() => setJustSynced(false), 3000);
+        // Invalidate project data so rfms_quote_id refreshes immediately
+        if (effectiveProjectId) {
+          queryClient.invalidateQueries({ queryKey: ["project-data", effectiveProjectId] });
+          queryClient.invalidateQueries({ queryKey: ["project", effectiveProjectId] });
+        }
+        onSyncComplete?.();
       }
     } catch (err: any) {
       const errMsg = err?.message || "Could not push to RFMS";
@@ -184,17 +197,19 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                       {showPush && (
                         <Button
                           size="xs"
-                          variant="outline"
+                          variant={justSynced ? "success" : "outline"}
                           className="w-full mt-2"
                           onClick={handlePushToRFMS}
-                          disabled={isPushing}
+                          disabled={isPushing || justSynced}
                         >
                           {isPushing ? (
                             <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : justSynced ? (
+                            <Check className="h-3 w-3 mr-1" />
                           ) : (
                             <RefreshCw className="h-3 w-3 mr-1" />
                           )}
-                          Re-sync
+                          {justSynced ? "Synced!" : "Re-sync"}
                         </Button>
                       )}
                     </div>
@@ -207,17 +222,19 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                           </p>
                           <Button
                             size="xs"
-                            variant="default"
+                            variant={justSynced ? "success" : "default"}
                             className="w-full"
                             onClick={handlePushToRFMS}
-                            disabled={isPushing}
+                            disabled={isPushing || justSynced}
                           >
                             {isPushing ? (
                               <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : justSynced ? (
+                              <Check className="h-3 w-3 mr-1" />
                             ) : (
                               <Upload className="h-3 w-3 mr-1" />
                             )}
-                            Push to RFMS
+                            {justSynced ? "Synced!" : "Push to RFMS"}
                           </Button>
                         </>
                       ) : sync.integrationType === "rfms" && quoteCreateUnavailable ? (
@@ -303,12 +320,14 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                       {showPush && (
                         <Button
                           size="icon-xs"
-                          variant="ghost"
+                          variant={justSynced ? "success" : "ghost"}
                           onClick={handlePushToRFMS}
-                          disabled={isPushing}
+                          disabled={isPushing || justSynced}
                         >
                           {isPushing ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : justSynced ? (
+                            <Check className="h-3 w-3" />
                           ) : (
                             <RefreshCw className="h-3 w-3" />
                           )}
@@ -331,16 +350,18 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                           {showPush && (
                             <Button
                               size="xs"
-                              variant="outline"
+                              variant={justSynced ? "success" : "outline"}
                               onClick={handlePushToRFMS}
-                              disabled={isPushing}
+                              disabled={isPushing || justSynced}
                             >
                               {isPushing ? (
                                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : justSynced ? (
+                                <Check className="h-3 w-3 mr-1" />
                               ) : (
                                 <Upload className="h-3 w-3 mr-1" />
                               )}
-                              Push
+                              {justSynced ? "Synced!" : "Push"}
                             </Button>
                           )}
                         </>

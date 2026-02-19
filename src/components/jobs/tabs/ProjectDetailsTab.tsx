@@ -26,7 +26,7 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -54,6 +54,7 @@ const convertToDateFnsFormat = (userFormat: string): string => {
 
 export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   // Use project status context for lock status
@@ -716,7 +717,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       )}
 
       {/* ERP Integration Sync Status */}
-      <IntegrationSyncStatus project={project as any} projectId={project.id} />
+      <IntegrationSyncStatus project={project as any} projectId={project.id} onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ["projects", project.id] })} />
 
       {/* Upcoming Appointments for this Project */}
       <ProjectAppointmentsCard projectId={project.id} clientId={formData.client_id} />
