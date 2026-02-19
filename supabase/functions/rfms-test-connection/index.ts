@@ -62,36 +62,45 @@ serve(async (req: Request) => {
       throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue token or API Key was rejected. Please double-check these values in your RFMS account settings."}`);
     }
 
-    if (data.status === "success") {
-      const sessionToken = data.result?.token || data.result?.session_token;
+    // Handle RFMS v2 response format: {authorized, sessionToken} at top level
+    let sessionToken: string | undefined;
 
+    if (data.authorized === true && data.sessionToken) {
+      sessionToken = data.sessionToken;
+    } else if (data.status === "success") {
+      sessionToken = data.result?.token || data.result?.session_token;
+    }
+
+    if (sessionToken) {
       // Try to fetch customers to verify full access
       let customerCount = null;
-      if (sessionToken) {
-        try {
-          const customerAuth = btoa(`${store_queue}:${sessionToken}`);
-          const custResponse = await fetch(`${baseUrl}/customers?limit=1`, {
-            headers: {
-              Authorization: `Basic ${customerAuth}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (custResponse.ok) {
-            const custData = await custResponse.json();
-            if (custData.status === "success") {
-              customerCount = custData.result?.total || custData.result?.length || 0;
-            }
+      try {
+        const customerAuth = btoa(`${store_queue}:${sessionToken}`);
+        const custResponse = await fetch(`${baseUrl}/customers?limit=1`, {
+          headers: {
+            Authorization: `Basic ${customerAuth}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (custResponse.ok) {
+          const custData = await custResponse.json();
+          if (custData.status === "success") {
+            customerCount = custData.result?.total || custData.result?.length || 0;
+          } else if (Array.isArray(custData)) {
+            customerCount = custData.length;
+          } else if (custData.total != null) {
+            customerCount = custData.total;
           }
-        } catch (e) {
-          console.log("Customer fetch test skipped:", e);
         }
+      } catch (e) {
+        console.log("Customer fetch test skipped:", e);
       }
 
       return new Response(
         JSON.stringify({
           success: true,
           message: "RFMS connection successful",
-          session_token: sessionToken ? "obtained" : "not returned",
+          session_token: "obtained",
           customer_count: customerCount,
           api_version: "v2",
         }),
@@ -99,15 +108,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // Status is "waiting" - async response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "RFMS connection initiated (async response pending)",
-        status: data.status,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Neither format matched
+    throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
   } catch (error: any) {
     console.error("RFMS connection test failed:", error.message);
     return new Response(

@@ -243,9 +243,11 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
           </div>
         </div>
         {integration && (
-          <Badge variant={integration.active ? "default" : "secondary"}>
-            {integration.active ? "Active" : "Inactive"}
-          </Badge>
+          (() => {
+            if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
+            if (integration.last_sync) return <Badge variant="success-solid">Connected</Badge>;
+            return <Badge variant="outline">Configured</Badge>;
+          })()
         )}
       </div>
 
