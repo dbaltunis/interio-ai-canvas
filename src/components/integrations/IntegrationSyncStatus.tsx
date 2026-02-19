@@ -10,6 +10,7 @@ import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { showSuccessToast, showErrorToast } from "@/components/ui/use-toast";
 
 interface IntegrationSyncStatusProps {
@@ -35,6 +36,7 @@ interface SyncItem {
 
 export const IntegrationSyncStatus = ({ project, compact = false, projectId }: IntegrationSyncStatusProps) => {
   const { integrations, isLoading } = useIntegrations();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [pushingSystem, setPushingSystem] = useState<string | null>(null);
 
@@ -81,8 +83,19 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
         body: { direction: "push", projectId: effectiveProjectId },
       });
       if (error) throw error;
+      const errorMsg = data?.errors?.[0] || "";
+      const isTierError = errorMsg.includes("does not support") || errorMsg.includes("higher API tier");
       if (data?.errors?.length > 0) {
-        showErrorToast("RFMS Push Issue", data.errors[0]);
+        if (isTierError) {
+          toast({
+            title: "RFMS Push Not Available",
+            description: "Your RFMS plan doesn't support creating quotes. You can still pull/import quotes from RFMS.",
+            variant: "warning",
+            importance: "important",
+          });
+        } else {
+          showErrorToast("RFMS Push Issue", errorMsg);
+        }
       } else {
         showSuccessToast(
           "Pushed to RFMS",
@@ -91,7 +104,18 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
         );
       }
     } catch (err: any) {
-      showErrorToast("RFMS Push Failed", err.message || "Could not push to RFMS");
+      const errMsg = err?.message || "Could not push to RFMS";
+      const isTierError = errMsg.includes("does not support") || errMsg.includes("higher API tier") || errMsg.includes("405");
+      if (isTierError) {
+        toast({
+          title: "RFMS Push Not Available",
+          description: "Your RFMS plan doesn't support creating quotes. You can still pull/import quotes from RFMS.",
+          variant: "warning",
+          importance: "important",
+        });
+      } else {
+        showErrorToast("RFMS Push Failed", errMsg);
+      }
     } finally {
       setPushingSystem(null);
     }

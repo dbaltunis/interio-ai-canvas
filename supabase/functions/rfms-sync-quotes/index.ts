@@ -419,13 +419,45 @@ serve(async (req: Request) => {
               await rfmsRequest("PUT", `/quotes/${existingRfmsQuoteId}`, storeQueue, currentToken, apiUrl, rfmsQuote);
               results.updated++;
             } else {
-              const createResult = await rfmsRequest("POST", "/opportunities", storeQueue, currentToken, apiUrl, rfmsQuote);
-              const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.id;
-              if (newId) {
-                await supabase.from("projects").update({ rfms_quote_id: newId.toString() } as any).eq("id", project.id);
-                results.exported++;
-              } else {
-                results.errors.push(`Project ${project.id}: RFMS did not return an ID for the created opportunity`);
+              // Try multiple endpoints — RFMS API tier may not support all of them
+              const createEndpoints = [
+                { method: "POST" as const, path: "/opportunities" },
+                { method: "POST" as const, path: "/quotes" },
+                { method: "POST" as const, path: "/estimates" },
+              ];
+
+              let created = false;
+              let allMethodNotAllowed = true;
+
+              for (const endpoint of createEndpoints) {
+                try {
+                  const createResult = await rfmsRequest(endpoint.method, endpoint.path, storeQueue, currentToken, apiUrl, rfmsQuote);
+                  const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.result?.quoteId || createResult.result?.estimateId || createResult.id;
+                  if (newId) {
+                    await supabase.from("projects").update({ rfms_quote_id: newId.toString() } as any).eq("id", project.id);
+                    results.exported++;
+                    created = true;
+                  } else {
+                    results.errors.push(`Project ${project.id}: RFMS did not return an ID from ${endpoint.path}`);
+                    created = true; // endpoint worked, just no ID
+                  }
+                  break; // success — stop trying
+                } catch (endpointErr: any) {
+                  const is405 = endpointErr.message?.includes("405") || endpointErr.message?.includes("Method Not Allowed");
+                  if (!is405) {
+                    allMethodNotAllowed = false;
+                    throw endpointErr; // real error, bubble up
+                  }
+                  console.log(`RFMS: ${endpoint.method} ${endpoint.path} returned 405, trying next...`);
+                }
+              }
+
+              if (!created) {
+                if (allMethodNotAllowed) {
+                  results.errors.push(`Project ${project.id}: RFMS does not support creating quotes/opportunities. This feature may require a higher API tier.`);
+                } else {
+                  results.errors.push(`Project ${project.id}: All RFMS create endpoints failed`);
+                }
               }
             }
           } catch (err: any) {
