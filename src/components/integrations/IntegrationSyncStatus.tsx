@@ -1,13 +1,20 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, CheckCircle2, Link2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RefreshCw, CheckCircle2, Link2, Loader2, ExternalLink, Upload } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { supabase } from "@/integrations/supabase/client";
+import { showSuccessToast, showErrorToast } from "@/components/ui/use-toast";
 
 interface IntegrationSyncStatusProps {
   project: {
+    id?: string;
     rfms_quote_id?: string | null;
     rfms_order_id?: string | null;
     netsuite_estimate_id?: string | null;
@@ -15,6 +22,7 @@ interface IntegrationSyncStatusProps {
     netsuite_invoice_id?: string | null;
   };
   compact?: boolean;
+  projectId?: string;
 }
 
 interface SyncItem {
@@ -25,8 +33,12 @@ interface SyncItem {
   records: { label: string; id: string | null | undefined }[];
 }
 
-export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationSyncStatusProps) => {
+export const IntegrationSyncStatus = ({ project, compact = false, projectId }: IntegrationSyncStatusProps) => {
   const { integrations, isLoading } = useIntegrations();
+  const navigate = useNavigate();
+  const [pushingSystem, setPushingSystem] = useState<string | null>(null);
+
+  const effectiveProjectId = projectId || project.id;
 
   const hasActiveIntegration = (type: string) =>
     integrations.some((i) => i.integration_type === type && i.active);
@@ -61,24 +73,49 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
   // Hide entire component if no ERP integrations are active (or still loading)
   if (isLoading || syncItems.length === 0) return null;
 
-  // Compact mode for job header
+  const handlePushToRFMS = async () => {
+    if (!effectiveProjectId) return;
+    setPushingSystem("rfms");
+    try {
+      const { data, error } = await supabase.functions.invoke("rfms-sync-quotes", {
+        body: { direction: "push", projectId: effectiveProjectId },
+      });
+      if (error) throw error;
+      if (data?.errors?.length > 0) {
+        showErrorToast("RFMS Push Issue", data.errors[0]);
+      } else {
+        showSuccessToast(
+          "Pushed to RFMS",
+          data?.summary || "Quote synced successfully",
+          "important"
+        );
+      }
+    } catch (err: any) {
+      showErrorToast("RFMS Push Failed", err.message || "Could not push to RFMS");
+    } finally {
+      setPushingSystem(null);
+    }
+  };
+
+  // Compact mode for job header — uses Popover instead of Tooltip
   if (compact) {
     return (
-      <TooltipProvider>
-        <div className="flex items-center gap-1.5">
-          {syncItems.map((sync) => {
-            const syncedRecords = sync.records.filter((r) => r.id);
-            const hasSynced = syncedRecords.length > 0;
+      <div className="flex items-center gap-1.5">
+        {syncItems.map((sync) => {
+          const syncedRecords = sync.records.filter((r) => r.id);
+          const hasSynced = syncedRecords.length > 0;
+          const isPushing = pushingSystem === sync.integrationType;
 
-            return (
-              <Tooltip key={sync.system}>
-                <TooltipTrigger>
+          return (
+            <Popover key={sync.system}>
+              <PopoverTrigger asChild>
+                <button type="button" className="cursor-pointer">
                   <Badge
                     variant="outline"
                     className={
                       hasSynced
-                        ? "text-[10px] px-1.5 py-0 h-5 gap-1 bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
-                        : "text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400"
+                        ? "text-[10px] px-1.5 py-0 h-5 gap-1 bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400 cursor-pointer"
+                        : "text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400 cursor-pointer"
                     }
                   >
                     <img src={sync.logo} alt={sync.system} className={sync.logoClass} />
@@ -88,28 +125,79 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
                       <Link2 className="h-3 w-3" />
                     )}
                   </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <div className="text-xs">
-                    {hasSynced ? (
-                      <>
-                        <p className="font-medium mb-1">Synced to {sync.system}</p>
-                        {syncedRecords.map((r) => (
-                          <p key={r.label} className="text-muted-foreground">
-                            {r.label}: {r.id}
-                          </p>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="font-medium">{sync.system} connected — not yet synced for this job</p>
-                    )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="w-56 p-3">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <img src={sync.logo} alt={sync.system} className="h-5 w-auto" />
+                    <span className="text-sm font-medium">{sync.system}</span>
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </TooltipProvider>
+
+                  {hasSynced ? (
+                    <div className="space-y-1.5">
+                      {syncedRecords.map((r) => (
+                        <div key={r.label} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{r.label}</span>
+                          <span className="font-mono text-foreground">{r.id}</span>
+                        </div>
+                      ))}
+                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          className="w-full mt-2"
+                          onClick={handlePushToRFMS}
+                          disabled={isPushing}
+                        >
+                          {isPushing ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                          )}
+                          Re-sync
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Connected — not yet synced for this job
+                      </p>
+                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                        <Button
+                          size="xs"
+                          variant="default"
+                          className="w-full"
+                          onClick={handlePushToRFMS}
+                          disabled={isPushing}
+                        >
+                          {isPushing ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : (
+                            <Upload className="h-3 w-3 mr-1" />
+                          )}
+                          Push to RFMS
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="w-full text-xs text-muted-foreground"
+                    onClick={() => navigate("/settings?tab=integrations")}
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    View in Settings
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          );
+        })}
+      </div>
     );
   }
 
@@ -127,6 +215,7 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
           {syncItems.map((sync) => {
             const syncedRecords = sync.records.filter((r) => r.id);
             const hasSynced = syncedRecords.length > 0;
+            const isPushing = pushingSystem === sync.integrationType;
 
             return (
               <div
@@ -139,31 +228,64 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
                 </div>
                 <div className="flex items-center gap-2">
                   {hasSynced ? (
-                    syncedRecords.map((r) => (
-                      <TooltipProvider key={r.label}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Badge
-                              variant="outline"
-                              className="text-xs bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
-                            >
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              {r.label}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">
-                              {sync.system} {r.label} ID: {r.id}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))
+                    <>
+                      {syncedRecords.map((r) => (
+                        <TooltipProvider key={r.label}>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                {r.label}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">
+                                {sync.system} {r.label} ID: {r.id}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={handlePushToRFMS}
+                          disabled={isPushing}
+                        >
+                          {isPushing ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                    </>
                   ) : (
-                    <Badge variant="info" className="text-xs">
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Connected
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="info" className="text-xs">
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Connected
+                      </Badge>
+                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={handlePushToRFMS}
+                          disabled={isPushing}
+                        >
+                          {isPushing ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : (
+                            <Upload className="h-3 w-3 mr-1" />
+                          )}
+                          Push
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

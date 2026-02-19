@@ -986,7 +986,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 }}
               />
 
-              <IntegrationSyncStatus project={project as any} compact />
+              <IntegrationSyncStatus project={project as any} compact projectId={project.id} />
 
               <ThreeDotMenu
                 items={[
