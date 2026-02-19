@@ -986,7 +986,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 }}
               />
 
-              <IntegrationSyncStatus project={project as any} compact projectId={project.id} />
+              <IntegrationSyncStatus project={project as any} compact projectId={project.id} onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ["projects", project.id] })} />
 
               <ThreeDotMenu
                 items={[
