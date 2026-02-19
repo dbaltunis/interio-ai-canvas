@@ -1,57 +1,56 @@
 
 
-## Make RFMS Badge Clickable — Push Quote to RFMS from Job Page
+## Handle RFMS 405 on Push: Try Alternative Endpoints, Then Graceful Fallback
 
-### What's Happening Now
+### Problem
 
-The RFMS badge (compact mode) in the job header is wrapped in a `TooltipTrigger` but has no `onClick` handler. Clicking it shows a tooltip ("RFMS connected -- not yet synced for this job") but performs no action.
+When pushing a quote to RFMS, the function calls `POST /opportunities` which returns `405 Method Not Allowed`. The RFMS v2 API does not support creating opportunities via POST at this tier. The raw error message is shown to the user, which is confusing.
 
-### What It Should Do
+### Solution
 
-When clicked, the badge should open a small popover with contextual actions for this specific job:
+Update the push logic in `rfms-sync-quotes` to:
 
-- **"Push to RFMS"** button — calls `rfms-sync-quotes` with `direction: 'push'` and this project's ID, so the current job's quote gets exported to RFMS
-- **"View in Settings"** link — navigates to Settings > Integrations > RFMS for full configuration
-- Once synced, the badge turns green and clicking shows the RFMS Quote/Order ID
+1. **Try multiple create endpoints** in sequence:
+   - `POST /opportunities` (current, fails with 405)
+   - `POST /quotes` (alternative endpoint)
+   - `PUT /opportunities` (some APIs use PUT for create)
+2. **If all fail with 405**, return a clear, user-friendly error instead of crashing
+3. **Update the UI** to show a friendly message when push is not supported by the API tier
 
 ### Technical Changes
 
-**File: `src/components/integrations/IntegrationSyncStatus.tsx`**
-
-1. Add imports for `Popover`, `PopoverTrigger`, `PopoverContent`, `Button`, `useNavigate`, and `supabase`
-2. Accept an optional `projectId` prop (needed to push a specific project)
-3. Replace the `Tooltip` wrapper on each compact badge with a `Popover`
-4. Inside the popover content:
-   - If not yet synced: show a "Push to RFMS" button that invokes `rfms-sync-quotes` with `{ direction: 'push', projectId }`
-   - Show a "Go to Settings" link that navigates to `/settings?tab=integrations`
-   - If already synced: show the sync IDs and a "Re-sync" option
-5. Add loading state while push is in progress
-6. Show success/error toast after push completes (with `importance: 'important'`)
-
 **File: `supabase/functions/rfms-sync-quotes/index.ts`**
 
-- Accept an optional `projectId` parameter in the request body
-- When `projectId` is provided, only sync that specific project instead of all projects
-- This makes per-job sync fast and targeted
+In the push section (around line 418-434), replace the single `POST /opportunities` call with a multi-endpoint fallback:
 
-**File: `src/components/jobs/JobDetailPage.tsx`**
+```
+Try sequence:
+1. POST /opportunities
+2. POST /quotes  
+3. POST /estimates
+If all return 405 → add a clear error:
+  "Your RFMS API tier does not support creating quotes/opportunities. 
+   You can still import quotes from RFMS using Pull."
+```
 
-- Pass `projectId={project.id}` to `IntegrationSyncStatus`
+If the endpoint works, proceed as normal. If all fail with 405, add a specific non-crashing error to `results.errors` and continue processing other projects.
+
+**File: `src/components/integrations/IntegrationSyncStatus.tsx`**
+
+Update the push error handling to detect the "does not support" message and show a friendlier toast:
+- Use `variant: "warning"` (amber) instead of `variant: "destructive"` (red)
+- Message: "RFMS Push Not Available -- Your RFMS plan doesn't support creating quotes. You can still pull/import quotes from RFMS."
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `src/components/integrations/IntegrationSyncStatus.tsx` | Replace Tooltip with Popover; add "Push to RFMS" button; accept projectId prop |
-| `src/components/jobs/JobDetailPage.tsx` | Pass `projectId` to `IntegrationSyncStatus` |
-| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Pass `projectId` to `IntegrationSyncStatus` |
-| `supabase/functions/rfms-sync-quotes/index.ts` | Support optional `projectId` for single-project sync |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Try POST /quotes and POST /estimates as fallbacks; return clear error when all return 405 |
+| `src/components/integrations/IntegrationSyncStatus.tsx` | Detect 405/tier error and show amber warning toast instead of red error |
 
-### User Experience After Fix
+### After Fix
 
-1. User sees blue RFMS badge with link icon on job header
-2. Clicks badge -- popover opens with "Push to RFMS" button and "Settings" link
-3. Clicks "Push to RFMS" -- spinner shows, quote data is sent to RFMS
-4. On success: badge turns green, toast shows "Quote pushed to RFMS", popover shows the RFMS Quote ID
-5. On error: toast shows clear error message with details
+- Push attempts multiple RFMS endpoints before giving up
+- If the API tier genuinely doesn't support quote creation, the user sees a clear amber warning: "Your RFMS plan doesn't support creating quotes. You can still import from RFMS."
+- No more raw error messages with UUIDs shown to the user
 
