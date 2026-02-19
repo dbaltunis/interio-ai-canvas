@@ -1,142 +1,212 @@
 
 
-## Supplier Ordering: Complete Bug Report and Fix Plan
+## Fix RFMS Integration + Improve Error Notifications
 
-### Issues Found (3 Critical, 1 Medium)
+### Root Cause Analysis
 
----
+**Why RFMS sync fails with "RFMS session error: undefined":**
 
-### Issue 1 (CRITICAL): Quote Items Duplicated -- 37 Items Instead of 1
+The `ensureSession` function in all 3 RFMS edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`) calls the RFMS API at `/session/begin`. When the RFMS API returns an unexpected response format (e.g., HTML error page, different JSON structure, or a network-level error), the code does:
 
-**Root Cause:** The quotation sync (`useQuotationSync.ts`) does a delete-then-insert on every sync cycle. However, the previous FK crash (`inventory_item_id` pointing to non-existent items) caused the INSERT to fail while the DELETE succeeded. On the next sync, the `hasChanges` check sees data is different (because items are now gone), so it creates them again. Over multiple cycles, this creates massive duplication.
+```typescript
+if (data.status !== "success") {
+  throw new Error(`RFMS session error: ${data.reason || data.status}`);
+}
+```
 
-**Database proof:**
-- Project `4d297d22` has 6 windows but 37 quote_items
-- ALL 37 items are identical: "Roller Blinds", same price ($191.69), same room ("Room 2 / Window 1"), same `twc_item_number: 500`
-- Only 1 unique window exists
+If the response parses as JSON but has neither `.status` nor `.reason` (or the response is `{}` or has a different structure like `{error: "..."}` or `{message: "..."}`), both are `undefined`, producing the unhelpful "RFMS session error: undefined".
 
-**Why the previous fix didn't fully resolve it:** The FK crash fix (setting `inventory_item_id: null`) prevents NEW duplicates, but the 37 existing duplicates were never cleaned up. Additionally, the sync has a race condition: it runs on BOTH an immediate trigger AND a 1-second debounce (lines 1228-1245), meaning two syncs can overlap -- one deletes, the other inserts before the first finishes, creating duplicates.
+The function also never logs the actual raw response from RFMS, making it impossible to debug what the API actually returned.
 
-**Fix:**
-1. Add a sync mutex/lock to prevent concurrent syncs (`isSyncingRef`)
-2. Remove the double-sync pattern (immediate + debounced) -- use only debounced
-3. SQL cleanup: deduplicate existing quote_items across all quotes
-4. The item count in `useProjectSuppliers.ts` should only count parent items (items where `product_details.hasChildren = true`), not child rows
+**Why the user sees "Edge Function returned a non-2xx status code":**
 
----
-
-### Issue 2 (CRITICAL): RFMS Integration -- Edge Functions Use `user_id` Instead of `account_owner_id`
-
-**Root Cause:** All 3 RFMS edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-test-connection`) query `integration_settings` using `user_id = user.id`. But in a multi-tenant team setup, team members' `user.id` differs from the `account_owner_id` where the integration is stored.
-
-**Database proof:**
-- RFMS integration `5de5bb4f` has `user_id = b0c727dd` and `account_owner_id = b0c727dd`
-- If a team member (different user_id) tries to sync, the query `.eq("user_id", user.id)` returns nothing -- "RFMS integration not found"
-
-**This same bug exists in `rfms-sync-quotes/index.ts` (line 125-128) and `rfms-sync-customers/index.ts` (line 136-142).**
-
-**Fix:**
-1. Update all RFMS edge functions to first resolve the `account_owner_id` for the current user, then query `integration_settings` by `account_owner_id`
-2. Pattern: Look up the user's `account_owner_id` from the `profiles` or `account_users` table, then use that for the integration lookup
+When an edge function returns HTTP 500, `supabase.functions.invoke()` puts the error body in `data` (not `error.message`). The frontend code does `if (error) throw error` -- but `error` is a generic `FunctionsHttpError` with the message "Edge Function returned a non-2xx status code". The actual error details are in `data.error`, which is never read.
 
 ---
 
-### Issue 3 (CRITICAL): Supplier Item Counting Counts Every Quote Row
+### Fix 1: Edge Functions -- Better Error Handling and Logging
 
-**Root Cause:** In `useProjectSuppliers.ts`, the detection loop iterates over ALL `quoteItems` and pushes each one into the supplier's items array. But `quoteItems` includes parent rows AND child option rows (e.g., "Brackets", "Control Type", "Roll Direction"). Each child inherits `twc_item_number` from the parent via `product_details`, so they ALL get counted as TWC items.
+**Files: `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`**
 
-**Actual example:** 1 window = 1 parent "Roller Blinds" + 8 children (Brackets, Material, Control Type, Cont Side, Control Length, Base Rail Colour, Roll Direction, Fitting, Smart Home Devices) = 9 items counted per window.
+Update the `ensureSession` function in all 3 files:
 
-**Fix:** Filter the detection to only count items where `product_details.hasChildren === true` (parent items), OR items that are NOT children. This correctly counts 1 product per window.
+```typescript
+async function ensureSession(supabase, integration) {
+  const { store_queue, api_key, session_token } = integration.api_credentials || {};
+  const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
+
+  if (!store_queue || !api_key) {
+    throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
+  }
+
+  if (session_token) {
+    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+  }
+
+  const basicAuth = btoa(`${store_queue}:${api_key}`);
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}/session/begin`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (fetchErr) {
+    // Network-level failure (DNS, timeout, etc.)
+    throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
+  }
+
+  const responseText = await response.text();
+  console.log(`RFMS session/begin response [${response.status}]: ${responseText.substring(0, 500)}`);
+
+  if (!response.ok) {
+    // Parse error details if possible
+    try {
+      const errData = JSON.parse(responseText);
+      throw new Error(`RFMS rejected the connection (${response.status}): ${errData.reason || errData.message || errData.error || responseText.substring(0, 200)}`);
+    } catch {
+      throw new Error(`RFMS returned HTTP ${response.status}. The API URL or credentials may be incorrect.`);
+    }
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
+  }
+
+  if (data.status === "failed") {
+    throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
+  }
+
+  if (data.status !== "success") {
+    throw new Error(`Unexpected RFMS response: ${JSON.stringify(data).substring(0, 200)}`);
+  }
+
+  const newToken = data.result?.token || data.result?.session_token;
+  if (!newToken) throw new Error("RFMS did not return a session token. Contact RFMS support.");
+
+  // Store the token...
+}
+```
+
+Key improvements:
+- Catches network errors (DNS, timeout) separately with a human-readable message
+- Logs the raw RFMS response for debugging
+- Handles every possible response format (not just `{status, reason}`)
+- Every error message tells the user what to check or do next
+
+Also update the error response from the edge functions to return 400 (not 500) for user-fixable errors:
+
+```typescript
+} catch (error: any) {
+  console.error("RFMS sync error:", error.message);
+  const isUserError = error.message.includes("credentials") || 
+                      error.message.includes("rejected") ||
+                      error.message.includes("not configured");
+  return new Response(
+    JSON.stringify({ 
+      success: false,
+      error: error.message,
+      user_action_required: isUserError 
+    }),
+    {
+      status: isUserError ? 400 : 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+```
 
 ---
 
-### Issue 4 (MEDIUM): Other Suppliers Show "No Items Detected"
+### Fix 2: Frontend -- Extract Actual Error from Edge Function Responses
 
-**Root Cause:** For non-TWC vendors (Betta Blinds, Capitol, CW Systems, Norman, Suntex), detection relies on `product_details.vendor_id` or `inventory_item_id` in quote_items. The backfill migration ran but only matched items where `windows_summary.fabric_details->>'id'` exists in `enhanced_inventory_items`. For this particular job (`d0312814`), the `windows_summary` has NO surfaces (0 rows), so there's nothing to backfill.
+**File: `src/components/integrations/RFMSIntegrationTab.tsx`**
 
-The "All suppliers" section correctly shows these vendors from Settings, but they'll always show "No items detected" unless:
-1. The job's windows have inventory items linked to those vendors
-2. The vendor_id is persisted through the save chain
+The Supabase SDK behavior: when an edge function returns non-2xx, `error` is a generic `FunctionsHttpError` and `data` contains the actual response body. Update all 3 handlers:
 
-This is working as designed -- vendors without products in the job show as available for manual email ordering but report no auto-detected items.
+```typescript
+const handleSyncCustomers = async (direction) => {
+  setIsSyncing(true);
+  try {
+    const { data, error } = await supabase.functions.invoke('rfms-sync-customers', {
+      body: { direction },
+    });
+
+    // Extract the REAL error message from the response body
+    if (error) {
+      const realMessage = data?.error || error.message;
+      throw new Error(realMessage);
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || "Sync returned no results");
+    }
+
+    // ... success handling
+  } catch (err) {
+    toast({
+      title: "Customer Sync Failed",
+      description: getFriendlyRFMSError(err.message),
+      variant: "warning",  // Use warning variant per project standard
+    });
+  }
+};
+```
+
+Add a helper to translate technical errors to user-friendly messages:
+
+```typescript
+function getFriendlyRFMSError(msg: string): string {
+  if (!msg) return "Something went wrong. Please try again.";
+  
+  // Already user-friendly (from our improved edge functions)
+  if (msg.includes("credentials") || msg.includes("Check your") || msg.includes("Contact")) {
+    return msg;
+  }
+  
+  // Supabase SDK generic errors
+  if (msg.includes("non-2xx")) {
+    return "The RFMS sync service encountered an error. Check your credentials in the RFMS settings above and try again.";
+  }
+  if (msg.includes("Failed to send") || msg.includes("FunctionsHttpError")) {
+    return "Could not reach the RFMS sync service. Please try again in a moment.";
+  }
+  
+  return msg;
+}
+```
+
+Apply the same pattern to `handleTestConnection`, `handleSyncQuotes`, and `handleSyncCustomers`.
+
+---
+
+### Fix 3: Use `warning` Toast Variant (Project Standard)
+
+Per the project's Friendly Error Notification standard, all integration errors should use `variant: "warning"` (orange/amber) instead of `variant: "destructive"` (red). The destructive red toasts are reserved for critical system failures. Integration errors are user-fixable and should use the calmer warning style.
+
+Change all `variant: "destructive"` in RFMSIntegrationTab to `variant: "warning"`.
 
 ---
 
 ### Files to Change
 
-| File | Change | Issue |
-|---|---|---|
-| `useQuotationSync.ts` | Add sync mutex; remove double-sync pattern | Issue 1 |
-| `useProjectSuppliers.ts` | Filter to parent items only (hasChildren check) | Issue 3 |
-| `rfms-sync-customers/index.ts` | Use `account_owner_id` lookup instead of `user_id` | Issue 2 |
-| `rfms-sync-quotes/index.ts` | Use `account_owner_id` lookup instead of `user_id` | Issue 2 |
-| `rfms-session/index.ts` | Use `account_owner_id` lookup instead of `user_id` (if applicable) | Issue 2 |
-| SQL Migration | Deduplicate existing quote_items across all quotes | Issue 1 |
+| File | Change |
+|---|---|
+| `supabase/functions/rfms-sync-customers/index.ts` | Rewrite `ensureSession` with proper error handling, logging, and user-friendly messages |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Same `ensureSession` fix |
+| `supabase/functions/rfms-session/index.ts` | Same `ensureSession` fix (already has multi-tenant, just needs error handling) |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Extract real error from `data.error`, add `getFriendlyRFMSError` helper, use `warning` variant |
 
-### SQL Deduplication (Issue 1)
+### After the Fix
 
-```sql
--- Remove duplicate quote_items, keeping only ONE per unique 
--- (quote_id, name, room_name, surface_name, unit_price) combination
-DELETE FROM quote_items
-WHERE id NOT IN (
-  SELECT DISTINCT ON (
-    quote_id, 
-    name, 
-    product_details->>'room_name', 
-    product_details->>'surface_name',
-    unit_price::text
-  ) id
-  FROM quote_items
-  ORDER BY 
-    quote_id, 
-    name, 
-    product_details->>'room_name', 
-    product_details->>'surface_name',
-    unit_price::text,
-    created_at ASC
-);
-```
-
-### RFMS Edge Function Fix Pattern
-
-```typescript
-// Before (broken for team members):
-.eq("user_id", user.id)
-
-// After (works for all team members):
-// Step 1: Resolve account_owner_id
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("account_owner_id")
-  .eq("id", user.id)
-  .single();
-const ownerId = profile?.account_owner_id || user.id;
-
-// Step 2: Query by account_owner_id
-.eq("account_owner_id", ownerId)
-```
-
-### Item Count Fix (Issue 3)
-
-```typescript
-// In useProjectSuppliers.ts - only count parent items
-quoteItems
-  .filter(item => {
-    const pd = item.product_details || {};
-    // Skip child rows - they inherit vendor/twc data from parent
-    return pd.hasChildren !== false || !pd.isChild;
-  })
-  .forEach((item) => { /* existing detection logic */ });
-```
-
-### After All Fixes
-
-- Existing duplicates cleaned up via SQL
-- No new duplicates due to sync mutex
-- TWC shows correct item count (1 product per window, not 9)
-- RFMS sync works for team members (uses account_owner_id)
-- Email ordering works for all vendors with detected products
-- All fixes are multi-tenant safe and apply to ALL accounts
-
+- RFMS edge functions log the actual API response for debugging
+- Every error message tells the user exactly what went wrong and what to do
+- "Edge Function returned a non-2xx status code" is replaced with actionable messages like "RFMS authentication failed: Your Store Queue or API Key was rejected"
+- Network errors, credential errors, and API format errors each get distinct, clear messages
+- Toast notifications use the orange warning style (not scary red)
+- All fixes apply to ALL accounts, not just this one
