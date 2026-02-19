@@ -165,17 +165,30 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Sync returned no results");
       }
 
-      const parts = [];
-      if (data.imported > 0) parts.push(`${data.imported} imported`);
-      if (data.exported > 0) parts.push(`${data.exported} exported`);
-      if (data.updated > 0) parts.push(`${data.updated} updated`);
-      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
-      if (data.errors?.length > 0) parts.push(`${data.errors.length} errors`);
+      const hasResults = (data.imported || 0) + (data.updated || 0) + (data.exported || 0) > 0;
+      const hasErrors = data.errors?.length > 0;
 
-      toast({
-        title: "Quote Sync Complete",
-        description: parts.length > 0 ? parts.join(', ') : 'No quotes found to sync',
-      });
+      if (!hasResults && hasErrors) {
+        toast({
+          title: "Quote Sync Issue",
+          description: data.errors[0],
+          variant: "warning",
+        });
+      } else {
+        const parts = [];
+        if (data.imported > 0) parts.push(`${data.imported} imported`);
+        if (data.exported > 0) parts.push(`${data.exported} exported`);
+        if (data.updated > 0) parts.push(`${data.updated} updated`);
+        if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+
+        toast({
+          title: parts.length > 0 ? "Quote Sync Complete" : "No Quotes Found",
+          description: parts.length > 0
+            ? parts.join(', ') + (hasErrors ? ` (${data.errors.length} warnings)` : '')
+            : "No quotes found to sync from RFMS.",
+          variant: hasErrors ? "warning" : "default",
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Quote Sync Failed",
@@ -204,19 +217,32 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Sync returned no results");
       }
 
-      const parts = [];
-      if (data.imported > 0) parts.push(`${data.imported} imported`);
-      if (data.exported > 0) parts.push(`${data.exported} exported`);
-      if (data.updated > 0) parts.push(`${data.updated} updated`);
-      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
-      if (data.errors?.length > 0) parts.push(`${data.errors.length} warnings`);
+      // Show detailed results
+      const hasResults = (data.imported || 0) + (data.updated || 0) + (data.exported || 0) > 0;
+      const hasErrors = data.errors?.length > 0;
 
-      const errorDetails = data.errors?.length > 0 ? `\n${data.errors[0]}` : '';
+      if (!hasResults && hasErrors) {
+        // Total failure - show the actual error
+        toast({
+          title: "Customer Sync Issue",
+          description: data.errors[0],
+          variant: "warning",
+        });
+      } else {
+        const parts = [];
+        if (data.imported > 0) parts.push(`${data.imported} imported`);
+        if (data.updated > 0) parts.push(`${data.updated} updated`);
+        if (data.exported > 0) parts.push(`${data.exported} exported`);
+        if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
 
-      toast({
-        title: "Customer Sync Complete",
-        description: (parts.length > 0 ? parts.join(', ') : 'No changes needed') + errorDetails,
-      });
+        toast({
+          title: parts.length > 0 ? "Customer Sync Complete" : "No New Customers",
+          description: parts.length > 0
+            ? parts.join(', ') + (hasErrors ? ` (${data.errors.length} warnings)` : '')
+            : "All customers are already up to date.",
+          variant: hasErrors ? "warning" : "default",
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Customer Sync Failed",

@@ -40,17 +40,24 @@ interface RFMSCustomer {
 
 async function ensureSession(
   supabase: any,
-  integration: any
+  integration: any,
+  forceRefresh = false
 ): Promise<{ sessionToken: string; storeQueue: string; apiUrl: string }> {
-  const { store_queue, api_key, session_token } = integration.api_credentials || {};
+  const { store_queue, api_key, session_token, session_started_at } = integration.api_credentials || {};
   const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
 
   if (!store_queue || !api_key) {
     throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
   }
 
-  if (session_token) {
-    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+  // Check if cached token is still valid (expires after ~30 min, refresh at 25)
+  if (session_token && !forceRefresh) {
+    const sessionAge = Date.now() - new Date(session_started_at || 0).getTime();
+    const MAX_SESSION_AGE_MS = 25 * 60 * 1000;
+    if (sessionAge < MAX_SESSION_AGE_MS) {
+      return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+    }
+    console.log("RFMS session token expired (age: " + Math.round(sessionAge / 60000) + "min), refreshing...");
   }
 
   const basicAuth = btoa(`${store_queue}:${api_key}`);
@@ -158,6 +165,11 @@ async function rfmsRequest(
   const responseText = await response.text();
   console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 500)}`);
 
+  // Detect expired session so caller can retry with a fresh token
+  if (response.status === 401) {
+    throw new Error("RFMS_SESSION_EXPIRED");
+  }
+
   let data: any;
   try {
     data = JSON.parse(responseText);
@@ -242,9 +254,25 @@ serve(async (req: Request) => {
       throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
-    const { sessionToken, storeQueue, apiUrl } = await ensureSession(supabase, integration);
+    let { sessionToken, storeQueue, apiUrl } = await ensureSession(supabase, integration);
 
     const results = { imported: 0, exported: 0, updated: 0, skipped: 0, errors: [] as string[] };
+
+    // Helper to retry once on expired session
+    const withSessionRetry = async (fn: (st: string) => Promise<void>) => {
+      try {
+        await fn(sessionToken);
+      } catch (err: any) {
+        if (err.message === "RFMS_SESSION_EXPIRED") {
+          console.log("Session expired, refreshing and retrying...");
+          const refreshed = await ensureSession(supabase, integration, true);
+          sessionToken = refreshed.sessionToken;
+          await fn(sessionToken);
+        } else {
+          throw err;
+        }
+      }
+    };
 
     // PUSH: Not supported by RFMS v2 API (POST /customers returns 405)
     if (direction === "push" || direction === "both") {
@@ -253,58 +281,49 @@ serve(async (req: Request) => {
 
     // PULL: Import customers from RFMS using /customers/search
     if (direction === "pull" || direction === "both") {
-      try {
-        // RFMS v2: GET /customers returns field metadata, not records.
+      await withSessionRetry(async (currentToken: string) => {
         // Use POST /customers/search to get actual customer records.
-        // Try search with empty criteria to get all customers.
         let rfmsData: any;
         let customers: any[] = [];
 
         try {
-          // Try the search endpoint first (Standard+ tier)
-          rfmsData = await rfmsRequest("POST", "/customers/search", storeQueue, sessionToken, apiUrl, {
+          rfmsData = await rfmsRequest("POST", "/customers/search", storeQueue, currentToken, apiUrl, {
             entryType: "Customer"
           });
         } catch (searchErr: any) {
-          console.log("POST /customers/search failed, trying GET /customers/search:", searchErr.message);
+          if (searchErr.message === "RFMS_SESSION_EXPIRED") throw searchErr;
+          console.log("POST /customers/search failed, trying GET:", searchErr.message);
           try {
-            // Some RFMS versions use GET with query params
-            rfmsData = await rfmsRequest("GET", "/customers/search?entryType=Customer", storeQueue, sessionToken, apiUrl);
+            rfmsData = await rfmsRequest("GET", "/customers/search?entryType=Customer", storeQueue, currentToken, apiUrl);
           } catch (getErr: any) {
-            console.log("GET /customers/search also failed, trying GET /customers with params:", getErr.message);
-            // Last resort: GET /customers may return records with certain params
-            rfmsData = await rfmsRequest("GET", "/customers?limit=500", storeQueue, sessionToken, apiUrl);
+            if (getErr.message === "RFMS_SESSION_EXPIRED") throw getErr;
+            console.log("GET /customers/search also failed, trying GET /customers:", getErr.message);
+            rfmsData = await rfmsRequest("GET", "/customers?limit=500", storeQueue, currentToken, apiUrl);
           }
         }
 
         // Extract customer records from response
-        // Standard RFMS v2 format: {status: "success", result: [...]} or {status: "success", result: {customers: [...]}}
         if (rfmsData.status === "success" && rfmsData.result) {
           if (Array.isArray(rfmsData.result)) {
             customers = rfmsData.result;
           } else if (rfmsData.result.customers && Array.isArray(rfmsData.result.customers)) {
             customers = rfmsData.result.customers;
           } else if (typeof rfmsData.result === 'object') {
-            // Check if result contains arrays that look like customer records
             const keys = Object.keys(rfmsData.result);
             const possibleList = keys.find(k => Array.isArray(rfmsData.result[k]) && rfmsData.result[k].length > 0 && rfmsData.result[k][0]?.firstName);
-            if (possibleList) {
-              customers = rfmsData.result[possibleList];
-            }
+            if (possibleList) customers = rfmsData.result[possibleList];
           }
         } else if (Array.isArray(rfmsData)) {
-          // Direct array response
           customers = rfmsData;
         }
 
-        // Detect if we got metadata instead of records
-        if (customers.length === 0 && rfmsData.result) {
-          const resultKeys = Object.keys(rfmsData.result || rfmsData);
+        // Detect metadata-only response
+        if (customers.length === 0) {
+          const checkObj = rfmsData.result || rfmsData;
+          const resultKeys = Object.keys(checkObj);
           const metadataKeys = ['customerType', 'entryType', 'taxStatus', 'taxMethod'];
-          const isMetadata = metadataKeys.some(k => resultKeys.includes(k));
-          if (isMetadata) {
-            console.log("RFMS returned field metadata instead of customer records. The search endpoint may require different parameters.");
-            results.errors.push("RFMS returned field definitions instead of customer records. Your API tier may not support customer search, or the search endpoint needs different parameters.");
+          if (metadataKeys.some(k => resultKeys.includes(k))) {
+            results.errors.push("RFMS returned field definitions instead of customer records. Your API tier may not support customer search.");
           }
         }
 
@@ -313,10 +332,7 @@ serve(async (req: Request) => {
         for (const rawCustomer of customers) {
           try {
             const customer = normalizeCustomer(rawCustomer);
-            if (!customer.id) {
-              results.skipped++;
-              continue;
-            }
+            if (!customer.id) { results.skipped++; continue; }
 
             const { data: existing } = await supabase
               .from("clients")
@@ -341,24 +357,19 @@ serve(async (req: Request) => {
             };
 
             if (existing) {
-              await supabase
-                .from("clients")
-                .update(clientData)
-                .eq("id", existing.id);
+              await supabase.from("clients").update(clientData).eq("id", existing.id);
               results.updated++;
             } else {
-              await supabase
-                .from("clients")
-                .insert(clientData);
+              await supabase.from("clients").insert(clientData);
               results.imported++;
             }
           } catch (err: any) {
             results.errors.push(`Customer ${rawCustomer.id || 'unknown'}: ${err.message}`);
           }
         }
-      } catch (err: any) {
+      }).catch((err: any) => {
         results.errors.push(`Pull failed: ${err.message}`);
-      }
+      });
     }
 
     // Update last_sync

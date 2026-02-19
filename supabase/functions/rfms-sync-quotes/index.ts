@@ -17,17 +17,23 @@ const corsHeaders = {
 
 async function ensureSession(
   supabase: any,
-  integration: any
+  integration: any,
+  forceRefresh = false
 ): Promise<{ sessionToken: string; storeQueue: string; apiUrl: string }> {
-  const { store_queue, api_key, session_token } = integration.api_credentials || {};
+  const { store_queue, api_key, session_token, session_started_at } = integration.api_credentials || {};
   const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
 
   if (!store_queue || !api_key) {
     throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
   }
 
-  if (session_token) {
-    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+  if (session_token && !forceRefresh) {
+    const sessionAge = Date.now() - new Date(session_started_at || 0).getTime();
+    const MAX_SESSION_AGE_MS = 25 * 60 * 1000;
+    if (sessionAge < MAX_SESSION_AGE_MS) {
+      return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+    }
+    console.log("RFMS session token expired (age: " + Math.round(sessionAge / 60000) + "min), refreshing...");
   }
 
   const basicAuth = btoa(`${store_queue}:${api_key}`);
@@ -134,7 +140,10 @@ async function rfmsRequest(
   const responseText = await response.text();
   console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 500)}`);
 
-  // Handle 405 Method Not Allowed gracefully
+  if (response.status === 401) {
+    throw new Error("RFMS_SESSION_EXPIRED");
+  }
+
   if (response.status === 405) {
     throw new Error(`RFMS does not support ${method} on ${endpoint}. This feature may require a higher API tier.`);
   }
@@ -196,7 +205,7 @@ serve(async (req: Request) => {
       throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
-    const { sessionToken, storeQueue, apiUrl } = await ensureSession(
+    let { sessionToken, storeQueue, apiUrl } = await ensureSession(
       supabase,
       integration
     );
@@ -209,26 +218,39 @@ serve(async (req: Request) => {
       errors: [] as string[],
     };
 
-    if (direction === "pull" || direction === "both") {
+    // Helper to retry once on expired session
+    const withSessionRetry = async (fn: (st: string) => Promise<void>) => {
       try {
-        // Try multiple endpoints for getting quotes/opportunities
+        await fn(sessionToken);
+      } catch (err: any) {
+        if (err.message === "RFMS_SESSION_EXPIRED") {
+          console.log("Session expired, refreshing and retrying...");
+          const refreshed = await ensureSession(supabase, integration, true);
+          sessionToken = refreshed.sessionToken;
+          await fn(sessionToken);
+        } else {
+          throw err;
+        }
+      }
+    };
+
+    if (direction === "pull" || direction === "both") {
+      await withSessionRetry(async (currentToken: string) => {
         let rfmsData: any;
         let quotes: any[] = [];
 
         try {
-          // Try /opportunities first (CRM opportunities endpoint)
-          rfmsData = await rfmsRequest("GET", "/opportunities", storeQueue, sessionToken, apiUrl);
-        } catch {
+          rfmsData = await rfmsRequest("GET", "/opportunities", storeQueue, currentToken, apiUrl);
+        } catch (err: any) {
+          if (err.message === "RFMS_SESSION_EXPIRED") throw err;
           try {
-            // Fall back to /quotes/search
-            rfmsData = await rfmsRequest("POST", "/quotes/search", storeQueue, sessionToken, apiUrl, {});
-          } catch {
-            // Fall back to /quotes
-            rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, sessionToken, apiUrl);
+            rfmsData = await rfmsRequest("POST", "/quotes/search", storeQueue, currentToken, apiUrl, {});
+          } catch (err2: any) {
+            if (err2.message === "RFMS_SESSION_EXPIRED") throw err2;
+            rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, currentToken, apiUrl);
           }
         }
 
-        // Extract quote records from standard response format
         if (rfmsData.status === "success" && rfmsData.result) {
           if (Array.isArray(rfmsData.result)) {
             quotes = rfmsData.result;
@@ -246,10 +268,7 @@ serve(async (req: Request) => {
         for (const quote of quotes) {
           try {
             const rfmsQuoteId = (quote.id || quote.opportunityId || quote.quoteId || "").toString();
-            if (!rfmsQuoteId) {
-              results.skipped++;
-              continue;
-            }
+            if (!rfmsQuoteId) { results.skipped++; continue; }
 
             const { data: existing } = await supabase
               .from("projects")
@@ -279,7 +298,6 @@ serve(async (req: Request) => {
                 .eq("user_id", user.id)
                 .eq("rfms_customer_id", custId)
                 .maybeSingle();
-
               if (matchingClient) clientId = matchingClient.id;
             }
 
@@ -293,135 +311,89 @@ serve(async (req: Request) => {
                 rfms_quote_id: rfmsQuoteId,
                 quote_number: quote.reference || quote.quoteNumber || undefined,
               } as any);
-
             results.imported++;
           } catch (err: any) {
             results.errors.push(`RFMS Quote ${quote.id || 'unknown'}: ${err.message}`);
           }
         }
-      } catch (err: any) {
+      }).catch((err: any) => {
         results.errors.push(`Pull failed: ${err.message}`);
-      }
+      });
     }
 
     if (direction === "push" || direction === "both") {
-      let projectsQuery = supabase
-        .from("projects")
-        .select(
-          `
-          *,
-          clients (
-            id, name, email, phone, address, city, state, zip_code, company_name,
-            rfms_customer_id
-          )
-        `
-        )
-        .eq("user_id", user.id);
+      await withSessionRetry(async (currentToken: string) => {
+        let projectsQuery = supabase
+          .from("projects")
+          .select(`*, clients (id, name, email, phone, address, city, state, zip_code, company_name, rfms_customer_id)`)
+          .eq("user_id", user.id);
 
-      if (projectId) {
-        projectsQuery = projectsQuery.eq("id", projectId);
-      }
-
-      const { data: projects, error: projError } = await projectsQuery;
-
-      if (projError) {
-        throw new Error(`Failed to fetch projects: ${projError.message}`);
-      }
-
-      for (const project of projects || []) {
-        try {
-          const { data: treatments } = await supabase
-            .from("treatments")
-            .select("*")
-            .eq("project_id", project.id);
-
-          const totalPrice =
-            treatments?.reduce(
-              (sum: number, t: any) => sum + (t.total_price || 0),
-              0
-            ) || 0;
-          const totalCost =
-            treatments?.reduce(
-              (sum: number, t: any) =>
-                sum + (t.material_cost || 0) + (t.labor_cost || 0),
-              0
-            ) || 0;
-
-          const treatmentSummary =
-            treatments
-              ?.map(
-                (t: any) =>
-                  `${t.treatment_name || t.treatment_type}: ${t.product_name || "N/A"} - $${(t.total_price || 0).toFixed(2)}`
-              )
-              .join("\n") || "No line items";
-
-          const rfmsQuote: any = {
-            customer_id: (project.clients as any)?.rfms_customer_id || undefined,
-            description: project.name,
-            notes: [
-              `InterioApp Quote: ${project.quote_number || project.job_number || project.id}`,
-              `Status: ${project.status || "Draft"}`,
-              project.description ? `Description: ${project.description}` : null,
-              `---`,
-              `Line Items:`,
-              treatmentSummary,
-              `---`,
-              `Total: $${totalPrice.toFixed(2)}`,
-              `Cost: $${totalCost.toFixed(2)}`,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-            total: totalPrice,
-            cost: totalCost,
-            reference: project.quote_number || project.job_number || project.id,
-          };
-
-          if (!rfmsQuote.customer_id && project.clients) {
-            const client = project.clients as any;
-            rfmsQuote.customer_name =
-              client.name || `${client.first_name || ""} ${client.last_name || ""}`.trim();
-            rfmsQuote.customer_email = client.email;
-            rfmsQuote.customer_phone = client.phone;
-          }
-
-          const existingRfmsQuoteId = (project as any).rfms_quote_id;
-
-          if (existingRfmsQuoteId) {
-            await rfmsRequest(
-              "PUT",
-              `/quotes/${existingRfmsQuoteId}`,
-              storeQueue,
-              sessionToken,
-              apiUrl,
-              rfmsQuote
-            );
-            results.updated++;
-          } else {
-            const createResult = await rfmsRequest(
-              "POST",
-              "/opportunities",
-              storeQueue,
-              sessionToken,
-              apiUrl,
-              rfmsQuote
-            );
-
-            // Handle standard v2 response format
-            const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.id;
-            if (newId) {
-              await supabase
-                .from("projects")
-                .update({ rfms_quote_id: newId.toString() } as any)
-                .eq("id", project.id);
-              results.exported++;
-            } else {
-              results.errors.push(`Project ${project.id}: RFMS did not return an ID for the created opportunity`);
-            }
-          }
-        } catch (err: any) {
-          results.errors.push(`Project ${project.id}: ${err.message}`);
+        if (projectId) {
+          projectsQuery = projectsQuery.eq("id", projectId);
         }
-      }
+
+        const { data: projects, error: projError } = await projectsQuery;
+        if (projError) throw new Error(`Failed to fetch projects: ${projError.message}`);
+
+        for (const project of projects || []) {
+          try {
+            const { data: treatments } = await supabase
+              .from("treatments")
+              .select("*")
+              .eq("project_id", project.id);
+
+            const totalPrice = treatments?.reduce((sum: number, t: any) => sum + (t.total_price || 0), 0) || 0;
+            const totalCost = treatments?.reduce((sum: number, t: any) => sum + (t.material_cost || 0) + (t.labor_cost || 0), 0) || 0;
+
+            const treatmentSummary = treatments?.map((t: any) =>
+              `${t.treatment_name || t.treatment_type}: ${t.product_name || "N/A"} - $${(t.total_price || 0).toFixed(2)}`
+            ).join("\n") || "No line items";
+
+            const rfmsQuote: any = {
+              customer_id: (project.clients as any)?.rfms_customer_id || undefined,
+              description: project.name,
+              notes: [
+                `InterioApp Quote: ${project.quote_number || project.job_number || project.id}`,
+                `Status: ${project.status || "Draft"}`,
+                project.description ? `Description: ${project.description}` : null,
+                `---`, `Line Items:`, treatmentSummary, `---`,
+                `Total: $${totalPrice.toFixed(2)}`, `Cost: $${totalCost.toFixed(2)}`,
+              ].filter(Boolean).join("\n"),
+              total: totalPrice,
+              cost: totalCost,
+              reference: project.quote_number || project.job_number || project.id,
+            };
+
+            if (!rfmsQuote.customer_id && project.clients) {
+              const client = project.clients as any;
+              rfmsQuote.customer_name = client.name || `${client.first_name || ""} ${client.last_name || ""}`.trim();
+              rfmsQuote.customer_email = client.email;
+              rfmsQuote.customer_phone = client.phone;
+            }
+
+            const existingRfmsQuoteId = (project as any).rfms_quote_id;
+
+            if (existingRfmsQuoteId) {
+              await rfmsRequest("PUT", `/quotes/${existingRfmsQuoteId}`, storeQueue, currentToken, apiUrl, rfmsQuote);
+              results.updated++;
+            } else {
+              const createResult = await rfmsRequest("POST", "/opportunities", storeQueue, currentToken, apiUrl, rfmsQuote);
+              const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.id;
+              if (newId) {
+                await supabase.from("projects").update({ rfms_quote_id: newId.toString() } as any).eq("id", project.id);
+                results.exported++;
+              } else {
+                results.errors.push(`Project ${project.id}: RFMS did not return an ID for the created opportunity`);
+              }
+            }
+          } catch (err: any) {
+            if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+            results.errors.push(`Project ${project.id}: ${err.message}`);
+          }
+        }
+      }).catch((err: any) => {
+        results.errors.push(`Push failed: ${err.message}`);
+      });
     }
 
     // Update last sync
