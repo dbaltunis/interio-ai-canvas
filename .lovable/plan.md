@@ -1,56 +1,84 @@
 
 
-## Make RFMS Push Feel Trustworthy — Instant UI Feedback After Sync
+## Build an RFMS Diagnostic Tool — Know Exactly What Your Tier Supports
 
-### What's Happening Now
+### Why You're Seeing Mixed Messages
 
-After you click "Push to RFMS" and it succeeds, the badge and popover still show "Connected — not yet synced" with the "Push to RFMS" button. The project data (which contains `rfms_quote_id`) isn't refreshed, so the UI doesn't know the quote is now linked. You have to reload the page to see the green checkmark.
+The RFMS API has three subscription tiers (Standard, Plus, Enterprise). Based on the 405 errors, your current tier does NOT include "Create Opportunities" — that requires Enterprise. This is confirmed by [RFMS's own documentation](https://www.rfms.com/app/uploads/2020/11/API-slick.pdf).
 
-This makes it feel broken — "did it actually work?"
+This explains everything:
+- "Pushed to RFMS / Quote synced successfully" = updating an ALREADY-LINKED quote (PUT) — this works on Plus tier
+- "RFMS Push Not Available" = creating a NEW quote (POST) — this requires Enterprise tier
+- Customer import returning metadata = the search endpoint may also be tier-restricted
 
-### What Should Happen
+**This is not a bug in our integration — it's a real API restriction from RFMS.**
 
-1. After a successful push, the component should **refetch the project data** so `rfms_quote_id` gets populated immediately
-2. The badge should flip from blue (not synced) to green (synced) right away
-3. The button should change from "Push to RFMS" to "Re-sync"
-4. Re-syncing unlimited times is normal and fine (it updates the quote in RFMS with latest data)
+### What We Should Build
+
+Instead of generic error messages, build a **one-click diagnostic** that tests every RFMS endpoint and shows you exactly what your tier supports, so you can take this to the RFMS team and ask for the right tier.
 
 ### Changes
 
-**File: `src/components/integrations/IntegrationSyncStatus.tsx`**
+**1. New Edge Function: `supabase/functions/rfms-diagnose/index.ts`**
 
-- After a successful `handlePushToRFMS` call, **invalidate the query** that provides the project data so it refetches and picks up the new `rfms_quote_id`
-- Add a brief success state (e.g., show a checkmark icon on the button for 2 seconds) so the user gets immediate visual confirmation before the data refreshes
-- Accept an optional `onSyncComplete` callback prop so parent components can trigger their own refetch if needed
-
-**File: Parent component(s) that render `IntegrationSyncStatus`**
-
-- Pass an `onSyncComplete` callback that invalidates the project/quote query, ensuring the `rfms_quote_id` field is refreshed in the parent's state
-
-### Technical Details
-
-In `handlePushToRFMS`, after the success path (line 103-109):
+A diagnostic function that tests each RFMS API endpoint and reports what works:
 
 ```
-// After successful push:
-1. Call onSyncComplete?.() to let the parent refetch project data
-2. Invalidate relevant react-query cache keys (e.g., ["project", projectId])
-3. Optionally set a local "just synced" state for 2-3 seconds to show a green checkmark on the button
+Endpoints tested:
+- POST /session/begin          (authentication)
+- GET /customers               (customer metadata)
+- GET /customers/search        (customer records)
+- GET /opportunities           (read quotes)
+- POST /opportunities          (create quotes - Enterprise only)
+- PUT /opportunities/{id}      (update quotes)
+- GET /quotes                  (alternative quote read)
+- POST /quotes                 (alternative quote create)
 ```
 
-The key insight: the component receives `project.rfms_quote_id` as a prop, so the **parent** needs to refetch for the prop to update. The `onSyncComplete` callback handles this cleanly.
+For each endpoint, it reports: works / 405 (not on your tier) / 403 (forbidden) / error
+
+Returns a clear summary like:
+```
+Your RFMS API Tier Summary:
+- Authentication: Working
+- Read Customers: Metadata only (no record access)
+- Read Quotes/Opportunities: Working
+- Create New Quotes: NOT AVAILABLE (requires Enterprise tier)
+- Update Existing Quotes: Working
+- Estimated tier: Plus
+```
+
+**2. Update `src/components/integrations/RFMSIntegrationTab.tsx`**
+
+Add a "Run Diagnostics" button in the RFMS settings panel that:
+- Calls the new `rfms-diagnose` function
+- Shows results in a clear table format
+- Highlights what works (green) and what doesn't (amber)
+- Suggests what to ask RFMS for if features are missing
+- Replaces the vague "API tier limitation" messages with specific, actionable info
+
+**3. Update `src/components/integrations/IntegrationSyncStatus.tsx`**
+
+- Remove the `quote_create_unavailable` flag-based hiding (it was confusing)
+- Instead, always show the Push button but if the push fails with 405, show a clear one-line message: "Requires RFMS Enterprise tier — run diagnostics in Settings for details"
+- Keep the re-sync button for already-linked quotes (this works fine)
+
+**4. Update `supabase/config.toml`**
+
+Add the new `rfms-diagnose` function with `verify_jwt = false`.
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `src/components/integrations/IntegrationSyncStatus.tsx` | Add `onSyncComplete` prop; call it after successful push; add brief visual success state on the button |
-| Parent components rendering `IntegrationSyncStatus` | Pass `onSyncComplete` that invalidates the project query so `rfms_quote_id` updates |
+| `supabase/functions/rfms-diagnose/index.ts` | New — tests all RFMS endpoints and returns tier summary |
+| `supabase/config.toml` | Add rfms-diagnose function config |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Add "Run Diagnostics" button and results display |
+| `src/components/integrations/IntegrationSyncStatus.tsx` | Simplify — show push button always, show specific error on failure instead of hiding buttons |
 
-### After Fix
+### After This Fix
 
-- Push quote to RFMS -> badge immediately flips to green with checkmark
-- Button changes to "Re-sync" without needing a page reload
-- Re-syncing (to push updates) remains available and is clearly labelled differently from the initial push
-- No more "did it work?" confusion
-
+- You get a clear, printable report of what your RFMS API key can and cannot do
+- You can share this with the RFMS team and say "I need Enterprise tier for Create Opportunities"
+- No more mystery — every button either works or tells you exactly why it doesn't
+- The app stops blaming vague "tier limitations" and instead shows you proof
