@@ -716,7 +716,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       )}
 
       {/* ERP Integration Sync Status */}
-      <IntegrationSyncStatus project={project as any} />
+      <IntegrationSyncStatus project={project as any} projectId={project.id} />
 
       {/* Upcoming Appointments for this Project */}
       <ProjectAppointmentsCard projectId={project.id} clientId={formData.client_id} />
