@@ -286,7 +286,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
   };
 
   return (
-    <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50" data-create-project>
+    <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50">
       {groupedData.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No projects found matching your criteria.</p>

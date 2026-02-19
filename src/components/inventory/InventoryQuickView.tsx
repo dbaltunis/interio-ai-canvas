@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface InventoryQuickViewProps {
   item: any;
@@ -18,6 +19,7 @@ interface InventoryQuickViewProps {
 export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: InventoryQuickViewProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const { formatCurrency } = useFormattedCurrency();
+  const { data: isDealer } = useIsDealer();
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -62,10 +64,12 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
                   </Badge>
                 )}
               </div>
-              <Button onClick={handleEditClick} size="sm" variant="outline" className="shrink-0">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Full Details
-              </Button>
+              {!isDealer && (
+                <Button onClick={handleEditClick} size="sm" variant="outline" className="shrink-0">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Full Details
+                </Button>
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -137,16 +141,18 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-md bg-background">
-                    <DollarSign className="h-4 w-4 text-primary" />
+              <div className={`grid ${isDealer ? 'grid-cols-1' : 'grid-cols-2'} gap-4 p-4 bg-muted/50 rounded-lg`}>
+                {!isDealer && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-md bg-background">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Cost Price</p>
+                      <p className="font-bold text-lg">{formatCurrency(item.cost_price || 0)}</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Cost Price</p>
-                    <p className="font-bold text-lg">{formatCurrency(item.cost_price || 0)}</p>
-                  </div>
-                </div>
+                )}
                 
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-md bg-background">
@@ -187,7 +193,7 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
 
             {/* Additional Details */}
             <div className="grid grid-cols-2 gap-4">
-              {item.supplier && (
+              {item.supplier && !isDealer && (
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-md bg-muted">
                     <Store className="h-4 w-4 text-muted-foreground" />

@@ -71,6 +71,9 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     // Non-dealers: hide Library from bottom nav (accessible via sidebar/other means)
     if (!isDealer && item.id === 'inventory') return false;
     
+    // Dealers always see Library regardless of permission
+    if (isDealer && item.id === 'inventory') return true;
+    
     // Dashboard/Home should always be visible for authenticated users
     if (item.permission === 'view_dashboard') return true;
     // Only hide if explicitly false, not undefined (loading)
@@ -93,7 +96,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe pb-[env(safe-area-inset-bottom)]">
         {navPermissionsLoading ? (
           // Show skeleton while permissions are loading
           <div className="grid grid-cols-5 h-16">
@@ -105,9 +108,9 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             ))}
           </div>
         ) : (
-          <div className={cn("relative grid h-16", gridCols)}>
+          <div className={cn("relative grid min-h-[64px]", gridCols)}>
           {/* First half of items */}
-          {visibleNavItems.slice(0, Math.floor(visibleNavItems.length / 2)).map((item) => {
+          {visibleNavItems.slice(0, Math.ceil(visibleNavItems.length / 2)).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
@@ -158,7 +161,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
           </div>
           
           {/* Second half of items */}
-          {visibleNavItems.slice(Math.floor(visibleNavItems.length / 2)).map((item) => {
+          {visibleNavItems.slice(Math.ceil(visibleNavItems.length / 2)).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             

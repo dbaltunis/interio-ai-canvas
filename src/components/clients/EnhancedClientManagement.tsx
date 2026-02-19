@@ -49,9 +49,14 @@ export const EnhancedClientManagement = () => {
     return stage?.color ? `${stage.color} border-current/20` : 'bg-muted text-muted-foreground border-border';
   };
 
+  const handleClientClick = (client: any) => {
+    // Navigate to client profile page
+    window.location.href = `/clients/${client.id}`;
+  };
+
   // Return mobile view for mobile devices
   if (isMobile) {
-    return <MobileClientView onClientClick={(client) => console.log('Client clicked:', client)} />;
+    return <MobileClientView onClientClick={handleClientClick} />;
   }
 
   if (showCreateForm) {

@@ -64,7 +64,10 @@ export const useCanEditJob = (project: any) => {
       const client = project.client_id ? clients.find((c: any) => c.id === project.client_id) : null;
       const isClientAssignedToUser = client?.assigned_to === user.id;
 
-      return isCreatedByUser || isClientAssignedToUser;
+      // Check if job is directly assigned to the user (assigned_to or assigned_manager)
+      const isDirectlyAssigned = project.assigned_to === user.id || project.assigned_manager === user.id;
+
+      return isCreatedByUser || isClientAssignedToUser || isDirectlyAssigned;
     }
 
     return false;

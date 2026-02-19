@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,15 @@ export const ClientManagementPage = ({
 
   // Check if user is a Dealer - they see only their own clients
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
+
+  // Listen for create-new-client custom event from CreateActionDialog (mobile + button)
+  useEffect(() => {
+    const handler = () => {
+      setShowCreateForm(true);
+    };
+    window.addEventListener('create-new-client', handler);
+    return () => window.removeEventListener('create-new-client', handler);
+  }, []);
 
   // Permission checks using centralized hook
   const canViewAllClients = useHasPermission('view_all_clients');

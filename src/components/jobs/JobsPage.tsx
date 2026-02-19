@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -201,6 +201,15 @@ const JobsPage = () => {
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
+
+  // Listen for create-new-job custom event from CreateActionDialog (mobile + button)
+  useEffect(() => {
+    const handler = () => {
+      handleNewJob();
+    };
+    window.addEventListener('create-new-job', handler);
+    return () => window.removeEventListener('create-new-job', handler);
+  }, [canCreateJobsExplicit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackFromJob = () => {
     setSearchParams(prev => {
