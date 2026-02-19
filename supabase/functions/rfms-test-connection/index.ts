@@ -20,7 +20,7 @@ serve(async (req: Request) => {
     const { api_url, store_queue, api_key } = await req.json();
 
     if (!store_queue || !api_key) {
-      throw new Error("Missing required fields: store_queue and api_key");
+      throw new Error("Please enter both your Store Queue token and API Key before testing.");
     }
 
     const baseUrl = api_url || "https://api.rfms.online/v2";
@@ -28,31 +28,38 @@ serve(async (req: Request) => {
 
     console.log(`Testing RFMS connection to ${baseUrl}...`);
 
-    const response = await fetch(`${baseUrl}/session/begin`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/json",
-      },
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/session/begin`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (fetchErr: any) {
+      console.error("RFMS network error:", fetchErr.message);
+      throw new Error(`Cannot reach RFMS server at ${baseUrl}. Please check the API URL is correct and your internet connection is working.`);
+    }
 
     const responseText = await response.text();
-    let data: any;
+    console.log(`RFMS test response [${response.status}]: ${responseText.substring(0, 500)}`);
 
+    let data: any;
     try {
       data = JSON.parse(responseText);
     } catch {
-      throw new Error(`Invalid response from RFMS: ${responseText.substring(0, 200)}`);
+      throw new Error(`RFMS returned an unexpected response (not JSON). Check your API URL is correct: ${baseUrl}`);
     }
 
     if (!response.ok) {
       throw new Error(
-        `RFMS API returned ${response.status}: ${data.reason || data.message || responseText.substring(0, 200)}`
+        `RFMS rejected the connection (HTTP ${response.status}): ${data.reason || data.message || data.error || responseText.substring(0, 200)}`
       );
     }
 
     if (data.status === "failed") {
-      throw new Error(`RFMS connection failed: ${data.reason || "Authentication rejected"}`);
+      throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue token or API Key was rejected. Please double-check these values in your RFMS account settings."}`);
     }
 
     if (data.status === "success") {
@@ -102,7 +109,7 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("RFMS connection test failed:", error);
+    console.error("RFMS connection test failed:", error.message);
     return new Response(
       JSON.stringify({
         success: false,

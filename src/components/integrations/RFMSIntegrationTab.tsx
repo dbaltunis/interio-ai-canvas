@@ -17,6 +17,53 @@ interface RFMSIntegrationTabProps {
   integration?: RFMSIntegration | null;
 }
 
+/**
+ * Translates raw RFMS errors into user-friendly messages.
+ * Edge functions now return detailed messages, but we still handle
+ * Supabase SDK generic wrappers gracefully.
+ */
+function getFriendlyRFMSError(msg: string): string {
+  if (!msg) return "Something went wrong. Please try again.";
+  
+  // Already user-friendly (from our improved edge functions)
+  if (msg.includes("credentials") || msg.includes("Check your") || msg.includes("Contact") || msg.includes("Please")) {
+    return msg;
+  }
+  
+  // Supabase SDK generic errors
+  if (msg.includes("non-2xx")) {
+    return "The RFMS service encountered an error. Please check your credentials in the settings above and try again.";
+  }
+  if (msg.includes("Failed to send") || msg.includes("FunctionsHttpError")) {
+    return "Could not reach the RFMS service. Please try again in a moment.";
+  }
+  if (msg.includes("FunctionsRelayError")) {
+    return "The RFMS service is temporarily unavailable. Please try again in a few minutes.";
+  }
+  
+  return msg;
+}
+
+/**
+ * Extracts the real error message from a Supabase edge function response.
+ * When edge functions return non-2xx, the SDK puts the body in `data` and
+ * a generic error in `error`. We need to read `data.error` for the real message.
+ */
+async function extractEdgeFunctionError(error: any, data: any): Promise<string> {
+  // Try to get the real message from the response body first
+  if (data?.error) return data.error;
+  
+  // FunctionsHttpError has a context with responseBody
+  if (error?.context?.responseBody) {
+    try {
+      const body = JSON.parse(error.context.responseBody);
+      if (body?.error) return body.error;
+    } catch {}
+  }
+  
+  return error?.message || "Unknown error";
+}
+
 export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => {
   const { createIntegration, updateIntegration } = useIntegrations();
   const { toast } = useToast();
@@ -70,7 +117,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
 
       toast({ title: "RFMS Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
     } catch (err: any) {
-      toast({ title: "Could not save RFMS settings", description: err.message || "Check your credentials are correct and try again.", variant: "destructive" });
+      toast({ title: "Could not save RFMS settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning" });
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +134,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
 
       if (data?.success) {
         toast({
@@ -95,17 +145,13 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
           description: `Connected to RFMS API v2${data.customer_count != null ? ` (${data.customer_count} customers found)` : ''}`,
         });
       } else {
-        throw new Error(data?.error || "Connection test failed");
+        throw new Error(data?.error || "Connection test returned no result");
       }
     } catch (err: any) {
-      const msg = err.message || "";
-      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError") || msg.includes("non-2xx");
       toast({
         title: "RFMS Connection Failed",
-        description: isEdgeFnMissing
-          ? "The RFMS backend service is not deployed yet. Please deploy the Edge Functions via Supabase CLI first."
-          : `Could not connect to RFMS. ${msg}. Check your Store Queue token and API key are correct.`,
-        variant: "destructive",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
       });
     } finally {
       setIsTesting(false);
@@ -119,7 +165,14 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         body: { direction },
       });
 
-      if (error) throw error;
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Sync returned no results");
+      }
 
       const parts = [];
       if (data.imported > 0) parts.push(`${data.imported} imported`);
@@ -131,14 +184,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         description: parts.length > 0 ? parts.join(', ') : 'No quotes to sync',
       });
     } catch (err: any) {
-      const msg = err.message || "";
-      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
         title: "Quote Sync Failed",
-        description: isEdgeFnMissing
-          ? "The RFMS sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
-          : `Quote sync failed. ${msg}`,
-        variant: "destructive",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
       });
     } finally {
       setIsSyncing(false);
@@ -152,7 +201,14 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         body: { direction },
       });
 
-      if (error) throw error;
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Sync returned no results");
+      }
 
       const parts = [];
       if (data.imported > 0) parts.push(`${data.imported} imported`);
@@ -160,18 +216,14 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
       if (data.updated > 0) parts.push(`${data.updated} updated`);
 
       toast({
-        title: "Sync Complete",
+        title: "Customer Sync Complete",
         description: parts.length > 0 ? parts.join(', ') : 'No changes needed',
       });
     } catch (err: any) {
-      const msg = err.message || "";
-      const isEdgeFnMissing = msg.includes("Failed to send") || msg.includes("FunctionsHttpError");
       toast({
         title: "Customer Sync Failed",
-        description: isEdgeFnMissing
-          ? "The RFMS sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
-          : `Customer sync failed. ${msg}`,
-        variant: "destructive",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
       });
     } finally {
       setIsSyncing(false);
