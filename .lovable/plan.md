@@ -1,134 +1,143 @@
 
 
-## Fix RFMS Integration: Session Response Format Mismatch + Active Badge + Test Connection
+## Fix RFMS Sync, Save Button UX, and Loading States Across All Integrations
 
-### Root Cause (Database Proof from Edge Function Logs)
+### Issues Found (5 Critical, 2 Medium)
 
-The RFMS API at `/session/begin` returns this response:
+---
 
+### Issue 1 (CRITICAL): RFMS `/customers` GET Returns Metadata, Not Customer Records
+
+**Root Cause (from edge function logs):** The GET `/customers` endpoint returns field enums/schema metadata:
 ```json
-{
-  "storeId": "store-e58d4e7c2a46464d9f29011be13e32c5",
-  "authorized": true,
-  "sessionToken": "rfmsapi-831d536a371f4bf1ab6f0fbe21c9c319",
-  "sessionExpires": "Thu, 19 Feb 2026 14:10:33 GMT"
-}
+{"customerType":["COMMERICAL","DECLINED",...], "entryType":["Customer","Prospect"], "taxStatus":[...], ...}
 ```
+This is NOT a list of customer records. The pull logic checks `rfmsData.status === "success"` which is `undefined` on this response, so it silently skips everything and reports "0 imported, 0 exported, 0 updated" -- making it look like nothing works.
 
-But all 3 edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`) expect:
+The RFMS v2 API likely requires a search/query endpoint (e.g., `/customers/search` or query parameters) to actually list customers, not just GET `/customers`.
 
-```json
-{ "status": "success", "result": { "token": "..." } }
-```
+**Fix:** Update `rfms-sync-customers` to:
+1. Handle the v2 response format (no `{status, result}` wrapper -- data is at the top level or uses pagination)
+2. Try `/customers/search` or `/customers?entryType=Customer` to get actual records
+3. Log and report clearly when the API returns metadata instead of records
 
-The check `if (data.status !== "success")` fails because there IS no `status` field. The token is at `data.sessionToken`, not `data.result.token`. This is the single line causing every RFMS sync failure.
+---
 
-The `rfms-test-connection` function works by accident: it checks `if (data.status === "success")` (false), then falls through to the "waiting" path which returns `success: true`. So "Test Connection" passes but sync fails.
+### Issue 2 (CRITICAL): RFMS POST `/customers` Returns 405 Method Not Allowed
 
-### Fix 1: Update `ensureSession` in All 3 Edge Functions
+**From logs:** Every customer push attempt returns `{"Message":"The requested resource does not support http method 'POST'."}` -- RFMS v2 does not support creating customers via POST. Export/push is not possible with this API version.
 
-**Files:** `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`
+**Fix:** 
+1. Remove or disable the "Export Customers" push button since POST is not supported
+2. Show a clear info message: "RFMS v2 API supports importing customers only. Customer creation must be done in RFMS directly."
+3. Report this in the notification instead of silently failing
 
-Replace lines 85-93 (the status checking block) in each `ensureSession` function with logic that handles BOTH response formats:
+---
 
+### Issue 3 (CRITICAL): PostgREST Schema Cache Stale for `rfms_customer_id`
+
+The column exists in the database but the edge function gets `column clients_1.rfms_customer_id does not exist` because PostgREST's schema cache hasn't been refreshed after the migration.
+
+**Fix:** Run `NOTIFY pgrst, 'reload schema';` via a SQL migration to refresh the cache. This is a one-line fix.
+
+---
+
+### Issue 4 (CRITICAL): RFMS Pull Logic Expects `{status: "success"}` But v2 Returns Raw Data
+
+Both `rfms-sync-customers` (line 271) and `rfms-sync-quotes` (line 215) check:
 ```typescript
-// Handle RFMS v2 response format: {authorized, sessionToken} at top level
-if (data.authorized === true && data.sessionToken) {
-  const newToken = data.sessionToken;
-  // Store the token...
-  await supabase.from("integration_settings").update({
-    api_credentials: {
-      ...integration.api_credentials,
-      session_token: newToken,
-      session_started_at: new Date().toISOString(),
-    },
-  }).eq("id", integration.id);
-  return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
-}
-
-// Handle legacy format: {status: "success", result: {token}}
-if (data.status === "failed") {
-  throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
-}
-
-if (data.status === "success") {
-  const newToken = data.result?.token || data.result?.session_token;
-  if (!newToken) throw new Error("RFMS did not return a session token.");
-  // Store and return...
-}
-
-// Neither format matched
-throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
+if (rfmsData.status === "success" && rfmsData.result) {
 ```
+But the RFMS v2 API returns data at the top level (arrays or objects), NOT wrapped in `{status, result}`. This means even when the API returns valid data, the pull logic skips it entirely.
 
-### Fix 2: Update `rfms-test-connection`
-
-**File:** `rfms-test-connection/index.ts`
-
-Same issue -- it needs to handle the `{authorized, sessionToken}` format properly instead of falling through to the "waiting" path. After the `data.status === "failed"` check, add:
-
+**Fix:** Update both functions to handle v2 format:
 ```typescript
-// Handle v2 format: {authorized, sessionToken}
-if (data.authorized === true && data.sessionToken) {
-  // Try customer fetch to verify full access
-  let customerCount = null;
-  try {
-    const customerAuth = btoa(`${store_queue}:${data.sessionToken}`);
-    const custResponse = await fetch(`${baseUrl}/customers?limit=1`, { ... });
-    // ... existing customer count logic
-  } catch {}
-
-  return new Response(JSON.stringify({
-    success: true,
-    message: "RFMS connection successful",
-    session_token: "obtained",
-    customer_count: customerCount,
-    api_version: "v2",
-  }), ...);
-}
+// v2: data is at top level (array or object with items)
+const items = Array.isArray(rfmsData) ? rfmsData 
+  : rfmsData.result ? (Array.isArray(rfmsData.result) ? rfmsData.result : rfmsData.result.customers || [])
+  : [];
 ```
 
-### Fix 3: "Active" Badge Should Reflect Connection Status
+---
 
-**File:** `RFMSIntegrationTab.tsx`
+### Issue 5 (MEDIUM): Save Button Always Active on RFMS, NetSuite, Google Calendar, MYOB, CW Systems, Norman
 
-Currently (line 246): `integration.active ? "Active" : "Inactive"` -- this just means credentials are saved, not that the connection works.
+TWC already implements the correct pattern with `hasChanges` + `useMemo` + `useRef` for initial load. All other integration tabs have the Save button always enabled, misleading users into thinking settings aren't saved.
 
-Change the badge to show:
-- **"Connected"** (green) -- only after a successful test/sync (check `last_sync` is recent)
-- **"Configured"** (blue/default) -- credentials saved but not yet verified
-- **"Inactive"** (gray) -- integration disabled
+**Fix:** Apply the TWC pattern to all 6 integration tabs:
+- Track `savedValues` with `useMemo` from the integration prop
+- Compute `hasChanges` by comparing form data to saved values
+- Disable button and show "Saved" text when no changes exist
+- Use `variant="secondary"` when disabled for visual clarity
 
+**Files affected:**
+| File | Current | Fix |
+|---|---|---|
+| `RFMSIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+| `NetSuiteIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+| `GoogleCalendarIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+| `MYOBExoIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+| `CWSystemsIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+| `NormanIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+
+---
+
+### Issue 6 (MEDIUM): All Sync Buttons Show Loading When Any Is Clicked
+
+Currently, `isSyncing` is a single boolean. When any sync button is clicked, ALL buttons show loading spinners, making it impossible to tell which operation is running.
+
+**Fix:** Replace single `isSyncing` with per-action loading states:
 ```typescript
-const getStatusBadge = () => {
-  if (!integration) return null;
-  if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
-  if (integration.last_sync) {
-    return <Badge variant="default" className="bg-green-600">Connected</Badge>;
-  }
-  return <Badge variant="outline">Configured</Badge>;
-};
+const [syncingAction, setSyncingAction] = useState<string | null>(null);
+// Usage: setSyncingAction('import-customers'), setSyncingAction('export-quotes'), etc.
+// Each button checks: disabled={syncingAction !== null}, shows spinner only when syncingAction === 'its-action'
 ```
 
-### Fix 4: "Coming Soon" Features
+Apply to both `RFMSIntegrationTab` and `NetSuiteIntegrationTab`.
 
-The 3 "Coming Soon" items (Sync Measurements, Sync Scheduling, Auto Update Job Status) are correctly marked as disabled with "Coming Soon" badges. These are genuinely not yet implemented. No fix needed -- they are informational placeholders, not broken features.
+---
+
+### Issue 7 (MEDIUM): "Active" Badge Misleading on NetSuite, CW Systems, Norman
+
+These tabs show "Active" when `integration.active === true`, but that just means credentials were saved. It doesn't confirm the connection works.
+
+**Fix:** Apply the same badge logic from RFMS (Connected/Configured/Inactive) to:
+- `NetSuiteIntegrationTab.tsx`
+- `CWSystemsIntegrationTab.tsx` 
+- `NormanIntegrationTab.tsx`
+- `GoogleCalendarIntegrationTab.tsx`
+- `MYOBExoIntegrationTab.tsx`
+
+---
 
 ### Files to Change
 
-| File | Change |
+| File | Changes |
 |---|---|
-| `supabase/functions/rfms-sync-customers/index.ts` | Update `ensureSession` to handle `{authorized, sessionToken}` format |
-| `supabase/functions/rfms-sync-quotes/index.ts` | Same `ensureSession` fix |
-| `supabase/functions/rfms-session/index.ts` | Same `ensureSession` fix |
-| `supabase/functions/rfms-test-connection/index.ts` | Handle `{authorized, sessionToken}` format instead of falling through to "waiting" |
-| `src/components/integrations/RFMSIntegrationTab.tsx` | Change "Active" badge to "Connected"/"Configured"/"Inactive" based on actual status |
+| `supabase/functions/rfms-sync-customers/index.ts` | Fix v2 response parsing for pull; disable push (POST not supported); handle metadata vs customer list response |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Fix v2 response parsing for pull (no `{status, result}` wrapper) |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Per-action loading states; `hasChanges` for save button; disable Export Customers button with info |
+| `src/components/integrations/NetSuiteIntegrationTab.tsx` | `hasChanges` for save button; per-action loading; status badge fix; `warning` toast variant |
+| `src/components/integrations/GoogleCalendarIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
+| `src/components/integrations/MYOBExoIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
+| `src/components/integrations/CWSystemsIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
+| `src/components/integrations/NormanIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
+| SQL Migration | `NOTIFY pgrst, 'reload schema';` to fix stale cache |
 
-### After the Fix
+### SQL Migration
 
-- Customer sync, quote sync, and session management all work with the real RFMS API response
-- "Test Connection" correctly reports success with customer count
-- Badge shows "Connected" only after a verified sync, "Configured" when credentials are saved but untested
-- All error messages remain user-friendly (from the previous fix)
-- "Coming Soon" items stay as-is (they are correct)
+```sql
+-- Refresh PostgREST schema cache after rfms_customer_id column addition
+NOTIFY pgrst, 'reload schema';
+```
+
+### After All Fixes
+
+- RFMS customer import correctly parses v2 API responses
+- Export Customers disabled with explanation (POST not supported by RFMS v2)
+- PostgREST cache refreshed so quote sync can access `rfms_customer_id`
+- Save button greyed out and shows "Saved" on all integrations when nothing changed
+- Each sync button shows its own loading spinner, not all buttons
+- Status badges show Connected/Configured/Inactive based on actual connection state
+- All integration errors use `warning` (amber) variant, not `destructive` (red)
 
