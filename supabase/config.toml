@@ -232,3 +232,9 @@ verify_jwt = true
 [functions.import-client-library]
 verify_jwt = false
 
+[functions.rfms-sync-measurements]
+verify_jwt = false
+
+[functions.rfms-sync-scheduling]
+verify_jwt = false
+
