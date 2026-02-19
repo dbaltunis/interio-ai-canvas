@@ -1,212 +1,134 @@
 
 
-## Fix RFMS Integration + Improve Error Notifications
+## Fix RFMS Integration: Session Response Format Mismatch + Active Badge + Test Connection
 
-### Root Cause Analysis
+### Root Cause (Database Proof from Edge Function Logs)
 
-**Why RFMS sync fails with "RFMS session error: undefined":**
+The RFMS API at `/session/begin` returns this response:
 
-The `ensureSession` function in all 3 RFMS edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`) calls the RFMS API at `/session/begin`. When the RFMS API returns an unexpected response format (e.g., HTML error page, different JSON structure, or a network-level error), the code does:
-
-```typescript
-if (data.status !== "success") {
-  throw new Error(`RFMS session error: ${data.reason || data.status}`);
+```json
+{
+  "storeId": "store-e58d4e7c2a46464d9f29011be13e32c5",
+  "authorized": true,
+  "sessionToken": "rfmsapi-831d536a371f4bf1ab6f0fbe21c9c319",
+  "sessionExpires": "Thu, 19 Feb 2026 14:10:33 GMT"
 }
 ```
 
-If the response parses as JSON but has neither `.status` nor `.reason` (or the response is `{}` or has a different structure like `{error: "..."}` or `{message: "..."}`), both are `undefined`, producing the unhelpful "RFMS session error: undefined".
+But all 3 edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`) expect:
 
-The function also never logs the actual raw response from RFMS, making it impossible to debug what the API actually returned.
+```json
+{ "status": "success", "result": { "token": "..." } }
+```
 
-**Why the user sees "Edge Function returned a non-2xx status code":**
+The check `if (data.status !== "success")` fails because there IS no `status` field. The token is at `data.sessionToken`, not `data.result.token`. This is the single line causing every RFMS sync failure.
 
-When an edge function returns HTTP 500, `supabase.functions.invoke()` puts the error body in `data` (not `error.message`). The frontend code does `if (error) throw error` -- but `error` is a generic `FunctionsHttpError` with the message "Edge Function returned a non-2xx status code". The actual error details are in `data.error`, which is never read.
+The `rfms-test-connection` function works by accident: it checks `if (data.status === "success")` (false), then falls through to the "waiting" path which returns `success: true`. So "Test Connection" passes but sync fails.
 
----
+### Fix 1: Update `ensureSession` in All 3 Edge Functions
 
-### Fix 1: Edge Functions -- Better Error Handling and Logging
+**Files:** `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`
 
-**Files: `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`**
-
-Update the `ensureSession` function in all 3 files:
+Replace lines 85-93 (the status checking block) in each `ensureSession` function with logic that handles BOTH response formats:
 
 ```typescript
-async function ensureSession(supabase, integration) {
-  const { store_queue, api_key, session_token } = integration.api_credentials || {};
-  const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
-
-  if (!store_queue || !api_key) {
-    throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
-  }
-
-  if (session_token) {
-    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
-  }
-
-  const basicAuth = btoa(`${store_queue}:${api_key}`);
-  let response: Response;
-  try {
-    response = await fetch(`${apiUrl}/session/begin`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/json",
-      },
-    });
-  } catch (fetchErr) {
-    // Network-level failure (DNS, timeout, etc.)
-    throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
-  }
-
-  const responseText = await response.text();
-  console.log(`RFMS session/begin response [${response.status}]: ${responseText.substring(0, 500)}`);
-
-  if (!response.ok) {
-    // Parse error details if possible
-    try {
-      const errData = JSON.parse(responseText);
-      throw new Error(`RFMS rejected the connection (${response.status}): ${errData.reason || errData.message || errData.error || responseText.substring(0, 200)}`);
-    } catch {
-      throw new Error(`RFMS returned HTTP ${response.status}. The API URL or credentials may be incorrect.`);
-    }
-  }
-
-  let data: any;
-  try {
-    data = JSON.parse(responseText);
-  } catch {
-    throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
-  }
-
-  if (data.status === "failed") {
-    throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
-  }
-
-  if (data.status !== "success") {
-    throw new Error(`Unexpected RFMS response: ${JSON.stringify(data).substring(0, 200)}`);
-  }
-
-  const newToken = data.result?.token || data.result?.session_token;
-  if (!newToken) throw new Error("RFMS did not return a session token. Contact RFMS support.");
-
+// Handle RFMS v2 response format: {authorized, sessionToken} at top level
+if (data.authorized === true && data.sessionToken) {
+  const newToken = data.sessionToken;
   // Store the token...
+  await supabase.from("integration_settings").update({
+    api_credentials: {
+      ...integration.api_credentials,
+      session_token: newToken,
+      session_started_at: new Date().toISOString(),
+    },
+  }).eq("id", integration.id);
+  return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
 }
+
+// Handle legacy format: {status: "success", result: {token}}
+if (data.status === "failed") {
+  throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
+}
+
+if (data.status === "success") {
+  const newToken = data.result?.token || data.result?.session_token;
+  if (!newToken) throw new Error("RFMS did not return a session token.");
+  // Store and return...
+}
+
+// Neither format matched
+throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
 ```
 
-Key improvements:
-- Catches network errors (DNS, timeout) separately with a human-readable message
-- Logs the raw RFMS response for debugging
-- Handles every possible response format (not just `{status, reason}`)
-- Every error message tells the user what to check or do next
+### Fix 2: Update `rfms-test-connection`
 
-Also update the error response from the edge functions to return 400 (not 500) for user-fixable errors:
+**File:** `rfms-test-connection/index.ts`
+
+Same issue -- it needs to handle the `{authorized, sessionToken}` format properly instead of falling through to the "waiting" path. After the `data.status === "failed"` check, add:
 
 ```typescript
-} catch (error: any) {
-  console.error("RFMS sync error:", error.message);
-  const isUserError = error.message.includes("credentials") || 
-                      error.message.includes("rejected") ||
-                      error.message.includes("not configured");
-  return new Response(
-    JSON.stringify({ 
-      success: false,
-      error: error.message,
-      user_action_required: isUserError 
-    }),
-    {
-      status: isUserError ? 400 : 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    }
-  );
-}
-```
-
----
-
-### Fix 2: Frontend -- Extract Actual Error from Edge Function Responses
-
-**File: `src/components/integrations/RFMSIntegrationTab.tsx`**
-
-The Supabase SDK behavior: when an edge function returns non-2xx, `error` is a generic `FunctionsHttpError` and `data` contains the actual response body. Update all 3 handlers:
-
-```typescript
-const handleSyncCustomers = async (direction) => {
-  setIsSyncing(true);
+// Handle v2 format: {authorized, sessionToken}
+if (data.authorized === true && data.sessionToken) {
+  // Try customer fetch to verify full access
+  let customerCount = null;
   try {
-    const { data, error } = await supabase.functions.invoke('rfms-sync-customers', {
-      body: { direction },
-    });
+    const customerAuth = btoa(`${store_queue}:${data.sessionToken}`);
+    const custResponse = await fetch(`${baseUrl}/customers?limit=1`, { ... });
+    // ... existing customer count logic
+  } catch {}
 
-    // Extract the REAL error message from the response body
-    if (error) {
-      const realMessage = data?.error || error.message;
-      throw new Error(realMessage);
-    }
+  return new Response(JSON.stringify({
+    success: true,
+    message: "RFMS connection successful",
+    session_token: "obtained",
+    customer_count: customerCount,
+    api_version: "v2",
+  }), ...);
+}
+```
 
-    if (!data?.success) {
-      throw new Error(data?.error || "Sync returned no results");
-    }
+### Fix 3: "Active" Badge Should Reflect Connection Status
 
-    // ... success handling
-  } catch (err) {
-    toast({
-      title: "Customer Sync Failed",
-      description: getFriendlyRFMSError(err.message),
-      variant: "warning",  // Use warning variant per project standard
-    });
+**File:** `RFMSIntegrationTab.tsx`
+
+Currently (line 246): `integration.active ? "Active" : "Inactive"` -- this just means credentials are saved, not that the connection works.
+
+Change the badge to show:
+- **"Connected"** (green) -- only after a successful test/sync (check `last_sync` is recent)
+- **"Configured"** (blue/default) -- credentials saved but not yet verified
+- **"Inactive"** (gray) -- integration disabled
+
+```typescript
+const getStatusBadge = () => {
+  if (!integration) return null;
+  if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
+  if (integration.last_sync) {
+    return <Badge variant="default" className="bg-green-600">Connected</Badge>;
   }
+  return <Badge variant="outline">Configured</Badge>;
 };
 ```
 
-Add a helper to translate technical errors to user-friendly messages:
+### Fix 4: "Coming Soon" Features
 
-```typescript
-function getFriendlyRFMSError(msg: string): string {
-  if (!msg) return "Something went wrong. Please try again.";
-  
-  // Already user-friendly (from our improved edge functions)
-  if (msg.includes("credentials") || msg.includes("Check your") || msg.includes("Contact")) {
-    return msg;
-  }
-  
-  // Supabase SDK generic errors
-  if (msg.includes("non-2xx")) {
-    return "The RFMS sync service encountered an error. Check your credentials in the RFMS settings above and try again.";
-  }
-  if (msg.includes("Failed to send") || msg.includes("FunctionsHttpError")) {
-    return "Could not reach the RFMS sync service. Please try again in a moment.";
-  }
-  
-  return msg;
-}
-```
-
-Apply the same pattern to `handleTestConnection`, `handleSyncQuotes`, and `handleSyncCustomers`.
-
----
-
-### Fix 3: Use `warning` Toast Variant (Project Standard)
-
-Per the project's Friendly Error Notification standard, all integration errors should use `variant: "warning"` (orange/amber) instead of `variant: "destructive"` (red). The destructive red toasts are reserved for critical system failures. Integration errors are user-fixable and should use the calmer warning style.
-
-Change all `variant: "destructive"` in RFMSIntegrationTab to `variant: "warning"`.
-
----
+The 3 "Coming Soon" items (Sync Measurements, Sync Scheduling, Auto Update Job Status) are correctly marked as disabled with "Coming Soon" badges. These are genuinely not yet implemented. No fix needed -- they are informational placeholders, not broken features.
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `supabase/functions/rfms-sync-customers/index.ts` | Rewrite `ensureSession` with proper error handling, logging, and user-friendly messages |
+| `supabase/functions/rfms-sync-customers/index.ts` | Update `ensureSession` to handle `{authorized, sessionToken}` format |
 | `supabase/functions/rfms-sync-quotes/index.ts` | Same `ensureSession` fix |
-| `supabase/functions/rfms-session/index.ts` | Same `ensureSession` fix (already has multi-tenant, just needs error handling) |
-| `src/components/integrations/RFMSIntegrationTab.tsx` | Extract real error from `data.error`, add `getFriendlyRFMSError` helper, use `warning` variant |
+| `supabase/functions/rfms-session/index.ts` | Same `ensureSession` fix |
+| `supabase/functions/rfms-test-connection/index.ts` | Handle `{authorized, sessionToken}` format instead of falling through to "waiting" |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Change "Active" badge to "Connected"/"Configured"/"Inactive" based on actual status |
 
 ### After the Fix
 
-- RFMS edge functions log the actual API response for debugging
-- Every error message tells the user exactly what went wrong and what to do
-- "Edge Function returned a non-2xx status code" is replaced with actionable messages like "RFMS authentication failed: Your Store Queue or API Key was rejected"
-- Network errors, credential errors, and API format errors each get distinct, clear messages
-- Toast notifications use the orange warning style (not scary red)
-- All fixes apply to ALL accounts, not just this one
+- Customer sync, quote sync, and session management all work with the real RFMS API response
+- "Test Connection" correctly reports success with customer count
+- Badge shows "Connected" only after a verified sync, "Configured" when credentials are saved but untested
+- All error messages remain user-friendly (from the previous fix)
+- "Coming Soon" items stay as-is (they are correct)
+
