@@ -12,6 +12,8 @@ const corsHeaders = {
  * Bidirectional customer sync between InterioApp and RFMS.
  * - Push: Export InterioApp clients to RFMS as customers
  * - Pull: Import RFMS customers to InterioApp as clients
+ * 
+ * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
  */
 
 interface RFMSCustomer {
@@ -36,7 +38,7 @@ async function ensureSession(
   const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
 
   if (!store_queue || !api_key) {
-    throw new Error("RFMS credentials not configured");
+    throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
   }
 
   // If we have a session token, try to use it
@@ -46,25 +48,50 @@ async function ensureSession(
 
   // Otherwise, begin a new session
   const basicAuth = btoa(`${store_queue}:${api_key}`);
-  const response = await fetch(`${apiUrl}/session/begin`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basicAuth}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`RFMS session begin failed: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}/session/begin`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (fetchErr: any) {
+    console.error("RFMS network error:", fetchErr.message);
+    throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
   }
 
-  const data = await response.json();
+  const responseText = await response.text();
+  console.log(`RFMS session/begin response [${response.status}]: ${responseText.substring(0, 500)}`);
+
+  if (!response.ok) {
+    try {
+      const errData = JSON.parse(responseText);
+      throw new Error(`RFMS rejected the connection (${response.status}): ${errData.reason || errData.message || errData.error || responseText.substring(0, 200)}`);
+    } catch (parseErr) {
+      if ((parseErr as Error).message.includes("RFMS rejected")) throw parseErr;
+      throw new Error(`RFMS returned HTTP ${response.status}. The API URL or credentials may be incorrect.`);
+    }
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
+  }
+
+  if (data.status === "failed") {
+    throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
+  }
+
   if (data.status !== "success") {
-    throw new Error(`RFMS session error: ${data.reason || data.status}`);
+    throw new Error(`Unexpected RFMS response: ${JSON.stringify(data).substring(0, 200)}`);
   }
 
   const newToken = data.result?.token || data.result?.session_token;
-  if (!newToken) throw new Error("No session token from RFMS");
+  if (!newToken) throw new Error("RFMS did not return a session token. Contact RFMS support.");
 
   // Store the token
   await supabase
@@ -102,11 +129,25 @@ async function rfmsRequest(
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${apiUrl}${endpoint}`, options);
-  const data = await response.json();
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}${endpoint}`, options);
+  } catch (fetchErr: any) {
+    throw new Error(`Cannot reach RFMS API at ${apiUrl}${endpoint}. Network error: ${fetchErr.message}`);
+  }
+
+  const responseText = await response.text();
+  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 300)}`);
+
+  let data: any;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(`RFMS returned invalid data for ${endpoint}. Response: ${responseText.substring(0, 200)}`);
+  }
 
   if (data.status === "failed") {
-    throw new Error(`RFMS API error: ${data.reason || "Request failed"}`);
+    throw new Error(`RFMS API error on ${endpoint}: ${data.reason || "Request failed"}`);
   }
 
   return data;
@@ -150,7 +191,7 @@ serve(async (req: Request) => {
       .single();
 
     if (intError || !integration) {
-      throw new Error("RFMS integration not found");
+      throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
     const { sessionToken, storeQueue, apiUrl } = await ensureSession(supabase, integration);
@@ -185,19 +226,15 @@ serve(async (req: Request) => {
             notes: `Synced from InterioApp. Client ID: ${client.id}`,
           };
 
-          // Check if already synced (look for rfms_customer_id in metadata)
           const existingRfmsId = (client as any).rfms_customer_id;
 
           if (existingRfmsId) {
-            // Update existing RFMS customer
             await rfmsRequest("PUT", `/customers/${existingRfmsId}`, storeQueue, sessionToken, apiUrl, rfmsCustomer);
             results.updated++;
           } else {
-            // Create new RFMS customer
             const createResult = await rfmsRequest("POST", "/customers", storeQueue, sessionToken, apiUrl, rfmsCustomer);
 
             if (createResult.status === "success" && createResult.result?.id) {
-              // Store RFMS customer ID back in our client record
               await supabase
                 .from("clients")
                 .update({ rfms_customer_id: createResult.result.id } as any)
@@ -213,7 +250,6 @@ serve(async (req: Request) => {
     }
 
     if (direction === "pull" || direction === "both") {
-      // Pull RFMS customers to InterioApp
       try {
         const rfmsData = await rfmsRequest("GET", "/customers", storeQueue, sessionToken, apiUrl);
 
@@ -224,7 +260,6 @@ serve(async (req: Request) => {
 
           for (const customer of customers) {
             try {
-              // Check if already imported (by rfms_customer_id)
               const { data: existing } = await supabase
                 .from("clients")
                 .select("id")
@@ -248,14 +283,12 @@ serve(async (req: Request) => {
               };
 
               if (existing) {
-                // Update existing client
                 await supabase
                   .from("clients")
                   .update(clientData as any)
                   .eq("id", existing.id);
                 results.updated++;
               } else {
-                // Create new client
                 await supabase
                   .from("clients")
                   .insert(clientData as any);
@@ -286,11 +319,21 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("RFMS customer sync error:", error);
+    console.error("RFMS customer sync error:", error.message);
+    const isUserError = error.message.includes("credentials") ||
+                        error.message.includes("rejected") ||
+                        error.message.includes("not configured") ||
+                        error.message.includes("not found") ||
+                        error.message.includes("not active") ||
+                        error.message.includes("Check your");
     return new Response(
-      JSON.stringify({ error: error.message || "Sync failed" }),
+      JSON.stringify({
+        success: false,
+        error: error.message || "Sync failed",
+        user_action_required: isUserError,
+      }),
       {
-        status: 500,
+        status: isUserError ? 400 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

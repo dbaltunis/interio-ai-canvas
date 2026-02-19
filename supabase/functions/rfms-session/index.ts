@@ -59,42 +59,64 @@ serve(async (req: Request) => {
       .single();
 
     if (intError || !integration) {
-      throw new Error("RFMS integration not found or not active");
+      throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
     const { store_queue, api_key } = integration.api_credentials || {};
     const apiUrl = integration.api_credentials?.api_url || "https://api.rfms.online/v2";
 
     if (!store_queue || !api_key) {
-      throw new Error("RFMS credentials not configured (store_queue and api_key required)");
+      throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
     }
 
     if (action === "begin" || action === "refresh") {
       const basicAuth = btoa(`${store_queue}:${api_key}`);
 
-      const response = await fetch(`${apiUrl}/session/begin`, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${basicAuth}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("RFMS session begin failed:", errorText);
-        throw new Error(`RFMS session begin failed: ${response.status}`);
+      let response: Response;
+      try {
+        response = await fetch(`${apiUrl}/session/begin`, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${basicAuth}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (fetchErr: any) {
+        console.error("RFMS network error:", fetchErr.message);
+        throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log(`RFMS session/begin response [${response.status}]: ${responseText.substring(0, 500)}`);
+
+      if (!response.ok) {
+        try {
+          const errData = JSON.parse(responseText);
+          throw new Error(`RFMS rejected the connection (${response.status}): ${errData.reason || errData.message || errData.error || responseText.substring(0, 200)}`);
+        } catch (parseErr) {
+          if ((parseErr as Error).message.includes("RFMS rejected")) throw parseErr;
+          throw new Error(`RFMS returned HTTP ${response.status}. The API URL or credentials may be incorrect.`);
+        }
+      }
+
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
+      }
+
+      if (data.status === "failed") {
+        throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
+      }
 
       if (data.status !== "success") {
-        throw new Error(`RFMS session error: ${data.status} - ${data.reason || "Unknown"}`);
+        throw new Error(`Unexpected RFMS response: ${JSON.stringify(data).substring(0, 200)}`);
       }
 
       const sessionToken = data.result?.token || data.result?.session_token;
       if (!sessionToken) {
-        throw new Error("No session token in RFMS response");
+        throw new Error("RFMS did not return a session token. Contact RFMS support.");
       }
 
       // Store session token
@@ -143,11 +165,21 @@ serve(async (req: Request) => {
 
     throw new Error(`Unknown action: ${action}`);
   } catch (error: any) {
-    console.error("RFMS session error:", error);
+    console.error("RFMS session error:", error.message);
+    const isUserError = error.message.includes("credentials") ||
+                        error.message.includes("rejected") ||
+                        error.message.includes("not configured") ||
+                        error.message.includes("not found") ||
+                        error.message.includes("not active") ||
+                        error.message.includes("Check your");
     return new Response(
-      JSON.stringify({ error: error.message || "RFMS session error" }),
+      JSON.stringify({
+        success: false,
+        error: error.message || "RFMS session error",
+        user_action_required: isUserError,
+      }),
       {
-        status: 500,
+        status: isUserError ? 400 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
