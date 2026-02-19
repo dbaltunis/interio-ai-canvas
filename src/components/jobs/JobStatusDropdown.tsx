@@ -16,6 +16,7 @@ import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useProject } from "@/hooks/useProjects";
 import { useLogStatusChange } from "@/hooks/useStatusHistory";
 import { StatusReasonDialog } from "@/components/projects/StatusReasonDialog";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface JobStatusDropdownProps {
   currentStatus?: string; // Legacy: for backward compatibility
@@ -57,9 +58,10 @@ export const JobStatusDropdown = ({
   // Use explicit permissions hook for edit checks
   const { canEditJob } = useCanEditJob(project);
   const canEditJobs = canEditJob ?? false; // Default to false if loading
+  const { data: isDealer } = useIsDealer();
 
   // Filter statuses based on job type
-  const availableStatuses = jobStatuses.filter(status => {
+  const filteredByCategory = jobStatuses.filter(status => {
     if (jobType === "quote") {
       return status.category.toLowerCase() === "quote";
     } else {
@@ -67,6 +69,22 @@ export const JobStatusDropdown = ({
       return status.category.toLowerCase() === "project";
     }
   });
+
+  // For dealers, restrict to forward-only transitions (no reverting approved/completed jobs)
+  const availableStatuses = (() => {
+    if (!isDealer || !currentStatusId) return filteredByCategory;
+    
+    const currentStatusObj = filteredByCategory.find(s => s.id === currentStatusId);
+    if (!currentStatusObj) return filteredByCategory;
+    
+    const currentSortOrder = currentStatusObj.sort_order ?? 0;
+    
+    // Dealers can only move forward (higher sort_order) or stay at current
+    return filteredByCategory.filter(status => {
+      const statusSortOrder = status.sort_order ?? 0;
+      return statusSortOrder >= currentSortOrder;
+    });
+  })();
 
   // Get current status details - prioritize status_id (UUID) over legacy status name
   const currentStatusDetails = currentStatusId 

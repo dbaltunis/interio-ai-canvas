@@ -54,10 +54,9 @@ export const CreateActionDialog = ({
     // Navigate to the appropriate tab and trigger creation
     if (action === "client") {
       onTabChange("clients");
-      // Trigger client creation dialog after a brief delay
+      // Dispatch custom event for client creation (works on both mobile & desktop)
       setTimeout(() => {
-        const createButton = document.querySelector('[data-create-client]') as HTMLElement;
-        createButton?.click();
+        window.dispatchEvent(new CustomEvent('create-new-client'));
       }, 150);
     } else if (action === "project") {
       // Check permission before triggering creation
@@ -70,9 +69,9 @@ export const CreateActionDialog = ({
         return;
       }
       onTabChange("projects");
+      // Dispatch custom event for job creation (works on both mobile & desktop)
       setTimeout(() => {
-        const createButton = document.querySelector('[data-create-project]') as HTMLElement;
-        createButton?.click();
+        window.dispatchEvent(new CustomEvent('create-new-job'));
       }, 150);
     } else if (action === "event") {
       onTabChange("calendar");

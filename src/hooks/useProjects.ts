@@ -249,11 +249,11 @@ export const useUpdateProject = () => {
             const existingNumber = (oldProject as any)[numberColumn];
             
             if (existingNumber) {
-              // REUSE the existing number for this stage
-              updates.job_number = existingNumber;
-              console.log(`Reusing existing ${entityType} number: ${existingNumber}`);
+              // REUSE the existing number for this stage - but DON'T overwrite job_number
+              console.log(`Reusing existing ${entityType} number: ${existingNumber} (job_number stays constant)`);
             } else {
-              // Generate a NEW number and store it for future reuse
+              // Generate a NEW number and store it for future reuse in entity-specific column
+              // But DON'T overwrite job_number - it stays constant forever
               const { data: { user } } = await supabase.auth.getUser();
               if (user) {
                 // Get account owner for team members
@@ -265,11 +265,11 @@ export const useUpdateProject = () => {
                 
                 const accountOwnerId = profile?.parent_account_id || user.id;
                 const newNumber = await generateSequenceNumber(accountOwnerId, entityType, 'DOC');
-                updates.job_number = newNumber;
                 
                 // Store the new number in the appropriate column for future reuse
+                // but do NOT update job_number - it remains constant
                 (updates as any)[numberColumn] = newNumber;
-                console.log(`Generated new ${entityType} number: ${newNumber}, stored in ${numberColumn}`);
+                console.log(`Generated new ${entityType} number: ${newNumber}, stored in ${numberColumn} (job_number stays constant)`);
               }
             }
           }
