@@ -1,12 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, CheckCircle2, XCircle, ArrowUpRight } from "lucide-react";
+import { RefreshCw, CheckCircle2, Link2 } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface IntegrationSyncStatusProps {
-  /** Project data with integration IDs */
   project: {
     rfms_quote_id?: string | null;
     rfms_order_id?: string | null;
@@ -14,25 +14,27 @@ interface IntegrationSyncStatusProps {
     netsuite_sales_order_id?: string | null;
     netsuite_invoice_id?: string | null;
   };
-  /** Optional: compact mode for inline display */
   compact?: boolean;
 }
 
 interface SyncItem {
   system: string;
+  integrationType: string;
   logo: string;
   logoClass: string;
   records: { label: string; id: string | null | undefined }[];
 }
 
-/**
- * Displays integration sync status badges for a project.
- * Shows which ERP systems have received data from this project.
- */
 export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationSyncStatusProps) => {
-  const syncItems: SyncItem[] = [
+  const { integrations, isLoading } = useIntegrations();
+
+  const hasActiveIntegration = (type: string) =>
+    integrations.some((i) => i.integration_type === type && i.active);
+
+  const allSyncItems: SyncItem[] = [
     {
       system: "RFMS",
+      integrationType: "rfms",
       logo: rfmsLogo,
       logoClass: "h-4 w-auto",
       records: [
@@ -42,6 +44,7 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
     },
     {
       system: "NetSuite",
+      integrationType: "netsuite",
       logo: netsuiteLogo,
       logoClass: "h-4 w-auto",
       records: [
@@ -52,39 +55,54 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
     },
   ];
 
-  // Filter to only show systems that have at least one synced record
-  const activeSyncs = syncItems.filter((s) =>
-    s.records.some((r) => r.id)
-  );
+  // Only show rows for integrations that are actually configured & active
+  const syncItems = allSyncItems.filter((s) => hasActiveIntegration(s.integrationType));
 
-  // In compact mode, just show small badges inline
+  // Hide entire component if no ERP integrations are active (or still loading)
+  if (isLoading || syncItems.length === 0) return null;
+
+  // Compact mode for job header
   if (compact) {
-    if (activeSyncs.length === 0) return null;
-
     return (
       <TooltipProvider>
         <div className="flex items-center gap-1.5">
-          {activeSyncs.map((sync) => {
+          {syncItems.map((sync) => {
             const syncedRecords = sync.records.filter((r) => r.id);
+            const hasSynced = syncedRecords.length > 0;
+
             return (
               <Tooltip key={sync.system}>
                 <TooltipTrigger>
                   <Badge
                     variant="outline"
-                    className="text-[10px] px-1.5 py-0 h-5 gap-1 bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
+                    className={
+                      hasSynced
+                        ? "text-[10px] px-1.5 py-0 h-5 gap-1 bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
+                        : "text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400"
+                    }
                   >
                     <img src={sync.logo} alt={sync.system} className={sync.logoClass} />
-                    <CheckCircle2 className="h-3 w-3" />
+                    {hasSynced ? (
+                      <CheckCircle2 className="h-3 w-3" />
+                    ) : (
+                      <Link2 className="h-3 w-3" />
+                    )}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <div className="text-xs">
-                    <p className="font-medium mb-1">Synced to {sync.system}</p>
-                    {syncedRecords.map((r) => (
-                      <p key={r.label} className="text-muted-foreground">
-                        {r.label}: {r.id}
-                      </p>
-                    ))}
+                    {hasSynced ? (
+                      <>
+                        <p className="font-medium mb-1">Synced to {sync.system}</p>
+                        {syncedRecords.map((r) => (
+                          <p key={r.label} className="text-muted-foreground">
+                            {r.label}: {r.id}
+                          </p>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="font-medium">{sync.system} connected — not yet synced for this job</p>
+                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -95,7 +113,7 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
     );
   }
 
-  // Full card mode for project detail page
+  // Full card mode
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -142,8 +160,9 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
                       </TooltipProvider>
                     ))
                   ) : (
-                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                      Not synced
+                    <Badge variant="info" className="text-xs">
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Connected
                     </Badge>
                   )}
                 </div>
@@ -151,11 +170,6 @@ export const IntegrationSyncStatus = ({ project, compact = false }: IntegrationS
             );
           })}
         </div>
-        {activeSyncs.length === 0 && (
-          <p className="text-xs text-muted-foreground mt-2">
-            No data has been synced to ERP systems yet. Use Settings &gt; Integrations &gt; ERP &amp; Business to configure and sync.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
