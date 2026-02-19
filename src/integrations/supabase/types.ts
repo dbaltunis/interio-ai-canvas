@@ -2448,6 +2448,7 @@ export type Database = {
           phone: string | null
           priority_level: string | null
           referral_source: string | null
+          rfms_customer_id: string | null
           shopify_customer_id: string | null
           source: string | null
           stage_changed_at: string | null
@@ -2493,6 +2494,7 @@ export type Database = {
           phone?: string | null
           priority_level?: string | null
           referral_source?: string | null
+          rfms_customer_id?: string | null
           shopify_customer_id?: string | null
           source?: string | null
           stage_changed_at?: string | null
@@ -2538,6 +2540,7 @@ export type Database = {
           phone?: string | null
           priority_level?: string | null
           referral_source?: string | null
+          rfms_customer_id?: string | null
           shopify_customer_id?: string | null
           source?: string | null
           stage_changed_at?: string | null
