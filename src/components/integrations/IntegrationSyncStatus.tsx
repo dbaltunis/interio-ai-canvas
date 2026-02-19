@@ -49,9 +49,8 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
   const hasActiveIntegration = (type: string) =>
     integrations.some((i) => i.integration_type === type && i.active);
 
-  // Check if quote creation is unavailable for this RFMS tier
-  const rfmsIntegration = integrations.find((i) => i.integration_type === "rfms" && i.active);
-  const quoteCreateUnavailable = !!(rfmsIntegration?.configuration as any)?.quote_create_unavailable;
+  // Push error message state for specific errors
+  const [pushError, setPushError] = useState<string | null>(null);
 
   const allSyncItems: SyncItem[] = [
     {
@@ -97,13 +96,15 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
       
       if (data?.errors?.length > 0) {
         if (isTierError) {
+          setPushError("Requires RFMS Enterprise tier — run diagnostics in Settings for details");
           toast({
             title: "RFMS Push Not Available",
-            description: "Your RFMS plan doesn't support creating quotes. You can still pull/import quotes from RFMS.",
+            description: "Your RFMS API tier may not support creating new quotes. Run diagnostics in Settings → RFMS to see exactly what's supported.",
             variant: "warning",
             importance: "important",
           });
         } else {
+          setPushError(null);
           showErrorToast("RFMS Push Issue", errorMsg);
         }
       } else if (!didSomething) {
@@ -133,13 +134,15 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
       const errMsg = err?.message || "Could not push to RFMS";
       const isTierError = errMsg.includes("does not support") || errMsg.includes("higher API tier") || errMsg.includes("405");
       if (isTierError) {
+        setPushError("Requires RFMS Enterprise tier — run diagnostics in Settings for details");
         toast({
           title: "RFMS Push Not Available",
-          description: "Your RFMS plan doesn't support creating quotes. You can still pull/import quotes from RFMS.",
+          description: "Your RFMS API tier may not support this. Run diagnostics in Settings → RFMS to check.",
           variant: "warning",
           importance: "important",
         });
       } else {
+        setPushError(null);
         showErrorToast("RFMS Push Failed", errMsg);
       }
     } finally {
@@ -148,12 +151,8 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
   };
 
   // Helper: should we show push button for RFMS?
-  const shouldShowRFMSPush = (sync: SyncItem, hasSynced: boolean) => {
+  const shouldShowRFMSPush = (sync: SyncItem) => {
     if (sync.integrationType !== "rfms" || !effectiveProjectId) return false;
-    // If already synced, always show re-sync (PUT works)
-    if (hasSynced) return true;
-    // If not synced and create is unavailable, don't show push button
-    if (quoteCreateUnavailable) return false;
     return true;
   };
 
@@ -165,7 +164,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
           const syncedRecords = sync.records.filter((r) => r.id);
           const hasSynced = syncedRecords.length > 0;
           const isPushing = pushingSystem === sync.integrationType;
-          const showPush = shouldShowRFMSPush(sync, hasSynced);
+          const showPush = shouldShowRFMSPush(sync);
 
           return (
             <Popover key={sync.system}>
@@ -246,11 +245,6 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
                             {justSynced ? "Synced!" : "Push to RFMS"}
                           </Button>
                         </>
-                      ) : sync.integrationType === "rfms" && quoteCreateUnavailable ? (
-                        <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                          <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                          <span>Import-only — create new quotes in RFMS, then pull them here</span>
-                        </div>
                       ) : (
                         <p className="text-xs text-muted-foreground">
                           Connected — not yet synced for this job
@@ -292,7 +286,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
             const syncedRecords = sync.records.filter((r) => r.id);
             const hasSynced = syncedRecords.length > 0;
             const isPushing = pushingSystem === sync.integrationType;
-            const showPush = shouldShowRFMSPush(sync, hasSynced);
+            const showPush = shouldShowRFMSPush(sync);
 
             return (
               <div
@@ -345,35 +339,26 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
                     </>
                   ) : (
                     <div className="flex items-center gap-2">
-                      {sync.integrationType === "rfms" && quoteCreateUnavailable ? (
-                        <Badge variant="outline" className="text-xs">
-                          <Info className="h-3 w-3 mr-1" />
-                          Import-only
-                        </Badge>
-                      ) : (
-                        <>
-                          <Badge variant="info" className="text-xs">
-                            <Link2 className="h-3 w-3 mr-1" />
-                            Connected
-                          </Badge>
-                          {showPush && (
-                            <Button
-                              size="xs"
-                              variant={justSynced ? "success" : "outline"}
-                              onClick={handlePushToRFMS}
-                              disabled={isPushing || justSynced}
-                            >
-                              {isPushing ? (
-                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                              ) : justSynced ? (
-                                <Check className="h-3 w-3 mr-1" />
-                              ) : (
-                                <Upload className="h-3 w-3 mr-1" />
-                              )}
-                              {justSynced ? "Synced!" : "Push"}
-                            </Button>
+                      <Badge variant="info" className="text-xs">
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Connected
+                      </Badge>
+                      {showPush && (
+                        <Button
+                          size="xs"
+                          variant={justSynced ? "success" : "outline"}
+                          onClick={handlePushToRFMS}
+                          disabled={isPushing || justSynced}
+                        >
+                          {isPushing ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : justSynced ? (
+                            <Check className="h-3 w-3 mr-1" />
+                          ) : (
+                            <Upload className="h-3 w-3 mr-1" />
                           )}
-                        </>
+                          {justSynced ? "Synced!" : "Push"}
+                        </Button>
                       )}
                     </div>
                   )}

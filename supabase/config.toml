@@ -238,3 +238,6 @@ verify_jwt = false
 [functions.rfms-sync-scheduling]
 verify_jwt = false
 
+[functions.rfms-diagnose]
+verify_jwt = false
+
