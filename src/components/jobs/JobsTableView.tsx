@@ -63,6 +63,11 @@ import { TeamAvatarStack, FullAccessMemberInfo } from "./TeamAvatarStack";
 import { ProjectTeamAssignDialog } from "./ProjectTeamAssignDialog";
 import { useProjectsWithAssignments } from "@/hooks/useProjectsWithAssignments";
 import { useTeamMembersWithJobPermissions } from "@/hooks/useTeamMembersWithJobPermissions";
+import { useProjectTotals } from "@/hooks/useProjectTotals";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CheckCircle2 } from "lucide-react";
+import rfmsLogo from "@/assets/rfms-logo.svg";
+import netsuiteLogo from "@/assets/netsuite-logo.svg";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -135,6 +140,9 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   // Fetch team assignments for all visible projects
   const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
   const { data: projectAssignmentsMap = {} } = useProjectsWithAssignments(projectIds);
+  
+  // Fetch accurate project totals from windows_summary (not stale quote amounts)
+  const { data: projectTotalsMap = {} } = useProjectTotals(projectIds);
   
   // Fetch team members with their job permissions for accurate access display
   const { data: teamPermissionsData } = useTeamMembersWithJobPermissions();
@@ -826,6 +834,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     switch (columnId) {
       case 'job_no':
         const dupInfo = duplicateData[project.id];
+        const hasRfms = !!project.rfms_quote_id;
+        const hasNetsuite = !!project.netsuite_estimate_id;
         return (
           <div className="flex items-center gap-1.5">
             <span 
@@ -842,6 +852,26 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                 <Copy className="h-3 w-3 text-blue-500 dark:text-blue-400" strokeWidth={2.5} />
                 <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{dupInfo.duplicateCount}</span>
               </div>
+            )}
+            {hasRfms && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <img src={rfmsLogo} alt="RFMS" className="h-3 w-auto opacity-70" />
+                  </TooltipTrigger>
+                  <TooltipContent><p className="text-xs">Synced to RFMS</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {hasNetsuite && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <img src={netsuiteLogo} alt="NetSuite" className="h-3 w-auto opacity-70" />
+                  </TooltipTrigger>
+                  <TooltipContent><p className="text-xs">Synced to NetSuite</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         );
@@ -881,10 +911,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'total':
-        // Show the project's quote total
-        const convertedQuote = quotes.find(q => q.status && q.status.toLowerCase() !== 'draft');
-        const displayQuote = convertedQuote || quotes[0];
-        const totalAmount = displayQuote?.total_amount || 0;
+        // Prefer live total from windows_summary; fall back to quote total
+        const liveTotal = projectTotalsMap[project.id];
+        const quoteForTotal = quotes.find(q => q.status && q.status.toLowerCase() !== 'draft') || quotes[0];
+        const totalAmount = (liveTotal?.hasData ? liveTotal.total : quoteForTotal?.total_amount) || 0;
         return (
           <span className="font-medium">
             {formatCurrency(totalAmount, userCurrency)}
@@ -902,9 +932,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'balance':
-        // Calculate balance = total - paid
+        // Calculate balance using live total
+        const liveTotalForBalance = projectTotalsMap[project.id];
         const balanceQuote = quotes.find(q => q.status !== 'draft') || quotes[0];
-        const balanceTotal = balanceQuote?.total_amount || 0;
+        const balanceTotal = (liveTotalForBalance?.hasData ? liveTotalForBalance.total : balanceQuote?.total_amount) || 0;
         const balancePaid = balanceQuote?.amount_paid || 0;
         const balanceAmount = balanceTotal - balancePaid;
         return (
