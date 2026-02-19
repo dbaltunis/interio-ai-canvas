@@ -1,143 +1,139 @@
 
 
-## Fix RFMS Sync, Save Button UX, and Loading States Across All Integrations
+## Fix RFMS Sync Notifications + ERP Sync Status Display
 
-### Issues Found (5 Critical, 2 Medium)
+### Root Causes Found
 
----
+**Why notifications don't appear to work:**
+The sync DOES show a toast, but it says things like "Customer Sync Complete / 1 warnings" because the actual sync silently fails. The reason: `ensureSession` caches the session token and reuses it without checking expiry. The RFMS session expires after ~30 minutes (e.g., `"sessionExpires": "Thu, 19 Feb 2026 14:10:33 GMT"`), but subsequent sync calls at 14:38+ reuse the expired token. Every API call then returns 401 Unauthorized, which gets swallowed into "1 errors" in the results. The user sees a toast but it has no meaningful numbers (0 imported, 0 exported, 0 updated), making it feel like nothing happened.
 
-### Issue 1 (CRITICAL): RFMS `/customers` GET Returns Metadata, Not Customer Records
-
-**Root Cause (from edge function logs):** The GET `/customers` endpoint returns field enums/schema metadata:
-```json
-{"customerType":["COMMERICAL","DECLINED",...], "entryType":["Customer","Prospect"], "taxStatus":[...], ...}
-```
-This is NOT a list of customer records. The pull logic checks `rfmsData.status === "success"` which is `undefined` on this response, so it silently skips everything and reports "0 imported, 0 exported, 0 updated" -- making it look like nothing works.
-
-The RFMS v2 API likely requires a search/query endpoint (e.g., `/customers/search` or query parameters) to actually list customers, not just GET `/customers`.
-
-**Fix:** Update `rfms-sync-customers` to:
-1. Handle the v2 response format (no `{status, result}` wrapper -- data is at the top level or uses pagination)
-2. Try `/customers/search` or `/customers?entryType=Customer` to get actual records
-3. Log and report clearly when the API returns metadata instead of records
+**Why ERP Sync Status always shows "Not synced":**
+The `IntegrationSyncStatus` component checks for columns `rfms_quote_id`, `rfms_order_id`, `netsuite_estimate_id`, `netsuite_sales_order_id`, `netsuite_invoice_id` on the `projects` table. **None of these columns exist in the database.** The component was built before the columns were created, so it always shows "Not synced" for every project regardless of actual sync state.
 
 ---
 
-### Issue 2 (CRITICAL): RFMS POST `/customers` Returns 405 Method Not Allowed
+### Fix 1: Session Token Expiry Handling in All Edge Functions
 
-**From logs:** Every customer push attempt returns `{"Message":"The requested resource does not support http method 'POST'."}` -- RFMS v2 does not support creating customers via POST. Export/push is not possible with this API version.
+**Files:** `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`
 
-**Fix:** 
-1. Remove or disable the "Export Customers" push button since POST is not supported
-2. Show a clear info message: "RFMS v2 API supports importing customers only. Customer creation must be done in RFMS directly."
-3. Report this in the notification instead of silently failing
+Update `ensureSession` to:
+1. Check `session_started_at` and clear the cached token if older than 25 minutes (RFMS sessions expire at ~30 min)
+2. Add a retry mechanism in `rfmsRequest`: if a 401 is returned, clear the cached token, get a fresh session, and retry once
 
----
-
-### Issue 3 (CRITICAL): PostgREST Schema Cache Stale for `rfms_customer_id`
-
-The column exists in the database but the edge function gets `column clients_1.rfms_customer_id does not exist` because PostgREST's schema cache hasn't been refreshed after the migration.
-
-**Fix:** Run `NOTIFY pgrst, 'reload schema';` via a SQL migration to refresh the cache. This is a one-line fix.
-
----
-
-### Issue 4 (CRITICAL): RFMS Pull Logic Expects `{status: "success"}` But v2 Returns Raw Data
-
-Both `rfms-sync-customers` (line 271) and `rfms-sync-quotes` (line 215) check:
 ```typescript
-if (rfmsData.status === "success" && rfmsData.result) {
+// In ensureSession - add expiry check before reusing cached token
+if (session_token) {
+  const sessionAge = Date.now() - new Date(integration.api_credentials?.session_started_at || 0).getTime();
+  const MAX_SESSION_AGE_MS = 25 * 60 * 1000; // 25 minutes (RFMS expires at ~30)
+  
+  if (sessionAge < MAX_SESSION_AGE_MS) {
+    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+  }
+  // Token likely expired, get a fresh one
+  console.log("RFMS session token expired, refreshing...");
+}
+// Continue to create new session...
 ```
-But the RFMS v2 API returns data at the top level (arrays or objects), NOT wrapped in `{status, result}`. This means even when the API returns valid data, the pull logic skips it entirely.
 
-**Fix:** Update both functions to handle v2 format:
+Also update `rfmsRequest` to detect 401 and signal that a session refresh is needed:
+
 ```typescript
-// v2: data is at top level (array or object with items)
-const items = Array.isArray(rfmsData) ? rfmsData 
-  : rfmsData.result ? (Array.isArray(rfmsData.result) ? rfmsData.result : rfmsData.result.customers || [])
-  : [];
+if (response.status === 401) {
+  throw new Error("RFMS_SESSION_EXPIRED");
+}
 ```
 
----
-
-### Issue 5 (MEDIUM): Save Button Always Active on RFMS, NetSuite, Google Calendar, MYOB, CW Systems, Norman
-
-TWC already implements the correct pattern with `hasChanges` + `useMemo` + `useRef` for initial load. All other integration tabs have the Save button always enabled, misleading users into thinking settings aren't saved.
-
-**Fix:** Apply the TWC pattern to all 6 integration tabs:
-- Track `savedValues` with `useMemo` from the integration prop
-- Compute `hasChanges` by comparing form data to saved values
-- Disable button and show "Saved" text when no changes exist
-- Use `variant="secondary"` when disabled for visual clarity
-
-**Files affected:**
-| File | Current | Fix |
-|---|---|---|
-| `RFMSIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
-| `NetSuiteIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
-| `GoogleCalendarIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
-| `MYOBExoIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
-| `CWSystemsIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
-| `NormanIntegrationTab.tsx` | Always enabled | Add `hasChanges` check |
+And in the main sync handler, wrap the pull/push in a retry that catches `RFMS_SESSION_EXPIRED`, clears the token, creates a new session, and retries.
 
 ---
 
-### Issue 6 (MEDIUM): All Sync Buttons Show Loading When Any Is Clicked
+### Fix 2: Add Missing Columns to `projects` Table
 
-Currently, `isSyncing` is a single boolean. When any sync button is clicked, ALL buttons show loading spinners, making it impossible to tell which operation is running.
+**New SQL migration:**
 
-**Fix:** Replace single `isSyncing` with per-action loading states:
+```sql
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS rfms_quote_id TEXT;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS rfms_order_id TEXT;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_estimate_id TEXT;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_sales_order_id TEXT;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_invoice_id TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_projects_rfms_quote_id ON public.projects(rfms_quote_id);
+
+NOTIFY pgrst, 'reload schema';
+```
+
+This makes the `IntegrationSyncStatus` component functional. When `rfms-sync-quotes` successfully pushes or pulls a quote, it sets `rfms_quote_id` on the project, and the card will show "Synced" with the RFMS quote ID.
+
+---
+
+### Fix 3: Better Sync Result Notifications
+
+**File:** `RFMSIntegrationTab.tsx`
+
+Update the toast calls after sync to be more informative:
+
+- When sync has 0 results and errors: show `variant: "warning"` with the actual error message (not "No changes needed")
+- When sync succeeds with numbers: show a clear summary like "Imported 12 customers from RFMS"
+- When sync has partial results + errors: show both the success count and error summary
+
 ```typescript
-const [syncingAction, setSyncingAction] = useState<string | null>(null);
-// Usage: setSyncingAction('import-customers'), setSyncingAction('export-quotes'), etc.
-// Each button checks: disabled={syncingAction !== null}, shows spinner only when syncingAction === 'its-action'
+// After sync completes
+if (data.errors?.length > 0 && results.imported === 0 && results.updated === 0) {
+  // Total failure - show as warning with the actual error
+  toast({
+    title: "Customer Sync Issue",
+    description: data.errors[0], // Show the actual error
+    variant: "warning",
+  });
+} else {
+  // Success (possibly partial)
+  const parts = [];
+  if (data.imported > 0) parts.push(`${data.imported} imported`);
+  if (data.updated > 0) parts.push(`${data.updated} updated`);
+  if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+  
+  toast({
+    title: parts.length > 0 ? "Customer Sync Complete" : "No New Customers",
+    description: parts.length > 0 
+      ? parts.join(', ') + (data.errors?.length ? ` (${data.errors.length} warnings)` : '')
+      : "All customers are already up to date.",
+    variant: data.errors?.length > 0 ? "warning" : "default",
+  });
+}
 ```
 
-Apply to both `RFMSIntegrationTab` and `NetSuiteIntegrationTab`.
+Also update `types.ts` to include the new project columns so TypeScript doesn't complain when the component reads them.
 
 ---
 
-### Issue 7 (MEDIUM): "Active" Badge Misleading on NetSuite, CW Systems, Norman
+### Fix 4: Update `IntegrationSyncStatus` to Use Real Data
 
-These tabs show "Active" when `integration.active === true`, but that just means credentials were saved. It doesn't confirm the connection works.
+**File:** `IntegrationSyncStatus.tsx`
 
-**Fix:** Apply the same badge logic from RFMS (Connected/Configured/Inactive) to:
-- `NetSuiteIntegrationTab.tsx`
-- `CWSystemsIntegrationTab.tsx` 
-- `NormanIntegrationTab.tsx`
-- `GoogleCalendarIntegrationTab.tsx`
-- `MYOBExoIntegrationTab.tsx`
+The component already has the right logic -- it just needs the database columns to exist (Fix 2). Once the columns are added, the component will correctly show:
+- "Synced" with green badge when `rfms_quote_id` is set on a project
+- "Not synced" when it's null
+
+No code changes needed in this component -- the Fix 2 migration makes it work.
 
 ---
 
 ### Files to Change
 
-| File | Changes |
+| File | Change |
 |---|---|
-| `supabase/functions/rfms-sync-customers/index.ts` | Fix v2 response parsing for pull; disable push (POST not supported); handle metadata vs customer list response |
-| `supabase/functions/rfms-sync-quotes/index.ts` | Fix v2 response parsing for pull (no `{status, result}` wrapper) |
-| `src/components/integrations/RFMSIntegrationTab.tsx` | Per-action loading states; `hasChanges` for save button; disable Export Customers button with info |
-| `src/components/integrations/NetSuiteIntegrationTab.tsx` | `hasChanges` for save button; per-action loading; status badge fix; `warning` toast variant |
-| `src/components/integrations/GoogleCalendarIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
-| `src/components/integrations/MYOBExoIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
-| `src/components/integrations/CWSystemsIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
-| `src/components/integrations/NormanIntegrationTab.tsx` | `hasChanges` for save button; status badge fix |
-| SQL Migration | `NOTIFY pgrst, 'reload schema';` to fix stale cache |
+| `supabase/functions/rfms-sync-customers/index.ts` | Add session expiry check + 401 retry logic |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Add session expiry check + 401 retry logic |
+| `supabase/functions/rfms-session/index.ts` | Add session expiry check |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Smarter toast messages based on result content |
+| `src/integrations/supabase/types.ts` | Add new project columns to type definitions |
+| New SQL migration | Add `rfms_quote_id`, `rfms_order_id`, `netsuite_*` columns to `projects` |
 
-### SQL Migration
+### After the Fix
 
-```sql
--- Refresh PostgREST schema cache after rfms_customer_id column addition
-NOTIFY pgrst, 'reload schema';
-```
-
-### After All Fixes
-
-- RFMS customer import correctly parses v2 API responses
-- Export Customers disabled with explanation (POST not supported by RFMS v2)
-- PostgREST cache refreshed so quote sync can access `rfms_customer_id`
-- Save button greyed out and shows "Saved" on all integrations when nothing changed
-- Each sync button shows its own loading spinner, not all buttons
-- Status badges show Connected/Configured/Inactive based on actual connection state
-- All integration errors use `warning` (amber) variant, not `destructive` (red)
+- Session tokens auto-refresh when expired (no more silent 401 failures)
+- Sync notifications clearly report what happened: "Imported 12 customers" or "RFMS session expired, retrying..." or the actual error message
+- ERP Sync Status card on each job shows real sync state based on actual database columns
+- When a quote is pushed/pulled from RFMS, the project's `rfms_quote_id` is set and the badge turns green
 
