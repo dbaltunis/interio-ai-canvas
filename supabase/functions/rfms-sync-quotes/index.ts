@@ -455,6 +455,22 @@ serve(async (req: Request) => {
               if (!created) {
                 if (allMethodNotAllowed) {
                   results.errors.push(`Project ${project.id}: RFMS does not support creating quotes/opportunities. This feature may require a higher API tier.`);
+                  
+                  // Persist limitation flag so UI can adapt
+                  try {
+                    const existingConfig = activeIntegration.configuration || {};
+                    if (!existingConfig.quote_create_unavailable) {
+                      await supabase
+                        .from("integration_settings")
+                        .update({ 
+                          configuration: { ...existingConfig, quote_create_unavailable: true } 
+                        })
+                        .eq("id", activeIntegration.id);
+                      console.log("Stored quote_create_unavailable flag in integration config");
+                    }
+                  } catch (flagErr) {
+                    console.error("Failed to store quote_create_unavailable flag:", flagErr);
+                  }
                 } else {
                   results.errors.push(`Project ${project.id}: All RFMS create endpoints failed`);
                 }

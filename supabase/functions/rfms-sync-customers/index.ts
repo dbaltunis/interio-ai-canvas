@@ -507,6 +507,21 @@ serve(async (req: Request) => {
 
       if (customers.length === 0) {
         results.errors.push("Could not retrieve customer records from RFMS. Tried /customers/search, /customers/list, and metadata-driven filters — all returned schema data instead of records. Your RFMS API tier may not support customer record access.");
+        
+        // Persist limitation flag so UI can adapt
+        try {
+          const existingConfig = activeIntegration.configuration || {};
+          await supabase
+            .from("integration_settings")
+            .update({ 
+              configuration: { ...existingConfig, customer_import_unavailable: true } 
+            })
+            .eq("id", activeIntegration.id);
+          console.log("Stored customer_import_unavailable flag in integration config");
+        } catch (flagErr) {
+          console.error("Failed to store customer_import_unavailable flag:", flagErr);
+        }
+        
         return;
       }
 
