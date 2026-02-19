@@ -273,11 +273,51 @@ async function fetchCustomersFromRFMS(
   apiUrl: string
 ): Promise<{ customers: any[]; method: string }> {
   const allCustomers = new Map<string, any>(); // deduplicate by ID
+  const triedEndpoints: string[] = [];
 
-  // Step 1: Get metadata to discover search parameters
-  console.log("Step 1: Fetching RFMS customer metadata...");
+  // === Priority Step: Try dedicated search/list endpoints first ===
+  const searchEndpoints = [
+    { method: "GET" as const, endpoint: "/customers/search", body: undefined },
+    { method: "GET" as const, endpoint: "/customers/search?query=*", body: undefined },
+    { method: "POST" as const, endpoint: "/customers/search", body: {} },
+    { method: "GET" as const, endpoint: "/customers/list", body: undefined },
+  ];
+
+  for (const attempt of searchEndpoints) {
+    const label = `${attempt.method} ${attempt.endpoint}`;
+    triedEndpoints.push(label);
+    try {
+      console.log(`Trying: ${label}`);
+      const { data: resp, status } = await rfmsRequest(
+        attempt.method, attempt.endpoint, storeQueue, sessionToken, apiUrl, attempt.body
+      );
+      if (status === 404 || status === 405) {
+        console.log(`${label} → ${status}, skipping`);
+        continue;
+      }
+      const records = extractCustomers(resp);
+      if (records.length > 0) {
+        console.log(`${label} returned ${records.length} customer records!`);
+        return { customers: records, method: label };
+      }
+      // Check if it returned metadata instead of records
+      const respObj = resp?.result || resp;
+      if (isMetadataResponse(respObj)) {
+        console.log(`${label} returned metadata, not records`);
+      } else {
+        console.log(`${label} returned data but no extractable customer records`);
+      }
+    } catch (err: any) {
+      if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+      console.log(`${label} failed: ${err.message}`);
+    }
+  }
+
+  // === Step 2: Metadata-driven approach (existing logic) ===
+  console.log("Step 2: Fetching RFMS customer metadata...");
   let metadata: any = null;
   try {
+    triedEndpoints.push("GET /customers");
     const { data: metaResp } = await rfmsRequest("GET", "/customers", storeQueue, sessionToken, apiUrl);
     const metaObj = metaResp?.result || metaResp;
     if (isMetadataResponse(metaObj)) {
@@ -296,18 +336,18 @@ async function fetchCustomersFromRFMS(
     console.log(`GET /customers failed: ${err.message}`);
   }
 
-  // Step 2: Use metadata-driven search (salesperson names as search params)
+  // Step 3: Use metadata-driven search (salesperson names as search params)
   if (metadata) {
     // Try searching by each salesperson name
     const salespersons = metadata.preferredSalesperson1 || metadata.preferredSalesperson || [];
     if (Array.isArray(salespersons) && salespersons.length > 0) {
-      console.log(`Step 2: Searching by ${salespersons.length} salesperson(s): ${salespersons.join(', ')}`);
+      console.log(`Step 3: Searching by ${salespersons.length} salesperson(s): ${salespersons.join(', ')}`);
       for (const sp of salespersons) {
+        const ep = `/customers?preferredSalesperson1=${encodeURIComponent(sp)}`;
+        triedEndpoints.push(`GET ${ep}`);
         try {
           const { data: spResp } = await rfmsRequest(
-            "GET",
-            `/customers?preferredSalesperson1=${encodeURIComponent(sp)}`,
-            storeQueue, sessionToken, apiUrl
+            "GET", ep, storeQueue, sessionToken, apiUrl
           );
           const records = extractCustomers(spResp);
           if (records.length > 0) {
@@ -332,11 +372,11 @@ async function fetchCustomersFromRFMS(
     const entryTypes = metadata.entryType || [];
     if (Array.isArray(entryTypes)) {
       for (const et of entryTypes) {
+        const ep = `/customers?entryType=${encodeURIComponent(et)}`;
+        triedEndpoints.push(`GET ${ep}`);
         try {
           const { data: etResp } = await rfmsRequest(
-            "GET",
-            `/customers?entryType=${encodeURIComponent(et)}`,
-            storeQueue, sessionToken, apiUrl
+            "GET", ep, storeQueue, sessionToken, apiUrl
           );
           const records = extractCustomers(etResp);
           if (records.length > 0) {
@@ -357,7 +397,7 @@ async function fetchCustomersFromRFMS(
     }
   }
 
-  // Step 3: Try direct search approaches as fallback
+  // Step 4: Try direct search approaches as final fallback
   const fallbackAttempts = [
     { method: "GET", endpoint: "/customers?limit=500&offset=0" },
     { method: "GET", endpoint: "/customers?lastName=*" },
@@ -365,8 +405,10 @@ async function fetchCustomersFromRFMS(
   ];
 
   for (const attempt of fallbackAttempts) {
+    const label = `${attempt.method} ${attempt.endpoint}`;
+    triedEndpoints.push(label);
     try {
-      console.log(`Fallback: ${attempt.method} ${attempt.endpoint}`);
+      console.log(`Fallback: ${label}`);
       const { data: fbResp, status } = await rfmsRequest(
         attempt.method, attempt.endpoint, storeQueue, sessionToken, apiUrl
       );
@@ -374,7 +416,7 @@ async function fetchCustomersFromRFMS(
       const records = extractCustomers(fbResp);
       if (records.length > 0) {
         console.log(`Fallback ${attempt.endpoint} found ${records.length} customers`);
-        return { customers: records, method: `${attempt.method} ${attempt.endpoint}` };
+        return { customers: records, method: label };
       }
     } catch (err: any) {
       if (err.message === "RFMS_SESSION_EXPIRED") throw err;
@@ -382,6 +424,7 @@ async function fetchCustomersFromRFMS(
     }
   }
 
+  console.log(`All customer fetch approaches exhausted. Tried: ${triedEndpoints.join(', ')}`);
   return { customers: [], method: "all approaches exhausted" };
 }
 
@@ -463,7 +506,7 @@ serve(async (req: Request) => {
       const { customers, method } = await fetchCustomersFromRFMS(storeQueue, currentToken, apiUrl);
 
       if (customers.length === 0) {
-        results.errors.push("No customer records found in RFMS. This may be due to your API tier or search configuration. Check the edge function logs for details.");
+        results.errors.push("Could not retrieve customer records from RFMS. Tried /customers/search, /customers/list, and metadata-driven filters — all returned schema data instead of records. Your RFMS API tier may not support customer record access.");
         return;
       }
 
