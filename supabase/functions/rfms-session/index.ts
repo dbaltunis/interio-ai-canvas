@@ -106,17 +106,19 @@ serve(async (req: Request) => {
         throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
       }
 
-      if (data.status === "failed") {
+      // Handle RFMS v2 response format: {authorized, sessionToken} at top level
+      let sessionToken: string | undefined;
+
+      if (data.authorized === true && data.sessionToken) {
+        sessionToken = data.sessionToken;
+      } else if (data.status === "failed") {
         throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
+      } else if (data.status === "success") {
+        sessionToken = data.result?.token || data.result?.session_token;
       }
 
-      if (data.status !== "success") {
-        throw new Error(`Unexpected RFMS response: ${JSON.stringify(data).substring(0, 200)}`);
-      }
-
-      const sessionToken = data.result?.token || data.result?.session_token;
       if (!sessionToken) {
-        throw new Error("RFMS did not return a session token. Contact RFMS support.");
+        throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
       }
 
       // Store session token
