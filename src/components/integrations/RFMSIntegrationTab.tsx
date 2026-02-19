@@ -123,9 +123,9 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         await createIntegration.mutateAsync(integrationData);
       }
 
-      toast({ title: "RFMS Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
+      toast({ title: "RFMS Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work.", importance: 'important' });
     } catch (err: any) {
-      toast({ title: "Could not save RFMS settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning" });
+      toast({ title: "Could not save RFMS settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning", importance: 'important' });
     } finally {
       setIsLoading(false);
     }
@@ -151,6 +151,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         toast({
           title: "Connection Successful",
           description: `Connected to RFMS API v2${data.customer_count != null ? ` (${data.customer_count} customers found)` : ''}`,
+          importance: 'important',
         });
       } else {
         throw new Error(data?.error || "Connection test returned no result");
@@ -160,6 +161,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         title: "RFMS Connection Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setIsTesting(false);
@@ -192,6 +194,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
           title: "Quote Sync Issue",
           description: data.errors[0],
           variant: "warning",
+          importance: 'important',
         });
       } else {
         const parts = [];
@@ -207,6 +210,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             ? parts.join(', ') + (hasErrors ? ` (${data.errors.length} warnings)` : '')
             : "No quotes found to sync from RFMS.",
           variant: hasErrors ? "warning" : "default",
+          importance: 'important',
         });
       }
     } catch (err: any) {
@@ -214,6 +218,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         title: "Quote Sync Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
@@ -245,6 +250,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
           title: "Customer Sync Issue",
           description: data.errors[0],
           variant: "warning",
+          importance: 'important',
         });
       } else {
         const parts = [];
@@ -258,6 +264,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             ? parts.join(', ') + (hasErrors ? ` (${data.errors.length} warnings)` : '')
             : "All customers are already up to date.",
           variant: hasErrors ? "warning" : "default",
+          importance: 'important',
         });
       }
     } catch (err: any) {
@@ -265,6 +272,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         title: "Customer Sync Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
@@ -287,22 +295,34 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Measurement sync returned no results");
       }
 
+      const hasErrors = data.errors?.length > 0;
       const parts = [];
-      if (data.imported > 0) parts.push(`${data.imported} imported`);
-      if (data.updated > 0) parts.push(`${data.updated} updated`);
+      if (data.imported > 0) parts.push(`${data.imported} projects processed`);
+      if (data.updated > 0) parts.push(`${data.updated} measurements updated`);
       if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
 
-      toast({
-        title: parts.length > 0 ? "Measurements Synced" : "No New Measurements",
-        description: parts.length > 0
-          ? parts.join(', ')
-          : "All measurements are already up to date.",
-      });
+      if (!parts.length && hasErrors) {
+        toast({
+          title: "Measurement Sync Issue",
+          description: data.errors[0],
+          variant: "warning",
+          importance: 'important',
+        });
+      } else {
+        toast({
+          title: parts.length > 0 ? "Measurements Synced" : "No New Measurements",
+          description: parts.length > 0
+            ? parts.join(', ')
+            : "No projects are linked to RFMS quotes yet. Import quotes first, then import measurements.",
+          importance: 'important',
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Measurement Sync Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);
@@ -325,22 +345,34 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Schedule sync returned no results");
       }
 
+      const hasErrors = data.errors?.length > 0;
       const parts = [];
-      if (data.imported > 0) parts.push(`${data.imported} imported`);
+      if (data.imported > 0) parts.push(`${data.imported} jobs imported`);
       if (data.updated > 0) parts.push(`${data.updated} updated`);
       if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
 
-      toast({
-        title: parts.length > 0 ? "Schedule Synced" : "No Schedule Changes",
-        description: parts.length > 0
-          ? parts.join(', ')
-          : "All schedule data is already up to date.",
-      });
+      if (!parts.length && hasErrors) {
+        toast({
+          title: "Schedule Sync Issue",
+          description: data.errors[0],
+          variant: "warning",
+          importance: 'important',
+        });
+      } else {
+        toast({
+          title: parts.length > 0 ? "Schedule Synced" : "No Schedule Changes",
+          description: parts.length > 0
+            ? parts.join(', ')
+            : "No scheduled jobs found in RFMS.",
+          importance: 'important',
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Schedule Sync Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
+        importance: 'important',
       });
     } finally {
       setSyncingAction(null);

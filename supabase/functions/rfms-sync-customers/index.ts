@@ -12,8 +12,8 @@ const corsHeaders = {
  * Pull-only: Import RFMS customers to InterioApp as clients.
  * RFMS v2 API does not support creating customers (POST returns 405).
  * 
- * Customer search: POST /customers with search body is the correct v2 endpoint.
- * Falls back to GET /customers with query params if POST fails.
+ * Strategy: GET /customers returns metadata with available search filter values.
+ * We use those filter values (e.g., salesperson names) to search for actual records.
  * 
  * MULTI-TENANT: Uses account_owner_id for integration lookup.
  */
@@ -140,7 +140,7 @@ async function rfmsRequest(
   sessionToken: string,
   apiUrl: string,
   body?: any
-): Promise<any> {
+): Promise<{ data: any; status: number }> {
   const auth = btoa(`${storeQueue}:${sessionToken}`);
   const options: RequestInit = {
     method,
@@ -162,7 +162,7 @@ async function rfmsRequest(
   }
 
   const responseText = await response.text();
-  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 500)}`);
+  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 800)}`);
 
   if (response.status === 401) {
     throw new Error("RFMS_SESSION_EXPIRED");
@@ -179,7 +179,7 @@ async function rfmsRequest(
     throw new Error(`RFMS API error on ${endpoint}: ${data.reason || "Request failed"}`);
   }
 
-  return data;
+  return { data, status: response.status };
 }
 
 function normalizeCustomer(c: RFMSCustomer): {
@@ -209,97 +209,180 @@ function normalizeCustomer(c: RFMSCustomer): {
 }
 
 /**
- * Try multiple RFMS API endpoints to fetch customer records.
- * The v2 API uses POST /customers with a search body as the primary search endpoint.
+ * Check if an object looks like customer metadata (enum values) rather than actual records.
+ */
+function isMetadataResponse(obj: any): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  const metadataKeys = ['customerType', 'entryType', 'taxStatus', 'taxMethod', 'preferredSalesperson1'];
+  const keys = Object.keys(obj);
+  // If most values are string arrays, it's metadata
+  const arrayValueCount = keys.filter(k => Array.isArray(obj[k]) && obj[k].length > 0 && typeof obj[k][0] === 'string').length;
+  return metadataKeys.some(k => keys.includes(k)) && arrayValueCount >= 2;
+}
+
+/**
+ * Extract customer records from any RFMS response format.
+ */
+function extractCustomers(rfmsData: any): any[] {
+  // Direct array
+  if (Array.isArray(rfmsData)) {
+    // Check if items look like customer records (have name/id fields)
+    if (rfmsData.length > 0 && (rfmsData[0]?.firstName || rfmsData[0]?.first_name || rfmsData[0]?.customerId || rfmsData[0]?.lastName)) {
+      return rfmsData;
+    }
+    return [];
+  }
+
+  // {status: "success", result: ...}
+  if (rfmsData?.status === "success" && rfmsData.result) {
+    if (Array.isArray(rfmsData.result)) return rfmsData.result;
+    if (rfmsData.result?.customers && Array.isArray(rfmsData.result.customers)) return rfmsData.result.customers;
+    // Check nested arrays
+    if (typeof rfmsData.result === 'object' && !isMetadataResponse(rfmsData.result)) {
+      for (const key of Object.keys(rfmsData.result)) {
+        const val = rfmsData.result[key];
+        if (Array.isArray(val) && val.length > 0 && (val[0]?.firstName || val[0]?.customerId || val[0]?.lastName)) {
+          return val;
+        }
+      }
+    }
+  }
+
+  // Top-level customer arrays
+  if (typeof rfmsData === 'object') {
+    for (const key of Object.keys(rfmsData)) {
+      const val = rfmsData[key];
+      if (Array.isArray(val) && val.length > 0 && (val[0]?.firstName || val[0]?.customerId || val[0]?.lastName)) {
+        return val;
+      }
+    }
+  }
+
+  return [];
+}
+
+/**
+ * Metadata-driven customer search strategy.
+ * 1. GET /customers to get search filter metadata
+ * 2. Use filter values (salesperson names, entry types) to search for actual records
+ * 3. Fallback approaches if metadata search doesn't work
  */
 async function fetchCustomersFromRFMS(
   storeQueue: string,
   sessionToken: string,
   apiUrl: string
 ): Promise<{ customers: any[]; method: string }> {
-  const attempts: { method: string; endpoint: string; body?: any }[] = [
-    // Primary: POST /customers with search body (RFMS v2 standard search)
-    { method: "POST", endpoint: "/customers", body: { entryType: "Customer", limit: 500 } },
-    // Fallback 1: POST with minimal body
-    { method: "POST", endpoint: "/customers", body: { limit: 500 } },
-    // Fallback 2: GET with entryType query param
-    { method: "GET", endpoint: "/customers?entryType=Customer&limit=500" },
-    // Fallback 3: GET with just limit
-    { method: "GET", endpoint: "/customers?limit=500" },
-  ];
+  const allCustomers = new Map<string, any>(); // deduplicate by ID
 
-  for (const attempt of attempts) {
-    try {
-      console.log(`Trying RFMS customer fetch: ${attempt.method} ${attempt.endpoint}`);
-      const rfmsData = await rfmsRequest(
-        attempt.method,
-        attempt.endpoint,
-        storeQueue,
-        sessionToken,
-        apiUrl,
-        attempt.body
-      );
-
-      // Extract customer records from various response formats
-      let customers: any[] = [];
-
-      // Format 1: Direct array response
-      if (Array.isArray(rfmsData)) {
-        customers = rfmsData;
+  // Step 1: Get metadata to discover search parameters
+  console.log("Step 1: Fetching RFMS customer metadata...");
+  let metadata: any = null;
+  try {
+    const { data: metaResp } = await rfmsRequest("GET", "/customers", storeQueue, sessionToken, apiUrl);
+    const metaObj = metaResp?.result || metaResp;
+    if (isMetadataResponse(metaObj)) {
+      metadata = metaObj;
+      console.log(`Got metadata. Keys: ${Object.keys(metaObj).join(', ')}`);
+    } else {
+      // Maybe GET /customers actually returned records directly
+      const records = extractCustomers(metaResp);
+      if (records.length > 0) {
+        console.log(`GET /customers returned ${records.length} customer records directly`);
+        return { customers: records, method: "GET /customers (direct)" };
       }
-      // Format 2: {status: "success", result: [...]}
-      else if (rfmsData.status === "success" && rfmsData.result) {
-        if (Array.isArray(rfmsData.result)) {
-          customers = rfmsData.result;
-        } else if (rfmsData.result.customers && Array.isArray(rfmsData.result.customers)) {
-          customers = rfmsData.result.customers;
-        } else if (typeof rfmsData.result === 'object') {
-          // Look for any array property that looks like customer records
-          for (const key of Object.keys(rfmsData.result)) {
-            const val = rfmsData.result[key];
-            if (Array.isArray(val) && val.length > 0 && (val[0]?.firstName || val[0]?.first_name || val[0]?.customerId)) {
-              customers = val;
-              break;
+    }
+  } catch (err: any) {
+    if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+    console.log(`GET /customers failed: ${err.message}`);
+  }
+
+  // Step 2: Use metadata-driven search (salesperson names as search params)
+  if (metadata) {
+    // Try searching by each salesperson name
+    const salespersons = metadata.preferredSalesperson1 || metadata.preferredSalesperson || [];
+    if (Array.isArray(salespersons) && salespersons.length > 0) {
+      console.log(`Step 2: Searching by ${salespersons.length} salesperson(s): ${salespersons.join(', ')}`);
+      for (const sp of salespersons) {
+        try {
+          const { data: spResp } = await rfmsRequest(
+            "GET",
+            `/customers?preferredSalesperson1=${encodeURIComponent(sp)}`,
+            storeQueue, sessionToken, apiUrl
+          );
+          const records = extractCustomers(spResp);
+          if (records.length > 0) {
+            console.log(`Found ${records.length} customers for salesperson "${sp}"`);
+            for (const c of records) {
+              const id = (c.customerId || c.id || "").toString();
+              if (id && !allCustomers.has(id)) allCustomers.set(id, c);
             }
           }
+        } catch (err: any) {
+          if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+          console.log(`Salesperson search for "${sp}" failed: ${err.message}`);
         }
       }
-      // Format 3: Top-level object with customer arrays
-      else if (typeof rfmsData === 'object') {
-        for (const key of Object.keys(rfmsData)) {
-          const val = rfmsData[key];
-          if (Array.isArray(val) && val.length > 0 && (val[0]?.firstName || val[0]?.first_name || val[0]?.customerId)) {
-            customers = val;
-            break;
+      if (allCustomers.size > 0) {
+        console.log(`Metadata-driven search found ${allCustomers.size} unique customers`);
+        return { customers: Array.from(allCustomers.values()), method: "GET /customers?preferredSalesperson1=..." };
+      }
+    }
+
+    // Try searching by entry type
+    const entryTypes = metadata.entryType || [];
+    if (Array.isArray(entryTypes)) {
+      for (const et of entryTypes) {
+        try {
+          const { data: etResp } = await rfmsRequest(
+            "GET",
+            `/customers?entryType=${encodeURIComponent(et)}`,
+            storeQueue, sessionToken, apiUrl
+          );
+          const records = extractCustomers(etResp);
+          if (records.length > 0) {
+            console.log(`Found ${records.length} customers for entryType "${et}"`);
+            for (const c of records) {
+              const id = (c.customerId || c.id || "").toString();
+              if (id && !allCustomers.has(id)) allCustomers.set(id, c);
+            }
           }
+        } catch (err: any) {
+          if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+          console.log(`EntryType search for "${et}" failed: ${err.message}`);
         }
       }
-
-      // Check if we got metadata instead of records
-      if (customers.length === 0) {
-        const checkObj = rfmsData.result || rfmsData;
-        const resultKeys = Object.keys(checkObj);
-        const metadataKeys = ['customerType', 'entryType', 'taxStatus', 'taxMethod', 'preferredSalesperson1'];
-        if (metadataKeys.some(k => resultKeys.includes(k))) {
-          console.log(`${attempt.method} ${attempt.endpoint} returned metadata, not records. Trying next approach...`);
-          continue; // Try next approach
-        }
+      if (allCustomers.size > 0) {
+        return { customers: Array.from(allCustomers.values()), method: "GET /customers?entryType=..." };
       }
-
-      if (customers.length > 0) {
-        console.log(`Successfully fetched ${customers.length} customers via ${attempt.method} ${attempt.endpoint}`);
-        return { customers, method: `${attempt.method} ${attempt.endpoint}` };
-      }
-
-      console.log(`${attempt.method} ${attempt.endpoint} returned 0 customer records`);
-    } catch (err: any) {
-      if (err.message === "RFMS_SESSION_EXPIRED") throw err;
-      console.log(`${attempt.method} ${attempt.endpoint} failed: ${err.message}`);
-      // Continue to next attempt
     }
   }
 
-  return { customers: [], method: "all attempts exhausted" };
+  // Step 3: Try direct search approaches as fallback
+  const fallbackAttempts = [
+    { method: "GET", endpoint: "/customers?limit=500&offset=0" },
+    { method: "GET", endpoint: "/customers?lastName=*" },
+    { method: "GET", endpoint: "/customers?search=*" },
+  ];
+
+  for (const attempt of fallbackAttempts) {
+    try {
+      console.log(`Fallback: ${attempt.method} ${attempt.endpoint}`);
+      const { data: fbResp, status } = await rfmsRequest(
+        attempt.method, attempt.endpoint, storeQueue, sessionToken, apiUrl
+      );
+      if (status === 404 || status === 405) continue;
+      const records = extractCustomers(fbResp);
+      if (records.length > 0) {
+        console.log(`Fallback ${attempt.endpoint} found ${records.length} customers`);
+        return { customers: records, method: `${attempt.method} ${attempt.endpoint}` };
+      }
+    } catch (err: any) {
+      if (err.message === "RFMS_SESSION_EXPIRED") throw err;
+      console.log(`Fallback ${attempt.endpoint} failed: ${err.message}`);
+    }
+  }
+
+  return { customers: [], method: "all approaches exhausted" };
 }
 
 serve(async (req: Request) => {
@@ -380,7 +463,7 @@ serve(async (req: Request) => {
       const { customers, method } = await fetchCustomersFromRFMS(storeQueue, currentToken, apiUrl);
 
       if (customers.length === 0) {
-        results.errors.push("No customer records found in RFMS. Your API tier may not support customer search, or there are no customers in the system.");
+        results.errors.push("No customer records found in RFMS. This may be due to your API tier or search configuration. Check the edge function logs for details.");
         return;
       }
 
@@ -391,7 +474,6 @@ serve(async (req: Request) => {
           const customer = normalizeCustomer(rawCustomer);
           if (!customer.id) { results.skipped++; continue; }
 
-          // Use accountOwnerId for client lookup (multi-tenant)
           const { data: existing } = await supabase
             .from("clients")
             .select("id")

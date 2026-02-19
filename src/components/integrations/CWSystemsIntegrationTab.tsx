@@ -75,7 +75,7 @@ export const CWSystemsIntegrationTab = () => {
       } else {
         await createIntegration.mutateAsync(data);
       }
-      toast({ title: "Saved", description: "CW Systems configuration saved" });
+      toast({ title: "Saved", description: "CW Systems configuration saved", importance: 'important' });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -105,7 +105,7 @@ export const CWSystemsIntegrationTab = () => {
       });
 
       if (error) throw error;
-      toast({ title: "Test Email Sent", description: `Test order email sent to ${formData.supplier_email}` });
+      toast({ title: "Test Email Sent", description: `Test order email sent to ${formData.supplier_email}`, importance: 'important' });
     } catch (err: any) {
       toast({ title: "Send Failed", description: err.message, variant: "destructive" });
     } finally {

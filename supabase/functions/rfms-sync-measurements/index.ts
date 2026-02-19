@@ -12,8 +12,7 @@ const corsHeaders = {
  * Pulls measurement data from RFMS quote line items (opportunities)
  * and maps them to InterioApp project rooms/treatments.
  * 
- * RFMS stores measurements on quote line items: width, height, length, area, etc.
- * These are imported into the corresponding InterioApp treatment records.
+ * Returns clear error when no projects are linked to RFMS quotes.
  * 
  * MULTI-TENANT: Uses account_owner_id for integration lookup.
  */
@@ -74,7 +73,7 @@ async function ensureSession(
   throw new Error("Could not establish RFMS session");
 }
 
-async function rfmsRequest(method: string, endpoint: string, storeQueue: string, sessionToken: string, apiUrl: string, body?: any): Promise<any> {
+async function rfmsRequest(method: string, endpoint: string, storeQueue: string, sessionToken: string, apiUrl: string, body?: any): Promise<{ data: any; status: number }> {
   const auth = btoa(`${storeQueue}:${sessionToken}`);
   const options: RequestInit = {
     method,
@@ -88,9 +87,14 @@ async function rfmsRequest(method: string, endpoint: string, storeQueue: string,
 
   if (response.status === 401) throw new Error("RFMS_SESSION_EXPIRED");
 
-  const data = JSON.parse(responseText);
-  if (data.status === "failed") throw new Error(`RFMS API error: ${data.reason || "Request failed"}`);
-  return data;
+  let data: any;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = null;
+  }
+  if (data?.status === "failed") throw new Error(`RFMS API error: ${data.reason || "Request failed"}`);
+  return { data, status: response.status };
 }
 
 serve(async (req: Request) => {
@@ -162,7 +166,7 @@ serve(async (req: Request) => {
         .not("rfms_quote_id", "is", null);
 
       if (!linkedProjects?.length) {
-        results.errors.push("No projects are linked to RFMS quotes. Import quotes first.");
+        results.errors.push("No projects are linked to RFMS quotes yet. Import quotes first using 'Import Quotes', then import measurements.");
         return;
       }
 
@@ -172,12 +176,17 @@ serve(async (req: Request) => {
         try {
           // Fetch quote details with line items from RFMS
           let quoteData: any;
+          let fetchStatus: number;
           try {
-            quoteData = await rfmsRequest("GET", `/opportunities/${project.rfms_quote_id}`, storeQueue, currentToken, apiUrl);
+            const resp = await rfmsRequest("GET", `/opportunities/${project.rfms_quote_id}`, storeQueue, currentToken, apiUrl);
+            quoteData = resp.data;
+            fetchStatus = resp.status;
           } catch (err: any) {
             if (err.message === "RFMS_SESSION_EXPIRED") throw err;
             try {
-              quoteData = await rfmsRequest("GET", `/quotes/${project.rfms_quote_id}`, storeQueue, currentToken, apiUrl);
+              const resp2 = await rfmsRequest("GET", `/quotes/${project.rfms_quote_id}`, storeQueue, currentToken, apiUrl);
+              quoteData = resp2.data;
+              fetchStatus = resp2.status;
             } catch (err2: any) {
               if (err2.message === "RFMS_SESSION_EXPIRED") throw err2;
               results.skipped++;
@@ -214,12 +223,10 @@ serve(async (req: Request) => {
             );
 
             if (matchingTreatment) {
-              // Convert units if needed
               let finalWidth = width;
               let finalHeight = height;
               if (measurementUnits === 'metric' && width) {
-                // RFMS typically stores in inches/feet, convert to cm
-                finalWidth = width * 2.54; // inches to cm
+                finalWidth = width * 2.54;
               }
               if (measurementUnits === 'metric' && height) {
                 finalHeight = height * 2.54;
