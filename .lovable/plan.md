@@ -1,140 +1,88 @@
 
-## Fix RFMS Integration: Credentials, Customer Sync, and Enable All Features
+## Fix All RFMS Integration Issues: Notifications, Customer Sync, and ERP Status
 
-### Problem Summary
+### Critical Root Cause: ALL Success Notifications Are Silently Suppressed
 
-1. **API Key disappears from form** -- The form uses `useState` initialized once; when the integration loads asynchronously after mount, the form doesn't update. Need `useEffect` to sync form state when integration data loads.
+The `use-toast.ts` file (line 160) defaults **every non-error toast** to `importance: 'silent'`, which means the toast is **never rendered** (line 163 returns early). This affects:
 
-2. **"Full Sync" shows export error** -- The "Full Sync" button calls `handleSyncCustomers('both')` which includes `direction: 'push'`, immediately triggering the "Export not supported" error. Full Sync for customers should only PULL (import).
+- "Connection Successful" -- suppressed (variant: default)
+- "RFMS Configuration Saved" -- suppressed (variant: default)
+- "Customer Sync Complete" -- suppressed (variant: default)
+- "No New Customers" -- suppressed (variant: default)
+- "Quote Sync Complete" -- suppressed (variant: default)
+- "Measurements Synced" -- suppressed (variant: default)
+- "Schedule Synced" -- suppressed (variant: default)
 
-3. **Customer import returns 0 records** -- `GET /customers` returns field schema/metadata, not customer records. `POST /customers/search` returns 404. Based on the RFMS API v2 documentation, the standard response format is `{status: "success", result: {}}`. The GET /customers endpoint returns metadata when called without search parameters. Need to use the correct search pattern -- likely `GET /customers?search=*` or `POST /customers` with search body, or iterate using `GET /customers/{id}`.
+Only `variant: "warning"` or `variant: "destructive"` toasts appear. This is why the user sees error toasts but never sees success or informational toasts.
 
-4. **"Coming Soon" features disabled** -- Measurements, Scheduling, and Auto Update Job Status need to be implemented using RFMS API endpoints: `/opportunities` for quotes, Schedule Pro endpoints for scheduling, and order/job status endpoints.
-
----
-
-### Fix 1: Form State Sync with Integration Data
-
-**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
-
-Add a `useEffect` that updates form data when the `integration` prop changes (e.g., after async load):
-
-```typescript
-useEffect(() => {
-  if (integration?.api_credentials) {
-    setFormData(prev => ({
-      ...prev,
-      api_url: integration.api_credentials?.api_url || 'https://api.rfms.online/v2',
-      store_queue: integration.api_credentials?.store_queue || '',
-      api_key: integration.api_credentials?.api_key || '',
-      sync_customers: integration.configuration?.sync_customers ?? true,
-      sync_quotes: integration.configuration?.sync_quotes ?? true,
-      // ... etc
-    }));
-  }
-}, [integration]);
-```
-
-This ensures credentials display correctly after the integration query resolves.
+**Fix:** Add `importance: 'important'` to ALL toast calls in `RFMSIntegrationTab.tsx` (and all integration tabs). This ensures every user-triggered action produces visible feedback.
 
 ---
 
-### Fix 2: Full Sync = Import Only for Customers
+### Issue 2: Customer Sync Uses Wrong RFMS API Pattern
 
-**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
+From the edge function logs:
+- `POST /customers` returns 405 (Method Not Allowed)
+- `GET /customers` returns field metadata (enum values), not customer records
 
-Change the "Full Sync" button to call `handleSyncCustomers('pull')` instead of `handleSyncCustomers('both')`. Since RFMS v2 does not support POST for customers, "Full Sync" for customers means "Import All".
+From the official RFMS API v2 documentation (https://api2docs.rfms.online), the Customers section says "Search for and Get Customer" is a Standard tier feature. The v2 response format wraps everything in `{status: "success", result: {}}`.
 
-Also rename it to "Import All Customers" for clarity.
+The `GET /customers` endpoint without parameters returns **available field values for search filters** (the metadata). To actually search for customers, the RFMS v2 API requires:
+- `GET /customers/{customerId}` -- get a specific customer by ID
+- `GET /customers?lastName=Smith` -- search by specific field values (the fields shown in the metadata response ARE the search parameters)
 
-**File:** `supabase/functions/rfms-sync-customers/index.ts`
+The metadata response actually tells us what search parameters are available. The user's RFMS test connection DOES find customers (the test endpoint returns a customer count), so customers exist.
 
-Remove the push/export code path entirely (lines 277-280) since it will never work with RFMS v2. This eliminates the confusing "Export not supported" error.
-
----
-
-### Fix 3: Fix Customer Import Using Correct RFMS API Pattern
-
-**File:** `supabase/functions/rfms-sync-customers/index.ts`
-
-The RFMS API v2 docs confirm the standard response format is `{status: "success", result: {}}`. The current code tries:
-1. `POST /customers/search` -- 404 (doesn't exist)
-2. `GET /customers/search?entryType=Customer` -- 404 (doesn't exist)
-3. `GET /customers?limit=500` -- returns metadata schema, not records
-
-The RFMS v2 customer endpoints (from the docs) are:
-- `GET /customers` -- returns available field values (enums) for search
-- `POST /customers` with search body -- searches customers (Standard tier)
-- `GET /customers/{id}` -- gets a single customer
-
-The fix: Use `POST /customers` with a search body (not `/customers/search`). The POST to `/customers` is the search endpoint in RFMS v2 API. Example search body:
-```json
-{"entryType": "Customer", "limit": 500}
-```
-
-If POST /customers also fails (405), try `GET /customers` with query parameters that trigger a search result instead of metadata, such as `?entryType=Customer&limit=500`.
-
-Also implement a discovery approach that logs exactly what each endpoint returns to help debug:
-1. Try `POST /customers` with `{"entryType": "Customer"}`
-2. Try `GET /customers?entryType=Customer` 
-3. Try `GET /customers?limit=100&page=1`
-4. Log all responses clearly for debugging
+**Fix:** Update `rfms-sync-customers` to:
+1. First call `GET /customers` to get the metadata (which lists available salespersons, entry types, etc.)
+2. Then search using the salesperson names as search parameters: `GET /customers?preferredSalesperson1=GREG%20TAANE` (iterating through each salesperson from the metadata)
+3. Or try `GET /customers?entryType=Customer` with different field combinations
+4. Also try `GET /customers?limit=500&offset=0` (pagination params)
+5. Log every response clearly for debugging
 
 ---
 
-### Fix 4: Enable Measurements Sync
+### Issue 3: Quote Export Uses POST /opportunities (Returns 405)
 
-**New file:** `supabase/functions/rfms-sync-measurements/index.ts`
+The RFMS docs say "Create opportunities" requires Standard tier, but the v2 API returns 405 on `POST /opportunities`. The `GET /opportunities` works and returns `{status: "success", result: []}` -- the store just has no opportunities yet.
 
-Create an edge function that:
-- Pulls measurement data from RFMS quotes/opportunities (measurements are typically attached to quote line items in RFMS)
-- Maps RFMS measurement fields to InterioApp treatment/room dimensions
-- Updates the corresponding project rooms with measurement data
-
-**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
-- Remove "Coming Soon" badge from Sync Measurements
-- Enable the switch
-- Add "Import Measurements" button to Manual Sync section
+**Fix:** 
+- Quote PULL (import) already works -- `GET /opportunities` returns valid data (just empty for now)
+- Quote PUSH: Try `POST /opportunities` with a different request body format, or try `POST /quotes` as an alternative
+- If POST continues to return 405, disable push and show clear message about API tier requirements
+- Log the exact request body being sent for debugging
 
 ---
 
-### Fix 5: Enable Scheduling Sync
+### Issue 4: Schedule Endpoints Return 404
 
-**New file:** `supabase/functions/rfms-sync-scheduling/index.ts`
+All schedule endpoints (`/schedule/jobs`, `/scheduling/jobs`, `/jobs`, `/schedule`) return 404. This means either:
+- Schedule Pro is not enabled for this RFMS account
+- The v2 API has different endpoint paths
 
-Create an edge function that:
-- Uses RFMS Schedule Pro API endpoints (`/schedule/jobs`, `/schedule/crews`)
-- Pulls scheduled jobs from RFMS and creates/updates calendar appointments in InterioApp
-- Pushes InterioApp appointments to RFMS schedule when direction is 'push'
+Per RFMS docs: "Get scheduled jobs by crew or order number" is an Enterprise tier feature. "Schedule New Jobs and Edit Existing Jobs" is also Enterprise.
 
-**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
-- Remove "Coming Soon" badge from Sync Scheduling
-- Enable the switch
-- Add "Sync Schedule" button to Manual Sync section
+**Fix:** 
+- When all schedule endpoints return 404, show a clear message: "RFMS Schedule Pro is not available. This feature requires the Enterprise API tier or a Schedule Pro subscription."
+- Don't silently report "0 imported, 0 updated" -- report the actual 404 error to the user
 
 ---
 
-### Fix 6: Enable Auto Update Job Status
+### Issue 5: Measurements Return 0 Because No Projects Are Linked
 
-**File:** `supabase/functions/rfms-sync-quotes/index.ts`
+Measurements depend on `rfms_quote_id` being set on projects. Since no quotes have been imported yet (RFMS has 0 opportunities), there are no linked projects to check.
 
-Extend the existing quote sync to also pull job status changes from RFMS:
-- When pulling quotes, check for status changes in RFMS (e.g., "Ordered", "Installed", "Complete")
-- Map RFMS statuses to InterioApp project statuses
-- Update the project status in the database
-
-**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
-- Remove "Coming Soon" badge from Auto Update Job Status
-- Enable the switch
-- The status sync happens automatically during quote sync when this option is enabled
+**Fix:** When no linked projects exist, show "No projects are linked to RFMS quotes yet. Import quotes first using 'Import Quotes', then import measurements."
 
 ---
 
-### Fix 7: Edge Function Query Fix
+### Issue 6: "Not Synced" Badge on Jobs
 
-**Files:** All RFMS edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`)
+The database columns exist (`rfms_quote_id`, `rfms_order_id`, etc.), the types include them, and `useProject` fetches with `select("*")`. The badge correctly shows "Not synced" because no RFMS quote IDs have been written to any projects yet (since the sync hasn't successfully imported any quotes).
 
-The edge functions query `.eq("user_id", accountOwnerId)` but should also check `.eq("account_owner_id", accountOwnerId)` as a fallback. Currently both columns match for existing records, but this is fragile. Use `account_owner_id` which is the correct column for multi-tenant lookups.
+This will automatically resolve once quotes are successfully synced and `rfms_quote_id` gets populated on projects.
+
+No code change needed for this -- it's working as designed. The fix is to get the sync working.
 
 ---
 
@@ -142,18 +90,53 @@ The edge functions query `.eq("user_id", accountOwnerId)` but should also check 
 
 | File | Changes |
 |---|---|
-| `src/components/integrations/RFMSIntegrationTab.tsx` | Add useEffect for form sync; Full Sync = pull only; enable Measurements, Scheduling, Auto Job Status; add sync buttons |
-| `supabase/functions/rfms-sync-customers/index.ts` | Fix customer search endpoint (POST /customers); remove push code; use account_owner_id |
-| `supabase/functions/rfms-sync-quotes/index.ts` | Add job status mapping; use account_owner_id |
-| `supabase/functions/rfms-session/index.ts` | Use account_owner_id |
-| `supabase/functions/rfms-sync-measurements/index.ts` | New -- pull measurements from RFMS |
-| `supabase/functions/rfms-sync-scheduling/index.ts` | New -- sync scheduling with RFMS Schedule Pro |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Add `importance: 'important'` to ALL toast calls (17+ occurrences). Improve error messages for scheduling/measurements when features aren't available. |
+| `src/components/integrations/NetSuiteIntegrationTab.tsx` | Add `importance: 'important'` to all toast calls |
+| `src/components/integrations/GoogleCalendarIntegrationTab.tsx` | Add `importance: 'important'` to all toast calls |
+| `src/components/integrations/MYOBExoIntegrationTab.tsx` | Add `importance: 'important'` to all toast calls |
+| `src/components/integrations/CWSystemsIntegrationTab.tsx` | Add `importance: 'important'` to all toast calls |
+| `src/components/integrations/NormanIntegrationTab.tsx` | Add `importance: 'important'` to all toast calls |
+| `supabase/functions/rfms-sync-customers/index.ts` | Rewrite customer fetching to use metadata-driven search (use salesperson names from GET /customers as search params); log all responses for debugging |
+| `supabase/functions/rfms-sync-scheduling/index.ts` | Return clear error message when all endpoints return 404 (Schedule Pro not available) |
+| `supabase/functions/rfms-sync-measurements/index.ts` | Return clear error message when no linked projects exist |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Improve push error handling; try alternative endpoints for quote creation |
 
-### Expected Results
+### Technical Detail: Toast Importance Fix
 
-- Credentials always display correctly when the page loads
-- "Full Sync" imports customers without showing export errors  
-- Customer import uses the correct RFMS API search endpoint
-- Measurements, Scheduling, and Job Status features are functional (not "Coming Soon")
-- Clear toast notifications with record counts for every sync action
-- Edge functions use the correct `account_owner_id` column for multi-tenant support
+Every toast call in integration tabs needs `importance: 'important'`:
+
+```typescript
+// BEFORE (suppressed -- never shown to user):
+toast({ title: "Connection Successful", description: "..." });
+
+// AFTER (always shown):
+toast({ title: "Connection Successful", description: "...", importance: 'important' });
+```
+
+This single change fixes: Test Connection, Save Configuration, Import Customers, Export Quotes, Import Quotes, Import Measurements, Sync Schedule, and all error notifications that use `variant: "default"`.
+
+### Technical Detail: Customer Search Strategy
+
+The RFMS `GET /customers` metadata response reveals the available search dimensions:
+```json
+{
+  "customerType": ["COMMERCIAL", "RESIDENTIAL", ...],
+  "entryType": ["Customer", "Prospect"],
+  "preferredSalesperson1": ["GREG TAANE", "CHRIS OGDEN", ...]
+}
+```
+
+New search strategy:
+1. `GET /customers` -- get metadata (search parameter options)
+2. For each salesperson in metadata, call `GET /customers?preferredSalesperson1={name}`
+3. Aggregate all unique customers from all responses
+4. If that fails, try `GET /customers?entryType=Customer`
+5. If all methods fail, show: "Could not retrieve customers. Your RFMS API tier may require different search parameters."
+
+### After Fix
+
+- Every sync action shows a visible toast notification with clear results
+- Customer search uses the correct RFMS v2 API search pattern
+- Schedule sync shows clear message when Schedule Pro is unavailable
+- Measurement sync shows clear message when no projects are linked to RFMS
+- Once quotes are imported, the ERP Sync Status badge will automatically update from "Not synced" to green
