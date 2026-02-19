@@ -1,84 +1,73 @@
 
 
-## Fix RFMS Customer Sync: Use Correct Search Endpoint
+## Stop Showing Buttons That Can't Work — Remember RFMS Tier Limitations
 
-### Problem
+### The Problem (Why You're Seeing Confusing Messages)
 
-The RFMS v2 API's `GET /customers` endpoint (with any query parameters) only returns metadata — field definitions and dropdown values like `customerType`, `entryType`, `preferredSalesperson1`, etc. It never returns actual customer records regardless of what filters are applied.
+Your RFMS API tier has two limitations:
+- **Customer records**: The API returns field definitions (metadata) instead of actual customer data. Every attempt to import customers will fail the same way.
+- **Creating new quotes**: `POST` requests are rejected (405 error). However, **updating** existing quotes via `PUT` works fine.
 
-Evidence from logs — every request returns the same schema:
-```
-GET /customers → {customerType: [...], entryType: [...], ...}
-GET /customers?preferredSalesperson1=CHRIS+OGDEN → same metadata
-GET /customers?entryType=Customer → same metadata
-GET /customers?limit=500&offset=0 → same metadata
-GET /customers?search=* → same metadata
-```
+This is why you see "Quote synced successfully" when re-syncing an already-linked quote (update = PUT = works), but "RFMS Push Not Available" when pushing a brand new quote (create = POST = blocked).
 
-### Root Cause
+The app currently keeps showing these buttons even though they will always fail, which is confusing and erodes trust.
 
-The current code assumes `GET /customers?<filter>=<value>` will return filtered customer records. Instead, RFMS v2 treats `GET /customers` as a metadata/schema endpoint that describes available filter values. Actual customer records likely require a different endpoint or method.
+### The Fix
 
-### Solution
+**Save the tier limitations** after the first failure, so the app remembers and adapts the UI accordingly:
 
-Update the customer fetch strategy in `rfms-sync-customers` to try additional RFMS v2 endpoints that are more likely to return actual records:
+1. When customer sync fails with the "schema data instead of records" message, store `customer_import_unavailable: true` in the integration's configuration
+2. When all quote POST endpoints return 405, store `quote_create_unavailable: true` in the integration's configuration
+3. Use these flags to adjust what buttons are shown
 
-1. **`GET /customers/search`** — dedicated search endpoint (referenced in project architecture notes)
-2. **`POST /customers/search`** — some APIs use POST for search with a body
-3. **`GET /customers/list`** — alternative listing endpoint
-4. **`GET /customers/{id}`** — if we can enumerate from metadata (store IDs, etc.)
+### What Changes in the UI
 
-If none return records, provide a clear, specific error message explaining what was tried.
+**Job page RFMS badge (IntegrationSyncStatus):**
+- If the quote is already synced: show "Re-sync" button (this works, uses PUT)
+- If the quote is NOT synced AND `quote_create_unavailable` is true: show a simple info message "Import-only — create new quotes in RFMS, then pull them here" instead of a "Push to RFMS" button that always fails
+
+**Settings > RFMS > Manual Sync (RFMSIntegrationTab):**
+- "Import Customers" button: If `customer_import_unavailable` is true, show it disabled with a note: "Not available at your RFMS API tier. Create customers in RFMS directly."
+- "Export Quotes" button: If `quote_create_unavailable` is true, show it disabled with a note: "New quote export not available at your RFMS API tier. You can still re-sync existing linked quotes."
+- Add a small info banner explaining what works and what doesn't, so you're never surprised
+- Add a "Retry" link next to each limitation in case you upgrade your RFMS tier later
 
 ### Technical Changes
 
 **File: `supabase/functions/rfms-sync-customers/index.ts`**
+- When the "all approaches exhausted" path is reached (line 508-510), also update the integration's configuration to set `customer_import_unavailable: true`
+- This prevents repeated failed attempts
 
-Update the `fetchCustomersFromRFMS` function:
+**File: `supabase/functions/rfms-sync-quotes/index.ts`**
+- When all POST endpoints return 405 (line 455-460), also update the integration's configuration to set `quote_create_unavailable: true`
+- Only set this flag for the "create new" path, not for PUT updates (which still work)
 
-1. Before the current metadata-driven approach, try these endpoints first:
-   - `GET /customers/search` (no params, get all)
-   - `GET /customers/search?query=*`
-   - `POST /customers/search` with empty/wildcard body
-   - `GET /customers/list`
-2. Keep existing metadata-driven approach as a secondary fallback
-3. Update the final "no records found" error message to list what was tried, so log debugging is easier
-4. If the API returns 404 on search endpoints, skip gracefully and try the next approach
+**File: `src/components/integrations/IntegrationSyncStatus.tsx`**
+- Read the integration's configuration to check for `quote_create_unavailable`
+- If true and the quote has no existing `rfms_quote_id`, show info text instead of "Push to RFMS" button
+- If the quote already has an `rfms_quote_id`, show "Re-sync" as normal (PUT works)
 
-Updated fallback sequence:
-```
-1. GET /customers/search          (dedicated search endpoint)
-2. POST /customers/search {}      (POST-based search)
-3. GET /customers/list            (list endpoint)
-4. GET /customers                 (current — gets metadata, then...)
-5. GET /customers?preferredSalesperson1=X  (metadata-driven, current approach)
-6. GET /customers?entryType=X     (metadata-driven, current approach)
-7. GET /customers?limit=500       (current fallback)
-```
-
-Also improve the error message:
-```
-Before: "No customer records found in RFMS. This may be due to your API tier or search configuration."
-After:  "Could not retrieve customer records from RFMS. Tried /customers/search, /customers/list, 
-         and metadata-driven filters — all returned schema data instead of records. 
-         Your RFMS API tier may not support customer record access."
-```
-
-**File: `src/components/integrations/IntegrationSyncStatus.tsx`** (minor)
-
-Detect the "API tier" message and show amber warning toast (same pattern already used for quote push).
+**File: `src/components/integrations/RFMSIntegrationTab.tsx`**
+- Read `customer_import_unavailable` and `quote_create_unavailable` from integration configuration
+- Disable "Import Customers" and "Export Quotes" buttons when respective flags are set
+- Show clear explanatory text for each disabled feature
+- Add a "Clear limitation flags" option (small link) so the user can retry if they upgrade their RFMS plan
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `supabase/functions/rfms-sync-customers/index.ts` | Add `/customers/search` and `/customers/list` endpoints as priority attempts before metadata-driven fallbacks; improve error message |
-| `src/components/integrations/IntegrationSyncStatus.tsx` | Show amber warning for customer sync tier limitation (if not already handled) |
+| `supabase/functions/rfms-sync-customers/index.ts` | Store `customer_import_unavailable` flag after exhausting all approaches |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Store `quote_create_unavailable` flag after all POST endpoints return 405 |
+| `src/components/integrations/IntegrationSyncStatus.tsx` | Hide "Push to RFMS" for new quotes when flag is set; keep "Re-sync" for existing |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Disable buttons and show explanatory text when flags are set; add retry option |
+| `src/hooks/useIntegrations.ts` | No changes needed (already fetches full integration config) |
 
 ### After Fix
 
-- The sync tries dedicated search/list endpoints before falling back to metadata-driven searches
-- If one of the new endpoints works, customers import immediately
-- If none work, the user sees a clear message about what was tried, rather than a vague "no records found"
-- No breaking changes to existing logic — new attempts are prepended, existing code is kept as fallback
+- No more confusing mixed messages — buttons that can't work are hidden or disabled with clear explanations
+- "Re-sync" still works for already-linked quotes (PUT is supported)
+- "Import Quotes" (pull) still works
+- If you upgrade your RFMS plan, you can clear the flags and try again
+- The Settings page shows a clear summary of what your RFMS tier supports
 
