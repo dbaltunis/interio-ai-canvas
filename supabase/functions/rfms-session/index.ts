@@ -8,12 +8,7 @@ const corsHeaders = {
 
 /**
  * RFMS Session Management Edge Function
- *
- * Handles session creation and token refresh for the RFMS API v2.
- * Auth flow: POST /v2/session/begin with Basic Auth (store_queue:api_key)
- * Returns a session token that auto-extends on each API call.
- * 
- * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
+ * MULTI-TENANT: Uses account_owner_id for integration lookup.
  */
 
 async function resolveAccountOwnerId(supabase: any, userId: string): Promise<string> {
@@ -22,7 +17,6 @@ async function resolveAccountOwnerId(supabase: any, userId: string): Promise<str
     .select("parent_account_id")
     .eq("user_id", userId)
     .maybeSingle();
-  
   return profile?.parent_account_id || userId;
 }
 
@@ -46,19 +40,29 @@ serve(async (req: Request) => {
 
     const { action } = await req.json();
 
-    // Resolve effective account owner for multi-tenant support
     const accountOwnerId = await resolveAccountOwnerId(supabase, user.id);
 
-    // Get integration settings using account_owner_id (not user_id)
-    const { data: integration, error: intError } = await supabase
+    // Use account_owner_id for integration lookup, with user_id fallback
+    let { data: integration } = await supabase
       .from("integration_settings")
       .select("*")
-      .eq("user_id", accountOwnerId)
+      .eq("account_owner_id", accountOwnerId)
       .eq("integration_type", "rfms")
       .eq("active", true)
-      .single();
+      .maybeSingle();
 
-    if (intError || !integration) {
+    if (!integration) {
+      const { data: legacyInt } = await supabase
+        .from("integration_settings")
+        .select("*")
+        .eq("user_id", accountOwnerId)
+        .eq("integration_type", "rfms")
+        .eq("active", true)
+        .maybeSingle();
+      integration = legacyInt;
+    }
+
+    if (!integration) {
       throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
@@ -70,7 +74,6 @@ serve(async (req: Request) => {
     }
 
     if (action === "begin" || action === "refresh") {
-      // Check if existing session is still valid
       const existingToken = integration.api_credentials?.session_token;
       const sessionStartedAt = integration.api_credentials?.session_started_at;
       if (existingToken && action === "begin" && sessionStartedAt) {
@@ -97,7 +100,6 @@ serve(async (req: Request) => {
           },
         });
       } catch (fetchErr: any) {
-        console.error("RFMS network error:", fetchErr.message);
         throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
       }
 
@@ -121,7 +123,6 @@ serve(async (req: Request) => {
         throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
       }
 
-      // Handle RFMS v2 response format: {authorized, sessionToken} at top level
       let sessionToken: string | undefined;
 
       if (data.authorized === true && data.sessionToken) {
@@ -136,7 +137,6 @@ serve(async (req: Request) => {
         throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
       }
 
-      // Store session token
       await supabase
         .from("integration_settings")
         .update({
@@ -152,11 +152,7 @@ serve(async (req: Request) => {
       console.log("RFMS session started successfully");
 
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: "RFMS session started",
-          session_token: sessionToken,
-        }),
+        JSON.stringify({ success: true, message: "RFMS session started", session_token: sessionToken }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

@@ -9,11 +9,30 @@ const corsHeaders = {
 /**
  * RFMS Quote Sync Edge Function
  *
- * Pushes InterioApp projects (quotes/orders) to RFMS as Quote headers.
- * Pulls RFMS quotes/opportunities into InterioApp as projects.
+ * Push: Export InterioApp projects to RFMS as opportunities/quotes.
+ * Pull: Import RFMS quotes/opportunities into InterioApp as projects.
+ * Auto Job Status: Maps RFMS statuses to InterioApp project statuses.
  * 
- * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
+ * MULTI-TENANT: Uses account_owner_id for integration lookup.
  */
+
+// RFMS status → InterioApp project status mapping
+const RFMS_STATUS_MAP: Record<string, string> = {
+  "Open": "quoted",
+  "Quoted": "quoted",
+  "Sold": "approved",
+  "Ordered": "in_progress",
+  "Scheduled": "in_progress",
+  "In Progress": "in_progress",
+  "Installed": "completed",
+  "Complete": "completed",
+  "Completed": "completed",
+  "Closed": "completed",
+  "Cancelled": "cancelled",
+  "Canceled": "cancelled",
+  "Lost": "cancelled",
+  "Declined": "cancelled",
+};
 
 async function ensureSession(
   supabase: any,
@@ -47,7 +66,6 @@ async function ensureSession(
       },
     });
   } catch (fetchErr: any) {
-    console.error("RFMS network error:", fetchErr.message);
     throw new Error(`Cannot reach RFMS server at ${apiUrl}. Check your internet connection and API URL.`);
   }
 
@@ -71,7 +89,6 @@ async function ensureSession(
     throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
   }
 
-  // Handle RFMS v2 session response: {authorized, sessionToken}
   if (data.authorized === true && data.sessionToken) {
     const newToken = data.sessionToken;
     await supabase
@@ -177,13 +194,10 @@ serve(async (req: Request) => {
     if (!authHeader) throw new Error("No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { projectId, direction } = await req.json();
+    const { projectId, direction, autoUpdateJobStatus } = await req.json();
 
     // Resolve effective account owner for multi-tenant support
     const { data: userProfile } = await supabase
@@ -193,39 +207,50 @@ serve(async (req: Request) => {
       .maybeSingle();
     const accountOwnerId = userProfile?.parent_account_id || user.id;
 
+    // Use account_owner_id for integration lookup
     const { data: integration, error: intError } = await supabase
       .from("integration_settings")
       .select("*")
-      .eq("user_id", accountOwnerId)
+      .eq("account_owner_id", accountOwnerId)
       .eq("integration_type", "rfms")
       .eq("active", true)
-      .single();
+      .maybeSingle();
 
-    if (intError || !integration) {
+    // Fallback to user_id if account_owner_id doesn't match
+    let activeIntegration = integration;
+    if (!activeIntegration) {
+      const { data: legacyInt } = await supabase
+        .from("integration_settings")
+        .select("*")
+        .eq("user_id", accountOwnerId)
+        .eq("integration_type", "rfms")
+        .eq("active", true)
+        .maybeSingle();
+      activeIntegration = legacyInt;
+    }
+
+    if (!activeIntegration) {
       throw new Error("RFMS integration not found or not active. Please configure RFMS in Settings → Integrations first.");
     }
 
-    let { sessionToken, storeQueue, apiUrl } = await ensureSession(
-      supabase,
-      integration
-    );
+    let { sessionToken, storeQueue, apiUrl } = await ensureSession(supabase, activeIntegration);
 
     const results = {
       imported: 0,
       exported: 0,
       updated: 0,
       skipped: 0,
+      statusUpdates: 0,
       errors: [] as string[],
     };
 
-    // Helper to retry once on expired session
     const withSessionRetry = async (fn: (st: string) => Promise<void>) => {
       try {
         await fn(sessionToken);
       } catch (err: any) {
         if (err.message === "RFMS_SESSION_EXPIRED") {
           console.log("Session expired, refreshing and retrying...");
-          const refreshed = await ensureSession(supabase, integration, true);
+          const refreshed = await ensureSession(supabase, activeIntegration, true);
           sessionToken = refreshed.sessionToken;
           await fn(sessionToken);
         } else {
@@ -239,12 +264,13 @@ serve(async (req: Request) => {
         let rfmsData: any;
         let quotes: any[] = [];
 
+        // Try multiple endpoints
         try {
           rfmsData = await rfmsRequest("GET", "/opportunities", storeQueue, currentToken, apiUrl);
         } catch (err: any) {
           if (err.message === "RFMS_SESSION_EXPIRED") throw err;
           try {
-            rfmsData = await rfmsRequest("POST", "/quotes/search", storeQueue, currentToken, apiUrl, {});
+            rfmsData = await rfmsRequest("POST", "/quotes", storeQueue, currentToken, apiUrl, { limit: 500 });
           } catch (err2: any) {
             if (err2.message === "RFMS_SESSION_EXPIRED") throw err2;
             rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, currentToken, apiUrl);
@@ -270,20 +296,34 @@ serve(async (req: Request) => {
             const rfmsQuoteId = (quote.id || quote.opportunityId || quote.quoteId || "").toString();
             if (!rfmsQuoteId) { results.skipped++; continue; }
 
+            const rfmsStatus = quote.status || quote.opportunityStatus || quote.quoteStatus || "";
+
             const { data: existing } = await supabase
               .from("projects")
-              .select("id")
-              .eq("user_id", user.id)
+              .select("id, status")
+              .eq("user_id", accountOwnerId)
               .eq("rfms_quote_id", rfmsQuoteId)
               .maybeSingle();
 
             if (existing) {
+              const updateData: any = {
+                name: quote.description || quote.name || existing.id,
+                total_price: quote.total || undefined,
+              };
+
+              // Auto update job status if enabled
+              if (autoUpdateJobStatus && rfmsStatus) {
+                const mappedStatus = RFMS_STATUS_MAP[rfmsStatus];
+                if (mappedStatus && mappedStatus !== existing.status) {
+                  updateData.status = mappedStatus;
+                  results.statusUpdates++;
+                  console.log(`Status update: Project ${existing.id} ${existing.status} → ${mappedStatus} (RFMS: ${rfmsStatus})`);
+                }
+              }
+
               await supabase
                 .from("projects")
-                .update({
-                  name: quote.description || quote.name || existing.id,
-                  total_price: quote.total || undefined,
-                } as any)
+                .update(updateData)
                 .eq("id", existing.id);
               results.updated++;
               continue;
@@ -295,18 +335,20 @@ serve(async (req: Request) => {
               const { data: matchingClient } = await supabase
                 .from("clients")
                 .select("id")
-                .eq("user_id", user.id)
+                .eq("user_id", accountOwnerId)
                 .eq("rfms_customer_id", custId)
                 .maybeSingle();
               if (matchingClient) clientId = matchingClient.id;
             }
 
+            const mappedStatus = rfmsStatus ? (RFMS_STATUS_MAP[rfmsStatus] || "quoted") : "quoted";
+
             await supabase
               .from("projects")
               .insert({
-                user_id: user.id,
+                user_id: accountOwnerId,
                 name: quote.description || quote.name || `RFMS Quote ${rfmsQuoteId}`,
-                status: "quoted",
+                status: mappedStatus,
                 client_id: clientId,
                 rfms_quote_id: rfmsQuoteId,
                 quote_number: quote.reference || quote.quoteNumber || undefined,
@@ -326,7 +368,7 @@ serve(async (req: Request) => {
         let projectsQuery = supabase
           .from("projects")
           .select(`*, clients (id, name, email, phone, address, city, state, zip_code, company_name, rfms_customer_id)`)
-          .eq("user_id", user.id);
+          .eq("user_id", accountOwnerId);
 
         if (projectId) {
           projectsQuery = projectsQuery.eq("id", projectId);
@@ -400,12 +442,13 @@ serve(async (req: Request) => {
     await supabase
       .from("integration_settings")
       .update({ last_sync: new Date().toISOString() })
-      .eq("id", integration.id);
+      .eq("id", activeIntegration.id);
 
     const summary = [
       results.imported > 0 ? `${results.imported} imported` : null,
       results.exported > 0 ? `${results.exported} exported` : null,
       results.updated > 0 ? `${results.updated} updated` : null,
+      results.statusUpdates > 0 ? `${results.statusUpdates} statuses updated` : null,
       results.skipped > 0 ? `${results.skipped} skipped` : null,
       results.errors.length > 0 ? `${results.errors.length} errors` : null,
     ].filter(Boolean).join(", ");

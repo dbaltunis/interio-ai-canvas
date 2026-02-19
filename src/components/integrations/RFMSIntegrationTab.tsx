@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { RFMSIntegration } from "@/types/integrations";
-import { RefreshCw, Users, ArrowUpDown, FileText, Info } from "lucide-react";
+import { RefreshCw, Users, ArrowUpDown, FileText, Info, Ruler, Calendar, Activity } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 
 interface RFMSIntegrationTabProps {
@@ -47,11 +47,29 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     api_key: integration?.api_credentials?.api_key || '',
     sync_customers: integration?.configuration?.sync_customers ?? true,
     sync_quotes: integration?.configuration?.sync_quotes ?? true,
-    sync_measurements: integration?.configuration?.sync_measurements ?? true,
-    sync_scheduling: integration?.configuration?.sync_scheduling ?? true,
+    sync_measurements: integration?.configuration?.sync_measurements ?? false,
+    sync_scheduling: integration?.configuration?.sync_scheduling ?? false,
     auto_update_job_status: integration?.configuration?.auto_update_job_status ?? false,
     measurement_units: integration?.configuration?.measurement_units || 'metric',
   });
+
+  // Fix 1: Sync form state when integration data loads asynchronously
+  useEffect(() => {
+    if (integration?.api_credentials) {
+      setFormData(prev => ({
+        ...prev,
+        api_url: integration.api_credentials?.api_url || 'https://api.rfms.online/v2',
+        store_queue: integration.api_credentials?.store_queue || '',
+        api_key: integration.api_credentials?.api_key || '',
+        sync_customers: integration.configuration?.sync_customers ?? true,
+        sync_quotes: integration.configuration?.sync_quotes ?? true,
+        sync_measurements: integration.configuration?.sync_measurements ?? false,
+        sync_scheduling: integration.configuration?.sync_scheduling ?? false,
+        auto_update_job_status: integration.configuration?.auto_update_job_status ?? false,
+        measurement_units: integration.configuration?.measurement_units || 'metric',
+      }));
+    }
+  }, [integration]);
 
   // Track saved values for hasChanges detection
   const savedValues = useMemo(() => ({
@@ -60,8 +78,8 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     api_key: integration?.api_credentials?.api_key || '',
     sync_customers: integration?.configuration?.sync_customers ?? true,
     sync_quotes: integration?.configuration?.sync_quotes ?? true,
-    sync_measurements: integration?.configuration?.sync_measurements ?? true,
-    sync_scheduling: integration?.configuration?.sync_scheduling ?? true,
+    sync_measurements: integration?.configuration?.sync_measurements ?? false,
+    sync_scheduling: integration?.configuration?.sync_scheduling ?? false,
     auto_update_job_status: integration?.configuration?.auto_update_job_status ?? false,
     measurement_units: integration?.configuration?.measurement_units || 'metric',
   }), [integration]);
@@ -153,7 +171,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     setSyncingAction(actionKey);
     try {
       const { data, error } = await supabase.functions.invoke('rfms-sync-quotes', {
-        body: { direction },
+        body: { direction, autoUpdateJobStatus: formData.auto_update_job_status },
       });
 
       if (error) {
@@ -167,8 +185,9 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
 
       const hasResults = (data.imported || 0) + (data.updated || 0) + (data.exported || 0) > 0;
       const hasErrors = data.errors?.length > 0;
+      const statusUpdates = data.statusUpdates || 0;
 
-      if (!hasResults && hasErrors) {
+      if (!hasResults && !statusUpdates && hasErrors) {
         toast({
           title: "Quote Sync Issue",
           description: data.errors[0],
@@ -179,6 +198,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         if (data.imported > 0) parts.push(`${data.imported} imported`);
         if (data.exported > 0) parts.push(`${data.exported} exported`);
         if (data.updated > 0) parts.push(`${data.updated} updated`);
+        if (statusUpdates > 0) parts.push(`${statusUpdates} statuses updated`);
         if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
 
         toast({
@@ -200,7 +220,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     }
   };
 
-  const handleSyncCustomers = async (direction: 'push' | 'pull' | 'both') => {
+  const handleSyncCustomers = async (direction: 'pull') => {
     const actionKey = `customers-${direction}`;
     setSyncingAction(actionKey);
     try {
@@ -217,12 +237,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         throw new Error(data?.error || "Sync returned no results");
       }
 
-      // Show detailed results
-      const hasResults = (data.imported || 0) + (data.updated || 0) + (data.exported || 0) > 0;
+      const hasResults = (data.imported || 0) + (data.updated || 0) > 0;
       const hasErrors = data.errors?.length > 0;
 
       if (!hasResults && hasErrors) {
-        // Total failure - show the actual error
         toast({
           title: "Customer Sync Issue",
           description: data.errors[0],
@@ -232,7 +250,6 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         const parts = [];
         if (data.imported > 0) parts.push(`${data.imported} imported`);
         if (data.updated > 0) parts.push(`${data.updated} updated`);
-        if (data.exported > 0) parts.push(`${data.exported} exported`);
         if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
 
         toast({
@@ -246,6 +263,82 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     } catch (err: any) {
       toast({
         title: "Customer Sync Failed",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
+      });
+    } finally {
+      setSyncingAction(null);
+    }
+  };
+
+  const handleSyncMeasurements = async () => {
+    setSyncingAction('measurements');
+    try {
+      const { data, error } = await supabase.functions.invoke('rfms-sync-measurements', {
+        body: { measurementUnits: formData.measurement_units },
+      });
+
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Measurement sync returned no results");
+      }
+
+      const parts = [];
+      if (data.imported > 0) parts.push(`${data.imported} imported`);
+      if (data.updated > 0) parts.push(`${data.updated} updated`);
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+
+      toast({
+        title: parts.length > 0 ? "Measurements Synced" : "No New Measurements",
+        description: parts.length > 0
+          ? parts.join(', ')
+          : "All measurements are already up to date.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Measurement Sync Failed",
+        description: getFriendlyRFMSError(err.message),
+        variant: "warning",
+      });
+    } finally {
+      setSyncingAction(null);
+    }
+  };
+
+  const handleSyncScheduling = async () => {
+    setSyncingAction('scheduling');
+    try {
+      const { data, error } = await supabase.functions.invoke('rfms-sync-scheduling', {
+        body: {},
+      });
+
+      if (error) {
+        const realMessage = await extractEdgeFunctionError(error, data);
+        throw new Error(realMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Schedule sync returned no results");
+      }
+
+      const parts = [];
+      if (data.imported > 0) parts.push(`${data.imported} imported`);
+      if (data.updated > 0) parts.push(`${data.updated} updated`);
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+
+      toast({
+        title: parts.length > 0 ? "Schedule Synced" : "No Schedule Changes",
+        description: parts.length > 0
+          ? parts.join(', ')
+          : "All schedule data is already up to date.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Schedule Sync Failed",
         description: getFriendlyRFMSError(err.message),
         variant: "warning",
       });
@@ -371,43 +464,49 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             />
           </div>
 
-          <div className="flex items-center justify-between opacity-60">
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Label>Sync Measurements</Label>
-                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-              </div>
+              <Label>Sync Measurements</Label>
               <p className="text-sm text-muted-foreground">
-                Import measurement data from RFMS
+                Import measurement data from RFMS quote line items
               </p>
             </div>
-            <Switch checked={false} disabled />
+            <Switch
+              checked={formData.sync_measurements}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, sync_measurements: checked }))
+              }
+            />
           </div>
 
-          <div className="flex items-center justify-between opacity-60">
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Label>Sync Scheduling</Label>
-                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-              </div>
+              <Label>Sync Scheduling</Label>
               <p className="text-sm text-muted-foreground">
-                Synchronize job schedules and appointments
+                Synchronize job schedules and appointments from RFMS Schedule Pro
               </p>
             </div>
-            <Switch checked={false} disabled />
+            <Switch
+              checked={formData.sync_scheduling}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, sync_scheduling: checked }))
+              }
+            />
           </div>
 
-          <div className="flex items-center justify-between opacity-60">
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Label>Auto Update Job Status</Label>
-                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-              </div>
+              <Label>Auto Update Job Status</Label>
               <p className="text-sm text-muted-foreground">
-                Automatically update job status from RFMS
+                Automatically update project status when RFMS job status changes
               </p>
             </div>
-            <Switch checked={false} disabled />
+            <Switch
+              checked={formData.auto_update_job_status}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, auto_update_job_status: checked }))
+              }
+            />
           </div>
 
           <div className="space-y-2">
@@ -457,15 +556,6 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSyncCustomers('both')}
-                disabled={syncingAction !== null}
-              >
-                {syncingAction === 'customers-both' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                Full Sync
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => handleSyncQuotes('push')}
                 disabled={syncingAction !== null}
               >
@@ -481,6 +571,24 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
                 {syncingAction === 'quotes-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
                 Import Quotes
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncMeasurements}
+                disabled={syncingAction !== null || !formData.sync_measurements}
+              >
+                {syncingAction === 'measurements' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Ruler className="h-4 w-4 mr-2" />}
+                Import Measurements
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncScheduling}
+                disabled={syncingAction !== null || !formData.sync_scheduling}
+              >
+                {syncingAction === 'scheduling' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Calendar className="h-4 w-4 mr-2" />}
+                Sync Schedule
+              </Button>
             </div>
 
             <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
@@ -488,6 +596,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
               <span>
                 Customer export to RFMS is not available — the RFMS v2 API does not support creating customers via API. 
                 Please create customers directly in RFMS, then use "Import Customers" to sync them here.
+                {formData.auto_update_job_status && " Job status auto-updates are active during quote sync."}
               </span>
             </div>
           </CardContent>
