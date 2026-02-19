@@ -57,14 +57,25 @@ serve(async (req: Request) => {
 
     const accountOwnerId = profile?.parent_account_id || userId;
 
-    // Get RFMS integration
-    const { data: integration } = await supabase
-      .from("integrations")
+    // Get RFMS integration (account_owner_id first, then user_id fallback)
+    let { data: integration } = await supabase
+      .from("integration_settings")
       .select("*")
-      .eq("user_id", accountOwnerId)
+      .eq("account_owner_id", accountOwnerId)
       .eq("integration_type", "rfms")
       .eq("active", true)
       .single();
+
+    if (!integration) {
+      const { data: legacyInt } = await supabase
+        .from("integration_settings")
+        .select("*")
+        .eq("user_id", accountOwnerId)
+        .eq("integration_type", "rfms")
+        .eq("active", true)
+        .single();
+      integration = legacyInt;
+    }
 
     if (!integration?.api_credentials) {
       return new Response(
@@ -100,8 +111,12 @@ serve(async (req: Request) => {
       let authData: any;
       try { authData = JSON.parse(authBody); } catch { authData = {}; }
 
-      if (authResp.ok && authData.authorized && authData.sessionToken) {
-        sessionToken = authData.sessionToken;
+      // v2 API wraps response in data.authorized / data.sessionToken
+      const authorized = authData?.data?.authorized ?? authData?.authorized;
+      const token2 = authData?.data?.sessionToken ?? authData?.sessionToken;
+
+      if (authResp.ok && authorized && token2) {
+        sessionToken = token2;
         results.push({
           endpoint: "/session/begin", method: "POST", label: "Authentication",
           status: "working", httpStatus: authResp.status,
@@ -111,7 +126,7 @@ serve(async (req: Request) => {
         results.push({
           endpoint: "/session/begin", method: "POST", label: "Authentication",
           status: "error", httpStatus: authResp.status,
-          detail: authData.reason || "Authentication failed", tierRequired: "Standard",
+          detail: authData?.data?.reason || authData?.reason || "Authentication failed", tierRequired: "Standard",
         });
         // Can't continue without auth
         return new Response(
