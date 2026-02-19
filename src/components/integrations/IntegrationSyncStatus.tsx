@@ -111,20 +111,24 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
       if (data?.errors?.length > 0) {
         if (isTierError) {
           setPushError("Requires RFMS Enterprise tier — run diagnostics in Settings for details");
-          showErrorToast(
-            "RFMS Push Not Available",
-            "Your RFMS API tier may not support creating new quotes. Run diagnostics in Settings → RFMS to see exactly what's supported."
-          );
+          toast({
+            title: "RFMS Tier Restriction",
+            description: "Your RFMS API tier doesn't support creating new quotes. Go to Settings → RFMS and run diagnostics to see what's supported.",
+            variant: "warning" as any,
+            importance: 'important',
+          });
         } else {
           setPushError(null);
           showErrorToast("RFMS Push Issue", errorMsg);
         }
       } else if (!didSomething) {
-        // Edge function returned success but nothing was actually pushed
-        showErrorToast(
-          "Nothing to sync",
-          "No changes were pushed to RFMS. The quote may already be up to date, or the project may not have quote data yet."
-        );
+        // Nothing changed — amber warning, not red error
+        toast({
+          title: "Nothing to sync",
+          description: "No changes were pushed. The quote may already be up to date, or the project may not have quote data yet.",
+          variant: "warning" as any,
+          importance: 'important',
+        });
       } else {
         showSuccessToast(
           "Pushed to RFMS",
