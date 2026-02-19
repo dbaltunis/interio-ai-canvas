@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,21 @@ export const GoogleCalendarIntegrationTab = ({ integration }: GoogleCalendarInte
     sync_direction: integration?.configuration?.sync_direction || 'both',
     event_duration_buffer: integration?.configuration?.event_duration_buffer || 15,
   });
+
+  const savedValues = useMemo(() => ({
+    client_id: integration?.api_credentials?.client_id || '',
+    client_secret: integration?.api_credentials?.client_secret || '',
+    refresh_token: integration?.api_credentials?.refresh_token || '',
+    calendar_id: integration?.configuration?.calendar_id || 'primary',
+    sync_appointments: integration?.configuration?.sync_appointments ?? true,
+    auto_create_events: integration?.configuration?.auto_create_events ?? true,
+    sync_direction: integration?.configuration?.sync_direction || 'both',
+    event_duration_buffer: integration?.configuration?.event_duration_buffer || 15,
+  }), [integration]);
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(savedValues);
+  }, [formData, savedValues]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -92,9 +107,11 @@ export const GoogleCalendarIntegrationTab = ({ integration }: GoogleCalendarInte
           </p>
         </div>
         {integration && (
-          <Badge variant={integration.active ? "default" : "secondary"}>
-            {integration.active ? "Active" : "Inactive"}
-          </Badge>
+          (() => {
+            if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
+            if (integration.last_sync) return <Badge variant="success-solid">Connected</Badge>;
+            return <Badge variant="outline">Configured</Badge>;
+          })()
         )}
       </div>
 
@@ -148,9 +165,10 @@ export const GoogleCalendarIntegrationTab = ({ integration }: GoogleCalendarInte
             </Button>
             <Button 
               onClick={handleSave}
-              disabled={!formData.client_id || !formData.client_secret || isLoading}
+              disabled={!formData.client_id || !formData.client_secret || isLoading || !hasChanges}
+              variant={hasChanges ? "default" : "secondary"}
             >
-              {isLoading ? "Saving..." : "Save Configuration"}
+              {isLoading ? "Saving..." : hasChanges ? "Save Configuration" : "Saved"}
             </Button>
           </div>
         </CardContent>

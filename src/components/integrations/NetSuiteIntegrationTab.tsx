@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,28 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
     default_currency: integration?.configuration?.default_currency || '',
   });
 
+  const savedValues = useMemo(() => ({
+    account_id: integration?.api_credentials?.account_id || '',
+    consumer_key: integration?.api_credentials?.consumer_key || '',
+    consumer_secret: integration?.api_credentials?.consumer_secret || '',
+    token_id: integration?.api_credentials?.token_id || '',
+    token_secret: integration?.api_credentials?.token_secret || '',
+    sync_customers: integration?.configuration?.sync_customers ?? true,
+    sync_estimates: integration?.configuration?.sync_estimates ?? true,
+    sync_sales_orders: integration?.configuration?.sync_sales_orders ?? true,
+    sync_invoices: integration?.configuration?.sync_invoices ?? false,
+    auto_create_customers: integration?.configuration?.auto_create_customers ?? true,
+    default_subsidiary: integration?.configuration?.default_subsidiary || '',
+    default_currency: integration?.configuration?.default_currency || '',
+  }), [integration]);
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(savedValues);
+  }, [formData, savedValues]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingAction, setSyncingAction] = useState<string | null>(null);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -75,7 +94,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
 
       toast({ title: "NetSuite Configuration Saved", description: "Your credentials have been stored. Use 'Test Connection' to verify they work." });
     } catch (err: any) {
-      toast({ title: "Could not save NetSuite settings", description: err.message || "Check your credentials are correct and try again.", variant: "destructive" });
+      toast({ title: "Could not save NetSuite settings", description: err.message || "Check your credentials are correct and try again.", variant: "warning" });
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +131,7 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: isEdgeFnMissing
           ? "The NetSuite backend service is not deployed yet. Please deploy the Edge Functions via Supabase CLI first."
           : `Could not connect to NetSuite. ${msg}. Check your Account ID and TBA credentials are correct.`,
-        variant: "destructive",
+        variant: "warning",
       });
     } finally {
       setIsTesting(false);
@@ -120,7 +139,8 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
   };
 
   const handleSyncCustomers = async (direction: 'push' | 'pull' | 'both') => {
-    setIsSyncing(true);
+    const actionKey = `customers-${direction}`;
+    setSyncingAction(actionKey);
     try {
       const { data, error } = await supabase.functions.invoke('netsuite-sync-customers', {
         body: { direction },
@@ -145,15 +165,16 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: isEdgeFnMissing
           ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Customer sync failed. ${msg}`,
-        variant: "destructive",
+        variant: "warning",
       });
     } finally {
-      setIsSyncing(false);
+      setSyncingAction(null);
     }
   };
 
   const handleSyncOrders = async (recordType: 'estimate' | 'salesOrder', direction: 'push' | 'pull') => {
-    setIsSyncing(true);
+    const actionKey = `orders-${recordType}-${direction}`;
+    setSyncingAction(actionKey);
     try {
       const { data, error } = await supabase.functions.invoke('netsuite-sync-orders', {
         body: { direction, recordType },
@@ -178,15 +199,15 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: isEdgeFnMissing
           ? "The NetSuite sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Order sync failed. ${msg}`,
-        variant: "destructive",
+        variant: "warning",
       });
     } finally {
-      setIsSyncing(false);
+      setSyncingAction(null);
     }
   };
 
   const handleSyncInvoices = async () => {
-    setIsSyncing(true);
+    setSyncingAction('invoices');
     try {
       const { data, error } = await supabase.functions.invoke('netsuite-sync-invoices', {
         body: {},
@@ -210,10 +231,10 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
         description: isEdgeFnMissing
           ? "The NetSuite invoice sync service is not deployed yet. Deploy Edge Functions via Supabase CLI first."
           : `Invoice sync failed. ${msg}`,
-        variant: "destructive",
+        variant: "warning",
       });
     } finally {
-      setIsSyncing(false);
+      setSyncingAction(null);
     }
   };
 
@@ -232,9 +253,11 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
           </div>
         </div>
         {integration && (
-          <Badge variant={integration.active ? "default" : "secondary"}>
-            {integration.active ? "Active" : "Inactive"}
-          </Badge>
+          (() => {
+            if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
+            if (integration.last_sync) return <Badge variant="success-solid">Connected</Badge>;
+            return <Badge variant="outline">Configured</Badge>;
+          })()
         )}
       </div>
 
@@ -314,9 +337,10 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!hasCredentials || isLoading}
+              disabled={!hasCredentials || isLoading || !hasChanges}
+              variant={hasChanges ? "default" : "secondary"}
             >
-              {isLoading ? "Saving..." : "Save Configuration"}
+              {isLoading ? "Saving..." : hasChanges ? "Save Configuration" : "Saved"}
             </Button>
           </div>
         </CardContent>
@@ -447,31 +471,16 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
               <div>
                 <h4 className="text-sm font-medium mb-2">Customers</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncCustomers('pull')}
-                    disabled={isSyncing}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncCustomers('pull')} disabled={syncingAction !== null}>
+                    {syncingAction === 'customers-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
                     Import Customers
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncCustomers('push')}
-                    disabled={isSyncing}
-                  >
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncCustomers('push')} disabled={syncingAction !== null}>
+                    {syncingAction === 'customers-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
                     Export Customers
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncCustomers('both')}
-                    disabled={isSyncing}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncCustomers('both')} disabled={syncingAction !== null}>
+                    {syncingAction === 'customers-both' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                     Full Customer Sync
                   </Button>
                 </div>
@@ -480,40 +489,20 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
               <div>
                 <h4 className="text-sm font-medium mb-2">Estimates &amp; Orders</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncOrders('estimate', 'push')}
-                    disabled={isSyncing}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncOrders('estimate', 'push')} disabled={syncingAction !== null}>
+                    {syncingAction === 'orders-estimate-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
                     Push Estimates
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncOrders('salesOrder', 'push')}
-                    disabled={isSyncing}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncOrders('salesOrder', 'push')} disabled={syncingAction !== null}>
+                    {syncingAction === 'orders-salesOrder-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
                     Push Sales Orders
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncOrders('estimate', 'pull')}
-                    disabled={isSyncing}
-                  >
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncOrders('estimate', 'pull')} disabled={syncingAction !== null}>
+                    {syncingAction === 'orders-estimate-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
                     Pull Estimates
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncOrders('salesOrder', 'pull')}
-                    disabled={isSyncing}
-                  >
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={() => handleSyncOrders('salesOrder', 'pull')} disabled={syncingAction !== null}>
+                    {syncingAction === 'orders-salesOrder-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
                     Pull Sales Orders
                   </Button>
                 </div>
@@ -522,13 +511,8 @@ export const NetSuiteIntegrationTab = ({ integration }: NetSuiteIntegrationTabPr
               <div>
                 <h4 className="text-sm font-medium mb-2">Invoices</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSyncInvoices}
-                    disabled={isSyncing}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <Button variant="outline" size="sm" onClick={handleSyncInvoices} disabled={syncingAction !== null}>
+                    {syncingAction === 'invoices' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                     Pull Invoices
                   </Button>
                 </div>
