@@ -1,55 +1,57 @@
 
 
-## Fix ERP Sync Status to Reflect Integration Connection State
+## Make RFMS Badge Clickable — Push Quote to RFMS from Job Page
 
-### Problem
+### What's Happening Now
 
-The "ERP Sync Status" card on every job page always shows both RFMS and NetSuite as "Not synced" -- even when the RFMS integration IS connected and active in Settings. This is because the component only checks for per-project sync IDs (`rfms_quote_id`, etc.) and has no awareness of whether the integration itself is configured.
+The RFMS badge (compact mode) in the job header is wrapped in a `TooltipTrigger` but has no `onClick` handler. Clicking it shows a tooltip ("RFMS connected -- not yet synced for this job") but performs no action.
 
-The result is confusing: Settings shows "Connected" for RFMS, but the job page says "Not synced" for RFMS.
+### What It Should Do
 
-### Solution
+When clicked, the badge should open a small popover with contextual actions for this specific job:
 
-Make `IntegrationSyncStatus` aware of which integrations are actually configured by querying `integration_settings`. Then display three distinct states:
-
-| State | Condition | Display |
-|---|---|---|
-| **Hidden** | Integration not configured | Row not shown at all |
-| **Connected** | Integration active, but this project has no sync ID yet | Blue "Connected" badge (not the alarming "Not synced") |
-| **Synced** | Project has a valid `rfms_quote_id` or similar | Green "Synced" badge with the ID (existing behavior) |
-
-If NO integrations are configured at all, hide the entire card.
+- **"Push to RFMS"** button — calls `rfms-sync-quotes` with `direction: 'push'` and this project's ID, so the current job's quote gets exported to RFMS
+- **"View in Settings"** link — navigates to Settings > Integrations > RFMS for full configuration
+- Once synced, the badge turns green and clicking shows the RFMS Quote/Order ID
 
 ### Technical Changes
 
 **File: `src/components/integrations/IntegrationSyncStatus.tsx`**
 
-1. Import `useIntegrations` from `@/hooks/useIntegrations`
-2. Inside the component, call `useIntegrations()` to get the list of active integrations
-3. Filter `syncItems` to only include systems that have an active integration:
-   - Show RFMS row only if there's an active `rfms` integration
-   - Show NetSuite row only if there's an active `netsuite` integration
-4. For shown-but-not-yet-synced rows, display a blue "Connected" badge instead of the grey "Not synced" badge
-5. If no integrations are active, return `null` (hide the card entirely)
+1. Add imports for `Popover`, `PopoverTrigger`, `PopoverContent`, `Button`, `useNavigate`, and `supabase`
+2. Accept an optional `projectId` prop (needed to push a specific project)
+3. Replace the `Tooltip` wrapper on each compact badge with a `Popover`
+4. Inside the popover content:
+   - If not yet synced: show a "Push to RFMS" button that invokes `rfms-sync-quotes` with `{ direction: 'push', projectId }`
+   - Show a "Go to Settings" link that navigates to `/settings?tab=integrations`
+   - If already synced: show the sync IDs and a "Re-sync" option
+5. Add loading state while push is in progress
+6. Show success/error toast after push completes (with `importance: 'important'`)
 
-```
-Before:
-  RFMS     [Not synced]     <-- always shown, always grey
-  NetSuite [Not synced]     <-- always shown, always grey
+**File: `supabase/functions/rfms-sync-quotes/index.ts`**
 
-After (with RFMS connected, NetSuite not configured):
-  RFMS     [Connected]      <-- blue badge, shown because integration exists
-  (NetSuite row hidden)     <-- no integration configured, row hidden
-```
+- Accept an optional `projectId` parameter in the request body
+- When `projectId` is provided, only sync that specific project instead of all projects
+- This makes per-job sync fast and targeted
 
-**Compact mode** (in job header): Same logic -- only show badges for configured integrations, and show a blue "Connected" indicator if integration exists but no project sync ID yet.
+**File: `src/components/jobs/JobDetailPage.tsx`**
+
+- Pass `projectId={project.id}` to `IntegrationSyncStatus`
 
 ### Files to Change
 
 | File | Change |
 |---|---|
-| `src/components/integrations/IntegrationSyncStatus.tsx` | Add `useIntegrations` hook; filter rows by active integrations; show "Connected" vs "Synced" vs hidden; hide card when no integrations exist |
+| `src/components/integrations/IntegrationSyncStatus.tsx` | Replace Tooltip with Popover; add "Push to RFMS" button; accept projectId prop |
+| `src/components/jobs/JobDetailPage.tsx` | Pass `projectId` to `IntegrationSyncStatus` |
+| `src/components/jobs/tabs/ProjectDetailsTab.tsx` | Pass `projectId` to `IntegrationSyncStatus` |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Support optional `projectId` for single-project sync |
 
-### No Database or Edge Function Changes
+### User Experience After Fix
 
-This is purely a UI display fix. The underlying data model is correct -- the columns exist, the integration records exist. The component just needs to read the integration status to determine what to show.
+1. User sees blue RFMS badge with link icon on job header
+2. Clicks badge -- popover opens with "Push to RFMS" button and "Settings" link
+3. Clicks "Push to RFMS" -- spinner shows, quote data is sent to RFMS
+4. On success: badge turns green, toast shows "Quote pushed to RFMS", popover shows the RFMS Quote ID
+5. On error: toast shows clear error message with details
+
