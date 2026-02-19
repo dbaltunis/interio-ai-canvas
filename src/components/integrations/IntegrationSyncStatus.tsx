@@ -93,6 +93,8 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
       if (error) throw error;
       const errorMsg = data?.errors?.[0] || "";
       const isTierError = errorMsg.includes("does not support") || errorMsg.includes("higher API tier");
+      const didSomething = (data?.exported > 0) || (data?.updated > 0);
+      
       if (data?.errors?.length > 0) {
         if (isTierError) {
           toast({
@@ -104,6 +106,12 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
         } else {
           showErrorToast("RFMS Push Issue", errorMsg);
         }
+      } else if (!didSomething) {
+        // Edge function returned success but nothing was actually pushed
+        toast({
+          title: "Nothing to sync",
+          description: "No changes were pushed to RFMS. The quote may already be up to date, or the project may not have quote data yet.",
+        });
       } else {
         showSuccessToast(
           "Pushed to RFMS",
@@ -117,6 +125,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId, onS
         if (effectiveProjectId) {
           queryClient.invalidateQueries({ queryKey: ["project-data", effectiveProjectId] });
           queryClient.invalidateQueries({ queryKey: ["project", effectiveProjectId] });
+          queryClient.invalidateQueries({ queryKey: ["projects", effectiveProjectId] });
         }
         onSyncComplete?.();
       }
