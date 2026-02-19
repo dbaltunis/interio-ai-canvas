@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,21 @@ export const CWSystemsIntegrationTab = () => {
     default_payment_terms: integration?.configuration?.default_payment_terms || 'Account 30 Days',
     notes_template: integration?.configuration?.notes_template || '',
   });
+
+  const savedValues = useMemo(() => ({
+    account_code: integration?.api_credentials?.account_code || '',
+    account_name: integration?.api_credentials?.account_name || '',
+    supplier_email: integration?.api_credentials?.supplier_email || 'orders@cwsystems.com.au',
+    contact_name: integration?.api_credentials?.contact_name || '',
+    contact_phone: integration?.api_credentials?.contact_phone || '',
+    default_delivery_address: integration?.configuration?.default_delivery_address || '',
+    default_payment_terms: integration?.configuration?.default_payment_terms || 'Account 30 Days',
+    notes_template: integration?.configuration?.notes_template || '',
+  }), [integration]);
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(savedValues);
+  }, [formData, savedValues]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -111,9 +126,11 @@ export const CWSystemsIntegrationTab = () => {
           </div>
         </div>
         {integration && (
-          <Badge variant={integration.active ? "default" : "secondary"}>
-            {integration.active ? "Active" : "Inactive"}
-          </Badge>
+          (() => {
+            if (!integration.active) return <Badge variant="secondary">Inactive</Badge>;
+            if (integration.last_sync) return <Badge variant="success-solid">Connected</Badge>;
+            return <Badge variant="outline">Configured</Badge>;
+          })()
         )}
       </div>
 
@@ -132,87 +149,44 @@ export const CWSystemsIntegrationTab = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cw_account_code">Account Code</Label>
-              <Input
-                id="cw_account_code"
-                placeholder="e.g. CW12345"
-                value={formData.account_code}
-                onChange={(e) => setFormData(prev => ({ ...prev, account_code: e.target.value }))}
-              />
+              <Input id="cw_account_code" placeholder="e.g. CW12345" value={formData.account_code} onChange={(e) => setFormData(prev => ({ ...prev, account_code: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cw_account_name">Account / Business Name</Label>
-              <Input
-                id="cw_account_name"
-                placeholder="Your business name"
-                value={formData.account_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, account_name: e.target.value }))}
-              />
+              <Input id="cw_account_name" placeholder="Your business name" value={formData.account_name} onChange={(e) => setFormData(prev => ({ ...prev, account_name: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cw_supplier_email">Supplier Order Email</Label>
-              <Input
-                id="cw_supplier_email"
-                type="email"
-                placeholder="orders@cwsystems.com.au"
-                value={formData.supplier_email}
-                onChange={(e) => setFormData(prev => ({ ...prev, supplier_email: e.target.value }))}
-              />
+              <Input id="cw_supplier_email" type="email" placeholder="orders@cwsystems.com.au" value={formData.supplier_email} onChange={(e) => setFormData(prev => ({ ...prev, supplier_email: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cw_contact_name">Your Contact Name</Label>
-              <Input
-                id="cw_contact_name"
-                placeholder="Contact name for orders"
-                value={formData.contact_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-              />
+              <Input id="cw_contact_name" placeholder="Contact name for orders" value={formData.contact_name} onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cw_contact_phone">Your Contact Phone</Label>
-              <Input
-                id="cw_contact_phone"
-                placeholder="Contact phone"
-                value={formData.contact_phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
-              />
+              <Input id="cw_contact_phone" placeholder="Contact phone" value={formData.contact_phone} onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cw_payment_terms">Payment Terms</Label>
-              <Input
-                id="cw_payment_terms"
-                placeholder="e.g. Account 30 Days"
-                value={formData.default_payment_terms}
-                onChange={(e) => setFormData(prev => ({ ...prev, default_payment_terms: e.target.value }))}
-              />
+              <Input id="cw_payment_terms" placeholder="e.g. Account 30 Days" value={formData.default_payment_terms} onChange={(e) => setFormData(prev => ({ ...prev, default_payment_terms: e.target.value }))} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="cw_delivery_address">Default Delivery Address</Label>
-            <Textarea
-              id="cw_delivery_address"
-              placeholder="Full delivery address for orders"
-              value={formData.default_delivery_address}
-              onChange={(e) => setFormData(prev => ({ ...prev, default_delivery_address: e.target.value }))}
-              rows={2}
-            />
+            <Textarea id="cw_delivery_address" placeholder="Full delivery address for orders" value={formData.default_delivery_address} onChange={(e) => setFormData(prev => ({ ...prev, default_delivery_address: e.target.value }))} rows={2} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="cw_notes">Default Order Notes</Label>
-            <Textarea
-              id="cw_notes"
-              placeholder="Standard notes to include on every order (optional)"
-              value={formData.notes_template}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes_template: e.target.value }))}
-              rows={2}
-            />
+            <Textarea id="cw_notes" placeholder="Standard notes to include on every order (optional)" value={formData.notes_template} onChange={(e) => setFormData(prev => ({ ...prev, notes_template: e.target.value }))} rows={2} />
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleSave} disabled={isLoading}>
+            <Button onClick={handleSave} disabled={isLoading || !hasChanges} variant={hasChanges ? "default" : "secondary"}>
               <Save className="h-4 w-4 mr-2" />
-              {isLoading ? "Saving..." : "Save Configuration"}
+              {isLoading ? "Saving..." : hasChanges ? "Save Configuration" : "Saved"}
             </Button>
           </div>
         </CardContent>
@@ -231,9 +205,7 @@ export const CWSystemsIntegrationTab = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                How Email Ordering Works
-              </p>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">How Email Ordering Works</p>
               <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
                 <li>1. Create a quote with CW Systems products in a job</li>
                 <li>2. Click "Submit to Supplier" from the Jobs page</li>
@@ -243,11 +215,7 @@ export const CWSystemsIntegrationTab = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleSendTestOrder}
-                disabled={isSending || !formData.account_code}
-              >
+              <Button variant="outline" onClick={handleSendTestOrder} disabled={isSending || !formData.account_code}>
                 <FileText className="h-4 w-4 mr-2" />
                 {isSending ? "Sending..." : "Send Test Order Email"}
               </Button>

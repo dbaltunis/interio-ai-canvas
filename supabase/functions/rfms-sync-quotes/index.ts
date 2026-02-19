@@ -10,8 +10,7 @@ const corsHeaders = {
  * RFMS Quote Sync Edge Function
  *
  * Pushes InterioApp projects (quotes/orders) to RFMS as Quote headers.
- * RFMS Standard API supports creating Quote, Order, and Estimate headers.
- * Enterprise tier required for line items.
+ * Pulls RFMS quotes/opportunities into InterioApp as projects.
  * 
  * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
  */
@@ -66,7 +65,7 @@ async function ensureSession(
     throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
   }
 
-  // Handle RFMS v2 response format: {authorized, sessionToken} at top level
+  // Handle RFMS v2 session response: {authorized, sessionToken}
   if (data.authorized === true && data.sessionToken) {
     const newToken = data.sessionToken;
     await supabase
@@ -82,11 +81,9 @@ async function ensureSession(
     return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
   }
 
-  // Handle legacy format: {status: "success", result: {token}}
   if (data.status === "failed") {
     throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
   }
-
   if (data.status === "success") {
     const newToken = data.result?.token || data.result?.session_token;
     if (!newToken) throw new Error("RFMS did not return a session token. Contact RFMS support.");
@@ -103,8 +100,7 @@ async function ensureSession(
     return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
   }
 
-  // Neither format matched
-  throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
+  throw new Error(`Unexpected RFMS response format. Response: ${JSON.stringify(data).substring(0, 150)}`);
 }
 
 async function rfmsRequest(
@@ -136,7 +132,12 @@ async function rfmsRequest(
   }
 
   const responseText = await response.text();
-  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 300)}`);
+  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 500)}`);
+
+  // Handle 405 Method Not Allowed gracefully
+  if (response.status === 405) {
+    throw new Error(`RFMS does not support ${method} on ${endpoint}. This feature may require a higher API tier.`);
+  }
 
   let data: any;
   try {
@@ -183,7 +184,6 @@ serve(async (req: Request) => {
       .maybeSingle();
     const accountOwnerId = userProfile?.parent_account_id || user.id;
 
-    // Get RFMS integration using account_owner_id (not user_id)
     const { data: integration, error: intError } = await supabase
       .from("integration_settings")
       .select("*")
@@ -205,69 +205,98 @@ serve(async (req: Request) => {
       imported: 0,
       exported: 0,
       updated: 0,
+      skipped: 0,
       errors: [] as string[],
     };
 
     if (direction === "pull" || direction === "both") {
       try {
-        const rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, sessionToken, apiUrl);
+        // Try multiple endpoints for getting quotes/opportunities
+        let rfmsData: any;
+        let quotes: any[] = [];
 
+        try {
+          // Try /opportunities first (CRM opportunities endpoint)
+          rfmsData = await rfmsRequest("GET", "/opportunities", storeQueue, sessionToken, apiUrl);
+        } catch {
+          try {
+            // Fall back to /quotes/search
+            rfmsData = await rfmsRequest("POST", "/quotes/search", storeQueue, sessionToken, apiUrl, {});
+          } catch {
+            // Fall back to /quotes
+            rfmsData = await rfmsRequest("GET", "/quotes", storeQueue, sessionToken, apiUrl);
+          }
+        }
+
+        // Extract quote records from standard response format
         if (rfmsData.status === "success" && rfmsData.result) {
-          const quotes = Array.isArray(rfmsData.result)
-            ? rfmsData.result
-            : rfmsData.result.quotes || [];
+          if (Array.isArray(rfmsData.result)) {
+            quotes = rfmsData.result;
+          } else if (rfmsData.result.quotes && Array.isArray(rfmsData.result.quotes)) {
+            quotes = rfmsData.result.quotes;
+          } else if (rfmsData.result.opportunities && Array.isArray(rfmsData.result.opportunities)) {
+            quotes = rfmsData.result.opportunities;
+          }
+        } else if (Array.isArray(rfmsData)) {
+          quotes = rfmsData;
+        }
 
-          for (const quote of quotes) {
-            try {
-              const rfmsQuoteId = quote.id?.toString();
-              if (!rfmsQuoteId) continue;
+        console.log(`RFMS quote pull: found ${quotes.length} records to process`);
 
-              const { data: existing } = await supabase
-                .from("projects")
-                .select("id")
-                .eq("user_id", user.id)
-                .eq("rfms_quote_id" as any, rfmsQuoteId)
-                .maybeSingle();
+        for (const quote of quotes) {
+          try {
+            const rfmsQuoteId = (quote.id || quote.opportunityId || quote.quoteId || "").toString();
+            if (!rfmsQuoteId) {
+              results.skipped++;
+              continue;
+            }
 
-              if (existing) {
-                await supabase
-                  .from("projects")
-                  .update({
-                    name: quote.description || existing.id,
-                    total_price: quote.total || undefined,
-                  } as any)
-                  .eq("id", existing.id);
-                results.updated++;
-                continue;
-              }
+            const { data: existing } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("user_id", user.id)
+              .eq("rfms_quote_id", rfmsQuoteId)
+              .maybeSingle();
 
-              let clientId = null;
-              if (quote.customer_id) {
-                const { data: matchingClient } = await supabase
-                  .from("clients")
-                  .select("id")
-                  .eq("user_id", user.id)
-                  .eq("rfms_customer_id" as any, quote.customer_id.toString())
-                  .maybeSingle();
-
-                if (matchingClient) clientId = matchingClient.id;
-              }
-
+            if (existing) {
               await supabase
                 .from("projects")
-                .insert({
-                  user_id: user.id,
-                  name: quote.description || `RFMS Quote ${rfmsQuoteId}`,
-                  status: "quoted",
-                  client_id: clientId,
-                  rfms_quote_id: rfmsQuoteId,
-                  quote_number: quote.reference || undefined,
-                } as any);
-
-              results.imported++;
-            } catch (err: any) {
-              results.errors.push(`RFMS Quote ${quote.id}: ${err.message}`);
+                .update({
+                  name: quote.description || quote.name || existing.id,
+                  total_price: quote.total || undefined,
+                } as any)
+                .eq("id", existing.id);
+              results.updated++;
+              continue;
             }
+
+            let clientId = null;
+            const custId = (quote.customer_id || quote.customerId || "").toString();
+            if (custId) {
+              const { data: matchingClient } = await supabase
+                .from("clients")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("rfms_customer_id", custId)
+                .maybeSingle();
+
+              if (matchingClient) clientId = matchingClient.id;
+            }
+
+            await supabase
+              .from("projects")
+              .insert({
+                user_id: user.id,
+                name: quote.description || quote.name || `RFMS Quote ${rfmsQuoteId}`,
+                status: "quoted",
+                client_id: clientId,
+                rfms_quote_id: rfmsQuoteId,
+                quote_number: quote.reference || quote.quoteNumber || undefined,
+              } as any);
+
+            results.imported++;
+          } catch (err: any) {
+            results.errors.push(`RFMS Quote ${quote.id || 'unknown'}: ${err.message}`);
           }
         }
       } catch (err: any) {
@@ -281,7 +310,7 @@ serve(async (req: Request) => {
         .select(
           `
           *,
-          clients!projects_client_id_fkey (
+          clients (
             id, name, email, phone, address, city, state, zip_code, company_name,
             rfms_customer_id
           )
@@ -370,20 +399,23 @@ serve(async (req: Request) => {
           } else {
             const createResult = await rfmsRequest(
               "POST",
-              "/quotes",
+              "/opportunities",
               storeQueue,
               sessionToken,
               apiUrl,
               rfmsQuote
             );
 
-            if (createResult.status === "success" && createResult.result?.id) {
+            // Handle standard v2 response format
+            const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.id;
+            if (newId) {
               await supabase
                 .from("projects")
-                .update({ rfms_quote_id: createResult.result.id } as any)
+                .update({ rfms_quote_id: newId.toString() } as any)
                 .eq("id", project.id);
-
               results.exported++;
+            } else {
+              results.errors.push(`Project ${project.id}: RFMS did not return an ID for the created opportunity`);
             }
           }
         } catch (err: any) {
@@ -398,11 +430,17 @@ serve(async (req: Request) => {
       .update({ last_sync: new Date().toISOString() })
       .eq("id", integration.id);
 
-    console.log(
-      `RFMS quote sync: ${results.exported} exported, ${results.updated} updated, ${results.errors.length} errors`
-    );
+    const summary = [
+      results.imported > 0 ? `${results.imported} imported` : null,
+      results.exported > 0 ? `${results.exported} exported` : null,
+      results.updated > 0 ? `${results.updated} updated` : null,
+      results.skipped > 0 ? `${results.skipped} skipped` : null,
+      results.errors.length > 0 ? `${results.errors.length} errors` : null,
+    ].filter(Boolean).join(", ");
 
-    return new Response(JSON.stringify({ success: true, ...results }), {
+    console.log(`RFMS quote sync: ${summary || "no changes"}`);
+
+    return new Response(JSON.stringify({ success: true, ...results, summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

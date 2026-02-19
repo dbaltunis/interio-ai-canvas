@@ -9,25 +9,33 @@ const corsHeaders = {
 /**
  * RFMS Customer Sync Edge Function
  *
- * Bidirectional customer sync between InterioApp and RFMS.
- * - Push: Export InterioApp clients to RFMS as customers
- * - Pull: Import RFMS customers to InterioApp as clients
+ * Pull: Import RFMS customers to InterioApp as clients (via /customers/search)
+ * Push: NOT SUPPORTED by RFMS v2 API (POST /customers returns 405)
  * 
  * MULTI-TENANT: Resolves account_owner_id so team members can use the owner's integration.
  */
 
 interface RFMSCustomer {
   id?: string;
+  customerId?: string;
+  firstName?: string;
+  lastName?: string;
   first_name?: string;
   last_name?: string;
+  companyName?: string;
   company_name?: string;
+  emailAddress?: string;
   email?: string;
   phone?: string;
+  phoneNumber?: string;
   address?: string;
+  address1?: string;
   city?: string;
   state?: string;
   zip?: string;
+  zipCode?: string;
   notes?: string;
+  entryType?: string;
 }
 
 async function ensureSession(
@@ -41,12 +49,10 @@ async function ensureSession(
     throw new Error("RFMS credentials not configured. Please enter your Store Queue and API Key in Settings.");
   }
 
-  // If we have a session token, try to use it
   if (session_token) {
     return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
   }
 
-  // Otherwise, begin a new session
   const basicAuth = btoa(`${store_queue}:${api_key}`);
   let response: Response;
   try {
@@ -82,7 +88,7 @@ async function ensureSession(
     throw new Error(`RFMS returned an invalid response. Check your API URL is correct: ${apiUrl}`);
   }
 
-  // Handle RFMS v2 response format: {authorized, sessionToken} at top level
+  // Handle RFMS v2 session response: {authorized, sessionToken}
   if (data.authorized === true && data.sessionToken) {
     const newToken = data.sessionToken;
     await supabase
@@ -98,11 +104,10 @@ async function ensureSession(
     return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
   }
 
-  // Handle legacy format: {status: "success", result: {token}}
+  // Handle legacy format
   if (data.status === "failed") {
     throw new Error(`RFMS authentication failed: ${data.reason || "Your Store Queue or API Key was rejected."}`);
   }
-
   if (data.status === "success") {
     const newToken = data.result?.token || data.result?.session_token;
     if (!newToken) throw new Error("RFMS did not return a session token. Contact RFMS support.");
@@ -119,8 +124,7 @@ async function ensureSession(
     return { sessionToken: newToken, storeQueue: store_queue, apiUrl };
   }
 
-  // Neither format matched
-  throw new Error(`Unexpected RFMS response format. Please contact support. Response: ${JSON.stringify(data).substring(0, 150)}`);
+  throw new Error(`Unexpected RFMS response format. Response: ${JSON.stringify(data).substring(0, 150)}`);
 }
 
 async function rfmsRequest(
@@ -152,7 +156,7 @@ async function rfmsRequest(
   }
 
   const responseText = await response.text();
-  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 300)}`);
+  console.log(`RFMS ${method} ${endpoint} [${response.status}]: ${responseText.substring(0, 500)}`);
 
   let data: any;
   try {
@@ -166,6 +170,36 @@ async function rfmsRequest(
   }
 
   return data;
+}
+
+/**
+ * Normalize an RFMS customer record to consistent field names.
+ * The RFMS API may return camelCase or snake_case fields.
+ */
+function normalizeCustomer(c: RFMSCustomer): {
+  id: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+} {
+  return {
+    id: (c.customerId || c.id || "").toString(),
+    firstName: c.firstName || c.first_name || "",
+    lastName: c.lastName || c.last_name || "",
+    company: c.companyName || c.company_name || "",
+    email: c.emailAddress || c.email || "",
+    phone: c.phoneNumber || c.phone || "",
+    address: c.address1 || c.address || "",
+    city: c.city || "",
+    state: c.state || "",
+    zip: c.zipCode || c.zip || "",
+  };
 }
 
 serve(async (req: Request) => {
@@ -196,7 +230,6 @@ serve(async (req: Request) => {
       .maybeSingle();
     const accountOwnerId = userProfile?.parent_account_id || user.id;
 
-    // Get integration using account_owner_id (not user_id)
     const { data: integration, error: intError } = await supabase
       .from("integration_settings")
       .select("*")
@@ -211,107 +244,116 @@ serve(async (req: Request) => {
 
     const { sessionToken, storeQueue, apiUrl } = await ensureSession(supabase, integration);
 
-    const results = { imported: 0, exported: 0, updated: 0, errors: [] as string[] };
+    const results = { imported: 0, exported: 0, updated: 0, skipped: 0, errors: [] as string[] };
 
+    // PUSH: Not supported by RFMS v2 API (POST /customers returns 405)
     if (direction === "push" || direction === "both") {
-      // Push InterioApp clients to RFMS
-      let clientsQuery = supabase
-        .from("clients")
-        .select("*")
-        .eq("user_id", user.id);
-
-      if (clientId) {
-        clientsQuery = clientsQuery.eq("id", clientId);
-      }
-
-      const { data: clients } = await clientsQuery;
-
-      for (const client of clients || []) {
-        try {
-          const rfmsCustomer: RFMSCustomer = {
-            first_name: client.first_name || client.name?.split(" ")[0] || "",
-            last_name: client.last_name || client.name?.split(" ").slice(1).join(" ") || "",
-            company_name: client.company || "",
-            email: client.email || "",
-            phone: client.phone || "",
-            address: client.address || "",
-            city: client.city || "",
-            state: client.state || "",
-            zip: client.postcode || client.zip || "",
-            notes: `Synced from InterioApp. Client ID: ${client.id}`,
-          };
-
-          const existingRfmsId = (client as any).rfms_customer_id;
-
-          if (existingRfmsId) {
-            await rfmsRequest("PUT", `/customers/${existingRfmsId}`, storeQueue, sessionToken, apiUrl, rfmsCustomer);
-            results.updated++;
-          } else {
-            const createResult = await rfmsRequest("POST", "/customers", storeQueue, sessionToken, apiUrl, rfmsCustomer);
-
-            if (createResult.status === "success" && createResult.result?.id) {
-              await supabase
-                .from("clients")
-                .update({ rfms_customer_id: createResult.result.id } as any)
-                .eq("id", client.id);
-
-              results.exported++;
-            }
-          }
-        } catch (err: any) {
-          results.errors.push(`Client ${client.id}: ${err.message}`);
-        }
-      }
+      results.errors.push("Export to RFMS is not supported. The RFMS v2 API does not allow creating customers via API. Please create customers directly in RFMS.");
     }
 
+    // PULL: Import customers from RFMS using /customers/search
     if (direction === "pull" || direction === "both") {
       try {
-        const rfmsData = await rfmsRequest("GET", "/customers", storeQueue, sessionToken, apiUrl);
+        // RFMS v2: GET /customers returns field metadata, not records.
+        // Use POST /customers/search to get actual customer records.
+        // Try search with empty criteria to get all customers.
+        let rfmsData: any;
+        let customers: any[] = [];
 
+        try {
+          // Try the search endpoint first (Standard+ tier)
+          rfmsData = await rfmsRequest("POST", "/customers/search", storeQueue, sessionToken, apiUrl, {
+            entryType: "Customer"
+          });
+        } catch (searchErr: any) {
+          console.log("POST /customers/search failed, trying GET /customers/search:", searchErr.message);
+          try {
+            // Some RFMS versions use GET with query params
+            rfmsData = await rfmsRequest("GET", "/customers/search?entryType=Customer", storeQueue, sessionToken, apiUrl);
+          } catch (getErr: any) {
+            console.log("GET /customers/search also failed, trying GET /customers with params:", getErr.message);
+            // Last resort: GET /customers may return records with certain params
+            rfmsData = await rfmsRequest("GET", "/customers?limit=500", storeQueue, sessionToken, apiUrl);
+          }
+        }
+
+        // Extract customer records from response
+        // Standard RFMS v2 format: {status: "success", result: [...]} or {status: "success", result: {customers: [...]}}
         if (rfmsData.status === "success" && rfmsData.result) {
-          const customers: RFMSCustomer[] = Array.isArray(rfmsData.result)
-            ? rfmsData.result
-            : rfmsData.result.customers || [];
-
-          for (const customer of customers) {
-            try {
-              const { data: existing } = await supabase
-                .from("clients")
-                .select("id")
-                .eq("user_id", user.id)
-                .eq("rfms_customer_id" as any, customer.id)
-                .maybeSingle();
-
-              const clientData = {
-                user_id: user.id,
-                first_name: customer.first_name || "",
-                last_name: customer.last_name || "",
-                name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim(),
-                company: customer.company_name || "",
-                email: customer.email || "",
-                phone: customer.phone || "",
-                address: customer.address || "",
-                city: customer.city || "",
-                state: customer.state || "",
-                postcode: customer.zip || "",
-                rfms_customer_id: customer.id,
-              };
-
-              if (existing) {
-                await supabase
-                  .from("clients")
-                  .update(clientData as any)
-                  .eq("id", existing.id);
-                results.updated++;
-              } else {
-                await supabase
-                  .from("clients")
-                  .insert(clientData as any);
-                results.imported++;
-              }
-            } catch (err: any) {
-              results.errors.push(`RFMS customer ${customer.id}: ${err.message}`);
+          if (Array.isArray(rfmsData.result)) {
+            customers = rfmsData.result;
+          } else if (rfmsData.result.customers && Array.isArray(rfmsData.result.customers)) {
+            customers = rfmsData.result.customers;
+          } else if (typeof rfmsData.result === 'object') {
+            // Check if result contains arrays that look like customer records
+            const keys = Object.keys(rfmsData.result);
+            const possibleList = keys.find(k => Array.isArray(rfmsData.result[k]) && rfmsData.result[k].length > 0 && rfmsData.result[k][0]?.firstName);
+            if (possibleList) {
+              customers = rfmsData.result[possibleList];
             }
+          }
+        } else if (Array.isArray(rfmsData)) {
+          // Direct array response
+          customers = rfmsData;
+        }
+
+        // Detect if we got metadata instead of records
+        if (customers.length === 0 && rfmsData.result) {
+          const resultKeys = Object.keys(rfmsData.result || rfmsData);
+          const metadataKeys = ['customerType', 'entryType', 'taxStatus', 'taxMethod'];
+          const isMetadata = metadataKeys.some(k => resultKeys.includes(k));
+          if (isMetadata) {
+            console.log("RFMS returned field metadata instead of customer records. The search endpoint may require different parameters.");
+            results.errors.push("RFMS returned field definitions instead of customer records. Your API tier may not support customer search, or the search endpoint needs different parameters.");
+          }
+        }
+
+        console.log(`RFMS customer pull: found ${customers.length} customer records to process`);
+
+        for (const rawCustomer of customers) {
+          try {
+            const customer = normalizeCustomer(rawCustomer);
+            if (!customer.id) {
+              results.skipped++;
+              continue;
+            }
+
+            const { data: existing } = await supabase
+              .from("clients")
+              .select("id")
+              .eq("user_id", user.id)
+              .eq("rfms_customer_id", customer.id)
+              .maybeSingle();
+
+            const clientData: any = {
+              user_id: user.id,
+              first_name: customer.firstName,
+              last_name: customer.lastName,
+              name: `${customer.firstName} ${customer.lastName}`.trim() || customer.company,
+              company: customer.company,
+              email: customer.email,
+              phone: customer.phone,
+              address: customer.address,
+              city: customer.city,
+              state: customer.state,
+              postcode: customer.zip,
+              rfms_customer_id: customer.id,
+            };
+
+            if (existing) {
+              await supabase
+                .from("clients")
+                .update(clientData)
+                .eq("id", existing.id);
+              results.updated++;
+            } else {
+              await supabase
+                .from("clients")
+                .insert(clientData);
+              results.imported++;
+            }
+          } catch (err: any) {
+            results.errors.push(`Customer ${rawCustomer.id || 'unknown'}: ${err.message}`);
           }
         }
       } catch (err: any) {
@@ -325,12 +367,18 @@ serve(async (req: Request) => {
       .update({ last_sync: new Date().toISOString() })
       .eq("id", integration.id);
 
-    console.log(
-      `RFMS customer sync complete: ${results.imported} imported, ${results.exported} exported, ${results.updated} updated, ${results.errors.length} errors`
-    );
+    const summary = [
+      results.imported > 0 ? `${results.imported} imported` : null,
+      results.exported > 0 ? `${results.exported} exported` : null,
+      results.updated > 0 ? `${results.updated} updated` : null,
+      results.skipped > 0 ? `${results.skipped} skipped` : null,
+      results.errors.length > 0 ? `${results.errors.length} errors` : null,
+    ].filter(Boolean).join(", ");
+
+    console.log(`RFMS customer sync complete: ${summary || "no changes"}`);
 
     return new Response(
-      JSON.stringify({ success: true, ...results }),
+      JSON.stringify({ success: true, ...results, summary }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {

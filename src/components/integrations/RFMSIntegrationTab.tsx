@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,57 +10,30 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { RFMSIntegration } from "@/types/integrations";
-import { RefreshCw, Users, ArrowUpDown, FileText } from "lucide-react";
+import { RefreshCw, Users, ArrowUpDown, FileText, Info } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 
 interface RFMSIntegrationTabProps {
   integration?: RFMSIntegration | null;
 }
 
-/**
- * Translates raw RFMS errors into user-friendly messages.
- * Edge functions now return detailed messages, but we still handle
- * Supabase SDK generic wrappers gracefully.
- */
 function getFriendlyRFMSError(msg: string): string {
   if (!msg) return "Something went wrong. Please try again.";
-  
-  // Already user-friendly (from our improved edge functions)
-  if (msg.includes("credentials") || msg.includes("Check your") || msg.includes("Contact") || msg.includes("Please")) {
-    return msg;
-  }
-  
-  // Supabase SDK generic errors
-  if (msg.includes("non-2xx")) {
-    return "The RFMS service encountered an error. Please check your credentials in the settings above and try again.";
-  }
-  if (msg.includes("Failed to send") || msg.includes("FunctionsHttpError")) {
-    return "Could not reach the RFMS service. Please try again in a moment.";
-  }
-  if (msg.includes("FunctionsRelayError")) {
-    return "The RFMS service is temporarily unavailable. Please try again in a few minutes.";
-  }
-  
+  if (msg.includes("credentials") || msg.includes("Check your") || msg.includes("Contact") || msg.includes("Please")) return msg;
+  if (msg.includes("non-2xx")) return "The RFMS service encountered an error. Please check your credentials and try again.";
+  if (msg.includes("Failed to send") || msg.includes("FunctionsHttpError")) return "Could not reach the RFMS service. Please try again in a moment.";
+  if (msg.includes("FunctionsRelayError")) return "The RFMS service is temporarily unavailable. Please try again in a few minutes.";
   return msg;
 }
 
-/**
- * Extracts the real error message from a Supabase edge function response.
- * When edge functions return non-2xx, the SDK puts the body in `data` and
- * a generic error in `error`. We need to read `data.error` for the real message.
- */
 async function extractEdgeFunctionError(error: any, data: any): Promise<string> {
-  // Try to get the real message from the response body first
   if (data?.error) return data.error;
-  
-  // FunctionsHttpError has a context with responseBody
   if (error?.context?.responseBody) {
     try {
       const body = JSON.parse(error.context.responseBody);
       if (body?.error) return body.error;
     } catch {}
   }
-  
   return error?.message || "Unknown error";
 }
 
@@ -80,9 +53,26 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     measurement_units: integration?.configuration?.measurement_units || 'metric',
   });
 
+  // Track saved values for hasChanges detection
+  const savedValues = useMemo(() => ({
+    api_url: integration?.api_credentials?.api_url || 'https://api.rfms.online/v2',
+    store_queue: integration?.api_credentials?.store_queue || '',
+    api_key: integration?.api_credentials?.api_key || '',
+    sync_customers: integration?.configuration?.sync_customers ?? true,
+    sync_quotes: integration?.configuration?.sync_quotes ?? true,
+    sync_measurements: integration?.configuration?.sync_measurements ?? true,
+    sync_scheduling: integration?.configuration?.sync_scheduling ?? true,
+    auto_update_job_status: integration?.configuration?.auto_update_job_status ?? false,
+    measurement_units: integration?.configuration?.measurement_units || 'metric',
+  }), [integration]);
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(savedValues);
+  }, [formData, savedValues]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingAction, setSyncingAction] = useState<string | null>(null);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -159,7 +149,8 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
   };
 
   const handleSyncQuotes = async (direction: 'push' | 'pull' | 'both' = 'push') => {
-    setIsSyncing(true);
+    const actionKey = `quotes-${direction}`;
+    setSyncingAction(actionKey);
     try {
       const { data, error } = await supabase.functions.invoke('rfms-sync-quotes', {
         body: { direction },
@@ -178,10 +169,12 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
       if (data.imported > 0) parts.push(`${data.imported} imported`);
       if (data.exported > 0) parts.push(`${data.exported} exported`);
       if (data.updated > 0) parts.push(`${data.updated} updated`);
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+      if (data.errors?.length > 0) parts.push(`${data.errors.length} errors`);
 
       toast({
         title: "Quote Sync Complete",
-        description: parts.length > 0 ? parts.join(', ') : 'No quotes to sync',
+        description: parts.length > 0 ? parts.join(', ') : 'No quotes found to sync',
       });
     } catch (err: any) {
       toast({
@@ -190,12 +183,13 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         variant: "warning",
       });
     } finally {
-      setIsSyncing(false);
+      setSyncingAction(null);
     }
   };
 
   const handleSyncCustomers = async (direction: 'push' | 'pull' | 'both') => {
-    setIsSyncing(true);
+    const actionKey = `customers-${direction}`;
+    setSyncingAction(actionKey);
     try {
       const { data, error } = await supabase.functions.invoke('rfms-sync-customers', {
         body: { direction },
@@ -214,10 +208,14 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
       if (data.imported > 0) parts.push(`${data.imported} imported`);
       if (data.exported > 0) parts.push(`${data.exported} exported`);
       if (data.updated > 0) parts.push(`${data.updated} updated`);
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
+      if (data.errors?.length > 0) parts.push(`${data.errors.length} warnings`);
+
+      const errorDetails = data.errors?.length > 0 ? `\n${data.errors[0]}` : '';
 
       toast({
         title: "Customer Sync Complete",
-        description: parts.length > 0 ? parts.join(', ') : 'No changes needed',
+        description: (parts.length > 0 ? parts.join(', ') : 'No changes needed') + errorDetails,
       });
     } catch (err: any) {
       toast({
@@ -226,7 +224,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         variant: "warning",
       });
     } finally {
-      setIsSyncing(false);
+      setSyncingAction(null);
     }
   };
 
@@ -300,9 +298,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!formData.store_queue || !formData.api_key || isLoading}
+              disabled={!formData.store_queue || !formData.api_key || isLoading || !hasChanges}
+              variant={hasChanges ? "default" : "secondary"}
             >
-              {isLoading ? "Saving..." : "Save Configuration"}
+              {isLoading ? "Saving..." : hasChanges ? "Save Configuration" : "Saved"}
             </Button>
           </div>
         </CardContent>
@@ -320,7 +319,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             <div className="space-y-0.5">
               <Label>Sync Customers</Label>
               <p className="text-sm text-muted-foreground">
-                Synchronize customer records between InterioApp and RFMS
+                Import customer records from RFMS into InterioApp
               </p>
             </div>
             <Switch
@@ -356,10 +355,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
                 Import measurement data from RFMS
               </p>
             </div>
-            <Switch
-              checked={false}
-              disabled
-            />
+            <Switch checked={false} disabled />
           </div>
 
           <div className="flex items-center justify-between opacity-60">
@@ -372,10 +368,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
                 Synchronize job schedules and appointments
               </p>
             </div>
-            <Switch
-              checked={false}
-              disabled
-            />
+            <Switch checked={false} disabled />
           </div>
 
           <div className="flex items-center justify-between opacity-60">
@@ -388,10 +381,7 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
                 Automatically update job status from RFMS
               </p>
             </div>
-            <Switch
-              checked={false}
-              disabled
-            />
+            <Switch checked={false} disabled />
           </div>
 
           <div className="space-y-2">
@@ -427,53 +417,52 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
               )}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleSyncCustomers('pull')}
-                disabled={isSyncing}
+                disabled={syncingAction !== null}
               >
-                <Users className="h-4 w-4 mr-2" />
+                {syncingAction === 'customers-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
                 Import Customers
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSyncCustomers('push')}
-                disabled={isSyncing}
-              >
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                Export Customers
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => handleSyncCustomers('both')}
-                disabled={isSyncing}
+                disabled={syncingAction !== null}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {syncingAction === 'customers-both' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                 Full Sync
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleSyncQuotes('push')}
-                disabled={isSyncing}
+                disabled={syncingAction !== null}
               >
-                <FileText className="h-4 w-4 mr-2" />
+                {syncingAction === 'quotes-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
                 Export Quotes
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleSyncQuotes('pull')}
-                disabled={isSyncing}
+                disabled={syncingAction !== null}
               >
-                <ArrowUpDown className="h-4 w-4 mr-2" />
+                {syncingAction === 'quotes-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
                 Import Quotes
               </Button>
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+              <Info className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                Customer export to RFMS is not available — the RFMS v2 API does not support creating customers via API. 
+                Please create customers directly in RFMS, then use "Import Customers" to sync them here.
+              </span>
             </div>
           </CardContent>
         </Card>
