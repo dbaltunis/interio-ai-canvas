@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RefreshCw, CheckCircle2, Link2, Loader2, ExternalLink, Upload } from "lucide-react";
+import { RefreshCw, CheckCircle2, Link2, Loader2, ExternalLink, Upload, Info } from "lucide-react";
 import rfmsLogo from "@/assets/rfms-logo.svg";
 import netsuiteLogo from "@/assets/netsuite-logo.svg";
 import { useIntegrations } from "@/hooks/useIntegrations";
@@ -44,6 +44,10 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
 
   const hasActiveIntegration = (type: string) =>
     integrations.some((i) => i.integration_type === type && i.active);
+
+  // Check if quote creation is unavailable for this RFMS tier
+  const rfmsIntegration = integrations.find((i) => i.integration_type === "rfms" && i.active);
+  const quoteCreateUnavailable = !!(rfmsIntegration?.configuration as any)?.quote_create_unavailable;
 
   const allSyncItems: SyncItem[] = [
     {
@@ -121,6 +125,16 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
     }
   };
 
+  // Helper: should we show push button for RFMS?
+  const shouldShowRFMSPush = (sync: SyncItem, hasSynced: boolean) => {
+    if (sync.integrationType !== "rfms" || !effectiveProjectId) return false;
+    // If already synced, always show re-sync (PUT works)
+    if (hasSynced) return true;
+    // If not synced and create is unavailable, don't show push button
+    if (quoteCreateUnavailable) return false;
+    return true;
+  };
+
   // Compact mode for job header — uses Popover instead of Tooltip
   if (compact) {
     return (
@@ -129,6 +143,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
           const syncedRecords = sync.records.filter((r) => r.id);
           const hasSynced = syncedRecords.length > 0;
           const isPushing = pushingSystem === sync.integrationType;
+          const showPush = shouldShowRFMSPush(sync, hasSynced);
 
           return (
             <Popover key={sync.system}>
@@ -166,7 +181,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                           <span className="font-mono text-foreground">{r.id}</span>
                         </div>
                       ))}
-                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                      {showPush && (
                         <Button
                           size="xs"
                           variant="outline"
@@ -185,24 +200,35 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">
-                        Connected — not yet synced for this job
-                      </p>
-                      {sync.integrationType === "rfms" && effectiveProjectId && (
-                        <Button
-                          size="xs"
-                          variant="default"
-                          className="w-full"
-                          onClick={handlePushToRFMS}
-                          disabled={isPushing}
-                        >
-                          {isPushing ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          ) : (
-                            <Upload className="h-3 w-3 mr-1" />
-                          )}
-                          Push to RFMS
-                        </Button>
+                      {showPush ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            Connected — not yet synced for this job
+                          </p>
+                          <Button
+                            size="xs"
+                            variant="default"
+                            className="w-full"
+                            onClick={handlePushToRFMS}
+                            disabled={isPushing}
+                          >
+                            {isPushing ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : (
+                              <Upload className="h-3 w-3 mr-1" />
+                            )}
+                            Push to RFMS
+                          </Button>
+                        </>
+                      ) : sync.integrationType === "rfms" && quoteCreateUnavailable ? (
+                        <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                          <span>Import-only — create new quotes in RFMS, then pull them here</span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Connected — not yet synced for this job
+                        </p>
                       )}
                     </div>
                   )}
@@ -240,6 +266,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
             const syncedRecords = sync.records.filter((r) => r.id);
             const hasSynced = syncedRecords.length > 0;
             const isPushing = pushingSystem === sync.integrationType;
+            const showPush = shouldShowRFMSPush(sync, hasSynced);
 
             return (
               <div
@@ -273,7 +300,7 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                           </Tooltip>
                         </TooltipProvider>
                       ))}
-                      {sync.integrationType === "rfms" && effectiveProjectId && (
+                      {showPush && (
                         <Button
                           size="icon-xs"
                           variant="ghost"
@@ -290,24 +317,33 @@ export const IntegrationSyncStatus = ({ project, compact = false, projectId }: I
                     </>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <Badge variant="info" className="text-xs">
-                        <Link2 className="h-3 w-3 mr-1" />
-                        Connected
-                      </Badge>
-                      {sync.integrationType === "rfms" && effectiveProjectId && (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={handlePushToRFMS}
-                          disabled={isPushing}
-                        >
-                          {isPushing ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          ) : (
-                            <Upload className="h-3 w-3 mr-1" />
+                      {sync.integrationType === "rfms" && quoteCreateUnavailable ? (
+                        <Badge variant="outline" className="text-xs">
+                          <Info className="h-3 w-3 mr-1" />
+                          Import-only
+                        </Badge>
+                      ) : (
+                        <>
+                          <Badge variant="info" className="text-xs">
+                            <Link2 className="h-3 w-3 mr-1" />
+                            Connected
+                          </Badge>
+                          {showPush && (
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={handlePushToRFMS}
+                              disabled={isPushing}
+                            >
+                              {isPushing ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : (
+                                <Upload className="h-3 w-3 mr-1" />
+                              )}
+                              Push
+                            </Button>
                           )}
-                          Push
-                        </Button>
+                        </>
                       )}
                     </div>
                   )}

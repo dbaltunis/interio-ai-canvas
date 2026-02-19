@@ -92,6 +92,35 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
   const [isTesting, setIsTesting] = useState(false);
   const [syncingAction, setSyncingAction] = useState<string | null>(null);
 
+  // Read tier limitation flags from integration configuration
+  const customerImportUnavailable = !!(integration?.configuration as any)?.customer_import_unavailable;
+  const quoteCreateUnavailable = !!(integration?.configuration as any)?.quote_create_unavailable;
+
+  const handleClearLimitationFlags = async () => {
+    if (!integration) return;
+    try {
+      const existingConfig = { ...(integration.configuration || {}) } as any;
+      delete existingConfig.customer_import_unavailable;
+      delete existingConfig.quote_create_unavailable;
+      await updateIntegration.mutateAsync({
+        id: integration.id,
+        updates: { configuration: existingConfig } as any,
+      });
+      toast({
+        title: "Limitation Flags Cleared",
+        description: "Next sync attempt will re-check what your RFMS tier supports.",
+        importance: 'important',
+      });
+    } catch (err: any) {
+      toast({
+        title: "Could not clear flags",
+        description: err.message,
+        variant: "warning",
+        importance: 'important',
+      });
+    }
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -575,25 +604,64 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Tier limitation banner */}
+            {(customerImportUnavailable || quoteCreateUnavailable) && (
+              <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg p-3">
+                <Activity className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <span className="font-medium">RFMS API Tier Limitations Detected</span>
+                  <ul className="list-disc list-inside space-y-0.5 text-amber-700 dark:text-amber-400">
+                    {customerImportUnavailable && (
+                      <li>Customer import: API returns metadata only, not records</li>
+                    )}
+                    {quoteCreateUnavailable && (
+                      <li>New quote export: POST not supported (re-syncing existing quotes still works)</li>
+                    )}
+                  </ul>
+                  <button
+                    type="button"
+                    className="text-amber-600 dark:text-amber-400 underline hover:no-underline mt-1 inline-block"
+                    onClick={handleClearLimitationFlags}
+                  >
+                    Upgraded your RFMS plan? Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSyncCustomers('pull')}
-                disabled={syncingAction !== null}
-              >
-                {syncingAction === 'customers-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
-                Import Customers
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSyncQuotes('push')}
-                disabled={syncingAction !== null}
-              >
-                {syncingAction === 'quotes-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
-                Export Quotes
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSyncCustomers('pull')}
+                  disabled={syncingAction !== null || customerImportUnavailable}
+                >
+                  {syncingAction === 'customers-pull' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+                  Import Customers
+                </Button>
+                {customerImportUnavailable && (
+                  <span className="text-[10px] text-muted-foreground max-w-[160px]">
+                    Not available at your RFMS API tier
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSyncQuotes('push')}
+                  disabled={syncingAction !== null || quoteCreateUnavailable}
+                >
+                  {syncingAction === 'quotes-push' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                  Export Quotes
+                </Button>
+                {quoteCreateUnavailable && (
+                  <span className="text-[10px] text-muted-foreground max-w-[160px]">
+                    New exports unavailable. Re-sync existing linked quotes via job page.
+                  </span>
+                )}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
