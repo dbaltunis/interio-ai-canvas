@@ -1,139 +1,159 @@
 
+## Fix RFMS Integration: Credentials, Customer Sync, and Enable All Features
 
-## Fix RFMS Sync Notifications + ERP Sync Status Display
+### Problem Summary
 
-### Root Causes Found
+1. **API Key disappears from form** -- The form uses `useState` initialized once; when the integration loads asynchronously after mount, the form doesn't update. Need `useEffect` to sync form state when integration data loads.
 
-**Why notifications don't appear to work:**
-The sync DOES show a toast, but it says things like "Customer Sync Complete / 1 warnings" because the actual sync silently fails. The reason: `ensureSession` caches the session token and reuses it without checking expiry. The RFMS session expires after ~30 minutes (e.g., `"sessionExpires": "Thu, 19 Feb 2026 14:10:33 GMT"`), but subsequent sync calls at 14:38+ reuse the expired token. Every API call then returns 401 Unauthorized, which gets swallowed into "1 errors" in the results. The user sees a toast but it has no meaningful numbers (0 imported, 0 exported, 0 updated), making it feel like nothing happened.
+2. **"Full Sync" shows export error** -- The "Full Sync" button calls `handleSyncCustomers('both')` which includes `direction: 'push'`, immediately triggering the "Export not supported" error. Full Sync for customers should only PULL (import).
 
-**Why ERP Sync Status always shows "Not synced":**
-The `IntegrationSyncStatus` component checks for columns `rfms_quote_id`, `rfms_order_id`, `netsuite_estimate_id`, `netsuite_sales_order_id`, `netsuite_invoice_id` on the `projects` table. **None of these columns exist in the database.** The component was built before the columns were created, so it always shows "Not synced" for every project regardless of actual sync state.
+3. **Customer import returns 0 records** -- `GET /customers` returns field schema/metadata, not customer records. `POST /customers/search` returns 404. Based on the RFMS API v2 documentation, the standard response format is `{status: "success", result: {}}`. The GET /customers endpoint returns metadata when called without search parameters. Need to use the correct search pattern -- likely `GET /customers?search=*` or `POST /customers` with search body, or iterate using `GET /customers/{id}`.
+
+4. **"Coming Soon" features disabled** -- Measurements, Scheduling, and Auto Update Job Status need to be implemented using RFMS API endpoints: `/opportunities` for quotes, Schedule Pro endpoints for scheduling, and order/job status endpoints.
 
 ---
 
-### Fix 1: Session Token Expiry Handling in All Edge Functions
+### Fix 1: Form State Sync with Integration Data
 
-**Files:** `rfms-sync-customers/index.ts`, `rfms-sync-quotes/index.ts`, `rfms-session/index.ts`
+**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
 
-Update `ensureSession` to:
-1. Check `session_started_at` and clear the cached token if older than 25 minutes (RFMS sessions expire at ~30 min)
-2. Add a retry mechanism in `rfmsRequest`: if a 401 is returned, clear the cached token, get a fresh session, and retry once
+Add a `useEffect` that updates form data when the `integration` prop changes (e.g., after async load):
 
 ```typescript
-// In ensureSession - add expiry check before reusing cached token
-if (session_token) {
-  const sessionAge = Date.now() - new Date(integration.api_credentials?.session_started_at || 0).getTime();
-  const MAX_SESSION_AGE_MS = 25 * 60 * 1000; // 25 minutes (RFMS expires at ~30)
-  
-  if (sessionAge < MAX_SESSION_AGE_MS) {
-    return { sessionToken: session_token, storeQueue: store_queue, apiUrl };
+useEffect(() => {
+  if (integration?.api_credentials) {
+    setFormData(prev => ({
+      ...prev,
+      api_url: integration.api_credentials?.api_url || 'https://api.rfms.online/v2',
+      store_queue: integration.api_credentials?.store_queue || '',
+      api_key: integration.api_credentials?.api_key || '',
+      sync_customers: integration.configuration?.sync_customers ?? true,
+      sync_quotes: integration.configuration?.sync_quotes ?? true,
+      // ... etc
+    }));
   }
-  // Token likely expired, get a fresh one
-  console.log("RFMS session token expired, refreshing...");
-}
-// Continue to create new session...
+}, [integration]);
 ```
 
-Also update `rfmsRequest` to detect 401 and signal that a session refresh is needed:
-
-```typescript
-if (response.status === 401) {
-  throw new Error("RFMS_SESSION_EXPIRED");
-}
-```
-
-And in the main sync handler, wrap the pull/push in a retry that catches `RFMS_SESSION_EXPIRED`, clears the token, creates a new session, and retries.
+This ensures credentials display correctly after the integration query resolves.
 
 ---
 
-### Fix 2: Add Missing Columns to `projects` Table
+### Fix 2: Full Sync = Import Only for Customers
 
-**New SQL migration:**
+**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
 
-```sql
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS rfms_quote_id TEXT;
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS rfms_order_id TEXT;
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_estimate_id TEXT;
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_sales_order_id TEXT;
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS netsuite_invoice_id TEXT;
+Change the "Full Sync" button to call `handleSyncCustomers('pull')` instead of `handleSyncCustomers('both')`. Since RFMS v2 does not support POST for customers, "Full Sync" for customers means "Import All".
 
-CREATE INDEX IF NOT EXISTS idx_projects_rfms_quote_id ON public.projects(rfms_quote_id);
+Also rename it to "Import All Customers" for clarity.
 
-NOTIFY pgrst, 'reload schema';
-```
+**File:** `supabase/functions/rfms-sync-customers/index.ts`
 
-This makes the `IntegrationSyncStatus` component functional. When `rfms-sync-quotes` successfully pushes or pulls a quote, it sets `rfms_quote_id` on the project, and the card will show "Synced" with the RFMS quote ID.
+Remove the push/export code path entirely (lines 277-280) since it will never work with RFMS v2. This eliminates the confusing "Export not supported" error.
 
 ---
 
-### Fix 3: Better Sync Result Notifications
+### Fix 3: Fix Customer Import Using Correct RFMS API Pattern
 
-**File:** `RFMSIntegrationTab.tsx`
+**File:** `supabase/functions/rfms-sync-customers/index.ts`
 
-Update the toast calls after sync to be more informative:
+The RFMS API v2 docs confirm the standard response format is `{status: "success", result: {}}`. The current code tries:
+1. `POST /customers/search` -- 404 (doesn't exist)
+2. `GET /customers/search?entryType=Customer` -- 404 (doesn't exist)
+3. `GET /customers?limit=500` -- returns metadata schema, not records
 
-- When sync has 0 results and errors: show `variant: "warning"` with the actual error message (not "No changes needed")
-- When sync succeeds with numbers: show a clear summary like "Imported 12 customers from RFMS"
-- When sync has partial results + errors: show both the success count and error summary
+The RFMS v2 customer endpoints (from the docs) are:
+- `GET /customers` -- returns available field values (enums) for search
+- `POST /customers` with search body -- searches customers (Standard tier)
+- `GET /customers/{id}` -- gets a single customer
 
-```typescript
-// After sync completes
-if (data.errors?.length > 0 && results.imported === 0 && results.updated === 0) {
-  // Total failure - show as warning with the actual error
-  toast({
-    title: "Customer Sync Issue",
-    description: data.errors[0], // Show the actual error
-    variant: "warning",
-  });
-} else {
-  // Success (possibly partial)
-  const parts = [];
-  if (data.imported > 0) parts.push(`${data.imported} imported`);
-  if (data.updated > 0) parts.push(`${data.updated} updated`);
-  if (data.skipped > 0) parts.push(`${data.skipped} skipped`);
-  
-  toast({
-    title: parts.length > 0 ? "Customer Sync Complete" : "No New Customers",
-    description: parts.length > 0 
-      ? parts.join(', ') + (data.errors?.length ? ` (${data.errors.length} warnings)` : '')
-      : "All customers are already up to date.",
-    variant: data.errors?.length > 0 ? "warning" : "default",
-  });
-}
+The fix: Use `POST /customers` with a search body (not `/customers/search`). The POST to `/customers` is the search endpoint in RFMS v2 API. Example search body:
+```json
+{"entryType": "Customer", "limit": 500}
 ```
 
-Also update `types.ts` to include the new project columns so TypeScript doesn't complain when the component reads them.
+If POST /customers also fails (405), try `GET /customers` with query parameters that trigger a search result instead of metadata, such as `?entryType=Customer&limit=500`.
+
+Also implement a discovery approach that logs exactly what each endpoint returns to help debug:
+1. Try `POST /customers` with `{"entryType": "Customer"}`
+2. Try `GET /customers?entryType=Customer` 
+3. Try `GET /customers?limit=100&page=1`
+4. Log all responses clearly for debugging
 
 ---
 
-### Fix 4: Update `IntegrationSyncStatus` to Use Real Data
+### Fix 4: Enable Measurements Sync
 
-**File:** `IntegrationSyncStatus.tsx`
+**New file:** `supabase/functions/rfms-sync-measurements/index.ts`
 
-The component already has the right logic -- it just needs the database columns to exist (Fix 2). Once the columns are added, the component will correctly show:
-- "Synced" with green badge when `rfms_quote_id` is set on a project
-- "Not synced" when it's null
+Create an edge function that:
+- Pulls measurement data from RFMS quotes/opportunities (measurements are typically attached to quote line items in RFMS)
+- Maps RFMS measurement fields to InterioApp treatment/room dimensions
+- Updates the corresponding project rooms with measurement data
 
-No code changes needed in this component -- the Fix 2 migration makes it work.
+**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
+- Remove "Coming Soon" badge from Sync Measurements
+- Enable the switch
+- Add "Import Measurements" button to Manual Sync section
+
+---
+
+### Fix 5: Enable Scheduling Sync
+
+**New file:** `supabase/functions/rfms-sync-scheduling/index.ts`
+
+Create an edge function that:
+- Uses RFMS Schedule Pro API endpoints (`/schedule/jobs`, `/schedule/crews`)
+- Pulls scheduled jobs from RFMS and creates/updates calendar appointments in InterioApp
+- Pushes InterioApp appointments to RFMS schedule when direction is 'push'
+
+**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
+- Remove "Coming Soon" badge from Sync Scheduling
+- Enable the switch
+- Add "Sync Schedule" button to Manual Sync section
+
+---
+
+### Fix 6: Enable Auto Update Job Status
+
+**File:** `supabase/functions/rfms-sync-quotes/index.ts`
+
+Extend the existing quote sync to also pull job status changes from RFMS:
+- When pulling quotes, check for status changes in RFMS (e.g., "Ordered", "Installed", "Complete")
+- Map RFMS statuses to InterioApp project statuses
+- Update the project status in the database
+
+**File:** `src/components/integrations/RFMSIntegrationTab.tsx`
+- Remove "Coming Soon" badge from Auto Update Job Status
+- Enable the switch
+- The status sync happens automatically during quote sync when this option is enabled
+
+---
+
+### Fix 7: Edge Function Query Fix
+
+**Files:** All RFMS edge functions (`rfms-sync-customers`, `rfms-sync-quotes`, `rfms-session`)
+
+The edge functions query `.eq("user_id", accountOwnerId)` but should also check `.eq("account_owner_id", accountOwnerId)` as a fallback. Currently both columns match for existing records, but this is fragile. Use `account_owner_id` which is the correct column for multi-tenant lookups.
 
 ---
 
 ### Files to Change
 
-| File | Change |
+| File | Changes |
 |---|---|
-| `supabase/functions/rfms-sync-customers/index.ts` | Add session expiry check + 401 retry logic |
-| `supabase/functions/rfms-sync-quotes/index.ts` | Add session expiry check + 401 retry logic |
-| `supabase/functions/rfms-session/index.ts` | Add session expiry check |
-| `src/components/integrations/RFMSIntegrationTab.tsx` | Smarter toast messages based on result content |
-| `src/integrations/supabase/types.ts` | Add new project columns to type definitions |
-| New SQL migration | Add `rfms_quote_id`, `rfms_order_id`, `netsuite_*` columns to `projects` |
+| `src/components/integrations/RFMSIntegrationTab.tsx` | Add useEffect for form sync; Full Sync = pull only; enable Measurements, Scheduling, Auto Job Status; add sync buttons |
+| `supabase/functions/rfms-sync-customers/index.ts` | Fix customer search endpoint (POST /customers); remove push code; use account_owner_id |
+| `supabase/functions/rfms-sync-quotes/index.ts` | Add job status mapping; use account_owner_id |
+| `supabase/functions/rfms-session/index.ts` | Use account_owner_id |
+| `supabase/functions/rfms-sync-measurements/index.ts` | New -- pull measurements from RFMS |
+| `supabase/functions/rfms-sync-scheduling/index.ts` | New -- sync scheduling with RFMS Schedule Pro |
 
-### After the Fix
+### Expected Results
 
-- Session tokens auto-refresh when expired (no more silent 401 failures)
-- Sync notifications clearly report what happened: "Imported 12 customers" or "RFMS session expired, retrying..." or the actual error message
-- ERP Sync Status card on each job shows real sync state based on actual database columns
-- When a quote is pushed/pulled from RFMS, the project's `rfms_quote_id` is set and the badge turns green
-
+- Credentials always display correctly when the page loads
+- "Full Sync" imports customers without showing export errors  
+- Customer import uses the correct RFMS API search endpoint
+- Measurements, Scheduling, and Job Status features are functional (not "Coming Soon")
+- Clear toast notifications with record counts for every sync action
+- Edge functions use the correct `account_owner_id` column for multi-tenant support
