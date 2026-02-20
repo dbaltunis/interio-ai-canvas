@@ -7,6 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { useMemo, useState } from "react";
 import { ClientFormWithLeadIntelligence } from "@/components/clients/ClientFormWithLeadIntelligence";
+import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateQuote } from "@/hooks/useQuotes";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -50,7 +54,53 @@ export const CreateActionDialog = ({
   
   const { toast } = useToast();
   const [showClientCreate, setShowClientCreate] = useState(false);
+  const createProject = useCreateProject();
+  const createQuote = useCreateQuote();
+  const navigate = useNavigate();
   
+  const handleCreateJob = async () => {
+    if (!hasCreateJobsPermission) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to create jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onOpenChange(false);
+    
+    try {
+      const newProject = await createProject.mutateAsync({
+        name: `New Job ${format(new Date(), 'MM/dd/yyyy')}`,
+        description: "",
+        status: "planning",
+        client_id: null
+      });
+
+      await createQuote.mutateAsync({
+        project_id: newProject.id,
+        client_id: null,
+        status: "draft",
+        subtotal: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        total_amount: 0,
+        notes: "New job created",
+      });
+
+      // Navigate to the new job
+      navigate(`/jobs?jobId=${newProject.id}`);
+    } catch (error) {
+      console.error("Failed to create new job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create new job. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAction = (action: string) => {
     onOpenChange(false);
     // Navigate to the appropriate tab and trigger creation
@@ -58,21 +108,6 @@ export const CreateActionDialog = ({
       // Open inline client create dialog instead of navigating
       setShowClientCreate(true);
       return;
-    } else if (action === "project") {
-      // Check permission before triggering creation
-      if (!hasCreateJobsPermission) {
-        toast({
-          title: "Permission Denied",
-          description: "You do not have permission to create jobs.",
-          variant: "destructive",
-        });
-        return;
-      }
-      onTabChange("projects");
-      // Dispatch custom event for job creation (works on both mobile & desktop)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('create-new-job'));
-      }, 150);
     } else if (action === "event") {
       onTabChange("calendar");
       setTimeout(() => {
@@ -127,9 +162,10 @@ export const CreateActionDialog = ({
           
           {hasCreateJobsPermission && (
             <Button
-              onClick={() => handleAction("project")}
+              onClick={handleCreateJob}
               variant="outline"
               className="h-16 justify-start gap-4 text-left"
+              disabled={createProject.isPending || createQuote.isPending}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <FolderOpen className="h-5 w-5 text-primary" />
