@@ -5,7 +5,8 @@ import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, Package } f
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useIsDealer } from "@/hooks/useIsDealer";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ClientFormWithLeadIntelligence } from "@/components/clients/ClientFormWithLeadIntelligence";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -48,16 +49,15 @@ export const CreateActionDialog = ({
   }, [canViewClients, canViewJobs, canViewCalendar, canViewOwnCalendar, canViewInventory]);
   
   const { toast } = useToast();
+  const [showClientCreate, setShowClientCreate] = useState(false);
   
   const handleAction = (action: string) => {
     onOpenChange(false);
     // Navigate to the appropriate tab and trigger creation
     if (action === "client") {
-      onTabChange("clients");
-      // Dispatch custom event for client creation (works on both mobile & desktop)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('create-new-client'));
-      }, 150);
+      // Open inline client create dialog instead of navigating
+      setShowClientCreate(true);
+      return;
     } else if (action === "project") {
       // Check permission before triggering creation
       if (!hasCreateJobsPermission) {
@@ -97,6 +97,7 @@ export const CreateActionDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -213,5 +214,19 @@ export const CreateActionDialog = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Inline Client Create Dialog */}
+    <Dialog open={showClientCreate} onOpenChange={setShowClientCreate}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Client</DialogTitle>
+        </DialogHeader>
+        <ClientFormWithLeadIntelligence 
+          onCancel={() => setShowClientCreate(false)} 
+          onSuccess={() => setShowClientCreate(false)} 
+        />
+      </DialogContent>
+    </Dialog>
+  </>
   );
 };
