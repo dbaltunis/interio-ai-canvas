@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, Package } from "lucide-react";
+import { Users, FolderOpen, Calendar, Settings, MessageCircle, Package, Moon, Sun, LogOut } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useIsDealer } from "@/hooks/useIsDealer";
@@ -11,6 +11,8 @@ import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { useTheme } from "next-themes";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -30,6 +32,9 @@ export const CreateActionDialog = ({
   onOpenTeamHub 
 }: CreateActionDialogProps) => {
   const { data: isDealer } = useIsDealer();
+  const { theme, setTheme } = useTheme();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   // Permission checks using centralized hook
   const hasCreateJobsPermission = useHasPermission('create_jobs') !== false;
@@ -39,9 +44,14 @@ export const CreateActionDialog = ({
   const canViewClients = useHasPermission('view_clients');
   const canViewJobs = useHasPermission('view_jobs');
   const canViewSettings = useHasPermission('view_settings') !== false;
+  const canViewTeam = useHasPermission('view_team_members') !== false;
+  const canSendMessages = useHasPermission('send_team_messages') !== false;
 
   // Combined calendar permission
   const canAccessCalendar = canViewCalendar !== false || canViewOwnCalendar !== false;
+
+  // Team & Messages visibility: not dealers AND has team or message permission
+  const canAccessTeamMessages = !isDealer && (canViewTeam || canSendMessages);
 
   // Check if user has ANY main page permission (for smart menu visibility)
   const hasAnyMainPagePermission = useMemo(() => {
@@ -56,7 +66,6 @@ export const CreateActionDialog = ({
   const [showClientCreate, setShowClientCreate] = useState(false);
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
-  const navigate = useNavigate();
   
   const handleCreateJob = async () => {
     if (!hasCreateJobsPermission) {
@@ -103,9 +112,7 @@ export const CreateActionDialog = ({
 
   const handleAction = (action: string) => {
     onOpenChange(false);
-    // Navigate to the appropriate tab and trigger creation
     if (action === "client") {
-      // Open inline client create dialog instead of navigating
       setShowClientCreate(true);
       return;
     } else if (action === "event") {
@@ -117,18 +124,20 @@ export const CreateActionDialog = ({
     } else if (action === "library") {
       onTabChange("inventory");
     } else if (action === "settings") {
-      if (canViewSettings === false) {
-        toast({
-          title: "Permission Denied",
-          description: "You don't have permission to view settings.",
-          variant: "destructive",
-        });
-        return;
-      }
       onOpenSettings?.();
     } else if (action === "team") {
       onOpenTeamHub?.();
     }
+  };
+
+  const handleToggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleLogout = async () => {
+    onOpenChange(false);
+    await signOut();
+    navigate('/auth');
   };
 
   return (
@@ -136,13 +145,10 @@ export const CreateActionDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-primary" />
-            Create New
-          </DialogTitle>
+          <DialogTitle className="sr-only">Quick Actions</DialogTitle>
         </DialogHeader>
         
-        <div className="grid gap-3 py-4">
+        <div className="grid gap-3 py-2">
           {/* New Client - always visible if user has any main page permission */}
           {hasAnyMainPagePermission && (
             <Button
@@ -214,8 +220,8 @@ export const CreateActionDialog = ({
           {/* Separator before utility items */}
           <Separator className="my-1" />
           
-          {/* Team & Messages - hide for dealers (they have restricted team visibility) */}
-          {!isDealer && (
+          {/* Team & Messages - hide for dealers AND requires team/message permissions */}
+          {canAccessTeamMessages && (
             <Button
               onClick={() => handleAction("team")}
               variant="outline"
@@ -232,7 +238,7 @@ export const CreateActionDialog = ({
           )}
           
           {/* Settings - HIDE entirely if no permission */}
-          {canViewSettings !== false && (
+          {canViewSettings && (
             <Button
               onClick={() => handleAction("settings")}
               variant="outline"
@@ -247,6 +253,43 @@ export const CreateActionDialog = ({
               </div>
             </Button>
           )}
+
+          {/* Separator before theme/logout */}
+          <Separator className="my-1" />
+
+          {/* Dark/Light Mode Toggle */}
+          <Button
+            onClick={handleToggleTheme}
+            variant="outline"
+            className="h-14 justify-start gap-4 text-left"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Moon className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <div className="font-medium">{theme === "dark" ? "Light Mode" : "Dark Mode"}</div>
+              <div className="text-xs text-muted-foreground">Switch appearance</div>
+            </div>
+          </Button>
+
+          {/* Log Out */}
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="h-14 justify-start gap-4 text-left text-destructive hover:text-destructive"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10">
+              <LogOut className="h-4 w-4 text-destructive" />
+            </div>
+            <div>
+              <div className="font-medium">Log Out</div>
+              <div className="text-xs text-muted-foreground">Sign out of your account</div>
+            </div>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
