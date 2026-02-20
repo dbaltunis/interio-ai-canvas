@@ -610,22 +610,22 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
       {/* Secondary Content Tabs - Notes, Activity, Measurements, Appointments */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-8 w-auto bg-muted/30 p-0.5">
-          <TabsTrigger value="notes" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
-            <FileText className="h-3 w-3" />
-            Notes
+        <TabsList className="h-8 w-full sm:w-auto bg-muted/30 p-0.5 overflow-x-auto">
+          <TabsTrigger value="notes" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background min-w-0">
+            <FileText className="h-3 w-3 shrink-0" />
+            <span className="hidden sm:inline">Notes</span>
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
-            <Clock className="h-3 w-3" />
-            Activity
+          <TabsTrigger value="activity" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background min-w-0">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span className="hidden sm:inline">Activity</span>
           </TabsTrigger>
-          <TabsTrigger value="measurements" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
-            <Package className="h-3 w-3" />
-            Measurements
+          <TabsTrigger value="measurements" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background min-w-0">
+            <Package className="h-3 w-3 shrink-0" />
+            <span className="hidden sm:inline">Measurements</span>
           </TabsTrigger>
-          <TabsTrigger value="appointments" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
-            <CalendarDays className="h-3 w-3" />
-            Appointments
+          <TabsTrigger value="appointments" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background min-w-0">
+            <CalendarDays className="h-3 w-3 shrink-0" />
+            <span className="hidden sm:inline">Appointments</span>
           </TabsTrigger>
         </TabsList>
 
