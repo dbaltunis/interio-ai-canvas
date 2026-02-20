@@ -99,7 +99,7 @@ export const CreateActionDialog = ({
       });
 
       // Navigate to the new job
-      navigate({ pathname: '/jobs', search: `?jobId=${newProject.id}` });
+      navigate(`/?tab=projects&jobId=${newProject.id}`);
     } catch (error) {
       console.error("Failed to create new job:", error);
       toast({
