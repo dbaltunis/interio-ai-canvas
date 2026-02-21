@@ -729,7 +729,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         description: `Created copy of job with all rooms, windows, and treatments.`
       });
       
-      window.location.href = `/?tab=projects&jobId=${newProject.id}`;
+      onJobSelect({ id: newProject.id, projects: newProject });
     } catch (error) {
       console.error('Error duplicating job:', error);
       toast({
