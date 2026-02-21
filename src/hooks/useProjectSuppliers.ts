@@ -8,11 +8,19 @@ export interface DetectedSupplier {
   id: string;
   name: string;
   type: 'twc' | 'vendor';
+  /** Optional: integration key if this vendor is linked to a specific supplier integration (e.g. 'cw_systems') */
+  integrationKey?: string;
   items: Array<{
     id: string;
     name: string;
     quantity: number;
     twcItemNumber?: string;
+    /** CW Systems product IDs for API order submission */
+    cwProductRangeId?: string;
+    cwProductTypeId?: string;
+    cwProductMaterialId?: string;
+    widthMm?: number;
+    heightMm?: number;
   }>;
   isOrdered: boolean;
   orderInfo?: {

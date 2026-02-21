@@ -168,9 +168,100 @@ export function SupplierOrderingDropdown({
       return;
     }
 
-    // Handle vendor-type supplier orders — record in supplier_orders JSON + generate email
     setIsSubmitting(true);
     try {
+      // ── Check if this vendor maps to a CW Systems integration with API token ──
+      const { data: cwIntegrationData } = await supabase
+        .from("integration_settings")
+        .select("api_credentials, configuration")
+        .eq("integration_type", "cw_systems")
+        .eq("active", true)
+        .maybeSingle();
+
+      const cwCreds = cwIntegrationData?.api_credentials as Record<string, any> | null;
+      const cwApiToken = cwCreds?.api_token;
+      const cwUserEmail = cwCreds?.api_user_email || cwCreds?.supplier_email || "";
+      const cwConfig = cwIntegrationData?.configuration as Record<string, any> | null;
+
+      // Detect if this supplier matches the CW Systems integration
+      // Match by integration_type on the vendor OR by name heuristic
+      const supplierNameLower = selectedSupplier.name.toLowerCase();
+      const isCwSupplier = !!(cwApiToken && (
+        supplierNameLower.includes("cw") ||
+        supplierNameLower.includes("cora") ||
+        selectedSupplier.integrationKey === "cw_systems"
+      ));
+
+      if (isCwSupplier && cwApiToken) {
+        // ── CW Systems API path ────────────────────────────────────────────────
+        // Build order items from quote items
+        const orderItems = selectedSupplier.items.map((item: any) => ({
+          roomLocation: item.name || item.id,
+          widthMm: item.widthMm || (parseFloat(item.width || "0") * (item.widthUnit === "cm" ? 10 : 1)),
+          heightMm: item.heightMm || (parseFloat(item.height || item.drop || "0") * (item.heightUnit === "cm" ? 10 : 1)),
+          cwProductRangeId: item.cwProductRangeId || item.cw_product_range_id,
+          cwProductTypeId: item.cwProductTypeId || item.cw_product_type_id,
+          cwProductMaterialId: item.cwProductMaterialId || item.cw_product_material_id,
+          notes: item.notes || "",
+          quantity: item.quantity || 1,
+        }));
+
+        const projectRef = projectData?.name || projectData?.address || quoteId;
+        const { data: cwResult, error: cwError } = await supabase.functions.invoke("cw-submit-order", {
+          body: {
+            apiToken: cwApiToken,
+            userEmail: cwUserEmail,
+            poNumber: projectRef,
+            additionalNotes: cwConfig?.notes_template || "",
+            measurementType: "opening sizes",
+            items: orderItems,
+            projectId,
+            quoteId,
+            supplierEmail: cwCreds?.supplier_email,
+            accountCode: cwCreds?.account_code,
+            accountName: cwCreds?.account_name,
+            contactName: cwCreds?.contact_name,
+            contactPhone: cwCreds?.contact_phone,
+            deliveryAddress: cwConfig?.default_delivery_address,
+            paymentTerms: cwConfig?.default_payment_terms,
+          },
+        });
+
+        if (cwError) throw cwError;
+
+        // Record in quote supplier_orders
+        const { data: quote } = await supabase.from("quotes").select("supplier_orders").eq("id", quoteId).single();
+        const existingOrders = (quote?.supplier_orders as Record<string, any>) || {};
+        await supabase.from("quotes").update({
+          supplier_orders: {
+            ...existingOrders,
+            [selectedSupplier.id]: {
+              status: "submitted",
+              order_id: cwResult?.apiOrderId || `CW-${Date.now()}`,
+              submitted_at: new Date().toISOString(),
+              submitted_method: cwResult?.apiItemsSubmitted > 0 ? "api" : "email",
+              supplier_name: selectedSupplier.name,
+            },
+          },
+        }).eq("id", quoteId);
+
+        queryClient.invalidateQueries({ queryKey: ["quotes"] });
+        queryClient.invalidateQueries({ queryKey: ["project-suppliers"] });
+
+        const apiCount = cwResult?.apiItemsSubmitted ?? 0;
+        const emailCount = cwResult?.emailItemsSent ?? 0;
+        toast.success(`Order submitted to CW Systems`, {
+          description: [
+            apiCount > 0 ? `${apiCount} item(s) sent via CORA API` : null,
+            emailCount > 0 ? `${emailCount} item(s) sent via email` : null,
+          ].filter(Boolean).join(", ") || cwResult?.message,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // ── Generic vendor order (email / mailto) ─────────────────────────────
+
       // Get current quote to merge supplier_orders
       const { data: quote, error: fetchErr } = await supabase
         .from("quotes")
