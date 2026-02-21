@@ -279,8 +279,122 @@ export const PERMISSION_DETAILS: Record<string, {
     warning: true 
   },
   
+  // ===== FINANCIAL & PRICING =====
+  view_quotes: {
+    label: 'View Quotes',
+    description: 'See quote totals and summaries',
+    category: 'financial',
+    required: []
+  },
+  manage_quotes: {
+    label: 'Manage Quotes',
+    description: 'Create, edit, and send quotes to clients',
+    category: 'financial',
+    required: ['view_quotes']
+  },
+  view_cost_prices: {
+    label: 'View Cost Prices',
+    description: 'See supplier/cost prices on products and treatments',
+    category: 'financial',
+    required: [],
+    warning: true
+  },
+  view_selling_prices: {
+    label: 'View Selling Prices',
+    description: 'See client-facing selling prices',
+    category: 'financial',
+    required: []
+  },
+  view_profit_margins: {
+    label: 'View Profit Margins',
+    description: 'See profit margin calculations on jobs and quotes',
+    category: 'financial',
+    required: ['view_cost_prices'],
+    warning: true
+  },
+  manage_pricing: {
+    label: 'Manage Pricing',
+    description: 'Configure pricing grids, markup rules, and pricing settings',
+    category: 'financial',
+    required: ['view_selling_prices'],
+    warning: true
+  },
+  view_billing: {
+    label: 'View Billing',
+    description: 'Access subscription and billing information',
+    category: 'financial',
+    required: []
+  },
+  view_analytics: {
+    label: 'View Analytics',
+    description: 'Access business analytics and reporting dashboards',
+    category: 'financial',
+    required: []
+  },
+  view_primary_kpis: {
+    label: 'View Primary KPIs',
+    description: 'See key performance indicators on the dashboard',
+    category: 'financial',
+    required: []
+  },
+  view_revenue_kpis: {
+    label: 'View Revenue KPIs',
+    description: 'See revenue metrics and financial KPIs',
+    category: 'financial',
+    required: ['view_cost_prices'],
+    warning: true
+  },
+  export_data: {
+    label: 'Export Data',
+    description: 'Export business data to CSV or other formats',
+    category: 'settings',
+    required: []
+  },
+  export_jobs: {
+    label: 'Export Jobs',
+    description: 'Export job and quote data',
+    category: 'jobs',
+    required: []
+  },
+  import_jobs: {
+    label: 'Import Jobs',
+    description: 'Import jobs from external files or systems',
+    category: 'jobs',
+    required: []
+  },
+  export_inventory: {
+    label: 'Export Inventory',
+    description: 'Export product and material data',
+    category: 'inventory',
+    required: ['view_inventory']
+  },
+  import_inventory: {
+    label: 'Import Inventory',
+    description: 'Import products from CSV or supplier feeds',
+    category: 'inventory',
+    required: ['manage_inventory']
+  },
+  view_vendors: {
+    label: 'View Vendors',
+    description: 'Browse vendor and supplier records',
+    category: 'inventory',
+    required: []
+  },
+  manage_vendors: {
+    label: 'Manage Vendors',
+    description: 'Add, edit, and configure vendors and suppliers',
+    category: 'inventory',
+    required: ['view_vendors']
+  },
+  view_materials: {
+    label: 'View Materials',
+    description: 'Browse raw materials and components',
+    category: 'inventory',
+    required: []
+  },
+
   // ===== ADDITIONAL PERMISSIONS (backward compatibility) =====
-  view_profile: { 
+  view_profile: {
     label: 'View Profile', 
     description: 'Access own user profile', 
     category: 'settings', 

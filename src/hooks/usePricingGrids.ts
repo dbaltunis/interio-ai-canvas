@@ -86,13 +86,21 @@ export const useCreatePricingGrid = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Resolve effective account owner so grids are stored under the account owner
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
+
       // Generate grid code from name if not provided
       const gridCode = gridData.grid_code || gridData.name.trim().replace(/\s+/g, '_').toUpperCase();
 
       const { data, error } = await supabase
         .from('pricing_grids')
         .insert([{
-          user_id: user.id,
+          user_id: effectiveOwnerId,
           name: gridData.name,
           grid_code: gridCode,
           grid_data: gridData.grid_data as any,
