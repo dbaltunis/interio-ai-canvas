@@ -67,6 +67,7 @@ interface VisualMeasurementSheetProps {
     optionKey?: string;
   }>) => void;
   selectedMaterial?: any; // For blinds that use materials (venetian, vertical)
+  selectedFabricItem2?: any; // Second fabric for double roller/blind
   /**
    * Pre-computed engine result from parent (SINGLE SOURCE OF TRUTH)
    * When provided, passed to AdaptiveFabricPricingDisplay
@@ -93,6 +94,7 @@ export const VisualMeasurementSheet = ({
   selectedOptions = [],
   onSelectedOptionsChange,
   selectedMaterial,
+  selectedFabricItem2,
   engineResult,
 }: VisualMeasurementSheetProps) => {
   // Use ref to track latest options during batch initialization
@@ -685,7 +687,7 @@ export const VisualMeasurementSheet = ({
             }} hideDetails={true} className="h-full" />
                   </div>
                 ) :
-            treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'zebra_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'zebra_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual key={`blind-visual-${measurements.selected_color || 'default'}`} windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'zebra_blinds' || selectedTemplate?.curtain_type === 'zebra_blind' ? 'zebra' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedMaterial || selectedFabricItem} selectedColor={measurements.selected_color} /> : (/* Curtains visual */
+            treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'zebra_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'zebra_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual key={`blind-visual-${measurements.selected_color || 'default'}`} windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'zebra_blinds' || selectedTemplate?.curtain_type === 'zebra_blind' ? 'zebra' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedMaterial || selectedFabricItem} material2={selectedFabricItem2} selectedColor={measurements.selected_color} /> : (/* Curtains visual */
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}

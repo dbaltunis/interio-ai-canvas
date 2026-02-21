@@ -10,6 +10,7 @@ interface DynamicBlindVisualProps {
   chainSide?: 'left' | 'right';
   controlType?: string;
   material?: any;
+  material2?: any; // Second fabric for double roller/blind
   selectedColor?: string; // User-selected color from ColorSelector
 }
 
@@ -22,6 +23,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
   chainSide = 'right',
   controlType,
   material,
+  material2,
   selectedColor
 }) => {
   const { units } = useMeasurementUnits();
@@ -88,60 +90,80 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
 
   const renderRollerBlind = () => {
     const isInsideMount = mountType === 'inside';
-    const blindWidth = isInsideMount ? 'left-16 right-16' : 'left-12 right-12';
     const blindTop = isInsideMount ? 'top-24' : 'top-20';
-    
-    return (
-      <>
-        {/* Roller Tube/Mechanism */}
-        <div className={`absolute ${blindTop} ${blindWidth} h-4 bg-gradient-to-b from-muted-foreground to-muted rounded-sm shadow-md z-20`}>
-          {/* Mounting brackets */}
-          <div className="absolute -left-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
-          <div className="absolute -right-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
-          
-          {/* Chain/Control - Only show if not motorized */}
-          {showChain && (
-            <>
-              {chainSide === 'right' ? (
+    const isDouble = measurements?.curtain_type === 'double';
+
+    const renderSinglePanel = (mat: any, side: 'full' | 'left' | 'right', showControl: boolean) => {
+      const positionStyle: React.CSSProperties = side === 'full'
+        ? { left: isInsideMount ? '4rem' : '3rem', right: isInsideMount ? '4rem' : '3rem' }
+        : side === 'left'
+        ? { left: isInsideMount ? '4rem' : '3rem', right: '50%', marginRight: '2px' }
+        : { left: '50%', right: isInsideMount ? '4rem' : '3rem', marginLeft: '2px' };
+
+      const topOffset = blindTop.includes('24') ? '6rem' : '5rem';
+
+      return (
+        <>
+          {/* Roller Tube */}
+          <div
+            className={`absolute ${blindTop} h-4 bg-gradient-to-b from-muted-foreground to-muted rounded-sm shadow-md z-20`}
+            style={positionStyle}
+          >
+            {side !== 'right' && <div className="absolute -left-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm" />}
+            {side !== 'left' && <div className="absolute -right-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm" />}
+            {/* Chain/Control */}
+            {showChain && showControl && (
+              side === 'right' || (side === 'full' && chainSide === 'right') ? (
                 <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm" />
                 </div>
               ) : (
                 <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm" />
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              )
+            )}
+          </div>
 
-        {/* Roller Blind Fabric - Semi-transparent */}
-        <div className={`absolute ${blindWidth} backdrop-blur-[1px] shadow-lg overflow-hidden`}
-             style={{
-               top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
-               bottom: hasValue(measurements.drop) ? '4rem' : '8rem',
-               backgroundColor: selectedColor ? `${blindColor}4D` : 'hsl(var(--primary) / 0.3)'
-             }}>
-          {/* Fabric image if available */}
-          {material?.image_url ? (
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-40"
-              style={{
-                backgroundImage: `url(${material.image_url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            />
-          ) : (
-            /* Fabric texture effect fallback */
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5"></div>
-          )}
-          
-          {/* Bottom bar/hembar */}
-          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-10"></div>
-        </div>
-      </>
-    );
+          {/* Fabric panel */}
+          <div
+            className="absolute backdrop-blur-[1px] shadow-lg overflow-hidden"
+            style={{
+              ...positionStyle,
+              top: `calc(${topOffset} + 1rem)`,
+              bottom: hasValue(measurements.drop) ? '4rem' : '8rem',
+              backgroundColor: selectedColor ? `${blindColor}4D` : 'hsl(var(--primary) / 0.3)'
+            }}
+          >
+            {mat?.image_url ? (
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-40"
+                style={{ backgroundImage: `url(${mat.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5" />
+            )}
+            <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-10" />
+          </div>
+        </>
+      );
+    };
+
+    if (isDouble) {
+      return (
+        <>
+          {renderSinglePanel(material, 'left', chainSide === 'left')}
+          {/* Center divider */}
+          <div
+            className="absolute w-0.5 bg-muted-foreground/30 z-30"
+            style={{ left: '50%', top: blindTop.includes('24') ? '6rem' : '5rem', bottom: '4rem' }}
+          />
+          {renderSinglePanel(material2, 'right', true)}
+        </>
+      );
+    }
+
+    return renderSinglePanel(material, 'full', true);
   };
 
   const renderVenetianBlind = () => {
