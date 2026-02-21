@@ -35,7 +35,7 @@ function generateNonce(): string {
   return nonce;
 }
 
-function generateOAuthHeader(
+async function generateOAuthHeader(
   method: string,
   url: string,
   creds: {
@@ -45,7 +45,7 @@ function generateOAuthHeader(
     tokenSecret: string;
     accountId: string;
   }
-): string {
+): Promise<string> {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = generateNonce();
 
@@ -92,7 +92,7 @@ async function nsRequest(
   creds: any,
   body?: any
 ): Promise<any> {
-  const authHeader = generateOAuthHeader(method, url.split("?")[0], creds);
+  const authHeader = await generateOAuthHeader(method, url.split("?")[0], creds);
   const options: RequestInit = {
     method,
     headers: {
