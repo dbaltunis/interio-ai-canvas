@@ -229,6 +229,12 @@ export const ModernInventoryDashboard = () => {
         />
       );
     }
+    if (category === "heading") {
+      return <HeadingInventoryManager />;
+    }
+    if (category === "service") {
+      return <HardwareInventoryView {...sharedProps} filterCategory="service" />;
+    }
 
     // If a vendor is selected but no category, show a combined view (default to fabrics as most common)
     if (navState.selectedVendorId && !category) {

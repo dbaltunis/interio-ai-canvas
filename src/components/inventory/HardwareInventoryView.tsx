@@ -44,6 +44,7 @@ interface HardwareInventoryViewProps {
   selectedCollection?: string;
   selectedStorageLocation?: string;
   canManageInventory?: boolean;
+  filterCategory?: string;
 }
 
 const HARDWARE_CATEGORIES = [
@@ -57,7 +58,7 @@ const HARDWARE_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: HardwareInventoryViewProps) => {
+export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false, filterCategory = 'hardware' }: HardwareInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { data: isDealer } = useIsDealer();
@@ -74,8 +75,8 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   // Use local vendor state, sync with external if provided
   const selectedVendor = externalVendor ?? localSelectedVendor;
 
-  const hardwareItems = inventory?.filter(item => 
-    item.category === 'hardware'
+  const hardwareItems = inventory?.filter(item =>
+    item.category === filterCategory
   ) || [];
 
   // Bulk selection
@@ -189,7 +190,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
             value={selectedVendor}
             onChange={setLocalSelectedVendor}
             showCounts={true}
-            category="hardware"
+            category={filterCategory}
           />
         </div>
         {canManageInventory && !isDealer && (
@@ -212,17 +213,19 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
-          {HARDWARE_CATEGORIES.map((cat) => (
-            <TabsTrigger
-              key={cat.key}
-              value={cat.key}
-              className="px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold rounded-none text-muted-foreground hover:text-foreground"
-            >
-              {cat.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {filterCategory === 'hardware' && (
+          <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
+            {HARDWARE_CATEGORIES.map((cat) => (
+              <TabsTrigger
+                key={cat.key}
+                value={cat.key}
+                className="px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold rounded-none text-muted-foreground hover:text-foreground"
+              >
+                {cat.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         {HARDWARE_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
@@ -512,9 +515,11 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                     <PixelHardwareIcon size={64} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Add your first track or rod</h3>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {filterCategory === 'hardware' ? 'Add your first track or rod' : `No ${filterCategory} items found`}
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      {searchQuery ? 'Try adjusting your search' : 'The foundation of every installation. Build your hardware library.'}
+                      {searchQuery ? 'Try adjusting your search' : filterCategory === 'hardware' ? 'The foundation of every installation. Build your hardware library.' : `Add ${filterCategory} items to your library to see them here.`}
                     </p>
                   </div>
                 </div>
