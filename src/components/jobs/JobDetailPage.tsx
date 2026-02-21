@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
@@ -92,7 +92,7 @@ interface JobDetailPageProps {
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialSection = searchParams.get('section');
   const [activeTab, setActiveTab] = useState(() => {
     if (initialSection === 'quotation') return 'quotation';
@@ -101,6 +101,16 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     if (initialSection === 'workroom') return 'workroom';
     return 'details';
   });
+
+  // Persist active tab to URL so refresh restores the correct section
+  const handleSectionChange = useCallback((section: string) => {
+    setActiveTab(section);
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      params.set('section', section);
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
@@ -718,8 +728,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         description: `Copied: ${summary}. Opening new job...`
       });
       
-      // Navigate to the new job instead of going back
-      window.location.href = `/?tab=projects&jobId=${newProject.id}`;
+      // Navigate to the new job using React Router (avoids full page reload)
+      setSearchParams(prev => {
+        const params = new URLSearchParams(prev);
+        params.set('jobId', newProject.id);
+        params.delete('section');
+        return params;
+      });
     } catch (error) {
       console.error('Error duplicating job:', error);
       toast({
@@ -1016,7 +1031,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
       {/* Tabs and Content - Tabs stay sticky */}
       <div className="flex-1 overflow-y-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleSectionChange} className="w-full">
           {/* Standardized Tab Navigation - STICKY */}
           <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border shadow-md">
             <div className="px-2 sm:px-4 lg:px-6">
@@ -1032,7 +1047,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       key={tab.id}
                       variant="ghost"
                       disabled={isDisabled}
-                      onClick={() => !isDisabled && setActiveTab(tab.id)}
+                      onClick={() => !isDisabled && handleSectionChange(tab.id)}
                       className={`hidden lg:flex items-center gap-1.5 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
@@ -1056,7 +1071,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       key={tab.id}
                       variant="ghost"
                       disabled={isDisabled}
-                      onClick={() => !isDisabled && setActiveTab(tab.id)}
+                      onClick={() => !isDisabled && handleSectionChange(tab.id)}
                       className={`flex lg:hidden items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
@@ -1094,7 +1109,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       return (
                         <DropdownMenuItem
                           key={tab.id}
-                          onClick={() => !isDisabled && setActiveTab(tab.id)}
+                          onClick={() => !isDisabled && handleSectionChange(tab.id)}
                           disabled={isDisabled}
                           className={`flex items-center gap-3 py-2.5 ${
                             isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
@@ -1125,8 +1140,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       children={duplicates.children}
                       siblings={duplicates.siblings}
                       onJobClick={(newJobId) => {
-                        // Navigate to the other job - handled by parent component
-                        window.location.href = `/?jobId=${newJobId}`;
+                        // Navigate to the other job using React Router (avoids full page reload)
+                        setSearchParams(prev => {
+                          const params = new URLSearchParams(prev);
+                          params.set('jobId', newJobId);
+                          params.delete('section');
+                          return params;
+                        });
                       }}
                     />
                   )}

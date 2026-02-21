@@ -1,9 +1,11 @@
 import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Package, Calculator, Save, Lock } from "lucide-react";
+import { Ruler, Package, Calculator, Save, Lock, Layers, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getEffectiveOwnerForMutation } from "@/utils/getEffectiveOwnerForMutation";
 import { toast } from "sonner";
@@ -126,9 +128,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   const [measurements, setMeasurements] = useState<Record<string, any>>({});
   const [selectedItems, setSelectedItems] = useState<{
     fabric?: any;
+    fabric2?: any;
     hardware?: any;
     material?: any;
   }>({});
+  // Tracks which fabric slot is being filled from the Library tab ('fabric' = primary, 'fabric2' = secondary)
+  const [selectingFabricSlot, setSelectingFabricSlot] = useState<'fabric' | 'fabric2'>('fabric');
   const [activeTab, setActiveTab] = useState("window-type");
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
   const [selectedHeading, setSelectedHeading] = useState("none");
@@ -600,7 +605,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             ...materialDetails
           };
         }
-        
+
+        // Restore secondary fabric for double roller/blind
+        const fabric2Details = (existingWindowSummary as any).fabric2_details;
+        if (fabric2Details && typeof fabric2Details === 'object' && fabric2Details.id) {
+          restoredItems.fabric2 = {
+            id: fabric2Details.id,
+            fabric_id: fabric2Details.id,
+            ...fabric2Details
+          };
+        }
+
         if (Object.keys(restoredItems).length > 0) {
           setSelectedItems(restoredItems);
         }
@@ -2363,6 +2378,22 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             selected_fabric_id: selectedItems.fabric?.id || null,
             selected_hardware_id: selectedItems.hardware?.id || null,
             selected_material_id: selectedItems.material?.id || null,
+            // Secondary fabric for double roller/blind configurations
+            fabric2_details: selectedItems.fabric2 ? {
+              id: selectedItems.fabric2.id,
+              name: selectedItems.fabric2.name,
+              fabric_width: selectedItems.fabric2.fabric_width ?? null,
+              cost_price: selectedItems.fabric2.cost_price,
+              selling_price: selectedItems.fabric2.selling_price || selectedItems.fabric2.unit_price,
+              category: selectedItems.fabric2.category,
+              subcategory: selectedItems.fabric2.subcategory,
+              image_url: selectedItems.fabric2.image_url,
+              pricing_grid_data: selectedItems.fabric2.pricing_grid_data,
+              resolved_grid_name: selectedItems.fabric2.resolved_grid_name,
+              resolved_grid_id: selectedItems.fabric2.resolved_grid_id,
+              price_group: selectedItems.fabric2.price_group,
+              inventory_item_id: selectedItems.fabric2.id,
+            } : null,
             hardware_details: selectedItems.hardware ? {
               id: selectedItems.hardware.id,
               name: selectedItems.hardware.name,
@@ -2837,12 +2868,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         fabric_id: fabricId
       };
     }
-    
+
+    // When selecting from the library, route to the correct fabric slot
+    const effectiveCategory = category === 'fabric' ? selectingFabricSlot : category;
+
     setSelectedItems(prev => ({
       ...prev,
-      [category]: processedItem
+      [effectiveCategory]: processedItem
     }));
-    
+
+    // Reset slot back to primary after selection
+    if (selectingFabricSlot === 'fabric2') {
+      setSelectingFabricSlot('fabric');
+    }
+
     // Auto-navigate to measurements after selecting inventory item with 1 second delay
     setTimeout(() => setActiveTab('measurements'), 1000);
     
@@ -2859,7 +2898,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     }
     
     // ✅ IMMEDIATE SAVE: Save fabric/inventory selection to windows_summary for real-time header updates
-    if (category === 'fabric' && surfaceId && item) {
+    // Only save the PRIMARY fabric immediately (fabric2 is saved as part of the main save flow)
+    if (category === 'fabric' && selectingFabricSlot === 'fabric' && surfaceId && item) {
       try {
         const { error } = await supabase
           .from('windows_summary')
@@ -3198,6 +3238,22 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         <TabsContent value="library" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full space-y-4">
+              {/* Banner when selecting the second fabric in a double roller setup */}
+              {selectingFabricSlot === 'fabric2' && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-md text-sm">
+                  <Layers className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium text-primary">Selecting Fabric 2</span>
+                  <span className="text-muted-foreground">— choose the fabric for the second roller</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="ml-auto h-6 px-2 text-xs"
+                    onClick={() => { setSelectingFabricSlot('fabric'); setActiveTab('measurements'); }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} templateId={selectedTemplate?.id} parentProductId={selectedTemplate?.inventory_item_id} />
             </CardContent>
           </Card>
@@ -3210,13 +3266,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               <div className="space-y-4 sm:space-y-6">
                 {/* Full Width Visual Worksheet */}
                 <div className="w-full">
-                  <VisualMeasurementSheet 
-                    measurements={measurements} 
-                    onMeasurementChange={handleMeasurementChange} 
-                    windowType={selectedWindowType?.key || "standard"} 
-                    selectedTemplate={selectedTemplate} 
+                  <VisualMeasurementSheet
+                    measurements={measurements}
+                    onMeasurementChange={handleMeasurementChange}
+                    windowType={selectedWindowType?.key || "standard"}
+                    selectedTemplate={selectedTemplate}
                     selectedFabric={selectedItems.fabric?.id}
                     selectedFabricItem={selectedItems.fabric}
+                    selectedFabricItem2={selectedItems.fabric2}
                     selectedLining={selectedLining}
                     onLiningChange={(lining) => {
                       isUserEditing.current = true;
@@ -3241,6 +3298,74 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   />
                 </div>
 
+                {/* Double Roller/Blind Toggle - shown only for blind treatment types */}
+                {isManufacturedItem(treatmentCategory || '') && (
+                  <div className="px-4 pb-2">
+                    <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border border-border/60">
+                      <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <Label htmlFor="double-blind-toggle" className="text-sm font-medium cursor-pointer">
+                          Double Roller / Double Blind
+                        </Label>
+                        <p className="text-xs text-muted-foreground">Two blinds on one headrail (e.g. blockout + screen)</p>
+                      </div>
+                      <Switch
+                        id="double-blind-toggle"
+                        checked={measurements?.curtain_type === 'double'}
+                        onCheckedChange={(checked) => {
+                          isUserEditing.current = true;
+                          handleMeasurementChange('curtain_type', checked ? 'double' : 'single');
+                          // Clear fabric2 when switching back to single
+                          if (!checked) {
+                            setSelectedItems(prev => ({ ...prev, fabric2: undefined }));
+                          }
+                        }}
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    {/* Fabric 2 selector - only visible in double mode */}
+                    {measurements?.curtain_type === 'double' && (
+                      <div className="mt-2 p-3 bg-muted/20 rounded-lg border border-dashed border-border">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Fabric 2 (Second Roller)</p>
+                            {selectedItems.fabric2 ? (
+                              <p className="text-sm font-medium truncate">{selectedItems.fabric2.name}</p>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">No fabric selected</p>
+                            )}
+                          </div>
+                          {!readOnly && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0 gap-1.5"
+                              onClick={() => {
+                                setSelectingFabricSlot('fabric2');
+                                setActiveTab('library');
+                              }}
+                            >
+                              {selectedItems.fabric2 ? 'Change' : 'Select'}
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {selectedItems.fabric2 && !readOnly && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="shrink-0 text-muted-foreground"
+                              onClick={() => setSelectedItems(prev => ({ ...prev, fabric2: undefined }))}
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Bottom Section - Configuration & Cost */}
                 <div className="space-y-4">
                   {(() => {
@@ -3262,12 +3387,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       
                       return (
                         <CostCalculationSummary
-                          template={selectedTemplate} 
-                          measurements={measurements} 
-                          selectedFabric={selectedItems.fabric || selectedItems.material} 
-                          selectedLining={selectedLining} 
-                          selectedHeading={selectedHeading} 
-                          inventory={[]} 
+                          template={selectedTemplate}
+                          measurements={measurements}
+                          selectedFabric={selectedItems.fabric || selectedItems.material}
+                          selectedFabric2={selectedItems.fabric2}
+                          selectedLining={selectedLining}
+                          selectedHeading={selectedHeading}
+                          inventory={[]}
                           fabricCalculation={fabricCalculation}
                           selectedOptions={basicOptions}
                           engineResult={engineResult}
@@ -3665,12 +3791,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     return (
                       <CostCalculationSummary
-                        template={selectedTemplate} 
-                        measurements={measurements} 
-                        selectedFabric={selectedItems.fabric || selectedItems.material} 
-                        selectedLining={selectedLining} 
-                        selectedHeading={selectedHeading} 
-                        inventory={[]} 
+                        template={selectedTemplate}
+                        measurements={measurements}
+                        selectedFabric={selectedItems.fabric || selectedItems.material}
+                        selectedFabric2={selectedItems.fabric2}
+                        selectedLining={selectedLining}
+                        selectedHeading={selectedHeading}
+                        inventory={[]}
                         fabricCalculation={fabricCalculation}
                         selectedOptions={allDisplayOptions}
                         calculatedFabricCost={(() => {

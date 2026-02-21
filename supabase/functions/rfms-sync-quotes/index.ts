@@ -391,26 +391,66 @@ serve(async (req: Request) => {
               `${t.treatment_name || t.treatment_type}: ${t.product_name || "N/A"} - $${(t.total_price || 0).toFixed(2)}`
             ).join("\n") || "No line items";
 
+            // Read RFMS-specific config values saved in integration settings
+            const rfmsConfig = activeIntegration.configuration || {};
+            const storeNumber = rfmsConfig.store_number ? Number(rfmsConfig.store_number) : undefined;
+            const customerType = rfmsConfig.customer_type || "RESIDENTIAL";
+            const taxStatus = rfmsConfig.tax_status || "Tax";
+            const taxMethod = rfmsConfig.tax_method || "SalesTax";
+
+            const notesText = [
+              `InterioApp Quote: ${project.quote_number || project.job_number || project.id}`,
+              `Status: ${project.status || "Draft"}`,
+              project.description ? `Description: ${project.description}` : null,
+              `---`, `Line Items:`, treatmentSummary, `---`,
+              `Total: $${totalPrice.toFixed(2)}`, `Cost: $${totalCost.toFixed(2)}`,
+            ].filter(Boolean).join("\n");
+
+            // Derive document number (strip non-numeric prefix if needed)
+            const documentNumber = (project.quote_number || project.job_number || "").replace(/[^0-9]/g, "") || undefined;
+
+            const client = project.clients as any | null;
+            const existingRfmsCustomerId = client?.rfms_customer_id || undefined;
+
+            // Build the RFMS v2 opportunity/quote payload
             const rfmsQuote: any = {
-              customer_id: (project.clients as any)?.rfms_customer_id || undefined,
-              description: project.name,
-              notes: [
-                `InterioApp Quote: ${project.quote_number || project.job_number || project.id}`,
-                `Status: ${project.status || "Draft"}`,
-                project.description ? `Description: ${project.description}` : null,
-                `---`, `Line Items:`, treatmentSummary, `---`,
-                `Total: $${totalPrice.toFixed(2)}`, `Cost: $${totalCost.toFixed(2)}`,
-              ].filter(Boolean).join("\n"),
-              total: totalPrice,
-              cost: totalCost,
-              reference: project.quote_number || project.job_number || project.id,
+              createOrder: false,
+              notes: notesText,
+              taxStatus,
+              taxMethod,
             };
 
-            if (!rfmsQuote.customer_id && project.clients) {
-              const client = project.clients as any;
-              rfmsQuote.customer_name = client.name || `${client.first_name || ""} ${client.last_name || ""}`.trim();
-              rfmsQuote.customer_email = client.email;
-              rfmsQuote.customer_phone = client.phone;
+            if (documentNumber) {
+              rfmsQuote.documentNumber = documentNumber;
+            }
+
+            if (existingRfmsCustomerId) {
+              // Existing RFMS customer — reference by ID only
+              rfmsQuote.customerId = existingRfmsCustomerId;
+              if (storeNumber) rfmsQuote.storeNumber = storeNumber;
+            } else if (client) {
+              // New customer — send full address payload so RFMS creates/matches the record
+              const nameParts = (client.name || "").trim().split(/\s+/);
+              const firstName = client.first_name || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || "";
+              const lastName = client.last_name || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : "") || "";
+
+              const addressObj = {
+                firstName,
+                lastName,
+                address1: client.address || "",
+                city: client.city || "",
+                state: client.state || "",
+                postalCode: client.zip_code || "",
+              };
+
+              rfmsQuote.entryType = "Customer";
+              rfmsQuote.customerType = customerType;
+              rfmsQuote.customerAddress = addressObj;
+              rfmsQuote.shipToAddress = addressObj;
+              rfmsQuote.phone1 = client.phone || "";
+              rfmsQuote.email = client.email || "";
+
+              if (storeNumber) rfmsQuote.storeNumber = storeNumber;
             }
 
             const existingRfmsQuoteId = (project as any).rfms_quote_id;
@@ -431,7 +471,31 @@ serve(async (req: Request) => {
 
               for (const endpoint of createEndpoints) {
                 try {
-                  const createResult = await rfmsRequest(endpoint.method, endpoint.path, storeQueue, currentToken, apiUrl, rfmsQuote);
+                  let createResult = await rfmsRequest(endpoint.method, endpoint.path, storeQueue, currentToken, apiUrl, rfmsQuote);
+
+                  // Handle RFMS duplicate customer: re-submit using the existing customerId
+                  if (createResult.accepted === false) {
+                    const existingIdMsg = (createResult.messages || []).find((m: string) => m.startsWith("existingCustomerId:"));
+                    if (existingIdMsg) {
+                      const existingCustomerId = Number(existingIdMsg.split(":")[1]);
+                      console.log(`RFMS: customer already exists (id=${existingCustomerId}), retrying with customerId only`);
+                      const retryPayload: any = {
+                        createOrder: rfmsQuote.createOrder,
+                        customerId: existingCustomerId,
+                        notes: rfmsQuote.notes,
+                        taxStatus: rfmsQuote.taxStatus,
+                        taxMethod: rfmsQuote.taxMethod,
+                      };
+                      if (rfmsQuote.documentNumber) retryPayload.documentNumber = rfmsQuote.documentNumber;
+                      if (rfmsQuote.storeNumber) retryPayload.storeNumber = rfmsQuote.storeNumber;
+                      createResult = await rfmsRequest(endpoint.method, endpoint.path, storeQueue, currentToken, apiUrl, retryPayload);
+                      // Store rfms_customer_id on the client record for future syncs
+                      if (client?.id) {
+                        await supabase.from("clients").update({ rfms_customer_id: existingCustomerId.toString() } as any).eq("id", client.id).catch(() => {});
+                      }
+                    }
+                  }
+
                   const newId = createResult.result?.id || createResult.result?.opportunityId || createResult.result?.quoteId || createResult.result?.estimateId || createResult.id;
                   if (newId) {
                     await supabase.from("projects").update({ rfms_quote_id: newId.toString() } as any).eq("id", project.id);

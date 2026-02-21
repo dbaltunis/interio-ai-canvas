@@ -123,6 +123,7 @@ interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
   selectedFabric?: any;
+  selectedFabric2?: any; // Second fabric for double roller/blind configurations
   selectedLining?: string;
   selectedHeading?: string;
   inventory: any[];
@@ -187,6 +188,7 @@ export const CostCalculationSummary = ({
   template,
   measurements,
   selectedFabric,
+  selectedFabric2,
   selectedLining,
   selectedHeading,
   inventory,
@@ -564,7 +566,7 @@ export const CostCalculationSummary = ({
           : null
       });
       
-      const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements);
+      const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements, selectedFabric2);
 
       console.log('✅ Blind calculator results:', blindCosts);
 

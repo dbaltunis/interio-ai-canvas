@@ -17,6 +17,7 @@ interface DynamicTreatmentVisualizerProps {
   template: CurtainTemplate;
   measurements: any;
   selectedFabric?: any;
+  selectedFabric2?: any; // Second fabric for double roller/blind
   selectedLining?: string;
 }
 
@@ -24,6 +25,7 @@ export const DynamicTreatmentVisualizer = ({
   template,
   measurements,
   selectedFabric,
+  selectedFabric2,
   selectedLining
 }: DynamicTreatmentVisualizerProps) => {
   const { units } = useMeasurementUnits();
@@ -207,6 +209,7 @@ export const DynamicTreatmentVisualizer = ({
           <RollerBlindVisualizer
             measurements={measurements}
             selectedFabric={selectedFabric}
+            selectedFabric2={selectedFabric2}
             controlPosition={measurements.control_position}
             mountingType={measurements.mounting_type}
             transparency={measurements.fabric_transparency}

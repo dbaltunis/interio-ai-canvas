@@ -1176,7 +1176,7 @@ export const QuotationTab = ({
             You need to create a quote template before you can generate quotes. Go to Settings → Documents to create your first template.
           </p>
           <Button onClick={() => {
-            window.location.href = '/?settings=documents';
+            window.location.href = '/?tab=settings&subtab=documents';
           }}>
             <FileText className="h-4 w-4 mr-2" />
             Create Template

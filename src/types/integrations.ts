@@ -182,12 +182,17 @@ export interface CWSystemsIntegration extends BaseIntegration {
     supplier_email: string;
     contact_name?: string;
     contact_phone?: string;
+    /** Bearer token from the CORA CW Trade Hub company profile — enables direct API ordering */
+    api_token?: string;
+    /** Email address registered with CW Trade Hub (used as user_email in API calls) */
+    api_user_email?: string;
   };
   configuration: {
     default_delivery_address: string;
     default_payment_terms: string;
     notes_template?: string;
-    order_method: 'email';
+    /** 'api' when Bearer token is configured; 'email' otherwise */
+    order_method: 'email' | 'api';
   };
 }
 

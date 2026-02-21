@@ -204,23 +204,31 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       // Grid expects CM, we already have CM
       const rawGridPrice = getPriceFromGrid(gridData, widthCm, heightCm);
       // Apply trade/supplier discount if set on the grid
-      const gridPrice = pricingGridDiscount > 0
+      const discountedGridPrice = pricingGridDiscount > 0
         ? rawGridPrice * (1 - pricingGridDiscount / 100)
         : rawGridPrice;
+
+      // Apply grid-specific markup (stored on the fabric/template as pricing_grid_markup).
+      // This is the fix for: "Curtain pricing grids: still using category markup only."
+      // The CalculationEngine path correctly applies this, but calculateTreatmentPricing
+      // was returning the raw grid price and letting markupResolver fall back to category markup.
+      const gridMarkupPct = (fabricItem as any)?.pricing_grid_markup ?? (template as any)?.pricing_grid_markup ?? 0;
+      const gridMarkupMultiplier = gridMarkupPct > 0 ? (1 + gridMarkupPct / 100) : 1;
+      const gridPrice = discountedGridPrice * gridMarkupMultiplier;
 
       if (gridPrice > 0) {
         // For pricing_grid with includes_fabric_price, grid contains TOTAL price (fabric + manufacturing)
         // Check if template indicates all-inclusive pricing
         const includesFabricPrice = template?.includes_fabric_price === true;
-        
+
         if (includesFabricPrice) {
           // Grid is all-inclusive - entire price is "fabric cost" (really product cost)
           fabricCost = gridPrice;
-          console.log(`💰 Fabric cost (pricing_grid ALL-INCLUSIVE): Grid price ${gridPrice.toFixed(2)} contains fabric + manufacturing`);
+          console.log(`💰 Fabric cost (pricing_grid ALL-INCLUSIVE): Grid price ${rawGridPrice.toFixed(2)} + ${gridMarkupPct}% grid markup = ${gridPrice.toFixed(2)}`);
         } else {
           // Grid is just for fabric, manufacturing calculated separately
           fabricCost = gridPrice;
-          console.log(`💰 Fabric cost (pricing_grid): ${gridPrice.toFixed(2)} from grid lookup [${widthCm}cm × ${heightCm}cm]`);
+          console.log(`💰 Fabric cost (pricing_grid): raw ${rawGridPrice.toFixed(2)} + ${gridMarkupPct}% grid markup = ${gridPrice.toFixed(2)} [${widthCm}cm × ${heightCm}cm]`);
         }
       } else {
         console.warn(`⚠️ pricing_grid returned 0 - falling back to per_sqm calculation`);

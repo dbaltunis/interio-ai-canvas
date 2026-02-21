@@ -51,6 +51,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     sync_scheduling: integration?.configuration?.sync_scheduling ?? false,
     auto_update_job_status: integration?.configuration?.auto_update_job_status ?? false,
     measurement_units: integration?.configuration?.measurement_units || 'metric',
+    store_number: (integration?.configuration as any)?.store_number || '',
+    customer_type: (integration?.configuration as any)?.customer_type || 'RESIDENTIAL',
+    tax_status: (integration?.configuration as any)?.tax_status || 'Tax',
+    tax_method: (integration?.configuration as any)?.tax_method || 'SalesTax',
   });
 
   // Fix 1: Sync form state when integration data loads asynchronously
@@ -67,6 +71,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
         sync_scheduling: integration.configuration?.sync_scheduling ?? false,
         auto_update_job_status: integration.configuration?.auto_update_job_status ?? false,
         measurement_units: integration.configuration?.measurement_units || 'metric',
+        store_number: (integration.configuration as any)?.store_number || '',
+        customer_type: (integration.configuration as any)?.customer_type || 'RESIDENTIAL',
+        tax_status: (integration.configuration as any)?.tax_status || 'Tax',
+        tax_method: (integration.configuration as any)?.tax_method || 'SalesTax',
       }));
     }
   }, [integration]);
@@ -82,6 +90,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
     sync_scheduling: integration?.configuration?.sync_scheduling ?? false,
     auto_update_job_status: integration?.configuration?.auto_update_job_status ?? false,
     measurement_units: integration?.configuration?.measurement_units || 'metric',
+    store_number: (integration?.configuration as any)?.store_number || '',
+    customer_type: (integration?.configuration as any)?.customer_type || 'RESIDENTIAL',
+    tax_status: (integration?.configuration as any)?.tax_status || 'Tax',
+    tax_method: (integration?.configuration as any)?.tax_method || 'SalesTax',
   }), [integration]);
 
   const hasChanges = useMemo(() => {
@@ -141,6 +153,10 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
           sync_scheduling: formData.sync_scheduling,
           auto_update_job_status: formData.auto_update_job_status,
           measurement_units: formData.measurement_units as 'metric' | 'imperial',
+          store_number: formData.store_number || undefined,
+          customer_type: formData.customer_type || 'RESIDENTIAL',
+          tax_status: formData.tax_status || 'Tax',
+          tax_method: formData.tax_method || 'SalesTax',
         },
         last_sync: null,
       };
@@ -627,6 +643,69 @@ export const RFMSIntegrationTab = ({ integration }: RFMSIntegrationTabProps) => 
                 <SelectItem value="imperial">Imperial (in, ft)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="store_number">RFMS Store Number</Label>
+            <Input
+              id="store_number"
+              type="number"
+              placeholder="e.g. 49"
+              value={formData.store_number}
+              onChange={e => setFormData(prev => ({ ...prev, store_number: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Your RFMS store number. Retrieve it via GET /v2/customers from the RFMS API.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer_type">Default Customer Type</Label>
+            <Select
+              value={formData.customer_type}
+              onValueChange={value => setFormData(prev => ({ ...prev, customer_type: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select customer type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="RESIDENTIAL">Residential</SelectItem>
+                <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="tax_status">Tax Status</Label>
+              <Select
+                value={formData.tax_status}
+                onValueChange={value => setFormData(prev => ({ ...prev, tax_status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Tax">Tax</SelectItem>
+                  <SelectItem value="Exempt">Exempt</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tax_method">Tax Method</Label>
+              <Select
+                value={formData.tax_method}
+                onValueChange={value => setFormData(prev => ({ ...prev, tax_method: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SalesTax">Sales Tax (GST)</SelectItem>
+                  <SelectItem value="VAT">VAT</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>

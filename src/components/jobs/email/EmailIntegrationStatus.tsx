@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Mail, Settings } from "lucide-react";
 import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
+import { useNavigate } from "react-router-dom";
 
 export const EmailIntegrationStatus = () => {
+  const navigate = useNavigate();
   const { hasEmailSettings, hasSendGridIntegration, emailLimit, isLoading } = useEmailSetupStatus();
 
   // Loading state
@@ -41,12 +43,7 @@ export const EmailIntegrationStatus = () => {
               <Button 
                 size="lg"
                 className="gap-2"
-                onClick={() => { 
-                  const url = new URL(window.location.href);
-                  url.pathname = '/';
-                  url.search = 'tab=settings&subtab=email';
-                  window.location.href = url.toString();
-                }}
+                onClick={() => navigate('/?tab=settings&subtab=email')}
               >
                 <Settings className="h-4 w-4" />
                 Set Up Now
@@ -84,27 +81,17 @@ export const EmailIntegrationStatus = () => {
                 variant="outline" 
                 size="sm"
                 className="gap-2 bg-white hover:bg-gray-50"
-                onClick={() => { 
-                  const url = new URL(window.location.href);
-                  url.pathname = '/';
-                  url.search = 'tab=settings&subtab=email';
-                  window.location.href = url.toString();
-                }}
+                onClick={() => navigate('/?tab=settings&subtab=email')}
               >
                 <Settings className="h-3 w-3" />
                 Settings
               </Button>
               {!hasSendGridIntegration && (
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   className="gap-2 bg-white hover:bg-gray-50"
-                  onClick={() => { 
-                    const url = new URL(window.location.href);
-                    url.pathname = '/';
-                    url.search = 'tab=settings&subtab=integrations';
-                    window.location.href = url.toString();
-                  }}
+                  onClick={() => navigate('/?tab=settings&subtab=integrations')}
                 >
                   Upgrade to Unlimited
                 </Button>

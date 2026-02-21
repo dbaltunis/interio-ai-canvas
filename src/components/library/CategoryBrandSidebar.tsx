@@ -33,6 +33,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   material: <PixelMaterialIcon size={14} />,
   wallcovering: <PixelWallpaperIcon size={14} />,
   service: <PixelBriefcaseIcon size={14} />,
+  heading: <PixelFabricIcon size={14} />,
 };
 
 export const CategoryBrandSidebar = ({

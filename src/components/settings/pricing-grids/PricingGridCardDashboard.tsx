@@ -70,11 +70,20 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
   const [editingGridId, setEditingGridId] = useState<string | null>(null);
   const [editMarkupValue, setEditMarkupValue] = useState('');
 
-  // Fetch all pricing grids
+  // Fetch all pricing grids for the effective account owner (supports multi-tenant)
   const { data: grids = [], isLoading } = useQuery({
     queryKey: ['pricing-grids-dashboard', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      // Resolve effective account owner so team members see the account owner's grids
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const effectiveOwnerId = profile?.parent_account_id || user.id;
+
       const { data, error } = await supabase
         .from('pricing_grids')
         .select(`
@@ -88,10 +97,10 @@ export const PricingGridCardDashboard = ({ onAddGrid }: PricingGridCardDashboard
           created_at,
           vendor:supplier_id (name)
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .eq('active', true)
         .order('product_type', { ascending: true });
-      
+
       if (error) throw error;
       return (data || []) as GridData[];
     },

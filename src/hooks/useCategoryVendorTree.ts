@@ -36,6 +36,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; order: number }> = {
   material: { label: "Materials", order: 2 },
   wallcovering: { label: "Wallcoverings", order: 3 },
   service: { label: "Services", order: 4 },
+  heading: { label: "Headings", order: 5 },
 };
 
 export const useCategoryVendorTree = (): CategoryVendorTree => {

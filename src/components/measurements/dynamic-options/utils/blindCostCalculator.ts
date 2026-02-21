@@ -36,11 +36,14 @@ export const calculateBlindCosts = (
   template: any,
   fabricItem: any,
   selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string; pricingGridData?: any; label?: string; orderIndex?: number }> = [],
-  measurements?: Record<string, any>
+  measurements?: Record<string, any>,
+  fabricItem2?: any  // Optional second fabric for double roller/blind configurations
 ): BlindCalculationResult => {
-  
+
   // Check for double configuration (Roman blinds - two blinds on one headrail)
   const isDoubleConfig = measurements?.curtain_type === 'double';
+  // When two different fabrics are provided, each covers one blind (no multiplier for fabric)
+  const hasDualFabrics = isDoubleConfig && !!fabricItem2;
   const blindMultiplier = isDoubleConfig ? 2 : 1;
   
   // Get hem defaults from centralized source - template settings take priority
@@ -84,19 +87,32 @@ export const calculateBlindCosts = (
     const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
 
     // Apply trade/supplier discount if set on the grid
-    // Flow: grid list price × (1 - discount/100) = effective cost, then markup applied later
     const gridDiscountPercent = fabricItem?.pricing_grid_discount || 0;
     const discountedGridPrice = gridDiscountPercent > 0
       ? totalGridPrice * (1 - gridDiscountPercent / 100)
       : totalGridPrice;
 
     // ✅ CRITICAL FIX: Do NOT apply grid markup here!
-    // Markup should be applied consistently in ONE place: the display/save layer (DynamicWindowWorksheet)
-    // Previously this was causing double-markup: once here, once in DynamicWindowWorksheet
-    // The grid price from database is the BASE COST - markup is a business decision applied later
+    // Markup should be applied consistently in ONE place: the display/save layer
 
-    // For double configuration, multiply the grid price by 2 (two blinds)
-    fabricCost = discountedGridPrice * blindMultiplier;
+    if (hasDualFabrics) {
+      // DUAL FABRIC: Each fabric covers one blind. Fabric 1 grid price + Fabric 2 grid/unit price.
+      const fabric2HasGrid = hasValidPricingGrid(fabricItem2?.pricing_grid_data);
+      let fabric2Cost = 0;
+      if (fabric2HasGrid) {
+        const grid2Total = getPriceFromGrid(fabricItem2.pricing_grid_data, widthCm, heightCm);
+        const discount2 = fabricItem2?.pricing_grid_discount || 0;
+        fabric2Cost = discount2 > 0 ? grid2Total * (1 - discount2 / 100) : grid2Total;
+      } else {
+        const f2Price = fabricItem2?.cost_price || fabricItem2?.price_per_sqm || fabricItem2?.selling_price || 0;
+        fabric2Cost = squareMetersPerBlind * f2Price;
+      }
+      fabricCost = discountedGridPrice + fabric2Cost; // one blind each
+    } else {
+      // Single fabric (or same fabric for both blinds): multiply by blindMultiplier
+      fabricCost = discountedGridPrice * blindMultiplier;
+    }
+
     fabricPricePerSqm = squareMeters > 0 ? fabricCost / squareMeters : 0;
 
     console.log('✅ UNIVERSAL FABRIC GRID (ALL CLIENTS, ALL BLIND TYPES):', {
@@ -104,71 +120,61 @@ export const calculateBlindCosts = (
       gridName: fabricItem.resolved_grid_name,
       gridCode: fabricItem.resolved_grid_code,
       dimensions: `${widthCm}cm × ${heightCm}cm`,
-      baseGridPrice: totalGridPrice,
-      gridDiscountPercent,
-      discountedGridPrice,
-      gridMarkupPercentage,
-      note: 'Grid markup NOT applied here - applied in display/save layer for consistency',
+      hasDualFabrics,
       blindMultiplier,
       totalFabricCost: fabricCost,
-      rule: 'Grid price = TOTAL product price (fabric + manufacturing) - applies to ALL SaaS clients'
     });
   } else {
-    // No grid - use per-unit pricing for fabric only (already uses total squareMeters which includes multiplier)
+    // No grid - use per-unit pricing for fabric only
     // ✅ CRITICAL FIX: Use cost_price as BASE when available to prevent double-markup
-    // The markup system will apply the correct markup (implied from cost vs selling difference)
-    // Priority: cost_price > price_per_sqm > price > price_per_meter > unit_price > selling_price
     const hasCostPrice = fabricItem?.cost_price && fabricItem?.cost_price > 0;
     const hasSellingPrice = fabricItem?.selling_price && fabricItem?.selling_price > 0;
-    
+
     // Use cost_price as base when available (markup will be applied later)
-    fabricPricePerSqm = hasCostPrice 
+    fabricPricePerSqm = hasCostPrice
       ? fabricItem.cost_price
-      : (fabricItem?.price_per_sqm ||      // For sqm-based pricing
-         fabricItem?.price ||              // Base inventory_items field
-         fabricItem?.price_per_meter || 
-         fabricItem?.unit_price || 
+      : (fabricItem?.price_per_sqm ||
+         fabricItem?.price ||
+         fabricItem?.price_per_meter ||
+         fabricItem?.unit_price ||
          fabricItem?.selling_price ||
          0);
-    
-    // If price is still 0, log error for debugging
+
     if (fabricPricePerSqm === 0) {
       console.error('⚠️ PRICE IS ZERO! No valid price found on material:', {
         materialName: fabricItem?.name,
         materialId: fabricItem?.id,
         cost_price: fabricItem?.cost_price,
         selling_price: fabricItem?.selling_price,
-        price: fabricItem?.price,
-        price_per_sqm: fabricItem?.price_per_sqm,
-        price_per_meter: fabricItem?.price_per_meter,
-        unit_price: fabricItem?.unit_price,
         hint: 'Please set cost_price and selling_price on this inventory item'
       });
     }
-    
-    fabricCost = squareMeters * fabricPricePerSqm;
-    
-    // ✅ Log when using cost_price as base (markup will be applied in CostCalculationSummary)
+
+    if (hasDualFabrics) {
+      // DUAL FABRIC: Each fabric covers one blind
+      const f2Price = fabricItem2?.cost_price || fabricItem2?.price_per_sqm ||
+                      fabricItem2?.price || fabricItem2?.price_per_meter ||
+                      fabricItem2?.unit_price || fabricItem2?.selling_price || 0;
+      fabricCost = (squareMetersPerBlind * fabricPricePerSqm) + (squareMetersPerBlind * f2Price);
+    } else {
+      fabricCost = squareMeters * fabricPricePerSqm; // squareMeters already includes blindMultiplier
+    }
+
     if (hasCostPrice && hasSellingPrice) {
       const impliedMarkup = ((fabricItem.selling_price - fabricItem.cost_price) / fabricItem.cost_price) * 100;
       console.log('💰 [LIBRARY PRICING] Using cost_price as base:', {
         cost_price: fabricItem.cost_price,
         selling_price: fabricItem.selling_price,
         impliedMarkup: `${impliedMarkup.toFixed(1)}%`,
-        note: 'Markup will be applied in display layer'
+        hasDualFabrics,
       });
     }
-    
+
     console.log('ℹ️ Per-unit fabric pricing (no grid):', {
       blindType: template?.treatment_category || 'unknown',
       fabricPricePerSqm,
-      priceSource: hasCostPrice ? 'cost_price' :
-                   fabricItem?.price_per_sqm ? 'price_per_sqm' :
-                   fabricItem?.price ? 'price' :
-                   fabricItem?.price_per_meter ? 'price_per_meter' :
-                   fabricItem?.unit_price ? 'unit_price' : 
-                   fabricItem?.selling_price ? 'selling_price' : 'none',
       squareMeters: squareMeters.toFixed(2),
+      hasDualFabrics,
       blindMultiplier,
       fabricCost: fabricCost.toFixed(2)
     });
@@ -316,9 +322,11 @@ export const calculateBlindCosts = (
   const totalCost = fabricCost + manufacturingCost + optionsCost;
   
   // Display text (show multiplier if double)
-  const displayText = isDoubleConfig 
-    ? `${squareMeters.toFixed(2)} sqm (2 blinds) × ${fabricPricePerSqm.toFixed(2)}/sqm`
-    : `${squareMeters.toFixed(2)} sqm × ${fabricPricePerSqm.toFixed(2)}/sqm`;
+  const displayText = hasDualFabrics
+    ? `${squareMetersPerBlind.toFixed(2)} sqm × 2 fabrics (dual roller)`
+    : isDoubleConfig
+      ? `${squareMeters.toFixed(2)} sqm (2 blinds) × ${fabricPricePerSqm.toFixed(2)}/sqm`
+      : `${squareMeters.toFixed(2)} sqm × ${fabricPricePerSqm.toFixed(2)}/sqm`;
   
   console.log('🧮 Blind Cost Calculation:', {
     dimensions: `${widthCm}cm × ${heightCm}cm`,
