@@ -31,6 +31,8 @@ import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { CompatibleTreatmentsSelector } from "./CompatibleTreatmentsSelector";
 import { TagInput } from "./TagInput";
 import { SupplierBadge } from "@/components/ui/SupplierBadge";
+import { CWProductSelector, type CWProductLink } from "@/components/integrations/CWProductSelector";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -73,6 +75,39 @@ export const UnifiedInventoryDialog = ({
   const createCollectionMutation = useCreateCollection();
   const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+
+  // CW Systems integration — show product linking only when CW integration with API token is configured
+  const { integrations } = useIntegrations();
+  const cwIntegration = integrations.find(i => i.integration_type === "cw_systems") as any;
+  const hasCwApiToken = !!(cwIntegration?.api_credentials?.api_token);
+
+  // Read CW product link from specifications
+  const cwProductLink: CWProductLink | null = formData.specifications?.cw_product_range_id
+    ? {
+        cw_product_range_id: formData.specifications.cw_product_range_id,
+        cw_product_type_id: formData.specifications.cw_product_type_id,
+        cw_product_material_id: formData.specifications.cw_product_material_id,
+        cw_range_name: formData.specifications.cw_range_name,
+        cw_type_name: formData.specifications.cw_type_name,
+        cw_material_name: formData.specifications.cw_material_name,
+      }
+    : null;
+
+  const handleCwProductLinkChange = (link: CWProductLink | null) => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: {
+        ...prev.specifications,
+        // Store CW IDs (or clear them)
+        cw_product_range_id: link?.cw_product_range_id ?? undefined,
+        cw_product_type_id: link?.cw_product_type_id ?? undefined,
+        cw_product_material_id: link?.cw_product_material_id ?? undefined,
+        cw_range_name: link?.cw_range_name ?? undefined,
+        cw_type_name: link?.cw_type_name ?? undefined,
+        cw_material_name: link?.cw_material_name ?? undefined,
+      },
+    }));
+  };
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -1528,6 +1563,33 @@ export const UnifiedInventoryDialog = ({
                     <InventoryTrackingInfo />
                   </CardContent>
                 </Card>
+
+                {/* CW Systems Product Link — shown when CW integration with API token is configured */}
+                {hasCwApiToken && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <img
+                          src="/lovable-uploads/cw-logo.svg"
+                          alt="CW"
+                          className="h-4 w-auto"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                        CW Trade Hub Product Link
+                      </CardTitle>
+                      <CardDescription>
+                        Link this item to a CW Systems product so orders are submitted automatically via
+                        the CORA API. Find your Range ID and Type ID in the CW Trade Hub portal.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <CWProductSelector
+                        value={cwProductLink}
+                        onChange={handleCwProductLinkChange}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* QR CODE TAB */}

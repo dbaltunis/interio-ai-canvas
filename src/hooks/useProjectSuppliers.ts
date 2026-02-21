@@ -75,6 +75,7 @@ export const useProjectSuppliers = ({
           name,
           vendor_id,
           supplier,
+          specifications,
           vendor:vendors(id, name)
         `)
         .in("id", inventoryItemIds);
@@ -167,6 +168,12 @@ export const useProjectSuppliers = ({
           const existing = supplierMap.get(vendorId);
           const vendorSupplierOrder = parsedSupplierOrders[vendorId];
 
+          const specs = (inventoryItem as any).specifications || {};
+          // Extract dimensions from quote item product_details
+          const pd = item.product_details || {};
+          const widthRaw = pd.width ?? pd.opening_width ?? pd.make_width ?? null;
+          const heightRaw = pd.height ?? pd.drop ?? pd.opening_height ?? pd.make_height ?? null;
+
           supplierMap.set(vendorId, {
             id: vendorId,
             name: vendorName,
@@ -177,6 +184,14 @@ export const useProjectSuppliers = ({
                 id: item.id,
                 name: item.name,
                 quantity: item.quantity || 1,
+                // CW Systems product IDs (from inventory item specifications)
+                cwProductRangeId: specs.cw_product_range_id,
+                cwProductTypeId: specs.cw_product_type_id,
+                cwProductMaterialId: specs.cw_product_material_id,
+                // Dimensions from quote item (convert to mm if needed)
+                widthMm: widthRaw ? Math.round(parseFloat(String(widthRaw))) : undefined,
+                heightMm: heightRaw ? Math.round(parseFloat(String(heightRaw))) : undefined,
+                notes: pd.notes || pd.additional_notes || "",
               },
             ],
             isOrdered: Boolean(vendorSupplierOrder),
